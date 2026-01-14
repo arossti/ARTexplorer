@@ -676,39 +676,65 @@ function startARTexplorer(
   document
     .getElementById("showGeodesicIcosahedron")
     .addEventListener("change", updateGeometry);
-  document
-    .getElementById("geodesicIcosaFrequency")
-    .addEventListener("change", updateGeometry); // Use 'change' not 'input' to avoid glitching
+
+  // Geodesic Icosahedron frequency slider
+  const geodesicIcosaFrequency = document.getElementById("geodesicIcosaFrequency");
+  geodesicIcosaFrequency.addEventListener("input", e => {
+    e.target.nextElementSibling.textContent = e.target.value;
+    updateGeometry();
+  });
+  geodesicIcosaFrequency.addEventListener("change", updateGeometry);
+
   document
     .getElementById("showGeodesicTetrahedron")
     .addEventListener("change", updateGeometry);
-  document
-    .getElementById("geodesicTetraFrequency")
-    .addEventListener("change", updateGeometry); // Use 'change' not 'input'
+
+  // Geodesic Tetrahedron frequency slider
+  const geodesicTetraFrequency = document.getElementById("geodesicTetraFrequency");
+  geodesicTetraFrequency.addEventListener("input", e => {
+    e.target.nextElementSibling.textContent = e.target.value;
+    updateGeometry();
+  });
+  geodesicTetraFrequency.addEventListener("change", updateGeometry);
+
   // Phase 2.9: Projection radio buttons
   document
     .querySelectorAll('input[name="geodesicTetraProjection"]')
     .forEach(radio => {
       radio.addEventListener("change", updateGeometry);
     });
+
   // Geodesic Dual Tetrahedron controls
   document
     .getElementById("showGeodesicDualTetrahedron")
     .addEventListener("change", updateGeometry);
-  document
-    .getElementById("geodesicDualTetraFrequency")
-    .addEventListener("change", updateGeometry);
+
+  // Geodesic Dual Tetrahedron frequency slider
+  const geodesicDualTetraFrequency = document.getElementById("geodesicDualTetraFrequency");
+  geodesicDualTetraFrequency.addEventListener("input", e => {
+    e.target.nextElementSibling.textContent = e.target.value;
+    updateGeometry();
+  });
+  geodesicDualTetraFrequency.addEventListener("change", updateGeometry);
+
   document
     .querySelectorAll('input[name="geodesicDualTetraProjection"]')
     .forEach(radio => {
       radio.addEventListener("change", updateGeometry);
     });
+
   document
     .getElementById("showGeodesicOctahedron")
     .addEventListener("change", updateGeometry);
-  document
-    .getElementById("geodesicOctaFrequency")
-    .addEventListener("change", updateGeometry); // Use 'change' not 'input'
+
+  // Geodesic Octahedron frequency slider
+  const geodesicOctaFrequency = document.getElementById("geodesicOctaFrequency");
+  geodesicOctaFrequency.addEventListener("input", e => {
+    e.target.nextElementSibling.textContent = e.target.value;
+    updateGeometry();
+  });
+  geodesicOctaFrequency.addEventListener("change", updateGeometry);
+
   document
     .querySelectorAll('input[name="geodesicOctaProjection"]')
     .forEach(radio => {
@@ -719,13 +745,20 @@ function startARTexplorer(
     .forEach(radio => {
       radio.addEventListener("change", updateGeometry);
     });
+
   // Geodesic Dual Icosahedron controls
   document
     .getElementById("showGeodesicDualIcosahedron")
     .addEventListener("change", updateGeometry);
-  document
-    .getElementById("geodesicDualIcosaFrequency")
-    .addEventListener("change", updateGeometry);
+
+  // Geodesic Dual Icosahedron frequency slider
+  const geodesicDualIcosaFrequency = document.getElementById("geodesicDualIcosaFrequency");
+  geodesicDualIcosaFrequency.addEventListener("input", e => {
+    e.target.nextElementSibling.textContent = e.target.value;
+    updateGeometry();
+  });
+  geodesicDualIcosaFrequency.addEventListener("change", updateGeometry);
+
   document
     .querySelectorAll('input[name="geodesicDualIcosaProjection"]')
     .forEach(radio => {
