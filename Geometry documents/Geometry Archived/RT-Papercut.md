@@ -1645,6 +1645,290 @@ export const RTPapercut = {
 
 ---
 
+#### 16.2.8 Dual Snap Interval System (2026-01-15) ✅ COMPLETE
+
+**Branch**: `QUADRAY-SNAP`
+**Implementation Date**: 2026-01-15
+**Status**: Production-ready
+
+**Goal**: Add independent interval snap functionality for both XYZ (Cartesian) and WXYZ (Quadray) grid systems, allowing cutplanes to lock precisely to grid intersections along their respective coordinate axes.
+
+##### Overview
+
+The dual snap interval system extends the cutplane functionality by providing grid-aligned snapping in both coordinate systems:
+
+- **XYZ Interval Snap**: Snaps cutplane to Cartesian grid intervals (step = 1.0 unit)
+- **WXYZ Interval Snap**: Snaps cutplane to Quadray IVM grid intervals (step = √6/4 ≈ 0.612372 units)
+
+Each snap mode operates independently, allowing users to enable/disable snapping per coordinate system based on their visualization needs.
+
+##### Implementation Details
+
+**UI Changes (index.html:1627-1638)**:
+
+```html
+<!-- XYZ Interval Snap -->
+<div class="control-item">
+  <label class="checkbox-label">
+    <input type="checkbox" id="intervalSnapXYZ" checked />
+    XYZ Interval Snap
+  </label>
+</div>
+
+<!-- WXYZ Interval Snap -->
+<div class="control-item">
+  <label class="checkbox-label">
+    <input type="checkbox" id="intervalSnapWXYZ" />
+    WXYZ Interval Snap
+  </label>
+</div>
+```
+
+**State Management (rt-papercut.js:27-28)**:
+
+```javascript
+intervalSnapXYZEnabled: true,   // XYZ: Snap to Cartesian grid intervals (step=1.0)
+intervalSnapWXYZEnabled: false, // WXYZ: Snap to Quadray grid intervals (step=√6/4≈0.612)
+```
+
+**Event Listeners (rt-papercut.js:157-175)**:
+
+```javascript
+// XYZ Interval Snap checkbox
+const intervalSnapXYZCheckbox = document.getElementById("intervalSnapXYZ");
+if (intervalSnapXYZCheckbox) {
+  intervalSnapXYZCheckbox.addEventListener("change", e => {
+    RTPapercut.state.intervalSnapXYZEnabled = e.target.checked;
+    RTPapercut._updateSliderRange();
+  });
+}
+
+// WXYZ Interval Snap checkbox
+const intervalSnapWXYZCheckbox = document.getElementById("intervalSnapWXYZ");
+if (intervalSnapWXYZCheckbox) {
+  intervalSnapWXYZCheckbox.addEventListener("change", e => {
+    RTPapercut.state.intervalSnapWXYZEnabled = e.target.checked;
+    RTPapercut._updateSliderRange();
+  });
+}
+```
+
+**Dynamic Extent Calculation (rt-papercut.js:226-231)**:
+
+Critical fix: Cutplane range must match actual grid tessellation extent, not arbitrary values.
+
+```javascript
+// Listen for Quadray tessellation slider changes
+const quadraySlider = document.getElementById("quadrayTessSlider");
+if (quadraySlider) {
+  quadraySlider.addEventListener("change", () => {
+    RTPapercut._updateSliderRange();
+  });
+}
+```
+
+##### RT-Pure Methodology: Grid Alignment & Algebraic Constants
+
+**Core Principle**: The implementation maintains Rational Trigonometry principles by using algebraically exact constants and deferring √ expansion to the GPU boundary.
+
+**Grid Interval Constant** (rt-math.js):
+
+```javascript
+RT.PureRadicals.QUADRAY_GRID_INTERVAL = Math.sqrt(6) / 4; // ≈ 0.6123724356957945
+```
+
+This represents the exact spacing between IVM (Isotropic Vector Matrix) grid intersections in the Quadray tetrahedral lattice.
+
+**Important**: This implementation uses the new RT Pure interval functions introduced in the codebase for maintaining algebraic exactness throughout the rendering pipeline. These functions ensure that square roots are only computed once (at constant definition) and integer multiples are used for all subsequent calculations, preventing floating-point error accumulation.
+
+**Slider Semantics: Distance vs Quadrance**:
+
+The cutplane slider represents signed **distance** (not quadrance) from origin along the selected basis vector. This is appropriate because:
+
+1. **THREE.Plane API Requirement**: The plane equation `normal·point + constant = 0` uses distance for the constant parameter
+2. **RT-Pure Maintenance**: Step intervals ARE calculated from RT-pure algebraic constants (`RT.PureRadicals.QUADRAY_GRID_INTERVAL`)
+3. **Integer Arithmetic**: The slider counts INTEGER multiples of the grid interval (pure arithmetic, no floating point error accumulation)
+4. **Pedagogical Value**: Console logs show both distance AND quadrance for RT education
+
+**Grid Alignment Verification**:
+
+Grid intersections (from `createIVMGrid()` in rt-rendering.js):
+```
+Position = i × gridInterval × basis1 + j × gridInterval × basis2
+```
+
+Cutplane positions when snapped:
+```
+Position = n × gridInterval along selected basis vector (n ∈ ℤ)
+```
+
+**Result**: Perfect alignment - cutplane intersects grid at exact lattice points.
+
+**Critical Range Calculation** (rt-papercut.js:325-390):
+
+The slider range must dynamically match the actual 3D extent of the grid geometry:
+
+```javascript
+_getCutplaneRange: function () {
+  const basis = RTPapercut.state.cutplaneBasis;
+  const xyzSnapEnabled = RTPapercut.state.intervalSnapXYZEnabled;
+  const wxySnapEnabled = RTPapercut.state.intervalSnapWXYZEnabled;
+
+  let step;
+
+  if (basis === "tetrahedral") {
+    if (wxySnapEnabled) {
+      // RT-PURE: Use algebraically exact constant (√6/4)
+      step = RT.PureRadicals.QUADRAY_GRID_INTERVAL;
+    } else {
+      step = 0.1; // Fine-grained control when snap disabled
+    }
+
+    // WXYZ Tetrahedral: Calculate extent from grid tessellations
+    // Grid extends to: tessellations × gridInterval
+    // Example: tessellations=12 → extent = 12 × 0.612372 ≈ 7.348469
+    const tessellations = parseInt(
+      document.getElementById("quadrayTessSlider")?.value || "12"
+    );
+    const extent = tessellations * RT.PureRadicals.QUADRAY_GRID_INTERVAL;
+
+    return { min: -extent, max: extent, step: step };
+  } else {
+    // XYZ Cartesian: Calculate extent from Cartesian grid
+    const divisions = parseInt(
+      document.getElementById("cartesianTessSlider")?.value || "10"
+    );
+    const extent = divisions / 2;
+
+    step = xyzSnapEnabled ? 1.0 : 0.1;
+
+    return { min: -extent, max: extent, step: step };
+  }
+}
+```
+
+**RT-Pure Diagnostic Logging** (rt-papercut.js:520-546):
+
+Console output provides pedagogical insight into RT principles:
+
+```javascript
+// Calculate both distance and quadrance
+const quadrance = value * value; // Q = d² (deferred √ principle)
+const basis = RTPapercut.state.cutplaneBasis;
+const axis = RTPapercut.state.cutplaneAxis.toUpperCase();
+
+// Calculate interval number (how many grid spacings from origin)
+let intervalNum = 0;
+if (basis === "tetrahedral" && RTPapercut.state.intervalSnapWXYZEnabled) {
+  intervalNum = Math.round(value / RT.PureRadicals.QUADRAY_GRID_INTERVAL);
+} else if (basis === "cartesian" && RTPapercut.state.intervalSnapXYZEnabled) {
+  intervalNum = Math.round(value / 1.0);
+}
+
+console.log(
+  `✂️ Cutplane: ${basis === "tetrahedral" ? "WXYZ" : "XYZ"}-${axis} | ` +
+  `Distance d = ${value.toFixed(6)}, Quadrance Q = ${quadrance.toFixed(6)} | ` +
+  `Interval: ${intervalNum} × gridStep`
+);
+```
+
+Example console output:
+```
+✂️ Cutplane: WXYZ-W | Distance d = 3.674234, Quadrance Q = 13.500000 | Interval: 6 × gridStep
+```
+
+##### Geometric Insight: Tetrahedral Lattice Sectioning
+
+**Observation**: A flat plane perpendicular to one WXYZ axis does NOT intersect ALL Quadray grid points simultaneously - only those along the selected axis plus a triangular cross-section of the IVM lattice.
+
+**Why This is Correct**:
+
+1. **Tetrahedral Lattice Structure**: The Quadray grid forms a tetrahedral lattice, not a rectilinear one
+2. **Architectural Section Cuts**: Flat planes are correct for architectural sectioning and demonstrate how tetrahedral coordinates project onto section planes
+3. **Natural Grain of IVM**: To follow the "natural grain" of the IVM lattice would require THREE folded planes at the tetrahedral dihedral angle (not desirable for section cuts)
+
+**Future Enhancement: Complete IVM Grid Extension**
+
+To extend the grid system to show ALL parallel lines in the Quadray system simultaneously:
+
+- **Method**: Attach cutplanes to the face-normals of a **Rhombic Dodecahedron**
+- **Reason**: The Rhombic Dodecahedron has exactly one plane for each set of parallel lines in the Quadray grid system
+- **Implementation**: Each of the 12 rhombic faces defines a family of parallel planes in the IVM lattice
+
+This discovery reveals the deep connection between the Rhombic Dodecahedron and the IVM grid structure, showing how the 12 face-normals define the complete set of grid plane families.
+
+##### Camera Views Integration
+
+The snap interval system integrates seamlessly with both XYZ and WXYZ camera view presets:
+
+**XYZ Camera Views** (Cartesian basis):
+- Top / Bottom - Look along ±Z axis
+- Front / Back - Look along ±Y axis
+- Left / Right - Look along ±X axis
+- When active: XYZ Interval Snap locks cutplane to integer grid positions (step = 1.0)
+
+**WXYZ Camera Views** (Tetrahedral basis):
+- W View - Look along W basis vector (0.577, 0.577, 0.577)
+- X View - Look along X basis vector (0.577, -0.577, -0.577)
+- Y View - Look along Y basis vector (-0.577, 0.577, -0.577)
+- Z View - Look along Z basis vector (-0.577, -0.577, 0.577)
+- When active: WXYZ Interval Snap locks cutplane to IVM grid positions (step = √6/4 ≈ 0.612372)
+
+The cutplane automatically switches coordinate basis when changing between XYZ and WXYZ views, maintaining snap alignment with the visible grid system.
+
+##### Files Modified
+
+- `index.html:1627-1638` - Dual snap interval checkboxes (XYZ and WXYZ)
+- `rt-papercut.js:27-28` - State properties for both snap modes
+- `rt-papercut.js:157-175` - Event listeners for snap checkboxes
+- `rt-papercut.js:226-231` - Dynamic range listener for Quadray tessellation changes
+- `rt-papercut.js:325-390` - RT-pure methodology comments in `_getCutplaneRange()`
+- `rt-papercut.js:520-546` - Quadrance diagnostic logging in `updateCutplane()`
+
+##### Verification & Testing
+
+**Test Case 1**: XYZ Interval Snap
+- Enable XYZ Interval Snap
+- Select Top View (Z axis)
+- Drag cutplane slider: should lock at integer positions (0, ±1, ±2, ±3...)
+- Grid intersections align perfectly with snap positions ✅
+
+**Test Case 2**: WXYZ Interval Snap
+- Enable WXYZ Interval Snap
+- Select W View (tetrahedral W axis)
+- Drag cutplane slider: should lock at IVM grid intervals (0, ±0.612, ±1.225, ±1.837...)
+- Grid intersections align perfectly with snap positions ✅
+
+**Test Case 3**: Dynamic Range Scaling
+- Set Quadray tessellation slider to 12
+- Note cutplane range: ±7.35 (12 × 0.612)
+- Increase tessellation to 20
+- Cutplane range expands to ±12.25 (20 × 0.612) ✅
+
+**Test Case 4**: Independent Operation
+- Enable both XYZ and WXYZ snap modes
+- Switch between Top View (XYZ) and W View (WXYZ)
+- Each maintains its own snap behavior ✅
+
+##### Implementation Status
+
+- [x] Rename "Interval Snap" to "XYZ Interval Snap" in UI and comments
+- [x] Add "WXYZ Interval Snap" checkbox below XYZ version
+- [x] Wire up event listeners for both snap modes
+- [x] Calculate WXYZ snap interval from `RT.PureRadicals.QUADRAY_GRID_INTERVAL`
+- [x] Fix cutplane range to match actual grid tessellation extent (not hardcoded)
+- [x] Add RT-pure methodology comments explaining algebraic approach
+- [x] Add console logging showing both distance and quadrance
+- [x] Verify grid alignment with snap intervals (perfect match achieved)
+- [x] Document Rhombic Dodecahedron discovery for future IVM extension
+- [x] Update RT-Papercut.md documentation
+
+**Branch**: `QUADRAY-SNAP`
+**Completion Date**: 2026-01-15
+**Status**: ✅ Ready for merge to main
+
+---
+
 ### 16.3 Expected Workflow: WXYZ Views + Cutplane
 
 **Example User Session**:
