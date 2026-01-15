@@ -24,7 +24,8 @@ export const RTPapercut = {
     cutplaneAxis: "z", // 'x', 'y', 'z' (Cartesian) or 'w', 'x', 'y', 'z' (Tetrahedral)
     cutplaneNormal: null, // THREE.Vector3
     invertCutPlane: false, // Invert normal (for ground plane mode)
-    intervalSnapEnabled: true, // Snap to grid intervals (step=1.0) vs fine control (step=0.1)
+    intervalSnapXYZEnabled: true, // XYZ: Snap to Cartesian grid intervals (step=1.0) vs fine control (step=0.1)
+    intervalSnapWXYZEnabled: false, // WXYZ: Snap to Quadray grid intervals (step=√6/4≈0.612) vs fine control (step=0.1)
     lineWeightEnabled: true,
     lineWeightMin: 0.5,
     lineWeightMax: 3.0,
@@ -153,11 +154,21 @@ export const RTPapercut = {
       });
     }
 
-    // 3f. Interval Snap checkbox
-    const intervalSnapCheckbox = document.getElementById("intervalSnap");
-    if (intervalSnapCheckbox) {
-      intervalSnapCheckbox.addEventListener("change", e => {
-        RTPapercut.state.intervalSnapEnabled = e.target.checked;
+    // 3f. XYZ Interval Snap checkbox
+    const intervalSnapXYZCheckbox = document.getElementById("intervalSnapXYZ");
+    if (intervalSnapXYZCheckbox) {
+      intervalSnapXYZCheckbox.addEventListener("change", e => {
+        RTPapercut.state.intervalSnapXYZEnabled = e.target.checked;
+        // Update slider step size immediately
+        RTPapercut._updateSliderRange();
+      });
+    }
+
+    // 3g. WXYZ Interval Snap checkbox
+    const intervalSnapWXYZCheckbox = document.getElementById("intervalSnapWXYZ");
+    if (intervalSnapWXYZCheckbox) {
+      intervalSnapWXYZCheckbox.addEventListener("change", e => {
+        RTPapercut.state.intervalSnapWXYZEnabled = e.target.checked;
         // Update slider step size immediately
         RTPapercut._updateSliderRange();
       });
@@ -288,33 +299,67 @@ export const RTPapercut = {
       }
     }
 
+    // Determine which snap mode is active
+    const basis = RTPapercut.state.cutplaneBasis;
+    const xyzSnap = RTPapercut.state.intervalSnapXYZEnabled;
+    const wxyzSnap = RTPapercut.state.intervalSnapWXYZEnabled;
+    let snapMode = "fine";
+    if (basis === "cartesian" && xyzSnap) {
+      snapMode = "XYZ";
+    } else if (basis === "tetrahedral" && wxyzSnap) {
+      snapMode = "WXYZ";
+    }
+
     console.log(
-      `✂️ Cutplane range: [${range.min}, ${range.max}] step=${range.step} (basis: ${RTPapercut.state.cutplaneBasis})`
+      `✂️ Cutplane range: [${range.min}, ${range.max}] step=${range.step.toFixed(6)} (basis: ${basis}, snap: ${snapMode})`
     );
   },
 
   /**
    * Get cutplane range and step size based on current basis
    * Returns extent and step that match the grid interval system
+   *
+   * XYZ Cartesian snap: step = 1.0 (aligns with Cartesian grid intervals)
+   * WXYZ Quadray snap: step = √6/4 ≈ 0.612 (aligns with tetrahedral grid intervals)
+   * Fine control (no snap): step = 0.1
+   *
    * @returns {{min: number, max: number, step: number}}
    * @private
    */
   _getCutplaneRange: function () {
     const basis = RTPapercut.state.cutplaneBasis;
-    const snapEnabled = RTPapercut.state.intervalSnapEnabled;
+    const xyzSnapEnabled = RTPapercut.state.intervalSnapXYZEnabled;
+    const wxySnapEnabled = RTPapercut.state.intervalSnapWXYZEnabled;
 
-    // Step size: 1.0 for interval snapping, 0.1 for fine control
-    const step = snapEnabled ? 1.0 : 0.1;
+    let step;
 
     if (basis === "tetrahedral") {
-      // WXYZ Tetrahedral: Natural interval is 12 units
+      // WXYZ Tetrahedral basis
+      if (wxySnapEnabled) {
+        // WXYZ snap: Use Quadray grid interval √6/4 ≈ 0.612372
+        step = RT.PureRadicals.QUADRAY_GRID_INTERVAL;
+      } else {
+        // Fine control
+        step = 0.1;
+      }
+
+      // WXYZ Tetrahedral: Natural extent is 12 units
       return {
         min: -12,
         max: 12,
         step: step,
       };
     } else {
-      // XYZ Cartesian: Natural interval is 10 units
+      // XYZ Cartesian basis
+      if (xyzSnapEnabled) {
+        // XYZ snap: step = 1.0 (Cartesian grid intervals)
+        step = 1.0;
+      } else {
+        // Fine control
+        step = 0.1;
+      }
+
+      // XYZ Cartesian: Natural extent is 10 units
       return {
         min: -10,
         max: 10,
