@@ -326,9 +326,29 @@ export const RTPapercut = {
    * Get cutplane range and step size based on current basis
    * Returns extent and step that match the grid interval system
    *
+   * RT-PURE METHODOLOGY:
+   * This implementation demonstrates Rational Trigonometry principles by using
+   * algebraically exact constants (RT.PureRadicals.QUADRAY_GRID_INTERVAL) and
+   * deferring √ expansion until the GPU boundary. The slider counts INTEGER
+   * multiples of the grid interval (pure arithmetic), maintaining algebraic
+   * exactness throughout intermediate calculations.
+   *
    * XYZ Cartesian snap: step = 1.0 (aligns with Cartesian grid intervals)
-   * WXYZ Quadray snap: step = √6/4 ≈ 0.612 (aligns with tetrahedral grid intervals)
+   * WXYZ Quadray snap: step = √6/4 ≈ 0.612372 (aligns with tetrahedral grid intervals)
    * Fine control (no snap): step = 0.1
+   *
+   * SLIDER SEMANTICS:
+   * - Slider value represents signed DISTANCE from origin along basis vector
+   * - Not quadrance! (Distance is appropriate for THREE.Plane constant parameter)
+   * - However, step intervals ARE calculated from RT-pure algebraic constants
+   * - Console logs show both distance and quadrance for RT pedagogy
+   *
+   * GRID ALIGNMENT VERIFICATION:
+   * Grid intersections (from createIVMGrid in rt-rendering.js):
+   *   Position = i × gridInterval × basis1 + j × gridInterval × basis2
+   * Cutplane positions when snapped:
+   *   Position = n × gridInterval along selected basis vector (n ∈ ℤ)
+   * Result: Perfect alignment - cutplane intersects grid at exact lattice points
    *
    * @returns {{min: number, max: number, step: number}}
    * @private
@@ -343,16 +363,20 @@ export const RTPapercut = {
     if (basis === "tetrahedral") {
       // WXYZ Tetrahedral basis
       if (wxySnapEnabled) {
-        // WXYZ snap: Use Quadray grid interval √6/4 ≈ 0.612372
+        // RT-PURE: Use algebraically exact constant (√6/4)
+        // This is the OutSphere radius of a unit tetrahedron (halfSize=1)
+        // Slider steps through INTEGER multiples: n × √6/4 where n ∈ ℤ
+        // No transcendental operations until final √ expansion in constant
         step = RT.PureRadicals.QUADRAY_GRID_INTERVAL;
       } else {
-        // Fine control
+        // Fine control (arbitrary decimal step)
         step = 0.1;
       }
 
       // WXYZ Tetrahedral: Calculate extent from grid tessellations
-      // Grid extends to: tessellations * gridInterval
-      // Default tessellations = 12, so extent = 12 * 0.612 ≈ 7.35
+      // Grid extends to: tessellations × gridInterval
+      // Example: tessellations=12 → extent = 12 × 0.612372 ≈ 7.348469
+      // This matches the actual 3D extent of createIVMGrid() geometry
       const tessellations = parseInt(
         document.getElementById("quadrayTessSlider")?.value || "12"
       );
@@ -493,13 +517,33 @@ export const RTPapercut = {
       console.error("❌ Renderer reference not found!");
     }
 
-    // 4. Update slider value display
+    // 4. Update slider value display and log RT values
     const valueDisplay = document.getElementById("cutplaneValue");
     if (valueDisplay) {
       valueDisplay.textContent = value.toFixed(1);
     }
 
-    // Cutplane updated
+    // RT-PURE DIAGNOSTIC: Log both distance and quadrance for pedagogy
+    // This demonstrates that while we use distance for the plane equation
+    // (appropriate for THREE.Plane API), the underlying grid intervals are
+    // calculated from RT-pure algebraic constants (√6/4 for WXYZ)
+    const quadrance = value * value; // Q = d² (deferred √ principle)
+    const basis = RTPapercut.state.cutplaneBasis;
+    const axis = RTPapercut.state.cutplaneAxis.toUpperCase();
+
+    // Calculate interval number (how many grid spacings from origin)
+    let intervalNum = 0;
+    if (basis === "tetrahedral" && RTPapercut.state.intervalSnapWXYZEnabled) {
+      intervalNum = Math.round(value / RT.PureRadicals.QUADRAY_GRID_INTERVAL);
+    } else if (basis === "cartesian" && RTPapercut.state.intervalSnapXYZEnabled) {
+      intervalNum = Math.round(value / 1.0);
+    }
+
+    console.log(
+      `✂️ Cutplane: ${basis === "tetrahedral" ? "WXYZ" : "XYZ"}-${axis} | ` +
+      `Distance d = ${value.toFixed(6)}, Quadrance Q = ${quadrance.toFixed(6)} | ` +
+      `Interval: ${intervalNum} × gridStep`
+    );
 
     // 5. Generate intersection edges where cutplane slices through geometry
     RTPapercut._generateIntersectionEdges(scene, plane);
