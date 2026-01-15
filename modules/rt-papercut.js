@@ -222,6 +222,13 @@ export const RTPapercut = {
         RTPapercut._updateSliderRange();
       });
     }
+
+    const quadraySlider = document.getElementById("quadrayTessSlider");
+    if (quadraySlider) {
+      quadraySlider.addEventListener("change", () => {
+        RTPapercut._updateSliderRange();
+      });
+    }
   },
 
   /**
@@ -343,10 +350,17 @@ export const RTPapercut = {
         step = 0.1;
       }
 
-      // WXYZ Tetrahedral: Natural extent is 12 units
+      // WXYZ Tetrahedral: Calculate extent from grid tessellations
+      // Grid extends to: tessellations * gridInterval
+      // Default tessellations = 12, so extent = 12 * 0.612 ≈ 7.35
+      const tessellations = parseInt(
+        document.getElementById("quadrayTessSlider")?.value || "12"
+      );
+      const extent = tessellations * RT.PureRadicals.QUADRAY_GRID_INTERVAL;
+
       return {
-        min: -12,
-        max: 12,
+        min: -extent,
+        max: extent,
         step: step,
       };
     } else {
