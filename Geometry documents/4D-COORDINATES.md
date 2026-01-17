@@ -59,7 +59,41 @@ The four Quadray basis vectors point from the origin to the vertices of a regula
 - All basis vectors have equal magnitude
 - Angle between any pair: arccos(-1/3) ≈ 109.47°
 - Spread between any pair: s = 1 - (-1/3)² = 8/9 ≈ 0.889
-- Sum of all four basis vectors = (0, 0, 0) in Cartesian space, aka. 'Neutral' per Degrees of freedom? 12 vectors (VE) needed for complete restraint, per Bucky?
+- Sum of all four basis vectors = (0, 0, 0) in Cartesian space — **vectorial neutrality**
+
+**On Degrees of Freedom and Fuller's Vector Equilibrium:**
+
+The Quadray system's 4 basis vectors achieve **vectorial neutrality** (sum to zero), but this is distinct from Fuller's claim about 12 vectors providing "complete restraint."
+
+| Concept | Vectors | What It Achieves |
+|---------|---------|------------------|
+| **Quadray Basis** | 4 | Vectorial neutrality (W+X+Y+Z = 0 in Cartesian); spans 3D space with 4D redundancy |
+| **Rigid Body DOF** | 6 | Standard mechanics: 3 translational + 3 rotational freedoms |
+| **Fuller's VE** | 12 | Omnidirectional equilibrium of forces; radial vectors from center to cuboctahedron vertices |
+
+**Fuller's 12-Vector Claim (Vector Equilibrium / Cuboctahedron):**
+
+Fuller stated the Vector Equilibrium (VE) is "the only geometric form wherein all vectors are of equal length" — both the 12 radial vectors from center to vertices AND the 24 edge vectors. He described it as achieving "omnidirectional equilibrium of forces in which the magnitude of its explosive potentials is exactly matched by the strength of its external cohering bonds."
+
+The 12 radial vectors of the VE comprise **6 pairs of opposite directions** (±X, ±Y, ±Z in Cartesian terms, though the VE's axes are not orthogonal). This 6-paired structure relates to the 6 degrees of freedom of a rigid body:
+- 3 translational (forward/back, left/right, up/down)
+- 3 rotational (pitch, yaw, roll)
+
+**However**, Fuller's claim is about **force equilibrium**, not kinematic constraint. The VE's 12 vectors represent balanced omnidirectional thrust — if you push equally from all 12 directions toward center, the forces cancel. This is geometric/structural equilibrium, not the same as constraining 6 DOF in the mechanical engineering sense (which requires 6 constraints, not 12).
+
+**The Quadray Connection:**
+
+Our 4 Quadray basis vectors achieve a different kind of neutrality:
+- They sum to zero vectorially (geometric balance)
+- They provide a complete basis for 3D space (any point expressible as linear combination)
+- The zero-sum constraint reduces 4 coordinates to 3 effective DOF
+
+The VE's 12 vectors can be understood as **three sets of 4 Quadray-like tetrahedra** interpenetrating at the center — each set providing its own vectorial neutrality, and all three together providing omnidirectional coverage.
+
+**References:**
+- Fuller, R.B. *Synergetics* §420-430 (Vector Equilibrium)
+- [Synergetics (Fuller) - Wikipedia](https://en.wikipedia.org/wiki/Synergetics_(Fuller))
+- [Vector Equilibrium - Cosmometry](https://cosmometry.net/vector-equilibrium-&-isotropic-vector-matrix)
 
 ---
 
