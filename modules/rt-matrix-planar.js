@@ -1,9 +1,11 @@
 /**
- * rt-matrix.js
- * IVM Spatial Array Matrix Generator
+ * rt-matrix-planar.js
+ * IVM Spatial Array Matrix Generator (Planar N×N)
  *
  * Generates N×N arrays of polyhedra in the X-Y plane to demonstrate
  * Fuller's Isotropic Vector Matrix (IVM) space-filling geometry.
+ *
+ * See also: rt-matrix-radial.js (radial frequency expansion from nucleus)
  *
  * RT-Pure Implementation:
  * - Uses quadrance (Q = distance²) for spacing calculations
