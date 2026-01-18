@@ -1391,7 +1391,7 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // Generate cube matrix
-      import("./rt-matrix.js").then(MatrixModule => {
+      import("./rt-matrix-planar.js").then(MatrixModule => {
         const { RTMatrix } = MatrixModule;
         const cubeMatrix = RTMatrix.createCubeMatrix(
           matrixSize,
@@ -1511,7 +1511,7 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // Generate tet matrix
-      import("./rt-matrix.js").then(MatrixModule => {
+      import("./rt-matrix-planar.js").then(MatrixModule => {
         const { RTMatrix } = MatrixModule;
         const tetMatrix = RTMatrix.createTetrahedronMatrix(
           matrixSize,
@@ -1582,7 +1582,7 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // Generate octa matrix
-      import("./rt-matrix.js").then(MatrixModule => {
+      import("./rt-matrix-planar.js").then(MatrixModule => {
         const { RTMatrix } = MatrixModule;
         const octaMatrix = RTMatrix.createOctahedronMatrix(
           matrixSize,
@@ -1713,7 +1713,7 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // Generate cuboctahedron matrix
-      import("./rt-matrix.js").then(MatrixModule => {
+      import("./rt-matrix-planar.js").then(MatrixModule => {
         const { RTMatrix } = MatrixModule;
         const cuboctaMatrix = RTMatrix.createCuboctahedronMatrix(
           matrixSize,
@@ -1779,7 +1779,7 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // Generate rhombic dodecahedron matrix
-      import("./rt-matrix.js").then(MatrixModule => {
+      import("./rt-matrix-planar.js").then(MatrixModule => {
         const { RTMatrix } = MatrixModule;
         const rhombicDodecMatrix = RTMatrix.createRhombicDodecahedronMatrix(
           matrixSize,

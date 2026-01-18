@@ -34,7 +34,7 @@
 
 ## 1. Introduction
 
-Quadray coordinates (also called WXYZ or tetrahedral coordinates) provide a 4-dimensional coordinate system for describing 3-dimensional space. Unlike Cartesian XYZ which uses three orthogonal axes at 90° angles, Quadray uses four equiangular axes emanating from a central origin toward the vertices of a regular tetrahedron (~109.47º).
+Quadray coordinates (also called WXYZ or tetrahedral coordinates) are a 4-dimensional coordinate system reflecting what R. Buckminster Fuller recognized as the *a priori* 4-dimensional nature of space. Three dimensions is an arbitrary abstraction; the tetrahedron — requiring four vertices, four faces, and four directions from center — is the minimum structural system in Universe. Where Cartesian XYZ imposes three orthogonal axes at 90° angles as orthogonal orthodoxy, Quadray honors the inherent four-foldness of spatial reality with four equiangular axes emanating from a central origin toward the vertices of a regular tetrahedron (~109.47°). This foundation not only provides natural symmetry for tetrahedral and icosahedral geometry, but opens pathways to understanding hyperdimensionality — the 4D+ and 4D- spaces explored in subsequent sections emerge naturally from this coordinate system rather than as exotic additions.
 
 **Key Properties:**
 - 4 basis vectors at 109.47° angles (tetrahedral angle)
