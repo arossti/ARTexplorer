@@ -1,5 +1,54 @@
 # Matrix-Radial: Radial Frequency Expansion Workplan
 
+## Quick Implementation Spec
+
+**Module**: `modules/rt-matrix-radial.js` → exports `RTRadialMatrix`
+
+### Function Signatures
+```javascript
+createRadialCubeMatrix(frequency, halfSize, spaceFilling, opacity, color, THREE) → THREE.Group
+createRadialTetrahedronMatrix(frequency, halfSize, spaceFilling, opacity, color, THREE) → THREE.Group
+createRadialOctahedronMatrix(frequency, halfSize, spaceFilling, opacity, color, THREE) → THREE.Group
+createRadialCuboctahedronMatrix(frequency, halfSize, spaceFilling, opacity, color, THREE) → THREE.Group
+createRadialRhombicDodecMatrix(frequency, halfSize, spaceFilling, opacity, color, THREE) → THREE.Group
+createRadialIcosahedronMatrix(frequency, halfSize, opacity, color, THREE) → THREE.Group  // no spaceFilling
+createRadialDodecahedronMatrix(frequency, halfSize, opacity, color, THREE) → THREE.Group  // no spaceFilling
+```
+
+### F2 Position Formulas (spacing = 2 × halfSize)
+
+| Polyhedron | F2 Count | Neighbor Positions |
+|------------|----------|-------------------|
+| Cube | 1+6=7 | `(±s,0,0), (0,±s,0), (0,0,±s)` |
+| Tetrahedron | 1+4=5 | Face normals × spacing (180° rotated) |
+| Octahedron | 1+6=7 | `(±s,0,0), (0,±s,0), (0,0,±s)` vertex directions |
+| Cuboctahedron | 1+12=13 | 12 vertex directions at edge length |
+| Rhombic Dodec | 1+12=13 | 6 cubic + 6 diagonal face directions |
+| Icosahedron | 1+12=13 | 12 vertex directions (gaps OK) |
+| Dodecahedron | 1+12=13 | 12 face directions (gaps OK) |
+
+### Shell Count Formulas (spaceFilling=true)
+
+| Polyhedron | Formula | F1→F5 |
+|------------|---------|-------|
+| Cube | `(2f-1)³` | 1, 7, 25, 63, 125 |
+| Rhombic Dodec | `(10f³-15f²+11f-3)/3` | 1, 13, 55, 147, 309 |
+| Tet/Oct | n tets requires (n-1) octs for IVM | — |
+
+### Key Rules
+- **IVM Complementary**: `n tetrahedra + (n-1) octahedra = space-filling`
+- **spaceFilling=false**: Stellation only, leave voids
+- **spaceFilling=true**: Fill all positions (cube/rhombic dodec) or add complementary shapes (tet/oct)
+- **Icosa/Dodeca**: Always have gaps, no spaceFilling option
+
+### UI Element IDs
+- Checkbox: `radialCube`, `radialTet`, `radialOct`, `radialCubocta`, `radialRhombicDodec`, `radialIcosa`, `radialDodeca`
+- Frequency: `radialCubeFreq` (1-5), etc.
+- Space-filling: `radialCubeSpaceFill`, etc.
+- Display: `radialCubeFreqDisplay`, `radialTetOctCount` (shows "+N octs")
+
+---
+
 ## Overview
 
 This workplan describes the implementation of **Radial Matrix Frequency** — a new feature that expands polyhedra outward from a central nucleus, packing space as efficiently as possible for each polyhedron type. Unlike the existing N×N planar matrix arrays, radial expansion grows concentrically in all directions, following crystallographic growth patterns.
