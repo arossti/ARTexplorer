@@ -329,7 +329,7 @@ The interface consists of several control panels:
 │   ├── rt-polyhedra.js         ← Geometry generation (RT-pure)
 │   ├── rt-math.js              ← Quadray & RT functions
 │   ├── rt-init.js              ← Application initialization
-│   ├── rt-matrix.js            ← IVM spatial arrays
+│   ├── rt-matrix-planar.js     ← IVM spatial arrays (planar N×N)
 │   ├── rt-controls.js          ← Gumball interaction
 │   ├── rt-papercut.js          ← Cutplane/slicing
 │   ├── rt-state-manager.js     ← State persistence
@@ -353,7 +353,7 @@ The interface consists of several control panels:
 
 - `rt-polyhedra.js`: All polyhedra definitions using RT-pure methods
 - `rt-math.js`: Core RT library (quadrance, spread, golden ratio, circle parametrization)
-- `rt-matrix.js`: IVM spatial array generation for polyhedra matrices
+- `rt-matrix-planar.js`: IVM spatial array generation for polyhedra matrices (planar N×N)
 
 **UI & Controls:**
 

@@ -6,7 +6,7 @@ This workplan describes the implementation of **Radial Matrix Frequency** — a 
 
 ## Current State (N×N Planar Matrices)
 
-The existing `rt-matrix.js` implements 2D planar arrays:
+The existing `rt-matrix-planar.js` implements 2D planar arrays:
 - **Cube Matrix**: Simple orthogonal grid, edge-to-edge contact
 - **Tetrahedron Matrix**: Checkerboard alternating orientations
 - **Octahedron Matrix**: Square grid with optional interstitial filling

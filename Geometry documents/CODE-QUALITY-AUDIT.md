@@ -52,7 +52,7 @@ src/geometry/modules/
 ├── rt-rendering.js       # THREE.js scene management (Factory pattern)
 ├── rt-math.js            # RT library (quadrance, spread, Phi, Sexagesimal)
 ├── rt-polyhedra.js       # All polyhedra generators (RT-pure)
-├── rt-matrix.js          # IVM spatial arrays
+├── rt-matrix-planar.js   # IVM spatial arrays (planar N×N)
 ├── rt-papercut.js        # Print mode, dynamic cutplane
 ├── rt-controls.js        # ART Gumball controls
 ├── rt-state-manager.js   # Forms/Instances state
