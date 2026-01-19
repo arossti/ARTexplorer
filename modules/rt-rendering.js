@@ -70,6 +70,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let cubeMatrixGroup, tetMatrixGroup, octaMatrixGroup; // Matrix forms (IVM arrays)
   let cuboctaMatrixGroup; // Cuboctahedron matrix (Vector Equilibrium array)
   let rhombicDodecMatrixGroup; // Rhombic dodecahedron matrix (space-filling array)
+  let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup; // Radial matrix forms
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -183,6 +184,15 @@ export function initScene(THREE, OrbitControls, RT) {
     rhombicDodecMatrixGroup.userData.type = "rhombicDodecMatrix";
     rhombicDodecMatrixGroup.userData.isInstance = false;
 
+    // Radial matrix forms (concentric shell expansion)
+    radialCubeMatrixGroup = new THREE.Group();
+    radialCubeMatrixGroup.userData.type = "radialCubeMatrix";
+    radialCubeMatrixGroup.userData.isInstance = false;
+
+    radialRhombicDodecMatrixGroup = new THREE.Group();
+    radialRhombicDodecMatrixGroup.userData.type = "radialRhombicDodecMatrix";
+    radialRhombicDodecMatrixGroup.userData.isInstance = false;
+
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -202,6 +212,8 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(octaMatrixGroup);
     scene.add(cuboctaMatrixGroup);
     scene.add(rhombicDodecMatrixGroup);
+    scene.add(radialCubeMatrixGroup);
+    scene.add(radialRhombicDodecMatrixGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -224,6 +236,8 @@ export function initScene(THREE, OrbitControls, RT) {
       octaMatrixGroup,
       cuboctaMatrixGroup,
       rhombicDodecMatrixGroup,
+      radialCubeMatrixGroup,
+      radialRhombicDodecMatrixGroup,
     ]);
 
     // Initial render
@@ -1815,6 +1829,73 @@ export function initScene(THREE, OrbitControls, RT) {
       rhombicDodecMatrixGroup.visible = false;
     }
 
+    // ========== RADIAL MATRICES ==========
+
+    // Radial Cube Matrix (concentric shell expansion)
+    if (document.getElementById("showRadialCubeMatrix")?.checked) {
+      const frequency = parseInt(
+        document.getElementById("radialCubeFreqSlider")?.value || "1"
+      );
+      const spaceFilling =
+        document.getElementById("radialCubeSpaceFill")?.checked ?? true;
+
+      // Clear existing radial cube matrix group
+      while (radialCubeMatrixGroup.children.length > 0) {
+        radialCubeMatrixGroup.remove(radialCubeMatrixGroup.children[0]);
+      }
+
+      // Generate radial cube matrix
+      import("./rt-matrix-radial.js").then(RadialModule => {
+        const { RTRadialMatrix } = RadialModule;
+        const radialCubeMatrix = RTRadialMatrix.createRadialCubeMatrix(
+          frequency,
+          scale,
+          spaceFilling,
+          opacity,
+          colorPalette.cube, // Use cube color
+          THREE
+        );
+        radialCubeMatrixGroup.add(radialCubeMatrix);
+      });
+      radialCubeMatrixGroup.visible = true;
+    } else {
+      radialCubeMatrixGroup.visible = false;
+    }
+
+    // Radial Rhombic Dodecahedron Matrix (FCC lattice expansion)
+    if (document.getElementById("showRadialRhombicDodecMatrix")?.checked) {
+      const frequency = parseInt(
+        document.getElementById("radialRhombicDodecFreqSlider")?.value || "1"
+      );
+      const spaceFilling =
+        document.getElementById("radialRhombicDodecSpaceFill")?.checked ?? true;
+
+      // Clear existing radial rhombic dodec matrix group
+      while (radialRhombicDodecMatrixGroup.children.length > 0) {
+        radialRhombicDodecMatrixGroup.remove(
+          radialRhombicDodecMatrixGroup.children[0]
+        );
+      }
+
+      // Generate radial rhombic dodecahedron matrix
+      import("./rt-matrix-radial.js").then(RadialModule => {
+        const { RTRadialMatrix } = RadialModule;
+        const radialRhombicDodecMatrix =
+          RTRadialMatrix.createRadialRhombicDodecMatrix(
+            frequency,
+            scale,
+            spaceFilling,
+            opacity,
+            colorPalette.rhombicDodecahedron, // Use rhombic dodec color
+            THREE
+          );
+        radialRhombicDodecMatrixGroup.add(radialRhombicDodecMatrix);
+      });
+      radialRhombicDodecMatrixGroup.visible = true;
+    } else {
+      radialRhombicDodecMatrixGroup.visible = false;
+    }
+
     // Scale basis vectors to match current slider values
     // Cartesian basis vectors scale with cube edge length
     const cubeEdge = parseFloat(document.getElementById("scaleSlider").value);
@@ -2418,6 +2499,8 @@ export function initScene(THREE, OrbitControls, RT) {
       octaMatrixGroup,
       cuboctaMatrixGroup,
       rhombicDodecMatrixGroup,
+      radialCubeMatrixGroup,
+      radialRhombicDodecMatrixGroup,
     };
   }
 

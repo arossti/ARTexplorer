@@ -672,6 +672,74 @@ function startARTexplorer(
     rhombicDodecMatrixFaceCoplanar.addEventListener("change", updateGeometry);
   }
 
+  // ========== RADIAL MATRICES ==========
+
+  // Radial Cube Matrix
+  const radialCubeCheckbox = document.getElementById("showRadialCubeMatrix");
+  if (radialCubeCheckbox) {
+    radialCubeCheckbox.addEventListener("change", () => {
+      const radialCubeControls = document.getElementById(
+        "radial-cube-matrix-controls"
+      );
+      if (radialCubeControls) {
+        radialCubeControls.style.display = radialCubeCheckbox.checked
+          ? "block"
+          : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const radialCubeFreqSlider = document.getElementById("radialCubeFreqSlider");
+  if (radialCubeFreqSlider) {
+    radialCubeFreqSlider.addEventListener("input", e => {
+      const freq = parseInt(e.target.value);
+      document.getElementById("radialCubeFreqDisplay").textContent = `F${freq}`;
+      updateGeometry();
+    });
+  }
+
+  const radialCubeSpaceFill = document.getElementById("radialCubeSpaceFill");
+  if (radialCubeSpaceFill) {
+    radialCubeSpaceFill.addEventListener("change", updateGeometry);
+  }
+
+  // Radial Rhombic Dodecahedron Matrix
+  const radialRhombicDodecCheckbox = document.getElementById(
+    "showRadialRhombicDodecMatrix"
+  );
+  if (radialRhombicDodecCheckbox) {
+    radialRhombicDodecCheckbox.addEventListener("change", () => {
+      const radialRhombicDodecControls = document.getElementById(
+        "radial-rhombic-dodec-matrix-controls"
+      );
+      if (radialRhombicDodecControls) {
+        radialRhombicDodecControls.style.display =
+          radialRhombicDodecCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const radialRhombicDodecFreqSlider = document.getElementById(
+    "radialRhombicDodecFreqSlider"
+  );
+  if (radialRhombicDodecFreqSlider) {
+    radialRhombicDodecFreqSlider.addEventListener("input", e => {
+      const freq = parseInt(e.target.value);
+      document.getElementById("radialRhombicDodecFreqDisplay").textContent =
+        `F${freq}`;
+      updateGeometry();
+    });
+  }
+
+  const radialRhombicDodecSpaceFill = document.getElementById(
+    "radialRhombicDodecSpaceFill"
+  );
+  if (radialRhombicDodecSpaceFill) {
+    radialRhombicDodecSpaceFill.addEventListener("change", updateGeometry);
+  }
+
   // Phase 2.7a, 2.7b, 2.7c: Geodesic controls
   document
     .getElementById("showGeodesicIcosahedron")

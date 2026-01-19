@@ -1026,6 +1026,85 @@
                 </p>
               </div>
             </div>
+
+            <!-- ========== RADIAL MATRICES ========== -->
+            <div class="matrix-divider">
+              <label class="matrix-divider-label">Radial Matrices</label>
+            </div>
+
+            <!-- Radial Cube Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialCubeMatrix" />
+                Cube (Radial)
+              </label>
+              <div
+                id="radial-cube-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialCubeFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialCubeFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="radialCubeSpaceFill" checked />
+                  Space-filling
+                </label>
+                <p class="matrix-info-text">
+                  Radial cube expansion: F1=1, F2=7, F3=25 cubes
+                </p>
+              </div>
+            </div>
+
+            <!-- Radial Rhombic Dodecahedron Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialRhombicDodecMatrix" />
+                Rhombic Dodec (Radial)
+              </label>
+              <div
+                id="radial-rhombic-dodec-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialRhombicDodecFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialRhombicDodecFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="radialRhombicDodecSpaceFill" checked />
+                  Space-filling
+                </label>
+                <p class="matrix-info-text">
+                  Radial FCC expansion: F1=1, F2=13, F3=55 polyhedra
+                </p>
+              </div>
+            </div>
           </div>
         </div>
         <!-- END SECTION 3: FORMS -->
