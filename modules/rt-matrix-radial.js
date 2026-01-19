@@ -140,16 +140,21 @@ export const RTRadialMatrix = {
    * Generate positions for radial rhombic dodecahedron matrix at given frequency
    * Uses FCC (face-centered cubic) lattice - rhombic dodecs tile perfectly
    *
-   * FCC lattice: positions where (i + j + k) is even, using half-integer coords
-   * At each FCC site, place a rhombic dodecahedron center.
+   * FCC lattice structure:
+   * - Primitive positions: (0,0,0) and face-centers of cubic cell
+   * - Each site has 12 nearest neighbors at distance spacing/√2
+   * - Neighbors at: (±1,±1,0), (±1,0,±1), (0,±1,±1) × spacing/2
    *
-   * The 12 nearest neighbors in FCC are at distance spacing * sqrt(2)/2:
-   * (±1,±1,0), (±1,0,±1), (0,±1,±1) scaled by spacing/2
+   * Shell counting uses FCC coordination shells:
+   * - Shell 0 (F1): origin only → 1 total
+   * - Shell 1 (F2): 12 neighbors → 13 total
+   * - Shell 2 (F3): 42 more → 55 total
+   * - Shell 3 (F4): 92 more → 147 total
+   * - Shell 4 (F5): 162 more → 309 total
    *
-   * Shell counting (centered on origin):
-   * F1 = 1 (origin only)
-   * F2 = 1 + 12 = 13 (origin + 12 nearest neighbors)
-   * F3 = 13 + 42 = 55
+   * FCC shell n contains points where the "FCC norm" = n
+   * FCC norm: For half-integer coords (i,j,k) where i+j+k is even,
+   *           norm = (|i| + |j| + |k|) / 2
    *
    * @param {number} frequency - Shell frequency (1-5)
    * @param {number} spacing - Distance between RD centers along cubic axis
@@ -169,15 +174,16 @@ export const RTRadialMatrix = {
       }
     };
 
-    // FCC lattice: 12 nearest neighbors at (±1,±1,0), (±1,0,±1), (0,±1,±1) * spacing/2
-    // Use "shell number" approach - FCC shell n contains positions
-    // at Manhattan-like distance n from origin in the FCC metric
-    // FCC metric: distance = max(|i|, |j|, |k|) where i,j,k are half-integer FCC coords
+    // FCC shell metric: sum of absolute half-integer coordinates / 2
+    // This gives the minimum number of nearest-neighbor hops from origin
+    // Shell 0: origin (0,0,0)
+    // Shell 1: 12 neighbors at (±1,±1,0) permutations → sum=2 → shell=1
+    // Shell 2: next layer at (±2,0,0), (±2,±2,0), (±1,±1,±2) etc → sum=2,4 → shell=1,2
 
-    // Generate positions using half-integer FCC coordinates
-    // FCC sites: (i/2, j/2, k/2) where i+j+k is even
     const halfSpacing = spacing / 2;
-    const maxCoord = (frequency - 1) * 2; // In half-integer units
+    const maxShell = frequency - 1;
+    // Search extent: FCC points can reach sum = 2*maxShell with coords up to 2*maxShell
+    const maxCoord = maxShell * 2;
 
     for (let i = -maxCoord; i <= maxCoord; i++) {
       for (let j = -maxCoord; j <= maxCoord; j++) {
@@ -185,14 +191,14 @@ export const RTRadialMatrix = {
           // FCC condition: i + j + k must be even
           if ((i + j + k) % 2 !== 0) continue;
 
-          // Calculate FCC shell number (taxicab-like metric for FCC)
-          // Shell = ceil(max(|i|, |j|, |k|) / 2)
-          const shell = Math.ceil(Math.max(Math.abs(i), Math.abs(j), Math.abs(k)) / 2);
+          // FCC shell number = taxicab distance / 2 in half-integer coords
+          // This equals the minimum number of nearest-neighbor hops
+          const shell = (Math.abs(i) + Math.abs(j) + Math.abs(k)) / 2;
 
-          if (shell > frequency - 1) continue; // Outside frequency range
+          if (shell > maxShell) continue; // Outside frequency range
 
-          // For shell-only mode, only include positions in outermost shell
-          if (!spaceFilling && shell !== frequency - 1 && frequency > 1) continue;
+          // For shell-only (stellation) mode, only include positions in outermost shell
+          if (!spaceFilling && shell !== maxShell && frequency > 1) continue;
 
           addPosition(i * halfSpacing, j * halfSpacing, k * halfSpacing);
         }
@@ -200,7 +206,7 @@ export const RTRadialMatrix = {
     }
 
     // Debug: log shell distribution
-    console.log(`[RTRadialMatrix] RD positions debug: frequency=${frequency}, spaceFilling=${spaceFilling}, maxCoord=${maxCoord}, total=${positions.length}`);
+    console.log(`[RTRadialMatrix] RD positions debug: frequency=${frequency}, spaceFilling=${spaceFilling}, maxShell=${maxShell}, total=${positions.length}`);
 
     return positions;
   },
