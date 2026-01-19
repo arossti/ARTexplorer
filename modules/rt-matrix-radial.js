@@ -31,36 +31,75 @@ export const RTRadialMatrix = {
    */
   shellCounts: {
     /**
-     * Cube shell count: (2f-1)³ for solid cube-of-cubes
-     * F1=1, F2=7, F3=25, F4=63, F5=125
+     * Cube total count (space-filling): (2f-1)³
+     * Solid cube-of-cubes at each frequency level
+     * F1=1, F2=27 (3³), F3=125 (5³), F4=343 (7³), F5=729 (9³)
      */
     cube: frequency => Math.pow(2 * frequency - 1, 3),
 
     /**
-     * Rhombic Dodecahedron shell count (FCC lattice)
+     * Cube radial stellation count (face-neighbors only, octahedral growth)
+     * Uses taxicab/Manhattan distance: |x| + |y| + |z| <= (f-1)
+     * This creates octahedral shape, not cubic
+     * F1=1, F2=7, F3=25, F4=63, F5=129
+     * Formula: (2f-1)(2f²-2f+3)/3 = centered octahedral numbers
+     */
+    cubeStellation: frequency => {
+      const f = frequency;
+      // Centered octahedral numbers: (2n-1)(2n²-2n+3)/3
+      return Math.round(((2 * f - 1) * (2 * f * f - 2 * f + 3)) / 3);
+    },
+
+    /**
+     * Rhombic Dodecahedron total count (FCC lattice, space-filling)
      * Formula: (10f³ - 15f² + 11f - 3) / 3
      * F1=1, F2=13, F3=55, F4=147, F5=309
      */
     rhombicDodec: frequency => {
       const f = frequency;
-      return (10 * f * f * f - 15 * f * f + 11 * f - 3) / 3;
+      return Math.round((10 * f * f * f - 15 * f * f + 11 * f - 3) / 3);
+    },
+
+    /**
+     * Rhombic Dodecahedron shell-only count (outer layer of FCC)
+     * F1=1, F2=12, F3=42, F4=92, F5=162
+     * Shell(f) = Total(f) - Total(f-1)
+     */
+    rhombicDodecShell: frequency => {
+      if (frequency === 1) return 1;
+      const f = frequency;
+      const total = Math.round((10 * f * f * f - 15 * f * f + 11 * f - 3) / 3);
+      const inner = Math.round(
+        (10 * (f - 1) * (f - 1) * (f - 1) -
+          15 * (f - 1) * (f - 1) +
+          11 * (f - 1) -
+          3) /
+          3
+      );
+      return total - inner;
     },
   },
 
   /**
    * Generate positions for radial cube matrix at given frequency
-   * Uses simple cubic lattice - cubes tile perfectly in 3D
+   *
+   * Two modes:
+   * - spaceFilling=true: Solid (2f-1)³ cube-of-cubes (F2=27, F3=125)
+   * - spaceFilling=false: Face-connected stellation only (F2=7, F3=25)
+   *
+   * Stellation uses octahedral growth pattern - only face-neighbors, no corner/edge fill
+   * This creates a 3D cross/octahedral shape rather than a solid cube
    *
    * @param {number} frequency - Shell frequency (1-5)
    * @param {number} spacing - Distance between cube centers (2 × halfSize)
-   * @param {boolean} spaceFilling - If true, fill all positions; if false, shell only
+   * @param {boolean} spaceFilling - If true, solid cube; if false, octahedral stellation
    * @returns {Array} Array of {x, y, z} positions
    */
   getCubePositions: (frequency, spacing, spaceFilling = true) => {
     const positions = [];
 
     if (spaceFilling) {
-      // Fill entire (2f-1)³ volume
+      // Fill entire (2f-1)³ volume - solid cube-of-cubes
       const extent = frequency - 1; // Range: -extent to +extent
       for (let x = -extent; x <= extent; x++) {
         for (let y = -extent; y <= extent; y++) {
@@ -74,17 +113,15 @@ export const RTRadialMatrix = {
         }
       }
     } else {
-      // Shell only - positions where at least one coordinate is at max extent
-      const extent = frequency - 1;
-      for (let x = -extent; x <= extent; x++) {
-        for (let y = -extent; y <= extent; y++) {
-          for (let z = -extent; z <= extent; z++) {
-            // Include only if on the outer shell
-            if (
-              Math.abs(x) === extent ||
-              Math.abs(y) === extent ||
-              Math.abs(z) === extent
-            ) {
+      // Stellation: Face-connected octahedral growth
+      // Only include positions where |x| + |y| + |z| <= (frequency - 1)
+      // This is the taxicab/Manhattan distance constraint (octahedral shape)
+      const maxDist = frequency - 1;
+      for (let x = -maxDist; x <= maxDist; x++) {
+        for (let y = -maxDist; y <= maxDist; y++) {
+          for (let z = -maxDist; z <= maxDist; z++) {
+            // Octahedral constraint: sum of absolute values <= max distance
+            if (Math.abs(x) + Math.abs(y) + Math.abs(z) <= maxDist) {
               positions.push({
                 x: x * spacing,
                 y: y * spacing,
@@ -103,16 +140,19 @@ export const RTRadialMatrix = {
    * Generate positions for radial rhombic dodecahedron matrix at given frequency
    * Uses FCC (face-centered cubic) lattice - rhombic dodecs tile perfectly
    *
-   * The 12 neighbor directions from F1 to F2:
-   * - 6 along cubic axes: (±1,0,0), (0,±1,0), (0,0,±1)
-   * - 6 along face diagonals: (±0.5,±0.5,0), (±0.5,0,±0.5), (0,±0.5,±0.5)
-   *   But normalized to spacing, the diagonal positions are at (±s,±s,0)/√2 etc.
-   *   Actually for rhombic dodec, the 12 neighbors are at:
-   *   - 6 at (±s,0,0), (0,±s,0), (0,0,±s) - face-to-face via square-type rhombi
-   *   - 6 at (±s/2,±s/2,±s/2) combinations where exactly 2 signs match
+   * FCC lattice: positions where (i + j + k) is even, using half-integer coords
+   * At each FCC site, place a rhombic dodecahedron center.
+   *
+   * The 12 nearest neighbors in FCC are at distance spacing * sqrt(2)/2:
+   * (±1,±1,0), (±1,0,±1), (0,±1,±1) scaled by spacing/2
+   *
+   * Shell counting (centered on origin):
+   * F1 = 1 (origin only)
+   * F2 = 1 + 12 = 13 (origin + 12 nearest neighbors)
+   * F3 = 13 + 42 = 55
    *
    * @param {number} frequency - Shell frequency (1-5)
-   * @param {number} spacing - Distance between centers for cubic directions (2 × halfSize)
+   * @param {number} spacing - Distance between RD centers along cubic axis
    * @param {boolean} spaceFilling - If true, fill all positions; if false, shell only
    * @returns {Array} Array of {x, y, z} positions
    */
@@ -129,62 +169,38 @@ export const RTRadialMatrix = {
       }
     };
 
-    // FCC lattice: positions at (i,j,k) where i+j+k is even
-    // Scale: spacing is the cubic cell size
-    // For rhombic dodec, we need half-integer positions too
+    // FCC lattice: 12 nearest neighbors at (±1,±1,0), (±1,0,±1), (0,±1,±1) * spacing/2
+    // Use "shell number" approach - FCC shell n contains positions
+    // at Manhattan-like distance n from origin in the FCC metric
+    // FCC metric: distance = max(|i|, |j|, |k|) where i,j,k are half-integer FCC coords
 
-    if (spaceFilling) {
-      // Generate FCC lattice positions up to frequency
-      // FCC has basis: (0,0,0), (0.5,0.5,0), (0.5,0,0.5), (0,0.5,0.5)
-      const extent = frequency - 1;
-      const halfSpacing = spacing / 2;
+    // Generate positions using half-integer FCC coordinates
+    // FCC sites: (i/2, j/2, k/2) where i+j+k is even
+    const halfSpacing = spacing / 2;
+    const maxCoord = (frequency - 1) * 2; // In half-integer units
 
-      for (let i = -extent; i <= extent; i++) {
-        for (let j = -extent; j <= extent; j++) {
-          for (let k = -extent; k <= extent; k++) {
-            // Primary cubic positions
-            addPosition(i * spacing, j * spacing, k * spacing);
+    for (let i = -maxCoord; i <= maxCoord; i++) {
+      for (let j = -maxCoord; j <= maxCoord; j++) {
+        for (let k = -maxCoord; k <= maxCoord; k++) {
+          // FCC condition: i + j + k must be even
+          if ((i + j + k) % 2 !== 0) continue;
 
-            // FCC interstitial positions (if within extent)
-            if (Math.abs(i) < extent || Math.abs(j) < extent) {
-              addPosition(
-                i * spacing + halfSpacing,
-                j * spacing + halfSpacing,
-                k * spacing
-              );
-            }
-            if (Math.abs(i) < extent || Math.abs(k) < extent) {
-              addPosition(
-                i * spacing + halfSpacing,
-                j * spacing,
-                k * spacing + halfSpacing
-              );
-            }
-            if (Math.abs(j) < extent || Math.abs(k) < extent) {
-              addPosition(
-                i * spacing,
-                j * spacing + halfSpacing,
-                k * spacing + halfSpacing
-              );
-            }
-          }
+          // Calculate FCC shell number (taxicab-like metric for FCC)
+          // Shell = ceil(max(|i|, |j|, |k|) / 2)
+          const shell = Math.ceil(Math.max(Math.abs(i), Math.abs(j), Math.abs(k)) / 2);
+
+          if (shell > frequency - 1) continue; // Outside frequency range
+
+          // For shell-only mode, only include positions in outermost shell
+          if (!spaceFilling && shell !== frequency - 1 && frequency > 1) continue;
+
+          addPosition(i * halfSpacing, j * halfSpacing, k * halfSpacing);
         }
       }
-    } else {
-      // Shell only mode - just the outermost layer
-      // For F1, just origin
-      if (frequency === 1) {
-        addPosition(0, 0, 0);
-      } else {
-        // TODO: Implement shell-only for higher frequencies
-        // For now, fall back to space-filling
-        return RTRadialMatrix.getRhombicDodecPositions(
-          frequency,
-          spacing,
-          true
-        );
-      }
     }
+
+    // Debug: log shell distribution
+    console.log(`[RTRadialMatrix] RD positions debug: frequency=${frequency}, spaceFilling=${spaceFilling}, maxCoord=${maxCoord}, total=${positions.length}`);
 
     return positions;
   },
@@ -290,10 +306,19 @@ export const RTRadialMatrix = {
       matrixGroup.add(cubeGroup);
     });
 
-    const expectedCount = RTRadialMatrix.shellCounts.cube(frequency);
-    console.log(
-      `[RTRadialMatrix] Radial Cube matrix created: F${frequency}, spaceFilling=${spaceFilling}, count=${positions.length} (expected=${expectedCount})`
-    );
+    const expectedCount = spaceFilling
+      ? RTRadialMatrix.shellCounts.cube(frequency)
+      : RTRadialMatrix.shellCounts.cubeStellation(frequency);
+
+    // Detailed logging for debugging
+    console.log(`[RTRadialMatrix] ========== CUBE RADIAL MATRIX ==========`);
+    console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
+    console.log(`[RTRadialMatrix] Mode: ${spaceFilling ? 'SPACE-FILLING' : 'SHELL-ONLY'}`);
+    console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
+    console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
+    console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
+    console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
+    console.log(`[RTRadialMatrix] =========================================`);
 
     return matrixGroup;
   },
@@ -403,10 +428,19 @@ export const RTRadialMatrix = {
       matrixGroup.add(polyGroup);
     });
 
-    const expectedCount = RTRadialMatrix.shellCounts.rhombicDodec(frequency);
-    console.log(
-      `[RTRadialMatrix] Radial Rhombic Dodec matrix created: F${frequency}, spaceFilling=${spaceFilling}, count=${positions.length} (expected=${expectedCount})`
-    );
+    const expectedCount = spaceFilling
+      ? RTRadialMatrix.shellCounts.rhombicDodec(frequency)
+      : RTRadialMatrix.shellCounts.rhombicDodecShell(frequency);
+
+    // Detailed logging for debugging
+    console.log(`[RTRadialMatrix] ========== RHOMBIC DODEC RADIAL MATRIX ==========`);
+    console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
+    console.log(`[RTRadialMatrix] Mode: ${spaceFilling ? 'SPACE-FILLING' : 'SHELL-ONLY'}`);
+    console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
+    console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
+    console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
+    console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
+    console.log(`[RTRadialMatrix] ================================================`);
 
     return matrixGroup;
   },

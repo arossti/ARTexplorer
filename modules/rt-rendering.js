@@ -1156,6 +1156,107 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   /**
+   * Add vertex nodes to a radial matrix group
+   * Takes pre-computed center positions rather than N×N grid
+   * @param {THREE.Group} matrixGroup - Group to add nodes to
+   * @param {Array} centerPositions - Array of {x, y, z} center positions
+   * @param {number} scale - Polyhedron scale (halfSize)
+   * @param {number} color - Node color
+   * @param {string} nodeSize - Node size ("sm", "md", "lg", "packed", "off")
+   * @param {string} polyhedronType - "cube" or "rhombicDodecahedron"
+   */
+  function addRadialMatrixNodes(
+    matrixGroup,
+    centerPositions,
+    scale,
+    color,
+    nodeSize,
+    polyhedronType = "cube"
+  ) {
+    // Get node geometry settings
+    const useFlatShading =
+      document.getElementById("nodeFlatShading")?.checked || false;
+
+    // Get cached node geometry AND triangle count
+    const { geometry: nodeGeometry, triangles: trianglesPerNode } =
+      getCachedNodeGeometry(useRTNodeGeometry, nodeSize, polyhedronType, scale);
+
+    // Update PerformanceClock with node triangle count
+    PerformanceClock.timings.lastNodeTriangles = Math.round(trianglesPerNode);
+
+    // Calculate node radius for userData
+    let nodeRadius;
+    if (nodeSize === "packed") {
+      nodeRadius = getClosePackedRadius(polyhedronType, scale);
+    } else {
+      const nodeSizes = { sm: 0.02, md: 0.04, lg: 0.08 };
+      nodeRadius = nodeSizes[nodeSize] || 0.04;
+    }
+
+    const nodeMaterial = new THREE.MeshStandardMaterial({
+      color: color,
+      emissive: color,
+      emissiveIntensity: 0.2,
+      flatShading: useFlatShading,
+      transparent: nodeOpacity < 1,
+      opacity: nodeOpacity,
+      side: THREE.FrontSide,
+    });
+
+    // Collect all unique vertex positions from matrix
+    const vertexPositions = new Set();
+
+    // Generate polyhedron vertices at each center position
+    import("./rt-polyhedra.js").then(PolyModule => {
+      const { Polyhedra } = PolyModule;
+
+      // Get the appropriate polyhedron geometry
+      let polyGeom;
+      if (polyhedronType === "cube") {
+        polyGeom = Polyhedra.cube(scale);
+      } else if (polyhedronType === "rhombicDodecahedron") {
+        // Scale by √2 to match matrix geometry
+        polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2));
+      }
+
+      const { vertices } = polyGeom;
+
+      // For each center position, add transformed vertices
+      centerPositions.forEach(pos => {
+        vertices.forEach(v => {
+          const x = v.x + pos.x;
+          const y = v.y + pos.y;
+          const z = v.z + pos.z;
+
+          // Use string key for deduplication
+          const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+          vertexPositions.add(key);
+        });
+      });
+
+      // Create nodes at unique positions
+      vertexPositions.forEach(key => {
+        const [x, y, z] = key.split(",").map(parseFloat);
+        const node = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
+        node.position.set(x, y, z);
+        node.renderOrder = 3;
+
+        // Mark as vertex node for Papercut section cut detection
+        node.userData.isVertexNode = true;
+        node.userData.nodeType = "sphere";
+        node.userData.nodeRadius = nodeRadius;
+        node.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
+
+        matrixGroup.add(node);
+      });
+
+      console.log(
+        `[Radial Matrix Nodes] Added ${vertexPositions.size} nodes to ${centerPositions.length} ${polyhedronType} radial matrix`
+      );
+    });
+  }
+
+  /**
    * Count total triangles in a group (including all children)
    * Used for performance statistics
    */
@@ -1856,6 +1957,28 @@ export function initScene(THREE, OrbitControls, RT) {
           THREE
         );
         radialCubeMatrixGroup.add(radialCubeMatrix);
+
+        // Add vertex nodes if enabled
+        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
+        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const showNodes = nodeSize !== "off";
+
+        if (showNodes) {
+          const spacing = scale * 2;
+          const positions = RTRadialMatrix.getCubePositions(
+            frequency,
+            spacing,
+            spaceFilling
+          );
+          addRadialMatrixNodes(
+            radialCubeMatrixGroup,
+            positions,
+            scale,
+            colorPalette.cube,
+            nodeSize,
+            "cube"
+          );
+        }
       });
       radialCubeMatrixGroup.visible = true;
     } else {
@@ -1890,6 +2013,28 @@ export function initScene(THREE, OrbitControls, RT) {
             THREE
           );
         radialRhombicDodecMatrixGroup.add(radialRhombicDodecMatrix);
+
+        // Add vertex nodes if enabled
+        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
+        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const showNodes = nodeSize !== "off";
+
+        if (showNodes) {
+          const spacing = scale * 2;
+          const positions = RTRadialMatrix.getRhombicDodecPositions(
+            frequency,
+            spacing,
+            spaceFilling
+          );
+          addRadialMatrixNodes(
+            radialRhombicDodecMatrixGroup,
+            positions,
+            scale,
+            colorPalette.rhombicDodecahedron,
+            nodeSize,
+            "rhombicDodecahedron"
+          );
+        }
       });
       radialRhombicDodecMatrixGroup.visible = true;
     } else {
