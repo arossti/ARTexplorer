@@ -733,12 +733,7 @@ function startARTexplorer(
     });
   }
 
-  const radialRhombicDodecSpaceFill = document.getElementById(
-    "radialRhombicDodecSpaceFill"
-  );
-  if (radialRhombicDodecSpaceFill) {
-    radialRhombicDodecSpaceFill.addEventListener("change", updateGeometry);
-  }
+  // RD space-fill toggle removed - RD is inherently space-filling
 
   // Phase 2.7a, 2.7b, 2.7c: Geodesic controls
   document

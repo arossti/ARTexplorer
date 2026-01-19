@@ -1986,12 +1986,12 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Radial Rhombic Dodecahedron Matrix (FCC lattice expansion)
+    // RD is inherently space-filling - no toggle needed
     if (document.getElementById("showRadialRhombicDodecMatrix")?.checked) {
       const frequency = parseInt(
         document.getElementById("radialRhombicDodecFreqSlider")?.value || "1"
       );
-      const spaceFilling =
-        document.getElementById("radialRhombicDodecSpaceFill")?.checked ?? true;
+      const spaceFilling = true; // RD always space-fills (no voids possible)
 
       // Clear existing radial rhombic dodec matrix group
       while (radialRhombicDodecMatrixGroup.children.length > 0) {
