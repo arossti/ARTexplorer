@@ -534,8 +534,11 @@ export const RTRadialMatrix = {
   /**
    * Generate positions for radial octahedron matrix at given frequency
    *
-   * Octahedra grow via vertex-to-vertex stellation (6 directions)
-   * Same as cube stellation - uses taxicab/Manhattan distance
+   * Standard vertex-to-vertex stellation using taxicab/Manhattan distance.
+   * Same lattice as cube stellation - centered octahedral numbers.
+   *
+   * NOTE: IVM close-packing with proper outsphere radius spacing and
+   * layer offsets is a future enhancement - requires different lattice logic.
    *
    * @param {number} frequency - Shell frequency (1-5)
    * @param {number} spacing - Distance between oct centers
@@ -544,7 +547,7 @@ export const RTRadialMatrix = {
   getOctahedronPositions: (frequency, spacing) => {
     const positions = [];
 
-    // Same as cube stellation - octahedral growth pattern
+    // Standard mode: same as cube stellation - octahedral growth pattern
     const maxDist = frequency - 1;
 
     for (let x = -maxDist; x <= maxDist; x++) {
@@ -716,21 +719,42 @@ export const RTRadialMatrix = {
   /**
    * Create radial octahedron matrix expanding from central nucleus
    *
+   * IVM Scale option: When ivmScale=true, octahedra are scaled 2× so their
+   * triangular faces match the tetrahedron face size. This enables IVM
+   * (octet truss) complementary space-filling when combined with tet matrix.
+   *
+   * Geometry relationship:
+   * - Tetrahedron edge = 2√2 × halfSize (inscribed in cube of edge 2×halfSize)
+   * - Octahedron edge = √2 × halfSize (vertices at ±halfSize on axes)
+   * - To match: scale octahedron by 2 → edge = 2√2 × halfSize
+   *
    * @param {number} frequency - Shell frequency (1-5)
    * @param {number} halfSize - Half the octahedron span (vertex to center)
    * @param {number} opacity - Face opacity (0.0 to 1.0)
    * @param {number} color - Hex color value
    * @param {Object} THREE - THREE.js library
+   * @param {boolean} ivmScale - If true, scale 2× to match tetrahedron faces
    * @returns {THREE.Group} Group containing all octahedron instances
    */
-  createRadialOctahedronMatrix: (frequency, halfSize, opacity, color, THREE) => {
+  createRadialOctahedronMatrix: (
+    frequency,
+    halfSize,
+    opacity,
+    color,
+    THREE,
+    ivmScale = false
+  ) => {
     const matrixGroup = new THREE.Group();
-    // Octahedra touch vertex-to-vertex at spacing = 2 * halfSize
+
+    // IVM scale: double the octahedron size to match tetrahedron face size
+    const octSize = ivmScale ? halfSize * 2 : halfSize;
+    // Spacing remains based on original halfSize for lattice alignment
     const spacing = halfSize * 2;
 
+    // Standard integer lattice positions (IVM close-packing is a future enhancement)
     const positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing);
 
-    const octGeom = Polyhedra.octahedron(halfSize);
+    const octGeom = Polyhedra.octahedron(octSize);
     const { vertices, edges, faces } = octGeom;
 
     positions.forEach(pos => {
@@ -804,6 +828,7 @@ export const RTRadialMatrix = {
 
     console.log(`[RTRadialMatrix] ========== OCTAHEDRON RADIAL MATRIX ==========`);
     console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
+    console.log(`[RTRadialMatrix] IVM Scale: ${ivmScale ? '2× (match tet faces)' : '1× (standard)'}`);
     console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
     console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
     console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);

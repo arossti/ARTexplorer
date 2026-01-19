@@ -789,6 +789,14 @@ function startARTexplorer(
     });
   }
 
+  // IVM Scale checkbox for octahedron (scales to match tetrahedron faces)
+  const radialOctIVMScale = document.getElementById("radialOctIVMScale");
+  if (radialOctIVMScale) {
+    radialOctIVMScale.addEventListener("change", () => {
+      updateGeometry();
+    });
+  }
+
   // Radial Cuboctahedron (VE) Matrix (Phase 3)
   const radialVECheckbox = document.getElementById(
     "showRadialCuboctahedronMatrix"

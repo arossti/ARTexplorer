@@ -2100,6 +2100,10 @@ export function initScene(THREE, OrbitControls, RT) {
         radialOctMatrixGroup.remove(radialOctMatrixGroup.children[0]);
       }
 
+      // Get IVM scale checkbox value
+      const ivmScale =
+        document.getElementById("radialOctIVMScale")?.checked || false;
+
       // Generate radial octahedron matrix
       import("./rt-matrix-radial.js").then(RadialModule => {
         const { RTRadialMatrix } = RadialModule;
@@ -2108,7 +2112,8 @@ export function initScene(THREE, OrbitControls, RT) {
           scale,
           opacity,
           colorPalette.octahedron,
-          THREE
+          THREE,
+          ivmScale
         );
         radialOctMatrixGroup.add(radialOctMatrix);
       });
