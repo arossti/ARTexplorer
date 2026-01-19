@@ -31,9 +31,14 @@ createRadialDodecahedronMatrix(frequency, halfSize, opacity, color, THREE) → T
 
 | Polyhedron | Formula | F1→F5 |
 |------------|---------|-------|
-| Cube | `(2f-1)³` | 1, 7, 25, 63, 125 |
+| Cube (solid) | `(2f-1)³` | 1, 27, 125, 343, 729 |
+| Cube (stellation) | `(2f-1)(2f²-2f+3)/3` | 1, 7, 25, 63, 129 |
 | Rhombic Dodec | `(10f³-15f²+11f-3)/3` | 1, 13, 55, 147, 309 |
 | Tet/Oct | n tets requires (n-1) octs for IVM | — |
+
+**Note on Cube Modes:**
+- **Space-filling (solid)**: Full `(2f-1)³` cube-of-cubes (3×3×3 at F2, 5×5×5 at F3, etc.)
+- **Stellation (octahedral growth)**: Face-connected only using taxicab distance `|x|+|y|+|z| <= f-1`. Creates octahedral/cross shape. Uses centered octahedral numbers.
 
 ### Key Rules
 - **IVM Complementary**: `n tetrahedra + (n-1) octahedra = space-filling`
@@ -363,16 +368,23 @@ modules/
 
 ## Implementation Phases
 
-### Phase 1: Core Infrastructure
-- [ ] Create `rt-radial-matrix.js` module
-- [ ] Implement `RTRadialMatrix` namespace with shared utilities
-- [ ] Add frequency-based shell position calculator
-- [ ] Import from `rt-math.js` and `rt-polyhedra.js`
+### Phase 1: Core Infrastructure ✅ COMPLETE
+- [x] Create `rt-matrix-radial.js` module
+- [x] Implement `RTRadialMatrix` namespace with shared utilities
+- [x] Add frequency-based shell position calculator
+- [x] Import from `rt-math.js` and `rt-polyhedra.js`
 
-### Phase 2: Space-Filling Polyhedra
-- [ ] `createRadialCubeMatrix(frequency, halfSize, growthMode, ...)`
-- [ ] `createRadialRhombicDodecMatrix(frequency, halfSize, ...)`
-- [ ] Validate space-filling at each frequency
+### Phase 2: Space-Filling Polyhedra ✅ COMPLETE
+- [x] `createRadialCubeMatrix(frequency, halfSize, spaceFilling, ...)` — with solid + stellation modes
+- [x] `createRadialRhombicDodecMatrix(frequency, halfSize, ...)` — FCC lattice, always space-filling
+- [x] Validate space-filling at each frequency
+- [x] Vertex node integration via `addRadialMatrixNodes()`
+
+**Implementation Notes (Phase 2):**
+- Cube stellation uses centered octahedral numbers: `(2f-1)(2f²-2f+3)/3`
+- Cube stellation constraint: taxicab distance `|x|+|y|+|z| <= f-1`
+- RD uses FCC shell metric: `(|i|+|j|+|k|)/2` for half-integer coords where `i+j+k` is even
+- RD has no space-fill toggle (inherently space-filling, no voids possible)
 
 ### Phase 3: IVM Polyhedra (Tet/Oct Complementary)
 - [ ] `createRadialTetrahedronMatrix(frequency, halfSize, spaceFilling, ...)`
@@ -385,11 +397,11 @@ modules/
 - [ ] `createRadialDodecahedronMatrix(frequency, halfSize, ...)`
 - [ ] Document gaps and stellation-only behavior
 
-### Phase 5: UI Integration
-- [ ] Add radial matrix controls to `index.html`
-- [ ] Wire up event handlers in `rt-init.js`
-- [ ] Add radial groups to `rt-rendering.js`
-- [ ] Implement state save/load for radial settings
+### Phase 5: UI Integration ✅ COMPLETE (for Phase 2 polyhedra)
+- [x] Add radial matrix controls to `index.html` (Cube + RD)
+- [x] Wire up event handlers in `rt-init.js`
+- [x] Add radial groups to `rt-rendering.js`
+- [ ] Implement state save/load for radial settings (pending)
 
 ### Phase 6: Helix Foundation (separate module)
 - [ ] Create `rt-matrix-helices.js` module
@@ -438,5 +450,30 @@ modules/
 
 ---
 
+## Lessons Learned: Radial vs Planar Matrices
+
+### Key Insight: Center Polyhedron Presence
+- **Radial matrices** always have a center polyhedron at origin (F1 = 1)
+- **Planar 2×2 matrices** have NO center polyhedron (4 at corners, centered on origin)
+- This affects how we think about "space-filling" — radial grows outward FROM a nucleus
+
+### Applying Planar Logic to Radial
+The planar matrix implementation (especially the cuboctahedron/octahedron/RD relationships) informs radial matrix design:
+
+1. **Face coplanarity / Edge colinearity toggles** in planar matrices control void filling
+2. **Radial equivalent**: The `spaceFilling` toggle serves similar purpose
+3. **Future possibility**: Add coplanarity/colinearity switches to radial matrices for finer control over which voids get filled
+
+### Void-Filling Philosophy
+When a radial matrix has voids (e.g., cube stellation at F3 has 8 corner voids):
+- **Option A**: Leave voids (pure stellation aesthetic)
+- **Option B**: Fill with same polyhedron type (becomes space-filling)
+- **Option C**: Fill with complementary polyhedra (IVM approach for tet/oct)
+
+Currently implemented: Options A and B for cube, Option B only for RD (no voids possible).
+
+---
+
 *Workplan created: 2026-01-18*
+*Last updated: 2026-01-19*
 *Branch: Matrix-Radial*
