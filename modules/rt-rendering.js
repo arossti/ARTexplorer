@@ -70,7 +70,8 @@ export function initScene(THREE, OrbitControls, RT) {
   let cubeMatrixGroup, tetMatrixGroup, octaMatrixGroup; // Matrix forms (IVM arrays)
   let cuboctaMatrixGroup; // Cuboctahedron matrix (Vector Equilibrium array)
   let rhombicDodecMatrixGroup; // Rhombic dodecahedron matrix (space-filling array)
-  let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup; // Radial matrix forms
+  let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup; // Radial matrix forms (Phase 2)
+  let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup; // Radial matrix forms (Phase 3)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -193,6 +194,19 @@ export function initScene(THREE, OrbitControls, RT) {
     radialRhombicDodecMatrixGroup.userData.type = "radialRhombicDodecMatrix";
     radialRhombicDodecMatrixGroup.userData.isInstance = false;
 
+    // Radial matrix forms - Phase 3 (IVM polyhedra)
+    radialTetMatrixGroup = new THREE.Group();
+    radialTetMatrixGroup.userData.type = "radialTetMatrix";
+    radialTetMatrixGroup.userData.isInstance = false;
+
+    radialOctMatrixGroup = new THREE.Group();
+    radialOctMatrixGroup.userData.type = "radialOctMatrix";
+    radialOctMatrixGroup.userData.isInstance = false;
+
+    radialVEMatrixGroup = new THREE.Group();
+    radialVEMatrixGroup.userData.type = "radialVEMatrix";
+    radialVEMatrixGroup.userData.isInstance = false;
+
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -214,6 +228,9 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(rhombicDodecMatrixGroup);
     scene.add(radialCubeMatrixGroup);
     scene.add(radialRhombicDodecMatrixGroup);
+    scene.add(radialTetMatrixGroup);
+    scene.add(radialOctMatrixGroup);
+    scene.add(radialVEMatrixGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -238,6 +255,9 @@ export function initScene(THREE, OrbitControls, RT) {
       rhombicDodecMatrixGroup,
       radialCubeMatrixGroup,
       radialRhombicDodecMatrixGroup,
+      radialTetMatrixGroup,
+      radialOctMatrixGroup,
+      radialVEMatrixGroup,
     ]);
 
     // Initial render
@@ -2039,6 +2059,90 @@ export function initScene(THREE, OrbitControls, RT) {
       radialRhombicDodecMatrixGroup.visible = true;
     } else {
       radialRhombicDodecMatrixGroup.visible = false;
+    }
+
+    // Radial Tetrahedron Matrix (Phase 3)
+    if (document.getElementById("showRadialTetrahedronMatrix")?.checked) {
+      const frequency = parseInt(
+        document.getElementById("radialTetFreqSlider")?.value || "1"
+      );
+
+      // Clear existing radial tet matrix group
+      while (radialTetMatrixGroup.children.length > 0) {
+        radialTetMatrixGroup.remove(radialTetMatrixGroup.children[0]);
+      }
+
+      // Generate radial tetrahedron matrix
+      import("./rt-matrix-radial.js").then(RadialModule => {
+        const { RTRadialMatrix } = RadialModule;
+        const radialTetMatrix = RTRadialMatrix.createRadialTetrahedronMatrix(
+          frequency,
+          scale,
+          opacity,
+          colorPalette.tetrahedron,
+          THREE
+        );
+        radialTetMatrixGroup.add(radialTetMatrix);
+      });
+      radialTetMatrixGroup.visible = true;
+    } else {
+      radialTetMatrixGroup.visible = false;
+    }
+
+    // Radial Octahedron Matrix (Phase 3)
+    if (document.getElementById("showRadialOctahedronMatrix")?.checked) {
+      const frequency = parseInt(
+        document.getElementById("radialOctFreqSlider")?.value || "1"
+      );
+
+      // Clear existing radial oct matrix group
+      while (radialOctMatrixGroup.children.length > 0) {
+        radialOctMatrixGroup.remove(radialOctMatrixGroup.children[0]);
+      }
+
+      // Generate radial octahedron matrix
+      import("./rt-matrix-radial.js").then(RadialModule => {
+        const { RTRadialMatrix } = RadialModule;
+        const radialOctMatrix = RTRadialMatrix.createRadialOctahedronMatrix(
+          frequency,
+          scale,
+          opacity,
+          colorPalette.octahedron,
+          THREE
+        );
+        radialOctMatrixGroup.add(radialOctMatrix);
+      });
+      radialOctMatrixGroup.visible = true;
+    } else {
+      radialOctMatrixGroup.visible = false;
+    }
+
+    // Radial Cuboctahedron (VE) Matrix (Phase 3)
+    if (document.getElementById("showRadialCuboctahedronMatrix")?.checked) {
+      const frequency = parseInt(
+        document.getElementById("radialVEFreqSlider")?.value || "1"
+      );
+
+      // Clear existing radial VE matrix group
+      while (radialVEMatrixGroup.children.length > 0) {
+        radialVEMatrixGroup.remove(radialVEMatrixGroup.children[0]);
+      }
+
+      // Generate radial cuboctahedron matrix
+      import("./rt-matrix-radial.js").then(RadialModule => {
+        const { RTRadialMatrix } = RadialModule;
+        const radialVEMatrix = RTRadialMatrix.createRadialCuboctahedronMatrix(
+          frequency,
+          scale,
+          opacity,
+          colorPalette.cuboctahedron,
+          THREE
+        );
+        radialVEMatrixGroup.add(radialVEMatrix);
+      });
+      radialVEMatrixGroup.visible = true;
+    } else {
+      radialVEMatrixGroup.visible = false;
     }
 
     // Scale basis vectors to match current slider values

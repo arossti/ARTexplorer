@@ -392,7 +392,9 @@ modules/
 - [ ] `createRadialCuboctahedronMatrix(frequency, halfSize, spaceFilling, ...)`
 - [ ] Implement IVM complementary counting (see below)
 
-### Phase 4: Non-Space-Filling Polyhedra
+### Phase 4: Non-Space-Filling Polyhedra ⏸️ DEFERRED
+> *Icosahedron and Dodecahedron radial matrices deferred — these have irregular gaps*
+> *and are lower priority than IVM polyhedra and helix foundation.*
 - [ ] `createRadialIcosahedronMatrix(frequency, halfSize, ...)`
 - [ ] `createRadialDodecahedronMatrix(frequency, halfSize, ...)`
 - [ ] Document gaps and stellation-only behavior

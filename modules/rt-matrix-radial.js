@@ -78,6 +78,40 @@ export const RTRadialMatrix = {
       );
       return total - inner;
     },
+
+    /**
+     * Tetrahedron stellation count (face-connected only, no IVM fill)
+     * Each tet has 4 faces; F2 adds 4 tets (stella octangula core)
+     * Growth follows tetrahedral numbers pattern
+     * F1=1, F2=5, F3=15, F4=35, F5=70
+     * Formula: f(f+1)(f+2)/6 = tetrahedral numbers
+     */
+    tetrahedron: frequency => {
+      const f = frequency;
+      return Math.round((f * (f + 1) * (f + 2)) / 6);
+    },
+
+    /**
+     * Octahedron count (vertex-to-vertex stellation)
+     * Each oct has 6 vertices; F2 adds 6 octs at vertex directions
+     * F1=1, F2=7, F3=25, F4=63, F5=129
+     * Same as cube stellation (centered octahedral numbers)
+     */
+    octahedron: frequency => {
+      const f = frequency;
+      return Math.round(((2 * f - 1) * (2 * f * f - 2 * f + 3)) / 3);
+    },
+
+    /**
+     * Cuboctahedron (VE) count - FCC-like close packing
+     * Each VE has 12 vertices = 12 neighbors at F2
+     * F1=1, F2=13, F3=55, F4=147, F5=309
+     * Same as RD (both are FCC lattice)
+     */
+    cuboctahedron: frequency => {
+      const f = frequency;
+      return Math.round((10 * f * f * f - 15 * f * f + 11 * f - 3) / 3);
+    },
   },
 
   /**
@@ -447,6 +481,434 @@ export const RTRadialMatrix = {
     console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
     console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
     console.log(`[RTRadialMatrix] ================================================`);
+
+    return matrixGroup;
+  },
+
+  // ============================================================
+  // PHASE 3: IVM POLYHEDRA (Tetrahedron, Octahedron, Cuboctahedron)
+  // ============================================================
+
+  /**
+   * Generate positions for radial tetrahedron matrix at given frequency
+   *
+   * Tetrahedra grow via face-connected stellation (Stella Octangula pattern)
+   * Each face of center tet gets a 180° rotated tet attached
+   *
+   * The tetrahedra exist on TWO interleaved lattices (like tet + dual tet)
+   * - "Up" tets at positions where (i+j+k) mod 2 = 0
+   * - "Down" tets at positions where (i+j+k) mod 2 = 1
+   *
+   * @param {number} frequency - Shell frequency (1-5)
+   * @param {number} spacing - Distance between tet centers
+   * @returns {Array} Array of {x, y, z, orientation} positions
+   */
+  getTetrahedronPositions: (frequency, spacing) => {
+    const positions = [];
+
+    // Tetrahedra fill space on a BCC-like dual lattice
+    // For stellation, use taxicab distance like octahedron
+    const maxDist = frequency - 1;
+
+    for (let i = -maxDist; i <= maxDist; i++) {
+      for (let j = -maxDist; j <= maxDist; j++) {
+        for (let k = -maxDist; k <= maxDist; k++) {
+          // Taxicab constraint for tetrahedral growth
+          if (Math.abs(i) + Math.abs(j) + Math.abs(k) <= maxDist) {
+            // Orientation alternates based on parity
+            const orientation = (i + j + k) % 2 === 0 ? "up" : "down";
+            positions.push({
+              x: i * spacing,
+              y: j * spacing,
+              z: k * spacing,
+              orientation,
+            });
+          }
+        }
+      }
+    }
+
+    return positions;
+  },
+
+  /**
+   * Generate positions for radial octahedron matrix at given frequency
+   *
+   * Octahedra grow via vertex-to-vertex stellation (6 directions)
+   * Same as cube stellation - uses taxicab/Manhattan distance
+   *
+   * @param {number} frequency - Shell frequency (1-5)
+   * @param {number} spacing - Distance between oct centers
+   * @returns {Array} Array of {x, y, z} positions
+   */
+  getOctahedronPositions: (frequency, spacing) => {
+    const positions = [];
+
+    // Same as cube stellation - octahedral growth pattern
+    const maxDist = frequency - 1;
+
+    for (let x = -maxDist; x <= maxDist; x++) {
+      for (let y = -maxDist; y <= maxDist; y++) {
+        for (let z = -maxDist; z <= maxDist; z++) {
+          if (Math.abs(x) + Math.abs(y) + Math.abs(z) <= maxDist) {
+            positions.push({
+              x: x * spacing,
+              y: y * spacing,
+              z: z * spacing,
+            });
+          }
+        }
+      }
+    }
+
+    return positions;
+  },
+
+  /**
+   * Generate positions for radial cuboctahedron (VE) matrix at given frequency
+   *
+   * VEs pack on FCC lattice (same as rhombic dodecahedra)
+   * 12 neighbors at vertex directions
+   *
+   * @param {number} frequency - Shell frequency (1-5)
+   * @param {number} spacing - Distance between VE centers
+   * @returns {Array} Array of {x, y, z} positions
+   */
+  getCuboctahedronPositions: (frequency, spacing) => {
+    const positions = [];
+    const visited = new Set();
+
+    const addPosition = (x, y, z) => {
+      const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+      if (!visited.has(key)) {
+        visited.add(key);
+        positions.push({ x, y, z });
+      }
+    };
+
+    // FCC lattice - same as RD positions
+    const halfSpacing = spacing / 2;
+    const maxShell = frequency - 1;
+    const maxCoord = maxShell * 2;
+
+    for (let i = -maxCoord; i <= maxCoord; i++) {
+      for (let j = -maxCoord; j <= maxCoord; j++) {
+        for (let k = -maxCoord; k <= maxCoord; k++) {
+          if ((i + j + k) % 2 !== 0) continue;
+
+          const shell = (Math.abs(i) + Math.abs(j) + Math.abs(k)) / 2;
+          if (shell > maxShell) continue;
+
+          addPosition(i * halfSpacing, j * halfSpacing, k * halfSpacing);
+        }
+      }
+    }
+
+    return positions;
+  },
+
+  /**
+   * Create radial tetrahedron matrix expanding from central nucleus
+   *
+   * @param {number} frequency - Shell frequency (1-5)
+   * @param {number} halfSize - Half the cube edge that inscribes the tet
+   * @param {number} opacity - Face opacity (0.0 to 1.0)
+   * @param {number} color - Hex color value
+   * @param {Object} THREE - THREE.js library
+   * @returns {THREE.Group} Group containing all tetrahedron instances
+   */
+  createRadialTetrahedronMatrix: (frequency, halfSize, opacity, color, THREE) => {
+    const matrixGroup = new THREE.Group();
+    // Spacing for face-to-face contact: 2 * (2/3) * height = 4√6/3 * halfSize
+    // But for IVM lattice, use 2 * halfSize (cube edge)
+    const spacing = halfSize * 2;
+
+    const positions = RTRadialMatrix.getTetrahedronPositions(frequency, spacing);
+
+    positions.forEach(pos => {
+      const tetGroup = new THREE.Group();
+
+      // Get geometry based on orientation
+      const tetGeom =
+        pos.orientation === "up"
+          ? Polyhedra.tetrahedron(halfSize)
+          : Polyhedra.dualTetrahedron(halfSize);
+
+      const { vertices, edges, faces } = tetGeom;
+
+      // Build face geometry
+      const positionsArray = [];
+      const indices = [];
+
+      vertices.forEach(v => {
+        positionsArray.push(v.x + pos.x, v.y + pos.y, v.z + pos.z);
+      });
+
+      faces.forEach(faceIndices => {
+        for (let k = 1; k < faceIndices.length - 1; k++) {
+          indices.push(faceIndices[0], faceIndices[k], faceIndices[k + 1]);
+        }
+      });
+
+      const faceGeometry = new THREE.BufferGeometry();
+      faceGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(positionsArray, 3)
+      );
+      faceGeometry.setIndex(indices);
+      faceGeometry.computeVertexNormals();
+
+      const faceMaterial = new THREE.MeshStandardMaterial({
+        color: color,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide,
+        depthWrite: opacity >= 0.99,
+        flatShading: true,
+      });
+
+      const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
+      faceMesh.renderOrder = 1;
+      tetGroup.add(faceMesh);
+
+      // Render edges
+      const edgePositions = [];
+      edges.forEach(([vi, vj]) => {
+        const v1 = vertices[vi];
+        const v2 = vertices[vj];
+        edgePositions.push(v1.x + pos.x, v1.y + pos.y, v1.z + pos.z);
+        edgePositions.push(v2.x + pos.x, v2.y + pos.y, v2.z + pos.z);
+      });
+
+      const edgeGeometry = new THREE.BufferGeometry();
+      edgeGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(edgePositions, 3)
+      );
+
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: color,
+        linewidth: 1,
+        depthTest: true,
+        depthWrite: true,
+      });
+
+      const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+      edgeLines.renderOrder = 2;
+      tetGroup.add(edgeLines);
+
+      matrixGroup.add(tetGroup);
+    });
+
+    const expectedCount = RTRadialMatrix.shellCounts.tetrahedron(frequency);
+
+    console.log(`[RTRadialMatrix] ========== TETRAHEDRON RADIAL MATRIX ==========`);
+    console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
+    console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
+    console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
+    console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
+    console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
+    console.log(`[RTRadialMatrix] ================================================`);
+
+    return matrixGroup;
+  },
+
+  /**
+   * Create radial octahedron matrix expanding from central nucleus
+   *
+   * @param {number} frequency - Shell frequency (1-5)
+   * @param {number} halfSize - Half the octahedron span (vertex to center)
+   * @param {number} opacity - Face opacity (0.0 to 1.0)
+   * @param {number} color - Hex color value
+   * @param {Object} THREE - THREE.js library
+   * @returns {THREE.Group} Group containing all octahedron instances
+   */
+  createRadialOctahedronMatrix: (frequency, halfSize, opacity, color, THREE) => {
+    const matrixGroup = new THREE.Group();
+    // Octahedra touch vertex-to-vertex at spacing = 2 * halfSize
+    const spacing = halfSize * 2;
+
+    const positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing);
+
+    const octGeom = Polyhedra.octahedron(halfSize);
+    const { vertices, edges, faces } = octGeom;
+
+    positions.forEach(pos => {
+      const octGroup = new THREE.Group();
+
+      // Build face geometry
+      const positionsArray = [];
+      const indices = [];
+
+      vertices.forEach(v => {
+        positionsArray.push(v.x + pos.x, v.y + pos.y, v.z + pos.z);
+      });
+
+      faces.forEach(faceIndices => {
+        for (let k = 1; k < faceIndices.length - 1; k++) {
+          indices.push(faceIndices[0], faceIndices[k], faceIndices[k + 1]);
+        }
+      });
+
+      const faceGeometry = new THREE.BufferGeometry();
+      faceGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(positionsArray, 3)
+      );
+      faceGeometry.setIndex(indices);
+      faceGeometry.computeVertexNormals();
+
+      const faceMaterial = new THREE.MeshStandardMaterial({
+        color: color,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide,
+        depthWrite: opacity >= 0.99,
+        flatShading: true,
+      });
+
+      const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
+      faceMesh.renderOrder = 1;
+      octGroup.add(faceMesh);
+
+      // Render edges
+      const edgePositions = [];
+      edges.forEach(([vi, vj]) => {
+        const v1 = vertices[vi];
+        const v2 = vertices[vj];
+        edgePositions.push(v1.x + pos.x, v1.y + pos.y, v1.z + pos.z);
+        edgePositions.push(v2.x + pos.x, v2.y + pos.y, v2.z + pos.z);
+      });
+
+      const edgeGeometry = new THREE.BufferGeometry();
+      edgeGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(edgePositions, 3)
+      );
+
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: color,
+        linewidth: 1,
+        depthTest: true,
+        depthWrite: true,
+      });
+
+      const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+      edgeLines.renderOrder = 2;
+      octGroup.add(edgeLines);
+
+      matrixGroup.add(octGroup);
+    });
+
+    const expectedCount = RTRadialMatrix.shellCounts.octahedron(frequency);
+
+    console.log(`[RTRadialMatrix] ========== OCTAHEDRON RADIAL MATRIX ==========`);
+    console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
+    console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
+    console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
+    console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
+    console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
+    console.log(`[RTRadialMatrix] ==============================================`);
+
+    return matrixGroup;
+  },
+
+  /**
+   * Create radial cuboctahedron (VE) matrix expanding from central nucleus
+   *
+   * @param {number} frequency - Shell frequency (1-5)
+   * @param {number} halfSize - Half the cuboctahedron span
+   * @param {number} opacity - Face opacity (0.0 to 1.0)
+   * @param {number} color - Hex color value
+   * @param {Object} THREE - THREE.js library
+   * @returns {THREE.Group} Group containing all cuboctahedron instances
+   */
+  createRadialCuboctahedronMatrix: (frequency, halfSize, opacity, color, THREE) => {
+    const matrixGroup = new THREE.Group();
+    // VEs pack on FCC lattice with spacing = 2 * halfSize
+    const spacing = halfSize * 2;
+
+    const positions = RTRadialMatrix.getCuboctahedronPositions(frequency, spacing);
+
+    const veGeom = Polyhedra.cuboctahedron(halfSize);
+    const { vertices, edges, faces } = veGeom;
+
+    positions.forEach(pos => {
+      const veGroup = new THREE.Group();
+
+      // Build face geometry
+      const positionsArray = [];
+      const indices = [];
+
+      vertices.forEach(v => {
+        positionsArray.push(v.x + pos.x, v.y + pos.y, v.z + pos.z);
+      });
+
+      faces.forEach(faceIndices => {
+        for (let k = 1; k < faceIndices.length - 1; k++) {
+          indices.push(faceIndices[0], faceIndices[k], faceIndices[k + 1]);
+        }
+      });
+
+      const faceGeometry = new THREE.BufferGeometry();
+      faceGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(positionsArray, 3)
+      );
+      faceGeometry.setIndex(indices);
+      faceGeometry.computeVertexNormals();
+
+      const faceMaterial = new THREE.MeshStandardMaterial({
+        color: color,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide,
+        depthWrite: opacity >= 0.99,
+        flatShading: true,
+      });
+
+      const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
+      faceMesh.renderOrder = 1;
+      veGroup.add(faceMesh);
+
+      // Render edges
+      const edgePositions = [];
+      edges.forEach(([vi, vj]) => {
+        const v1 = vertices[vi];
+        const v2 = vertices[vj];
+        edgePositions.push(v1.x + pos.x, v1.y + pos.y, v1.z + pos.z);
+        edgePositions.push(v2.x + pos.x, v2.y + pos.y, v2.z + pos.z);
+      });
+
+      const edgeGeometry = new THREE.BufferGeometry();
+      edgeGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(edgePositions, 3)
+      );
+
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: color,
+        linewidth: 1,
+        depthTest: true,
+        depthWrite: true,
+      });
+
+      const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+      edgeLines.renderOrder = 2;
+      veGroup.add(edgeLines);
+
+      matrixGroup.add(veGroup);
+    });
+
+    const expectedCount = RTRadialMatrix.shellCounts.cuboctahedron(frequency);
+
+    console.log(`[RTRadialMatrix] ========== CUBOCTAHEDRON RADIAL MATRIX ==========`);
+    console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
+    console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
+    console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
+    console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
+    console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
+    console.log(`[RTRadialMatrix] =================================================`);
 
     return matrixGroup;
   },

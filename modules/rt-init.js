@@ -735,6 +735,87 @@ function startARTexplorer(
 
   // RD space-fill toggle removed - RD is inherently space-filling
 
+  // Radial Tetrahedron Matrix (Phase 3)
+  const radialTetCheckbox = document.getElementById(
+    "showRadialTetrahedronMatrix"
+  );
+  if (radialTetCheckbox) {
+    radialTetCheckbox.addEventListener("change", () => {
+      const radialTetControls = document.getElementById(
+        "radial-tetrahedron-matrix-controls"
+      );
+      if (radialTetControls) {
+        radialTetControls.style.display = radialTetCheckbox.checked
+          ? "block"
+          : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const radialTetFreqSlider = document.getElementById("radialTetFreqSlider");
+  if (radialTetFreqSlider) {
+    radialTetFreqSlider.addEventListener("input", e => {
+      const freq = parseInt(e.target.value);
+      document.getElementById("radialTetFreqDisplay").textContent = `F${freq}`;
+      updateGeometry();
+    });
+  }
+
+  // Radial Octahedron Matrix (Phase 3)
+  const radialOctCheckbox = document.getElementById(
+    "showRadialOctahedronMatrix"
+  );
+  if (radialOctCheckbox) {
+    radialOctCheckbox.addEventListener("change", () => {
+      const radialOctControls = document.getElementById(
+        "radial-octahedron-matrix-controls"
+      );
+      if (radialOctControls) {
+        radialOctControls.style.display = radialOctCheckbox.checked
+          ? "block"
+          : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const radialOctFreqSlider = document.getElementById("radialOctFreqSlider");
+  if (radialOctFreqSlider) {
+    radialOctFreqSlider.addEventListener("input", e => {
+      const freq = parseInt(e.target.value);
+      document.getElementById("radialOctFreqDisplay").textContent = `F${freq}`;
+      updateGeometry();
+    });
+  }
+
+  // Radial Cuboctahedron (VE) Matrix (Phase 3)
+  const radialVECheckbox = document.getElementById(
+    "showRadialCuboctahedronMatrix"
+  );
+  if (radialVECheckbox) {
+    radialVECheckbox.addEventListener("change", () => {
+      const radialVEControls = document.getElementById(
+        "radial-cuboctahedron-matrix-controls"
+      );
+      if (radialVEControls) {
+        radialVEControls.style.display = radialVECheckbox.checked
+          ? "block"
+          : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const radialVEFreqSlider = document.getElementById("radialVEFreqSlider");
+  if (radialVEFreqSlider) {
+    radialVEFreqSlider.addEventListener("input", e => {
+      const freq = parseInt(e.target.value);
+      document.getElementById("radialVEFreqDisplay").textContent = `F${freq}`;
+      updateGeometry();
+    });
+  }
+
   // Phase 2.7a, 2.7b, 2.7c: Geodesic controls
   document
     .getElementById("showGeodesicIcosahedron")
