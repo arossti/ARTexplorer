@@ -641,18 +641,36 @@ export const RTRadialMatrix = {
         { dx: -1, dy: 1, dz: -1, orientation: "up" },    // base tet
       ];
 
-      [...upperLayer, ...lowerLayer].forEach(pos => {
-        positions.push({
-          x: pos.dx * offset,
-          y: pos.dy * offset,
-          z: pos.dz * offset,
-          orientation: pos.orientation,
+      // The 8 tetrahedral void directions (octant pattern)
+      const tetVoidDirs = [...upperLayer, ...lowerLayer];
+
+      // Get all octahedron positions for this frequency
+      // Tetrahedra fill voids around EACH octahedron in the FCC lattice
+      const octPositions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, true);
+
+      // Use a Set to deduplicate positions (shared voids between adjacent octs)
+      const positionSet = new Set();
+
+      octPositions.forEach(octPos => {
+        tetVoidDirs.forEach(dir => {
+          const x = octPos.x + dir.dx * offset;
+          const y = octPos.y + dir.dy * offset;
+          const z = octPos.z + dir.dz * offset;
+
+          // Create unique key for deduplication (round to avoid floating point issues)
+          const key = `${Math.round(x * 1000)},${Math.round(y * 1000)},${Math.round(z * 1000)}`;
+
+          if (!positionSet.has(key)) {
+            positionSet.add(key);
+            positions.push({
+              x,
+              y,
+              z,
+              orientation: dir.orientation,
+            });
+          }
         });
       });
-
-      // For frequency > 2, tetrahedra fill voids between ALL octahedra
-      // This requires generating positions around each octahedron in the FCC lattice
-      // with deduplication at shared void positions
     }
 
     return positions;
