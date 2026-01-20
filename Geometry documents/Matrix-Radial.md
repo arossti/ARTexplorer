@@ -530,42 +530,56 @@ for (let i = -maxShell*2; i <= maxShell*2; i++) {
 
 ---
 
-### IVM Tetrahedra Implementation 🔄 PENDING
+### IVM Tetrahedra Implementation ✅ COMPLETE (Independent Mode)
 
-**Goal**: Fill the tetrahedral voids left between IVM octahedra with correctly sized and oriented tetrahedra.
+**Current state**: Both IVM octahedra and IVM tetrahedra generate correct space-filling lattices **independently**. Each produces a valid IVM structure on its own.
 
-**Void geometry:**
-- Tetrahedral voids exist at positions **between** octahedra centers
-- These are at the "opposite parity" FCC positions: where `i+j+k` is **ODD**
-- Each void requires a tetrahedron with alternating orientation
+**Implementation details:**
+- 8 tetrahedra per octahedron center (octant positions)
+- Base/dual pairing creates cuboctahedral void pattern
+- Frequency slider expands radially with deduplication
+- Upper layer: 2 base + 2 dual tets (edges form square)
+- Lower layer: inverted pattern (2 dual + 2 base)
 
-**Proposed implementation:**
+---
 
-1. **Add `ivmMode` parameter** to `getTetrahedronPositions`
+### The Nesting Conundrum 🤔 DEFERRED
 
-2. **IVM tetrahedral positions**: FCC lattice where `i+j+k` is ODD (opposite of octahedra)
-   ```javascript
-   // Tetrahedra at positions where i+j+k is ODD
-   if ((i + j + k) % 2 === 0) continue;  // Skip octahedra positions
-   ```
+**Observation**: The IVM cannot be nucleated from a single central polyhedron.
 
-3. **Spacing**: Same as IVM octahedra (`4 × halfSize`)
+When examining the tetrahedra matrix with a papercut at the XY plane at origin, we see:
+- Pockets exist for octahedra to nest into
+- But these pockets expect **4 octahedra meeting at vertices**, not a single central octahedron
+- The "F1" tetrahedra matrix actually contains **8 tetrahedra** forming a cuboctahedral cage
+- This suggests "Frequency" may not be the appropriate term for the slider
 
-4. **Orientation**: Alternate up/down based on position
-   - `(i + j + k) % 4 === 1` → "up" orientation
-   - `(i + j + k) % 4 === 3` → "down" orientation
-   - (This needs verification through testing)
+**Fundamental geometry insight:**
 
-5. **Size**: Tetrahedra should already be correct size (edge = `2√2 × halfSize`)
+The IVM (Isotropic Vector Matrix) does NOT nucleate from a center polyhedron. Instead:
+- It nucleates from a **vertex junction** where multiple polyhedra meet
+- The cuboctahedron (Vector Equilibrium) formed by 8 tetrahedra IS the nucleus
+- Octahedra and tetrahedra each generate valid IVM lattices independently
+- But they are **offset** from each other - not centered on the same origin
 
-**Count relationship:**
-- For IVM space-filling: `n octahedra` requires `2n tetrahedra` (approximately)
-- F2: 13 octahedra → ~24 tetrahedra expected
+**Options going forward:**
 
-**Alternative approach** (if FCC parity doesn't work):
-- Position tetrahedra at the 8 octant positions around each octahedron vertex
-- Positions: `(oct_x ± spacing/4, oct_y ± spacing/4, oct_z ± spacing/4)`
-- May produce duplicates that need deduplication
+1. **Keep independent solutions** (current state)
+   - IVM Octahedra: FCC lattice centered on origin
+   - IVM Tetrahedra: Octant-based cuboctahedral pattern centered on origin
+   - Each is geometrically correct for its own lattice
+   - They don't nest because IVM doesn't work that way
+
+2. **Offset one lattice to nest**
+   - Would require shifting tetrahedra OR octahedra by ~halfSize
+   - Breaks the elegant origin-centered approach
+   - May introduce complexity without clear benefit
+
+3. **Vertex-centered IVM mode**
+   - New mode where the "center" is a vertex, not a polyhedron
+   - 4 octahedra + 8 tetrahedra meeting at origin
+   - More faithful to IVM topology but less intuitive for UI
+
+**Decision**: Sleep on it. The current independent solutions are elegant and mathematically correct. Forcing them to nest may add complexity without improving the educational value.
 
 ---
 
