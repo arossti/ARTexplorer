@@ -738,62 +738,35 @@ export const RTRadialMatrix = {
   },
 
   /**
-   * Generate IVM octahedra positions on XY plane only (for nesting into tetrahedra)
+   * Generate IVM octahedra positions on XY plane (edge-colinear quilt pattern)
    *
-   * Builds a square grid pattern (quilt of colinear edges when viewed from above):
-   * - F1: 1 octahedron at origin
-   * - F2: 4 octahedra sharing a vertex at origin (2×2 grid centered at origin)
-   * - F3: 16 octahedra (4×4 grid) = 4 + 12 more around the initial 4
-   * - F4: 36 octahedra (6×6 grid) = 16 + 20 more
+   * Combined with 45° in-place rotation, produces octahedra with colinear edges:
+   * - F1: 1 at origin
+   * - F2: 4 sharing vertex at origin (2×2)
+   * - F3: 16 (4×4), F4: 36 (6×6), F5: 64 (8×8)
    *
-   * Uses Chebyshev distance (max of |i|,|j|) for square shells, not taxicab (diamond).
-   * Each shell ring is spaced by the full octahedron diagonal (outsphere diameter),
-   * ensuring all edges are colinear with no overlap.
-   *
-   * Shell counts: F1=1, F2=4, F3=16, F4=36, F5=64 → (2n)² where n = frequency-1 for F2+
+   * Formula: (2n)² octahedra where n = frequency - 1 (for F2+)
    *
    * @param {number} frequency - Shell frequency (1-5)
-   * @param {number} spacing - Distance between adjacent oct centers (outsphere diameter)
-   * @returns {Array} Array of {x, y, z} positions (all with z=0)
+   * @param {number} spacing - Octahedron size (2 × halfSize for IVM scale)
+   * @returns {Array} Array of {x, y, z} positions (all z=0)
    */
   getIVMOctahedronPositionsXY: (frequency, spacing) => {
     const positions = [];
 
     if (frequency === 1) {
-      // F1: single octahedron at origin
       positions.push({ x: 0, y: 0, z: 0 });
     } else {
-      // F2+: square grid centered at origin, no oct AT origin
-      // Grid size: 2n × 2n where n = frequency - 1
-      // F2: 2×2 = 4, F3: 4×4 = 16, F4: 6×6 = 36
       const n = frequency - 1;
-
-      // After 45° rotation, octahedron vertices point along XY diagonals.
-      // For 4 octs to share a vertex at origin:
-      // - Each oct center is along a diagonal (e.g., +X+Y quadrant)
-      // - The vertex pointing toward origin (in -X-Y direction) must reach (0,0)
-      // - After rotation, that vertex is at distance octSize from center
-      //
-      // Geometry: center at (c, c) where c = octSize / √2
-      // Because: center + octSize * (-1/√2, -1/√2) = origin
-      //          (c, c) + (-c, -c) = (0, 0) ✓
-      //
-      // With octSize = spacing (both = 2 * halfSize for IVM scale):
-      // Inner 4 centers at (±spacing/√2, ±spacing/√2)
-      // Next shell at (±spacing/√2, ±3*spacing/√2), etc.
-      //
-      // RT-Pure note: √2 computed once via Math.SQRT1_2
-      const unit = spacing * Math.SQRT1_2; // spacing / √2
+      // unit = spacing / √2 converts octSize to grid spacing after 45° rotation
+      const unit = spacing * Math.SQRT1_2;
 
       for (let i = 0; i < n; i++) {
         for (let j = 0; j < n; j++) {
-          // Grid positions: (2i+1, 2j+1) * unit/2 = (i+0.5, j+0.5) * unit * 2
-          // Wait, simpler: inner 4 at (±1, ±1) * unit, next at (±1, ±3), (±3, ±1), (±3, ±3) * unit
-          // So: x = (2*i + 1) * unit, y = (2*j + 1) * unit
+          // Odd-integer grid: (±1, ±1), (±1, ±3), (±3, ±1), (±3, ±3), ...
           const x = (2 * i + 1) * unit;
           const y = (2 * j + 1) * unit;
 
-          // Place in all 4 quadrants (mirror symmetry)
           positions.push({ x: x, y: y, z: 0 });
           positions.push({ x: -x, y: y, z: 0 });
           positions.push({ x: x, y: -y, z: 0 });
