@@ -26,14 +26,43 @@ import { Polyhedra } from "./rt-polyhedra.js";
  */
 export const RTRadialMatrix = {
   /**
+   * RT-Pure integer division with assertion
+   * Performs exact integer division, throwing if result is not exact.
+   * This ensures we catch any mathematical errors immediately rather than
+   * silently rounding.
+   *
+   * @param {number} numerator - The dividend (must be divisible by divisor)
+   * @param {number} divisor - The divisor
+   * @param {string} context - Description for error message
+   * @returns {number} Exact integer quotient
+   * @throws {Error} If division is not exact
+   */
+  exactDiv: (numerator, divisor, context = "division") => {
+    const result = numerator / divisor;
+    if (!Number.isInteger(result)) {
+      throw new Error(
+        `RT-Pure violation in ${context}: ${numerator}/${divisor} = ${result} (not an integer)`
+      );
+    }
+    return result;
+  },
+
+  /**
    * Shell count formulas for space-filling polyhedra
    * Returns total count of polyhedra for a given frequency
+   *
+   * RT-Pure Implementation:
+   * All formulas produce exact integers by mathematical proof.
+   * We use exactDiv() instead of Math.round() to assert correctness
+   * and catch any implementation errors immediately.
    */
   shellCounts: {
     /**
      * Cube total count (space-filling): (2f-1)³
      * Solid cube-of-cubes at each frequency level
      * F1=1, F2=27 (3³), F3=125 (5³), F4=343 (7³), F5=729 (9³)
+     *
+     * Mathematical proof: (2f-1) is odd integer, odd³ is integer ✓
      */
     cube: frequency => Math.pow(2 * frequency - 1, 3),
 
@@ -42,53 +71,71 @@ export const RTRadialMatrix = {
      * Uses taxicab/Manhattan distance: |x| + |y| + |z| <= (f-1)
      * This creates octahedral shape, not cubic
      * F1=1, F2=7, F3=25, F4=63, F5=129
-     * Formula: (2f-1)(2f²-2f+3)/3 = centered octahedral numbers
+     * Formula: (2f-1)(2f²-2f+3)/3 = centered octahedral numbers (OEIS A001845)
+     *
+     * Mathematical proof of divisibility by 3:
+     * - f ≡ 0 (mod 3): 2f²-2f+3 ≡ 0+0+0 ≡ 0 (mod 3)
+     * - f ≡ 1 (mod 3): 2f²-2f+3 ≡ 2-2+0 ≡ 0 (mod 3)
+     * - f ≡ 2 (mod 3): 2f-1 ≡ 4-1 ≡ 0 (mod 3)
      */
     cubeStellation: frequency => {
       const f = frequency;
-      // Centered octahedral numbers: (2n-1)(2n²-2n+3)/3
-      return Math.round(((2 * f - 1) * (2 * f * f - 2 * f + 3)) / 3);
+      const numerator = (2 * f - 1) * (2 * f * f - 2 * f + 3);
+      return RTRadialMatrix.exactDiv(numerator, 3, "cubeStellation");
     },
 
     /**
      * Rhombic Dodecahedron total count (FCC lattice, space-filling)
      * Formula: (10f³ - 15f² + 11f - 3) / 3
      * F1=1, F2=13, F3=55, F4=147, F5=309
+     *
+     * Mathematical proof of divisibility by 3:
+     * 10f³ - 15f² + 11f - 3 ≡ f³ + 0 + 2f + 0 ≡ f(f² + 2) (mod 3)
+     * For f ≡ 0: 0 ≡ 0 (mod 3) ✓
+     * For f ≡ 1: 1(1+2) = 3 ≡ 0 (mod 3) ✓
+     * For f ≡ 2: 2(4+2) = 12 ≡ 0 (mod 3) ✓
      */
     rhombicDodec: frequency => {
       const f = frequency;
-      return Math.round((10 * f * f * f - 15 * f * f + 11 * f - 3) / 3);
+      const numerator = 10 * f * f * f - 15 * f * f + 11 * f - 3;
+      return RTRadialMatrix.exactDiv(numerator, 3, "rhombicDodec");
     },
 
     /**
      * Rhombic Dodecahedron shell-only count (outer layer of FCC)
      * F1=1, F2=12, F3=42, F4=92, F5=162
      * Shell(f) = Total(f) - Total(f-1)
+     *
+     * Difference of two exact integers is exact ✓
      */
     rhombicDodecShell: frequency => {
       if (frequency === 1) return 1;
       const f = frequency;
-      const total = Math.round((10 * f * f * f - 15 * f * f + 11 * f - 3) / 3);
-      const inner = Math.round(
-        (10 * (f - 1) * (f - 1) * (f - 1) -
-          15 * (f - 1) * (f - 1) +
-          11 * (f - 1) -
-          3) /
-          3
-      );
+      const totalNum = 10 * f * f * f - 15 * f * f + 11 * f - 3;
+      const g = f - 1;
+      const innerNum = 10 * g * g * g - 15 * g * g + 11 * g - 3;
+      const total = RTRadialMatrix.exactDiv(totalNum, 3, "rhombicDodecShell total");
+      const inner = RTRadialMatrix.exactDiv(innerNum, 3, "rhombicDodecShell inner");
       return total - inner;
     },
 
     /**
      * Tetrahedron stellation count (face-connected only, no IVM fill)
-     * Each tet has 4 faces; F2 adds 4 tets (stella octangula core)
-     * Growth follows tetrahedral numbers pattern
-     * F1=1, F2=5, F3=15, F4=35, F5=70
-     * Formula: f(f+1)(f+2)/6 = tetrahedral numbers
+     * F1=1, F2=4, F3=10, F4=20, F5=35
+     * Formula: f(f+1)(f+2)/6 = tetrahedral numbers (OEIS A000292)
+     *
+     * Mathematical proof of divisibility by 6:
+     * Product of 3 consecutive integers f, f+1, f+2:
+     * - At least one is divisible by 2 (consecutive integers)
+     * - At least one is divisible by 3 (consecutive integers)
+     * Therefore product is divisible by 2×3 = 6 ✓
+     *
+     * Note: These are standard tetrahedral numbers, not centered.
      */
     tetrahedron: frequency => {
       const f = frequency;
-      return Math.round((f * (f + 1) * (f + 2)) / 6);
+      const numerator = f * (f + 1) * (f + 2);
+      return RTRadialMatrix.exactDiv(numerator, 6, "tetrahedron");
     },
 
     /**
@@ -96,10 +143,13 @@ export const RTRadialMatrix = {
      * Each oct has 6 vertices; F2 adds 6 octs at vertex directions
      * F1=1, F2=7, F3=25, F4=63, F5=129
      * Same as cube stellation (centered octahedral numbers)
+     *
+     * See cubeStellation for divisibility proof.
      */
     octahedron: frequency => {
       const f = frequency;
-      return Math.round(((2 * f - 1) * (2 * f * f - 2 * f + 3)) / 3);
+      const numerator = (2 * f - 1) * (2 * f * f - 2 * f + 3);
+      return RTRadialMatrix.exactDiv(numerator, 3, "octahedron");
     },
 
     /**
@@ -107,10 +157,13 @@ export const RTRadialMatrix = {
      * Each VE has 12 vertices = 12 neighbors at F2
      * F1=1, F2=13, F3=55, F4=147, F5=309
      * Same as RD (both are FCC lattice)
+     *
+     * See rhombicDodec for divisibility proof.
      */
     cuboctahedron: frequency => {
       const f = frequency;
-      return Math.round((10 * f * f * f - 15 * f * f + 11 * f - 3) / 3);
+      const numerator = 10 * f * f * f - 15 * f * f + 11 * f - 3;
+      return RTRadialMatrix.exactDiv(numerator, 3, "cuboctahedron");
     },
   },
 
