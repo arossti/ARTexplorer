@@ -534,31 +534,56 @@ export const RTRadialMatrix = {
   /**
    * Generate positions for radial octahedron matrix at given frequency
    *
-   * Standard vertex-to-vertex stellation using taxicab/Manhattan distance.
-   * Same lattice as cube stellation - centered octahedral numbers.
-   *
-   * NOTE: IVM close-packing with proper outsphere radius spacing and
-   * layer offsets is a future enhancement - requires different lattice logic.
+   * Two modes:
+   * - ivmMode=false: Taxicab stellation (octahedral growth pattern)
+   * - ivmMode=true: FCC lattice for edge-to-edge colinearity
    *
    * @param {number} frequency - Shell frequency (1-5)
    * @param {number} spacing - Distance between oct centers
+   * @param {boolean} ivmMode - If true, use FCC lattice for edge colinearity
    * @returns {Array} Array of {x, y, z} positions
    */
-  getOctahedronPositions: (frequency, spacing) => {
+  getOctahedronPositions: (frequency, spacing, ivmMode = false) => {
     const positions = [];
 
-    // Standard mode: same as cube stellation - octahedral growth pattern
-    const maxDist = frequency - 1;
+    if (!ivmMode) {
+      // Standard mode: taxicab/Manhattan distance (octahedral growth)
+      const maxDist = frequency - 1;
 
-    for (let x = -maxDist; x <= maxDist; x++) {
-      for (let y = -maxDist; y <= maxDist; y++) {
-        for (let z = -maxDist; z <= maxDist; z++) {
-          if (Math.abs(x) + Math.abs(y) + Math.abs(z) <= maxDist) {
-            positions.push({
-              x: x * spacing,
-              y: y * spacing,
-              z: z * spacing,
-            });
+      for (let x = -maxDist; x <= maxDist; x++) {
+        for (let y = -maxDist; y <= maxDist; y++) {
+          for (let z = -maxDist; z <= maxDist; z++) {
+            if (Math.abs(x) + Math.abs(y) + Math.abs(z) <= maxDist) {
+              positions.push({
+                x: x * spacing,
+                y: y * spacing,
+                z: z * spacing,
+              });
+            }
+          }
+        }
+      }
+    } else {
+      // IVM mode: FCC lattice positions for edge-to-edge colinearity
+      // FCC has positions at integer coords where sum of coords is even
+      // This gives center + 12 neighbors (not 6) for proper edge contact
+      const maxShell = frequency - 1;
+
+      for (let i = -maxShell * 2; i <= maxShell * 2; i++) {
+        for (let j = -maxShell * 2; j <= maxShell * 2; j++) {
+          for (let k = -maxShell * 2; k <= maxShell * 2; k++) {
+            // FCC constraint: i+j+k must be even
+            if ((i + j + k) % 2 !== 0) continue;
+
+            // Shell metric for FCC: (|i|+|j|+|k|)/2
+            const shell = (Math.abs(i) + Math.abs(j) + Math.abs(k)) / 2;
+            if (shell <= maxShell) {
+              positions.push({
+                x: i * (spacing / 2),
+                y: j * (spacing / 2),
+                z: k * (spacing / 2),
+              });
+            }
           }
         }
       }
@@ -748,11 +773,13 @@ export const RTRadialMatrix = {
 
     // IVM scale: double the octahedron size to match tetrahedron face size
     const octSize = ivmScale ? halfSize * 2 : halfSize;
-    // Spacing remains based on original halfSize for lattice alignment
-    const spacing = halfSize * 2;
+    // IVM scale: also double spacing so octahedra touch edge-to-edge (not overlapping)
+    // Standard: spacing = 2 × halfSize (vertex-to-vertex)
+    // IVM: spacing = 4 × halfSize (edge-to-edge, diagonal width of scaled oct)
+    const spacing = ivmScale ? halfSize * 4 : halfSize * 2;
 
-    // Standard integer lattice positions (IVM close-packing is a future enhancement)
-    const positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing);
+    // IVM mode uses FCC lattice for edge-to-edge colinearity, standard uses taxicab
+    const positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, ivmScale);
 
     const octGeom = Polyhedra.octahedron(octSize);
     const { vertices, edges, faces } = octGeom;
@@ -828,7 +855,8 @@ export const RTRadialMatrix = {
 
     console.log(`[RTRadialMatrix] ========== OCTAHEDRON RADIAL MATRIX ==========`);
     console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
-    console.log(`[RTRadialMatrix] IVM Scale: ${ivmScale ? '2× (match tet faces)' : '1× (standard)'}`);
+    console.log(`[RTRadialMatrix] IVM Scale: ${ivmScale ? '2× size, 4× spacing (edge-to-edge)' : '1× (standard)'}`);
+    console.log(`[RTRadialMatrix] Spacing: ${spacing} (${ivmScale ? '4×' : '2×'} halfSize)`);
     console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
     console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
     console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
