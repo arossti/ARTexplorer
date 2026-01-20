@@ -543,13 +543,48 @@ for (let i = -maxShell*2; i <= maxShell*2; i++) {
 
 ---
 
-### The Nesting Conundrum 🤔 DEFERRED
+### The Nesting Solution ✅ SOLVED
 
-**Observation**: The IVM cannot be nucleated from a single central polyhedron.
+**Problem**: Octahedra positioned correctly with taxicab stellation but scaled too small to nest into tetrahedra pockets.
 
-When examining the tetrahedra matrix with a papercut at the XY plane at origin, we see:
+**Key insight**: Size and positioning are INDEPENDENT concerns:
+- Taxicab positioning (standard mode) places octahedra correctly for nesting
+- FCC lattice positioning (full IVM mode) gives edge-to-edge colinearity but different topology
+- The 2× size scaling is needed regardless of positioning mode
+
+**Solution**: New `ivmScaleOnly` parameter
+
+| Parameter | Size | Positioning | Use Case |
+|-----------|------|-------------|----------|
+| Both false | 1× | Taxicab | Standard octahedral stellation |
+| `ivmScale=true` | 2× | FCC lattice | Full IVM (edge colinearity) |
+| `ivmScaleOnly=true` | 2× | Taxicab | **Nesting into tetrahedra** ✅ |
+
+**Implementation** (`createRadialOctahedronMatrix`):
+```javascript
+// Size: 2× when ivmScale OR ivmScaleOnly
+const useScaledSize = ivmScale || ivmScaleOnly;
+const octSize = useScaledSize ? halfSize * 2 : halfSize;
+
+// Positioning: only ivmScale changes to FCC (ivmScaleOnly keeps taxicab)
+const spacing = ivmScale ? halfSize * 4 : halfSize * 2;
+const positions = getOctahedronPositions(frequency, spacing, ivmScale);
+```
+
+**Why this works:**
+- Taxicab stellation places F1 octahedron at origin
+- F2 adds 6 octahedra at axial positions (matching tet void pockets)
+- 2× scaling makes octahedron faces match tetrahedron face size
+- The "IVM Scale" checkbox now activates `ivmScaleOnly` mode
+
+---
+
+### Historical Context: The Nesting Conundrum
+
+**Original observation**: The IVM cannot be nucleated from a single central polyhedron.
+
+When examining the tetrahedra matrix with a papercut at the XY plane at origin:
 - Pockets exist for octahedra to nest into
-- But these pockets expect **4 octahedra meeting at vertices**, not a single central octahedron
 - The "F1" tetrahedra matrix actually contains **8 tetrahedra** forming a cuboctahedral cage
 - This suggests "Frequency" may not be the appropriate term for the slider
 
@@ -559,30 +594,14 @@ The IVM (Isotropic Vector Matrix) does NOT nucleate from a center polyhedron. In
 - It nucleates from a **vertex junction** where multiple polyhedra meet
 - The cuboctahedron (Vector Equilibrium) formed by 8 tetrahedra IS the nucleus
 - Octahedra and tetrahedra each generate valid IVM lattices independently
-- But they are **offset** from each other - not centered on the same origin
 
-**Options going forward:**
-
-1. **Keep independent solutions** (current state)
-   - IVM Octahedra: FCC lattice centered on origin
-   - IVM Tetrahedra: Octant-based cuboctahedral pattern centered on origin
-   - Each is geometrically correct for its own lattice
-   - They don't nest because IVM doesn't work that way
-
-2. **Offset one lattice to nest**
-   - Would require shifting tetrahedra OR octahedra by ~halfSize
-   - Breaks the elegant origin-centered approach
-   - May introduce complexity without clear benefit
-
-3. **Vertex-centered IVM mode**
-   - New mode where the "center" is a vertex, not a polyhedron
-   - 4 octahedra + 8 tetrahedra meeting at origin
-   - More faithful to IVM topology but less intuitive for UI
-
-**Decision**: Sleep on it. The current independent solutions are elegant and mathematically correct. Forcing them to nest may add complexity without improving the educational value.
+**Resolution**: Rather than forcing both lattices to share the same origin-centered topology, we found that:
+1. Standard taxicab octahedra (with 2× size) nest correctly into tetrahedra pockets
+2. Full FCC IVM mode remains available for edge-colinearity visualization
+3. The `ivmScaleOnly` parameter bridges these two approaches
 
 ---
 
 *Workplan created: 2026-01-18*
-*Last updated: 2026-01-19*
+*Last updated: 2026-01-20*
 *Branch: Matrix-Radial*
