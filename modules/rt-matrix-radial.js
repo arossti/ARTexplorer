@@ -583,59 +583,76 @@ export const RTRadialMatrix = {
         }
       }
     } else {
-      // IVM mode: Tetrahedra fill the 8 octahedral voids around each octahedron
+      // IVM mode: Tetrahedra sit on the 8 faces of the central octahedron
       //
-      // Geometry: Each octahedron has 8 triangular faces pointing to 8 octants.
-      // A tetrahedron fits in each octant void, with its apex pointing toward
-      // the octahedron center and its base parallel to the octahedron face.
+      // Geometry: The octahedron has 8 triangular faces - 4 pointing up (+Z),
+      // 4 pointing down (-Z). Tetrahedra rest on these faces with their bases
+      // coplanar with the octahedron faces.
       //
-      // At F2 (one shell around central oct): 8 tetrahedra in octant positions
-      // Position offset from octahedron center: (±1, ±1, ±1) × (spacing/4)
+      // CRITICAL: Tetrahedra are NOT centered at origin - they're offset
+      // vertically so their bases rest on the octahedron faces.
       //
-      // Orientation rule based on octant sign pattern:
-      // - "up" (base tet): when product of signs is POSITIVE (+++, +--, -+-, --+)
-      // - "down" (dual tet): when product of signs is NEGATIVE (++-,+-+, -++, ---)
+      // Upper layer (4 tetrahedra, Z > 0):
+      // - 2 base tetrahedra with parallel top edges (2 opposite sides of square)
+      // - 2 dual tetrahedra with perpendicular top edges (other 2 sides)
+      // - Together, top edges form a complete square
       //
-      // This creates the "basket" pattern: 4 up tets + 4 down tets forming
-      // interlocking squares at top and bottom.
+      // Lower layer (4 tetrahedra, Z < 0):
+      // - Inverted arrangement (apexes pointing down)
+      //
+      // The base tetrahedron vertices are at: (-s,-s,-s), (s,s,-s), (s,-s,s), (-s,s,s)
+      // The dual tetrahedron is the 180° rotation (multiply by -1)
+      //
+      // For IVM octahedra at 2× scale with 4× spacing:
+      // - Octahedron halfSize = 2 × base halfSize
+      // - Tetrahedron uses base halfSize (edges match oct faces)
 
-      const offset = spacing / 4; // Distance from oct center to tet center
+      // Tetrahedra positioned at octahedron face centers
+      // For octahedron with vertices at (±oct_s, 0, 0), (0, ±oct_s, 0), (0, 0, ±oct_s)
+      // Face centroids are at (±oct_s/3, ±oct_s/3, ±oct_s/3) in each octant
+      //
+      // But for IVM, we use spacing/4 as the offset (same as oct_halfSize/2)
+      const offset = spacing / 4;
 
-      // Generate octant positions for tetrahedra around each octahedron
-      // For F2: tetrahedra around central octahedron only
-      // For F3+: tetrahedra around each shell octahedron
-
-      // The 8 octant directions
-      const octants = [
-        { dx: 1, dy: 1, dz: 1 },   // +++ → up
-        { dx: 1, dy: 1, dz: -1 },  // ++- → down
-        { dx: 1, dy: -1, dz: 1 },  // +-+ → down
-        { dx: 1, dy: -1, dz: -1 }, // +-- → up
-        { dx: -1, dy: 1, dz: 1 },  // -++ → down
-        { dx: -1, dy: 1, dz: -1 }, // -+- → up
-        { dx: -1, dy: -1, dz: 1 }, // --+ → up
-        { dx: -1, dy: -1, dz: -1 },// --- → down
+      // Upper 4 faces (+Z hemisphere): tetrahedra with apex UP
+      // Face centroids have Z > 0: (+,+,+), (+,-,+), (-,+,+), (-,-,+)
+      // But we need to pair base/dual tets to form square edges at top
+      //
+      // Looking down Z-axis at the upper square formed by top edges:
+      // - Base tet top edge runs along one diagonal direction
+      // - Dual tet top edge runs along perpendicular diagonal
+      //
+      // Upper layer positions (dz = +1):
+      // Two base tets at (+,+,+) and (-,-,+) - edges parallel
+      // Two dual tets at (+,-,+) and (-,+,+) - edges perpendicular
+      const upperLayer = [
+        { dx: 1, dy: 1, dz: 1, orientation: "up" },    // base tet
+        { dx: -1, dy: -1, dz: 1, orientation: "up" },  // base tet (parallel edge)
+        { dx: 1, dy: -1, dz: 1, orientation: "down" }, // dual tet
+        { dx: -1, dy: 1, dz: 1, orientation: "down" }, // dual tet (parallel edge)
       ];
 
-      // For IVM, we need tetrahedra around the CENTRAL octahedron
-      // At F2, this is just the 8 octants around origin
-      // At higher frequencies, tetrahedra fill voids between ALL octahedra
+      // Lower 4 faces (-Z hemisphere): tetrahedra with apex DOWN
+      // Mirror of upper layer with inverted orientations
+      const lowerLayer = [
+        { dx: 1, dy: 1, dz: -1, orientation: "down" },   // dual tet (apex down)
+        { dx: -1, dy: -1, dz: -1, orientation: "down" }, // dual tet
+        { dx: 1, dy: -1, dz: -1, orientation: "up" },    // base tet
+        { dx: -1, dy: 1, dz: -1, orientation: "up" },    // base tet
+      ];
 
-      // Start with tetrahedra around central octahedron (always present)
-      octants.forEach(oct => {
-        const signProduct = oct.dx * oct.dy * oct.dz;
-        const orientation = signProduct > 0 ? "up" : "down";
+      [...upperLayer, ...lowerLayer].forEach(pos => {
         positions.push({
-          x: oct.dx * offset,
-          y: oct.dy * offset,
-          z: oct.dz * offset,
-          orientation,
+          x: pos.dx * offset,
+          y: pos.dy * offset,
+          z: pos.dz * offset,
+          orientation: pos.orientation,
         });
       });
 
-      // For frequency > 2, add tetrahedra around outer shell octahedra
-      // This is a simplified approach - full IVM would need deduplication
-      // at shared void positions between adjacent octahedra
+      // For frequency > 2, tetrahedra fill voids between ALL octahedra
+      // This requires generating positions around each octahedron in the FCC lattice
+      // with deduplication at shared void positions
     }
 
     return positions;
