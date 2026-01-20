@@ -908,9 +908,10 @@ export const RTRadialMatrix = {
   /**
    * Create radial octahedron matrix expanding from central nucleus
    *
-   * IVM Scale option: When ivmScale=true, octahedra are scaled 2× so their
-   * triangular faces match the tetrahedron face size. This enables IVM
-   * (octet truss) complementary space-filling when combined with tet matrix.
+   * Scale options:
+   * - ivmScale=false: Standard size (halfSize), taxicab positioning
+   * - ivmScale=true: 2× size, FCC lattice, 4× spacing (full IVM mode)
+   * - ivmScaleOnly=true: 2× size but KEEP taxicab positioning (for nesting into tet matrix)
    *
    * Geometry relationship:
    * - Tetrahedron edge = 2√2 × halfSize (inscribed in cube of edge 2×halfSize)
@@ -922,7 +923,8 @@ export const RTRadialMatrix = {
    * @param {number} opacity - Face opacity (0.0 to 1.0)
    * @param {number} color - Hex color value
    * @param {Object} THREE - THREE.js library
-   * @param {boolean} ivmScale - If true, scale 2× to match tetrahedron faces
+   * @param {boolean} ivmScale - If true, full IVM mode (2× size + FCC lattice + 4× spacing)
+   * @param {boolean} ivmScaleOnly - If true, 2× size only (keeps taxicab positioning for tet nesting)
    * @returns {THREE.Group} Group containing all octahedron instances
    */
   createRadialOctahedronMatrix: (
@@ -931,18 +933,21 @@ export const RTRadialMatrix = {
     opacity,
     color,
     THREE,
-    ivmScale = false
+    ivmScale = false,
+    ivmScaleOnly = false
   ) => {
     const matrixGroup = new THREE.Group();
 
-    // IVM scale: double the octahedron size to match tetrahedron face size
-    const octSize = ivmScale ? halfSize * 2 : halfSize;
-    // IVM scale: also double spacing so octahedra touch edge-to-edge (not overlapping)
-    // Standard: spacing = 2 × halfSize (vertex-to-vertex)
-    // IVM: spacing = 4 × halfSize (edge-to-edge, diagonal width of scaled oct)
+    // Size scaling: 2× when ivmScale OR ivmScaleOnly is true
+    const useScaledSize = ivmScale || ivmScaleOnly;
+    const octSize = useScaledSize ? halfSize * 2 : halfSize;
+
+    // Spacing and positioning: only ivmScale changes these (not ivmScaleOnly)
+    // Standard/ivmScaleOnly: spacing = 2 × halfSize (vertex-to-vertex), taxicab positioning
+    // Full IVM: spacing = 4 × halfSize (edge-to-edge), FCC lattice
     const spacing = ivmScale ? halfSize * 4 : halfSize * 2;
 
-    // IVM mode uses FCC lattice for edge-to-edge colinearity, standard uses taxicab
+    // IVM mode uses FCC lattice, standard and ivmScaleOnly use taxicab
     const positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, ivmScale);
 
     const octGeom = Polyhedra.octahedron(octSize);
@@ -1019,7 +1024,13 @@ export const RTRadialMatrix = {
 
     console.log(`[RTRadialMatrix] ========== OCTAHEDRON RADIAL MATRIX ==========`);
     console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
-    console.log(`[RTRadialMatrix] IVM Scale: ${ivmScale ? '2× size, 4× spacing (edge-to-edge)' : '1× (standard)'}`);
+    const modeDesc = ivmScale
+      ? '2× size, 4× spacing, FCC lattice (full IVM)'
+      : ivmScaleOnly
+        ? '2× size, 2× spacing, taxicab (IVM scale for tet nesting)'
+        : '1× size, 2× spacing, taxicab (standard)';
+    console.log(`[RTRadialMatrix] Mode: ${modeDesc}`);
+    console.log(`[RTRadialMatrix] Octahedron size: ${octSize} (${useScaledSize ? '2×' : '1×'} halfSize)`);
     console.log(`[RTRadialMatrix] Spacing: ${spacing} (${ivmScale ? '4×' : '2×'} halfSize)`);
     console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
     console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);

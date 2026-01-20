@@ -2106,7 +2106,9 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // Get IVM scale checkbox value
-      const ivmScale =
+      // ivmScaleOnly = true: 2× size with taxicab positioning (for nesting into tet matrix)
+      // ivmScale = false: keeps taxicab positioning (not FCC lattice)
+      const ivmScaleOnly =
         document.getElementById("radialOctIVMScale")?.checked || false;
 
       // Generate radial octahedron matrix
@@ -2118,7 +2120,8 @@ export function initScene(THREE, OrbitControls, RT) {
           opacity,
           colorPalette.octahedron,
           THREE,
-          ivmScale
+          false,        // ivmScale = false (no FCC lattice)
+          ivmScaleOnly  // ivmScaleOnly = checkbox value (2× size only)
         );
         radialOctMatrixGroup.add(radialOctMatrix);
       });
