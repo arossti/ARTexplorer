@@ -738,6 +738,64 @@ export const RTRadialMatrix = {
   },
 
   /**
+   * Generate IVM octahedra positions on XY plane only (for nesting into tetrahedra)
+   *
+   * This is a simplified IVM mode that builds up layer by layer:
+   * - F1: 1 octahedron at origin
+   * - F2: 4 octahedra sharing a vertex at origin (one per XY quadrant, colinear edges)
+   * - F3: adds 12 more around the initial 4
+   * - etc.
+   *
+   * The octahedra have their centers in the XY plane (z=0).
+   * At F2+, the 4 quadrant octahedra share a vertex at origin.
+   *
+   * @param {number} frequency - Shell frequency (1-5)
+   * @param {number} spacing - Distance between adjacent oct centers (2 × halfSize)
+   * @returns {Array} Array of {x, y, z} positions (all with z=0)
+   */
+  getIVMOctahedronPositionsXY: (frequency, spacing) => {
+    const positions = [];
+
+    if (frequency === 1) {
+      // F1: single octahedron at origin
+      positions.push({ x: 0, y: 0, z: 0 });
+    } else {
+      // F2+: octahedra share vertex at origin
+      // Their centers are offset by spacing in the 4 diagonal directions
+      // For vertex-sharing at origin: centers at (±s, ±s, 0) where s = spacing/2
+      // Actually, for edge-colinearity with 4 octs sharing origin vertex:
+      // centers at (±s, 0, 0) and (0, ±s, 0) gives 4 octs sharing edges at origin
+      // But user wants "4 octahedra sharing a vertex at origin, all 4 with 4 colinear edges"
+
+      // Octahedron vertices are at ±halfSize on each axis from center
+      // For 4 octs to share vertex at origin with colinear edges:
+      // Centers should be at diagonal positions: (±s, ±s, 0) where s = halfSize
+      // But spacing = 2 * halfSize, so s = spacing/2
+
+      const s = spacing; // Distance from origin to each oct center
+
+      // Generate XY plane positions using taxicab metric on a diagonal grid
+      // The 4 quadrant positions at F2
+      const maxShell = frequency - 1;
+
+      for (let i = -maxShell; i <= maxShell; i++) {
+        for (let j = -maxShell; j <= maxShell; j++) {
+          // Taxicab shell in XY plane
+          if (Math.abs(i) + Math.abs(j) <= maxShell && Math.abs(i) + Math.abs(j) > 0) {
+            positions.push({
+              x: i * s,
+              y: j * s,
+              z: 0,
+            });
+          }
+        }
+      }
+    }
+
+    return positions;
+  },
+
+  /**
    * Generate positions for radial cuboctahedron (VE) matrix at given frequency
    *
    * VEs pack on FCC lattice (same as rhombic dodecahedra)
@@ -942,13 +1000,21 @@ export const RTRadialMatrix = {
     const useScaledSize = ivmScale || ivmScaleOnly;
     const octSize = useScaledSize ? halfSize * 2 : halfSize;
 
-    // Spacing and positioning: only ivmScale changes these (not ivmScaleOnly)
-    // Standard/ivmScaleOnly: spacing = 2 × halfSize (vertex-to-vertex), taxicab positioning
-    // Full IVM: spacing = 4 × halfSize (edge-to-edge), FCC lattice
+    // Spacing and positioning depend on mode
+    // Standard: spacing = 2 × halfSize, taxicab positioning
+    // Full IVM: spacing = 4 × halfSize, FCC lattice
+    // ivmScaleOnly: spacing = 2 × halfSize, XY-plane vertex-sharing
     const spacing = ivmScale ? halfSize * 4 : halfSize * 2;
 
-    // IVM mode uses FCC lattice, standard and ivmScaleOnly use taxicab
-    const positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, ivmScale);
+    // Choose position generator based on mode
+    let positions;
+    if (ivmScaleOnly) {
+      // IVM scale mode: XY-plane octahedra with vertex-sharing at origin
+      positions = RTRadialMatrix.getIVMOctahedronPositionsXY(frequency, spacing);
+    } else {
+      // Standard or full IVM mode
+      positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, ivmScale);
+    }
 
     const octGeom = Polyhedra.octahedron(octSize);
     const { vertices, edges, faces } = octGeom;
@@ -1020,21 +1086,25 @@ export const RTRadialMatrix = {
       matrixGroup.add(octGroup);
     });
 
-    const expectedCount = RTRadialMatrix.shellCounts.octahedron(frequency);
-
     console.log(`[RTRadialMatrix] ========== OCTAHEDRON RADIAL MATRIX ==========`);
     console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
     const modeDesc = ivmScale
       ? '2× size, 4× spacing, FCC lattice (full IVM)'
       : ivmScaleOnly
-        ? '2× size, 2× spacing, taxicab (IVM scale for tet nesting)'
+        ? '2× size, XY-plane vertex-sharing (IVM nesting)'
         : '1× size, 2× spacing, taxicab (standard)';
     console.log(`[RTRadialMatrix] Mode: ${modeDesc}`);
     console.log(`[RTRadialMatrix] Octahedron size: ${octSize} (${useScaledSize ? '2×' : '1×'} halfSize)`);
-    console.log(`[RTRadialMatrix] Spacing: ${spacing} (${ivmScale ? '4×' : '2×'} halfSize)`);
+    console.log(`[RTRadialMatrix] Spacing: ${spacing}`);
+    if (ivmScaleOnly) {
+      console.log(`[RTRadialMatrix] Position generator: getIVMOctahedronPositionsXY (XY plane only)`);
+    }
     console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
-    console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
-    console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
+    if (!ivmScaleOnly) {
+      const expectedCount = RTRadialMatrix.shellCounts.octahedron(frequency);
+      console.log(`[RTRadialMatrix] Expected (standard formula): ${expectedCount}`);
+      console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
+    }
     console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
     console.log(`[RTRadialMatrix] ==============================================`);
 
