@@ -740,17 +740,20 @@ export const RTRadialMatrix = {
   /**
    * Generate IVM octahedra positions on XY plane only (for nesting into tetrahedra)
    *
-   * This is a simplified IVM mode that builds up layer by layer:
+   * Builds a square grid pattern (quilt of colinear edges when viewed from above):
    * - F1: 1 octahedron at origin
-   * - F2: 4 octahedra sharing a vertex at origin (one per XY quadrant, colinear edges)
-   * - F3: adds 12 more around the initial 4
-   * - etc.
+   * - F2: 4 octahedra sharing a vertex at origin (2×2 grid centered at origin)
+   * - F3: 16 octahedra (4×4 grid) = 4 + 12 more around the initial 4
+   * - F4: 36 octahedra (6×6 grid) = 16 + 20 more
    *
-   * The octahedra have their centers in the XY plane (z=0).
-   * At F2+, the 4 quadrant octahedra share a vertex at origin.
+   * Uses Chebyshev distance (max of |i|,|j|) for square shells, not taxicab (diamond).
+   * Each shell ring is spaced by the full octahedron diagonal (outsphere diameter),
+   * ensuring all edges are colinear with no overlap.
+   *
+   * Shell counts: F1=1, F2=4, F3=16, F4=36, F5=64 → (2n)² where n = frequency-1 for F2+
    *
    * @param {number} frequency - Shell frequency (1-5)
-   * @param {number} spacing - Distance between adjacent oct centers (2 × halfSize)
+   * @param {number} spacing - Distance between adjacent oct centers (outsphere diameter)
    * @returns {Array} Array of {x, y, z} positions (all with z=0)
    */
   getIVMOctahedronPositionsXY: (frequency, spacing) => {
@@ -760,34 +763,41 @@ export const RTRadialMatrix = {
       // F1: single octahedron at origin
       positions.push({ x: 0, y: 0, z: 0 });
     } else {
-      // F2+: octahedra share vertex at origin
-      // Their centers are offset by spacing in the 4 diagonal directions
-      // For vertex-sharing at origin: centers at (±s, ±s, 0) where s = spacing/2
-      // Actually, for edge-colinearity with 4 octs sharing origin vertex:
-      // centers at (±s, 0, 0) and (0, ±s, 0) gives 4 octs sharing edges at origin
-      // But user wants "4 octahedra sharing a vertex at origin, all 4 with 4 colinear edges"
+      // F2+: square grid centered at origin, no oct AT origin
+      // Grid size: 2n × 2n where n = frequency - 1
+      // F2: 2×2 = 4, F3: 4×4 = 16, F4: 6×6 = 36
+      const n = frequency - 1;
 
-      // Octahedron vertices are at ±halfSize on each axis from center
-      // For 4 octs to share vertex at origin with colinear edges:
-      // Centers should be at diagonal positions: (±s, ±s, 0) where s = halfSize
-      // But spacing = 2 * halfSize, so s = spacing/2
+      // After 45° rotation, octahedron vertices point along XY diagonals.
+      // For 4 octs to share a vertex at origin:
+      // - Each oct center is along a diagonal (e.g., +X+Y quadrant)
+      // - The vertex pointing toward origin (in -X-Y direction) must reach (0,0)
+      // - After rotation, that vertex is at distance octSize from center
+      //
+      // Geometry: center at (c, c) where c = octSize / √2
+      // Because: center + octSize * (-1/√2, -1/√2) = origin
+      //          (c, c) + (-c, -c) = (0, 0) ✓
+      //
+      // With octSize = spacing (both = 2 * halfSize for IVM scale):
+      // Inner 4 centers at (±spacing/√2, ±spacing/√2)
+      // Next shell at (±spacing/√2, ±3*spacing/√2), etc.
+      //
+      // RT-Pure note: √2 computed once via Math.SQRT1_2
+      const unit = spacing * Math.SQRT1_2; // spacing / √2
 
-      const s = spacing; // Distance from origin to each oct center
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          // Grid positions: (2i+1, 2j+1) * unit/2 = (i+0.5, j+0.5) * unit * 2
+          // Wait, simpler: inner 4 at (±1, ±1) * unit, next at (±1, ±3), (±3, ±1), (±3, ±3) * unit
+          // So: x = (2*i + 1) * unit, y = (2*j + 1) * unit
+          const x = (2 * i + 1) * unit;
+          const y = (2 * j + 1) * unit;
 
-      // Generate XY plane positions using taxicab metric on a diagonal grid
-      // The 4 quadrant positions at F2
-      const maxShell = frequency - 1;
-
-      for (let i = -maxShell; i <= maxShell; i++) {
-        for (let j = -maxShell; j <= maxShell; j++) {
-          // Taxicab shell in XY plane
-          if (Math.abs(i) + Math.abs(j) <= maxShell && Math.abs(i) + Math.abs(j) > 0) {
-            positions.push({
-              x: i * s,
-              y: j * s,
-              z: 0,
-            });
-          }
+          // Place in all 4 quadrants (mirror symmetry)
+          positions.push({ x: x, y: y, z: 0 });
+          positions.push({ x: -x, y: y, z: 0 });
+          positions.push({ x: x, y: -y, z: 0 });
+          positions.push({ x: -x, y: -y, z: 0 });
         }
       }
     }
@@ -1022,12 +1032,12 @@ export const RTRadialMatrix = {
     positions.forEach(pos => {
       const octGroup = new THREE.Group();
 
-      // Build face geometry
+      // Build face geometry AT ORIGIN (for proper in-place rotation)
       const positionsArray = [];
       const indices = [];
 
       vertices.forEach(v => {
-        positionsArray.push(v.x + pos.x, v.y + pos.y, v.z + pos.z);
+        positionsArray.push(v.x, v.y, v.z); // No offset - build at origin
       });
 
       faces.forEach(faceIndices => {
@@ -1057,13 +1067,13 @@ export const RTRadialMatrix = {
       faceMesh.renderOrder = 1;
       octGroup.add(faceMesh);
 
-      // Render edges
+      // Render edges AT ORIGIN
       const edgePositions = [];
       edges.forEach(([vi, vj]) => {
         const v1 = vertices[vi];
         const v2 = vertices[vj];
-        edgePositions.push(v1.x + pos.x, v1.y + pos.y, v1.z + pos.z);
-        edgePositions.push(v2.x + pos.x, v2.y + pos.y, v2.z + pos.z);
+        edgePositions.push(v1.x, v1.y, v1.z); // No offset
+        edgePositions.push(v2.x, v2.y, v2.z);
       });
 
       const edgeGeometry = new THREE.BufferGeometry();
@@ -1082,6 +1092,15 @@ export const RTRadialMatrix = {
       const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
       edgeLines.renderOrder = 2;
       octGroup.add(edgeLines);
+
+      // Apply 45° in-place rotation for IVM scale mode (RT-pure)
+      // This aligns octahedron edges with the XY grid for colinear edge contact
+      if (ivmScaleOnly) {
+        RT.applyRotation45(octGroup);
+      }
+
+      // Now translate to final position
+      octGroup.position.set(pos.x, pos.y, pos.z);
 
       matrixGroup.add(octGroup);
     });
