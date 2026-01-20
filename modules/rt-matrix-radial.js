@@ -738,44 +738,83 @@ export const RTRadialMatrix = {
   },
 
   /**
-   * Generate IVM octahedra positions on XY plane (edge-colinear quilt pattern)
+   * Generate positions for a single XY layer of IVM octahedra
    *
-   * Combined with 45° in-place rotation, produces octahedra with colinear edges:
+   * @param {number} layerFreq - Frequency for this layer (determines grid size)
+   * @param {number} unit - Grid spacing unit (spacing × SQRT1_2)
+   * @param {number} z - Z-height for this layer
+   * @returns {Array} Array of {x, y, z} positions
+   */
+  getIVMOctahedronLayer: (layerFreq, unit, z) => {
+    const positions = [];
+
+    if (layerFreq === 1) {
+      positions.push({ x: 0, y: 0, z: z });
+    } else {
+      const n = layerFreq - 1;
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          const x = (2 * i + 1) * unit;
+          const y = (2 * j + 1) * unit;
+
+          positions.push({ x: x, y: y, z: z });
+          positions.push({ x: -x, y: y, z: z });
+          positions.push({ x: x, y: -y, z: z });
+          positions.push({ x: -x, y: -y, z: z });
+        }
+      }
+    }
+
+    return positions;
+  },
+
+  /**
+   * Generate all IVM octahedra positions (primary layer + upper/lower tiers)
+   *
+   * Builds stacked layers with decreasing frequency as you go up/down:
    * - F1: 1 at origin
-   * - F2: 4 sharing vertex at origin (2×2)
-   * - F3: 16 (4×4), F4: 36 (6×6), F5: 64 (8×8)
+   * - F2: 4 primary + 1 above + 1 below = 6 total
+   * - F3: 16 primary + 4 above + 4 below + 1 top + 1 bottom = 26 total
+   * - F4: 36 + 16 + 16 + 4 + 4 + 1 + 1 = 78 total
    *
-   * Formula: (2n)² octahedra where n = frequency - 1 (for F2+)
+   * Z-spacing: each tier offset by octSize (= spacing) from the one below
+   *
+   * @param {number} frequency - Shell frequency (1-5)
+   * @param {number} spacing - Octahedron size (2 × halfSize for IVM scale)
+   * @returns {Array} Array of {x, y, z} positions
+   */
+  getIVMOctahedronPositions: (frequency, spacing) => {
+    const positions = [];
+    const unit = spacing * Math.SQRT1_2;
+    const zStep = spacing; // Z-distance between tiers = octahedron height
+
+    // Build layers from primary (z=0) outward
+    // Primary layer at frequency, then each tier up/down is frequency-1, frequency-2, etc.
+    for (let tier = 0; tier < frequency; tier++) {
+      const layerFreq = frequency - tier;
+      const z = tier * zStep;
+
+      // Add this layer (and its mirror below for tier > 0)
+      positions.push(...RTRadialMatrix.getIVMOctahedronLayer(layerFreq, unit, z));
+      if (tier > 0) {
+        positions.push(...RTRadialMatrix.getIVMOctahedronLayer(layerFreq, unit, -z));
+      }
+    }
+
+    return positions;
+  },
+
+  /**
+   * Generate IVM octahedra positions on XY plane only (edge-colinear quilt pattern)
+   * DEPRECATED: Use getIVMOctahedronPositions for full 3D IVM structure
    *
    * @param {number} frequency - Shell frequency (1-5)
    * @param {number} spacing - Octahedron size (2 × halfSize for IVM scale)
    * @returns {Array} Array of {x, y, z} positions (all z=0)
    */
   getIVMOctahedronPositionsXY: (frequency, spacing) => {
-    const positions = [];
-
-    if (frequency === 1) {
-      positions.push({ x: 0, y: 0, z: 0 });
-    } else {
-      const n = frequency - 1;
-      // unit = spacing / √2 converts octSize to grid spacing after 45° rotation
-      const unit = spacing * Math.SQRT1_2;
-
-      for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n; j++) {
-          // Odd-integer grid: (±1, ±1), (±1, ±3), (±3, ±1), (±3, ±3), ...
-          const x = (2 * i + 1) * unit;
-          const y = (2 * j + 1) * unit;
-
-          positions.push({ x: x, y: y, z: 0 });
-          positions.push({ x: -x, y: y, z: 0 });
-          positions.push({ x: x, y: -y, z: 0 });
-          positions.push({ x: -x, y: -y, z: 0 });
-        }
-      }
-    }
-
-    return positions;
+    const unit = spacing * Math.SQRT1_2;
+    return RTRadialMatrix.getIVMOctahedronLayer(frequency, unit, 0);
   },
 
   /**
@@ -992,8 +1031,8 @@ export const RTRadialMatrix = {
     // Choose position generator based on mode
     let positions;
     if (ivmScaleOnly) {
-      // IVM scale mode: XY-plane octahedra with vertex-sharing at origin
-      positions = RTRadialMatrix.getIVMOctahedronPositionsXY(frequency, spacing);
+      // IVM scale mode: full 3D stacked layers with vertex-sharing
+      positions = RTRadialMatrix.getIVMOctahedronPositions(frequency, spacing);
     } else {
       // Standard or full IVM mode
       positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, ivmScale);
