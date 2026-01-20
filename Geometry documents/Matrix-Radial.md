@@ -390,7 +390,8 @@ modules/
 - [x] `createRadialTetrahedronMatrix(frequency, halfSize, ...)` — basic taxicab stellation
 - [x] `createRadialOctahedronMatrix(frequency, halfSize, ivmScale, ...)` — with 2× IVM scale option
 - [x] `createRadialCuboctahedronMatrix(frequency, halfSize, ...)` — FCC lattice positioning
-- [ ] Implement proper IVM edge-to-edge close-packing (see "IVM Close-Packing Geometry" below)
+- [x] **IVM Octahedra**: FCC lattice + 4× spacing for edge-to-edge colinearity ✅
+- [ ] **IVM Tetrahedra**: Add `ivmMode` to fill voids between IVM octahedra
 - [ ] Implement IVM complementary counting
 
 ### Phase 4: Non-Space-Filling Polyhedra ⏸️ DEFERRED
@@ -479,88 +480,92 @@ Currently implemented: Options A and B for cube, Option B only for RD (no voids 
 
 ## IVM Close-Packing Geometry (Phase 3 Enhancement)
 
-### Problem Statement
-
-The current IVM Scale implementation (2× octahedron scaling) correctly sizes the octahedra to match tetrahedron face dimensions, but the **positioning/spacing is wrong**. The octahedra overlap each other instead of touching edge-to-edge.
-
 ### Target Configuration: Octet Truss (IVM)
 
 The IVM (Isotropic Vector Matrix) is an octet truss where:
-- **Central octahedron** at origin (yellow in reference images)
-- **6 octahedra** surround it at F1, all **edge-to-edge** (colinear edges, no overlap)
-- **8 tetrahedra** fill the voids between octahedra
+- **Central octahedron** at origin
+- **12 octahedra** surround it at F2 (using FCC lattice), all **edge-to-edge** (colinear edges, no overlap)
+- **8 tetrahedra** fill the voids between octahedra at each frequency
 - When 4 "up" tetrahedra meet 4 "down" tetrahedra, they form a **cuboctahedral void** at their shared vertex
 
-### Key Geometry Relationships
+### IVM Octahedra Implementation ✅ COMPLETE
 
-**Octahedron Dimensions (for IVM-scaled oct at 2× halfSize):**
-- Edge length: `2√2 × halfSize` (matches tetrahedron edge)
-- Vertex-to-vertex (diagonal when viewed in plan): `4 × halfSize`
-- Outsphere radius: `2 × halfSize` (vertex touches sphere)
+**Problem solved**: Standard taxicab stellation gives only 6 neighbors (axial positions). IVM edge-to-edge colinearity requires **FCC lattice** which gives 12 neighbors.
 
-**Edge-to-Edge Spacing:**
-For octahedra to touch edge-to-edge (not vertex-to-vertex), the center-to-center distance should be:
-- **Spacing = diagonal dimension = 4 × halfSize** (when viewed from above, the "width" of the octahedron)
-- This equals `2 × outsphere radius`
+**Key geometry relationships:**
 
-### Current vs Required Positioning
+| Property | Standard Mode | IVM Mode |
+|----------|---------------|----------|
+| Octahedron size | `halfSize` | `halfSize × 2` (2× scale) |
+| Edge length | `√2 × halfSize` | `2√2 × halfSize` |
+| Spacing | `2 × halfSize` | `4 × halfSize` |
+| Lattice type | Taxicab (octahedral growth) | FCC (edge colinearity) |
+| F2 count | 7 (1 + 6 axial) | 13 (1 + 12 FCC neighbors) |
 
-| Mode | Current Spacing | Required Spacing | Result |
-|------|-----------------|------------------|--------|
-| Standard | `2 × halfSize` | `2 × halfSize` | Correct (vertex-to-vertex) |
-| IVM Scale | `2 × halfSize` | `4 × halfSize` | **WRONG** (overlapping) |
+**FCC lattice implementation** (`getOctahedronPositions` with `ivmMode=true`):
+```javascript
+// FCC positions: integer coords where i+j+k is EVEN
+// Shell metric: (|i|+|j|+|k|)/2
+for (let i = -maxShell*2; i <= maxShell*2; i++) {
+  for (let j = -maxShell*2; j <= maxShell*2; j++) {
+    for (let k = -maxShell*2; k <= maxShell*2; k++) {
+      if ((i + j + k) % 2 !== 0) continue;  // FCC constraint
+      const shell = (Math.abs(i) + Math.abs(j) + Math.abs(k)) / 2;
+      if (shell <= maxShell) {
+        positions.push({
+          x: i * (spacing / 2),
+          y: j * (spacing / 2),
+          z: k * (spacing / 2),
+        });
+      }
+    }
+  }
+}
+```
 
-### Proposed Solution: IVM Mode Positioning
+**Why FCC works for edge colinearity:**
+- FCC lattice positions include both axial `(±2,0,0)` AND face-diagonal `(±1,±1,0)` positions
+- At `spacing/2` scale, these give the 12 neighbors needed for octahedra to touch at edges
+- The 6 axial-only positions from taxicab leave gaps at the "corners" where edges should meet
 
-When `ivmScale = true`:
+---
 
-1. **Scale octahedra 2×** (already implemented) → edge = `2√2 × halfSize`
-2. **Double the spacing** → spacing = `4 × halfSize` (octahedra touch edge-to-edge)
-3. **No octahedron at origin** (optional) → center void for tetrahedra OR keep central oct
-4. **First shell = 6 octahedra** at `(±spacing, 0, 0), (0, ±spacing, 0), (0, 0, ±spacing)`
+### IVM Tetrahedra Implementation 🔄 PENDING
 
-### Tetrahedral Layer Positioning
+**Goal**: Fill the tetrahedral voids left between IVM octahedra with correctly sized and oriented tetrahedra.
 
-The tetrahedra fill voids between octahedra. Key insight from testing:
-- Tetrahedra need **alternating orientations** (up/down based on parity)
-- When 4 "up" tets meet 4 "down" tets vertex-to-vertex, they create a cuboctahedral void
-- The pattern is **not pure taxicab stellation** — rotations matter
+**Void geometry:**
+- Tetrahedral voids exist at positions **between** octahedra centers
+- These are at the "opposite parity" FCC positions: where `i+j+k` is **ODD**
+- Each void requires a tetrahedron with alternating orientation
 
-**Tetrahedral positions relative to octahedral centers:**
-- Tets sit at the 8 octants: `(±s/2, ±s/2, ±s/2)` relative to oct centers
-- Orientation alternates: `(i+j+k) % 2 == 0` → "up", else → "down"
+**Proposed implementation:**
 
-### Layer Structure
+1. **Add `ivmMode` parameter** to `getTetrahedronPositions`
 
-The IVM has a layered structure that's not purely radial:
-- **Layer 0 (z=0)**: Planar arrangement of octahedra + tetrahedra
-- **Layer ±1**: Offset layer (shifted by half-spacing in x and y)
-- Pattern repeats with alternating offsets
+2. **IVM tetrahedral positions**: FCC lattice where `i+j+k` is ODD (opposite of octahedra)
+   ```javascript
+   // Tetrahedra at positions where i+j+k is ODD
+   if ((i + j + k) % 2 === 0) continue;  // Skip octahedra positions
+   ```
 
-This is fundamentally different from pure taxicab radial growth and may require a separate `ivmMode` position generator.
+3. **Spacing**: Same as IVM octahedra (`4 × halfSize`)
 
-### Implementation Options
+4. **Orientation**: Alternate up/down based on position
+   - `(i + j + k) % 4 === 1` → "up" orientation
+   - `(i + j + k) % 4 === 3` → "down" orientation
+   - (This needs verification through testing)
 
-**Option A: Adjust spacing only**
-- Keep taxicab positions, just change spacing to `4 × halfSize` when IVM
-- Simple but may not create correct edge alignment
+5. **Size**: Tetrahedra should already be correct size (edge = `2√2 × halfSize`)
 
-**Option B: True IVM lattice generator**
-- New function: `getIVMOctahedronPositions(frequency, spacing)`
-- Implements proper FCC-like lattice with correct layer offsets
-- More complex but geometrically correct
+**Count relationship:**
+- For IVM space-filling: `n octahedra` requires `2n tetrahedra` (approximately)
+- F2: 13 octahedra → ~24 tetrahedra expected
 
-**Option C: Planar + layer stacking**
-- Reuse planar matrix logic for individual layers
-- Stack layers with 180° rotation offset
-- Leverages existing working code
-
-### Next Steps
-
-1. Verify the edge-to-edge spacing calculation: `4 × halfSize` for IVM-scaled octs
-2. Test Option A (spacing adjustment) first — quickest to validate
-3. If edge alignment is wrong, implement Option B or C
-4. Add tetrahedral void-filling once octahedral layer is correct
+**Alternative approach** (if FCC parity doesn't work):
+- Position tetrahedra at the 8 octant positions around each octahedron vertex
+- Positions: `(oct_x ± spacing/4, oct_y ± spacing/4, oct_z ± spacing/4)`
+- May produce duplicates that need deduplication
 
 ---
 

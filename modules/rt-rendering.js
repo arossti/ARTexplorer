@@ -2072,6 +2072,10 @@ export function initScene(THREE, OrbitControls, RT) {
         radialTetMatrixGroup.remove(radialTetMatrixGroup.children[0]);
       }
 
+      // Get IVM Mode checkbox value
+      const ivmMode =
+        document.getElementById("radialTetIVMMode")?.checked || false;
+
       // Generate radial tetrahedron matrix
       import("./rt-matrix-radial.js").then(RadialModule => {
         const { RTRadialMatrix } = RadialModule;
@@ -2080,7 +2084,8 @@ export function initScene(THREE, OrbitControls, RT) {
           scale,
           opacity,
           colorPalette.tetrahedron,
-          THREE
+          THREE,
+          ivmMode
         );
         radialTetMatrixGroup.add(radialTetMatrix);
       });

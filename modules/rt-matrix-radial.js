@@ -492,37 +492,67 @@ export const RTRadialMatrix = {
   /**
    * Generate positions for radial tetrahedron matrix at given frequency
    *
-   * Tetrahedra grow via face-connected stellation (Stella Octangula pattern)
-   * Each face of center tet gets a 180° rotated tet attached
+   * Two modes:
+   * - ivmMode=false: Taxicab stellation (Stella Octangula pattern)
+   * - ivmMode=true: FCC lattice ODD parity (fills voids between IVM octahedra)
    *
    * The tetrahedra exist on TWO interleaved lattices (like tet + dual tet)
-   * - "Up" tets at positions where (i+j+k) mod 2 = 0
-   * - "Down" tets at positions where (i+j+k) mod 2 = 1
+   * - "Up" tets at positions where (i+j+k) mod 4 = 1
+   * - "Down" tets at positions where (i+j+k) mod 4 = 3
    *
    * @param {number} frequency - Shell frequency (1-5)
    * @param {number} spacing - Distance between tet centers
+   * @param {boolean} ivmMode - If true, use FCC ODD positions for IVM void filling
    * @returns {Array} Array of {x, y, z, orientation} positions
    */
-  getTetrahedronPositions: (frequency, spacing) => {
+  getTetrahedronPositions: (frequency, spacing, ivmMode = false) => {
     const positions = [];
 
-    // Tetrahedra fill space on a BCC-like dual lattice
-    // For stellation, use taxicab distance like octahedron
-    const maxDist = frequency - 1;
+    if (!ivmMode) {
+      // Standard mode: taxicab stellation
+      const maxDist = frequency - 1;
 
-    for (let i = -maxDist; i <= maxDist; i++) {
-      for (let j = -maxDist; j <= maxDist; j++) {
-        for (let k = -maxDist; k <= maxDist; k++) {
-          // Taxicab constraint for tetrahedral growth
-          if (Math.abs(i) + Math.abs(j) + Math.abs(k) <= maxDist) {
-            // Orientation alternates based on parity
-            const orientation = (i + j + k) % 2 === 0 ? "up" : "down";
-            positions.push({
-              x: i * spacing,
-              y: j * spacing,
-              z: k * spacing,
-              orientation,
-            });
+      for (let i = -maxDist; i <= maxDist; i++) {
+        for (let j = -maxDist; j <= maxDist; j++) {
+          for (let k = -maxDist; k <= maxDist; k++) {
+            // Taxicab constraint for tetrahedral growth
+            if (Math.abs(i) + Math.abs(j) + Math.abs(k) <= maxDist) {
+              // Orientation alternates based on parity
+              const orientation = (i + j + k) % 2 === 0 ? "up" : "down";
+              positions.push({
+                x: i * spacing,
+                y: j * spacing,
+                z: k * spacing,
+                orientation,
+              });
+            }
+          }
+        }
+      }
+    } else {
+      // IVM mode: FCC lattice ODD positions (fills voids between octahedra)
+      // Octahedra are at EVEN parity, tetrahedra at ODD parity
+      const maxShell = frequency - 1;
+
+      for (let i = -maxShell * 2; i <= maxShell * 2; i++) {
+        for (let j = -maxShell * 2; j <= maxShell * 2; j++) {
+          for (let k = -maxShell * 2; k <= maxShell * 2; k++) {
+            // FCC ODD constraint: i+j+k must be ODD (opposite of octahedra)
+            if ((i + j + k) % 2 === 0) continue;
+
+            // Shell metric for FCC: (|i|+|j|+|k|)/2
+            const shell = (Math.abs(i) + Math.abs(j) + Math.abs(k)) / 2;
+            if (shell <= maxShell) {
+              // Orientation based on which odd value: 1 or 3 (mod 4)
+              const mod4 = ((i + j + k) % 4 + 4) % 4; // Handle negative mod
+              const orientation = mod4 === 1 ? "up" : "down";
+              positions.push({
+                x: i * (spacing / 2),
+                y: j * (spacing / 2),
+                z: k * (spacing / 2),
+                orientation,
+              });
+            }
           }
         }
       }
@@ -638,20 +668,32 @@ export const RTRadialMatrix = {
   /**
    * Create radial tetrahedron matrix expanding from central nucleus
    *
+   * IVM Mode: When ivmMode=true, tetrahedra are positioned to fill voids
+   * between IVM octahedra (FCC ODD positions vs octahedra EVEN positions).
+   * Uses 4× spacing to match IVM octahedra spacing.
+   *
    * @param {number} frequency - Shell frequency (1-5)
    * @param {number} halfSize - Half the cube edge that inscribes the tet
    * @param {number} opacity - Face opacity (0.0 to 1.0)
    * @param {number} color - Hex color value
    * @param {Object} THREE - THREE.js library
+   * @param {boolean} ivmMode - If true, position for IVM void filling
    * @returns {THREE.Group} Group containing all tetrahedron instances
    */
-  createRadialTetrahedronMatrix: (frequency, halfSize, opacity, color, THREE) => {
+  createRadialTetrahedronMatrix: (
+    frequency,
+    halfSize,
+    opacity,
+    color,
+    THREE,
+    ivmMode = false
+  ) => {
     const matrixGroup = new THREE.Group();
-    // Spacing for face-to-face contact: 2 * (2/3) * height = 4√6/3 * halfSize
-    // But for IVM lattice, use 2 * halfSize (cube edge)
-    const spacing = halfSize * 2;
+    // IVM mode: use 4× spacing to match IVM octahedra
+    // Standard: use 2× spacing (cube edge)
+    const spacing = ivmMode ? halfSize * 4 : halfSize * 2;
 
-    const positions = RTRadialMatrix.getTetrahedronPositions(frequency, spacing);
+    const positions = RTRadialMatrix.getTetrahedronPositions(frequency, spacing, ivmMode);
 
     positions.forEach(pos => {
       const tetGroup = new THREE.Group();
@@ -728,13 +770,20 @@ export const RTRadialMatrix = {
       matrixGroup.add(tetGroup);
     });
 
-    const expectedCount = RTRadialMatrix.shellCounts.tetrahedron(frequency);
+    // In IVM mode, count differs from standard stellation
+    const expectedCount = ivmMode
+      ? positions.length  // IVM positions computed, not formula-based yet
+      : RTRadialMatrix.shellCounts.tetrahedron(frequency);
 
     console.log(`[RTRadialMatrix] ========== TETRAHEDRON RADIAL MATRIX ==========`);
     console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
+    console.log(`[RTRadialMatrix] Mode: ${ivmMode ? 'IVM (FCC ODD, void filling)' : 'Standard (taxicab)'}`);
+    console.log(`[RTRadialMatrix] Spacing: ${spacing} (${ivmMode ? '4×' : '2×'} halfSize)`);
     console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
-    console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
-    console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
+    if (!ivmMode) {
+      console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
+      console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
+    }
     console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
     console.log(`[RTRadialMatrix] ================================================`);
 

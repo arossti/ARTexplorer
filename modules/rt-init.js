@@ -762,6 +762,14 @@ function startARTexplorer(
     });
   }
 
+  // IVM Mode checkbox for tetrahedron (fills voids between IVM octahedra)
+  const radialTetIVMMode = document.getElementById("radialTetIVMMode");
+  if (radialTetIVMMode) {
+    radialTetIVMMode.addEventListener("change", () => {
+      updateGeometry();
+    });
+  }
+
   // Radial Octahedron Matrix (Phase 3)
   const radialOctCheckbox = document.getElementById(
     "showRadialOctahedronMatrix"
