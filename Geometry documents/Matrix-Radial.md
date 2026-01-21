@@ -570,11 +570,15 @@ Previous attempts used FCC lattice which gives counts of 1, 13, 55, 147, 309 (rh
 2. FCC doesn't respect the odd/even vertex-sharing alternation
 3. The counts don't match the tetrahedra IVM void structure
 
-#### The 45° Rotation
+#### The 45° Rotation (Two-Stage)
 
-Each octahedron is rotated 45° about Z-axis using `RT.applyRotation45()` to align edges for colinear contact. This rotation is applied to each octahedron individually at origin, then translated to final position.
+The IVM octahedra require **two** 45° rotations using `RT.applyRotation45()`:
 
-**Still needed**: The entire octahedra constellation may need a final 45° rotation to align with the tetrahedra IVM lattice orientation.
+1. **Individual octahedron rotation**: Each octahedron is rotated 45° about Z-axis at origin BEFORE translation. This aligns edges for colinear edge contact between adjacent octahedra.
+
+2. **Constellation rotation**: The entire `matrixGroup` is rotated 45° about Z-axis AFTER all octahedra are positioned. This aligns the octahedra constellation with the tetrahedra IVM lattice orientation.
+
+Both rotations use RT-pure spread/cross values (s=0.5, c=0.5 - exact rationals!).
 
 ---
 
@@ -618,18 +622,27 @@ if (ivmScaleOnly) {
 
 ---
 
-### Remaining Work: Spacing & Constellation Rotation
+### IVM Octahedra Spacing Solution ✅ SOLVED
 
-**Current status**: Counts are correct for all frequencies (F1=1, F2=6, F3=19, F4=44, F5=85).
+**The key insight**: All 6 octahedra at F2 (4 perimeter + apex + nadir) must be at the **same radial distance** from origin (outsphere radius = `octSize`).
 
-**Still needed**:
-1. **Spacing adjustment** - octahedra may need spacing tuning to match tetrahedra face sizes
-2. **45° constellation rotation** - entire octahedra group may need rotation to align with tetrahedra IVM orientation
+**Implementation** (`getIVMOctahedronPositions`):
+```javascript
+const octSize = spacing / 2;  // Actual octahedron size = outsphere radius
+const unit = octSize * Math.SQRT1_2;  // XY grid unit for perimeter positioning
+const zStep = octSize;  // Z-distance for apex/nadir
+```
+
+**Why this works**:
+- Perimeter octahedra at `(±1, ±1, 0) * unit` have distance `√2 * unit` from origin
+- Setting `unit = octSize / √2 = octSize * SQRT1_2` makes this equal to `octSize`
+- Apex/nadir at `(0, 0, ±zStep)` where `zStep = octSize` also at distance `octSize`
+- All 6 octahedra converge at origin with vertices meeting at shared point
 
 ---
 
 *Workplan created: 2026-01-18*
-*Last updated: 2026-01-20*
+*Last updated: 2026-01-21*
 *Branch: Matrix-Radial*
 
 ---
@@ -662,3 +675,18 @@ Use the dedicated `getIVMOctahedronPositions()` function which implements the co
 - Odd freq: center included (even integer coords: 0, ±2, ±4...)
 - Even freq: center excluded (odd integer coords: ±1, ±3, ±5...)
 - Stacked layers with decreasing frequency per tier
+
+---
+
+## TODO: Remaining Work
+
+### Nodes and Selection Integration
+- [ ] Add node markers at octahedra vertices (like other matrix forms)
+- [ ] Enable selection/editing of radial octahedra matrices
+- [ ] Add node markers at tetrahedra vertices
+- [ ] Enable selection/editing of radial tetrahedra matrices
+
+### Tetrahedra IVM Frequency Matching
+- [ ] **Tetrahedral IVM frequency expansion** - Currently the tetrahedra IVM appears to skip frequencies or not match the octahedra frequency increments. Need to implement proper frequency scaling for tetrahedra to match octahedra (F1=1, F2=6, F3=19, F4=44, F5=85 pattern).
+
+The octahedra implementation now correctly follows geodesic frequency expansion with proper odd/even alternation. The tetrahedra implementation needs similar refinement to ensure both expand in lockstep at each frequency level.

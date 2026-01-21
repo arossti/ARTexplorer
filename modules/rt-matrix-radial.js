@@ -799,8 +799,10 @@ export const RTRadialMatrix = {
     // octSize = spacing/2 (the actual octahedron size = outsphere radius)
     const octSize = spacing / 2;
     // XY unit: Perimeter octahedra at (±1,±1)*unit should be at distance octSize from origin
-    // Distance from origin = √2 * unit, so unit = octSize / √2 = octSize * SQRT1_2
-    const unit = octSize * Math.SQRT1_2;
+    // Distance from origin = √2 * unit, so unit = octSize / √2
+    // RT-Pure: Use cached √2 from PureRadicals for consistency
+    const sqrt2 = RT.PureRadicals.sqrt2();
+    const unit = octSize / sqrt2;
     // Z-distance between tiers: apex/nadir at distance octSize from origin
     const zStep = octSize;
 
