@@ -709,12 +709,12 @@ Use the dedicated `getIVMOctahedronPositions()` function which implements the co
 - [x] Add node markers at octahedra vertices (like other matrix forms) ✅ 2026-01-20
 - [x] Add node markers at tetrahedra vertices ✅ 2026-01-20
 - [x] Add node markers at cuboctahedra vertices ✅ 2026-01-20
-- [ ] **Correct cuboctahedron spacing** - VE radial matrix spacing needs adjustment for proper face-to-face contact
+- [x] **Correct cuboctahedron spacing** - VE radial matrix uses stacked n×n grids (not FCC) ✅ 2026-01-21
+- [x] Add radial matrix colors to color theory modal ✅ 2026-01-21
+- [x] Fix radial cuboctahedron node sizes (√2 scaling handled internally) ✅ 2026-01-21
 - [ ] Enable selection/editing of radial tetrahedra matrices
 - [ ] Enable selection/editing of radial octahedra matrices
 - [ ] Enable selection/editing of radial cuboctahedra matrices
 
-### Tetrahedra IVM Frequency Matching
-- [ ] **Tetrahedral IVM frequency expansion** - Currently the tetrahedra IVM appears to skip frequencies or not match the octahedra frequency increments. Need to implement proper frequency scaling for tetrahedra to match octahedra (F1=1, F2=6, F3=19, F4=44, F5=85 pattern).
-
-The octahedra implementation now correctly follows geodesic frequency expansion with proper odd/even alternation. The tetrahedra implementation needs similar refinement to ensure both expand in lockstep at each frequency level.
+### Frequency Slider Labels
+- [ ] **Update frequency slider labels** - Current sliders show F1, F2, F3 etc. but don't reflect actual frequency multiples (e.g., cube uses shell count not 2×2, 3×3 grids). Labels should accurately describe what each frequency level generates.

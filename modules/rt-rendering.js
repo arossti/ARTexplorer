@@ -48,6 +48,10 @@ const colorPalette = {
   geodesicDualIcosahedron: 0x00fdff,
   cuboctahedron: 0x00f900,
   rhombicDodecahedron: 0xff9900,
+  // Radial matrices (concentric shell expansion)
+  radialTetrahedron: 0xfffb00,      // Yellow (matches base tetrahedron)
+  radialOctahedron: 0xff6b6b,       // Coral (matches planar octahedron matrix)
+  radialCuboctahedron: 0x00f900,    // Lime green (matches cuboctahedron)
 };
 
 /**
@@ -1244,7 +1248,8 @@ export function initScene(THREE, OrbitControls, RT) {
       } else if (polyhedronType === "octahedron") {
         polyGeom = Polyhedra.octahedron(scale);
       } else if (polyhedronType === "cuboctahedron") {
-        polyGeom = Polyhedra.cuboctahedron(scale);
+        // Scale by √2 to match matrix geometry (vertices at scale from center)
+        polyGeom = Polyhedra.cuboctahedron(scale * Math.sqrt(2));
       }
 
       // For each center position, add transformed vertices
@@ -2132,7 +2137,7 @@ export function initScene(THREE, OrbitControls, RT) {
           frequency,
           scale,
           opacity,
-          colorPalette.tetrahedron,
+          colorPalette.radialTetrahedron,
           THREE,
           ivmMode
         );
@@ -2155,7 +2160,7 @@ export function initScene(THREE, OrbitControls, RT) {
             radialTetMatrixGroup,
             positions,
             scale,
-            colorPalette.tetrahedron,
+            colorPalette.radialTetrahedron,
             nodeSize,
             "tetrahedron"
           );
@@ -2190,7 +2195,7 @@ export function initScene(THREE, OrbitControls, RT) {
           frequency,
           scale,
           opacity,
-          colorPalette.octahedron,
+          colorPalette.radialOctahedron,
           THREE,
           false,        // ivmScale = false (no FCC lattice)
           ivmScaleOnly  // ivmScaleOnly = checkbox value (2× size only)
@@ -2218,7 +2223,7 @@ export function initScene(THREE, OrbitControls, RT) {
             radialOctMatrixGroup,
             positions,
             octScale,
-            colorPalette.octahedron,
+            colorPalette.radialOctahedron,
             nodeSize,
             "octahedron",
             ivmScaleOnly  // Apply 45° rotation for IVM mode
@@ -2248,7 +2253,7 @@ export function initScene(THREE, OrbitControls, RT) {
           frequency,
           scale,
           opacity,
-          colorPalette.cuboctahedron,
+          colorPalette.radialCuboctahedron,
           THREE
         );
         radialVEMatrixGroup.add(radialVEMatrix);
@@ -2264,11 +2269,12 @@ export function initScene(THREE, OrbitControls, RT) {
             frequency,
             spacing
           );
+          // addRadialMatrixNodes handles √2 scaling internally for cuboctahedron
           addRadialMatrixNodes(
             radialVEMatrixGroup,
             positions,
             scale,
-            colorPalette.cuboctahedron,
+            colorPalette.radialCuboctahedron,
             nodeSize,
             "cuboctahedron"
           );

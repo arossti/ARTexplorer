@@ -825,11 +825,17 @@ export const RTRadialMatrix = {
   /**
    * Generate positions for radial cuboctahedron (VE) matrix at given frequency
    *
-   * VEs pack on FCC lattice (same as rhombic dodecahedra)
-   * 12 neighbors at vertex directions
+   * Cuboctahedra pack by sharing square faces (like cubes), NOT on FCC lattice.
+   * Pattern: Stacked n×n grids, with grid size = frequency at each Z level.
+   *
+   * F1: 1×1 at Z=0 → 1 total
+   * F2: 2×2 at Z=0, 1×1 at Z=±spacing → 4 + 2 = 6 total
+   * F3: 3×3 at Z=0, 2×2 at Z=±spacing, 1×1 at Z=±2×spacing → 9 + 8 + 2 = 19 total
+   *
+   * Same stacking logic as planar matrix, extended radially in all directions.
    *
    * @param {number} frequency - Shell frequency (1-5)
-   * @param {number} spacing - Distance between VE centers
+   * @param {number} spacing - Distance between VE centers (edge length = 2 * halfSize)
    * @returns {Array} Array of {x, y, z} positions
    */
   getCuboctahedronPositions: (frequency, spacing) => {
@@ -844,20 +850,27 @@ export const RTRadialMatrix = {
       }
     };
 
-    // FCC lattice - same as RD positions
-    const halfSpacing = spacing / 2;
-    const maxShell = frequency - 1;
-    const maxCoord = maxShell * 2;
+    // Build stacked layers: each Z level gets an n×n grid
+    // Z=0: frequency × frequency grid
+    // Z=±spacing: (frequency-1) × (frequency-1) grid
+    // Z=±2×spacing: (frequency-2) × (frequency-2) grid
+    // etc.
 
-    for (let i = -maxCoord; i <= maxCoord; i++) {
-      for (let j = -maxCoord; j <= maxCoord; j++) {
-        for (let k = -maxCoord; k <= maxCoord; k++) {
-          if ((i + j + k) % 2 !== 0) continue;
+    for (let tier = 0; tier < frequency; tier++) {
+      const gridSize = frequency - tier;
+      const z = tier * spacing;
 
-          const shell = (Math.abs(i) + Math.abs(j) + Math.abs(k)) / 2;
-          if (shell > maxShell) continue;
+      // Generate n×n grid at this Z level (centered at origin)
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          const x = (i - gridSize / 2 + 0.5) * spacing;
+          const y = (j - gridSize / 2 + 0.5) * spacing;
 
-          addPosition(i * halfSpacing, j * halfSpacing, k * halfSpacing);
+          addPosition(x, y, z);
+          // Mirror to negative Z (except for Z=0)
+          if (tier > 0) {
+            addPosition(x, y, -z);
+          }
         }
       }
     }
@@ -1157,8 +1170,15 @@ export const RTRadialMatrix = {
   /**
    * Create radial cuboctahedron (VE) matrix expanding from central nucleus
    *
+   * Scaling: Cuboctahedron scaled by √2 so vertices are at `halfSize` from center
+   * (matching octahedron vertex distance for IVM compatibility)
+   *
+   * From rt-polyhedra.js: cuboctahedron(s) has vertices at s/√2 from origin
+   * So cuboctahedron(halfSize * √2) has vertices at halfSize from origin
+   * This makes triangular faces match octahedron triangular faces in size
+   *
    * @param {number} frequency - Shell frequency (1-5)
-   * @param {number} halfSize - Half the cuboctahedron span
+   * @param {number} halfSize - Base scale (same as octahedron halfSize)
    * @param {number} opacity - Face opacity (0.0 to 1.0)
    * @param {number} color - Hex color value
    * @param {Object} THREE - THREE.js library
@@ -1166,12 +1186,18 @@ export const RTRadialMatrix = {
    */
   createRadialCuboctahedronMatrix: (frequency, halfSize, opacity, color, THREE) => {
     const matrixGroup = new THREE.Group();
-    // VEs pack on FCC lattice with spacing = 2 * halfSize
+
+    // Scale cuboctahedron by √2 so vertices are at halfSize (matching octahedron)
+    // This makes triangular faces the same size as octahedron faces
+    const scaledHalfSize = halfSize * Math.sqrt(2);
+
+    // Edge length = scaledHalfSize * √2 = 2 * halfSize
+    // For face-to-face contact, spacing = edge length
     const spacing = halfSize * 2;
 
     const positions = RTRadialMatrix.getCuboctahedronPositions(frequency, spacing);
 
-    const veGeom = Polyhedra.cuboctahedron(halfSize);
+    const veGeom = Polyhedra.cuboctahedron(scaledHalfSize);
     const { vertices, edges, faces } = veGeom;
 
     positions.forEach(pos => {
