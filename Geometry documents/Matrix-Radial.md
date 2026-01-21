@@ -488,51 +488,99 @@ The IVM (Isotropic Vector Matrix) is an octet truss where:
 - **8 tetrahedra** fill the voids between octahedra at each frequency
 - When 4 "up" tetrahedra meet 4 "down" tetrahedra, they form a **cuboctahedral void** at their shared vertex
 
-### IVM Octahedra Implementation ✅ COMPLETE
+### IVM Octahedra Implementation ✅ SOLVED (Geodesic Frequency Pattern)
 
-**Problem solved**: Standard taxicab stellation gives only 6 neighbors (axial positions). IVM edge-to-edge colinearity requires **FCC lattice** which gives 12 neighbors.
+**The correct approach**: IVM octahedra follow a **geodesic frequency pattern** similar to geodesic sphere subdivision, NOT FCC lattice or taxicab stellation.
 
-**Key geometry relationships:**
+#### Geodesic Frequency Pattern for Octahedra
 
-| Property | Standard Mode | IVM Mode |
-|----------|---------------|----------|
-| Octahedron size | `halfSize` | `halfSize × 2` (2× scale) |
-| Edge length | `√2 × halfSize` | `2√2 × halfSize` |
-| Spacing | `2 × halfSize` | `4 × halfSize` |
-| Lattice type | Taxicab (octahedral growth) | FCC (edge colinearity) |
-| F2 count | 7 (1 + 6 axial) | 13 (1 + 12 FCC neighbors) |
+The key insight is that octahedra expansion follows the same odd/even alternation as geodesic frequency:
 
-**FCC lattice implementation** (`getOctahedronPositions` with `ivmMode=true`):
+| Frequency | XY Grid Pattern | Center at Origin? | XY Layer Count |
+|-----------|-----------------|-------------------|----------------|
+| F1 (odd)  | 1×1 | YES - octahedron at origin | 1 |
+| F2 (even) | 2×2 | NO - shared vertex at origin | 4 |
+| F3 (odd)  | 3×3 | YES - octahedron at origin | 9 |
+| F4 (even) | 4×4 | NO - shared vertex at origin | 16 |
+| F5 (odd)  | 5×5 | YES - octahedron at origin | 25 |
+
+**Critical rule**:
+- **Odd frequencies** (F1, F3, F5): n×n grid WITH center octahedron
+- **Even frequencies** (F2, F4): n×n grid with shared VERTEX at origin (no center oct)
+
+#### Stacked Layer Structure
+
+Each frequency builds stacked layers, with each tier up/down decreasing frequency by 1:
+
+**F1 (1 total)**:
+- XY layer: 1 (F1 odd, has center)
+
+**F2 (6 total)**:
+- XY layer: 4 (F2 even, vertex at origin)
+- Upper tier: 1 (F1 odd, apex)
+- Lower tier: 1 (F1 odd, nadir)
+
+**F3 (19 total)**:
+- XY layer: 9 (F3 odd, has center)
+- Upper tier 1: 4 (F2 even)
+- Lower tier 1: 4 (F2 even)
+- Upper tier 2: 1 (F1 odd, top)
+- Lower tier 2: 1 (F1 odd, bottom)
+
+**F4 (44 total)**:
+- XY: 16 + Upper/Lower tier 1: 9+9 + Tier 2: 4+4 + Tier 3: 1+1 = 44
+
+**F5 (85 total)**:
+- 25 + 16+16 + 9+9 + 4+4 + 1+1 = 85
+
+#### Implementation
+
 ```javascript
-// FCC positions: integer coords where i+j+k is EVEN
-// Shell metric: (|i|+|j|+|k|)/2
-for (let i = -maxShell*2; i <= maxShell*2; i++) {
-  for (let j = -maxShell*2; j <= maxShell*2; j++) {
-    for (let k = -maxShell*2; k <= maxShell*2; k++) {
-      if ((i + j + k) % 2 !== 0) continue;  // FCC constraint
-      const shell = (Math.abs(i) + Math.abs(j) + Math.abs(k)) / 2;
-      if (shell <= maxShell) {
-        positions.push({
-          x: i * (spacing / 2),
-          y: j * (spacing / 2),
-          z: k * (spacing / 2),
-        });
+getIVMOctahedronLayer: (frequency, unit, z) => {
+  const positions = [];
+
+  if (frequency % 2 === 1) {
+    // Odd: n×n grid WITH center (0, ±2, ±4, ...)
+    const extent = frequency - 1;
+    for (let i = -extent; i <= extent; i += 2) {
+      for (let j = -extent; j <= extent; j += 2) {
+        positions.push({ x: i * unit, y: j * unit, z: z });
+      }
+    }
+  } else {
+    // Even: n×n grid with vertex at origin (±1, ±3, ...)
+    const extent = frequency - 1;
+    for (let i = -extent; i <= extent; i += 2) {
+      if (i === 0) continue;
+      for (let j = -extent; j <= extent; j += 2) {
+        if (j === 0) continue;
+        positions.push({ x: i * unit, y: j * unit, z: z });
       }
     }
   }
+  return positions;
 }
 ```
 
-**Why FCC works for edge colinearity:**
-- FCC lattice positions include both axial `(±2,0,0)` AND face-diagonal `(±1,±1,0)` positions
-- At `spacing/2` scale, these give the 12 neighbors needed for octahedra to touch at edges
-- The 6 axial-only positions from taxicab leave gaps at the "corners" where edges should meet
+#### Why NOT FCC Lattice
+
+Previous attempts used FCC lattice which gives counts of 1, 13, 55, 147, 309 (rhombic dodec numbers). This is **incorrect** for IVM octahedra nesting because:
+
+1. FCC assumes center octahedron at every frequency
+2. FCC doesn't respect the odd/even vertex-sharing alternation
+3. The counts don't match the tetrahedra IVM void structure
+
+#### The 45° Rotation
+
+Each octahedron is rotated 45° about Z-axis using `RT.applyRotation45()` to align edges for colinear contact. This rotation is applied to each octahedron individually at origin, then translated to final position.
+
+**Still needed**: The entire octahedra constellation may need a final 45° rotation to align with the tetrahedra IVM lattice orientation.
 
 ---
 
 ### IVM Tetrahedra Implementation ✅ COMPLETE (Independent Mode)
 
-**Current state**: Both IVM octahedra and IVM tetrahedra generate correct space-filling lattices **independently**. Each produces a valid IVM structure on its own.
+**Current state**: IVM tetrahedra generate correct space-filling lattice independently using octant void positions around FCC octahedron centers.
 
 **Implementation details:**
 - 8 tetrahedra per octahedron center (octant positions)
@@ -543,22 +591,13 @@ for (let i = -maxShell*2; i <= maxShell*2; i++) {
 
 ---
 
-### The Nesting Solution ✅ SOLVED
-
-**Problem**: Octahedra positioned correctly with taxicab stellation but scaled too small to nest into tetrahedra pockets.
-
-**Key insight**: Size and positioning are INDEPENDENT concerns:
-- Taxicab positioning (standard mode) places octahedra correctly for nesting
-- FCC lattice positioning (full IVM mode) gives edge-to-edge colinearity but different topology
-- The 2× size scaling is needed regardless of positioning mode
-
-**Solution**: New `ivmScaleOnly` parameter
+### The `ivmScaleOnly` Parameter
 
 | Parameter | Size | Positioning | Use Case |
 |-----------|------|-------------|----------|
 | Both false | 1× | Taxicab | Standard octahedral stellation |
 | `ivmScale=true` | 2× | FCC lattice | Full IVM (edge colinearity) |
-| `ivmScaleOnly=true` | 2× | Taxicab | **Nesting into tetrahedra** ✅ |
+| `ivmScaleOnly=true` | 2× | Geodesic frequency | **Nesting into tetrahedra** ✅ |
 
 **Implementation** (`createRadialOctahedronMatrix`):
 ```javascript
@@ -566,42 +605,60 @@ for (let i = -maxShell*2; i <= maxShell*2; i++) {
 const useScaledSize = ivmScale || ivmScaleOnly;
 const octSize = useScaledSize ? halfSize * 2 : halfSize;
 
-// Positioning: only ivmScale changes to FCC (ivmScaleOnly keeps taxicab)
-const spacing = ivmScale ? halfSize * 4 : halfSize * 2;
-const positions = getOctahedronPositions(frequency, spacing, ivmScale);
-```
+// Spacing: 4× for IVM modes
+const spacing = (ivmScale || ivmScaleOnly) ? halfSize * 4 : halfSize * 2;
 
-**Why this works:**
-- Taxicab stellation places F1 octahedron at origin
-- F2 adds 6 octahedra at axial positions (matching tet void pockets)
-- 2× scaling makes octahedron faces match tetrahedron face size
-- The "IVM Scale" checkbox now activates `ivmScaleOnly` mode
+// Position generator
+if (ivmScaleOnly) {
+  positions = getIVMOctahedronPositions(frequency, spacing); // Geodesic frequency
+} else {
+  positions = getOctahedronPositions(frequency, spacing, ivmScale); // Taxicab or FCC
+}
+```
 
 ---
 
-### Historical Context: The Nesting Conundrum
+### Remaining Work: Spacing & Constellation Rotation
 
-**Original observation**: The IVM cannot be nucleated from a single central polyhedron.
+**Current status**: Counts are correct for all frequencies (F1=1, F2=6, F3=19, F4=44, F5=85).
 
-When examining the tetrahedra matrix with a papercut at the XY plane at origin:
-- Pockets exist for octahedra to nest into
-- The "F1" tetrahedra matrix actually contains **8 tetrahedra** forming a cuboctahedral cage
-- This suggests "Frequency" may not be the appropriate term for the slider
-
-**Fundamental geometry insight:**
-
-The IVM (Isotropic Vector Matrix) does NOT nucleate from a center polyhedron. Instead:
-- It nucleates from a **vertex junction** where multiple polyhedra meet
-- The cuboctahedron (Vector Equilibrium) formed by 8 tetrahedra IS the nucleus
-- Octahedra and tetrahedra each generate valid IVM lattices independently
-
-**Resolution**: Rather than forcing both lattices to share the same origin-centered topology, we found that:
-1. Standard taxicab octahedra (with 2× size) nest correctly into tetrahedra pockets
-2. Full FCC IVM mode remains available for edge-colinearity visualization
-3. The `ivmScaleOnly` parameter bridges these two approaches
+**Still needed**:
+1. **Spacing adjustment** - octahedra may need spacing tuning to match tetrahedra face sizes
+2. **45° constellation rotation** - entire octahedra group may need rotation to align with tetrahedra IVM orientation
 
 ---
 
 *Workplan created: 2026-01-18*
 *Last updated: 2026-01-20*
 *Branch: Matrix-Radial*
+
+---
+
+## Lessons Learned: FCC vs Geodesic Frequency (2026-01-20)
+
+### The Multi-Day Debugging Journey
+
+We spent significant time attempting to use FCC lattice and taxicab/Chebyshev distance metrics for IVM octahedra positioning. These approaches consistently failed because:
+
+1. **FCC lattice** produces counts (1, 13, 55, 147, 309) that don't match the IVM void structure
+2. **Taxicab distance** doesn't respect the odd/even frequency alternation
+3. **Chebyshev distance** creates diamond patterns instead of square grids
+
+### The Breakthrough: Geodesic Frequency Analogy
+
+The solution came from recognizing that IVM octahedra follow the same pattern as geodesic sphere subdivision:
+
+- **Odd frequency**: Polyhedron at center (like Class I geodesics)
+- **Even frequency**: Vertex at center (like Class II geodesics)
+
+This odd/even alternation is fundamental to how the IVM lattice grows and how octahedra nest into tetrahedra voids.
+
+### Key Takeaway for Future Agents
+
+**DO NOT use FCC lattice or taxicab/Chebyshev metrics for `ivmScaleOnly` octahedra.**
+
+Use the dedicated `getIVMOctahedronPositions()` function which implements the correct geodesic frequency pattern with:
+- n×n grids where n = frequency
+- Odd freq: center included (even integer coords: 0, ±2, ±4...)
+- Even freq: center excluded (odd integer coords: ±1, ±3, ±5...)
+- Stacked layers with decreasing frequency per tier
