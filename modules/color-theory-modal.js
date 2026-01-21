@@ -125,7 +125,11 @@ export class ColorTheoryModal {
           {
             name: "Radial Cuboctahedron",
             pairs: [
-              { id: "radial-cubocta", label: "Radial Matrix", color: "0x00F900" },
+              {
+                id: "radial-cubocta",
+                label: "Radial Matrix",
+                color: "0x00F900",
+              },
             ],
           },
         ],

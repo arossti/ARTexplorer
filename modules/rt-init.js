@@ -693,8 +693,13 @@ function startARTexplorer(
   const radialCubeFreqSlider = document.getElementById("radialCubeFreqSlider");
   if (radialCubeFreqSlider) {
     radialCubeFreqSlider.addEventListener("input", e => {
-      const freq = parseInt(e.target.value);
-      document.getElementById("radialCubeFreqDisplay").textContent = `F${freq}`;
+      const sliderVal = parseInt(e.target.value);
+      // Hexahedral radial uses odd frequencies only (nuclear cube at origin)
+      // Slider 1→F1(1³), 2→F3(3³), 3→F5(5³), 4→F7(7³), 5→F9(9³)
+      // Future: even frequencies (F2, F4...) could use vertex-centered patterns
+      const actualFreq = 2 * sliderVal - 1;
+      document.getElementById("radialCubeFreqDisplay").textContent =
+        `F${actualFreq}`;
       updateGeometry();
     });
   }
@@ -726,9 +731,13 @@ function startARTexplorer(
   );
   if (radialRhombicDodecFreqSlider) {
     radialRhombicDodecFreqSlider.addEventListener("input", e => {
-      const freq = parseInt(e.target.value);
+      const sliderVal = parseInt(e.target.value);
+      // RD radial uses odd frequencies only (nuclear RD at origin)
+      // Slider 1→F1, 2→F3, 3→F5, 4→F7, 5→F9
+      // Future: even frequencies could use vertex-centered patterns
+      const actualFreq = 2 * sliderVal - 1;
       document.getElementById("radialRhombicDodecFreqDisplay").textContent =
-        `F${freq}`;
+        `F${actualFreq}`;
       updateGeometry();
     });
   }
@@ -838,7 +847,9 @@ function startARTexplorer(
     .addEventListener("change", updateGeometry);
 
   // Geodesic Icosahedron frequency slider
-  const geodesicIcosaFrequency = document.getElementById("geodesicIcosaFrequency");
+  const geodesicIcosaFrequency = document.getElementById(
+    "geodesicIcosaFrequency"
+  );
   geodesicIcosaFrequency.addEventListener("input", e => {
     e.target.nextElementSibling.textContent = e.target.value;
     updateGeometry();
@@ -850,7 +861,9 @@ function startARTexplorer(
     .addEventListener("change", updateGeometry);
 
   // Geodesic Tetrahedron frequency slider
-  const geodesicTetraFrequency = document.getElementById("geodesicTetraFrequency");
+  const geodesicTetraFrequency = document.getElementById(
+    "geodesicTetraFrequency"
+  );
   geodesicTetraFrequency.addEventListener("input", e => {
     e.target.nextElementSibling.textContent = e.target.value;
     updateGeometry();
@@ -870,7 +883,9 @@ function startARTexplorer(
     .addEventListener("change", updateGeometry);
 
   // Geodesic Dual Tetrahedron frequency slider
-  const geodesicDualTetraFrequency = document.getElementById("geodesicDualTetraFrequency");
+  const geodesicDualTetraFrequency = document.getElementById(
+    "geodesicDualTetraFrequency"
+  );
   geodesicDualTetraFrequency.addEventListener("input", e => {
     e.target.nextElementSibling.textContent = e.target.value;
     updateGeometry();
@@ -888,7 +903,9 @@ function startARTexplorer(
     .addEventListener("change", updateGeometry);
 
   // Geodesic Octahedron frequency slider
-  const geodesicOctaFrequency = document.getElementById("geodesicOctaFrequency");
+  const geodesicOctaFrequency = document.getElementById(
+    "geodesicOctaFrequency"
+  );
   geodesicOctaFrequency.addEventListener("input", e => {
     e.target.nextElementSibling.textContent = e.target.value;
     updateGeometry();
@@ -912,7 +929,9 @@ function startARTexplorer(
     .addEventListener("change", updateGeometry);
 
   // Geodesic Dual Icosahedron frequency slider
-  const geodesicDualIcosaFrequency = document.getElementById("geodesicDualIcosaFrequency");
+  const geodesicDualIcosaFrequency = document.getElementById(
+    "geodesicDualIcosaFrequency"
+  );
   geodesicDualIcosaFrequency.addEventListener("input", e => {
     e.target.nextElementSibling.textContent = e.target.value;
     updateGeometry();
