@@ -694,7 +694,7 @@ function startARTexplorer(
   if (radialCubeFreqSlider) {
     radialCubeFreqSlider.addEventListener("input", e => {
       const freq = parseInt(e.target.value);
-      document.getElementById("radialCubeFreqDisplay").textContent = `${freq}³`;
+      document.getElementById("radialCubeFreqDisplay").textContent = `F${freq}`;
       updateGeometry();
     });
   }
@@ -728,7 +728,7 @@ function startARTexplorer(
     radialRhombicDodecFreqSlider.addEventListener("input", e => {
       const freq = parseInt(e.target.value);
       document.getElementById("radialRhombicDodecFreqDisplay").textContent =
-        `${freq}³`;
+        `F${freq}`;
       updateGeometry();
     });
   }
@@ -757,7 +757,7 @@ function startARTexplorer(
   if (radialTetFreqSlider) {
     radialTetFreqSlider.addEventListener("input", e => {
       const freq = parseInt(e.target.value);
-      document.getElementById("radialTetFreqDisplay").textContent = `${freq}³`;
+      document.getElementById("radialTetFreqDisplay").textContent = `F${freq}`;
       updateGeometry();
     });
   }
@@ -792,7 +792,7 @@ function startARTexplorer(
   if (radialOctFreqSlider) {
     radialOctFreqSlider.addEventListener("input", e => {
       const freq = parseInt(e.target.value);
-      document.getElementById("radialOctFreqDisplay").textContent = `${freq}³`;
+      document.getElementById("radialOctFreqDisplay").textContent = `F${freq}`;
       updateGeometry();
     });
   }
@@ -827,7 +827,7 @@ function startARTexplorer(
   if (radialVEFreqSlider) {
     radialVEFreqSlider.addEventListener("input", e => {
       const freq = parseInt(e.target.value);
-      document.getElementById("radialVEFreqDisplay").textContent = `${freq}³`;
+      document.getElementById("radialVEFreqDisplay").textContent = `F${freq}`;
       updateGeometry();
     });
   }

@@ -717,4 +717,7 @@ Use the dedicated `getIVMOctahedronPositions()` function which implements the co
 - [ ] Enable selection/editing of radial cuboctahedra matrices
 
 ### Frequency Slider Labels
-- [ ] **Update frequency slider labels** - Current sliders show F1, F2, F3 etc. but don't reflect actual frequency multiples (e.g., cube uses shell count not 2×2, 3×3 grids). Labels should accurately describe what each frequency level generates.
+- [x] **Standardize frequency notation** - Using Fuller's synergetics `Fn` notation (F1, F2, F3...) for all radial matrices ✅ 2026-01-21
+  - Frequency represents edge subdivisions of the meta-polyhedron
+  - Info text below each slider explains actual polyhedra counts at each frequency
+  - Renamed UI labels to match planar matrix pattern (e.g., "Hexahedral Radial Matrix")
