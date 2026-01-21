@@ -104,6 +104,35 @@ export class ColorTheoryModal {
               { id: "rhombic", label: "Solid & Matrix", color: "0xff9900" },
             ],
           },
+          {
+            name: "Octahedron Matrix",
+            pairs: [
+              { id: "octa-matrix", label: "Planar Matrix", color: "0xFF6B6B" },
+            ],
+          },
+        ],
+      },
+      {
+        section: "Radial Matrices (Concentric Shells)",
+        groups: [
+          {
+            name: "Radial Tetrahedron",
+            pairs: [
+              { id: "radial-tetra", label: "Radial Matrix", color: "0xFFFB00" },
+            ],
+          },
+          {
+            name: "Radial Octahedron",
+            pairs: [
+              { id: "radial-octa", label: "Radial Matrix", color: "0xFF6B6B" },
+            ],
+          },
+          {
+            name: "Radial Cuboctahedron",
+            pairs: [
+              { id: "radial-cubocta", label: "Radial Matrix", color: "0x00F900" },
+            ],
+          },
         ],
       },
     ];
@@ -118,6 +147,7 @@ export class ColorTheoryModal {
       "dual-tetra-geodesic": "geodesicDualTetrahedron",
       octa: "octahedron",
       "octa-geodesic": "geodesicOctahedron",
+      "octa-matrix": "octahedronMatrix",
       icosa: "icosahedron",
       "icosa-geodesic": "geodesicIcosahedron",
       dodeca: "dodecahedron",
@@ -125,6 +155,10 @@ export class ColorTheoryModal {
       "dual-icosa-geodesic": "geodesicDualIcosahedron",
       cubocta: "cuboctahedron",
       rhombic: "rhombicDodecahedron",
+      // Radial matrices
+      "radial-tetra": "radialTetrahedron",
+      "radial-octa": "radialOctahedron",
+      "radial-cubocta": "radialCuboctahedron",
     };
   }
 
