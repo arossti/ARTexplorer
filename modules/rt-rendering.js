@@ -2264,10 +2264,13 @@ export function initScene(THREE, OrbitControls, RT) {
             frequency,
             spacing
           );
+          // Cuboctahedron is scaled by √2 so vertices are at `scale` from center
+          // (matching octahedron vertex distance for IVM compatibility)
+          const veScale = scale * Math.sqrt(2);
           addRadialMatrixNodes(
             radialVEMatrixGroup,
             positions,
-            scale,
+            veScale,
             colorPalette.cuboctahedron,
             nodeSize,
             "cuboctahedron"
