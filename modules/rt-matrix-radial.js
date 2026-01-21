@@ -796,8 +796,13 @@ export const RTRadialMatrix = {
    */
   getIVMOctahedronPositions: (frequency, spacing) => {
     const positions = [];
-    const unit = spacing * Math.SQRT1_2;
-    const zStep = spacing; // Z-distance between tiers
+    // octSize = spacing/2 (the actual octahedron size = outsphere radius)
+    const octSize = spacing / 2;
+    // XY unit: Perimeter octahedra at (±1,±1)*unit should be at distance octSize from origin
+    // Distance from origin = √2 * unit, so unit = octSize / √2 = octSize * SQRT1_2
+    const unit = octSize * Math.SQRT1_2;
+    // Z-distance between tiers: apex/nadir at distance octSize from origin
+    const zStep = octSize;
 
     // Build layers from primary (z=0) outward
     // Each tier up/down has frequency-1, frequency-2, etc.
