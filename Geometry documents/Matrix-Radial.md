@@ -706,11 +706,12 @@ Use the dedicated `getIVMOctahedronPositions()` function which implements the co
    - Individual vertex positions must be rotated to match the octahedron orientations
    - Or: Extract world positions from matrixGroup children after rendering
 
-- [ ] Add node markers at octahedra vertices (like other matrix forms)
-- [ ] Enable selection/editing of radial octahedra matrices
-- [ ] Add node markers at tetrahedra vertices
+- [x] Add node markers at octahedra vertices (like other matrix forms) ✅ 2026-01-20
+- [x] Add node markers at tetrahedra vertices ✅ 2026-01-20
+- [x] Add node markers at cuboctahedra vertices ✅ 2026-01-20
+- [ ] **Correct cuboctahedron spacing** - VE radial matrix spacing needs adjustment for proper face-to-face contact
 - [ ] Enable selection/editing of radial tetrahedra matrices
-- [ ] Add node markers at cuboctahedra vertices
+- [ ] Enable selection/editing of radial octahedra matrices
 - [ ] Enable selection/editing of radial cuboctahedra matrices
 
 ### Tetrahedra IVM Frequency Matching
