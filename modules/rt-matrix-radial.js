@@ -1143,6 +1143,12 @@ export const RTRadialMatrix = {
     console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
     console.log(`[RTRadialMatrix] ==============================================`);
 
+    // Apply 45° constellation rotation for ivmScaleOnly
+    // This rotates the entire octahedra group to align with tetrahedra IVM lattice
+    if (ivmScaleOnly) {
+      RT.applyRotation45(matrixGroup);
+    }
+
     return matrixGroup;
   },
 
