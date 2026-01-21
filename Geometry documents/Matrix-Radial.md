@@ -1,5 +1,59 @@
 # Matrix-Radial: Radial Frequency Expansion Workplan
 
+## Quick Implementation Spec
+
+**Module**: `modules/rt-matrix-radial.js` → exports `RTRadialMatrix`
+
+### Function Signatures
+```javascript
+createRadialCubeMatrix(frequency, halfSize, spaceFilling, opacity, color, THREE) → THREE.Group
+createRadialTetrahedronMatrix(frequency, halfSize, spaceFilling, opacity, color, THREE) → THREE.Group
+createRadialOctahedronMatrix(frequency, halfSize, spaceFilling, opacity, color, THREE) → THREE.Group
+createRadialCuboctahedronMatrix(frequency, halfSize, spaceFilling, opacity, color, THREE) → THREE.Group
+createRadialRhombicDodecMatrix(frequency, halfSize, spaceFilling, opacity, color, THREE) → THREE.Group
+createRadialIcosahedronMatrix(frequency, halfSize, opacity, color, THREE) → THREE.Group  // no spaceFilling
+createRadialDodecahedronMatrix(frequency, halfSize, opacity, color, THREE) → THREE.Group  // no spaceFilling
+```
+
+### F2 Position Formulas (spacing = 2 × halfSize)
+
+| Polyhedron | F2 Count | Neighbor Positions |
+|------------|----------|-------------------|
+| Cube | 1+6=7 | `(±s,0,0), (0,±s,0), (0,0,±s)` |
+| Tetrahedron | 1+4=5 | Face normals × spacing (180° rotated) |
+| Octahedron | 1+6=7 | `(±s,0,0), (0,±s,0), (0,0,±s)` vertex directions |
+| Cuboctahedron | 1+12=13 | 12 vertex directions at edge length |
+| Rhombic Dodec | 1+12=13 | 6 cubic + 6 diagonal face directions |
+| Icosahedron | 1+12=13 | 12 vertex directions (gaps OK) |
+| Dodecahedron | 1+12=13 | 12 face directions (gaps OK) |
+
+### Shell Count Formulas (spaceFilling=true)
+
+| Polyhedron | Formula | F1→F5 |
+|------------|---------|-------|
+| Cube (solid) | `(2f-1)³` | 1, 27, 125, 343, 729 |
+| Cube (stellation) | `(2f-1)(2f²-2f+3)/3` | 1, 7, 25, 63, 129 |
+| Rhombic Dodec | `(10f³-15f²+11f-3)/3` | 1, 13, 55, 147, 309 |
+| Tet/Oct | n tets requires (n-1) octs for IVM | — |
+
+**Note on Cube Modes:**
+- **Space-filling (solid)**: Full `(2f-1)³` cube-of-cubes (3×3×3 at F2, 5×5×5 at F3, etc.)
+- **Stellation (octahedral growth)**: Face-connected only using taxicab distance `|x|+|y|+|z| <= f-1`. Creates octahedral/cross shape. Uses centered octahedral numbers.
+
+### Key Rules
+- **IVM Complementary**: `n tetrahedra + (n-1) octahedra = space-filling`
+- **spaceFilling=false**: Stellation only, leave voids
+- **spaceFilling=true**: Fill all positions (cube/rhombic dodec) or add complementary shapes (tet/oct)
+- **Icosa/Dodeca**: Always have gaps, no spaceFilling option
+
+### UI Element IDs
+- Checkbox: `radialCube`, `radialTet`, `radialOct`, `radialCubocta`, `radialRhombicDodec`, `radialIcosa`, `radialDodeca`
+- Frequency: `radialCubeFreq` (1-5), etc.
+- Space-filling: `radialCubeSpaceFill`, etc.
+- Display: `radialCubeFreqDisplay`, `radialTetOctCount` (shows "+N octs")
+
+---
+
 ## Overview
 
 This workplan describes the implementation of **Radial Matrix Frequency** — a new feature that expands polyhedra outward from a central nucleus, packing space as efficiently as possible for each polyhedron type. Unlike the existing N×N planar matrix arrays, radial expansion grows concentrically in all directions, following crystallographic growth patterns.
@@ -314,33 +368,44 @@ modules/
 
 ## Implementation Phases
 
-### Phase 1: Core Infrastructure
-- [ ] Create `rt-radial-matrix.js` module
-- [ ] Implement `RTRadialMatrix` namespace with shared utilities
-- [ ] Add frequency-based shell position calculator
-- [ ] Import from `rt-math.js` and `rt-polyhedra.js`
+### Phase 1: Core Infrastructure ✅ COMPLETE
+- [x] Create `rt-matrix-radial.js` module
+- [x] Implement `RTRadialMatrix` namespace with shared utilities
+- [x] Add frequency-based shell position calculator
+- [x] Import from `rt-math.js` and `rt-polyhedra.js`
 
-### Phase 2: Space-Filling Polyhedra
-- [ ] `createRadialCubeMatrix(frequency, halfSize, growthMode, ...)`
-- [ ] `createRadialRhombicDodecMatrix(frequency, halfSize, ...)`
-- [ ] Validate space-filling at each frequency
+### Phase 2: Space-Filling Polyhedra ✅ COMPLETE
+- [x] `createRadialCubeMatrix(frequency, halfSize, spaceFilling, ...)` — with solid + stellation modes
+- [x] `createRadialRhombicDodecMatrix(frequency, halfSize, ...)` — FCC lattice, always space-filling
+- [x] Validate space-filling at each frequency
+- [x] Vertex node integration via `addRadialMatrixNodes()`
 
-### Phase 3: IVM Polyhedra (Tet/Oct Complementary)
-- [ ] `createRadialTetrahedronMatrix(frequency, halfSize, spaceFilling, ...)`
-- [ ] `createRadialOctahedronMatrix(frequency, halfSize, spaceFilling, ...)`
-- [ ] `createRadialCuboctahedronMatrix(frequency, halfSize, spaceFilling, ...)`
-- [ ] Implement IVM complementary counting (see below)
+**Implementation Notes (Phase 2):**
+- Cube stellation uses centered octahedral numbers: `(2f-1)(2f²-2f+3)/3`
+- Cube stellation constraint: taxicab distance `|x|+|y|+|z| <= f-1`
+- RD uses FCC shell metric: `(|i|+|j|+|k|)/2` for half-integer coords where `i+j+k` is even
+- RD has no space-fill toggle (inherently space-filling, no voids possible)
 
-### Phase 4: Non-Space-Filling Polyhedra
+### Phase 3: IVM Polyhedra (Tet/Oct Complementary) 🔄 IN PROGRESS
+- [x] `createRadialTetrahedronMatrix(frequency, halfSize, ...)` — basic taxicab stellation
+- [x] `createRadialOctahedronMatrix(frequency, halfSize, ivmScale, ...)` — with 2× IVM scale option
+- [x] `createRadialCuboctahedronMatrix(frequency, halfSize, ...)` — FCC lattice positioning
+- [x] **IVM Octahedra**: FCC lattice + 4× spacing for edge-to-edge colinearity ✅
+- [ ] **IVM Tetrahedra**: Add `ivmMode` to fill voids between IVM octahedra
+- [ ] Implement IVM complementary counting
+
+### Phase 4: Non-Space-Filling Polyhedra ⏸️ DEFERRED
+> *Icosahedron and Dodecahedron radial matrices deferred — these have irregular gaps*
+> *and are lower priority than IVM polyhedra and helix foundation.*
 - [ ] `createRadialIcosahedronMatrix(frequency, halfSize, ...)`
 - [ ] `createRadialDodecahedronMatrix(frequency, halfSize, ...)`
 - [ ] Document gaps and stellation-only behavior
 
-### Phase 5: UI Integration
-- [ ] Add radial matrix controls to `index.html`
-- [ ] Wire up event handlers in `rt-init.js`
-- [ ] Add radial groups to `rt-rendering.js`
-- [ ] Implement state save/load for radial settings
+### Phase 5: UI Integration ✅ COMPLETE (for Phase 2 polyhedra)
+- [x] Add radial matrix controls to `index.html` (Cube + RD)
+- [x] Wire up event handlers in `rt-init.js`
+- [x] Add radial groups to `rt-rendering.js`
+- [ ] Implement state save/load for radial settings (pending)
 
 ### Phase 6: Helix Foundation (separate module)
 - [ ] Create `rt-matrix-helices.js` module
@@ -389,5 +454,266 @@ modules/
 
 ---
 
+## Lessons Learned: Radial vs Planar Matrices
+
+### Key Insight: Center Polyhedron Presence
+- **Radial matrices** always have a center polyhedron at origin (F1 = 1)
+- **Planar 2×2 matrices** have NO center polyhedron (4 at corners, centered on origin)
+- This affects how we think about "space-filling" — radial grows outward FROM a nucleus
+
+### Applying Planar Logic to Radial
+The planar matrix implementation (especially the cuboctahedron/octahedron/RD relationships) informs radial matrix design:
+
+1. **Face coplanarity / Edge colinearity toggles** in planar matrices control void filling
+2. **Radial equivalent**: The `spaceFilling` toggle serves similar purpose
+3. **Future possibility**: Add coplanarity/colinearity switches to radial matrices for finer control over which voids get filled
+
+### Void-Filling Philosophy
+When a radial matrix has voids (e.g., cube stellation at F3 has 8 corner voids):
+- **Option A**: Leave voids (pure stellation aesthetic)
+- **Option B**: Fill with same polyhedron type (becomes space-filling)
+- **Option C**: Fill with complementary polyhedra (IVM approach for tet/oct)
+
+Currently implemented: Options A and B for cube, Option B only for RD (no voids possible).
+
+---
+
+## IVM Close-Packing Geometry (Phase 3 Enhancement)
+
+### Target Configuration: Octet Truss (IVM)
+
+The IVM (Isotropic Vector Matrix) is an octet truss where:
+- **Central octahedron** at origin
+- **12 octahedra** surround it at F2 (using FCC lattice), all **edge-to-edge** (colinear edges, no overlap)
+- **8 tetrahedra** fill the voids between octahedra at each frequency
+- When 4 "up" tetrahedra meet 4 "down" tetrahedra, they form a **cuboctahedral void** at their shared vertex
+
+### IVM Octahedra Implementation ✅ SOLVED (Geodesic Frequency Pattern)
+
+**The correct approach**: IVM octahedra follow a **geodesic frequency pattern** similar to geodesic sphere subdivision, NOT FCC lattice or taxicab stellation.
+
+#### Geodesic Frequency Pattern for Octahedra
+
+The key insight is that octahedra expansion follows the same odd/even alternation as geodesic frequency:
+
+| Frequency | XY Grid Pattern | Center at Origin? | XY Layer Count |
+|-----------|-----------------|-------------------|----------------|
+| F1 (odd)  | 1×1 | YES - octahedron at origin | 1 |
+| F2 (even) | 2×2 | NO - shared vertex at origin | 4 |
+| F3 (odd)  | 3×3 | YES - octahedron at origin | 9 |
+| F4 (even) | 4×4 | NO - shared vertex at origin | 16 |
+| F5 (odd)  | 5×5 | YES - octahedron at origin | 25 |
+
+**Critical rule**:
+- **Odd frequencies** (F1, F3, F5): n×n grid WITH center octahedron
+- **Even frequencies** (F2, F4): n×n grid with shared VERTEX at origin (no center oct)
+
+#### Stacked Layer Structure
+
+Each frequency builds stacked layers, with each tier up/down decreasing frequency by 1:
+
+**F1 (1 total)**:
+- XY layer: 1 (F1 odd, has center)
+
+**F2 (6 total)**:
+- XY layer: 4 (F2 even, vertex at origin)
+- Upper tier: 1 (F1 odd, apex)
+- Lower tier: 1 (F1 odd, nadir)
+
+**F3 (19 total)**:
+- XY layer: 9 (F3 odd, has center)
+- Upper tier 1: 4 (F2 even)
+- Lower tier 1: 4 (F2 even)
+- Upper tier 2: 1 (F1 odd, top)
+- Lower tier 2: 1 (F1 odd, bottom)
+
+**F4 (44 total)**:
+- XY: 16 + Upper/Lower tier 1: 9+9 + Tier 2: 4+4 + Tier 3: 1+1 = 44
+
+**F5 (85 total)**:
+- 25 + 16+16 + 9+9 + 4+4 + 1+1 = 85
+
+#### Implementation
+
+```javascript
+getIVMOctahedronLayer: (frequency, unit, z) => {
+  const positions = [];
+
+  if (frequency % 2 === 1) {
+    // Odd: n×n grid WITH center (0, ±2, ±4, ...)
+    const extent = frequency - 1;
+    for (let i = -extent; i <= extent; i += 2) {
+      for (let j = -extent; j <= extent; j += 2) {
+        positions.push({ x: i * unit, y: j * unit, z: z });
+      }
+    }
+  } else {
+    // Even: n×n grid with vertex at origin (±1, ±3, ...)
+    const extent = frequency - 1;
+    for (let i = -extent; i <= extent; i += 2) {
+      if (i === 0) continue;
+      for (let j = -extent; j <= extent; j += 2) {
+        if (j === 0) continue;
+        positions.push({ x: i * unit, y: j * unit, z: z });
+      }
+    }
+  }
+  return positions;
+}
+```
+
+#### Why NOT FCC Lattice
+
+Previous attempts used FCC lattice which gives counts of 1, 13, 55, 147, 309 (rhombic dodec numbers). This is **incorrect** for IVM octahedra nesting because:
+
+1. FCC assumes center octahedron at every frequency
+2. FCC doesn't respect the odd/even vertex-sharing alternation
+3. The counts don't match the tetrahedra IVM void structure
+
+#### The 45° Rotation (Two-Stage)
+
+The IVM octahedra require **two** 45° rotations using `RT.applyRotation45()`:
+
+1. **Individual octahedron rotation**: Each octahedron is rotated 45° about Z-axis at origin BEFORE translation. This aligns edges for colinear edge contact between adjacent octahedra.
+
+2. **Constellation rotation**: The entire `matrixGroup` is rotated 45° about Z-axis AFTER all octahedra are positioned. This aligns the octahedra constellation with the tetrahedra IVM lattice orientation.
+
+Both rotations use RT-pure spread/cross values (s=0.5, c=0.5 - exact rationals!).
+
+---
+
+### IVM Tetrahedra Implementation ✅ COMPLETE (Independent Mode)
+
+**Current state**: IVM tetrahedra generate correct space-filling lattice independently using octant void positions around FCC octahedron centers.
+
+**Implementation details:**
+- 8 tetrahedra per octahedron center (octant positions)
+- Base/dual pairing creates cuboctahedral void pattern
+- Frequency slider expands radially with deduplication
+- Upper layer: 2 base + 2 dual tets (edges form square)
+- Lower layer: inverted pattern (2 dual + 2 base)
+
+---
+
+### The `ivmScaleOnly` Parameter
+
+| Parameter | Size | Positioning | Use Case |
+|-----------|------|-------------|----------|
+| Both false | 1× | Taxicab | Standard octahedral stellation |
+| `ivmScale=true` | 2× | FCC lattice | Full IVM (edge colinearity) |
+| `ivmScaleOnly=true` | 2× | Geodesic frequency | **Nesting into tetrahedra** ✅ |
+
+**Implementation** (`createRadialOctahedronMatrix`):
+```javascript
+// Size: 2× when ivmScale OR ivmScaleOnly
+const useScaledSize = ivmScale || ivmScaleOnly;
+const octSize = useScaledSize ? halfSize * 2 : halfSize;
+
+// Spacing: 4× for IVM modes
+const spacing = (ivmScale || ivmScaleOnly) ? halfSize * 4 : halfSize * 2;
+
+// Position generator
+if (ivmScaleOnly) {
+  positions = getIVMOctahedronPositions(frequency, spacing); // Geodesic frequency
+} else {
+  positions = getOctahedronPositions(frequency, spacing, ivmScale); // Taxicab or FCC
+}
+```
+
+---
+
+### IVM Octahedra Spacing Solution ✅ SOLVED
+
+**The key insight**: All 6 octahedra at F2 (4 perimeter + apex + nadir) must be at the **same radial distance** from origin (outsphere radius = `octSize`).
+
+**Implementation** (`getIVMOctahedronPositions`):
+```javascript
+const octSize = spacing / 2;  // Actual octahedron size = outsphere radius
+const unit = octSize * Math.SQRT1_2;  // XY grid unit for perimeter positioning
+const zStep = octSize;  // Z-distance for apex/nadir
+```
+
+**Why this works**:
+- Perimeter octahedra at `(±1, ±1, 0) * unit` have distance `√2 * unit` from origin
+- Setting `unit = octSize / √2 = octSize * SQRT1_2` makes this equal to `octSize`
+- Apex/nadir at `(0, 0, ±zStep)` where `zStep = octSize` also at distance `octSize`
+- All 6 octahedra converge at origin with vertices meeting at shared point
+
+---
+
 *Workplan created: 2026-01-18*
+*Last updated: 2026-01-21*
 *Branch: Matrix-Radial*
+
+---
+
+## Lessons Learned: FCC vs Geodesic Frequency (2026-01-20)
+
+### The Multi-Day Debugging Journey
+
+We spent significant time attempting to use FCC lattice and taxicab/Chebyshev distance metrics for IVM octahedra positioning. These approaches consistently failed because:
+
+1. **FCC lattice** produces counts (1, 13, 55, 147, 309) that don't match the IVM void structure
+2. **Taxicab distance** doesn't respect the odd/even frequency alternation
+3. **Chebyshev distance** creates diamond patterns instead of square grids
+
+### The Breakthrough: Geodesic Frequency Analogy
+
+The solution came from recognizing that IVM octahedra follow the same pattern as geodesic sphere subdivision:
+
+- **Odd frequency**: Polyhedron at center (like Class I geodesics)
+- **Even frequency**: Vertex at center (like Class II geodesics)
+
+This odd/even alternation is fundamental to how the IVM lattice grows and how octahedra nest into tetrahedra voids.
+
+### Key Takeaway for Future Agents
+
+**DO NOT use FCC lattice or taxicab/Chebyshev metrics for `ivmScaleOnly` octahedra.**
+
+Use the dedicated `getIVMOctahedronPositions()` function which implements the correct geodesic frequency pattern with:
+- n×n grids where n = frequency
+- Odd freq: center included (even integer coords: 0, ±2, ±4...)
+- Even freq: center excluded (odd integer coords: ±1, ±3, ±5...)
+- Stacked layers with decreasing frequency per tier
+
+---
+
+## TODO: Remaining Work
+
+### Nodes and Selection Integration
+
+**Pattern from working implementations** (radial cube, radial RD in `rt-rendering.js`):
+
+1. **Extend `addRadialMatrixNodes()`** (line ~1188) to support new polyhedron types:
+   ```javascript
+   // Add to the if/else chain at line ~1235:
+   } else if (polyhedronType === "tetrahedron") {
+     polyGeom = Polyhedra.tetrahedron(scale);
+   } else if (polyhedronType === "octahedron") {
+     // Note: For ivmScaleOnly, use scale * 2
+     polyGeom = Polyhedra.octahedron(scale);
+   } else if (polyhedronType === "cuboctahedron") {
+     polyGeom = Polyhedra.cuboctahedron(scale);
+   }
+   ```
+
+2. **Add node generation calls** in `updateScene()` for each radial matrix:
+   - Radial Tetrahedron (line ~2090): Add `addRadialMatrixNodes()` call with `getIVMTetrahedronPositions()`
+   - Radial Octahedron (line ~2126): Add `addRadialMatrixNodes()` call with `getIVMOctahedronPositions()`
+   - Radial Cuboctahedron (line ~2154): Add `addRadialMatrixNodes()` call with `getCuboctahedronPositions()`
+
+3. **Handle IVM scaling** - For octahedra with `ivmScaleOnly=true`, vertices need 45° rotation twice:
+   - Individual vertex positions must be rotated to match the octahedron orientations
+   - Or: Extract world positions from matrixGroup children after rendering
+
+- [ ] Add node markers at octahedra vertices (like other matrix forms)
+- [ ] Enable selection/editing of radial octahedra matrices
+- [ ] Add node markers at tetrahedra vertices
+- [ ] Enable selection/editing of radial tetrahedra matrices
+- [ ] Add node markers at cuboctahedra vertices
+- [ ] Enable selection/editing of radial cuboctahedra matrices
+
+### Tetrahedra IVM Frequency Matching
+- [ ] **Tetrahedral IVM frequency expansion** - Currently the tetrahedra IVM appears to skip frequencies or not match the octahedra frequency increments. Need to implement proper frequency scaling for tetrahedra to match octahedra (F1=1, F2=6, F3=19, F4=44, F5=85 pattern).
+
+The octahedra implementation now correctly follows geodesic frequency expansion with proper odd/even alternation. The tetrahedra implementation needs similar refinement to ensure both expand in lockstep at each frequency level.

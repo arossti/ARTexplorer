@@ -1026,6 +1026,189 @@
                 </p>
               </div>
             </div>
+
+            <!-- ========== RADIAL MATRICES ========== -->
+            <div class="matrix-divider">
+              <label class="matrix-divider-label">Radial Matrices</label>
+            </div>
+
+            <!-- Radial Cube Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialCubeMatrix" />
+                Cube (Radial)
+              </label>
+              <div
+                id="radial-cube-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialCubeFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialCubeFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="radialCubeSpaceFill" checked />
+                  Space-filling
+                </label>
+                <p class="matrix-info-text">
+                  Stellation: F2=7, F3=25 | Solid: F2=27, F3=125
+                </p>
+              </div>
+            </div>
+
+            <!-- Radial Rhombic Dodecahedron Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialRhombicDodecMatrix" />
+                Rhombic Dodec (Radial)
+              </label>
+              <div
+                id="radial-rhombic-dodec-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialRhombicDodecFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialRhombicDodecFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <!-- RD is inherently space-filling, no toggle needed -->
+                <p class="matrix-info-text">
+                  Radial FCC expansion: F1=1, F2=13, F3=55 polyhedra (always space-filling)
+                </p>
+              </div>
+            </div>
+
+            <!-- Radial Tetrahedron Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialTetrahedronMatrix" />
+                Tetrahedron (Radial)
+              </label>
+              <div
+                id="radial-tetrahedron-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialTetFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialTetFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <p class="matrix-info-text">
+                  Stellation: F1=1, F2=5, F3=15 (alternating up/down)
+                </p>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="radialTetIVMMode" />
+                  IVM Mode (fill oct voids)
+                </label>
+              </div>
+            </div>
+
+            <!-- Radial Octahedron Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialOctahedronMatrix" />
+                Octahedron (Radial)
+              </label>
+              <div
+                id="radial-octahedron-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialOctFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialOctFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <p class="matrix-info-text">
+                  Vertex stellation: F1=1, F2=7, F3=25 (octahedral growth)
+                </p>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="radialOctIVMScale" />
+                  IVM Scale (match tet faces)
+                </label>
+              </div>
+            </div>
+
+            <!-- Radial Cuboctahedron (VE) Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialCuboctahedronMatrix" />
+                Cuboctahedron (Radial)
+              </label>
+              <div
+                id="radial-cuboctahedron-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialVEFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialVEFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <p class="matrix-info-text">
+                  FCC packing: F1=1, F2=13, F3=55 (12 vertex directions)
+                </p>
+              </div>
+            </div>
           </div>
         </div>
         <!-- END SECTION 3: FORMS -->

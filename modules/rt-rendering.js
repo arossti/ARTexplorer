@@ -70,6 +70,8 @@ export function initScene(THREE, OrbitControls, RT) {
   let cubeMatrixGroup, tetMatrixGroup, octaMatrixGroup; // Matrix forms (IVM arrays)
   let cuboctaMatrixGroup; // Cuboctahedron matrix (Vector Equilibrium array)
   let rhombicDodecMatrixGroup; // Rhombic dodecahedron matrix (space-filling array)
+  let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup; // Radial matrix forms (Phase 2)
+  let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup; // Radial matrix forms (Phase 3)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -183,6 +185,28 @@ export function initScene(THREE, OrbitControls, RT) {
     rhombicDodecMatrixGroup.userData.type = "rhombicDodecMatrix";
     rhombicDodecMatrixGroup.userData.isInstance = false;
 
+    // Radial matrix forms (concentric shell expansion)
+    radialCubeMatrixGroup = new THREE.Group();
+    radialCubeMatrixGroup.userData.type = "radialCubeMatrix";
+    radialCubeMatrixGroup.userData.isInstance = false;
+
+    radialRhombicDodecMatrixGroup = new THREE.Group();
+    radialRhombicDodecMatrixGroup.userData.type = "radialRhombicDodecMatrix";
+    radialRhombicDodecMatrixGroup.userData.isInstance = false;
+
+    // Radial matrix forms - Phase 3 (IVM polyhedra)
+    radialTetMatrixGroup = new THREE.Group();
+    radialTetMatrixGroup.userData.type = "radialTetMatrix";
+    radialTetMatrixGroup.userData.isInstance = false;
+
+    radialOctMatrixGroup = new THREE.Group();
+    radialOctMatrixGroup.userData.type = "radialOctMatrix";
+    radialOctMatrixGroup.userData.isInstance = false;
+
+    radialVEMatrixGroup = new THREE.Group();
+    radialVEMatrixGroup.userData.type = "radialVEMatrix";
+    radialVEMatrixGroup.userData.isInstance = false;
+
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -202,6 +226,11 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(octaMatrixGroup);
     scene.add(cuboctaMatrixGroup);
     scene.add(rhombicDodecMatrixGroup);
+    scene.add(radialCubeMatrixGroup);
+    scene.add(radialRhombicDodecMatrixGroup);
+    scene.add(radialTetMatrixGroup);
+    scene.add(radialOctMatrixGroup);
+    scene.add(radialVEMatrixGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -224,6 +253,11 @@ export function initScene(THREE, OrbitControls, RT) {
       octaMatrixGroup,
       cuboctaMatrixGroup,
       rhombicDodecMatrixGroup,
+      radialCubeMatrixGroup,
+      radialRhombicDodecMatrixGroup,
+      radialTetMatrixGroup,
+      radialOctMatrixGroup,
+      radialVEMatrixGroup,
     ]);
 
     // Initial render
@@ -1142,6 +1176,107 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   /**
+   * Add vertex nodes to a radial matrix group
+   * Takes pre-computed center positions rather than N×N grid
+   * @param {THREE.Group} matrixGroup - Group to add nodes to
+   * @param {Array} centerPositions - Array of {x, y, z} center positions
+   * @param {number} scale - Polyhedron scale (halfSize)
+   * @param {number} color - Node color
+   * @param {string} nodeSize - Node size ("sm", "md", "lg", "packed", "off")
+   * @param {string} polyhedronType - "cube" or "rhombicDodecahedron"
+   */
+  function addRadialMatrixNodes(
+    matrixGroup,
+    centerPositions,
+    scale,
+    color,
+    nodeSize,
+    polyhedronType = "cube"
+  ) {
+    // Get node geometry settings
+    const useFlatShading =
+      document.getElementById("nodeFlatShading")?.checked || false;
+
+    // Get cached node geometry AND triangle count
+    const { geometry: nodeGeometry, triangles: trianglesPerNode } =
+      getCachedNodeGeometry(useRTNodeGeometry, nodeSize, polyhedronType, scale);
+
+    // Update PerformanceClock with node triangle count
+    PerformanceClock.timings.lastNodeTriangles = Math.round(trianglesPerNode);
+
+    // Calculate node radius for userData
+    let nodeRadius;
+    if (nodeSize === "packed") {
+      nodeRadius = getClosePackedRadius(polyhedronType, scale);
+    } else {
+      const nodeSizes = { sm: 0.02, md: 0.04, lg: 0.08 };
+      nodeRadius = nodeSizes[nodeSize] || 0.04;
+    }
+
+    const nodeMaterial = new THREE.MeshStandardMaterial({
+      color: color,
+      emissive: color,
+      emissiveIntensity: 0.2,
+      flatShading: useFlatShading,
+      transparent: nodeOpacity < 1,
+      opacity: nodeOpacity,
+      side: THREE.FrontSide,
+    });
+
+    // Collect all unique vertex positions from matrix
+    const vertexPositions = new Set();
+
+    // Generate polyhedron vertices at each center position
+    import("./rt-polyhedra.js").then(PolyModule => {
+      const { Polyhedra } = PolyModule;
+
+      // Get the appropriate polyhedron geometry
+      let polyGeom;
+      if (polyhedronType === "cube") {
+        polyGeom = Polyhedra.cube(scale);
+      } else if (polyhedronType === "rhombicDodecahedron") {
+        // Scale by √2 to match matrix geometry
+        polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2));
+      }
+
+      const { vertices } = polyGeom;
+
+      // For each center position, add transformed vertices
+      centerPositions.forEach(pos => {
+        vertices.forEach(v => {
+          const x = v.x + pos.x;
+          const y = v.y + pos.y;
+          const z = v.z + pos.z;
+
+          // Use string key for deduplication
+          const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+          vertexPositions.add(key);
+        });
+      });
+
+      // Create nodes at unique positions
+      vertexPositions.forEach(key => {
+        const [x, y, z] = key.split(",").map(parseFloat);
+        const node = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
+        node.position.set(x, y, z);
+        node.renderOrder = 3;
+
+        // Mark as vertex node for Papercut section cut detection
+        node.userData.isVertexNode = true;
+        node.userData.nodeType = "sphere";
+        node.userData.nodeRadius = nodeRadius;
+        node.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
+
+        matrixGroup.add(node);
+      });
+
+      console.log(
+        `[Radial Matrix Nodes] Added ${vertexPositions.size} nodes to ${centerPositions.length} ${polyhedronType} radial matrix`
+      );
+    });
+  }
+
+  /**
    * Count total triangles in a group (including all children)
    * Used for performance statistics
    */
@@ -1815,6 +1950,214 @@ export function initScene(THREE, OrbitControls, RT) {
       rhombicDodecMatrixGroup.visible = false;
     }
 
+    // ========== RADIAL MATRICES ==========
+
+    // Radial Cube Matrix (concentric shell expansion)
+    if (document.getElementById("showRadialCubeMatrix")?.checked) {
+      const frequency = parseInt(
+        document.getElementById("radialCubeFreqSlider")?.value || "1"
+      );
+      const spaceFilling =
+        document.getElementById("radialCubeSpaceFill")?.checked ?? true;
+
+      // Clear existing radial cube matrix group
+      while (radialCubeMatrixGroup.children.length > 0) {
+        radialCubeMatrixGroup.remove(radialCubeMatrixGroup.children[0]);
+      }
+
+      // Generate radial cube matrix
+      import("./rt-matrix-radial.js").then(RadialModule => {
+        const { RTRadialMatrix } = RadialModule;
+        const radialCubeMatrix = RTRadialMatrix.createRadialCubeMatrix(
+          frequency,
+          scale,
+          spaceFilling,
+          opacity,
+          colorPalette.cube, // Use cube color
+          THREE
+        );
+        radialCubeMatrixGroup.add(radialCubeMatrix);
+
+        // Add vertex nodes if enabled
+        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
+        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const showNodes = nodeSize !== "off";
+
+        if (showNodes) {
+          const spacing = scale * 2;
+          const positions = RTRadialMatrix.getCubePositions(
+            frequency,
+            spacing,
+            spaceFilling
+          );
+          addRadialMatrixNodes(
+            radialCubeMatrixGroup,
+            positions,
+            scale,
+            colorPalette.cube,
+            nodeSize,
+            "cube"
+          );
+        }
+      });
+      radialCubeMatrixGroup.visible = true;
+    } else {
+      radialCubeMatrixGroup.visible = false;
+    }
+
+    // Radial Rhombic Dodecahedron Matrix (FCC lattice expansion)
+    // RD is inherently space-filling - no toggle needed
+    if (document.getElementById("showRadialRhombicDodecMatrix")?.checked) {
+      const frequency = parseInt(
+        document.getElementById("radialRhombicDodecFreqSlider")?.value || "1"
+      );
+      const spaceFilling = true; // RD always space-fills (no voids possible)
+
+      // Clear existing radial rhombic dodec matrix group
+      while (radialRhombicDodecMatrixGroup.children.length > 0) {
+        radialRhombicDodecMatrixGroup.remove(
+          radialRhombicDodecMatrixGroup.children[0]
+        );
+      }
+
+      // Generate radial rhombic dodecahedron matrix
+      import("./rt-matrix-radial.js").then(RadialModule => {
+        const { RTRadialMatrix } = RadialModule;
+        const radialRhombicDodecMatrix =
+          RTRadialMatrix.createRadialRhombicDodecMatrix(
+            frequency,
+            scale,
+            spaceFilling,
+            opacity,
+            colorPalette.rhombicDodecahedron, // Use rhombic dodec color
+            THREE
+          );
+        radialRhombicDodecMatrixGroup.add(radialRhombicDodecMatrix);
+
+        // Add vertex nodes if enabled
+        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
+        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const showNodes = nodeSize !== "off";
+
+        if (showNodes) {
+          const spacing = scale * 2;
+          const positions = RTRadialMatrix.getRhombicDodecPositions(
+            frequency,
+            spacing,
+            spaceFilling
+          );
+          addRadialMatrixNodes(
+            radialRhombicDodecMatrixGroup,
+            positions,
+            scale,
+            colorPalette.rhombicDodecahedron,
+            nodeSize,
+            "rhombicDodecahedron"
+          );
+        }
+      });
+      radialRhombicDodecMatrixGroup.visible = true;
+    } else {
+      radialRhombicDodecMatrixGroup.visible = false;
+    }
+
+    // Radial Tetrahedron Matrix (Phase 3)
+    if (document.getElementById("showRadialTetrahedronMatrix")?.checked) {
+      const frequency = parseInt(
+        document.getElementById("radialTetFreqSlider")?.value || "1"
+      );
+
+      // Clear existing radial tet matrix group
+      while (radialTetMatrixGroup.children.length > 0) {
+        radialTetMatrixGroup.remove(radialTetMatrixGroup.children[0]);
+      }
+
+      // Get IVM Mode checkbox value
+      const ivmMode =
+        document.getElementById("radialTetIVMMode")?.checked || false;
+
+      // Generate radial tetrahedron matrix
+      import("./rt-matrix-radial.js").then(RadialModule => {
+        const { RTRadialMatrix } = RadialModule;
+        const radialTetMatrix = RTRadialMatrix.createRadialTetrahedronMatrix(
+          frequency,
+          scale,
+          opacity,
+          colorPalette.tetrahedron,
+          THREE,
+          ivmMode
+        );
+        radialTetMatrixGroup.add(radialTetMatrix);
+      });
+      radialTetMatrixGroup.visible = true;
+    } else {
+      radialTetMatrixGroup.visible = false;
+    }
+
+    // Radial Octahedron Matrix (Phase 3)
+    if (document.getElementById("showRadialOctahedronMatrix")?.checked) {
+      const frequency = parseInt(
+        document.getElementById("radialOctFreqSlider")?.value || "1"
+      );
+
+      // Clear existing radial oct matrix group
+      while (radialOctMatrixGroup.children.length > 0) {
+        radialOctMatrixGroup.remove(radialOctMatrixGroup.children[0]);
+      }
+
+      // Get IVM scale checkbox value
+      // ivmScaleOnly = true: 2× size with taxicab positioning (for nesting into tet matrix)
+      // ivmScale = false: keeps taxicab positioning (not FCC lattice)
+      const ivmScaleOnly =
+        document.getElementById("radialOctIVMScale")?.checked || false;
+
+      // Generate radial octahedron matrix
+      import("./rt-matrix-radial.js").then(RadialModule => {
+        const { RTRadialMatrix } = RadialModule;
+        const radialOctMatrix = RTRadialMatrix.createRadialOctahedronMatrix(
+          frequency,
+          scale,
+          opacity,
+          colorPalette.octahedron,
+          THREE,
+          false,        // ivmScale = false (no FCC lattice)
+          ivmScaleOnly  // ivmScaleOnly = checkbox value (2× size only)
+        );
+        radialOctMatrixGroup.add(radialOctMatrix);
+      });
+      radialOctMatrixGroup.visible = true;
+    } else {
+      radialOctMatrixGroup.visible = false;
+    }
+
+    // Radial Cuboctahedron (VE) Matrix (Phase 3)
+    if (document.getElementById("showRadialCuboctahedronMatrix")?.checked) {
+      const frequency = parseInt(
+        document.getElementById("radialVEFreqSlider")?.value || "1"
+      );
+
+      // Clear existing radial VE matrix group
+      while (radialVEMatrixGroup.children.length > 0) {
+        radialVEMatrixGroup.remove(radialVEMatrixGroup.children[0]);
+      }
+
+      // Generate radial cuboctahedron matrix
+      import("./rt-matrix-radial.js").then(RadialModule => {
+        const { RTRadialMatrix } = RadialModule;
+        const radialVEMatrix = RTRadialMatrix.createRadialCuboctahedronMatrix(
+          frequency,
+          scale,
+          opacity,
+          colorPalette.cuboctahedron,
+          THREE
+        );
+        radialVEMatrixGroup.add(radialVEMatrix);
+      });
+      radialVEMatrixGroup.visible = true;
+    } else {
+      radialVEMatrixGroup.visible = false;
+    }
+
     // Scale basis vectors to match current slider values
     // Cartesian basis vectors scale with cube edge length
     const cubeEdge = parseFloat(document.getElementById("scaleSlider").value);
@@ -2418,6 +2761,8 @@ export function initScene(THREE, OrbitControls, RT) {
       octaMatrixGroup,
       cuboctaMatrixGroup,
       rhombicDodecMatrixGroup,
+      radialCubeMatrixGroup,
+      radialRhombicDodecMatrixGroup,
     };
   }
 

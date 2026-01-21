@@ -672,6 +672,166 @@ function startARTexplorer(
     rhombicDodecMatrixFaceCoplanar.addEventListener("change", updateGeometry);
   }
 
+  // ========== RADIAL MATRICES ==========
+
+  // Radial Cube Matrix
+  const radialCubeCheckbox = document.getElementById("showRadialCubeMatrix");
+  if (radialCubeCheckbox) {
+    radialCubeCheckbox.addEventListener("change", () => {
+      const radialCubeControls = document.getElementById(
+        "radial-cube-matrix-controls"
+      );
+      if (radialCubeControls) {
+        radialCubeControls.style.display = radialCubeCheckbox.checked
+          ? "block"
+          : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const radialCubeFreqSlider = document.getElementById("radialCubeFreqSlider");
+  if (radialCubeFreqSlider) {
+    radialCubeFreqSlider.addEventListener("input", e => {
+      const freq = parseInt(e.target.value);
+      document.getElementById("radialCubeFreqDisplay").textContent = `F${freq}`;
+      updateGeometry();
+    });
+  }
+
+  const radialCubeSpaceFill = document.getElementById("radialCubeSpaceFill");
+  if (radialCubeSpaceFill) {
+    radialCubeSpaceFill.addEventListener("change", updateGeometry);
+  }
+
+  // Radial Rhombic Dodecahedron Matrix
+  const radialRhombicDodecCheckbox = document.getElementById(
+    "showRadialRhombicDodecMatrix"
+  );
+  if (radialRhombicDodecCheckbox) {
+    radialRhombicDodecCheckbox.addEventListener("change", () => {
+      const radialRhombicDodecControls = document.getElementById(
+        "radial-rhombic-dodec-matrix-controls"
+      );
+      if (radialRhombicDodecControls) {
+        radialRhombicDodecControls.style.display =
+          radialRhombicDodecCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const radialRhombicDodecFreqSlider = document.getElementById(
+    "radialRhombicDodecFreqSlider"
+  );
+  if (radialRhombicDodecFreqSlider) {
+    radialRhombicDodecFreqSlider.addEventListener("input", e => {
+      const freq = parseInt(e.target.value);
+      document.getElementById("radialRhombicDodecFreqDisplay").textContent =
+        `F${freq}`;
+      updateGeometry();
+    });
+  }
+
+  // RD space-fill toggle removed - RD is inherently space-filling
+
+  // Radial Tetrahedron Matrix (Phase 3)
+  const radialTetCheckbox = document.getElementById(
+    "showRadialTetrahedronMatrix"
+  );
+  if (radialTetCheckbox) {
+    radialTetCheckbox.addEventListener("change", () => {
+      const radialTetControls = document.getElementById(
+        "radial-tetrahedron-matrix-controls"
+      );
+      if (radialTetControls) {
+        radialTetControls.style.display = radialTetCheckbox.checked
+          ? "block"
+          : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const radialTetFreqSlider = document.getElementById("radialTetFreqSlider");
+  if (radialTetFreqSlider) {
+    radialTetFreqSlider.addEventListener("input", e => {
+      const freq = parseInt(e.target.value);
+      document.getElementById("radialTetFreqDisplay").textContent = `F${freq}`;
+      updateGeometry();
+    });
+  }
+
+  // IVM Mode checkbox for tetrahedron (fills voids between IVM octahedra)
+  const radialTetIVMMode = document.getElementById("radialTetIVMMode");
+  if (radialTetIVMMode) {
+    radialTetIVMMode.addEventListener("change", () => {
+      updateGeometry();
+    });
+  }
+
+  // Radial Octahedron Matrix (Phase 3)
+  const radialOctCheckbox = document.getElementById(
+    "showRadialOctahedronMatrix"
+  );
+  if (radialOctCheckbox) {
+    radialOctCheckbox.addEventListener("change", () => {
+      const radialOctControls = document.getElementById(
+        "radial-octahedron-matrix-controls"
+      );
+      if (radialOctControls) {
+        radialOctControls.style.display = radialOctCheckbox.checked
+          ? "block"
+          : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const radialOctFreqSlider = document.getElementById("radialOctFreqSlider");
+  if (radialOctFreqSlider) {
+    radialOctFreqSlider.addEventListener("input", e => {
+      const freq = parseInt(e.target.value);
+      document.getElementById("radialOctFreqDisplay").textContent = `F${freq}`;
+      updateGeometry();
+    });
+  }
+
+  // IVM Scale checkbox for octahedron (scales to match tetrahedron faces)
+  const radialOctIVMScale = document.getElementById("radialOctIVMScale");
+  if (radialOctIVMScale) {
+    radialOctIVMScale.addEventListener("change", () => {
+      updateGeometry();
+    });
+  }
+
+  // Radial Cuboctahedron (VE) Matrix (Phase 3)
+  const radialVECheckbox = document.getElementById(
+    "showRadialCuboctahedronMatrix"
+  );
+  if (radialVECheckbox) {
+    radialVECheckbox.addEventListener("change", () => {
+      const radialVEControls = document.getElementById(
+        "radial-cuboctahedron-matrix-controls"
+      );
+      if (radialVEControls) {
+        radialVEControls.style.display = radialVECheckbox.checked
+          ? "block"
+          : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const radialVEFreqSlider = document.getElementById("radialVEFreqSlider");
+  if (radialVEFreqSlider) {
+    radialVEFreqSlider.addEventListener("input", e => {
+      const freq = parseInt(e.target.value);
+      document.getElementById("radialVEFreqDisplay").textContent = `F${freq}`;
+      updateGeometry();
+    });
+  }
+
   // Phase 2.7a, 2.7b, 2.7c: Geodesic controls
   document
     .getElementById("showGeodesicIcosahedron")
