@@ -90,7 +90,7 @@ export class ColorTheoryModal {
         ],
       },
       {
-        section: "Archimedean & Space-Filling Polyhedra",
+        section: "Space-Filling & Radial Matrices",
         groups: [
           {
             name: "Cuboctahedron",
@@ -110,11 +110,6 @@ export class ColorTheoryModal {
               { id: "octa-matrix", label: "Planar Matrix", color: "0xFF6B6B" },
             ],
           },
-        ],
-      },
-      {
-        section: "Radial Matrices (Concentric Shells)",
-        groups: [
           {
             name: "Radial Tetrahedron",
             pairs: [

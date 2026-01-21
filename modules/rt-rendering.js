@@ -1248,7 +1248,8 @@ export function initScene(THREE, OrbitControls, RT) {
       } else if (polyhedronType === "octahedron") {
         polyGeom = Polyhedra.octahedron(scale);
       } else if (polyhedronType === "cuboctahedron") {
-        polyGeom = Polyhedra.cuboctahedron(scale);
+        // Scale by √2 to match matrix geometry (vertices at scale from center)
+        polyGeom = Polyhedra.cuboctahedron(scale * Math.sqrt(2));
       }
 
       // For each center position, add transformed vertices
@@ -2268,13 +2269,11 @@ export function initScene(THREE, OrbitControls, RT) {
             frequency,
             spacing
           );
-          // Cuboctahedron is scaled by √2 so vertices are at `scale` from center
-          // (matching octahedron vertex distance for IVM compatibility)
-          const veScale = scale * Math.sqrt(2);
+          // addRadialMatrixNodes handles √2 scaling internally for cuboctahedron
           addRadialMatrixNodes(
             radialVEMatrixGroup,
             positions,
-            veScale,
+            scale,
             colorPalette.radialCuboctahedron,
             nodeSize,
             "cuboctahedron"
