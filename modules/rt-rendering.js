@@ -1183,7 +1183,8 @@ export function initScene(THREE, OrbitControls, RT) {
    * @param {number} scale - Polyhedron scale (halfSize)
    * @param {number} color - Node color
    * @param {string} nodeSize - Node size ("sm", "md", "lg", "packed", "off")
-   * @param {string} polyhedronType - "cube" or "rhombicDodecahedron"
+   * @param {string} polyhedronType - "cube", "rhombicDodecahedron", "tetrahedron", "octahedron", "cuboctahedron"
+   * @param {boolean} ivmRotation - If true, apply 45° rotation to vertices (for IVM octahedra)
    */
   function addRadialMatrixNodes(
     matrixGroup,
@@ -1191,7 +1192,8 @@ export function initScene(THREE, OrbitControls, RT) {
     scale,
     color,
     nodeSize,
-    polyhedronType = "cube"
+    polyhedronType = "cube",
+    ivmRotation = false
   ) {
     // Get node geometry settings
     const useFlatShading =
@@ -1237,19 +1239,66 @@ export function initScene(THREE, OrbitControls, RT) {
       } else if (polyhedronType === "rhombicDodecahedron") {
         // Scale by √2 to match matrix geometry
         polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2));
+      } else if (polyhedronType === "tetrahedron") {
+        polyGeom = Polyhedra.tetrahedron(scale);
+      } else if (polyhedronType === "octahedron") {
+        polyGeom = Polyhedra.octahedron(scale);
+      } else if (polyhedronType === "cuboctahedron") {
+        polyGeom = Polyhedra.cuboctahedron(scale);
       }
 
-      const { vertices } = polyGeom;
-
       // For each center position, add transformed vertices
+      // Tetrahedra have orientation ("up" or "down") that affects vertex positions
+      // IVM octahedra need 45° rotation applied to both vertices and positions
+
+      // 45° rotation matrix (RT-pure: s=0.5, c=0.5 → cos=sin=√0.5)
+      // [cos, -sin, 0]   [√0.5, -√0.5, 0]
+      // [sin,  cos, 0] = [√0.5,  √0.5, 0]
+      // [0,    0,   1]   [0,     0,    1]
+      const sqrt05 = Math.sqrt(0.5);
+      const rotate45 = (x, y, z) => ({
+        x: x * sqrt05 - y * sqrt05,
+        y: x * sqrt05 + y * sqrt05,
+        z: z
+      });
+
       centerPositions.forEach(pos => {
+        let vertices;
+        if (polyhedronType === "tetrahedron" && pos.orientation) {
+          // Use base or dual tetrahedron based on orientation
+          const tetGeom = pos.orientation === "up"
+            ? Polyhedra.tetrahedron(scale)
+            : Polyhedra.dualTetrahedron(scale);
+          vertices = tetGeom.vertices;
+        } else {
+          vertices = polyGeom.vertices;
+        }
+
         vertices.forEach(v => {
-          const x = v.x + pos.x;
-          const y = v.y + pos.y;
-          const z = v.z + pos.z;
+          let vx = v.x, vy = v.y, vz = v.z;
+          let px = pos.x, py = pos.y, pz = pos.z;
+
+          if (ivmRotation) {
+            // For IVM octahedra: rotate vertex 45°, then translate, then rotate result 45°
+            // Step 1: Rotate vertex around origin
+            const rv = rotate45(vx, vy, vz);
+            // Step 2: Add position (position is in pre-rotated coords)
+            const tx = rv.x + px;
+            const ty = rv.y + py;
+            const tz = rv.z + pz;
+            // Step 3: Rotate the whole thing (constellation rotation)
+            const final = rotate45(tx, ty, tz);
+            vx = final.x;
+            vy = final.y;
+            vz = final.z;
+          } else {
+            vx = v.x + pos.x;
+            vy = v.y + pos.y;
+            vz = v.z + pos.z;
+          }
 
           // Use string key for deduplication
-          const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+          const key = `${vx.toFixed(6)},${vy.toFixed(6)},${vz.toFixed(6)}`;
           vertexPositions.add(key);
         });
       });
@@ -2088,6 +2137,29 @@ export function initScene(THREE, OrbitControls, RT) {
           ivmMode
         );
         radialTetMatrixGroup.add(radialTetMatrix);
+
+        // Add vertex nodes if enabled
+        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
+        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const showNodes = nodeSize !== "off";
+
+        if (showNodes) {
+          // IVM mode uses 4× spacing, standard uses 2× spacing
+          const spacing = ivmMode ? scale * 4 : scale * 2;
+          const positions = RTRadialMatrix.getTetrahedronPositions(
+            frequency,
+            spacing,
+            ivmMode
+          );
+          addRadialMatrixNodes(
+            radialTetMatrixGroup,
+            positions,
+            scale,
+            colorPalette.tetrahedron,
+            nodeSize,
+            "tetrahedron"
+          );
+        }
       });
       radialTetMatrixGroup.visible = true;
     } else {
@@ -2124,6 +2196,34 @@ export function initScene(THREE, OrbitControls, RT) {
           ivmScaleOnly  // ivmScaleOnly = checkbox value (2× size only)
         );
         radialOctMatrixGroup.add(radialOctMatrix);
+
+        // Add vertex nodes if enabled
+        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
+        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const showNodes = nodeSize !== "off";
+
+        if (showNodes) {
+          // IVM mode uses 4× spacing, standard uses 2× spacing
+          const spacing = ivmScaleOnly ? scale * 4 : scale * 2;
+          // Get positions based on mode
+          let positions;
+          if (ivmScaleOnly) {
+            positions = RTRadialMatrix.getIVMOctahedronPositions(frequency, spacing);
+          } else {
+            positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, false);
+          }
+          // For IVM octahedra, use 2× scale for node vertex calculation
+          const octScale = ivmScaleOnly ? scale * 2 : scale;
+          addRadialMatrixNodes(
+            radialOctMatrixGroup,
+            positions,
+            octScale,
+            colorPalette.octahedron,
+            nodeSize,
+            "octahedron",
+            ivmScaleOnly  // Apply 45° rotation for IVM mode
+          );
+        }
       });
       radialOctMatrixGroup.visible = true;
     } else {
@@ -2152,6 +2252,27 @@ export function initScene(THREE, OrbitControls, RT) {
           THREE
         );
         radialVEMatrixGroup.add(radialVEMatrix);
+
+        // Add vertex nodes if enabled
+        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
+        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const showNodes = nodeSize !== "off";
+
+        if (showNodes) {
+          const spacing = scale * 2;
+          const positions = RTRadialMatrix.getCuboctahedronPositions(
+            frequency,
+            spacing
+          );
+          addRadialMatrixNodes(
+            radialVEMatrixGroup,
+            positions,
+            scale,
+            colorPalette.cuboctahedron,
+            nodeSize,
+            "cuboctahedron"
+          );
+        }
       });
       radialVEMatrixGroup.visible = true;
     } else {
