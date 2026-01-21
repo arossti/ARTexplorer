@@ -165,7 +165,8 @@ export const RTPapercut = {
     }
 
     // 3g. WXYZ Interval Snap checkbox
-    const intervalSnapWXYZCheckbox = document.getElementById("intervalSnapWXYZ");
+    const intervalSnapWXYZCheckbox =
+      document.getElementById("intervalSnapWXYZ");
     if (intervalSnapWXYZCheckbox) {
       intervalSnapWXYZCheckbox.addEventListener("change", e => {
         RTPapercut.state.intervalSnapWXYZEnabled = e.target.checked;
@@ -535,14 +536,17 @@ export const RTPapercut = {
     let intervalNum = 0;
     if (basis === "tetrahedral" && RTPapercut.state.intervalSnapWXYZEnabled) {
       intervalNum = Math.round(value / RT.PureRadicals.QUADRAY_GRID_INTERVAL);
-    } else if (basis === "cartesian" && RTPapercut.state.intervalSnapXYZEnabled) {
+    } else if (
+      basis === "cartesian" &&
+      RTPapercut.state.intervalSnapXYZEnabled
+    ) {
       intervalNum = Math.round(value / 1.0);
     }
 
     console.log(
       `✂️ Cutplane: ${basis === "tetrahedral" ? "WXYZ" : "XYZ"}-${axis} | ` +
-      `Distance d = ${value.toFixed(6)}, Quadrance Q = ${quadrance.toFixed(6)} | ` +
-      `Interval: ${intervalNum} × gridStep`
+        `Distance d = ${value.toFixed(6)}, Quadrance Q = ${quadrance.toFixed(6)} | ` +
+        `Interval: ${intervalNum} × gridStep`
     );
 
     // 5. Generate intersection edges where cutplane slices through geometry

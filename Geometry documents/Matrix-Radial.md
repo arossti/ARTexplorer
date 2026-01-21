@@ -29,16 +29,21 @@ createRadialDodecahedronMatrix(frequency, halfSize, opacity, color, THREE) → T
 
 ### Shell Count Formulas (spaceFilling=true)
 
-| Polyhedron | Formula | F1→F5 |
-|------------|---------|-------|
-| Cube (solid) | `(2f-1)³` | 1, 27, 125, 343, 729 |
-| Cube (stellation) | `(2f-1)(2f²-2f+3)/3` | 1, 7, 25, 63, 129 |
-| Rhombic Dodec | `(10f³-15f²+11f-3)/3` | 1, 13, 55, 147, 309 |
+| Polyhedron | Formula | Displayed Frequencies |
+|------------|---------|----------------------|
+| Cube (solid) | `(2f-1)³` | F1=1³, F3=3³, F5=5³, F7=7³, F9=9³ |
+| Cube (stellation) | taxicab constraint | F1=1, F3=7, F5=25, F7=63, F9=129 |
+| Rhombic Dodec | FCC shells | F1=1, F3=13, F5=55, F7=147, F9=309 |
 | Tet/Oct | n tets requires (n-1) octs for IVM | — |
 
+**Note on Hexahedral & Rhombic Dodec Frequency Conventions:**
+Both hexahedral (cube) and rhombic dodecahedral radial matrices use **odd frequencies only** (F1, F3, F5, F7, F9) because they nucleate from a polyhedron at origin. The slider values 1-5 map directly to these odd frequencies.
+
+**Future Enhancement**: Even frequencies (F2, F4, F6...) would require **vertex-centered** patterns with no nuclear polyhedron at origin. This alternating mode could be added in future development.
+
 **Note on Cube Modes:**
-- **Space-filling (solid)**: Full `(2f-1)³` cube-of-cubes (3×3×3 at F2, 5×5×5 at F3, etc.)
-- **Stellation (octahedral growth)**: Face-connected only using taxicab distance `|x|+|y|+|z| <= f-1`. Creates octahedral/cross shape. Uses centered octahedral numbers.
+- **Space-filling (solid)**: Full (2f-1)³ cube-of-cubes (F3=3³=27, F5=5³=125, etc.)
+- **Stellation (octahedral growth)**: Face-connected only using taxicab distance `|x|+|y|+|z| <= f-1`. Creates octahedral/cross shape.
 
 ### Key Rules
 - **IVM Complementary**: `n tetrahedra + (n-1) octahedra = space-filling`
@@ -717,4 +722,7 @@ Use the dedicated `getIVMOctahedronPositions()` function which implements the co
 - [ ] Enable selection/editing of radial cuboctahedra matrices
 
 ### Frequency Slider Labels
-- [ ] **Update frequency slider labels** - Current sliders show F1, F2, F3 etc. but don't reflect actual frequency multiples (e.g., cube uses shell count not 2×2, 3×3 grids). Labels should accurately describe what each frequency level generates.
+- [x] **Standardize frequency notation** - Using Fuller's synergetics `Fn` notation (F1, F2, F3...) for all radial matrices ✅ 2026-01-21
+  - Frequency represents edge subdivisions of the meta-polyhedron
+  - Info text below each slider explains actual polyhedra counts at each frequency
+  - Renamed UI labels to match planar matrix pattern (e.g., "Hexahedral Radial Matrix")

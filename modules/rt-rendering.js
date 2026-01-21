@@ -49,9 +49,9 @@ const colorPalette = {
   cuboctahedron: 0x00f900,
   rhombicDodecahedron: 0xff9900,
   // Radial matrices (concentric shell expansion)
-  radialTetrahedron: 0xfffb00,      // Yellow (matches base tetrahedron)
-  radialOctahedron: 0xff6b6b,       // Coral (matches planar octahedron matrix)
-  radialCuboctahedron: 0x00f900,    // Lime green (matches cuboctahedron)
+  radialTetrahedron: 0xfffb00, // Yellow (matches base tetrahedron)
+  radialOctahedron: 0xff6b6b, // Coral (matches planar octahedron matrix)
+  radialCuboctahedron: 0x00f900, // Lime green (matches cuboctahedron)
 };
 
 /**
@@ -1264,24 +1264,29 @@ export function initScene(THREE, OrbitControls, RT) {
       const rotate45 = (x, y, z) => ({
         x: x * sqrt05 - y * sqrt05,
         y: x * sqrt05 + y * sqrt05,
-        z: z
+        z: z,
       });
 
       centerPositions.forEach(pos => {
         let vertices;
         if (polyhedronType === "tetrahedron" && pos.orientation) {
           // Use base or dual tetrahedron based on orientation
-          const tetGeom = pos.orientation === "up"
-            ? Polyhedra.tetrahedron(scale)
-            : Polyhedra.dualTetrahedron(scale);
+          const tetGeom =
+            pos.orientation === "up"
+              ? Polyhedra.tetrahedron(scale)
+              : Polyhedra.dualTetrahedron(scale);
           vertices = tetGeom.vertices;
         } else {
           vertices = polyGeom.vertices;
         }
 
         vertices.forEach(v => {
-          let vx = v.x, vy = v.y, vz = v.z;
-          let px = pos.x, py = pos.y, pz = pos.z;
+          let vx = v.x,
+            vy = v.y,
+            vz = v.z;
+          let px = pos.x,
+            py = pos.y,
+            pz = pos.z;
 
           if (ivmRotation) {
             // For IVM octahedra: rotate vertex 45°, then translate, then rotate result 45°
@@ -2197,8 +2202,8 @@ export function initScene(THREE, OrbitControls, RT) {
           opacity,
           colorPalette.radialOctahedron,
           THREE,
-          false,        // ivmScale = false (no FCC lattice)
-          ivmScaleOnly  // ivmScaleOnly = checkbox value (2× size only)
+          false, // ivmScale = false (no FCC lattice)
+          ivmScaleOnly // ivmScaleOnly = checkbox value (2× size only)
         );
         radialOctMatrixGroup.add(radialOctMatrix);
 
@@ -2213,9 +2218,16 @@ export function initScene(THREE, OrbitControls, RT) {
           // Get positions based on mode
           let positions;
           if (ivmScaleOnly) {
-            positions = RTRadialMatrix.getIVMOctahedronPositions(frequency, spacing);
+            positions = RTRadialMatrix.getIVMOctahedronPositions(
+              frequency,
+              spacing
+            );
           } else {
-            positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, false);
+            positions = RTRadialMatrix.getOctahedronPositions(
+              frequency,
+              spacing,
+              false
+            );
           }
           // For IVM octahedra, use 2× scale for node vertex calculation
           const octScale = ivmScaleOnly ? scale * 2 : scale;
@@ -2226,7 +2238,7 @@ export function initScene(THREE, OrbitControls, RT) {
             colorPalette.radialOctahedron,
             nodeSize,
             "octahedron",
-            ivmScaleOnly  // Apply 45° rotation for IVM mode
+            ivmScaleOnly // Apply 45° rotation for IVM mode
           );
         }
       });

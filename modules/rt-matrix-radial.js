@@ -114,8 +114,16 @@ export const RTRadialMatrix = {
       const totalNum = 10 * f * f * f - 15 * f * f + 11 * f - 3;
       const g = f - 1;
       const innerNum = 10 * g * g * g - 15 * g * g + 11 * g - 3;
-      const total = RTRadialMatrix.exactDiv(totalNum, 3, "rhombicDodecShell total");
-      const inner = RTRadialMatrix.exactDiv(innerNum, 3, "rhombicDodecShell inner");
+      const total = RTRadialMatrix.exactDiv(
+        totalNum,
+        3,
+        "rhombicDodecShell total"
+      );
+      const inner = RTRadialMatrix.exactDiv(
+        innerNum,
+        3,
+        "rhombicDodecShell inner"
+      );
       return total - inner;
     },
 
@@ -170,14 +178,22 @@ export const RTRadialMatrix = {
   /**
    * Generate positions for radial cube matrix at given frequency
    *
+   * FREQUENCY NOTE: With a nuclear cube at origin, only ODD frequencies exist:
+   * F1=1³, F3=3³, F5=5³, F7=7³, F9=9³ (slider values 1-5 map to these)
+   *
+   * FUTURE: Even frequencies (F2=2³, F4=4³...) would require vertex-centered
+   * patterns with no nuclear cube, alternating between cube-centered (odd) and
+   * vertex-centered (even) modes. This is consistent with Fuller's frequency
+   * conventions where the nuclear unit determines the parity.
+   *
    * Two modes:
-   * - spaceFilling=true: Solid (2f-1)³ cube-of-cubes (F2=27, F3=125)
-   * - spaceFilling=false: Face-connected stellation only (F2=7, F3=25)
+   * - spaceFilling=true: Solid (2f-1)³ cube-of-cubes (F3=27, F5=125)
+   * - spaceFilling=false: Face-connected stellation only (F3=7, F5=25)
    *
    * Stellation uses octahedral growth pattern - only face-neighbors, no corner/edge fill
    * This creates a 3D cross/octahedral shape rather than a solid cube
    *
-   * @param {number} frequency - Shell frequency (1-5)
+   * @param {number} frequency - Shell frequency (1-5, maps to odd frequencies F1,F3,F5,F7,F9)
    * @param {number} spacing - Distance between cube centers (2 × halfSize)
    * @param {boolean} spaceFilling - If true, solid cube; if false, octahedral stellation
    * @returns {Array} Array of {x, y, z} positions
@@ -227,6 +243,13 @@ export const RTRadialMatrix = {
    * Generate positions for radial rhombic dodecahedron matrix at given frequency
    * Uses FCC (face-centered cubic) lattice - rhombic dodecs tile perfectly
    *
+   * FREQUENCY NOTE: With a nuclear RD at origin, only ODD frequencies exist:
+   * F1=1, F3=13, F5=55, F7=147, F9=309 (slider values 1-5 map to these)
+   *
+   * FUTURE: Even frequencies (F2, F4...) would require vertex-centered
+   * patterns with no nuclear RD, alternating between RD-centered (odd) and
+   * vertex-centered (even) modes.
+   *
    * FCC lattice structure:
    * - Primitive positions: (0,0,0) and face-centers of cubic cell
    * - Each site has 12 nearest neighbors at distance spacing/√2
@@ -234,16 +257,16 @@ export const RTRadialMatrix = {
    *
    * Shell counting uses FCC coordination shells:
    * - Shell 0 (F1): origin only → 1 total
-   * - Shell 1 (F2): 12 neighbors → 13 total
-   * - Shell 2 (F3): 42 more → 55 total
-   * - Shell 3 (F4): 92 more → 147 total
-   * - Shell 4 (F5): 162 more → 309 total
+   * - Shell 1 (F3): 12 neighbors → 13 total
+   * - Shell 2 (F5): 42 more → 55 total
+   * - Shell 3 (F7): 92 more → 147 total
+   * - Shell 4 (F9): 162 more → 309 total
    *
    * FCC shell n contains points where the "FCC norm" = n
    * FCC norm: For half-integer coords (i,j,k) where i+j+k is even,
    *           norm = (|i| + |j| + |k|) / 2
    *
-   * @param {number} frequency - Shell frequency (1-5)
+   * @param {number} frequency - Shell frequency (1-5, maps to odd frequencies F1,F3,F5,F7,F9)
    * @param {number} spacing - Distance between RD centers along cubic axis
    * @param {boolean} spaceFilling - If true, fill all positions; if false, shell only
    * @returns {Array} Array of {x, y, z} positions
@@ -293,7 +316,9 @@ export const RTRadialMatrix = {
     }
 
     // Debug: log shell distribution
-    console.log(`[RTRadialMatrix] RD positions debug: frequency=${frequency}, spaceFilling=${spaceFilling}, maxShell=${maxShell}, total=${positions.length}`);
+    console.log(
+      `[RTRadialMatrix] RD positions debug: frequency=${frequency}, spaceFilling=${spaceFilling}, maxShell=${maxShell}, total=${positions.length}`
+    );
 
     return positions;
   },
@@ -406,11 +431,19 @@ export const RTRadialMatrix = {
     // Detailed logging for debugging
     console.log(`[RTRadialMatrix] ========== CUBE RADIAL MATRIX ==========`);
     console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
-    console.log(`[RTRadialMatrix] Mode: ${spaceFilling ? 'SPACE-FILLING' : 'SHELL-ONLY'}`);
-    console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
+    console.log(
+      `[RTRadialMatrix] Mode: ${spaceFilling ? "SPACE-FILLING" : "SHELL-ONLY"}`
+    );
+    console.log(
+      `[RTRadialMatrix] Center positions generated: ${positions.length}`
+    );
     console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
-    console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
-    console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
+    console.log(
+      `[RTRadialMatrix] Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`
+    );
+    console.log(
+      `[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`
+    );
     console.log(`[RTRadialMatrix] =========================================`);
 
     return matrixGroup;
@@ -526,14 +559,26 @@ export const RTRadialMatrix = {
       : RTRadialMatrix.shellCounts.rhombicDodecShell(frequency);
 
     // Detailed logging for debugging
-    console.log(`[RTRadialMatrix] ========== RHOMBIC DODEC RADIAL MATRIX ==========`);
+    console.log(
+      `[RTRadialMatrix] ========== RHOMBIC DODEC RADIAL MATRIX ==========`
+    );
     console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
-    console.log(`[RTRadialMatrix] Mode: ${spaceFilling ? 'SPACE-FILLING' : 'SHELL-ONLY'}`);
-    console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
+    console.log(
+      `[RTRadialMatrix] Mode: ${spaceFilling ? "SPACE-FILLING" : "SHELL-ONLY"}`
+    );
+    console.log(
+      `[RTRadialMatrix] Center positions generated: ${positions.length}`
+    );
     console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
-    console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
-    console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
-    console.log(`[RTRadialMatrix] ================================================`);
+    console.log(
+      `[RTRadialMatrix] Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`
+    );
+    console.log(
+      `[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`
+    );
+    console.log(
+      `[RTRadialMatrix] ================================================`
+    );
 
     return matrixGroup;
   },
@@ -626,8 +671,8 @@ export const RTRadialMatrix = {
       // Two base tets at (+,+,+) and (-,-,+) - edges parallel
       // Two dual tets at (+,-,+) and (-,+,+) - edges perpendicular
       const upperLayer = [
-        { dx: 1, dy: 1, dz: 1, orientation: "up" },    // base tet
-        { dx: -1, dy: -1, dz: 1, orientation: "up" },  // base tet (parallel edge)
+        { dx: 1, dy: 1, dz: 1, orientation: "up" }, // base tet
+        { dx: -1, dy: -1, dz: 1, orientation: "up" }, // base tet (parallel edge)
         { dx: 1, dy: -1, dz: 1, orientation: "down" }, // dual tet
         { dx: -1, dy: 1, dz: 1, orientation: "down" }, // dual tet (parallel edge)
       ];
@@ -635,10 +680,10 @@ export const RTRadialMatrix = {
       // Lower 4 faces (-Z hemisphere): tetrahedra with apex DOWN
       // Mirror of upper layer with inverted orientations
       const lowerLayer = [
-        { dx: 1, dy: 1, dz: -1, orientation: "down" },   // dual tet (apex down)
+        { dx: 1, dy: 1, dz: -1, orientation: "down" }, // dual tet (apex down)
         { dx: -1, dy: -1, dz: -1, orientation: "down" }, // dual tet
-        { dx: 1, dy: -1, dz: -1, orientation: "up" },    // base tet
-        { dx: -1, dy: 1, dz: -1, orientation: "up" },    // base tet
+        { dx: 1, dy: -1, dz: -1, orientation: "up" }, // base tet
+        { dx: -1, dy: 1, dz: -1, orientation: "up" }, // base tet
       ];
 
       // The 8 tetrahedral void directions (octant pattern)
@@ -646,7 +691,11 @@ export const RTRadialMatrix = {
 
       // Get all octahedron positions for this frequency
       // Tetrahedra fill voids around EACH octahedron in the FCC lattice
-      const octPositions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, true);
+      const octPositions = RTRadialMatrix.getOctahedronPositions(
+        frequency,
+        spacing,
+        true
+      );
 
       // Use a Set to deduplicate positions (shared voids between adjacent octs)
       const positionSet = new Set();
@@ -813,9 +862,13 @@ export const RTRadialMatrix = {
       const z = tier * zStep;
 
       // Add this layer (and its mirror below for tier > 0)
-      positions.push(...RTRadialMatrix.getIVMOctahedronLayer(layerFreq, unit, z));
+      positions.push(
+        ...RTRadialMatrix.getIVMOctahedronLayer(layerFreq, unit, z)
+      );
       if (tier > 0) {
-        positions.push(...RTRadialMatrix.getIVMOctahedronLayer(layerFreq, unit, -z));
+        positions.push(
+          ...RTRadialMatrix.getIVMOctahedronLayer(layerFreq, unit, -z)
+        );
       }
     }
 
@@ -906,7 +959,11 @@ export const RTRadialMatrix = {
     // Standard: use 2× spacing (cube edge)
     const spacing = ivmMode ? halfSize * 4 : halfSize * 2;
 
-    const positions = RTRadialMatrix.getTetrahedronPositions(frequency, spacing, ivmMode);
+    const positions = RTRadialMatrix.getTetrahedronPositions(
+      frequency,
+      spacing,
+      ivmMode
+    );
 
     positions.forEach(pos => {
       const tetGroup = new THREE.Group();
@@ -985,20 +1042,36 @@ export const RTRadialMatrix = {
 
     // In IVM mode, count differs from standard stellation
     const expectedCount = ivmMode
-      ? positions.length  // IVM positions computed, not formula-based yet
+      ? positions.length // IVM positions computed, not formula-based yet
       : RTRadialMatrix.shellCounts.tetrahedron(frequency);
 
-    console.log(`[RTRadialMatrix] ========== TETRAHEDRON RADIAL MATRIX ==========`);
+    console.log(
+      `[RTRadialMatrix] ========== TETRAHEDRON RADIAL MATRIX ==========`
+    );
     console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
-    console.log(`[RTRadialMatrix] Mode: ${ivmMode ? 'IVM (FCC ODD, void filling)' : 'Standard (taxicab)'}`);
-    console.log(`[RTRadialMatrix] Spacing: ${spacing} (${ivmMode ? '4×' : '2×'} halfSize)`);
-    console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
+    console.log(
+      `[RTRadialMatrix] Mode: ${ivmMode ? "IVM (FCC ODD, void filling)" : "Standard (taxicab)"}`
+    );
+    console.log(
+      `[RTRadialMatrix] Spacing: ${spacing} (${ivmMode ? "4×" : "2×"} halfSize)`
+    );
+    console.log(
+      `[RTRadialMatrix] Center positions generated: ${positions.length}`
+    );
     if (!ivmMode) {
-      console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
-      console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
+      console.log(
+        `[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`
+      );
+      console.log(
+        `[RTRadialMatrix] Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`
+      );
     }
-    console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
-    console.log(`[RTRadialMatrix] ================================================`);
+    console.log(
+      `[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`
+    );
+    console.log(
+      `[RTRadialMatrix] ================================================`
+    );
 
     return matrixGroup;
   },
@@ -1050,7 +1123,7 @@ export const RTRadialMatrix = {
     // Standard: 2× halfSize with taxicab positioning
     // Full IVM: 4× halfSize with FCC lattice
     // ivmScaleOnly: 4× halfSize with geodesic frequency layers
-    const spacing = (ivmScale || ivmScaleOnly) ? halfSize * 4 : halfSize * 2;
+    const spacing = ivmScale || ivmScaleOnly ? halfSize * 4 : halfSize * 2;
 
     // Choose position generator based on mode
     let positions;
@@ -1059,7 +1132,11 @@ export const RTRadialMatrix = {
       positions = RTRadialMatrix.getIVMOctahedronPositions(frequency, spacing);
     } else {
       // Standard taxicab or full IVM (FCC lattice)
-      positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, ivmScale);
+      positions = RTRadialMatrix.getOctahedronPositions(
+        frequency,
+        spacing,
+        ivmScale
+      );
     }
 
     const octGeom = Polyhedra.octahedron(octSize);
@@ -1141,22 +1218,34 @@ export const RTRadialMatrix = {
       matrixGroup.add(octGroup);
     });
 
-    console.log(`[RTRadialMatrix] ========== OCTAHEDRON RADIAL MATRIX ==========`);
+    console.log(
+      `[RTRadialMatrix] ========== OCTAHEDRON RADIAL MATRIX ==========`
+    );
     console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
     const modeDesc = ivmScale
-      ? '2× size, 4× spacing, FCC lattice (full IVM)'
+      ? "2× size, 4× spacing, FCC lattice (full IVM)"
       : ivmScaleOnly
-        ? '2× size, geodesic frequency layers (IVM nesting)'
-        : '1× size, 2× spacing, taxicab (standard)';
+        ? "2× size, geodesic frequency layers (IVM nesting)"
+        : "1× size, 2× spacing, taxicab (standard)";
     console.log(`[RTRadialMatrix] Mode: ${modeDesc}`);
-    console.log(`[RTRadialMatrix] Octahedron size: ${octSize} (${useScaledSize ? '2×' : '1×'} halfSize)`);
+    console.log(
+      `[RTRadialMatrix] Octahedron size: ${octSize} (${useScaledSize ? "2×" : "1×"} halfSize)`
+    );
     console.log(`[RTRadialMatrix] Spacing: ${spacing}`);
     if (ivmScaleOnly) {
-      console.log(`[RTRadialMatrix] Pattern: ${frequency % 2 === 1 ? 'Odd (oct at origin)' : 'Even (vertex at origin)'}`);
+      console.log(
+        `[RTRadialMatrix] Pattern: ${frequency % 2 === 1 ? "Odd (oct at origin)" : "Even (vertex at origin)"}`
+      );
     }
-    console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
-    console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
-    console.log(`[RTRadialMatrix] ==============================================`);
+    console.log(
+      `[RTRadialMatrix] Center positions generated: ${positions.length}`
+    );
+    console.log(
+      `[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`
+    );
+    console.log(
+      `[RTRadialMatrix] ==============================================`
+    );
 
     // Apply 45° constellation rotation for ivmScaleOnly
     // This rotates the entire octahedra group to align with tetrahedra IVM lattice
@@ -1184,7 +1273,13 @@ export const RTRadialMatrix = {
    * @param {Object} THREE - THREE.js library
    * @returns {THREE.Group} Group containing all cuboctahedron instances
    */
-  createRadialCuboctahedronMatrix: (frequency, halfSize, opacity, color, THREE) => {
+  createRadialCuboctahedronMatrix: (
+    frequency,
+    halfSize,
+    opacity,
+    color,
+    THREE
+  ) => {
     const matrixGroup = new THREE.Group();
 
     // Scale cuboctahedron by √2 so vertices are at halfSize (matching octahedron)
@@ -1195,7 +1290,10 @@ export const RTRadialMatrix = {
     // For face-to-face contact, spacing = edge length
     const spacing = halfSize * 2;
 
-    const positions = RTRadialMatrix.getCuboctahedronPositions(frequency, spacing);
+    const positions = RTRadialMatrix.getCuboctahedronPositions(
+      frequency,
+      spacing
+    );
 
     const veGeom = Polyhedra.cuboctahedron(scaledHalfSize);
     const { vertices, edges, faces } = veGeom;
@@ -1269,13 +1367,23 @@ export const RTRadialMatrix = {
 
     const expectedCount = RTRadialMatrix.shellCounts.cuboctahedron(frequency);
 
-    console.log(`[RTRadialMatrix] ========== CUBOCTAHEDRON RADIAL MATRIX ==========`);
+    console.log(
+      `[RTRadialMatrix] ========== CUBOCTAHEDRON RADIAL MATRIX ==========`
+    );
     console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
-    console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
+    console.log(
+      `[RTRadialMatrix] Center positions generated: ${positions.length}`
+    );
     console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
-    console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
-    console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
-    console.log(`[RTRadialMatrix] =================================================`);
+    console.log(
+      `[RTRadialMatrix] Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`
+    );
+    console.log(
+      `[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`
+    );
+    console.log(
+      `[RTRadialMatrix] =================================================`
+    );
 
     return matrixGroup;
   },
