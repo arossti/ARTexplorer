@@ -681,10 +681,37 @@ Use the dedicated `getIVMOctahedronPositions()` function which implements the co
 ## TODO: Remaining Work
 
 ### Nodes and Selection Integration
+
+**Pattern from working implementations** (radial cube, radial RD in `rt-rendering.js`):
+
+1. **Extend `addRadialMatrixNodes()`** (line ~1188) to support new polyhedron types:
+   ```javascript
+   // Add to the if/else chain at line ~1235:
+   } else if (polyhedronType === "tetrahedron") {
+     polyGeom = Polyhedra.tetrahedron(scale);
+   } else if (polyhedronType === "octahedron") {
+     // Note: For ivmScaleOnly, use scale * 2
+     polyGeom = Polyhedra.octahedron(scale);
+   } else if (polyhedronType === "cuboctahedron") {
+     polyGeom = Polyhedra.cuboctahedron(scale);
+   }
+   ```
+
+2. **Add node generation calls** in `updateScene()` for each radial matrix:
+   - Radial Tetrahedron (line ~2090): Add `addRadialMatrixNodes()` call with `getIVMTetrahedronPositions()`
+   - Radial Octahedron (line ~2126): Add `addRadialMatrixNodes()` call with `getIVMOctahedronPositions()`
+   - Radial Cuboctahedron (line ~2154): Add `addRadialMatrixNodes()` call with `getCuboctahedronPositions()`
+
+3. **Handle IVM scaling** - For octahedra with `ivmScaleOnly=true`, vertices need 45° rotation twice:
+   - Individual vertex positions must be rotated to match the octahedron orientations
+   - Or: Extract world positions from matrixGroup children after rendering
+
 - [ ] Add node markers at octahedra vertices (like other matrix forms)
 - [ ] Enable selection/editing of radial octahedra matrices
 - [ ] Add node markers at tetrahedra vertices
 - [ ] Enable selection/editing of radial tetrahedra matrices
+- [ ] Add node markers at cuboctahedra vertices
+- [ ] Enable selection/editing of radial cuboctahedra matrices
 
 ### Tetrahedra IVM Frequency Matching
 - [ ] **Tetrahedral IVM frequency expansion** - Currently the tetrahedra IVM appears to skip frequencies or not match the octahedra frequency increments. Need to implement proper frequency scaling for tetrahedra to match octahedra (F1=1, F2=6, F3=19, F4=44, F5=85 pattern).
