@@ -738,29 +738,40 @@ export const RTRadialMatrix = {
   },
 
   /**
-   * Generate positions for a single XY layer of IVM octahedra
+   * Generate positions for a single XY layer of IVM octahedra (geodesic frequency pattern)
    *
-   * @param {number} layerFreq - Frequency for this layer (determines grid size)
-   * @param {number} unit - Grid spacing unit (spacing × SQRT1_2)
+   * Grid pattern alternates based on frequency:
+   * - Odd frequency (F1, F3, F5): n×n grid WITH center octahedron (1×1, 3×3, 5×5)
+   * - Even frequency (F2, F4): n×n grid with shared VERTEX at origin (2×2, 4×4)
+   *
+   * The 45° rotation applied later aligns octahedron edges for colinear contact.
+   *
+   * @param {number} frequency - Frequency for this layer (determines grid size and pattern)
+   * @param {number} unit - Grid spacing unit (spacing × SQRT1_2 after rotation)
    * @param {number} z - Z-height for this layer
    * @returns {Array} Array of {x, y, z} positions
    */
-  getIVMOctahedronLayer: (layerFreq, unit, z) => {
+  getIVMOctahedronLayer: (frequency, unit, z) => {
     const positions = [];
 
-    if (layerFreq === 1) {
-      positions.push({ x: 0, y: 0, z: z });
+    if (frequency % 2 === 1) {
+      // Odd frequency: n×n grid WITH center (1×1, 3×3, 5×5)
+      // Grid coords: 0, ±2, ±4, ... (even integers, including 0)
+      const extent = frequency - 1; // F1→0, F3→2, F5→4
+      for (let i = -extent; i <= extent; i += 2) {
+        for (let j = -extent; j <= extent; j += 2) {
+          positions.push({ x: i * unit, y: j * unit, z: z });
+        }
+      }
     } else {
-      const n = layerFreq - 1;
-      for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n; j++) {
-          const x = (2 * i + 1) * unit;
-          const y = (2 * j + 1) * unit;
-
-          positions.push({ x: x, y: y, z: z });
-          positions.push({ x: -x, y: y, z: z });
-          positions.push({ x: x, y: -y, z: z });
-          positions.push({ x: -x, y: -y, z: z });
+      // Even frequency: n×n grid with vertex at origin (2×2, 4×4)
+      // Grid coords: ±1, ±3, ±5, ... (odd integers, NO zero)
+      const extent = frequency - 1; // F2→1, F4→3
+      for (let i = -extent; i <= extent; i += 2) {
+        if (i === 0) continue; // Skip zero for even frequencies
+        for (let j = -extent; j <= extent; j += 2) {
+          if (j === 0) continue;
+          positions.push({ x: i * unit, y: j * unit, z: z });
         }
       }
     }
@@ -769,15 +780,15 @@ export const RTRadialMatrix = {
   },
 
   /**
-   * Generate all IVM octahedra positions (primary layer + upper/lower tiers)
+   * Generate all IVM octahedra positions (geodesic frequency expansion)
    *
-   * Builds stacked layers with decreasing frequency as you go up/down:
-   * - F1: 1 at origin
-   * - F2: 4 primary + 1 above + 1 below = 6 total
-   * - F3: 16 primary + 4 above + 4 below + 1 top + 1 bottom = 26 total
-   * - F4: 36 + 16 + 16 + 4 + 4 + 1 + 1 = 78 total
+   * Builds stacked layers following geodesic frequency pattern:
+   * - F1: 1 octahedron at origin (odd freq, has center)
+   * - F2: 4 on XY (even, vertex at origin) + 1 apex + 1 nadir = 6 total
+   * - F3: 9 on XY (3×3, odd, has center) + 4 above + 4 below + 1 top + 1 bottom = 19 total
+   * - F4: 16 on XY (4×4, even) + 9 + 9 + 4 + 4 + 1 + 1 = 44 total
    *
-   * Z-spacing: each tier offset by octSize (= spacing) from the one below
+   * Each tier up/down decreases frequency by 1, maintaining odd/even alternation.
    *
    * @param {number} frequency - Shell frequency (1-5)
    * @param {number} spacing - Octahedron size (2 × halfSize for IVM scale)
@@ -786,10 +797,10 @@ export const RTRadialMatrix = {
   getIVMOctahedronPositions: (frequency, spacing) => {
     const positions = [];
     const unit = spacing * Math.SQRT1_2;
-    const zStep = spacing; // Z-distance between tiers = octahedron height
+    const zStep = spacing; // Z-distance between tiers
 
     // Build layers from primary (z=0) outward
-    // Primary layer at frequency, then each tier up/down is frequency-1, frequency-2, etc.
+    // Each tier up/down has frequency-1, frequency-2, etc.
     for (let tier = 0; tier < frequency; tier++) {
       const layerFreq = frequency - tier;
       const z = tier * zStep;
@@ -802,19 +813,6 @@ export const RTRadialMatrix = {
     }
 
     return positions;
-  },
-
-  /**
-   * Generate IVM octahedra positions on XY plane only (edge-colinear quilt pattern)
-   * DEPRECATED: Use getIVMOctahedronPositions for full 3D IVM structure
-   *
-   * @param {number} frequency - Shell frequency (1-5)
-   * @param {number} spacing - Octahedron size (2 × halfSize for IVM scale)
-   * @returns {Array} Array of {x, y, z} positions (all z=0)
-   */
-  getIVMOctahedronPositionsXY: (frequency, spacing) => {
-    const unit = spacing * Math.SQRT1_2;
-    return RTRadialMatrix.getIVMOctahedronLayer(frequency, unit, 0);
   },
 
   /**
@@ -991,12 +989,18 @@ export const RTRadialMatrix = {
    * Scale options:
    * - ivmScale=false: Standard size (halfSize), taxicab positioning
    * - ivmScale=true: 2× size, FCC lattice, 4× spacing (full IVM mode)
-   * - ivmScaleOnly=true: 2× size but KEEP taxicab positioning (for nesting into tet matrix)
+   * - ivmScaleOnly=true: 2× size, geodesic frequency layers (for nesting into tet IVM)
    *
    * Geometry relationship:
    * - Tetrahedron edge = 2√2 × halfSize (inscribed in cube of edge 2×halfSize)
    * - Octahedron edge = √2 × halfSize (vertices at ±halfSize on axes)
    * - To match: scale octahedron by 2 → edge = 2√2 × halfSize
+   *
+   * IVM Nesting (ivmScaleOnly) - Geodesic Frequency Pattern:
+   * - Odd freq (F1, F3, F5): Octahedron at origin (n×n grid with center)
+   * - Even freq (F2, F4): Shared vertex at origin (n×n grid, no center)
+   * - Each tier up/down decreases frequency by 1, maintaining alternation
+   * - 45° rotation aligns edges for colinear contact
    *
    * @param {number} frequency - Shell frequency (1-5)
    * @param {number} halfSize - Half the octahedron span (vertex to center)
@@ -1004,7 +1008,7 @@ export const RTRadialMatrix = {
    * @param {number} color - Hex color value
    * @param {Object} THREE - THREE.js library
    * @param {boolean} ivmScale - If true, full IVM mode (2× size + FCC lattice + 4× spacing)
-   * @param {boolean} ivmScaleOnly - If true, 2× size only (keeps taxicab positioning for tet nesting)
+   * @param {boolean} ivmScaleOnly - If true, 2× size + geodesic layers (for nesting into tet IVM)
    * @returns {THREE.Group} Group containing all octahedron instances
    */
   createRadialOctahedronMatrix: (
@@ -1022,19 +1026,19 @@ export const RTRadialMatrix = {
     const useScaledSize = ivmScale || ivmScaleOnly;
     const octSize = useScaledSize ? halfSize * 2 : halfSize;
 
-    // Spacing and positioning depend on mode
-    // Standard: spacing = 2 × halfSize, taxicab positioning
-    // Full IVM: spacing = 4 × halfSize, FCC lattice
-    // ivmScaleOnly: spacing = 2 × halfSize, XY-plane vertex-sharing
-    const spacing = ivmScale ? halfSize * 4 : halfSize * 2;
+    // Spacing depends on mode
+    // Standard: 2× halfSize with taxicab positioning
+    // Full IVM: 4× halfSize with FCC lattice
+    // ivmScaleOnly: 4× halfSize with geodesic frequency layers
+    const spacing = (ivmScale || ivmScaleOnly) ? halfSize * 4 : halfSize * 2;
 
     // Choose position generator based on mode
     let positions;
     if (ivmScaleOnly) {
-      // IVM scale mode: full 3D stacked layers with vertex-sharing
+      // Geodesic frequency layers (odd/even alternation)
       positions = RTRadialMatrix.getIVMOctahedronPositions(frequency, spacing);
     } else {
-      // Standard or full IVM mode
+      // Standard taxicab or full IVM (FCC lattice)
       positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, ivmScale);
     }
 
@@ -1049,7 +1053,7 @@ export const RTRadialMatrix = {
       const indices = [];
 
       vertices.forEach(v => {
-        positionsArray.push(v.x, v.y, v.z); // No offset - build at origin
+        positionsArray.push(v.x, v.y, v.z);
       });
 
       faces.forEach(faceIndices => {
@@ -1084,7 +1088,7 @@ export const RTRadialMatrix = {
       edges.forEach(([vi, vj]) => {
         const v1 = vertices[vi];
         const v2 = vertices[vj];
-        edgePositions.push(v1.x, v1.y, v1.z); // No offset
+        edgePositions.push(v1.x, v1.y, v1.z);
         edgePositions.push(v2.x, v2.y, v2.z);
       });
 
@@ -1105,13 +1109,13 @@ export const RTRadialMatrix = {
       edgeLines.renderOrder = 2;
       octGroup.add(edgeLines);
 
-      // Apply 45° in-place rotation for IVM scale mode (RT-pure)
-      // This aligns octahedron edges with the XY grid for colinear edge contact
+      // Apply 45° in-place rotation for ivmScaleOnly (RT-pure)
+      // This aligns octahedron edges for colinear edge contact
       if (ivmScaleOnly) {
         RT.applyRotation45(octGroup);
       }
 
-      // Now translate to final position
+      // Translate to final position
       octGroup.position.set(pos.x, pos.y, pos.z);
 
       matrixGroup.add(octGroup);
@@ -1122,20 +1126,15 @@ export const RTRadialMatrix = {
     const modeDesc = ivmScale
       ? '2× size, 4× spacing, FCC lattice (full IVM)'
       : ivmScaleOnly
-        ? '2× size, XY-plane vertex-sharing (IVM nesting)'
+        ? '2× size, geodesic frequency layers (IVM nesting)'
         : '1× size, 2× spacing, taxicab (standard)';
     console.log(`[RTRadialMatrix] Mode: ${modeDesc}`);
     console.log(`[RTRadialMatrix] Octahedron size: ${octSize} (${useScaledSize ? '2×' : '1×'} halfSize)`);
     console.log(`[RTRadialMatrix] Spacing: ${spacing}`);
     if (ivmScaleOnly) {
-      console.log(`[RTRadialMatrix] Position generator: getIVMOctahedronPositionsXY (XY plane only)`);
+      console.log(`[RTRadialMatrix] Pattern: ${frequency % 2 === 1 ? 'Odd (oct at origin)' : 'Even (vertex at origin)'}`);
     }
     console.log(`[RTRadialMatrix] Center positions generated: ${positions.length}`);
-    if (!ivmScaleOnly) {
-      const expectedCount = RTRadialMatrix.shellCounts.octahedron(frequency);
-      console.log(`[RTRadialMatrix] Expected (standard formula): ${expectedCount}`);
-      console.log(`[RTRadialMatrix] Match: ${positions.length === expectedCount ? '✓' : '✗ MISMATCH'}`);
-    }
     console.log(`[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`);
     console.log(`[RTRadialMatrix] ==============================================`);
 
