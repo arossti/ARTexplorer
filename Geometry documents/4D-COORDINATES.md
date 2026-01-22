@@ -1550,6 +1550,16 @@ Fuller's IN/OUT directionality (replacing Cartesian UP/DOWN) and tetrahedral coo
 **N.J. Wildberger - Rational Trigonometry**
 The algebraic exactness of quadrance and spread allows us to maintain mathematical rigor when describing forms in both positive and negative dimensional spaces.
 
+#### Why This Remained Hidden: The Cartesian Blind Spot
+
+Human habituation to the XYZ coordinate system may have long obscured the possibility of negative dimensional space. In Cartesian coordinates, the eight octants created by negative X, Y, and Z values all remain *within* the same 3D reference frame — they are merely directional extensions of the same space. There is no conceptual "outside" to Cartesian space; negative coordinates simply point the other way.
+
+Quadray coordinates (WXYZ) operate differently. With four basis vectors extending from a tetrahedral origin, all coordinates in "normal" space are non-negative. This immediately raises the question that Cartesian thinking never prompts: *what, then, is a negative position in this framework?* The answer cannot be "the other direction" because there is no other direction — the four basis vectors already span all of 3D space with positive values only.
+
+This distinction becomes vivid in ARTexplorer. When the XYZ basis vectors invert through the origin, they do not turn "inside-out" — they merely flip from right-hand rule to left-hand rule orientation, remaining recognizably within the same spatial framework. But when quadray-defined forms invert through the Janus Point, something categorically different occurs: they pass into a space that positive quadray coordinates cannot describe. The ±(1,1,1,1) normalization bridge between tetrahedron and dual tetrahedron hints at this hidden realm, but Cartesian thinking — with its symmetrical positive/negative axes — provided no reason to look for it.
+
+This may explain why negative dimensional space remained invisible to mathematicians and philosophers for so long. The question simply cannot arise within Cartesian assumptions. Only by adopting a coordinate system where "negative" has no directional meaning does the deeper question emerge: negative *what*, exactly? And once asked, the answer points toward a complementary dimensional realm that Cartesian geometry, by its very structure, was designed to make unthinkable.
+
 #### What Appears to Be Original
 
 As of January 2026, no published work appears to combine these concepts into a unified framework:
