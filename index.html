@@ -1542,12 +1542,12 @@
           </h3>
           <div id="scale-section" class="section-content collapsed">
             <div class="control-item">
-              <label>Cube Edge Length</label>
+              <label>Cube Edge Length (4D±)</label>
               <div class="slider-container">
                 <input
                   type="range"
                   id="scaleSlider"
-                  min="0.5"
+                  min="-3.6"
                   max="3.6"
                   step="0.1"
                   value="1.4"
@@ -1556,12 +1556,12 @@
               </div>
             </div>
             <div class="control-item">
-              <label>Tetrahedron Edge Length</label>
+              <label>Tetrahedron Edge Length (4D±)</label>
               <div class="slider-container">
                 <input
                   type="range"
                   id="tetScaleSlider"
-                  min="0.7"
+                  min="-5.0"
                   max="5.0"
                   step="0.1"
                   value="2.0"
@@ -1571,6 +1571,9 @@
             </div>
             <p class="info-text" style="font-size: 10px; margin-top: 5px">
               Linked sliders: rational units follow whichever you adjust
+            </p>
+            <p class="info-text" style="font-size: 9px; margin-top: 3px; color: #888;">
+              💫 Negative = inverted through origin (Janus Point)
             </p>
           </div>
         </div>

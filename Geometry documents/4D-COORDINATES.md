@@ -1277,6 +1277,254 @@ See `DEV-PRIVATE.md` §7.2.4 for proposed implementation.
 
 ---
 
-**Document Status:** Complete polyhedra reference with RT-pure operations
+## 13. Implementation: Janus Inversion (Through-Origin Scaling)
 
-**Last Updated:** 2026-01-17
+**Branch:** `Kali-Yuga`
+**Date:** 2026-01-21
+**Status:** ✅ Complete (Core Implementation)
+
+---
+
+### 13.1 Overview
+
+The Janus Inversion feature enables individual polyhedra to scale through the origin point, passing from positive dimensional space (4D+) into negative dimensional space (4D-). This implements the theoretical framework described in Section 4.1 (Topological Inversion Conjecture) and Section 5 (Negative Dimensionality).
+
+**Key Concept:** When a selected polyhedron's scale passes through zero, it doesn't simply shrink to nothing — it inverts through the Janus Point (origin) and emerges in the complementary dimensional space. This is the geometric equivalent of Barbour's cosmological theory and Fuller's IN/OUT directionality.
+
+---
+
+### 13.2 User Experience Design
+
+**Interaction Flow:**
+1. User selects a polyhedron (Form or Instance)
+2. User activates Scale mode (gumball)
+3. User drags the central sphere (uniform scaling) toward the origin
+4. As scale approaches zero, an **animated transition** triggers
+5. The polyhedron "collapses" through origin and re-emerges inverted
+6. Inverted form renders into white background, from former black background
+
+**Visual Feedback:**
+- **Positive space (4D+):** Normal solid rendering, black background
+- **Transition zone (approaching 0):** Increasing transparency, possible particle/dissolve effect
+- **Origin crossing:** Brief flash/pulse animation (the "Janus moment")
+- **Negative space (4D-):** Translucent ghost rendering of remainder of polyhedra NOT affected by this scaling transformation (opacity ~0.3-0.4), **WHITE background**
+
+**Background Inversion (Key Visual Cue):**
+When ANY form exists in negative dimensional space, the entire scene background inverts from black to white. This dramatic shift signals unmistakably that we have entered a different dimensional realm — the "negative universe" or anti-space. The contrast inversion also ensures ghost forms remain visible (dark translucent on white vs. light translucent on black).
+
+---
+
+### 13.3 Technical Implementation Plan
+
+#### Phase 1: Core Scaling Logic
+
+**File:** `modules/rt-init.js` (lines 2455-2540)
+
+**Current behavior:**
+```javascript
+// Line 2500 - Current clamping prevents negative values
+const clampedScale = Math.max(0.1, Math.min(10.0, newScale));
+```
+
+**New behavior:**
+```javascript
+// Allow negative scaling, detect origin crossing
+const JANUS_THRESHOLD = 0.05; // Zone near zero triggers transition
+const previousScale = poly.userData.currentScale || 1.0;
+const crossedOrigin = (previousScale > 0 && newScale < 0) ||
+                      (previousScale < 0 && newScale > 0);
+
+if (crossedOrigin) {
+  // Trigger Janus transition animation
+  triggerJanusTransition(poly, previousScale > 0 ? 'inward' : 'outward');
+}
+
+// Allow full range but clamp magnitude
+const clampedScale = Math.sign(newScale) * Math.max(0.1, Math.min(10.0, Math.abs(newScale)));
+```
+
+#### Phase 2: Janus Transition Animation
+
+**New function:** `triggerJanusTransition(polyhedron, direction)`
+
+**Animation sequence:**
+1. **Collapse phase** (200ms): Scale rapidly toward zero with increasing transparency
+2. **Flash phase** (50ms): Brief white/golden flash at origin point
+3. **Emerge phase** (200ms): Scale outward with remainder polyhedra ghost opacity, inverted geometry
+4. **Settle phase** (100ms): Opacity stabilizes at ghost level
+
+**Implementation approach:**
+- Use `requestAnimationFrame` for smooth animation
+- Store animation state in `poly.userData.janusAnimation`
+- Disable gumball interaction during animation
+
+#### Phase 3: Ghost Rendering
+
+**Visual state tracking:**
+```javascript
+poly.userData.dimensionalState = 'positive'; // or 'negative'
+poly.userData.isInverted = false; // or true after crossing
+```
+
+**Material modifications for ghost state:**
+- Opacity: 0.35 (configurable)
+- Emissive: slight glow to distinguish from transparent positive forms
+- Side: `THREE.DoubleSide` (inverted winding order visible)
+- DepthWrite: false (proper layering with positive forms)
+
+#### Phase 4: Background Inversion
+
+**Scene background management:**
+```javascript
+// Track global dimensional state
+let hasNegativeForms = false;
+
+function updateDimensionalBackground() {
+  // Check if ANY form is in negative space
+  hasNegativeForms = scene.children.some(child =>
+    child.userData.dimensionalState === 'negative'
+  );
+
+  // Animate background transition
+  const targetColor = hasNegativeForms ? 0xffffff : 0x000000;
+  animateBackgroundColor(scene.background, targetColor, 300); // 300ms transition
+}
+```
+
+**Visual implications:**
+- Grid lines may need color inversion for visibility
+- Basis vector colors remain unchanged (they exist in both spaces)
+- UI panels remain dark (only 3D viewport inverts)
+
+#### Phase 5: State Persistence
+
+**Extend state manager** (`rt-state-manager.js`) to save/load:
+- `dimensionalState`: 'positive' | 'negative'
+- `isInverted`: boolean
+- `currentScale`: can be negative
+- Scene background state (derived from form states)
+
+---
+
+### 13.4 Technical Considerations
+
+**THREE.js Negative Scale Behavior:**
+- `object.scale.set(-1, -1, -1)` inverts geometry correctly
+- Face winding order reverses (CCW becomes CW)
+- Need `THREE.DoubleSide` or manual backface handling
+- Normals point inward for negative scale
+
+**Coordinate System Implications:**
+- Inverted tetrahedron vertices: (-1,0,0,0), (0,-1,0,0), etc. in raw Quadray
+- Maintains same centroid at origin
+- Relationship to dual tetrahedron: inversion ≠ dual (dual is different vertex set)
+
+**Performance Notes:**
+- Animation uses existing render loop
+- Ghost material can be shared across inverted forms
+- No geometry regeneration needed (scale transform only)
+
+---
+
+### 13.5 File Modification Summary
+
+| File | Changes |
+|------|---------|
+| `modules/rt-init.js` | Modify scale clamping (L2500), add `triggerJanusTransition()`, origin-crossing detection |
+| `modules/rt-rendering.js` | Add ghost material, background inversion, `updateDimensionalBackground()` |
+| `modules/rt-state-manager.js` | Extend state schema for dimensional state |
+| `art.css` | Optional: CSS for UI indicators of inverted state |
+| `index.html` | Optional: Add 4D± indicator in selection info |
+
+---
+
+### 13.6 Dimensional Transition Rules (Resolved)
+
+These rules govern how forms behave during dimensional transitions:
+
+#### Rule 1: Individual Selection Scaling
+When a selected polyhedron is scaled toward negative space:
+- **Non-selected positive forms ghost out** (fade to translucent) during the transition
+- This creates a "spotlight" effect on the form crossing the Janus Point
+- Once the selected form enters negative space, background inverts to white
+- Non-selected forms remain ghosted until the inverting form settles
+
+#### Rule 2: Global Inversion (Future Feature)
+When global scale sliders support negative values:
+- **ALL active forms pass through origin together**, preserving relative relationships
+- This represents the "cosmic breath" — the entire universe inhaling through the Janus Point
+- Individual inversion = local event; Global inversion = universal event
+- Background inverts as the collective crosses zero
+
+#### Rule 3: Dual Relationship Preservation
+When a "parent" form inverts, its dual's relationship inverts too:
+- The dual tetrahedron displayed as (0,1,1,1), (1,0,1,1), etc. is the raw negative form (-1,0,0,0), (0,-1,0,0) **normalized by +(1,1,1,1)** to show in positive space
+- When the parent inverts to negative space, the dual's normalization relationship inverts
+- **Double-negative becomes positive**: An inverted parent's dual would be normalized by -(1,1,1,1), effectively returning to raw negative coordinates
+- This maintains the fundamental ±(1,1,1,1) translation relationship across dimensional boundaries
+
+**Philosophical Note:** The dual is already a "shadow" of negative space projected into positive space. Global inversion reveals this truth — what appeared as the dual in positive space was always the true negative form, and vice versa.
+
+---
+
+### 13.7 Open Questions (Remaining)
+
+1. **Axis-constrained scaling:** Should negative scaling be allowed on individual axes (non-uniform inversion), or only uniform through central sphere? *Recommendation: Uniform only for v1*
+
+2. **IVM/Matrix context:** How do inverted forms interact with the IVM lattice visualization? Should negative space forms be excluded from IVM, or rendered as ghost lattice points?
+
+---
+
+### 13.8 Acceptance Criteria
+
+- [x] Selected polyhedron can scale through zero via gumball
+- [x] Animated transition plays when crossing origin (golden flash at Janus Point)
+- [x] Background inverts black↔white when crossing origin
+- [x] Non-selected forms ghost out during individual scaling transition
+- [x] Global scale sliders support negative values (-3.6 to 3.6 / -5.0 to 5.0)
+- [x] Global slider crossing triggers universal background inversion
+- [x] Debounced crossing detection prevents double-trigger at zero
+- [x] Console logs dimensional state changes for debugging
+- [ ] Inverted forms render as translucent ghosts (partial - non-selected ghost during transition only)
+- [ ] State persists in save/load (Phase 5 - future)
+
+---
+
+### 13.9 Discovered Issues & Future Work
+
+During implementation, the following edge cases and extensions were identified:
+
+#### Issue 1: Cross-Dimensional Ghost Rendering
+
+**Scenario:** An instance of a polyhedron is scaled into negative space (e.g., a negative cube), but then the global slider or base form is scaled back into positive space.
+
+**Question:** Should the negative cube appear as a ghost in positive space?
+
+**Answer:** YES. Forms that exist in the opposite dimensional space from the current global state should render as ghosts. This creates a consistent visual language:
+- **Positive global space + negative form** → form appears as ghost
+- **Negative global space + positive form** → form appears as ghost
+
+This reinforces the concept that ghosts are "shadows" of the other dimensional realm.
+
+#### Issue 2: Mixed-Dimensional Scenes
+
+When both positive and negative forms coexist, the background state must be determined by:
+- The **most recently crossed** form, OR
+- The **majority** dimensional state, OR
+- A **user-selected** primary dimension
+
+*Recommendation:* For v2, implement a "dimensional focus" concept where the user can lock the background to a specific state, with cross-dimensional forms ghosted.
+
+#### Issue 3: State Persistence (Phase 5)
+
+The `rt-state-manager.js` must be extended to save/load:
+- `dimensionalState` per polyhedron
+- `globalDimensionalState` for scene
+- Negative scale values
+- Background color state
+
+---
+
+**Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation
+
+**Last Updated:** 2026-01-21

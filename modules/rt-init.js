@@ -949,6 +949,49 @@ function startARTexplorer(
   // Both snap to 0.10 intervals, show 2 decimal places
   // Which slider you adjust determines which shows rational values
 
+  // Track global dimensional state for slider-based scaling
+  // State tracking: actual dimensional state is 'positive' or 'negative'
+  // Sign tracking: last non-zero sign seen (1 or -1), prevents double-trigger
+  let globalDimensionalState = 'positive';
+  let previousGlobalSign = 1; // Last non-zero sign: 1 or -1
+  let hasTriggeredAtZero = false; // Debounce: prevent double-trigger when passing through 0
+
+  /**
+   * Check if we crossed the Janus Point (zero)
+   * Returns: 'inward' | 'outward' | null
+   *
+   * Critical fix: When slider goes 0.1 → 0.0 → -0.1, we must trigger ONCE.
+   * Without debouncing, both the 0.1→0.0 AND 0.0→-0.1 transitions would trigger.
+   */
+  function checkGlobalJanusCrossing(newValue) {
+    const newSign = Math.sign(newValue); // -1, 0, or 1
+    let direction = null;
+
+    if (newSign === 0) {
+      // Landing on zero: trigger transition if we haven't already
+      if (!hasTriggeredAtZero) {
+        direction = previousGlobalSign > 0 ? 'inward' : 'outward';
+        hasTriggeredAtZero = true;
+      }
+      // Don't update previousGlobalSign at zero - keep last known direction
+    } else {
+      // Non-zero value
+      if (newSign !== previousGlobalSign) {
+        // Actual sign change (e.g., from positive to negative)
+        if (!hasTriggeredAtZero) {
+          // Crossed directly without landing on zero
+          direction = previousGlobalSign > 0 ? 'inward' : 'outward';
+        }
+        // Update to new sign
+        previousGlobalSign = newSign;
+      }
+      // Reset debounce when we've moved away from zero
+      hasTriggeredAtZero = false;
+    }
+
+    return direction;
+  }
+
   document.getElementById("scaleSlider").addEventListener("input", e => {
     const rawValue = parseFloat(e.target.value);
 
@@ -965,6 +1008,22 @@ function startARTexplorer(
     // Update tet slider and display (irrational - calculated)
     document.getElementById("tetScaleSlider").value = tetEdge;
     document.getElementById("tetScaleValue").textContent = tetEdge.toFixed(4);
+
+    // JANUS INVERSION: Detect global Janus Point crossing
+    const crossDirection = checkGlobalJanusCrossing(cubeEdge);
+
+    if (crossDirection) {
+      globalDimensionalState = globalDimensionalState === 'positive' ? 'negative' : 'positive';
+      console.log(`🌀 GLOBAL JANUS: All forms crossed origin (${crossDirection}) → ${globalDimensionalState} space`);
+      console.log(`   Previous sign: ${previousGlobalSign}, Current value: ${cubeEdge}`);
+
+      // Animate background inversion
+      const targetColor = globalDimensionalState === 'negative' ? 0xffffff : 0x1a1a1a;
+      animateBackgroundColor(targetColor, 300);
+
+      // Create flash effect at origin
+      createJanusFlash(new THREE.Vector3(0, 0, 0));
+    }
 
     updateGeometry();
   });
@@ -985,6 +1044,22 @@ function startARTexplorer(
     // Update cube slider and display (irrational - calculated)
     document.getElementById("scaleSlider").value = cubeEdge;
     document.getElementById("scaleValue").textContent = cubeEdge.toFixed(4);
+
+    // JANUS INVERSION: Detect global Janus Point crossing (using tetEdge)
+    const crossDirection = checkGlobalJanusCrossing(tetEdge);
+
+    if (crossDirection) {
+      globalDimensionalState = globalDimensionalState === 'positive' ? 'negative' : 'positive';
+      console.log(`🌀 GLOBAL JANUS: All forms crossed origin (${crossDirection}) → ${globalDimensionalState} space`);
+      console.log(`   Previous sign: ${previousGlobalSign}, Current value: ${tetEdge}`);
+
+      // Animate background inversion
+      const targetColor = globalDimensionalState === 'negative' ? 0xffffff : 0x1a1a1a;
+      animateBackgroundColor(targetColor, 300);
+
+      // Create flash effect at origin
+      createJanusFlash(new THREE.Vector3(0, 0, 0));
+    }
 
     updateGeometry();
   });
@@ -2271,6 +2346,157 @@ function startARTexplorer(
     return [];
   }
 
+  // ========================================================================
+  // JANUS INVERSION: Through-Origin Transition Animation
+  // ========================================================================
+
+  /**
+   * Trigger the Janus Point transition animation when a polyhedron crosses origin
+   * @param {THREE.Group} poly - The polyhedron crossing the origin
+   * @param {string} direction - 'inward' (positive→negative) or 'outward' (negative→positive)
+   * @param {Array} selectedPolyhedra - Array of currently selected polyhedra
+   */
+  function triggerJanusTransition(poly, direction, selectedPolyhedra) {
+    const isEnteringNegative = direction === 'inward';
+
+    // ================================================================
+    // Phase 1: Ghost non-selected forms
+    // ================================================================
+    scene.traverse(child => {
+      if (child.userData && child.userData.type && !selectedPolyhedra.includes(child)) {
+        // This is a polyhedron that is NOT being scaled - ghost it
+        child.traverse(mesh => {
+          if (mesh.isMesh && mesh.material) {
+            // Store original material properties for restoration
+            if (!mesh.userData.originalOpacity) {
+              mesh.userData.originalOpacity = mesh.material.opacity;
+              mesh.userData.originalTransparent = mesh.material.transparent;
+            }
+            // Apply ghost effect
+            mesh.material.transparent = true;
+            mesh.material.opacity = 0.25;
+            mesh.material.needsUpdate = true;
+          }
+        });
+      }
+    });
+
+    // ================================================================
+    // Phase 2: Background inversion
+    // ================================================================
+    const targetColor = isEnteringNegative ? 0xffffff : 0x1a1a1a;
+    animateBackgroundColor(targetColor, 300);
+
+    // ================================================================
+    // Phase 3: Flash effect at origin (the "Janus moment")
+    // ================================================================
+    createJanusFlash(poly.position.clone());
+
+    // ================================================================
+    // Phase 4: Restore non-selected forms after transition settles
+    // ================================================================
+    setTimeout(() => {
+      scene.traverse(child => {
+        if (child.userData && child.userData.type && !selectedPolyhedra.includes(child)) {
+          child.traverse(mesh => {
+            if (mesh.isMesh && mesh.material && mesh.userData.originalOpacity !== undefined) {
+              // Restore original opacity (or keep ghosted if we're in negative space)
+              const hasNegativeForms = scene.children.some(c =>
+                c.userData && c.userData.dimensionalState === 'negative'
+              );
+              if (hasNegativeForms) {
+                // Keep ghosted while any form is in negative space
+                mesh.material.opacity = 0.35;
+              } else {
+                // Restore original
+                mesh.material.opacity = mesh.userData.originalOpacity;
+                mesh.material.transparent = mesh.userData.originalTransparent;
+              }
+              mesh.material.needsUpdate = true;
+            }
+          });
+        }
+      });
+    }, 550); // After animation completes (200 + 50 + 200 + 100ms)
+
+    console.log(`💫 Janus transition: ${direction} → background ${isEnteringNegative ? 'WHITE' : 'BLACK'}`);
+  }
+
+  /**
+   * Animate scene background color transition
+   * @param {number} targetColorHex - Target color in hex (e.g., 0xffffff)
+   * @param {number} duration - Animation duration in ms
+   */
+  function animateBackgroundColor(targetColorHex, duration) {
+    const startColor = scene.background.clone();
+    const endColor = new THREE.Color(targetColorHex);
+    const startTime = performance.now();
+
+    function animate() {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Ease-in-out cubic
+      const eased = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      scene.background.copy(startColor).lerp(endColor, eased);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  /**
+   * Create a brief flash effect at the Janus Point (origin crossing)
+   * @param {THREE.Vector3} position - Position of the flash
+   */
+  function createJanusFlash(position) {
+    // Create a glowing sphere that expands and fades
+    const flashGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+    const flashMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffcc, // Warm golden-white
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide,
+    });
+
+    const flash = new THREE.Mesh(flashGeometry, flashMaterial);
+    flash.position.copy(position);
+    scene.add(flash);
+
+    // Animate: expand and fade
+    const startTime = performance.now();
+    const duration = 250; // ms
+
+    function animateFlash() {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Scale up rapidly
+      const scale = 0.1 + progress * 2.5;
+      flash.scale.set(scale, scale, scale);
+
+      // Fade out
+      flashMaterial.opacity = 0.9 * (1 - progress);
+
+      if (progress < 1) {
+        requestAnimationFrame(animateFlash);
+      } else {
+        // Cleanup
+        scene.remove(flash);
+        flashGeometry.dispose();
+        flashMaterial.dispose();
+      }
+    }
+
+    requestAnimationFrame(animateFlash);
+  }
+
   // Initialize gumball mouse event listeners (called after initScene)
   function initGumballEventListeners() {
     raycaster = new THREE.Raycaster();
@@ -2491,22 +2717,74 @@ function startARTexplorer(
                 if (!poly.userData.currentScale) {
                   poly.userData.currentScale = 1.0;
                 }
+                // Initialize dimensional state if not set
+                if (!poly.userData.dimensionalState) {
+                  poly.userData.dimensionalState = 'positive';
+                }
 
-                // Calculate new scale multiplier
-                const scaleMultiplier = 1 + scaleDelta * 0.01; // Convert delta to percentage
-                const newScale = poly.userData.currentScale * scaleMultiplier;
+                // JANUS INVERSION: Use ADDITIVE scaling to allow crossing through zero
+                // Multiplicative scaling asymptotically approaches zero but never crosses
+                // Additive scaling allows linear traversal through the Janus Point
+                const previousScale = poly.userData.currentScale;
+                const scaleIncrement = scaleDelta * 0.02; // INCREASED sensitivity (was 0.005)
+                const newScale = previousScale + scaleIncrement;
 
-                // Clamp scale to reasonable bounds (0.1 to 10.0)
-                const clampedScale = Math.max(0.1, Math.min(10.0, newScale));
+                // JANUS INVERSION: Allow through-origin scaling
+                // Clamp magnitude to reasonable bounds (0.05 to 10.0)
+                const minScale = 0.05;
+                const maxScale = 10.0;
+                let clampedScale;
+                let crossedJanus = false; // Track if we crossed this frame
 
-                // Apply uniform scale to the object
+                // KEY: Detect when we're AT the minimum and still pushing toward zero
+                // This is the moment to cross through the Janus Point
+                const atPositiveMin = Math.abs(previousScale - minScale) < 0.01;
+                const atNegativeMin = Math.abs(previousScale - (-minScale)) < 0.01;
+                const pushingInward = scaleIncrement < -0.0001;
+                const pushingOutward = scaleIncrement > 0.0001;
+
+                if (atPositiveMin && pushingInward) {
+                  // At +0.05 and pushing inward → CROSS TO NEGATIVE SPACE
+                  clampedScale = -minScale;
+                  crossedJanus = true;
+                  console.log(`🌀 CROSSING: +${minScale} → -${minScale} (pushing inward)`);
+                } else if (atNegativeMin && pushingOutward) {
+                  // At -0.05 and pushing outward → CROSS BACK TO POSITIVE SPACE
+                  clampedScale = minScale;
+                  crossedJanus = true;
+                  console.log(`🌀 CROSSING: -${minScale} → +${minScale} (pushing outward)`);
+                } else if (Math.abs(newScale) < minScale) {
+                  // In the "zero zone" but not crossing - clamp to current side
+                  clampedScale = previousScale > 0 ? minScale : -minScale;
+                } else {
+                  // Normal scaling - just clamp max
+                  clampedScale = Math.sign(newScale) * Math.min(maxScale, Math.abs(newScale));
+                }
+
+                // ================================================================
+                // JANUS INVERSION: Trigger transition when crossing detected
+                // ================================================================
+                if (crossedJanus) {
+                  const direction = previousScale > 0 ? 'inward' : 'outward';
+                  poly.userData.dimensionalState =
+                    poly.userData.dimensionalState === 'positive' ? 'negative' : 'positive';
+
+                  console.log(
+                    `🌀 JANUS POINT: ${poly.userData.type || 'Form'} crossed origin (${direction}) → ${poly.userData.dimensionalState} space`
+                  );
+
+                  // Trigger Janus transition (animation + ghost + background)
+                  triggerJanusTransition(poly, direction, selectedPolyhedra);
+                }
+
+                // Apply uniform scale to the object (negative = inverted geometry)
                 poly.scale.set(clampedScale, clampedScale, clampedScale);
 
                 // Store current scale for next frame
                 poly.userData.currentScale = clampedScale;
 
                 console.log(
-                  `✅ Scaled ${poly.userData.isInstance ? "Instance" : "Form"}: ${clampedScale.toFixed(4)}`
+                  `✅ Scaled ${poly.userData.isInstance ? "Instance" : "Form"}: ${clampedScale.toFixed(4)} (${poly.userData.dimensionalState})`
                 );
               });
 
