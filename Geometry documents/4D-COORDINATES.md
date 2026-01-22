@@ -1590,6 +1590,49 @@ The "cosmic breath" metaphor — all forms inhaling through the Janus Point toge
 
 These intuitions feel natural and self-evident to contemplative experience. The purpose of ARTexplorer is to provide tools for visualizing and testing these ideas geometrically, allowing intuition and mathematics to inform each other.
 
+#### Anticipated Counter-Arguments & Response
+
+**The XYZ Rendering Objection**
+
+A mathematician could object: "The current ARTexplorer implementation renders everything through THREE.js, which uses standard XYZ Cartesian coordinates. The 'Janus Inversion' is simply `scale.set(-1, -1, -1)` — ordinary negative scaling that any 3D engine can perform. The visual effects are arbitrary UI design choices, not mathematical necessities. XYZ handles negative coordinates perfectly well. Nothing is 'hidden' — the entire demonstration occurs in Cartesian space at the GPU level."
+
+This objection deserves a direct response.
+
+**What We Already Have**
+
+The mathematical foundations documented in this specification are substantial:
+
+1. **Quadray Basis Vectors** (Section 2) — Four tetrahedral basis vectors with precise Cartesian equivalents, maintaining the property that all positive combinations span 3D space
+2. **Rational Trigonometry** (Section 8) — Quadrance and spread calculations that maintain algebraic exactness throughout geometric operations
+3. **The ±(1,1,1,1) Normalization Bridge** (Section 4) — A mathematically defined translation between positive and negative Quadray representations
+4. **Weierstrass Substitution** (Section 8.4) — Pure rational rotation without transcendental functions
+5. **Algebraic Exactness** — XYZ conversion deferred to the GPU boundary; intermediate calculations remain in rational form
+
+The current implementation already performs geometry in Quadray/RT space before converting to XYZ for rendering. The question is not whether we have mathematics — we do — but whether the XYZ rendering layer undermines the conceptual claim about negative dimensionality.
+
+**The Subtler Claim**
+
+We do not claim that XYZ *cannot* represent inverted geometry — it obviously can. The claim is that XYZ's symmetric ±axes make the *question* of negative dimensionality structurally invisible. In XYZ, the point (-1, -1, -1) is simply "the opposite octant" — still conceptually within the same 3D space. The framework never prompts you to ask "what *is* negative space?"
+
+In Quadray coordinates, where all positive values already span 3D, negative coordinates have no directional interpretation. This forces a categorically different question: negative *what*?
+
+**Future Development: Native 4D Rendering**
+
+To fully realize the mathematical framework, future work should eliminate the XYZ conversion entirely:
+
+1. **Native 4D Rendering Engine** — A purpose-built renderer operating in tetrahedral coordinate space, where:
+   - All transformations occur in WXYZ using rational algebra
+   - No Cartesian conversion until final pixel output
+   - Negative Quadray coordinates handled natively, not as XYZ proxies
+   - Computational efficiency gains from tetrahedral symmetry
+
+2. **Extended Signed Quadray Algebra** — Formalize the mathematics of WXYZ where negative values are permitted:
+   - Quadrance calculations across the ±(1,1,1,1) boundary
+   - Transformation matrices for 4D± space
+   - Topological characterization of the origin as dimensional transition point
+
+The current ARTexplorer demonstrates Janus Inversion through XYZ rendering, but the underlying Quadray mathematics is real and operational. The visual metaphor is built on genuine algebraic foundations — foundations that await only a native 4D renderer to be fully expressed.
+
 ---
 
 **Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation + theoretical context

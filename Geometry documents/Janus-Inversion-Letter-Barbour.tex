@@ -273,6 +273,48 @@ We have implemented this framework in ARTexplorer, an interactive 3D geometry vi
 The software is available at: \url{https://arossti.github.io/ARTexplorer/}
 
 %==============================================================================
+\section{Anticipated Objections and Response}
+%==============================================================================
+
+\subsection{The XYZ Rendering Objection}
+
+A mathematician could object: ``The current ARTexplorer implementation renders everything through THREE.js, which uses standard XYZ Cartesian coordinates. The `Janus Inversion' is simply \texttt{scale.set(-1, -1, -1)}---ordinary negative scaling that any 3D engine can perform. XYZ handles negative coordinates perfectly well. Nothing is `hidden'---the entire demonstration occurs in Cartesian space at the GPU level.''
+
+This objection deserves a direct response.
+
+\subsection{What We Already Have}
+
+The mathematical foundations in ARTexplorer are substantial:
+
+\begin{enumerate}
+\item \textbf{Quadray Basis Vectors}---Four tetrahedral basis vectors with precise Cartesian equivalents, maintaining the property that all positive combinations span 3D space
+\item \textbf{Rational Trigonometry}---Quadrance ($Q = d^2$) and spread ($s = \sin^2\theta$) calculations that maintain algebraic exactness throughout geometric operations
+\item \textbf{The $\pm(1,1,1,1)$ Normalization Bridge}---A mathematically defined translation between positive and negative Quadray representations
+\item \textbf{Weierstrass Substitution}---Pure rational rotation without transcendental functions
+\item \textbf{Algebraic Exactness}---XYZ conversion deferred to the GPU boundary; intermediate calculations remain in rational form
+\end{enumerate}
+
+The current implementation performs geometry in Quadray/RT space before converting to XYZ for rendering. The question is not whether we have mathematics---we do---but whether the XYZ rendering layer undermines the conceptual claim about negative dimensionality.
+
+\subsection{The Subtler Claim}
+
+We do not claim that XYZ \emph{cannot} represent inverted geometry---it obviously can. The claim is that XYZ's symmetric $\pm$ axes make the \emph{question} of negative dimensionality structurally invisible. In XYZ, the point $(-1, -1, -1)$ is simply ``the opposite octant''---still conceptually within the same 3D space. The framework never prompts you to ask ``what \emph{is} negative space?''
+
+In Quadray coordinates, where all positive values already span 3D, negative coordinates have no directional interpretation. This forces a categorically different question: negative \emph{what}?
+
+\subsection{Future Development: Native 4D Rendering}
+
+To fully realize the mathematical framework, future work should eliminate the XYZ conversion entirely:
+
+\begin{enumerate}
+\item \textbf{Native 4D Rendering Engine}---A purpose-built renderer operating in tetrahedral coordinate space, where all transformations occur in WXYZ using rational algebra, with no Cartesian conversion until final pixel output. This would handle negative Quadray coordinates natively, not as XYZ proxies, and potentially achieve computational efficiency gains from tetrahedral symmetry.
+
+\item \textbf{Extended Signed Quadray Algebra}---Formalization of the mathematics of WXYZ where negative values are permitted, including quadrance calculations across the $\pm(1,1,1,1)$ boundary, transformation matrices for 4D$^\pm$ space, and topological characterization of the origin as dimensional transition point.
+\end{enumerate}
+
+The current ARTexplorer demonstrates Janus Inversion through XYZ rendering, but the underlying Quadray mathematics is real and operational. The visual metaphor is built on genuine algebraic foundations---foundations that await only a native 4D renderer to be fully expressed.
+
+%==============================================================================
 \section{Conclusion}
 %==============================================================================
 
@@ -287,6 +329,18 @@ The answer points toward a complementary dimensional realm---4D$^-$---that may h
 %==============================================================================
 
 This work draws on the insights of Julian Barbour, R. Buckminster Fuller, and N.J. Wildberger. The geometric intuitions emerged from decades of contemplative practice and were developed in collaboration with AI assistance (Claude/Anthropic) for implementation and documentation.
+
+Special thanks to:
+\begin{itemize}
+\item Rudolf Dorenach, Bucky's German associate and my first Synergetics mentor
+\item Kirby Urner, for introducing me to Quadray coordinates
+\item Tom Ace, for his work on the basis vector conversion methodology
+\item Gerald DeJong, for introducing me to Wildberger's Rational Trigonometry
+\item Dawn Danby and David McConville, for their moral support and enthusiasm
+\item Bonnie DeVarco, for her tireless preservation and active engagement with Fuller's original work
+\item Mark Pavlidis, for teaching me Git discipline and the importance of clean code
+\item Enzyme APD, for encouraging the pursuit of these ideas against all odds
+\end{itemize}
 
 %==============================================================================
 \section*{References}
