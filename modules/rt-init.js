@@ -949,6 +949,49 @@ function startARTexplorer(
   // Both snap to 0.10 intervals, show 2 decimal places
   // Which slider you adjust determines which shows rational values
 
+  // Track global dimensional state for slider-based scaling
+  // State tracking: actual dimensional state is 'positive' or 'negative'
+  // Sign tracking: last non-zero sign seen (1 or -1), prevents double-trigger
+  let globalDimensionalState = 'positive';
+  let previousGlobalSign = 1; // Last non-zero sign: 1 or -1
+  let hasTriggeredAtZero = false; // Debounce: prevent double-trigger when passing through 0
+
+  /**
+   * Check if we crossed the Janus Point (zero)
+   * Returns: 'inward' | 'outward' | null
+   *
+   * Critical fix: When slider goes 0.1 → 0.0 → -0.1, we must trigger ONCE.
+   * Without debouncing, both the 0.1→0.0 AND 0.0→-0.1 transitions would trigger.
+   */
+  function checkGlobalJanusCrossing(newValue) {
+    const newSign = Math.sign(newValue); // -1, 0, or 1
+    let direction = null;
+
+    if (newSign === 0) {
+      // Landing on zero: trigger transition if we haven't already
+      if (!hasTriggeredAtZero) {
+        direction = previousGlobalSign > 0 ? 'inward' : 'outward';
+        hasTriggeredAtZero = true;
+      }
+      // Don't update previousGlobalSign at zero - keep last known direction
+    } else {
+      // Non-zero value
+      if (newSign !== previousGlobalSign) {
+        // Actual sign change (e.g., from positive to negative)
+        if (!hasTriggeredAtZero) {
+          // Crossed directly without landing on zero
+          direction = previousGlobalSign > 0 ? 'inward' : 'outward';
+        }
+        // Update to new sign
+        previousGlobalSign = newSign;
+      }
+      // Reset debounce when we've moved away from zero
+      hasTriggeredAtZero = false;
+    }
+
+    return direction;
+  }
+
   document.getElementById("scaleSlider").addEventListener("input", e => {
     const rawValue = parseFloat(e.target.value);
 
@@ -965,6 +1008,22 @@ function startARTexplorer(
     // Update tet slider and display (irrational - calculated)
     document.getElementById("tetScaleSlider").value = tetEdge;
     document.getElementById("tetScaleValue").textContent = tetEdge.toFixed(4);
+
+    // KALI-YUGA: Detect global Janus Point crossing
+    const crossDirection = checkGlobalJanusCrossing(cubeEdge);
+
+    if (crossDirection) {
+      globalDimensionalState = globalDimensionalState === 'positive' ? 'negative' : 'positive';
+      console.log(`🌀 GLOBAL JANUS: All forms crossed origin (${crossDirection}) → ${globalDimensionalState} space`);
+      console.log(`   Previous sign: ${previousGlobalSign}, Current value: ${cubeEdge}`);
+
+      // Animate background inversion
+      const targetColor = globalDimensionalState === 'negative' ? 0xffffff : 0x1a1a1a;
+      animateBackgroundColor(targetColor, 300);
+
+      // Create flash effect at origin
+      createJanusFlash(new THREE.Vector3(0, 0, 0));
+    }
 
     updateGeometry();
   });
@@ -985,6 +1044,22 @@ function startARTexplorer(
     // Update cube slider and display (irrational - calculated)
     document.getElementById("scaleSlider").value = cubeEdge;
     document.getElementById("scaleValue").textContent = cubeEdge.toFixed(4);
+
+    // KALI-YUGA: Detect global Janus Point crossing (using tetEdge)
+    const crossDirection = checkGlobalJanusCrossing(tetEdge);
+
+    if (crossDirection) {
+      globalDimensionalState = globalDimensionalState === 'positive' ? 'negative' : 'positive';
+      console.log(`🌀 GLOBAL JANUS: All forms crossed origin (${crossDirection}) → ${globalDimensionalState} space`);
+      console.log(`   Previous sign: ${previousGlobalSign}, Current value: ${tetEdge}`);
+
+      // Animate background inversion
+      const targetColor = globalDimensionalState === 'negative' ? 0xffffff : 0x1a1a1a;
+      animateBackgroundColor(targetColor, 300);
+
+      // Create flash effect at origin
+      createJanusFlash(new THREE.Vector3(0, 0, 0));
+    }
 
     updateGeometry();
   });
