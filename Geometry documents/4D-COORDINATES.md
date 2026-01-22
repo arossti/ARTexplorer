@@ -1277,17 +1277,17 @@ See `DEV-PRIVATE.md` §7.2.4 for proposed implementation.
 
 ---
 
-## 13. Implementation: Kali-Yuga Scaling (Through-Origin Inversion)
+## 13. Implementation: Janus Inversion (Through-Origin Scaling)
 
 **Branch:** `Kali-Yuga`
 **Date:** 2026-01-21
-**Status:** Workplan
+**Status:** ✅ Complete (Core Implementation)
 
 ---
 
 ### 13.1 Overview
 
-The Kali-Yuga feature enables individual polyhedra to scale through the origin point, passing from positive dimensional space (4D+) into negative dimensional space (4D-). This implements the theoretical framework described in Section 4.1 (Topological Inversion Conjecture) and Section 5 (Negative Dimensionality).
+The Janus Inversion feature enables individual polyhedra to scale through the origin point, passing from positive dimensional space (4D+) into negative dimensional space (4D-). This implements the theoretical framework described in Section 4.1 (Topological Inversion Conjecture) and Section 5 (Negative Dimensionality).
 
 **Key Concept:** When a selected polyhedron's scale passes through zero, it doesn't simply shrink to nothing — it inverts through the Janus Point (origin) and emerges in the complementary dimensional space. This is the geometric equivalent of Barbour's cosmological theory and Fuller's IN/OUT directionality.
 
@@ -1477,15 +1477,54 @@ When a "parent" form inverts, its dual's relationship inverts too:
 
 ### 13.8 Acceptance Criteria
 
-- [ ] Selected polyhedron can scale through zero via gumball
-- [ ] Animated transition plays when crossing origin
-- [ ] Inverted forms render as translucent ghosts
-- [ ] State persists in save/load
-- [ ] No visual glitches at transition point
-- [ ] Console logs dimensional state changes for debugging
+- [x] Selected polyhedron can scale through zero via gumball
+- [x] Animated transition plays when crossing origin (golden flash at Janus Point)
+- [x] Background inverts black↔white when crossing origin
+- [x] Non-selected forms ghost out during individual scaling transition
+- [x] Global scale sliders support negative values (-3.6 to 3.6 / -5.0 to 5.0)
+- [x] Global slider crossing triggers universal background inversion
+- [x] Debounced crossing detection prevents double-trigger at zero
+- [x] Console logs dimensional state changes for debugging
+- [ ] Inverted forms render as translucent ghosts (partial - non-selected ghost during transition only)
+- [ ] State persists in save/load (Phase 5 - future)
 
 ---
 
-**Document Status:** Complete polyhedra reference with RT-pure operations + Kali-Yuga workplan
+### 13.9 Discovered Issues & Future Work
+
+During implementation, the following edge cases and extensions were identified:
+
+#### Issue 1: Cross-Dimensional Ghost Rendering
+
+**Scenario:** An instance of a polyhedron is scaled into negative space (e.g., a negative cube), but then the global slider or base form is scaled back into positive space.
+
+**Question:** Should the negative cube appear as a ghost in positive space?
+
+**Answer:** YES. Forms that exist in the opposite dimensional space from the current global state should render as ghosts. This creates a consistent visual language:
+- **Positive global space + negative form** → form appears as ghost
+- **Negative global space + positive form** → form appears as ghost
+
+This reinforces the concept that ghosts are "shadows" of the other dimensional realm.
+
+#### Issue 2: Mixed-Dimensional Scenes
+
+When both positive and negative forms coexist, the background state must be determined by:
+- The **most recently crossed** form, OR
+- The **majority** dimensional state, OR
+- A **user-selected** primary dimension
+
+*Recommendation:* For v2, implement a "dimensional focus" concept where the user can lock the background to a specific state, with cross-dimensional forms ghosted.
+
+#### Issue 3: State Persistence (Phase 5)
+
+The `rt-state-manager.js` must be extended to save/load:
+- `dimensionalState` per polyhedron
+- `globalDimensionalState` for scene
+- Negative scale values
+- Background color state
+
+---
+
+**Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation
 
 **Last Updated:** 2026-01-21

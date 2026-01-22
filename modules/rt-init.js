@@ -1009,7 +1009,7 @@ function startARTexplorer(
     document.getElementById("tetScaleSlider").value = tetEdge;
     document.getElementById("tetScaleValue").textContent = tetEdge.toFixed(4);
 
-    // KALI-YUGA: Detect global Janus Point crossing
+    // JANUS INVERSION: Detect global Janus Point crossing
     const crossDirection = checkGlobalJanusCrossing(cubeEdge);
 
     if (crossDirection) {
@@ -1045,7 +1045,7 @@ function startARTexplorer(
     document.getElementById("scaleSlider").value = cubeEdge;
     document.getElementById("scaleValue").textContent = cubeEdge.toFixed(4);
 
-    // KALI-YUGA: Detect global Janus Point crossing (using tetEdge)
+    // JANUS INVERSION: Detect global Janus Point crossing (using tetEdge)
     const crossDirection = checkGlobalJanusCrossing(tetEdge);
 
     if (crossDirection) {
@@ -2347,7 +2347,7 @@ function startARTexplorer(
   }
 
   // ========================================================================
-  // KALI-YUGA: Janus Point Transition Animation
+  // JANUS INVERSION: Through-Origin Transition Animation
   // ========================================================================
 
   /**
@@ -2722,14 +2722,14 @@ function startARTexplorer(
                   poly.userData.dimensionalState = 'positive';
                 }
 
-                // KALI-YUGA: Use ADDITIVE scaling to allow crossing through zero
+                // JANUS INVERSION: Use ADDITIVE scaling to allow crossing through zero
                 // Multiplicative scaling asymptotically approaches zero but never crosses
                 // Additive scaling allows linear traversal through the Janus Point
                 const previousScale = poly.userData.currentScale;
                 const scaleIncrement = scaleDelta * 0.02; // INCREASED sensitivity (was 0.005)
                 const newScale = previousScale + scaleIncrement;
 
-                // KALI-YUGA: Allow through-origin scaling
+                // JANUS INVERSION: Allow through-origin scaling
                 // Clamp magnitude to reasonable bounds (0.05 to 10.0)
                 const minScale = 0.05;
                 const maxScale = 10.0;
@@ -2762,7 +2762,7 @@ function startARTexplorer(
                 }
 
                 // ================================================================
-                // KALI-YUGA: Trigger Janus transition when crossing detected
+                // JANUS INVERSION: Trigger transition when crossing detected
                 // ================================================================
                 if (crossedJanus) {
                   const direction = previousScale > 0 ? 'inward' : 'outward';
