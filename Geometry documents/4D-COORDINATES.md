@@ -1525,6 +1525,63 @@ The `rt-state-manager.js` must be extended to save/load:
 
 ---
 
-**Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation
+### 13.10 Theoretical Context & Original Contributions
 
-**Last Updated:** 2026-01-21
+This section documents the intellectual lineage of the Janus Inversion concept and clarifies what appears to be original to this work.
+
+#### Related Work (Acknowledged Influences)
+
+**Julian Barbour - The Janus Point (2020)**
+Barbour's work proposes that time flows in two directions from a minimal-order "Janus Point" at the Big Bang. His 2014 paper with Koslowski and Mercati ("Identification of a Gravitational Arrow of Time," Physical Review Letters 113:181101) provides peer-reviewed foundations. However, Barbour addresses *temporal* reversal, not spatial/dimensional inversion. His work does not propose "negative space" as a geometric concept.
+- [The Janus Point (Amazon)](https://www.amazon.com/Janus-Point-New-Theory-Time/dp/0465095461)
+- [arXiv critique](https://arxiv.org/pdf/1601.02790)
+
+**CPT Symmetry (Lüders, Pauli, Schwinger - 1951-1954)**
+The CPT theorem describes a theoretical "mirror universe" where charge, parity, and time are simultaneously inverted. This is established physics but concerns antimatter and mirrored particle interactions, not geometric scaling through an origin into negative dimensionality.
+- [CPT Symmetry (Wikipedia)](https://en.wikipedia.org/wiki/CPT_symmetry)
+
+**Benoit Mandelbrot - Negative Fractal Dimensions**
+Mandelbrot explored negative dimensions as a mathematical measure of "emptiness" in sets — a purely formal construction with no physical interpretation proposed.
+- [Negative Fractal Dimensions (Yale)](https://users.math.yale.edu/users/mandelbrot/web_pdfs/123negativeFractalDimensions.pdf)
+
+**R. Buckminster Fuller - Synergetics**
+Fuller's IN/OUT directionality (replacing Cartesian UP/DOWN) and tetrahedral coordinate thinking inform this work deeply. His emphasis on the origin as the observer's position and radial vectors as primary geometric elements aligns naturally with Janus Inversion.
+
+**N.J. Wildberger - Rational Trigonometry**
+The algebraic exactness of quadrance and spread allows us to maintain mathematical rigor when describing forms in both positive and negative dimensional spaces.
+
+#### What Appears to Be Original
+
+As of January 2026, no published work appears to combine these concepts into a unified framework:
+
+1. **Geometric Janus Inversion** — Applying Barbour's temporal Janus Point concept to *spatial* geometry, where forms scale through an origin into negative dimensionality
+
+2. **Negative Dimensional Space (4D-)** — Proposing that negative scale values represent existence in a complementary dimensional realm, not merely "inverted geometry"
+
+3. **Quadray Implementation** — Using tetrahedral coordinates (WXYZ) to mathematically describe forms in both 4D+ and 4D- space, with the ±(1,1,1,1) normalization as the bridge between realms
+
+4. **Visual Semantics** — The black/white background inversion as a perceptual signal of dimensional state; ghost rendering for cross-dimensional forms
+
+#### Intuitions Awaiting Formalization
+
+The following conjectures emerge from decades of contemplative practice and geometric intuition. They are recorded here not as claims but as directions for future exploration:
+
+**Scale-Invariant Janus Points**
+Inversion through origin may occur at every scale of existence — from subatomic to cosmic. What we observe as "particles" may be local eddies of dimensional inversion. What we observe as "black holes" may be macro-scale Janus Points where spacetime itself inverts through the origin.
+
+**Energy Twinning**
+Every manifestation of energy in positive space may have a paired "twin" in negative space. This is not antimatter (which exists in positive space with opposite charge) but something more fundamental — a complementary existence across the dimensional boundary. The conservation laws we observe may be shadows of a deeper bidimensional conservation.
+
+**The Dual as Shadow**
+The dual tetrahedron, rendered in positive space via +(1,1,1,1) normalization, is already a projection of negative space into our realm. Global inversion doesn't create something new — it reveals what was always there. The relationship between form and dual may be the most accessible window into understanding positive/negative dimensional pairing.
+
+**Breathing Universe**
+The "cosmic breath" metaphor — all forms inhaling through the Janus Point together — suggests that universal expansion and contraction may be aspects of a dimensional oscillation. The Big Bang may not be a beginning but a Janus Point through which existence continuously flows in both temporal and dimensional directions.
+
+These intuitions feel natural and self-evident to contemplative experience. The purpose of ARTexplorer is to provide tools for visualizing and testing these ideas geometrically, allowing intuition and mathematics to inform each other.
+
+---
+
+**Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation + theoretical context
+
+**Last Updated:** 2026-01-22
