@@ -1525,6 +1525,116 @@ The `rt-state-manager.js` must be extended to save/load:
 
 ---
 
-**Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation
+### 13.10 Theoretical Context & Original Contributions
 
-**Last Updated:** 2026-01-21
+This section documents the intellectual lineage of the Janus Inversion concept and clarifies what appears to be original to this work.
+
+#### Related Work (Acknowledged Influences)
+
+**Julian Barbour - The Janus Point (2020)**
+Barbour's work proposes that time flows in two directions from a minimal-order "Janus Point" at the Big Bang. His 2014 paper with Koslowski and Mercati ("Identification of a Gravitational Arrow of Time," Physical Review Letters 113:181101) provides peer-reviewed foundations. However, Barbour addresses *temporal* reversal, not spatial/dimensional inversion. His work does not propose "negative space" as a geometric concept.
+- [The Janus Point (Amazon)](https://www.amazon.com/Janus-Point-New-Theory-Time/dp/0465095461)
+- [arXiv critique](https://arxiv.org/pdf/1601.02790)
+
+**CPT Symmetry (Lüders, Pauli, Schwinger - 1951-1954)**
+The CPT theorem describes a theoretical "mirror universe" where charge, parity, and time are simultaneously inverted. This is established physics but concerns antimatter and mirrored particle interactions, not geometric scaling through an origin into negative dimensionality.
+- [CPT Symmetry (Wikipedia)](https://en.wikipedia.org/wiki/CPT_symmetry)
+
+**Benoit Mandelbrot - Negative Fractal Dimensions**
+Mandelbrot explored negative dimensions as a mathematical measure of "emptiness" in sets — a purely formal construction with no physical interpretation proposed.
+- [Negative Fractal Dimensions (Yale)](https://users.math.yale.edu/users/mandelbrot/web_pdfs/123negativeFractalDimensions.pdf)
+
+**R. Buckminster Fuller - Synergetics**
+Fuller's IN/OUT directionality (replacing Cartesian UP/DOWN) and tetrahedral coordinate thinking inform this work deeply. His emphasis on the origin as the observer's position and radial vectors as primary geometric elements aligns naturally with Janus Inversion.
+
+**N.J. Wildberger - Rational Trigonometry**
+The algebraic exactness of quadrance and spread allows us to maintain mathematical rigor when describing forms in both positive and negative dimensional spaces.
+
+#### Why This Remained Hidden: The Cartesian Blind Spot
+
+Human habituation to the XYZ coordinate system may have long obscured the possibility of negative dimensional space. In Cartesian coordinates, the eight octants created by negative X, Y, and Z values all remain *within* the same 3D reference frame — they are merely directional extensions of the same space. There is no conceptual "outside" to Cartesian space; negative coordinates simply point the other way.
+
+Quadray coordinates (WXYZ) operate differently. With four basis vectors extending from a tetrahedral origin, all coordinates in "normal" space are non-negative. This immediately raises the question that Cartesian thinking never prompts: *what, then, is a negative position in this framework?* The answer cannot be "the other direction" because there is no other direction — the four basis vectors already span all of 3D space with positive values only.
+
+This distinction becomes vivid in ARTexplorer. When the XYZ basis vectors invert through the origin, they do not turn "inside-out" — they merely flip from right-hand rule to left-hand rule orientation, remaining recognizably within the same spatial framework. But when quadray-defined forms invert through the Janus Point, something categorically different occurs: they pass into a space that positive quadray coordinates cannot describe. The ±(1,1,1,1) normalization bridge between tetrahedron and dual tetrahedron hints at this hidden realm, but Cartesian thinking — with its symmetrical positive/negative axes — provided no reason to look for it.
+
+This may explain why negative dimensional space remained invisible to mathematicians and philosophers for so long. The question simply cannot arise within Cartesian assumptions. Only by adopting a coordinate system where "negative" has no directional meaning does the deeper question emerge: negative *what*, exactly? And once asked, the answer points toward a complementary dimensional realm that Cartesian geometry, by its very structure, was designed to make unthinkable.
+
+#### What Appears to Be Original
+
+As of January 2026, no published work appears to combine these concepts into a unified framework:
+
+1. **Geometric Janus Inversion** — Applying Barbour's temporal Janus Point concept to *spatial* geometry, where forms scale through an origin into negative dimensionality
+
+2. **Negative Dimensional Space (4D-)** — Proposing that negative scale values represent existence in a complementary dimensional realm, not merely "inverted geometry"
+
+3. **Quadray Implementation** — Using tetrahedral coordinates (WXYZ) to mathematically describe forms in both 4D+ and 4D- space, with the ±(1,1,1,1) normalization as the bridge between realms
+
+4. **Visual Semantics** — The black/white background inversion as a perceptual signal of dimensional state; ghost rendering for cross-dimensional forms
+
+#### Intuitions Awaiting Formalization
+
+The following conjectures emerge from decades of contemplative practice and geometric intuition. They are recorded here not as claims but as directions for future exploration:
+
+**Scale-Invariant Janus Points**
+Inversion through origin may occur at every scale of existence — from subatomic to cosmic. What we observe as "particles" may be local eddies of dimensional inversion. What we observe as "black holes" may be macro-scale Janus Points where spacetime itself inverts through the origin.
+
+**Energy Twinning**
+Every manifestation of energy in positive space may have a paired "twin" in negative space. This is not antimatter (which exists in positive space with opposite charge) but something more fundamental — a complementary existence across the dimensional boundary. The conservation laws we observe may be shadows of a deeper bidimensional conservation.
+
+**The Dual as Shadow**
+The dual tetrahedron, rendered in positive space via +(1,1,1,1) normalization, is already a projection of negative space into our realm. Global inversion doesn't create something new — it reveals what was always there. The relationship between form and dual may be the most accessible window into understanding positive/negative dimensional pairing.
+
+**Breathing Universe**
+The "cosmic breath" metaphor — all forms inhaling through the Janus Point together — suggests that universal expansion and contraction may be aspects of a dimensional oscillation. The Big Bang may not be a beginning but a Janus Point through which existence continuously flows in both temporal and dimensional directions.
+
+These intuitions feel natural and self-evident to contemplative experience. The purpose of ARTexplorer is to provide tools for visualizing and testing these ideas geometrically, allowing intuition and mathematics to inform each other.
+
+#### Anticipated Counter-Arguments & Response
+
+**The XYZ Rendering Objection**
+
+A mathematician could object: "The current ARTexplorer implementation renders everything through THREE.js, which uses standard XYZ Cartesian coordinates. The 'Janus Inversion' is simply `scale.set(-1, -1, -1)` — ordinary negative scaling that any 3D engine can perform. The visual effects are arbitrary UI design choices, not mathematical necessities. XYZ handles negative coordinates perfectly well. Nothing is 'hidden' — the entire demonstration occurs in Cartesian space at the GPU level."
+
+This objection deserves a direct response.
+
+**What We Already Have**
+
+The mathematical foundations documented in this specification are substantial:
+
+1. **Quadray Basis Vectors** (Section 2) — Four tetrahedral basis vectors with precise Cartesian equivalents, maintaining the property that all positive combinations span 3D space
+2. **Rational Trigonometry** (Section 8) — Quadrance and spread calculations that maintain algebraic exactness throughout geometric operations
+3. **The ±(1,1,1,1) Normalization Bridge** (Section 4) — A mathematically defined translation between positive and negative Quadray representations
+4. **Weierstrass Substitution** (Section 8.4) — Pure rational rotation without transcendental functions
+5. **Algebraic Exactness** — XYZ conversion deferred to the GPU boundary; intermediate calculations remain in rational form
+
+The current implementation already performs geometry in Quadray/RT space before converting to XYZ for rendering. The question is not whether we have mathematics — we do — but whether the XYZ rendering layer undermines the conceptual claim about negative dimensionality.
+
+**The Subtler Claim**
+
+We do not claim that XYZ *cannot* represent inverted geometry — it obviously can. The claim is that XYZ's symmetric ±axes make the *question* of negative dimensionality structurally invisible. In XYZ, the point (-1, -1, -1) is simply "the opposite octant" — still conceptually within the same 3D space. The framework never prompts you to ask "what *is* negative space?"
+
+In Quadray coordinates, where all positive values already span 3D, negative coordinates have no directional interpretation. This forces a categorically different question: negative *what*?
+
+**Future Development: Native 4D Rendering**
+
+To fully realize the mathematical framework, future work should eliminate the XYZ conversion entirely:
+
+1. **Native 4D Rendering Engine** — A purpose-built renderer operating in tetrahedral coordinate space, where:
+   - All transformations occur in WXYZ using rational algebra
+   - No Cartesian conversion until final pixel output
+   - Negative Quadray coordinates handled natively, not as XYZ proxies
+   - Computational efficiency gains from tetrahedral symmetry
+
+2. **Extended Signed Quadray Algebra** — Formalize the mathematics of WXYZ where negative values are permitted:
+   - Quadrance calculations across the ±(1,1,1,1) boundary
+   - Transformation matrices for 4D± space
+   - Topological characterization of the origin as dimensional transition point
+
+The current ARTexplorer demonstrates Janus Inversion through XYZ rendering, but the underlying Quadray mathematics is real and operational. The visual metaphor is built on genuine algebraic foundations — foundations that await only a native 4D renderer to be fully expressed.
+
+---
+
+**Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation + theoretical context
+
+**Last Updated:** 2026-01-22

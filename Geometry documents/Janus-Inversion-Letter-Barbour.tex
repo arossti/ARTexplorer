@@ -1,0 +1,380 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+\geometry{margin=1in}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{definition}{Definition}
+\newtheorem{observation}{Observation}
+
+\title{Geometric Janus Inversion:\\
+\large Extending the Janus Point from Temporal to Spatial Geometry\\
+via Tetrahedral (Quadray) Coordinates}
+
+\author{Andrew Thomson\\
+\small Open Building / ARTexplorer Project\\
+\small \href{mailto:andy@openbuilding.ca}{andy@openbuilding.ca}}
+
+\date{January 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document proposes an extension of Julian Barbour's Janus Point concept from temporal cosmology to spatial geometry. Using tetrahedral coordinates (Quadray/WXYZ), we demonstrate that the origin serves as a dimensional transition point---a \emph{geometric} Janus Point---through which forms can scale into what we term ``negative dimensional space.'' We argue that the Cartesian coordinate system's symmetric positive/negative axes structurally obscured this possibility, while tetrahedral coordinates, with their all-positive basis spanning 3D space, naturally prompt the question: what constitutes a negative position? The answer points toward a complementary dimensional realm that may have physical implications for understanding phenomena from particles to black holes.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%==============================================================================
+\section{Introduction and Acknowledgment}
+%==============================================================================
+
+This work draws significant inspiration from Julian Barbour's \emph{The Janus Point: A New Theory of Time} (2020) and the foundational paper with Koslowski and Mercati, ``Identification of a Gravitational Arrow of Time'' (\emph{Physical Review Letters} 113:181101, 2014).
+
+Barbour's insight that the Big Bang may represent not a beginning but a \emph{pivot point}---the Janus Point---from which time extends in two directions, provides the conceptual foundation for what we propose here: that spatial geometry may possess an analogous structure, with the origin serving as a dimensional transition point between positive and negative geometric spaces.
+
+We acknowledge that Barbour's work addresses \emph{temporal} reversal and the arrow of time, not spatial inversion. What follows is an independent extension of the Janus Point concept to geometry, developed through the lens of R. Buckminster Fuller's synergetic geometry and N.J. Wildberger's rational trigonometry. We present this not as established physics but as a geometric framework awaiting rigorous formalization.
+
+%==============================================================================
+\section{Tetrahedral (Quadray) Coordinates}
+%==============================================================================
+
+\subsection{Definition and Basis Vectors}
+
+Quadray coordinates employ four basis vectors emanating from a central origin toward the vertices of a regular tetrahedron:
+
+\begin{definition}[Quadray Basis Vectors]
+The four basis vectors $\mathbf{W}, \mathbf{X}, \mathbf{Y}, \mathbf{Z}$ point from the origin to the vertices of a regular tetrahedron:
+\begin{align}
+\mathbf{W} &= (1, 0, 0, 0) \quad \longleftrightarrow \quad \frac{1}{\sqrt{3}}(+1, +1, +1) \text{ in Cartesian}\\
+\mathbf{X} &= (0, 1, 0, 0) \quad \longleftrightarrow \quad \frac{1}{\sqrt{3}}(+1, -1, -1)\\
+\mathbf{Y} &= (0, 0, 1, 0) \quad \longleftrightarrow \quad \frac{1}{\sqrt{3}}(-1, +1, -1)\\
+\mathbf{Z} &= (0, 0, 0, 1) \quad \longleftrightarrow \quad \frac{1}{\sqrt{3}}(-1, -1, +1)
+\end{align}
+\end{definition}
+
+\subsection{Key Properties}
+
+\begin{enumerate}[label=(\roman*)]
+\item \textbf{Vectorial Neutrality:} $\mathbf{W} + \mathbf{X} + \mathbf{Y} + \mathbf{Z} = \mathbf{0}$ (sum to zero in Cartesian space)
+\item \textbf{Tetrahedral Angle:} The angle between any pair of basis vectors is $\arccos(-\frac{1}{3}) \approx 109.47°$
+\item \textbf{Spread:} Using rational trigonometry, the spread between any pair is $s = \frac{8}{9}$
+\item \textbf{Zero-Sum Constraint:} For any point $P = (w, x, y, z)$, normalization requires $w + x + y + z = k$ for some constant $k$, reducing 4 coordinates to 3 effective degrees of freedom
+\item \textbf{All-Positive Spanning:} Critically, all points in ordinary 3D space can be expressed with \emph{non-negative} coordinates only
+\end{enumerate}
+
+\subsection{The Unit Tetrahedron}
+
+The fundamental unit in Quadray space has vertices at the four basis directions:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccc}
+\toprule
+\textbf{Vertex} & \textbf{Quadray $(W, X, Y, Z)$} & \textbf{Description}\\
+\midrule
+$V_0$ & $(1, 0, 0, 0)$ & W-axis vertex\\
+$V_1$ & $(0, 1, 0, 0)$ & X-axis vertex\\
+$V_2$ & $(0, 0, 1, 0)$ & Y-axis vertex\\
+$V_3$ & $(0, 0, 0, 1)$ & Z-axis vertex\\
+\bottomrule
+\end{tabular}
+\caption{Unit tetrahedron vertices in Quadray coordinates}
+\end{table}
+
+The centroid lies at the origin $(0, 0, 0, 0)$.
+
+%==============================================================================
+\section{The Dual Tetrahedron and Dimensional Inversion}
+%==============================================================================
+
+\subsection{The Inversion Operation}
+
+The dual tetrahedron is obtained by inverting through the origin---a 180° rotation or, equivalently, multiplication by $-1$:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccc}
+\toprule
+\textbf{Vertex} & \textbf{Raw Negative Form} & \textbf{Re-normalized (adding $(1,1,1,1)$)}\\
+\midrule
+$V'_0$ & $(-1, 0, 0, 0)$ & $(0, 1, 1, 1)$\\
+$V'_1$ & $(0, -1, 0, 0)$ & $(1, 0, 1, 1)$\\
+$V'_2$ & $(0, 0, -1, 0)$ & $(1, 1, 0, 1)$\\
+$V'_3$ & $(0, 0, 0, -1)$ & $(1, 1, 1, 0)$\\
+\bottomrule
+\end{tabular}
+\caption{Dual tetrahedron vertices: raw negative and re-normalized forms}
+\end{table}
+
+\subsection{The Topological Question}
+
+In classical topology, a closed genus-0 surface (sphere, tetrahedron) cannot be turned inside-out in 3D without tearing. Yet in Quadray space, we perform exactly this operation: the tetrahedron passes through the origin to become its dual.
+
+\begin{conjecture}[Dimensional Transition]
+The origin in Quadray space is not merely ``empty space'' but a \textbf{transition point between positive and negative dimensional spaces}. The inversion operation does not require topological tearing because it occurs through dimensional transition---analogous to passing through zero on a number line.
+\end{conjecture}
+
+This interpretation preserves the genus-0 nature of the tetrahedron while permitting ``inside-outing.'' The key insight is that Quadray coordinates, with their inherent 4-dimensionality (4 basis vectors constrained to 3 DOF), provide a natural higher-dimensional embedding in which such inversion becomes a rigid motion rather than a topological impossibility.
+
+%==============================================================================
+\section{The Geometric Janus Point}
+%==============================================================================
+
+\subsection{Analogy to Barbour's Temporal Janus Point}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{6cm}p{6cm}}
+\toprule
+\textbf{Barbour's Janus Point} & \textbf{Geometric Janus Point}\\
+\midrule
+The Big Bang is a central pivot from which time extends in two directions & The origin $(0,0,0,0)$ is a pivot from which positive and negative dimensional spaces extend\\
+\addlinespace
+The universe passed through minimal size/complexity at the Janus Point & Forms pass through minimal extension (the origin) during inversion\\
+\addlinespace
+Two arrows of time emerge, each with increasing complexity & Two dimensional spaces (4D$^+$ and 4D$^-$) emerge, each containing complete geometric structure\\
+\addlinespace
+Observers on either side perceive their direction as ``forward'' & Observers in either dimensional space would perceive their forms as the ``base'' state\\
+\bottomrule
+\end{tabular}
+\caption{Correspondence between temporal and geometric Janus Points}
+\end{table}
+
+\subsection{Fuller's IN/OUT Directionality}
+
+R. Buckminster Fuller criticized ``Up'' and ``Down'' as flat-earth artifacts. On a sphere, the only absolute directions are \textbf{IN} (toward center) and \textbf{OUT} (away from center). We map:
+
+\begin{align}
+\text{Positive } (+) &\longleftrightarrow \text{OUT: expansion away from origin}\\
+\text{Negative } (-) &\longleftrightarrow \text{IN: collapse through origin}
+\end{align}
+
+A form with all-negative Quadray coordinates has not merely ``moved to the other side''---it has passed \emph{through} the origin into what we term \textbf{negative dimensional space} (4D$^-$).
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{Screenshot 2026-01-22 at 12.03.30 PM.png}
+    \caption{Our Quadray Basis vector with Tetrahedral Arrows point Outwards indicating Positive space. }
+    \label{fig:placeholder}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{Screenshot 2026-01-22 at 12.03.17 PM.png}
+    \caption{Inversion reverses tetrahedral coordinates to its dual, background converts to white, Tetrahedral basis vector arrows direct to origin as we have passed into negative dimensionality}
+    \label{fig:placeholder}
+\end{figure}
+%==============================================================================
+\section{The Cartesian Blind Spot}
+%==============================================================================
+
+\subsection{Why This Remained Hidden}
+
+Human habituation to Cartesian coordinates may have long obscured the possibility of negative dimensional space.
+
+\begin{observation}[The Cartesian Blind Spot]
+In Cartesian coordinates, the eight octants created by $\pm X$, $\pm Y$, $\pm Z$ all remain \emph{within} the same 3D reference frame. Negative coordinates simply point the other direction---there is no conceptual ``outside'' to Cartesian space.
+\end{observation}
+
+Quadray coordinates operate differently. With four basis vectors spanning all of 3D space using \emph{non-negative values only}, the question immediately arises: \textbf{what is a negative position in this framework?}
+
+The answer cannot be ``the other direction''---the four basis vectors already cover all directions with positive values. The only coherent interpretation is that negative Quadray coordinates represent existence in a \textbf{complementary dimensional realm}.
+
+\subsection{Visual Demonstration}
+
+In our visualization software (ARTexplorer), when XYZ basis vectors invert through the origin, they merely flip from right-hand to left-hand orientation---remaining recognizably within the same spatial framework. But when Quadray-defined forms invert through the geometric Janus Point, something categorically different occurs: they pass into a space that positive Quadray coordinates cannot describe.
+
+The $\pm(1,1,1,1)$ normalization bridge between tetrahedron and dual tetrahedron hints at this hidden realm, but Cartesian thinking---with its symmetrical positive/negative axes---provided no reason to look for it.
+
+%==============================================================================
+\section{Mathematical Formalization}
+%==============================================================================
+
+\subsection{Dimensional State}
+
+For any point $P = (w, x, y, z)$ in Quadray space:
+
+\begin{definition}[Dimensional State]
+\begin{align}
+P \in 4D^+ &\quad \text{if all coordinates are non-negative (positive dimensional space)}\\
+P \in 4D^- &\quad \text{if all coordinates are non-positive (negative dimensional space)}\\
+P \in \partial &\quad \text{if coordinates have mixed signs (boundary/transition zone)}
+\end{align}
+\end{definition}
+
+\subsection{The Inversion Operator}
+
+The geometric Janus inversion is mathematically equivalent to:
+
+\begin{enumerate}[label=(\roman*)]
+\item Multiplication by $-1$: $P' = -P$
+\item 180° rotation through the origin in 4D space
+\item Application of the inversion matrix: $\text{diag}(-1, -1, -1, -1)$
+\end{enumerate}
+
+None of these operations require a topological ``hole''---only the existence of a higher-dimensional embedding, which Quadray coordinates inherently provide.
+
+\subsection{The Normalization Bridge}
+
+The dual tetrahedron can be re-expressed in positive coordinates by adding $(1,1,1,1)$:
+
+\begin{equation}
+V'_i(\text{positive}) = V'_i(\text{negative}) + (1, 1, 1, 1)
+\end{equation}
+
+This $\pm(1,1,1,1)$ translation serves as the \textbf{bridge between dimensional spaces}---a mathematical operation that projects negative-space forms into positive-space representation (and vice versa).
+
+%==============================================================================
+\section{Speculative Extensions}
+%==============================================================================
+
+The following conjectures emerge from this geometric framework. They are recorded not as claims but as directions for exploration:
+
+\subsection{Scale-Invariant Janus Points}
+
+If the geometric Janus Point operates at one scale, it may operate at all scales:
+
+\begin{itemize}
+\item \textbf{Subatomic:} What we observe as ``particles'' may be local eddies of dimensional inversion---stable configurations oscillating through microscopic Janus Points
+\item \textbf{Cosmic:} Black holes may be macro-scale Janus Points where spacetime itself inverts through the origin
+\end{itemize}
+
+\subsection{Energy Twinning}
+
+Every manifestation of energy in positive space may have a paired ``twin'' in negative space. This is distinct from antimatter (which exists in positive space with opposite charge)---it represents a complementary existence across the dimensional boundary. Conservation laws may be shadows of a deeper bidimensional conservation.
+
+\subsection{The Dual as Shadow}
+
+The dual tetrahedron, rendered in positive space via $+(1,1,1,1)$ normalization, is already a \emph{projection} of negative space into our realm. Global inversion doesn't create something new---it reveals what was always there.
+
+\subsection{Cyclic Cosmology}
+
+Combining Barbour's Janus Point with ancient cosmological intuitions (the Vedic ``breath of Brahma,'' Gurdjieff's Trogoautoegocrat) suggests the universe may not pass through the Janus Point once but \emph{repeatedly}---an eternal oscillation between expansion and contraction, positive and negative dimensional states.
+
+%==============================================================================
+\section{Visualization and Implementation}
+%==============================================================================
+
+We have implemented this framework in ARTexplorer, an interactive 3D geometry visualization tool. Key behaviors:
+
+\begin{itemize}
+\item Forms can be scaled through zero via direct manipulation
+\item Crossing the origin triggers a visual ``Janus transition''---a golden flash at the geometric Janus Point
+\item The background inverts from black to white when forms enter negative dimensional space, providing an unmistakable perceptual signal of dimensional state
+\item Non-selected forms become translucent ``ghosts'' during the transition, emphasizing the dimensional boundary crossing
+\end{itemize}
+
+The software is available at: \url{https://arossti.github.io/ARTexplorer/}
+
+%==============================================================================
+\section{Anticipated Objections and Response}
+%==============================================================================
+
+\subsection{The XYZ Rendering Objection}
+
+A mathematician could object: ``The current ARTexplorer implementation renders everything through THREE.js, which uses standard XYZ Cartesian coordinates. The `Janus Inversion' is simply \texttt{scale.set(-1, -1, -1)}---ordinary negative scaling that any 3D engine can perform. XYZ handles negative coordinates perfectly well. Nothing is `hidden'---the entire demonstration occurs in Cartesian space at the GPU level.''
+
+This objection deserves a direct response.
+
+\subsection{What We Already Have}
+
+The mathematical foundations in ARTexplorer are substantial:
+
+\begin{enumerate}
+\item \textbf{Quadray Basis Vectors}---Four tetrahedral basis vectors with precise Cartesian equivalents, maintaining the property that all positive combinations span 3D space
+\item \textbf{Rational Trigonometry}---Quadrance ($Q = d^2$) and spread ($s = \sin^2\theta$) calculations that maintain algebraic exactness throughout geometric operations
+\item \textbf{The $\pm(1,1,1,1)$ Normalization Bridge}---A mathematically defined translation between positive and negative Quadray representations
+\item \textbf{Weierstrass Substitution}---Pure rational rotation without transcendental functions
+\item \textbf{Algebraic Exactness}---XYZ conversion deferred to the GPU boundary; intermediate calculations remain in rational form
+\end{enumerate}
+
+The current implementation performs geometry in Quadray/RT space before converting to XYZ for rendering. The question is not whether we have mathematics---we do---but whether the XYZ rendering layer undermines the conceptual claim about negative dimensionality.
+
+\subsection{The Subtler Claim}
+
+We do not claim that XYZ \emph{cannot} represent inverted geometry---it obviously can. The claim is that XYZ's symmetric $\pm$ axes make the \emph{question} of negative dimensionality structurally invisible. In XYZ, the point $(-1, -1, -1)$ is simply ``the opposite octant''---still conceptually within the same 3D space. The framework never prompts you to ask ``what \emph{is} negative space?''
+
+In Quadray coordinates, where all positive values already span 3D, negative coordinates have no directional interpretation. This forces a categorically different question: negative \emph{what}?
+
+\subsection{Future Development: Native 4D Rendering}
+
+To fully realize the mathematical framework, future work should eliminate the XYZ conversion entirely:
+
+\begin{enumerate}
+\item \textbf{Native 4D Rendering Engine}---A purpose-built renderer operating in tetrahedral coordinate space, where all transformations occur in WXYZ using rational algebra, with no Cartesian conversion until final pixel output. This would handle negative Quadray coordinates natively, not as XYZ proxies, and potentially achieve computational efficiency gains from tetrahedral symmetry.
+
+\item \textbf{Extended Signed Quadray Algebra}---Formalization of the mathematics of WXYZ where negative values are permitted, including quadrance calculations across the $\pm(1,1,1,1)$ boundary, transformation matrices for 4D$^\pm$ space, and topological characterization of the origin as dimensional transition point.
+\end{enumerate}
+
+The current ARTexplorer demonstrates Janus Inversion through XYZ rendering, but the underlying Quadray mathematics is real and operational. The visual metaphor is built on genuine algebraic foundations---foundations that await only a native 4D renderer to be fully expressed.
+
+%==============================================================================
+\section{Conclusion}
+%==============================================================================
+
+We propose that Julian Barbour's Janus Point, originally conceived as a temporal pivot in cosmology, may have a geometric analog: the origin in tetrahedral (Quadray) coordinates serves as a transition point between positive and negative dimensional spaces.
+
+This possibility remained hidden because Cartesian coordinates, with their symmetric $\pm$ axes, made the question structurally irrelevant. Only by adopting a coordinate system where all of 3D space can be described entirely with non-negative values does the deeper question emerge: what then in this system is a \emph{negative} position?
+
+The answer points toward a complementary dimensional realm---4D$^-$---that may have implications for understanding phenomena from quantum mechanics to black holes. We offer this framework not as established physics but as a geometric intuition awaiting rigorous formalization, in the spirit of Barbour's own exploratory approach to fundamental questions about the nature of space and time.
+
+%==============================================================================
+\section*{Acknowledgments}
+%==============================================================================
+
+This work draws on the insights of Julian Barbour, R. Buckminster Fuller, and N.J. Wildberger. The geometric intuitions emerged from decades of contemplative practice and were developed in collaboration with AI assistance (Claude/Anthropic) for implementation and documentation.
+
+Special thanks to:
+\begin{itemize}
+\item Rudolf Dorenach, Bucky's German associate and my first Synergetics mentor
+\item Kirby Urner, for introducing me to Quadray coordinates
+\item Tom Ace, for his work on the basis vector conversion methodology
+\item Gerald DeJong, for introducing me to Wildberger's Rational Trigonometry
+\item Dawn Danby and David McConville, for their moral support and enthusiasm
+\item Bonnie DeVarco, for her tireless preservation and active engagement with Fuller's original work
+\item Mark Pavlidis, for teaching me Git discipline and the importance of clean code
+\item Enzyme APD, for encouraging the pursuit of these ideas against all odds
+\end{itemize}
+
+%==============================================================================
+\section*{References}
+%==============================================================================
+
+\begin{enumerate}
+\item Barbour, J. (2020). \emph{The Janus Point: A New Theory of Time}. Basic Books.
+\item Barbour, J., Koslowski, T., \& Mercati, F. (2014). ``Identification of a Gravitational Arrow of Time.'' \emph{Physical Review Letters}, 113:181101.
+\item Fuller, R.B. (1975). \emph{Synergetics: Explorations in the Geometry of Thinking}. Macmillan.
+\item Wildberger, N.J. (2005). \emph{Divine Proportions: Rational Trigonometry to Universal Geometry}. Wild Egg Books.
+\item CPT Symmetry. \emph{Wikipedia}. \url{https://en.wikipedia.org/wiki/CPT_symmetry}
+\item Mandelbrot, B. ``Negative Fractal Dimensions and Multifractals.'' Yale University. \url{https://users.math.yale.edu/users/mandelbrot/web_pdfs/123negativeFractalDimensions.pdf}
+\item Kirby Urner - Quadray Introduction(http://www.grunch.net/synergetics/quadintro.html)-
+\item Tom Ace - Quadray Coordinates(http://minortriad.com/quadray.html) (C++ implementation)
+\end{enumerate}
+
+\vfill
+\begin{center}
+\textit{``The question simply cannot arise within Cartesian assumptions.\\
+Only by adopting a coordinate system where `negative' has no directional meaning\\
+does the deeper question emerge: negative \textbf{what}, exactly?''}
+\end{center}
+
+\end{document}
