@@ -20,43 +20,10 @@ window.RTPolyhedra = Polyhedra;
 // import { RTControls } from "./modules/rt-controls.js";
 
 // ========================================================================
-// PASSWORD PROTECTION
+// APPLICATION INITIALIZATION
 // ========================================================================
-const PASSWORD = "enzyme2026!";
-const passwordOverlay = document.getElementById("password-overlay");
-const passwordInput = document.getElementById("password-input");
-const passwordSubmit = document.getElementById("password-submit");
-const passwordError = document.getElementById("password-error");
-
-// Check if already authenticated (session storage)
-if (sessionStorage.getItem("artexplorer-auth") === "true") {
-  passwordOverlay.classList.add("hidden");
-  initApp();
-} else {
-  // Focus on password input
-  passwordInput.focus();
-
-  // Handle password submission
-  function checkPassword() {
-    if (passwordInput.value === PASSWORD) {
-      sessionStorage.setItem("artexplorer-auth", "true");
-      passwordOverlay.classList.add("hidden");
-      passwordError.classList.add("hidden");
-      initApp();
-    } else {
-      passwordError.classList.remove("hidden");
-      passwordInput.value = "";
-      passwordInput.focus();
-    }
-  }
-
-  passwordSubmit.addEventListener("click", checkPassword);
-  passwordInput.addEventListener("keypress", e => {
-    if (e.key === "Enter") {
-      checkPassword();
-    }
-  });
-}
+// Initialize app immediately (no password protection)
+initApp();
 
 // ========================================================================
 // INFO MODAL
