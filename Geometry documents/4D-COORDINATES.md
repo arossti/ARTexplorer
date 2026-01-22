@@ -1301,13 +1301,13 @@ The Kali-Yuga feature enables individual polyhedra to scale through the origin p
 3. User drags the central sphere (uniform scaling) toward the origin
 4. As scale approaches zero, an **animated transition** triggers
 5. The polyhedron "collapses" through origin and re-emerges inverted
-6. Inverted form renders as **translucent ghost** (semi-transparent negative space)
+6. Inverted form renders into white background, from former black background
 
 **Visual Feedback:**
 - **Positive space (4D+):** Normal solid rendering, black background
 - **Transition zone (approaching 0):** Increasing transparency, possible particle/dissolve effect
 - **Origin crossing:** Brief flash/pulse animation (the "Janus moment")
-- **Negative space (4D-):** Translucent ghost rendering (opacity ~0.3-0.4), **WHITE background**
+- **Negative space (4D-):** Translucent ghost rendering of remainder of polyhedra NOT affected by this scaling transformation (opacity ~0.3-0.4), **WHITE background**
 
 **Background Inversion (Key Visual Cue):**
 When ANY form exists in negative dimensional space, the entire scene background inverts from black to white. This dramatic shift signals unmistakably that we have entered a different dimensional realm — the "negative universe" or anti-space. The contrast inversion also ensures ghost forms remain visible (dark translucent on white vs. light translucent on black).
@@ -1350,7 +1350,7 @@ const clampedScale = Math.sign(newScale) * Math.max(0.1, Math.min(10.0, Math.abs
 **Animation sequence:**
 1. **Collapse phase** (200ms): Scale rapidly toward zero with increasing transparency
 2. **Flash phase** (50ms): Brief white/golden flash at origin point
-3. **Emerge phase** (200ms): Scale outward with ghost opacity, inverted geometry
+3. **Emerge phase** (200ms): Scale outward with remainder polyhedra ghost opacity, inverted geometry
 4. **Settle phase** (100ms): Opacity stabilizes at ghost level
 
 **Implementation approach:**
