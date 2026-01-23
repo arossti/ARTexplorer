@@ -200,8 +200,8 @@ RTControls.SnapTargets = {
 
 ### Phase 1: Free Movement
 - [x] Free move works for cube, tetrahedron, octahedron (initial test passed)
-- [ ] Free move works for radial matrix polyhedra
-- [ ] Free move works for deposited instances
+- [x] Free move works for radial matrix polyhedra
+- [x] Free move works for deposited instances
 - [x] Grid snapping (XYZ/WXYZ) applies correctly on mouseup
 - [x] Coordinate displays update during free move
 - [x] No interference with gumball axis-constrained movement
