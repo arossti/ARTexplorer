@@ -2737,6 +2737,7 @@ function startARTexplorer(
       // Vertex-to-vertex snapping
       if (objectSnapVertex && sourceVertices.length > 0) {
         const targetVertices = getPolyhedronVertices(targetGroup);
+        console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetVertices.length} vertices`);
         sourceVertices.forEach(srcVertex => {
           targetVertices.forEach(tgtVertex => {
             const distance = srcVertex.distanceTo(tgtVertex);
