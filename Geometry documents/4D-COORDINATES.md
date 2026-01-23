@@ -96,6 +96,123 @@ The VE's 12 vectors can be understood as **three sets of 4 Quadray-like tetrahed
 - [Synergetics (Fuller) - Wikipedia](https://en.wikipedia.org/wiki/Synergetics_(Fuller))
 - [Vector Equilibrium - Cosmometry](https://cosmometry.net/vector-equilibrium-&-isotropic-vector-matrix)
 
+### 2.1 Native Degrees of Freedom: 3, 4, or 5?
+
+**The Standard Claim (3 DOF):**
+
+Quadray coordinates are conventionally described as providing 3 degrees of freedom. This arises from the **zero-sum constraint**: if W + X + Y + Z = k for some constant k, then knowing any three coordinates determines the fourth. This constraint is imposed to ensure Quadray maps onto Cartesian 3D space—it is a *compatibility requirement*, not an intrinsic property of tetrahedral coordinates.
+
+**The Native Reality (4 DOF):**
+
+However, the tetrahedron—the minimum structural system capable of enclosing space—requires **four vertices** to define. You cannot specify a tetrahedron with three coordinates; the fourth is not redundant information but essential geometric content.
+
+Consider two points:
+- **(1, 1, 1, 1)** — equidistant from all four basis directions (the dual tetrahedron vertex)
+- **(1, 1, 1, 6)** — much closer to the Z-vertex than to W, X, or Y
+
+With the zero-sum constraint, these would be "normalized" to equivalent positions. But they describe fundamentally different geometric relationships: the first is symmetric, the second is a **deformed tetrahedron** stretched along the Z-axis. The fourth coordinate carries real information that the constraint destroys.
+
+| Framing | DOF | What it describes |
+|---------|-----|-------------------|
+| Quadray as XYZ substitute | 3 | Zero-sum constraint enforced; equivalent to Cartesian |
+| Quadray as native system | **4** | Four independent coordinates; no external constraint |
+| Quadray with Janus extension | **4 + 1** | Four coordinates plus dimensional polarity (±) |
+
+**The Fifth Degree: Dimensional Polarity (License Pending)**
+
+If we accept that positive and negative Quadray spaces (4D+ and 4D−) represent distinct dimensional realms separated by the Janus Point at origin, then a complete specification requires not only the four coordinates but also **which side of origin** the point occupies. This dimensional polarity is not a continuous degree of freedom but a discrete binary state—yet it represents information that four unsigned coordinates cannot capture.
+
+Whether this constitutes a "fifth dimension" or merely a binary flag on a 4D system is a matter of interpretation. No dimensional licensing board exists to adjudicate the question. The framework is coherent either way.*
+
+*\*Application submitted to the Universal Dimensional Licensing Board, 2026.January.Earthtime. Awaiting response.*
+
+**Example: The Deformed Tetrahedron**
+
+```
+Regular tetrahedron vertices:     Deformed tetrahedron vertices:
+  W: (1, 0, 0, 0)                   W: (1, 0, 0, 0)
+  X: (0, 1, 0, 0)                   X: (0, 1, 0, 0)
+  Y: (0, 0, 1, 0)                   Y: (0, 0, 1, 0)
+  Z: (0, 0, 0, 1)                   Z: (0, 0, 0, 6)  ← stretched!
+
+With zero-sum constraint:          Without constraint:
+  Z would normalize to (0,0,0,1)     Z remains at (0,0,0,6)
+  Information lost!                  Deformation preserved
+```
+
+The native Quadray system, without the zero-sum constraint, is a **4-dimensional coordinate system** that can describe tetrahedral deformations, asymmetries, and (with signed values) passage through the dimensional Janus Point. The 3 DOF interpretation is a projection onto Cartesian-compatible space—useful, but not the full picture.
+
+### 2.2 Critical Clarification: Negative Coordinates ≠ Negative Dimensional Space
+
+**For mathematicians and careful readers:** There is a crucial distinction between *negative coordinate values* and *negative dimensional space*. Conflating these would be a category error.
+
+**Movement vs. Inversion**
+
+When you translate an object along the -W direction (past the origin on the W axis), the W coordinate becomes negative. But you have **not** changed dimensional state—you are still in positive dimensional space, just located in a region where one coordinate happens to be negative.
+
+This is exactly analogous to Cartesian coordinates: moving from X = +5 to X = -5 doesn't transport you to another dimension. You're simply on the other side of the YZ plane.
+
+**The 16 Regions of Full Signed Quadray Space**
+
+In Cartesian XYZ:
+- 3 axes × 2 directions = 6 axial directions
+- 2³ = **8 octants** (all combinations of ±X, ±Y, ±Z)
+
+In full signed WXYZ (without zero-sum constraint):
+- 4 axes × 2 directions = **8 axial directions**
+- 2⁴ = **16 regions** (all combinations of ±W, ±X, ±Y, ±Z)
+
+| Sign Pattern | # Negative | Region Type | Dimensional State |
+|--------------|------------|-------------|-------------------|
+| (+,+,+,+) | 0 | Canonical positive | **4D+** (positive dimensional space) |
+| (+,+,+,−) | 1 | Single-negative | 4D+ (ordinary space) |
+| (+,+,−,−) | 2 | Double-negative | 4D+ (ordinary space) |
+| (+,−,−,−) | 3 | Triple-negative | 4D+ (ordinary space) |
+| (−,−,−,−) | 4 | Canonical negative | **4D−** (negative dimensional space) |
+
+*Plus 11 additional permutations of the mixed-sign patterns.*
+
+**What Triggers Janus Inversion?**
+
+The Janus Point transition occurs **only** when passing between the two canonical regions:
+- **(+,+,+,+)** → all coordinates positive
+- **(−,−,−,−)** → all coordinates negative
+
+This happens through **scaling through zero** (the form itself collapses through the origin and re-emerges inverted), NOT through translation past zero on individual axes.
+
+| Operation | Effect on Coordinates | Dimensional State Change? |
+|-----------|----------------------|---------------------------|
+| Translate along -W | W goes negative, others unchanged | **NO** — still in 4D+ |
+| Translate along -W, -X | W and X go negative | **NO** — still in 4D+ |
+| Scale uniformly through zero | ALL coordinates pass through zero simultaneously | **YES** — 4D+ ↔ 4D− |
+
+**ARTexplorer Implementation**
+
+This is exactly how ARTexplorer behaves:
+- **Translation** along any axis allows coordinates to go negative without triggering Janus effects (no background inversion, no golden flash)
+- **Scaling through zero** (via the gumball's central sphere) triggers the full Janus transition: golden flash at origin, background inverts black↔white, form emerges inverted
+
+The 14 mixed-sign regions are simply **ordinary navigable space**—they're "over there" relative to origin, but they're not dimensionally inverted.
+
+### 2.3 Summary: The Full Dimensional Accounting
+
+| Aspect | Count | Type | Notes |
+|--------|-------|------|-------|
+| Basis vectors | 4 | — | W, X, Y, Z |
+| Axial directions | 8 | — | ±W, ±X, ±Y, ±Z |
+| Spatial regions | 16 | — | 2⁴ sign combinations |
+| Continuous DOF (native) | **4** | Continuous | Position in tetrahedral space |
+| Dimensional polarity | **1** | Discrete binary | 4D+ or 4D− |
+| **Total specification** | **4 + 1** | Mixed | 4 continuous + 1 binary |
+
+Whether to call this a "5-dimensional system" is a matter of convention. The dimensional polarity is not a continuous degree of freedom like the four spatial coordinates—it's a discrete binary state. One could argue:
+
+- **"4D + binary flag"** — emphasizes the discrete nature of polarity
+- **"5D"** — emphasizes that full specification requires 5 pieces of information
+- **"4D±"** — our notation, which captures both the four continuous DOF and the ± polarity
+
+We prefer **4D±** as the most precise description: a 4-dimensional continuous space with a discrete positive/negative dimensional state.
+
 ---
 
 ## 3. The Unit Tetrahedron
@@ -1535,6 +1652,38 @@ This section documents the intellectual lineage of the Janus Inversion concept a
 Barbour's work proposes that time flows in two directions from a minimal-order "Janus Point" at the Big Bang. His 2014 paper with Koslowski and Mercati ("Identification of a Gravitational Arrow of Time," Physical Review Letters 113:181101) provides peer-reviewed foundations. However, Barbour addresses *temporal* reversal, not spatial/dimensional inversion. His work does not propose "negative space" as a geometric concept.
 - [The Janus Point (Amazon)](https://www.amazon.com/Janus-Point-New-Theory-Time/dp/0465095461)
 - [arXiv critique](https://arxiv.org/pdf/1601.02790)
+
+#### Correspondence with Dr. Julian Barbour (22 January 2026)
+
+In response to an early draft of this work shared by email, Dr. Julian Barbour graciously replied:
+
+> Dear Andy,
+>
+> Thanks for this and for your kind comments. However, I am afraid I am a bit too old and out of your field to grasp the full significance of what you have said. However, I do find things like the Platonic solids very interesting. This is because I'm getting more and more convinced that science should be about shapes rather than dynamics. In fact one can see from early Greek thinking, starting with the myths associated with the constellations, and then the ideas of Plato and the atomists, who according to Lucretius were trying to explain the shapes of microscopic object and creatures of different genera, that very naturally they were trying to understand the origin of shapes. I think it is just possible that the development of dynamics, which happened at about the same time as Lucretius wrote his book when Hipparchus developed the first dynamical theory, his theory of the motion of the Sun around the ecliptic with the rotation of the Earth defining time, may have marked a wrong turn. I'm currently writing a book which will include discussion of that.
+>
+> One other thing that I might say is that I am now not quite so keen on the Janus-point solutions in Newton gravity. That is not because there is anything wrong in what I said about them in my recent book but rather that if one eliminates all the absolute elements with which I would say Newton corrupted his own theory, then all that is left is Big Bang solutions as described in chapter 16 of my book. In this case bidirectional arrows of time are replaced by a monodirectional one.
+>
+> Best wishes and thanks again for your interest,
+>
+> Julian.
+
+**Analysis and Implications for This Work:**
+
+Dr. Barbour's response contains several significant points:
+
+1. **"Science should be about shapes rather than dynamics"** — This observation *strengthens* the relevance of our geometric approach. We are doing precisely this: exploring the shapes of space through tetrahedral geometry rather than tracking motions through time. Barbour's suggestion that Hipparchus's dynamical turn "may have marked a wrong turn" aligns remarkably with Fuller's critique of Cartesian/Newtonian frameworks.
+
+2. **Revised view on Janus Points** — Barbour now favors **monodirectional** Big Bang solutions (Chapter 16 of *The Janus Point*) over bidirectional Janus Point solutions when Newtonian absolute elements are fully eliminated. This is an important clarification of his current thinking.
+
+3. **Our domain is different** — Critically, our geometric extension applies the Janus Point concept to *spatial* rather than *temporal* structure. The geometric Janus Point we describe is a property of tetrahedral coordinate systems—the origin as a transition point between positive and negative dimensional spaces—not a claim about the cosmological arrow of time. Barbour's refinement of his temporal theory does not affect our spatial/geometric application.
+
+4. **Shapes vs. Dynamics alignment** — Barbour's intuition that science took a "wrong turn" toward dynamics resonates with:
+   - Fuller's emphasis on structure over motion
+   - Wildberger's algebraic approach to geometry (avoiding limits and infinitesimals)
+   - Our use of Quadrance and Spread rather than distance and angle
+   - The fundamental claim that the tetrahedron (a shape) is the minimum system, not any dynamic process
+
+We are grateful for Dr. Barbour's engagement and particularly for his encouragement that "science should be about shapes rather than dynamics." This view aligns naturally with everything we are attempting here.
 
 **CPT Symmetry (Lüders, Pauli, Schwinger - 1951-1954)**
 The CPT theorem describes a theoretical "mirror universe" where charge, parity, and time are simultaneously inverted. This is established physics but concerns antimatter and mirrored particle interactions, not geometric scaling through an origin into negative dimensionality.
