@@ -183,11 +183,12 @@ RTControls.SnapTargets = {
    - ✅ Yellow preview marker shows snap target during drag
    - ✅ Snap offset applied on mouseup
 
-4. **Phase 2.6**: Quad-face refinement 🔲 IN PROGRESS
-   - Issue: Cubes show 12 edges (includes 6 invisible diagonals from triangulation)
-   - Issue: Cubes show 12 face centroids (2 triangles per quad face)
-   - Solution: Store Polyhedra definition reference on mesh userData
-   - Use explicit `edges` and `faces` arrays instead of extracting from BufferGeometry
+4. **Phase 2.6**: Quad-face refinement ❌ CANCELLED
+   - Attempted to normalize cube faces from 12 triangles to 6 quads
+   - Added ~150 lines of code, broke existing snap detection
+   - **Decision**: Accept THREE.js triangulation as mesh reality
+   - Edge snap naturally aligns invisible diagonals between cubes
+   - Face snap finds triangle centroids (functional, not geometrically centered)
 
 5. **Phase 3**: Modularization (deferred)
    - Extract as functions stabilize
@@ -195,87 +196,44 @@ RTControls.SnapTargets = {
 
 ---
 
-## Phase 2.6: Quad-Face Refinement (Detailed Plan)
+## Phase 2.6: Decision - Accept Triangulation
 
-### Problem
-THREE.js triangulates all faces for rendering. A cube's 6 square faces become 12 triangles, creating:
-- 6 invisible diagonal edges (the triangle hypotenuses)
-- 12 triangle centroids instead of 6 face centroids
+### Background
+THREE.js triangulates all faces for GPU rendering. A cube's 6 square faces become 12 triangles, creating:
+- 6 invisible diagonal edges (triangle hypotenuses)
+- 12 triangle centroids instead of 6 quad face centroids
 
-### Solution: Use Polyhedra Definition Arrays
+### Attempted Solution
+Tried storing original Polyhedra definitions (`vertices`, `edges`, `faces` arrays) on mesh userData to bypass BufferGeometry extraction. This required:
+- Modifying rt-rendering.js to store `polyhedraDef`
+- Modifying rt-state-manager.js to deep-copy on instance clone
+- Modifying rt-init.js snap functions to prefer stored definitions
+- Adding face normal calculations for face-to-face offset
 
-**Step 1**: Store Polyhedra reference on group userData during mesh creation (rt-rendering.js)
-```javascript
-// In createPolyhedronMesh():
-group.userData.polyhedraDef = {
-  vertices: vertices,  // Original vertex array
-  edges: edges,        // Explicit edge pairs [v1, v2]
-  faces: faces         // Face vertex indices (can be quads)
-};
-```
+### Why It Failed
+- Added ~150 lines of complex code
+- Broke existing vertex and face snap detection
+- Over-engineered solution for a minor cosmetic issue
 
-**Step 2**: Modify snap helper functions to prefer stored definitions
-```javascript
-function getPolyhedronEdgeMidpoints(polyGroup) {
-  // If polyhedraDef exists, use explicit edges
-  if (polyGroup.userData.polyhedraDef?.edges) {
-    const { vertices, edges } = polyGroup.userData.polyhedraDef;
-    return edges.map(([a, b]) => {
-      const v1 = vertices[a].clone();
-      const v2 = vertices[b].clone();
-      const midpoint = v1.add(v2).multiplyScalar(0.5);
-      polyGroup.localToWorld(midpoint);
-      return midpoint;
-    });
-  }
-  // Fallback to BufferGeometry extraction (triangulated)
-  // ... existing code ...
-}
-```
+### Decision: Work With Triangulation
+**Accept mesh reality rather than fight it.** The triangulated approach:
+- ✅ Vertex snap works correctly (vertices are unchanged)
+- ✅ Edge snap aligns invisible diagonals naturally (cubes align well)
+- ✅ Face snap finds faces (centroids offset from quad center, but functional)
+- ✅ Works for all polyhedra without special-casing
+- ✅ No additional code complexity
 
-**Step 3**: Similar for face centroids - use original face definitions
-```javascript
-function getPolyhedronFaceCentroids(polyGroup) {
-  if (polyGroup.userData.polyhedraDef?.faces) {
-    const { vertices, faces } = polyGroup.userData.polyhedraDef;
-    return faces.map(faceIndices => {
-      const centroid = new THREE.Vector3();
-      faceIndices.forEach(i => centroid.add(vertices[i]));
-      centroid.divideScalar(faceIndices.length);
-      polyGroup.localToWorld(centroid);
-      return centroid;
-    });
-  }
-  // Fallback to BufferGeometry extraction
-  // ... existing code ...
-}
-```
-
-### Files to Modify
-| File | Changes |
-|------|---------|
-| `modules/rt-rendering.js` | Store `polyhedraDef` on group userData during mesh creation |
-| `modules/rt-state-manager.js` | Copy `polyhedraDef` when cloning instances |
-| `modules/rt-init.js` | Update `getPolyhedronEdgeMidpoints()` and `getPolyhedronFaceCentroids()` to use stored definitions |
-
-### Expected Results
-| Polyhedron | Before | After |
-|------------|--------|-------|
-| Cube edges | 18 (includes 6 diagonals) | 12 (true edges only) |
-| Cube faces | 12 (triangle centroids) | 6 (quad face centroids) |
-| Tetrahedron | No change (already triangular) | No change |
-| Icosahedron | No change (already triangular) | No change |
+The existing implementation is pragmatic and functional. Perfect geometric alignment of quad faces is not worth the code bloat and regression risk.
 
 ---
 
-## Files to Modify
+## Files Modified
 
 | File | Changes |
 |------|---------|
-| `modules/rt-init.js` | Free move logic in gumball event handlers |
-| `modules/rt-controls.js` | New snap calculation functions (Phase 3) |
-| `index.html` | Object snap toggle buttons |
-| `art.css` | Styles for snap toggle buttons, snap preview highlights |
+| `modules/rt-init.js` | Free move logic, snap detection functions |
+| `index.html` | Object snap toggle buttons (Vertex, Edge, Face) |
+| `art.css` | Styles for `.variant-objsnap` buttons |
 
 ---
 
@@ -291,17 +249,16 @@ function getPolyhedronFaceCentroids(polyGroup) {
 
 ### Phase 2: Object Snapping ✅ COMPLETE (2026-01-23)
 - [x] Vertex snap detects and snaps correctly
-- [x] Edge snap detects and snaps correctly (note: cubes show triangulated edges)
-- [x] Face snap detects and snaps correctly (note: cubes show triangulated faces)
+- [x] Edge snap detects and snaps correctly (cubes align via invisible diagonals)
+- [x] Face snap detects and snaps correctly (uses triangle centroids)
 - [x] Node sphere geometry filtered out via `isVertexNode` userData
 - [x] Instance cloning preserves userData for filtering
 - [ ] Performance testing with 10+ visible objects (deferred)
 
-### Phase 2.6: Quad-Face Refinement (Pending)
-- [ ] Store Polyhedra definition on group userData
-- [ ] Update edge extraction to use explicit edges array
-- [ ] Update face extraction to use explicit faces array
-- [ ] Copy polyhedraDef when cloning instances
+### Phase 2.6: Quad-Face Refinement ❌ CANCELLED (2026-01-23)
+- [x] Attempted polyhedraDef storage approach
+- [x] Reverted due to regression in snap detection
+- [x] Decision: Accept THREE.js triangulation as mesh reality
 
 ---
 
@@ -318,7 +275,8 @@ function getPolyhedronFaceCentroids(polyGroup) {
 
 | Date | Change |
 |------|--------|
-| 2026-01-23 | Phase 2.6 plan documented: Quad-face refinement for cubes |
+| 2026-01-23 | Phase 2.6 cancelled: Accept triangulation, reverted complex code |
+| 2026-01-23 | Phase 2.6 attempted: polyhedraDef storage caused regression |
 | 2026-01-23 | Phase 2 complete: Object snapping (vertex/edge/face) with node filtering |
 | 2026-01-23 | Fix: Instance cloning preserves userData for snap filtering |
 | 2026-01-23 | Phase 1 complete: Free movement implemented in rt-init.js |
