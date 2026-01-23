@@ -167,6 +167,8 @@ function startARTexplorer(
     geodesicOctahedronGroup;
   let cubeMatrixGroup, tetMatrixGroup, octaMatrixGroup;
   let cuboctaMatrixGroup, rhombicDodecMatrixGroup;
+  let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup;
+  let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup;
   let cartesianGrid, ivmPlanes;
   // cartesianBasis, quadrayBasis removed - managed internally by renderingAPI
 
@@ -1350,13 +1352,18 @@ function startARTexplorer(
       // Reset Form to origin
       RTStateManager.resetForm(poly);
 
-      // Check if this was a matrix form
+      // Check if this was a matrix form (planar or radial)
       if (
         formType === "cubeMatrix" ||
         formType === "tetMatrix" ||
         formType === "octaMatrix" ||
         formType === "cuboctaMatrix" ||
-        formType === "rhombicDodecMatrix"
+        formType === "rhombicDodecMatrix" ||
+        formType === "radialCubeMatrix" ||
+        formType === "radialRhombicDodecMatrix" ||
+        formType === "radialTetMatrix" ||
+        formType === "radialOctMatrix" ||
+        formType === "radialVEMatrix"
       ) {
         matrixFormDeposited = true;
       }
@@ -2255,6 +2262,11 @@ function startARTexplorer(
       octaMatrixGroup,
       cuboctaMatrixGroup,
       rhombicDodecMatrixGroup,
+      radialCubeMatrixGroup,
+      radialRhombicDodecMatrixGroup,
+      radialTetMatrixGroup,
+      radialOctMatrixGroup,
+      radialVEMatrixGroup,
     ];
 
     formGroups.forEach(group => {
@@ -3109,6 +3121,11 @@ function startARTexplorer(
     octaMatrixGroup,
     cuboctaMatrixGroup,
     rhombicDodecMatrixGroup,
+    radialCubeMatrixGroup,
+    radialRhombicDodecMatrixGroup,
+    radialTetMatrixGroup,
+    radialOctMatrixGroup,
+    radialVEMatrixGroup,
   } = formGroups);
 
   // NOTE: updateGeometry and updateGeometryStats were assigned earlier (line ~135-136)
