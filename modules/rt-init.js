@@ -1318,9 +1318,11 @@ function startARTexplorer(
   let currentGumballTool = null; // null = off, "move", "scale", "rotate"
   let currentSnapMode = "free"; // 'free', 'xyz', 'wxyz'
   let isDragging = false;
+  let isFreeMoving = false; // FREE MOVEMENT: Direct drag on polyhedron body (no axis constraint)
   let selectedHandle = null; // { type: 'quadray'|'cartesian', index: number, axis: Vector3 }
   let dragPlane = null; // THREE.Plane for raycasting
   let dragStartPoint = new THREE.Vector3();
+  let freeMoveDragOffset = new THREE.Vector3(); // Offset from click point to object center
   let selectedPolyhedra = []; // Will store currently selected polyhedra
   let justFinishedDrag = false; // Track if we just completed a drag (prevent deselect on click-after-drag)
   let editingBasis = null; // Localized gumball that follows selected Forms
@@ -2587,10 +2589,83 @@ function startARTexplorer(
                 `✅ Gumball handle selected: ${basisType.toUpperCase()} ${axisName}-axis, polyhedra count: ${selectedPolyhedra.length}`
               );
             }
+          } else if (currentGumballTool === "move" && currentSelection) {
+            // ================================================================
+            // FREE MOVEMENT: No gumball handle hit, check if clicked on selected polyhedron
+            // ================================================================
+            const selectableObjects = [];
+            currentSelection.traverse(obj => {
+              if (obj.isMesh || obj.isLine) {
+                selectableObjects.push(obj);
+              }
+            });
+
+            const polyIntersects = raycaster.intersectObjects(selectableObjects, false);
+
+            if (polyIntersects.length > 0) {
+              // Clicked on the selected polyhedron body - start free movement
+              event.preventDefault();
+              event.stopPropagation();
+
+              isFreeMoving = true;
+              selectedPolyhedra = getSelectedPolyhedra();
+
+              // Create drag plane perpendicular to camera, through object's position
+              const cameraDirection = new THREE.Vector3();
+              camera.getWorldDirection(cameraDirection);
+              dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+                cameraDirection,
+                currentSelection.position.clone()
+              );
+
+              // Get click point on drag plane
+              raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
+
+              // Calculate offset from click point to object center (prevents jumping)
+              freeMoveDragOffset.copy(currentSelection.position).sub(dragStartPoint);
+
+              console.log(
+                `🖐️ FREE MOVE started: ${currentSelection.userData.type}, polyhedra count: ${selectedPolyhedra.length}`
+              );
+            }
           }
-        } else {
+        } else if (currentGumballTool === "move" && currentSelection) {
+          // ================================================================
+          // FREE MOVEMENT (no editing basis): Check if clicked on selected polyhedron
+          // ================================================================
+          const selectableObjects = [];
+          currentSelection.traverse(obj => {
+            if (obj.isMesh || obj.isLine) {
+              selectableObjects.push(obj);
+            }
+          });
+
+          const polyIntersects = raycaster.intersectObjects(selectableObjects, false);
+
+          if (polyIntersects.length > 0) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            isFreeMoving = true;
+            selectedPolyhedra = getSelectedPolyhedra();
+
+            const cameraDirection = new THREE.Vector3();
+            camera.getWorldDirection(cameraDirection);
+            dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+              cameraDirection,
+              currentSelection.position.clone()
+            );
+
+            raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
+            freeMoveDragOffset.copy(currentSelection.position).sub(dragStartPoint);
+
+            console.log(
+              `🖐️ FREE MOVE started (no basis): ${currentSelection.userData.type}`
+            );
+          }
+        } else if (!editingBasis && currentGumballTool === "move") {
           console.warn(
-            "⚠️ No editing basis found - did you activate Move tool?"
+            "⚠️ No editing basis and no selection - select a polyhedron first"
           );
         }
       },
@@ -2601,6 +2676,58 @@ function startARTexplorer(
     renderer.domElement.addEventListener(
       "mousemove",
       event => {
+        // Handle FREE MOVEMENT (direct polyhedron drag)
+        if (isFreeMoving) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const rect = renderer.domElement.getBoundingClientRect();
+          mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+          raycaster.setFromCamera(mouse, camera);
+
+          const currentPoint = new THREE.Vector3();
+          raycaster.ray.intersectPlane(dragPlane, currentPoint);
+
+          if (currentPoint) {
+            // Apply offset to get new position (prevents jumping)
+            const newPosition = currentPoint.clone().add(freeMoveDragOffset);
+
+            // Move all selected polyhedra
+            selectedPolyhedra.forEach(poly => {
+              poly.position.copy(newPosition);
+            });
+
+            // Update editing basis position if it exists
+            if (editingBasis) {
+              editingBasis.position.copy(newPosition);
+            }
+
+            // Update coordinate displays
+            const pos = newPosition;
+            document.getElementById("coordX").value = pos.x.toFixed(4);
+            document.getElementById("coordY").value = pos.y.toFixed(4);
+            document.getElementById("coordZ").value = pos.z.toFixed(4);
+
+            // Convert to WXYZ
+            const basisVectors = Quadray.basisVectors;
+            let wxyz = [0, 0, 0, 0];
+            for (let i = 0; i < 4; i++) {
+              wxyz[i] = pos.dot(basisVectors[i]);
+            }
+            const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
+            wxyz = wxyz.map(c => c - mean);
+
+            document.getElementById("coordW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
+            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
+            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+          }
+          return; // Don't process gumball drag
+        }
+
+        // Handle GUMBALL AXIS DRAG (existing behavior)
         if (!isDragging || !selectedHandle) return;
 
         // Prevent orbit controls from receiving this event
@@ -2979,6 +3106,79 @@ function startARTexplorer(
     renderer.domElement.addEventListener(
       "mouseup",
       event => {
+        // Handle FREE MOVEMENT mouseup
+        if (isFreeMoving) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          // Apply snapping (same logic as gumball drag)
+          if (currentSnapMode !== "free" && selectedPolyhedra.length > 0) {
+            selectedPolyhedra.forEach(poly => {
+              if (currentSnapMode === "xyz") {
+                const gridSize = 0.1;
+                poly.position.x = Math.round(poly.position.x / gridSize) * gridSize;
+                poly.position.y = Math.round(poly.position.y / gridSize) * gridSize;
+                poly.position.z = Math.round(poly.position.z / gridSize) * gridSize;
+                console.log(
+                  `📐 FREE MOVE XYZ snap: (${poly.position.x.toFixed(2)}, ${poly.position.y.toFixed(2)}, ${poly.position.z.toFixed(2)})`
+                );
+              } else if (currentSnapMode === "wxyz") {
+                const basisVectors = Quadray.basisVectors;
+                let wxyz = [0, 0, 0, 0];
+                for (let i = 0; i < 4; i++) {
+                  wxyz[i] = poly.position.dot(basisVectors[i]);
+                }
+                const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
+                wxyz = wxyz.map(c => c - mean);
+                const quadrayGridSize = RT.PureRadicals.QUADRAY_GRID_INTERVAL;
+                wxyz = wxyz.map(c => Math.round(c / quadrayGridSize) * quadrayGridSize);
+                const snappedPos = Quadray.toCartesian(wxyz[0], wxyz[1], wxyz[2], wxyz[3], THREE);
+                poly.position.copy(snappedPos);
+                console.log(
+                  `📐 FREE MOVE WXYZ snap: (W:${wxyz[0].toFixed(3)}, X:${wxyz[1].toFixed(3)}, Y:${wxyz[2].toFixed(3)}, Z:${wxyz[3].toFixed(3)})`
+                );
+              }
+            });
+
+            // Update coordinate displays after snapping
+            if (selectedPolyhedra.length > 0) {
+              const pos = selectedPolyhedra[0].position;
+              document.getElementById("coordX").value = pos.x.toFixed(4);
+              document.getElementById("coordY").value = pos.y.toFixed(4);
+              document.getElementById("coordZ").value = pos.z.toFixed(4);
+
+              const basisVectors = Quadray.basisVectors;
+              let wxyz = [0, 0, 0, 0];
+              for (let i = 0; i < 4; i++) {
+                wxyz[i] = pos.dot(basisVectors[i]);
+              }
+              const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
+              wxyz = wxyz.map(c => c - mean);
+
+              document.getElementById("coordW").value = wxyz[0].toFixed(4);
+              document.getElementById("coordX2").value = wxyz[1].toFixed(4);
+              document.getElementById("coordY2").value = wxyz[2].toFixed(4);
+              document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+
+              // Update editing basis position after snapping
+              if (editingBasis) {
+                editingBasis.position.copy(pos);
+              }
+            }
+          } else {
+            console.log("✨ FREE MOVE: No snapping (full precision preserved)");
+          }
+
+          justFinishedDrag = true;
+          isFreeMoving = false;
+          selectedPolyhedra = [];
+
+          // Keep tool mode active for continued free movement
+          console.log("✅ FREE MOVE ended - selection and tool preserved");
+          return;
+        }
+
+        // Handle GUMBALL AXIS DRAG mouseup (existing behavior)
         if (isDragging) {
           // Prevent orbit controls from receiving this event
           event.preventDefault();
