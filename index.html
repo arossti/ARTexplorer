@@ -1268,6 +1268,40 @@
               </div>
             </div>
 
+            <!-- Object Snapping -->
+            <div class="control-item spacing-top">
+              <label class="label-section">Object Snaps</label>
+              <div class="snap-toggle-container">
+                <button
+                  id="snapVertex"
+                  class="toggle-btn variant-objsnap"
+                  data-objsnap="vertex"
+                  title="Snap to nearest vertex"
+                >
+                  Vertex
+                </button>
+                <button
+                  id="snapEdge"
+                  class="toggle-btn variant-objsnap"
+                  data-objsnap="edge"
+                  title="Snap to nearest edge midpoint"
+                >
+                  Edge
+                </button>
+                <button
+                  id="snapFace"
+                  class="toggle-btn variant-objsnap"
+                  data-objsnap="face"
+                  title="Snap to nearest face centroid"
+                >
+                  Face
+                </button>
+              </div>
+              <div class="snap-description snap-description-small">
+                Toggle on/off. Snaps to other visible polyhedra.
+              </div>
+            </div>
+
             <!-- NOW Button -->
             <div class="control-item spacing-top-large">
               <button id="nowButton" class="gumball-action-btn">🕐 NOW</button>
