@@ -1367,14 +1367,6 @@ export function initScene(THREE, OrbitControls, RT) {
 
     const { vertices, edges, faces } = geometry;
 
-    // Store original polyhedra definition for snap detection (avoids triangulation artifacts)
-    // This allows snap functions to use explicit edges/faces instead of BufferGeometry extraction
-    group.userData.polyhedraDef = {
-      vertices: vertices.map(v => v.clone()), // Clone to preserve original positions
-      edges: edges.slice(), // Copy edge pairs array
-      faces: faces.map(f => f.slice()), // Copy face index arrays
-    };
-
     // Get selected node size from new button selector
     const nodeSizeBtn = document.querySelector(".node-size-btn.active");
     const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
