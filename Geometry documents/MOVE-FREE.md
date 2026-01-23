@@ -16,9 +16,12 @@ Enable direct drag-to-move functionality for selected polyhedra without requirin
 - Grid snapping: Free (no snap), XYZ (0.1), WXYZ (√6/4)
 - Scale and Rotate tools via gumball handles
 - NOW button deposits instances, form resets to origin
+- **✅ FREE MOVEMENT** - Direct click-drag on polyhedron body (Phase 1 complete)
 
-### Current Limitation
-Movement **only** works when dragging gumball handle hit-zones. Users cannot click-drag directly on a selected polyhedron to move it freely in screen space.
+### ~~Current Limitation~~ (RESOLVED)
+~~Movement **only** works when dragging gumball handle hit-zones. Users cannot click-drag directly on a selected polyhedron to move it freely in screen space.~~
+
+**Phase 1 implemented 2026-01-23**: Free movement now works when Move tool is active. Click-drag directly on selected polyhedron to move freely in screen-parallel plane. Snapping applies on release.
 
 ---
 
@@ -158,10 +161,14 @@ RTControls.SnapTargets = {
 
 ## Implementation Order
 
-1. **Phase 1.1-1.4**: Free movement (~2-3 hours)
-   - Modify mousedown/mousemove/mouseup in rt-init.js
-   - Add `isFreeMoving` state flag
-   - Test with all polyhedron types including radial matrices
+1. **Phase 1.1-1.4**: Free movement ✅ COMPLETE (2026-01-23)
+   - ✅ Modified mousedown/mousemove/mouseup in rt-init.js
+   - ✅ Added `isFreeMoving` and `freeMoveDragOffset` state flags
+   - ✅ Camera-facing drag plane through object position
+   - ✅ Offset calculation prevents object jumping on click
+   - ✅ XYZ/WXYZ snapping applies on mouseup
+   - ✅ Coordinate displays update in real-time
+   - 🔲 Further testing with radial matrices and instances
 
 2. **Phase 2.1-2.2**: Object snap UI (~1 hour)
    - Add toggle buttons to index.html
@@ -191,16 +198,19 @@ RTControls.SnapTargets = {
 
 ## Testing Checklist
 
-- [ ] Free move works for cube, tetrahedron, octahedron
+### Phase 1: Free Movement
+- [x] Free move works for cube, tetrahedron, octahedron (initial test passed)
 - [ ] Free move works for radial matrix polyhedra
 - [ ] Free move works for deposited instances
-- [ ] Grid snapping (XYZ/WXYZ) applies correctly on mouseup
+- [x] Grid snapping (XYZ/WXYZ) applies correctly on mouseup
+- [x] Coordinate displays update during free move
+- [x] No interference with gumball axis-constrained movement
+
+### Phase 2: Object Snapping (Future)
 - [ ] Vertex snap detects and snaps correctly
 - [ ] Edge snap detects and snaps correctly
 - [ ] Face snap detects and snaps correctly
 - [ ] Performance acceptable with 10+ visible objects
-- [ ] Coordinate displays update during free move
-- [ ] No interference with gumball axis-constrained movement
 
 ---
 
@@ -213,5 +223,13 @@ RTControls.SnapTargets = {
 
 ---
 
-*Document created: 2026-01-22*
+## Changelog
+
+| Date | Change |
+|------|--------|
+| 2026-01-23 | Phase 1 complete: Free movement implemented in rt-init.js |
+| 2026-01-22 | Document created, workplan drafted |
+
+---
+
 *Branch: FREE-MOVEMENT*
