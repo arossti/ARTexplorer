@@ -240,6 +240,17 @@ export const RTStateManager = {
     clonedGroup.rotation.copy(polyhedronGroup.rotation);
     clonedGroup.scale.copy(polyhedronGroup.scale);
 
+    // Copy top-level userData (includes type, polyhedraDef for snap detection, etc.)
+    // Deep copy polyhedraDef to avoid shared references
+    if (polyhedronGroup.userData.polyhedraDef) {
+      clonedGroup.userData.polyhedraDef = {
+        vertices: polyhedronGroup.userData.polyhedraDef.vertices.map(v => v.clone()),
+        edges: polyhedronGroup.userData.polyhedraDef.edges.map(e => e.slice()),
+        faces: polyhedronGroup.userData.polyhedraDef.faces.map(f => f.slice()),
+      };
+    }
+    clonedGroup.userData.type = polyhedronGroup.userData.type;
+
     // Create instance metadata
     const instance = {
       id: instanceId,

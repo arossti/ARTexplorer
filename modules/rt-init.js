@@ -2559,6 +2559,22 @@ function startARTexplorer(
    */
   function getPolyhedronEdgeMidpoints(polyGroup) {
     const midpoints = [];
+
+    // PREFERRED: Use explicit edge definitions (avoids invisible triangulation diagonals)
+    if (polyGroup.userData.polyhedraDef?.edges) {
+      const { vertices, edges } = polyGroup.userData.polyhedraDef;
+      edges.forEach(([a, b]) => {
+        const v1 = vertices[a].clone();
+        const v2 = vertices[b].clone();
+        const midpoint = v1.add(v2).multiplyScalar(0.5);
+        // Transform to world coordinates using group's world matrix
+        midpoint.applyMatrix4(polyGroup.matrixWorld);
+        midpoints.push(midpoint);
+      });
+      return midpoints;
+    }
+
+    // FALLBACK: Extract from BufferGeometry (includes triangulation diagonals)
     const seenEdges = new Set(); // Deduplicate edges
 
     polyGroup.traverse(obj => {
@@ -2622,6 +2638,21 @@ function startARTexplorer(
   function getPolyhedronFaceCentroids(polyGroup) {
     const centroids = [];
 
+    // PREFERRED: Use explicit face definitions (handles quads correctly, avoids triangle split)
+    if (polyGroup.userData.polyhedraDef?.faces) {
+      const { vertices, faces } = polyGroup.userData.polyhedraDef;
+      faces.forEach(faceIndices => {
+        const centroid = new THREE.Vector3();
+        faceIndices.forEach(i => centroid.add(vertices[i]));
+        centroid.divideScalar(faceIndices.length);
+        // Transform to world coordinates using group's world matrix
+        centroid.applyMatrix4(polyGroup.matrixWorld);
+        centroids.push(centroid);
+      });
+      return centroids;
+    }
+
+    // FALLBACK: Extract from BufferGeometry (gives triangle centroids, not quad centroids)
     polyGroup.traverse(obj => {
       // Skip vertex node spheres (decorative geometry, not structural)
       if (obj.userData?.isVertexNode) return;
@@ -2665,6 +2696,105 @@ function startARTexplorer(
     });
 
     return centroids;
+  }
+
+  /**
+   * Get face data (centroid, normal, distance to center) for face-to-face snapping
+   * @param {THREE.Group} polyGroup - Polyhedron group
+   * @returns {Array<{centroid: THREE.Vector3, normal: THREE.Vector3, distanceToCenter: number}>}
+   */
+  function getPolyhedronFaceData(polyGroup) {
+    const faceData = [];
+
+    // PREFERRED: Use explicit face definitions
+    if (polyGroup.userData.polyhedraDef?.faces) {
+      const { vertices, faces } = polyGroup.userData.polyhedraDef;
+
+      faces.forEach(faceIndices => {
+        // Calculate centroid in local space
+        const centroid = new THREE.Vector3();
+        faceIndices.forEach(i => centroid.add(vertices[i]));
+        centroid.divideScalar(faceIndices.length);
+
+        // Calculate face normal using first 3 vertices (cross product)
+        const v0 = vertices[faceIndices[0]];
+        const v1 = vertices[faceIndices[1]];
+        const v2 = vertices[faceIndices[2]];
+
+        const edge1 = v1.clone().sub(v0);
+        const edge2 = v2.clone().sub(v0);
+        const normal = edge1.cross(edge2).normalize();
+
+        // Make sure normal points outward (away from origin)
+        // For convex polyhedra centered at origin, centroid direction = outward
+        if (normal.dot(centroid) < 0) {
+          normal.negate();
+        }
+
+        // Distance from object center (origin) to face plane along normal
+        // This is how far the face is from the center
+        const distanceToCenter = centroid.dot(normal);
+
+        // Transform centroid to world coordinates
+        const worldCentroid = centroid.clone().applyMatrix4(polyGroup.matrixWorld);
+
+        // Transform normal to world coordinates (rotation only, no translation)
+        const normalMatrix = new THREE.Matrix3().getNormalMatrix(polyGroup.matrixWorld);
+        const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
+
+        faceData.push({
+          centroid: worldCentroid,
+          normal: worldNormal,
+          distanceToCenter: distanceToCenter * polyGroup.scale.x, // Account for scale
+        });
+      });
+
+      return faceData;
+    }
+
+    // FALLBACK: Extract from BufferGeometry (triangulated faces)
+    polyGroup.traverse(obj => {
+      if (obj.userData?.isVertexNode) return;
+
+      if (obj.isMesh && obj.geometry) {
+        const posAttr = obj.geometry.getAttribute("position");
+        const index = obj.geometry.index;
+
+        if (posAttr && index) {
+          for (let i = 0; i < index.count; i += 3) {
+            const a = index.getX(i);
+            const b = index.getX(i + 1);
+            const c = index.getX(i + 2);
+
+            const v1 = new THREE.Vector3(posAttr.getX(a), posAttr.getY(a), posAttr.getZ(a));
+            const v2 = new THREE.Vector3(posAttr.getX(b), posAttr.getY(b), posAttr.getZ(b));
+            const v3 = new THREE.Vector3(posAttr.getX(c), posAttr.getY(c), posAttr.getZ(c));
+
+            const centroid = v1.clone().add(v2).add(v3).multiplyScalar(1 / 3);
+
+            const edge1 = v2.clone().sub(v1);
+            const edge2 = v3.clone().sub(v1);
+            const normal = edge1.cross(edge2).normalize();
+
+            if (normal.dot(centroid) < 0) normal.negate();
+
+            const distanceToCenter = centroid.dot(normal);
+
+            obj.localToWorld(centroid);
+            const normalMatrix = new THREE.Matrix3().getNormalMatrix(obj.matrixWorld);
+            normal.applyMatrix3(normalMatrix).normalize();
+
+            faceData.push({
+              centroid: centroid,
+              normal: normal,
+              distanceToCenter: distanceToCenter,
+            });
+          }
+        }
+      }
+    });
+
+    return faceData;
   }
 
   /**
@@ -2729,7 +2859,7 @@ function startARTexplorer(
     // Get source object's snap points (we need to compare geometry-to-geometry)
     const sourceVertices = objectSnapVertex ? getPolyhedronVertices(excludeGroup) : [];
     const sourceEdges = objectSnapEdge ? getPolyhedronEdgeMidpoints(excludeGroup) : [];
-    const sourceFaces = objectSnapFace ? getPolyhedronFaceCentroids(excludeGroup) : [];
+    const sourceFaceData = objectSnapFace ? getPolyhedronFaceData(excludeGroup) : [];
 
     // console.log(`🔍 SNAP DEBUG: Source has ${sourceVertices.length} vertices, ${sourceEdges.length} edges, ${sourceFaces.length} faces`);
 
@@ -2763,7 +2893,7 @@ function startARTexplorer(
       // Edge-to-edge snapping (midpoint to midpoint)
       if (objectSnapEdge && sourceEdges.length > 0) {
         const targetEdges = getPolyhedronEdgeMidpoints(targetGroup);
-        // console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetEdges.length} edge midpoints`);
+        console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetEdges.length} edge midpoints`);
         sourceEdges.forEach(srcEdge => {
           targetEdges.forEach(tgtEdge => {
             const distance = srcEdge.distanceTo(tgtEdge);
@@ -2784,21 +2914,36 @@ function startARTexplorer(
         });
       }
 
-      // Face-to-face snapping (centroid to centroid)
-      if (objectSnapFace && sourceFaces.length > 0) {
-        const targetFaces = getPolyhedronFaceCentroids(targetGroup);
-        sourceFaces.forEach(srcFace => {
-          targetFaces.forEach(tgtFace => {
-            const distance = srcFace.distanceTo(tgtFace);
+      // Face-to-face snapping (faces touch, not centroids overlap)
+      if (objectSnapFace && sourceFaceData.length > 0) {
+        const targetFaceData = getPolyhedronFaceData(targetGroup);
+        console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetFaceData.length} faces`);
+        sourceFaceData.forEach(srcFace => {
+          targetFaceData.forEach(tgtFace => {
+            // Check if faces are roughly opposing (normals point toward each other)
+            // Dot product of normals should be negative for opposing faces
+            const normalDot = srcFace.normal.dot(tgtFace.normal);
+            if (normalDot > -0.5) return; // Skip non-opposing faces (need ~120° or more)
+
+            const distance = srcFace.centroid.distanceTo(tgtFace.centroid);
             if (distance < nearestDistance) {
               nearestDistance = distance;
-              // Calculate offset to align source face to target face
-              const offset = tgtFace.clone().sub(srcFace);
+
+              // Calculate offset for face-to-face contact:
+              // 1. Move source centroid to target centroid position
+              // 2. Then offset along target normal so faces touch (don't overlap)
+              // The offset along normal = source's distance-to-center + target's distance-to-center
+              const centroidOffset = tgtFace.centroid.clone().sub(srcFace.centroid);
+              const faceOffset = tgtFace.normal.clone().multiplyScalar(
+                srcFace.distanceToCenter + tgtFace.distanceToCenter
+              );
+              const totalOffset = centroidOffset.add(faceOffset);
+
               nearest = {
                 type: "face",
-                position: position.clone().add(offset), // New center position after snap
-                sourcePoint: srcFace.clone(),
-                targetPoint: tgtFace.clone(),
+                position: position.clone().add(totalOffset),
+                sourcePoint: srcFace.centroid.clone(),
+                targetPoint: tgtFace.centroid.clone(),
                 distance: distance,
                 targetGroup: targetGroup,
               };
