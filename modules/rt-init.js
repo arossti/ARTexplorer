@@ -2715,29 +2715,30 @@ function startARTexplorer(
 
     // Instances
     const allInstances = RTStateManager.getAllInstances();
-    console.log(`🔍 SNAP DEBUG: ${allInstances.length} instances in RTStateManager`);
+    // DEBUG: Uncomment for snap debugging
+    // console.log(`🔍 SNAP DEBUG: ${allInstances.length} instances in RTStateManager`);
     allInstances.forEach(instance => {
-      console.log(`  Instance: ${instance.id}, visible: ${instance.threeObject?.visible}, excluded: ${instance.threeObject === excludeGroup}`);
+      // console.log(`  Instance: ${instance.id}, visible: ${instance.threeObject?.visible}, excluded: ${instance.threeObject === excludeGroup}`);
       if (instance.threeObject && instance.threeObject.visible && instance.threeObject !== excludeGroup) {
         targetGroups.push(instance.threeObject);
       }
     });
 
-    console.log(`🔍 SNAP DEBUG: ${targetGroups.length} target groups found (excluding dragged object)`);
+    // console.log(`🔍 SNAP DEBUG: ${targetGroups.length} target groups found (excluding dragged object)`);
 
     // Get source object's snap points (we need to compare geometry-to-geometry)
     const sourceVertices = objectSnapVertex ? getPolyhedronVertices(excludeGroup) : [];
     const sourceEdges = objectSnapEdge ? getPolyhedronEdgeMidpoints(excludeGroup) : [];
     const sourceFaces = objectSnapFace ? getPolyhedronFaceCentroids(excludeGroup) : [];
 
-    console.log(`🔍 SNAP DEBUG: Source has ${sourceVertices.length} vertices, ${sourceEdges.length} edges, ${sourceFaces.length} faces`);
+    // console.log(`🔍 SNAP DEBUG: Source has ${sourceVertices.length} vertices, ${sourceEdges.length} edges, ${sourceFaces.length} faces`);
 
     // Check each target group for snap points
     targetGroups.forEach(targetGroup => {
       // Vertex-to-vertex snapping
       if (objectSnapVertex && sourceVertices.length > 0) {
         const targetVertices = getPolyhedronVertices(targetGroup);
-        console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetVertices.length} vertices`);
+        // console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetVertices.length} vertices`);
         sourceVertices.forEach(srcVertex => {
           targetVertices.forEach(tgtVertex => {
             const distance = srcVertex.distanceTo(tgtVertex);
@@ -2762,7 +2763,7 @@ function startARTexplorer(
       // Edge-to-edge snapping (midpoint to midpoint)
       if (objectSnapEdge && sourceEdges.length > 0) {
         const targetEdges = getPolyhedronEdgeMidpoints(targetGroup);
-        console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetEdges.length} edge midpoints`);
+        // console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetEdges.length} edge midpoints`);
         sourceEdges.forEach(srcEdge => {
           targetEdges.forEach(tgtEdge => {
             const distance = srcEdge.distanceTo(tgtEdge);
@@ -2807,12 +2808,12 @@ function startARTexplorer(
       }
     });
 
-    // Debug: Log result
-    if (nearest) {
-      console.log(`🎯 SNAP FOUND: ${nearest.type} at distance ${nearest.distance.toFixed(3)}`);
-    } else {
-      console.log(`🔍 SNAP DEBUG: Closest was beyond threshold ${threshold}`);
-    }
+    // Debug: Log result (uncomment for debugging)
+    // if (nearest) {
+    //   console.log(`🎯 SNAP FOUND: ${nearest.type} at distance ${nearest.distance.toFixed(3)}`);
+    // } else {
+    //   console.log(`🔍 SNAP DEBUG: Closest was beyond threshold ${threshold}`);
+    // }
 
     return nearest;
   }
