@@ -193,6 +193,8 @@ export const RTStateManager = {
           instanceMesh.rotation.copy(child.rotation);
           instanceMesh.scale.copy(child.scale);
           instanceMesh.renderOrder = child.renderOrder;
+          // Copy userData to preserve isVertexNode and other markers
+          Object.assign(instanceMesh.userData, child.userData);
           target.add(instanceMesh);
         } else if (child.isLine || child.isLineSegments) {
           // Clone line geometry too
@@ -213,6 +215,8 @@ export const RTStateManager = {
           instanceLine.rotation.copy(child.rotation);
           instanceLine.scale.copy(child.scale);
           instanceLine.renderOrder = child.renderOrder;
+          // Copy userData to preserve any markers
+          Object.assign(instanceLine.userData, child.userData);
           target.add(instanceLine);
         } else if (child.isGroup) {
           // Recursively clone nested groups (for matrix forms)
@@ -220,6 +224,8 @@ export const RTStateManager = {
           nestedGroup.position.copy(child.position);
           nestedGroup.rotation.copy(child.rotation);
           nestedGroup.scale.copy(child.scale);
+          // Copy userData to preserve any markers
+          Object.assign(nestedGroup.userData, child.userData);
           cloneGroupHierarchy(child, nestedGroup);
           target.add(nestedGroup);
         }

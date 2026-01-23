@@ -2902,6 +2902,9 @@ export function initScene(THREE, OrbitControls, RT) {
       rhombicDodecMatrixGroup,
       radialCubeMatrixGroup,
       radialRhombicDodecMatrixGroup,
+      radialTetMatrixGroup,
+      radialOctMatrixGroup,
+      radialVEMatrixGroup,
     };
   }
 

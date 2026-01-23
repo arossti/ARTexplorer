@@ -167,6 +167,8 @@ function startARTexplorer(
     geodesicOctahedronGroup;
   let cubeMatrixGroup, tetMatrixGroup, octaMatrixGroup;
   let cuboctaMatrixGroup, rhombicDodecMatrixGroup;
+  let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup;
+  let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup;
   let cartesianGrid, ivmPlanes;
   // cartesianBasis, quadrayBasis removed - managed internally by renderingAPI
 
@@ -1316,12 +1318,21 @@ function startARTexplorer(
   let currentGumballTool = null; // null = off, "move", "scale", "rotate"
   let currentSnapMode = "free"; // 'free', 'xyz', 'wxyz'
   let isDragging = false;
+  let isFreeMoving = false; // FREE MOVEMENT: Direct drag on polyhedron body (no axis constraint)
   let selectedHandle = null; // { type: 'quadray'|'cartesian', index: number, axis: Vector3 }
   let dragPlane = null; // THREE.Plane for raycasting
   let dragStartPoint = new THREE.Vector3();
+  let freeMoveDragOffset = new THREE.Vector3(); // Offset from click point to object center
   let selectedPolyhedra = []; // Will store currently selected polyhedra
   let justFinishedDrag = false; // Track if we just completed a drag (prevent deselect on click-after-drag)
   let editingBasis = null; // Localized gumball that follows selected Forms
+
+  // Object snap state (toggleable, can combine with grid snapping)
+  let objectSnapVertex = false; // Snap to nearest vertex
+  let objectSnapEdge = false; // Snap to nearest edge midpoint
+  let objectSnapFace = false; // Snap to nearest face centroid
+  let currentSnapTarget = null; // { type: 'vertex'|'edge'|'face', position: Vector3, object: Group }
+  let snapPreviewMarker = null; // Visual indicator for snap target
 
   // ========================================================================
   // SELECTION STATE
@@ -1350,13 +1361,18 @@ function startARTexplorer(
       // Reset Form to origin
       RTStateManager.resetForm(poly);
 
-      // Check if this was a matrix form
+      // Check if this was a matrix form (planar or radial)
       if (
         formType === "cubeMatrix" ||
         formType === "tetMatrix" ||
         formType === "octaMatrix" ||
         formType === "cuboctaMatrix" ||
-        formType === "rhombicDodecMatrix"
+        formType === "rhombicDodecMatrix" ||
+        formType === "radialCubeMatrix" ||
+        formType === "radialRhombicDodecMatrix" ||
+        formType === "radialTetMatrix" ||
+        formType === "radialOctMatrix" ||
+        formType === "radialVEMatrix"
       ) {
         matrixFormDeposited = true;
       }
@@ -1438,6 +1454,29 @@ function startARTexplorer(
       currentSnapMode = snapMode;
 
       console.log(`📐 Snap mode changed to: ${snapMode.toUpperCase()}`);
+    });
+  });
+
+  // Object snap toggle buttons (toggleable - can be combined)
+  document.querySelectorAll(".toggle-btn.variant-objsnap").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const snapType = this.dataset.objsnap;
+
+      // Toggle active state (these are independent toggles, not radio buttons)
+      this.classList.toggle("active");
+      const isActive = this.classList.contains("active");
+
+      // Update corresponding state variable
+      if (snapType === "vertex") {
+        objectSnapVertex = isActive;
+      } else if (snapType === "edge") {
+        objectSnapEdge = isActive;
+      } else if (snapType === "face") {
+        objectSnapFace = isActive;
+      }
+
+      const status = isActive ? "ON" : "OFF";
+      console.log(`🎯 Object snap ${snapType.toUpperCase()}: ${status}`);
     });
   });
 
@@ -2255,6 +2294,11 @@ function startARTexplorer(
       octaMatrixGroup,
       cuboctaMatrixGroup,
       rhombicDodecMatrixGroup,
+      radialCubeMatrixGroup,
+      radialRhombicDodecMatrixGroup,
+      radialTetMatrixGroup,
+      radialOctMatrixGroup,
+      radialVEMatrixGroup,
     ];
 
     formGroups.forEach(group => {
@@ -2464,6 +2508,370 @@ function startARTexplorer(
     requestAnimationFrame(animateFlash);
   }
 
+  // ========================================================================
+  // OBJECT SNAPPING HELPER FUNCTIONS
+  // ========================================================================
+
+  /**
+   * Get all vertices of a polyhedron in world coordinates
+   * @param {THREE.Group} polyGroup - Polyhedron group
+   * @returns {Array<THREE.Vector3>} Array of vertex positions in world space
+   */
+  function getPolyhedronVertices(polyGroup) {
+    const vertices = [];
+    const seenPositions = new Set(); // Deduplicate vertices
+
+    polyGroup.traverse(obj => {
+      // Skip vertex node spheres (decorative geometry, not structural)
+      if (obj.userData?.isVertexNode) return;
+
+      if (obj.isMesh && obj.geometry) {
+        const posAttr = obj.geometry.getAttribute("position");
+        if (posAttr) {
+          for (let i = 0; i < posAttr.count; i++) {
+            const localVertex = new THREE.Vector3(
+              posAttr.getX(i),
+              posAttr.getY(i),
+              posAttr.getZ(i)
+            );
+            // Transform to world coordinates
+            const worldVertex = localVertex.clone();
+            obj.localToWorld(worldVertex);
+
+            // Deduplicate (round to 4 decimal places for comparison)
+            const key = `${worldVertex.x.toFixed(4)},${worldVertex.y.toFixed(4)},${worldVertex.z.toFixed(4)}`;
+            if (!seenPositions.has(key)) {
+              seenPositions.add(key);
+              vertices.push(worldVertex);
+            }
+          }
+        }
+      }
+    });
+
+    return vertices;
+  }
+
+  /**
+   * Get all edge midpoints of a polyhedron in world coordinates
+   * @param {THREE.Group} polyGroup - Polyhedron group
+   * @returns {Array<THREE.Vector3>} Array of edge midpoint positions in world space
+   */
+  function getPolyhedronEdgeMidpoints(polyGroup) {
+    const midpoints = [];
+    const seenEdges = new Set(); // Deduplicate edges
+
+    polyGroup.traverse(obj => {
+      // Skip vertex node spheres (decorative geometry, not structural)
+      if (obj.userData?.isVertexNode) return;
+
+      if (obj.isMesh && obj.geometry) {
+        const posAttr = obj.geometry.getAttribute("position");
+        const index = obj.geometry.index;
+
+        if (posAttr && index) {
+          // Indexed geometry - extract edges from triangles
+          for (let i = 0; i < index.count; i += 3) {
+            const indices = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+
+            // Three edges per triangle
+            const edges = [
+              [indices[0], indices[1]],
+              [indices[1], indices[2]],
+              [indices[2], indices[0]],
+            ];
+
+            edges.forEach(([a, b]) => {
+              // Normalize edge key (smaller index first)
+              const edgeKey = a < b ? `${a}-${b}` : `${b}-${a}`;
+              if (!seenEdges.has(edgeKey)) {
+                seenEdges.add(edgeKey);
+
+                const v1 = new THREE.Vector3(
+                  posAttr.getX(a),
+                  posAttr.getY(a),
+                  posAttr.getZ(a)
+                );
+                const v2 = new THREE.Vector3(
+                  posAttr.getX(b),
+                  posAttr.getY(b),
+                  posAttr.getZ(b)
+                );
+
+                // Calculate midpoint in local space
+                const midpoint = v1.clone().add(v2).multiplyScalar(0.5);
+
+                // Transform to world coordinates
+                obj.localToWorld(midpoint);
+                midpoints.push(midpoint);
+              }
+            });
+          }
+        }
+      }
+    });
+
+    return midpoints;
+  }
+
+  /**
+   * Get all face centroids of a polyhedron in world coordinates
+   * @param {THREE.Group} polyGroup - Polyhedron group
+   * @returns {Array<THREE.Vector3>} Array of face centroid positions in world space
+   */
+  function getPolyhedronFaceCentroids(polyGroup) {
+    const centroids = [];
+
+    polyGroup.traverse(obj => {
+      // Skip vertex node spheres (decorative geometry, not structural)
+      if (obj.userData?.isVertexNode) return;
+
+      if (obj.isMesh && obj.geometry) {
+        const posAttr = obj.geometry.getAttribute("position");
+        const index = obj.geometry.index;
+
+        if (posAttr && index) {
+          // Process each triangle face
+          for (let i = 0; i < index.count; i += 3) {
+            const a = index.getX(i);
+            const b = index.getX(i + 1);
+            const c = index.getX(i + 2);
+
+            const v1 = new THREE.Vector3(
+              posAttr.getX(a),
+              posAttr.getY(a),
+              posAttr.getZ(a)
+            );
+            const v2 = new THREE.Vector3(
+              posAttr.getX(b),
+              posAttr.getY(b),
+              posAttr.getZ(b)
+            );
+            const v3 = new THREE.Vector3(
+              posAttr.getX(c),
+              posAttr.getY(c),
+              posAttr.getZ(c)
+            );
+
+            // Calculate centroid in local space
+            const centroid = v1.clone().add(v2).add(v3).multiplyScalar(1 / 3);
+
+            // Transform to world coordinates
+            obj.localToWorld(centroid);
+            centroids.push(centroid);
+          }
+        }
+      }
+    });
+
+    return centroids;
+  }
+
+  /**
+   * Find the nearest snap target from all visible polyhedra (excluding the dragged one)
+   * @param {THREE.Vector3} position - Current position to snap from
+   * @param {THREE.Group} excludeGroup - The polyhedron being dragged (exclude from targets)
+   * @param {number} threshold - Maximum distance for snapping
+   * @returns {Object|null} { type, position, distance } or null if no target found
+   */
+  function findNearestSnapTarget(position, excludeGroup, threshold = 0.5) {
+    let nearest = null;
+    let nearestDistance = threshold;
+
+    // Collect all visible polyhedra (Forms and Instances)
+    const targetGroups = [];
+
+    // Forms
+    const formGroups = [
+      cubeGroup,
+      tetrahedronGroup,
+      dualTetrahedronGroup,
+      octahedronGroup,
+      icosahedronGroup,
+      dodecahedronGroup,
+      dualIcosahedronGroup,
+      cuboctahedronGroup,
+      rhombicDodecahedronGroup,
+      geodesicIcosahedronGroup,
+      geodesicTetrahedronGroup,
+      geodesicOctahedronGroup,
+      cubeMatrixGroup,
+      tetMatrixGroup,
+      octaMatrixGroup,
+      cuboctaMatrixGroup,
+      rhombicDodecMatrixGroup,
+      radialCubeMatrixGroup,
+      radialRhombicDodecMatrixGroup,
+      radialTetMatrixGroup,
+      radialOctMatrixGroup,
+      radialVEMatrixGroup,
+    ];
+
+    formGroups.forEach(group => {
+      if (group && group.visible && group !== excludeGroup && group.children.length > 0) {
+        targetGroups.push(group);
+      }
+    });
+
+    // Instances
+    const allInstances = RTStateManager.getAllInstances();
+    // DEBUG: Uncomment for snap debugging
+    // console.log(`🔍 SNAP DEBUG: ${allInstances.length} instances in RTStateManager`);
+    allInstances.forEach(instance => {
+      // console.log(`  Instance: ${instance.id}, visible: ${instance.threeObject?.visible}, excluded: ${instance.threeObject === excludeGroup}`);
+      if (instance.threeObject && instance.threeObject.visible && instance.threeObject !== excludeGroup) {
+        targetGroups.push(instance.threeObject);
+      }
+    });
+
+    // console.log(`🔍 SNAP DEBUG: ${targetGroups.length} target groups found (excluding dragged object)`);
+
+    // Get source object's snap points (we need to compare geometry-to-geometry)
+    const sourceVertices = objectSnapVertex ? getPolyhedronVertices(excludeGroup) : [];
+    const sourceEdges = objectSnapEdge ? getPolyhedronEdgeMidpoints(excludeGroup) : [];
+    const sourceFaces = objectSnapFace ? getPolyhedronFaceCentroids(excludeGroup) : [];
+
+    // console.log(`🔍 SNAP DEBUG: Source has ${sourceVertices.length} vertices, ${sourceEdges.length} edges, ${sourceFaces.length} faces`);
+
+    // Check each target group for snap points
+    targetGroups.forEach(targetGroup => {
+      // Vertex-to-vertex snapping
+      if (objectSnapVertex && sourceVertices.length > 0) {
+        const targetVertices = getPolyhedronVertices(targetGroup);
+        // console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetVertices.length} vertices`);
+        sourceVertices.forEach(srcVertex => {
+          targetVertices.forEach(tgtVertex => {
+            const distance = srcVertex.distanceTo(tgtVertex);
+            if (distance < nearestDistance) {
+              nearestDistance = distance;
+              // Calculate offset: where target is minus where source vertex is
+              // This offset would move source vertex to target vertex
+              const offset = tgtVertex.clone().sub(srcVertex);
+              nearest = {
+                type: "vertex",
+                position: position.clone().add(offset), // New center position after snap
+                sourcePoint: srcVertex.clone(),
+                targetPoint: tgtVertex.clone(),
+                distance: distance,
+                targetGroup: targetGroup,
+              };
+            }
+          });
+        });
+      }
+
+      // Edge-to-edge snapping (midpoint to midpoint)
+      if (objectSnapEdge && sourceEdges.length > 0) {
+        const targetEdges = getPolyhedronEdgeMidpoints(targetGroup);
+        // console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetEdges.length} edge midpoints`);
+        sourceEdges.forEach(srcEdge => {
+          targetEdges.forEach(tgtEdge => {
+            const distance = srcEdge.distanceTo(tgtEdge);
+            if (distance < nearestDistance) {
+              nearestDistance = distance;
+              // Calculate offset to align source edge to target edge
+              const offset = tgtEdge.clone().sub(srcEdge);
+              nearest = {
+                type: "edge",
+                position: position.clone().add(offset), // New center position after snap
+                sourcePoint: srcEdge.clone(),
+                targetPoint: tgtEdge.clone(),
+                distance: distance,
+                targetGroup: targetGroup,
+              };
+            }
+          });
+        });
+      }
+
+      // Face-to-face snapping (centroid to centroid)
+      if (objectSnapFace && sourceFaces.length > 0) {
+        const targetFaces = getPolyhedronFaceCentroids(targetGroup);
+        sourceFaces.forEach(srcFace => {
+          targetFaces.forEach(tgtFace => {
+            const distance = srcFace.distanceTo(tgtFace);
+            if (distance < nearestDistance) {
+              nearestDistance = distance;
+              // Calculate offset to align source face to target face
+              const offset = tgtFace.clone().sub(srcFace);
+              nearest = {
+                type: "face",
+                position: position.clone().add(offset), // New center position after snap
+                sourcePoint: srcFace.clone(),
+                targetPoint: tgtFace.clone(),
+                distance: distance,
+                targetGroup: targetGroup,
+              };
+            }
+          });
+        });
+      }
+    });
+
+    // Debug: Log result (uncomment for debugging)
+    // if (nearest) {
+    //   console.log(`🎯 SNAP FOUND: ${nearest.type} at distance ${nearest.distance.toFixed(3)}`);
+    // } else {
+    //   console.log(`🔍 SNAP DEBUG: Closest was beyond threshold ${threshold}`);
+    // }
+
+    return nearest;
+  }
+
+  /**
+   * Create or update the snap preview marker (visual indicator)
+   * @param {THREE.Vector3} position - Position to show marker
+   * @param {string} snapType - 'vertex', 'edge', or 'face'
+   */
+  function updateSnapPreviewMarker(position, snapType) {
+    // Remove existing marker
+    if (snapPreviewMarker) {
+      scene.remove(snapPreviewMarker);
+      snapPreviewMarker = null;
+    }
+
+    if (!position) return;
+
+    // Create marker based on snap type
+    let geometry, material;
+    const colors = {
+      vertex: 0xff9944, // Orange
+      edge: 0x44ff99, // Green
+      face: 0x4499ff, // Blue
+    };
+
+    if (snapType === "vertex") {
+      geometry = new THREE.SphereGeometry(0.15, 16, 16);
+    } else if (snapType === "edge") {
+      geometry = new THREE.OctahedronGeometry(0.15);
+    } else if (snapType === "face") {
+      geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    }
+
+    material = new THREE.MeshBasicMaterial({
+      color: colors[snapType],
+      transparent: true,
+      opacity: 0.8,
+      depthTest: false,
+    });
+
+    snapPreviewMarker = new THREE.Mesh(geometry, material);
+    snapPreviewMarker.position.copy(position);
+    snapPreviewMarker.renderOrder = 999; // Render on top
+    scene.add(snapPreviewMarker);
+  }
+
+  /**
+   * Remove the snap preview marker
+   */
+  function clearSnapPreviewMarker() {
+    if (snapPreviewMarker) {
+      scene.remove(snapPreviewMarker);
+      snapPreviewMarker = null;
+    }
+    currentSnapTarget = null;
+  }
+
   // Initialize gumball mouse event listeners (called after initScene)
   function initGumballEventListeners() {
     raycaster = new THREE.Raycaster();
@@ -2575,10 +2983,83 @@ function startARTexplorer(
                 `✅ Gumball handle selected: ${basisType.toUpperCase()} ${axisName}-axis, polyhedra count: ${selectedPolyhedra.length}`
               );
             }
+          } else if (currentGumballTool === "move" && currentSelection) {
+            // ================================================================
+            // FREE MOVEMENT: No gumball handle hit, check if clicked on selected polyhedron
+            // ================================================================
+            const selectableObjects = [];
+            currentSelection.traverse(obj => {
+              if (obj.isMesh || obj.isLine) {
+                selectableObjects.push(obj);
+              }
+            });
+
+            const polyIntersects = raycaster.intersectObjects(selectableObjects, false);
+
+            if (polyIntersects.length > 0) {
+              // Clicked on the selected polyhedron body - start free movement
+              event.preventDefault();
+              event.stopPropagation();
+
+              isFreeMoving = true;
+              selectedPolyhedra = getSelectedPolyhedra();
+
+              // Create drag plane perpendicular to camera, through object's position
+              const cameraDirection = new THREE.Vector3();
+              camera.getWorldDirection(cameraDirection);
+              dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+                cameraDirection,
+                currentSelection.position.clone()
+              );
+
+              // Get click point on drag plane
+              raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
+
+              // Calculate offset from click point to object center (prevents jumping)
+              freeMoveDragOffset.copy(currentSelection.position).sub(dragStartPoint);
+
+              console.log(
+                `🖐️ FREE MOVE started: ${currentSelection.userData.type}, polyhedra count: ${selectedPolyhedra.length}`
+              );
+            }
           }
-        } else {
+        } else if (currentGumballTool === "move" && currentSelection) {
+          // ================================================================
+          // FREE MOVEMENT (no editing basis): Check if clicked on selected polyhedron
+          // ================================================================
+          const selectableObjects = [];
+          currentSelection.traverse(obj => {
+            if (obj.isMesh || obj.isLine) {
+              selectableObjects.push(obj);
+            }
+          });
+
+          const polyIntersects = raycaster.intersectObjects(selectableObjects, false);
+
+          if (polyIntersects.length > 0) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            isFreeMoving = true;
+            selectedPolyhedra = getSelectedPolyhedra();
+
+            const cameraDirection = new THREE.Vector3();
+            camera.getWorldDirection(cameraDirection);
+            dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+              cameraDirection,
+              currentSelection.position.clone()
+            );
+
+            raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
+            freeMoveDragOffset.copy(currentSelection.position).sub(dragStartPoint);
+
+            console.log(
+              `🖐️ FREE MOVE started (no basis): ${currentSelection.userData.type}`
+            );
+          }
+        } else if (!editingBasis && currentGumballTool === "move") {
           console.warn(
-            "⚠️ No editing basis found - did you activate Move tool?"
+            "⚠️ No editing basis and no selection - select a polyhedron first"
           );
         }
       },
@@ -2589,6 +3070,82 @@ function startARTexplorer(
     renderer.domElement.addEventListener(
       "mousemove",
       event => {
+        // Handle FREE MOVEMENT (direct polyhedron drag)
+        if (isFreeMoving) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const rect = renderer.domElement.getBoundingClientRect();
+          mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+          raycaster.setFromCamera(mouse, camera);
+
+          const currentPoint = new THREE.Vector3();
+          raycaster.ray.intersectPlane(dragPlane, currentPoint);
+
+          if (currentPoint) {
+            // Apply offset to get new position (prevents jumping)
+            let newPosition = currentPoint.clone().add(freeMoveDragOffset);
+
+            // ================================================================
+            // OBJECT SNAPPING: Check for snap targets during drag
+            // ================================================================
+            if (objectSnapVertex || objectSnapEdge || objectSnapFace) {
+              const snapTarget = findNearestSnapTarget(
+                newPosition,
+                currentSelection,
+                0.5 // Snap threshold
+              );
+
+              if (snapTarget) {
+                // Show snap preview marker at the TARGET point (where snap will attach)
+                updateSnapPreviewMarker(snapTarget.targetPoint, snapTarget.type);
+                currentSnapTarget = snapTarget;
+
+                // Preview snap position (object will snap on release)
+                // For now, show the marker but don't move the object until release
+                // This gives visual feedback without commitment
+              } else {
+                // No snap target - clear preview
+                clearSnapPreviewMarker();
+              }
+            }
+
+            // Move all selected polyhedra
+            selectedPolyhedra.forEach(poly => {
+              poly.position.copy(newPosition);
+            });
+
+            // Update editing basis position if it exists
+            if (editingBasis) {
+              editingBasis.position.copy(newPosition);
+            }
+
+            // Update coordinate displays
+            const pos = newPosition;
+            document.getElementById("coordX").value = pos.x.toFixed(4);
+            document.getElementById("coordY").value = pos.y.toFixed(4);
+            document.getElementById("coordZ").value = pos.z.toFixed(4);
+
+            // Convert to WXYZ
+            const basisVectors = Quadray.basisVectors;
+            let wxyz = [0, 0, 0, 0];
+            for (let i = 0; i < 4; i++) {
+              wxyz[i] = pos.dot(basisVectors[i]);
+            }
+            const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
+            wxyz = wxyz.map(c => c - mean);
+
+            document.getElementById("coordW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
+            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
+            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+          }
+          return; // Don't process gumball drag
+        }
+
+        // Handle GUMBALL AXIS DRAG (existing behavior)
         if (!isDragging || !selectedHandle) return;
 
         // Prevent orbit controls from receiving this event
@@ -2967,6 +3524,128 @@ function startARTexplorer(
     renderer.domElement.addEventListener(
       "mouseup",
       event => {
+        // Handle FREE MOVEMENT mouseup
+        if (isFreeMoving) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          // ================================================================
+          // OBJECT SNAPPING: Apply snap if target was found during drag
+          // ================================================================
+          if (currentSnapTarget && selectedPolyhedra.length > 0) {
+            selectedPolyhedra.forEach(poly => {
+              poly.position.copy(currentSnapTarget.position);
+            });
+
+            // Update editing basis position
+            if (editingBasis) {
+              editingBasis.position.copy(currentSnapTarget.position);
+            }
+
+            console.log(
+              `🎯 OBJECT SNAP (${currentSnapTarget.type.toUpperCase()}): Snapped to (${currentSnapTarget.position.x.toFixed(4)}, ${currentSnapTarget.position.y.toFixed(4)}, ${currentSnapTarget.position.z.toFixed(4)})`
+            );
+
+            // Update coordinate displays
+            const pos = currentSnapTarget.position;
+            document.getElementById("coordX").value = pos.x.toFixed(4);
+            document.getElementById("coordY").value = pos.y.toFixed(4);
+            document.getElementById("coordZ").value = pos.z.toFixed(4);
+
+            const basisVectors = Quadray.basisVectors;
+            let wxyz = [0, 0, 0, 0];
+            for (let i = 0; i < 4; i++) {
+              wxyz[i] = pos.dot(basisVectors[i]);
+            }
+            const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
+            wxyz = wxyz.map(c => c - mean);
+
+            document.getElementById("coordW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
+            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
+            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+
+            // Clear snap state
+            clearSnapPreviewMarker();
+
+            justFinishedDrag = true;
+            isFreeMoving = false;
+            selectedPolyhedra = [];
+            console.log("✅ FREE MOVE ended with OBJECT SNAP - selection and tool preserved");
+            return;
+          }
+
+          // Clear any snap preview that didn't result in a snap
+          clearSnapPreviewMarker();
+
+          // Apply GRID snapping (same logic as gumball drag)
+          if (currentSnapMode !== "free" && selectedPolyhedra.length > 0) {
+            selectedPolyhedra.forEach(poly => {
+              if (currentSnapMode === "xyz") {
+                const gridSize = 0.1;
+                poly.position.x = Math.round(poly.position.x / gridSize) * gridSize;
+                poly.position.y = Math.round(poly.position.y / gridSize) * gridSize;
+                poly.position.z = Math.round(poly.position.z / gridSize) * gridSize;
+                console.log(
+                  `📐 FREE MOVE XYZ snap: (${poly.position.x.toFixed(2)}, ${poly.position.y.toFixed(2)}, ${poly.position.z.toFixed(2)})`
+                );
+              } else if (currentSnapMode === "wxyz") {
+                const basisVectors = Quadray.basisVectors;
+                let wxyz = [0, 0, 0, 0];
+                for (let i = 0; i < 4; i++) {
+                  wxyz[i] = poly.position.dot(basisVectors[i]);
+                }
+                const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
+                wxyz = wxyz.map(c => c - mean);
+                const quadrayGridSize = RT.PureRadicals.QUADRAY_GRID_INTERVAL;
+                wxyz = wxyz.map(c => Math.round(c / quadrayGridSize) * quadrayGridSize);
+                const snappedPos = Quadray.toCartesian(wxyz[0], wxyz[1], wxyz[2], wxyz[3], THREE);
+                poly.position.copy(snappedPos);
+                console.log(
+                  `📐 FREE MOVE WXYZ snap: (W:${wxyz[0].toFixed(3)}, X:${wxyz[1].toFixed(3)}, Y:${wxyz[2].toFixed(3)}, Z:${wxyz[3].toFixed(3)})`
+                );
+              }
+            });
+
+            // Update coordinate displays after snapping
+            if (selectedPolyhedra.length > 0) {
+              const pos = selectedPolyhedra[0].position;
+              document.getElementById("coordX").value = pos.x.toFixed(4);
+              document.getElementById("coordY").value = pos.y.toFixed(4);
+              document.getElementById("coordZ").value = pos.z.toFixed(4);
+
+              const basisVectors = Quadray.basisVectors;
+              let wxyz = [0, 0, 0, 0];
+              for (let i = 0; i < 4; i++) {
+                wxyz[i] = pos.dot(basisVectors[i]);
+              }
+              const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
+              wxyz = wxyz.map(c => c - mean);
+
+              document.getElementById("coordW").value = wxyz[0].toFixed(4);
+              document.getElementById("coordX2").value = wxyz[1].toFixed(4);
+              document.getElementById("coordY2").value = wxyz[2].toFixed(4);
+              document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+
+              // Update editing basis position after snapping
+              if (editingBasis) {
+                editingBasis.position.copy(pos);
+              }
+            }
+          } else {
+            console.log("✨ FREE MOVE: No snapping (full precision preserved)");
+          }
+
+          justFinishedDrag = true;
+          isFreeMoving = false;
+          selectedPolyhedra = [];
+
+          // Keep tool mode active for continued free movement
+          console.log("✅ FREE MOVE ended - selection and tool preserved");
+          return;
+        }
+
+        // Handle GUMBALL AXIS DRAG mouseup (existing behavior)
         if (isDragging) {
           // Prevent orbit controls from receiving this event
           event.preventDefault();
@@ -3109,6 +3788,11 @@ function startARTexplorer(
     octaMatrixGroup,
     cuboctaMatrixGroup,
     rhombicDodecMatrixGroup,
+    radialCubeMatrixGroup,
+    radialRhombicDodecMatrixGroup,
+    radialTetMatrixGroup,
+    radialOctMatrixGroup,
+    radialVEMatrixGroup,
   } = formGroups);
 
   // NOTE: updateGeometry and updateGeometryStats were assigned earlier (line ~135-136)
