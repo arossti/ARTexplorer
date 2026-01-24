@@ -1371,6 +1371,283 @@ See `DEV-PRIVATE.md` §7.2.4 for proposed implementation.
 
 ---
 
+## 11.4 Understanding Quadray Rules: "Only 3 of 4 Needed"
+
+**Reference:** [Kirby Urner - Quadray Introduction](http://www.grunch.net/synergetics/quadintro.html)
+
+The grunch.net introduction to Quadrays presents two fundamental rules:
+
+| Rule | Statement |
+|------|-----------|
+| **Rule 1** | "At least one of the four quadrays is always zero" |
+| **Rule 2** | "Only positive numbers (and zero) are needed for any ray" |
+
+These rules seem counterintuitive at first. How can we reach any point in 3D space using only three directions with positive values?
+
+### 11.4.1 The Geometric Intuition
+
+**The Laser Beam Analogy (Direction Only):**
+
+Imagine a laser at the origin. It can point in any direction. But pointing doesn't get you *to* a point—you need to travel a distance. The Quadray claim is about **reaching** points, not just pointing at them.
+
+**The Vector Addition Insight:**
+
+The key is **vector addition** (tip-to-tail combination), not single-vector extension. With three non-coplanar basis vectors, you can reach any point in their "positive span" by combining them with positive weights:
+
+```
+Point P = a·W + b·X + c·Y  (where a, b, c ≥ 0)
+```
+
+Since the four Quadray basis vectors together cover ALL directions, at least one set of three will have any target point P in their positive span. The fourth basis vector points "away" from P—you don't need it.
+
+**The "Behind You" Intuition:**
+
+Picture standing at the origin of a tetrahedron. You want to reach point P somewhere in space. Three of the four vertices will be "in front of you" (in the general direction of P), and one will be "behind you." You can reach P by combining the three forward-ish directions with positive weights. The backward direction is superfluous.
+
+### 11.4.2 How "Positive Only" Works
+
+In Cartesian coordinates, to go "left" you need negative X. But in Quadray, the four basis vectors **already cover all directions** with positive values.
+
+The magic comes from **vectorial neutrality**: W + X + Y + Z = 0 (in Cartesian terms).
+
+This means: **-W = X + Y + Z**
+
+To go "opposite" of W, you don't need -W; you use the sum of the other three. The "opposite" of any direction is the *sum* of the remaining three directions—no negatives required!
+
+### 11.4.3 The Normalization Choice
+
+Two normalization methods are described:
+
+| Method | Constraint | Effect |
+|--------|------------|--------|
+| **All-positive** | Add (k,k,k,k) to eliminate negatives | Brings most negative to zero |
+| **Zero-sum** | a+b+c+d = 0 | Reduces 4 DOF to 3 DOF |
+
+This is the **±(1,1,1,1) bridge** we use for tetrahedron ↔ dual tetrahedron conversion.
+
+### 11.4.4 The ARTexplorer Tension: Continuous Motion vs. Coordinate Substitution
+
+**The grunch.net rules require coordinate substitution:**
+```
+Instead of:  (-1, 0, 0, 0)  ← "negative W"
+Use:         (0, 1, 1, 1)   ← "sum of X+Y+Z" (equivalent position)
+```
+
+**But in ARTexplorer, when you drag along -W:**
+- The W coordinate continuously decreases through zero
+- It naturally becomes negative
+- We do NOT substitute (0, 1, 1, 1)—we preserve the native coordinate path
+
+**This is correct for our framework because:**
+
+1. We do NOT enforce zero-sum normalization
+2. We preserve the native 4-DOF system
+3. Negative coordinates are *meaningful* in our Janus framework (see §5)
+4. Coordinate substitution would obscure the geometry of scaling through origin
+
+**The grunch.net "positive only" rule is a constraint choice, not a geometric necessity.** Our framework deliberately breaks it to explore the full signed Quadray space, including passage through the Janus Point.
+
+### 11.4.5 Reconciling the Frameworks
+
+| Aspect | Standard Quadray (grunch.net) | ARTexplorer Native Quadray |
+|--------|-------------------------------|---------------------------|
+| Negatives allowed? | No (substitute with sum of others) | Yes (required for Janus) |
+| Zero-sum constraint | Enforced (3 DOF) | Optional (native 4 DOF) |
+| Coordinate substitution | Required at axis crossing | Never (continuous motion) |
+| Compatible with Cartesian | Yes (isomorphic) | Extended (4D±) |
+
+The standard Quadray system is a **coordinate language** for 3D Cartesian space. Our extended system is a **native 4D± framework** that uses Quadray as its foundation but explores regions and operations that the standard constraint system deliberately excludes.
+
+---
+
+## 11.5 The 4D-Tetrahedron Demonstrator
+
+To visualize the difference between standard Quadray (with substitution) and native Quadray (continuous signed coordinates), we implement a special polyhedron defined purely in Quadray space.
+
+### 11.5.1 Design Goals
+
+| Feature | Purpose |
+|---------|---------|
+| **Native WXYZ definition** | Vertices defined as [w,x,y,z] tuples, not XYZ |
+| **Deferred conversion** | XYZ computed only at render time |
+| **Normalization options** | Toggle zero-sum constraint on/off |
+| **Dual display** | Show both coordinate systems simultaneously |
+| **Deformation support** | Allow (1,1,1,6) "stretched" tetrahedra |
+
+### 11.5.2 Implementation
+
+**File:** `modules/rt-polyhedra.js`
+
+```javascript
+/**
+ * Quadray Tetrahedron (4D-Tetrahedron Demonstrator)
+ * Defined NATIVELY in Quadray coordinates, converted to XYZ only at render time.
+ *
+ * This polyhedron demonstrates:
+ * - Native WXYZ coordinate definition
+ * - Optional zero-sum normalization
+ * - The difference between standard Quadray and extended 4D± Quadray
+ *
+ * @param {number} scale - Uniform scale factor
+ * @param {Object} options - Configuration options
+ * @param {boolean} options.normalize - Apply zero-sum normalization (default: true)
+ * @param {Array} options.wxyz - Custom vertex coordinates (default: unit tetrahedron)
+ * @returns {Object} - {vertices, edges, faces, wxyz_raw, wxyz_normalized}
+ */
+quadrayTetrahedron: (scale = 1, options = {}) => {
+  const { normalize = true, wxyz = null } = options;
+
+  // Default: unit tetrahedron in Quadray (single active coordinate per vertex)
+  const wxyz_raw = wxyz || [
+    [1, 0, 0, 0],  // W-axis vertex
+    [0, 1, 0, 0],  // X-axis vertex
+    [0, 0, 1, 0],  // Y-axis vertex
+    [0, 0, 0, 1],  // Z-axis vertex
+  ];
+
+  // Optional: Apply zero-sum normalization
+  // Standard: w + x + y + z = 0 (subtracts average from each coordinate)
+  const wxyz_normalized = wxyz_raw.map(([w, x, y, z]) => {
+    if (!normalize) return [w, x, y, z];
+    const sum = w + x + y + z;
+    const avg = sum / 4;
+    return [w - avg, x - avg, y - avg, z - avg];
+  });
+
+  // Convert to Cartesian for THREE.js rendering
+  // Uses Quadray.toCartesian() from rt-math.js
+  const vertices = wxyz_normalized.map(([w, x, y, z]) => {
+    // Basis vectors (normalized to unit length)
+    const W = new THREE.Vector3(1, 1, 1).normalize();
+    const X = new THREE.Vector3(1, -1, -1).normalize();
+    const Y = new THREE.Vector3(-1, 1, -1).normalize();
+    const Z = new THREE.Vector3(-1, -1, 1).normalize();
+
+    // Linear combination
+    return new THREE.Vector3()
+      .addScaledVector(W, w * scale)
+      .addScaledVector(X, x * scale)
+      .addScaledVector(Y, y * scale)
+      .addScaledVector(Z, z * scale);
+  });
+
+  // Standard tetrahedron topology
+  const edges = [
+    [0, 1], [0, 2], [0, 3],
+    [1, 2], [1, 3], [2, 3],
+  ];
+
+  const faces = [
+    [0, 1, 2],
+    [0, 3, 1],
+    [0, 2, 3],
+    [1, 3, 2],
+  ];
+
+  // RT VALIDATION
+  const sampleQ = RT.quadrance(vertices[0], vertices[1]);
+  console.log(`[RT] Quadray Tetrahedron: normalize=${normalize}, scale=${scale}`);
+  console.log(`  WXYZ raw: ${JSON.stringify(wxyz_raw[0])} → ${JSON.stringify(wxyz_raw[3])}`);
+  console.log(`  WXYZ normalized: ${JSON.stringify(wxyz_normalized[0].map(n => n.toFixed(3)))}`);
+  console.log(`  Sample edge Q: ${sampleQ.toFixed(6)}`);
+
+  return {
+    vertices,
+    edges,
+    faces,
+    // Preserve Quadray coordinates for display/inspection
+    wxyz_raw,
+    wxyz_normalized,
+    metadata: {
+      coordinateSystem: 'quadray',
+      normalized: normalize,
+      scale: scale,
+    }
+  };
+},
+
+/**
+ * Deformed Quadray Tetrahedron
+ * Demonstrates that the fourth coordinate carries real geometric information
+ * when zero-sum normalization is NOT applied.
+ *
+ * @param {number} scale - Base scale
+ * @param {number} zStretch - Stretch factor for Z vertex (default: 1 = regular)
+ * @returns {Object} - Geometry with deformed tetrahedron
+ */
+quadrayTetrahedronDeformed: (scale = 1, zStretch = 2) => {
+  // Stretch the Z vertex while keeping W, X, Y at unit distance
+  const wxyz = [
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, zStretch],  // Stretched!
+  ];
+
+  console.log(`[RT] Deformed Quadray Tetrahedron: Z stretched by ${zStretch}x`);
+  console.log(`  Standard tetrahedron: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,1)`);
+  console.log(`  Deformed tetrahedron: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,${zStretch})`);
+  console.log(`  With zero-sum: Z vertex would normalize to (0,0,0,1) — deformation LOST`);
+  console.log(`  Without zero-sum: Z vertex stays at (0,0,0,${zStretch}) — deformation PRESERVED`);
+
+  // Return WITHOUT normalization to preserve deformation
+  return Polyhedra.quadrayTetrahedron(scale, {
+    normalize: false,
+    wxyz: wxyz,
+  });
+},
+```
+
+### 11.5.3 Usage Examples
+
+**Regular Tetrahedron (standard normalized):**
+```javascript
+const regularTet = Polyhedra.quadrayTetrahedron(1, { normalize: true });
+// Vertices at basis vector directions, equal edge lengths
+```
+
+**Regular Tetrahedron (native 4D, no normalization):**
+```javascript
+const nativeTet = Polyhedra.quadrayTetrahedron(1, { normalize: false });
+// Same geometry, but wxyz_normalized preserves original coordinates
+```
+
+**Deformed Tetrahedron (Z-stretched):**
+```javascript
+const stretchedTet = Polyhedra.quadrayTetrahedronDeformed(1, 3);
+// Z vertex at (0,0,0,3) — three times further than others
+// Demonstrates that 4th coordinate carries real geometric information
+```
+
+### 11.5.4 What This Demonstrates
+
+| With normalize: true | With normalize: false |
+|---------------------|----------------------|
+| (1,0,0,0) → (0.75, -0.25, -0.25, -0.25) | (1,0,0,0) → (1,0,0,0) |
+| Zero-sum constraint enforced | Native 4-tuple preserved |
+| Equivalent to standard 3D Quadray | Extended 4D± system |
+| (1,1,1,6) collapses to regular tetrahedron | (1,1,1,6) renders as stretched tetrahedron |
+
+The deformed tetrahedron is the key insight: **the fourth coordinate carries real geometric information that zero-sum normalization destroys.**
+
+### 11.5.5 Rendering Pipeline
+
+```
+WXYZ Definition → [Optional Normalization] → Quadray.toCartesian() → THREE.Vector3 → GPU
+     ↑                    ↑                           ↑                    ↑
+  Your math          Constraint choice          One-time              Rendering
+  (pure Quadray)     (on/off toggle)           conversion            (standard)
+```
+
+The conversion to XYZ happens at the *definition* stage, not during rendering. The GPU receives standard THREE.Vector3 positions—it doesn't know or care that they originated from Quadray coordinates.
+
+**This means:**
+- No performance penalty for Quadray-defined polyhedra
+- All existing rendering, interaction, and Janus inversion works unchanged
+- We can toggle normalization to explore both standard and extended Quadray
+
+---
+
 ## 12. References
 
 ### Primary Sources

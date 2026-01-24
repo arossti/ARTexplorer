@@ -461,6 +461,43 @@ function startARTexplorer(
     .getElementById("showRhombicDodecahedron")
     .addEventListener("change", updateGeometry);
 
+  // Quadray Tetrahedron Demonstrators
+  const quadrayTetraCheckbox = document.getElementById("showQuadrayTetrahedron");
+  if (quadrayTetraCheckbox) {
+    quadrayTetraCheckbox.addEventListener("change", () => {
+      const controls = document.getElementById("quadray-tetra-controls");
+      if (controls) {
+        controls.style.display = quadrayTetraCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const quadrayTetraNormalizeCheckbox = document.getElementById("quadrayTetraNormalize");
+  if (quadrayTetraNormalizeCheckbox) {
+    quadrayTetraNormalizeCheckbox.addEventListener("change", updateGeometry);
+  }
+
+  const quadrayTetraDeformedCheckbox = document.getElementById("showQuadrayTetraDeformed");
+  if (quadrayTetraDeformedCheckbox) {
+    quadrayTetraDeformedCheckbox.addEventListener("change", () => {
+      const controls = document.getElementById("quadray-tetra-deformed-controls");
+      if (controls) {
+        controls.style.display = quadrayTetraDeformedCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const quadrayTetraZStretchSlider = document.getElementById("quadrayTetraZStretch");
+  if (quadrayTetraZStretchSlider) {
+    quadrayTetraZStretchSlider.addEventListener("input", e => {
+      const value = parseFloat(e.target.value);
+      e.target.nextElementSibling.textContent = value.toFixed(1);
+      updateGeometry();
+    });
+  }
+
   // Matrix forms (IVM Arrays)
   const cubeMatrixCheckbox = document.getElementById("showCubeMatrix");
   if (cubeMatrixCheckbox) {

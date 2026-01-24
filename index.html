@@ -815,6 +815,64 @@
               </label>
             </div>
 
+            <!-- ========== QUADRAY DEMONSTRATORS ========== -->
+            <div class="matrix-divider">
+              <label class="matrix-divider-label">Quadray Demonstrators</label>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayTetrahedron" />
+                Quadray Tetrahedron (4D Native)
+              </label>
+              <div
+                id="quadray-tetra-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="quadrayTetraNormalize" checked />
+                    Zero-Sum Normalize (3 DOF)
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    ON: Standard Quadray (equivalent to XYZ)<br />
+                    OFF: Native 4-DOF (deformations preserved)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayTetraDeformed" />
+                Quadray Tetrahedron Deformed
+              </label>
+              <div
+                id="quadray-tetra-deformed-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <div class="slider-container">
+                    <label class="geodesic-frequency-label">Z Stretch:</label>
+                    <input
+                      type="range"
+                      id="quadrayTetraZStretch"
+                      min="0.5"
+                      max="4"
+                      step="0.5"
+                      value="2"
+                    />
+                    <span class="slider-value">2.0</span>
+                  </div>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    Stretches Z vertex to (0,0,0,N) — demonstrates 4th DOF
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <!-- ========== MATRICES ========== -->
             <div class="matrix-divider">
               <label class="matrix-divider-label">Matrices</label>

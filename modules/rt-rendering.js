@@ -52,6 +52,9 @@ const colorPalette = {
   radialTetrahedron: 0xfffb00, // Yellow (matches base tetrahedron)
   radialOctahedron: 0xff6b6b, // Coral (matches planar octahedron matrix)
   radialCuboctahedron: 0x00f900, // Lime green (matches cuboctahedron)
+  // Quadray demonstrators
+  quadrayTetrahedron: 0x00ff88, // Bright teal/mint (distinct from other forms)
+  quadrayTetraDeformed: 0xff5577, // Coral-pink (visually distinct for deformed)
 };
 
 /**
@@ -76,6 +79,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let rhombicDodecMatrixGroup; // Rhombic dodecahedron matrix (space-filling array)
   let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup; // Radial matrix forms (Phase 2)
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup; // Radial matrix forms (Phase 3)
+  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup; // Quadray demonstrators
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -218,6 +222,13 @@ export function initScene(THREE, OrbitControls, RT) {
     radialVEMatrixGroup.userData.type = "radialVEMatrix";
     radialVEMatrixGroup.userData.isInstance = false;
 
+    // Quadray demonstrators
+    quadrayTetrahedronGroup = new THREE.Group();
+    quadrayTetrahedronGroup.userData.type = "quadrayTetrahedron";
+
+    quadrayTetraDeformedGroup = new THREE.Group();
+    quadrayTetraDeformedGroup.userData.type = "quadrayTetraDeformed";
+
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -242,6 +253,8 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(radialTetMatrixGroup);
     scene.add(radialOctMatrixGroup);
     scene.add(radialVEMatrixGroup);
+    scene.add(quadrayTetrahedronGroup);
+    scene.add(quadrayTetraDeformedGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -269,6 +282,8 @@ export function initScene(THREE, OrbitControls, RT) {
       radialTetMatrixGroup,
       radialOctMatrixGroup,
       radialVEMatrixGroup,
+      quadrayTetrahedronGroup,
+      quadrayTetraDeformedGroup,
     ]);
 
     // Initial render
@@ -1961,6 +1976,46 @@ export function initScene(THREE, OrbitControls, RT) {
       rhombicDodecahedronGroup.visible = true;
     } else {
       rhombicDodecahedronGroup.visible = false;
+    }
+
+    // ========== QUADRAY DEMONSTRATORS ==========
+
+    // Quadray Tetrahedron (Native WXYZ definition)
+    if (document.getElementById("showQuadrayTetrahedron")?.checked) {
+      const normalize =
+        document.getElementById("quadrayTetraNormalize")?.checked ?? true;
+      const quadrayTet = Polyhedra.quadrayTetrahedron(scale, {
+        normalize: normalize,
+      });
+      renderPolyhedron(
+        quadrayTetrahedronGroup,
+        quadrayTet,
+        colorPalette.quadrayTetrahedron,
+        opacity
+      );
+      quadrayTetrahedronGroup.visible = true;
+    } else {
+      quadrayTetrahedronGroup.visible = false;
+    }
+
+    // Quadray Tetrahedron Deformed (Demonstrates 4th DOF)
+    if (document.getElementById("showQuadrayTetraDeformed")?.checked) {
+      const zStretch = parseFloat(
+        document.getElementById("quadrayTetraZStretch")?.value || "2"
+      );
+      const quadrayTetDeformed = Polyhedra.quadrayTetrahedronDeformed(
+        scale,
+        zStretch
+      );
+      renderPolyhedron(
+        quadrayTetraDeformedGroup,
+        quadrayTetDeformed,
+        colorPalette.quadrayTetraDeformed,
+        opacity
+      );
+      quadrayTetraDeformedGroup.visible = true;
+    } else {
+      quadrayTetraDeformedGroup.visible = false;
     }
 
     // Rhombic Dodecahedron Matrix (Space-Filling Array)

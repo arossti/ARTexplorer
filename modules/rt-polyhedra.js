@@ -1481,6 +1481,189 @@ export const Polyhedra = {
 
     return { vertices, edges, faces };
   },
+
+  /**
+   * Quadray Tetrahedron (4D-Tetrahedron Demonstrator)
+   * Defined NATIVELY in Quadray coordinates, converted to XYZ only at render time.
+   *
+   * This polyhedron demonstrates:
+   * - Native WXYZ coordinate definition
+   * - Optional zero-sum normalization
+   * - The difference between standard Quadray and extended 4D± Quadray
+   *
+   * Reference: http://www.grunch.net/synergetics/quadintro.html
+   * See also: Geometry documents/4D-COORDINATES.md §11.4-11.5
+   *
+   * @param {number} scale - Uniform scale factor
+   * @param {Object} options - Configuration options
+   * @param {boolean} options.normalize - Apply zero-sum normalization (default: true)
+   * @param {Array} options.wxyz - Custom vertex coordinates (default: unit tetrahedron)
+   * @returns {Object} - {vertices, edges, faces, wxyz_raw, wxyz_normalized, metadata}
+   */
+  quadrayTetrahedron: (scale = 1, options = {}) => {
+    const { normalize = true, wxyz = null } = options;
+
+    // Default: unit tetrahedron in Quadray (single active coordinate per vertex)
+    const wxyz_raw = wxyz || [
+      [1, 0, 0, 0], // W-axis vertex
+      [0, 1, 0, 0], // X-axis vertex
+      [0, 0, 1, 0], // Y-axis vertex
+      [0, 0, 0, 1], // Z-axis vertex
+    ];
+
+    // Optional: Apply zero-sum normalization
+    // Standard: w + x + y + z = 0 (subtracts average from each coordinate)
+    const wxyz_normalized = wxyz_raw.map(([w, x, y, z]) => {
+      if (!normalize) return [w, x, y, z];
+      const sum = w + x + y + z;
+      const avg = sum / 4;
+      return [w - avg, x - avg, y - avg, z - avg];
+    });
+
+    // Quadray basis vectors (normalized to unit length, matching rt-math.js)
+    const basisW = new THREE.Vector3(1, 1, 1).normalize();
+    const basisX = new THREE.Vector3(1, -1, -1).normalize();
+    const basisY = new THREE.Vector3(-1, 1, -1).normalize();
+    const basisZ = new THREE.Vector3(-1, -1, 1).normalize();
+
+    // Convert to Cartesian for THREE.js rendering
+    const vertices = wxyz_normalized.map(([w, x, y, z]) => {
+      return new THREE.Vector3()
+        .addScaledVector(basisW, w * scale)
+        .addScaledVector(basisX, x * scale)
+        .addScaledVector(basisY, y * scale)
+        .addScaledVector(basisZ, z * scale);
+    });
+
+    // Standard tetrahedron topology
+    const edges = [
+      [0, 1],
+      [0, 2],
+      [0, 3],
+      [1, 2],
+      [1, 3],
+      [2, 3],
+    ];
+
+    // Faces with CCW winding for outward normals
+    const faces = [
+      [0, 1, 2],
+      [0, 3, 1],
+      [0, 2, 3],
+      [1, 3, 2],
+    ];
+
+    // RT VALIDATION
+    const sampleQ = RT.quadrance(vertices[0], vertices[1]);
+    const validation = RT.validateEdges(vertices, edges, sampleQ);
+    const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+
+    console.log(
+      `[RT] Quadray Tetrahedron: normalize=${normalize}, scale=${scale}`
+    );
+    console.log(
+      `  WXYZ raw: [${wxyz_raw[0]}] → [${wxyz_raw[3]}]`
+    );
+    console.log(
+      `  WXYZ normalized: [${wxyz_normalized[0].map(n => n.toFixed(3)).join(", ")}]`
+    );
+    console.log(
+      `  Edge quadrance: Q=${sampleQ.toFixed(6)}, max error=${maxError.toExponential(2)}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      // Preserve Quadray coordinates for display/inspection
+      wxyz_raw,
+      wxyz_normalized,
+      metadata: {
+        coordinateSystem: "quadray",
+        normalized: normalize,
+        scale: scale,
+      },
+    };
+  },
+
+  /**
+   * Deformed Quadray Tetrahedron
+   * Demonstrates that the fourth coordinate carries real geometric information
+   * when zero-sum normalization is NOT applied.
+   *
+   * With normalization ON: (1,1,1,6) collapses to same shape as (1,1,1,1)
+   * With normalization OFF: (1,1,1,6) renders as stretched tetrahedron
+   *
+   * This is the key insight: the 4th coordinate is NOT redundant in native Quadray.
+   *
+   * @param {number} scale - Base scale
+   * @param {number} zStretch - Stretch factor for Z vertex (default: 1 = regular)
+   * @returns {Object} - Geometry with deformed tetrahedron
+   */
+  quadrayTetrahedronDeformed: (scale = 1, zStretch = 2) => {
+    // Stretch the Z vertex while keeping W, X, Y at unit distance
+    const wxyz = [
+      [1, 0, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 1, 0],
+      [0, 0, 0, zStretch], // Stretched!
+    ];
+
+    console.log(
+      `[RT] Deformed Quadray Tetrahedron: Z stretched by ${zStretch}x`
+    );
+    console.log(
+      `  Standard: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,1)`
+    );
+    console.log(
+      `  Deformed: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,${zStretch})`
+    );
+    console.log(
+      `  With zero-sum: Z normalizes to (0,0,0,1) — deformation LOST`
+    );
+    console.log(
+      `  Without zero-sum: Z stays at (0,0,0,${zStretch}) — deformation PRESERVED`
+    );
+
+    // Return WITHOUT normalization to preserve deformation
+    return Polyhedra.quadrayTetrahedron(scale, {
+      normalize: false,
+      wxyz: wxyz,
+    });
+  },
+
+  /**
+   * Dual Quadray Tetrahedron
+   * The inverted tetrahedron defined natively in Quadray space.
+   *
+   * Standard approach: vertices at (0,1,1,1) permutations (three active coordinates)
+   * This is equivalent to adding (1,1,1,1) to the negative tetrahedron.
+   *
+   * @param {number} scale - Uniform scale factor
+   * @param {Object} options - Configuration options
+   * @returns {Object} - Dual tetrahedron geometry with Quadray metadata
+   */
+  quadrayDualTetrahedron: (scale = 1, options = {}) => {
+    const { normalize = true } = options;
+
+    // Dual tetrahedron: single INACTIVE coordinate per vertex
+    // This is the +(1,1,1,1) normalized form of the negative tetrahedron
+    const wxyz = [
+      [0, 1, 1, 1], // W-axis inactive (opposite of W vertex)
+      [1, 0, 1, 1], // X-axis inactive
+      [1, 1, 0, 1], // Y-axis inactive
+      [1, 1, 1, 0], // Z-axis inactive
+    ];
+
+    console.log(`[RT] Quadray Dual Tetrahedron: scale=${scale}`);
+    console.log(`  Vertices: (0,1,1,1) permutations (single inactive coordinate)`);
+    console.log(`  Relationship: dual = base inverted through origin + (1,1,1,1)`);
+
+    return Polyhedra.quadrayTetrahedron(scale, {
+      normalize: normalize,
+      wxyz: wxyz,
+    });
+  },
 };
 
 /**
