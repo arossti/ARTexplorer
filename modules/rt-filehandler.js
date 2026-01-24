@@ -299,13 +299,113 @@ export const RTFileHandler = {
 
       // Restore instances
       if (stateData.instances && Array.isArray(stateData.instances)) {
-        // Note: This requires access to the polyhedron creation functions
-        // For now, just log what would be restored
-        console.log(`📦 Would restore ${stateData.instances.length} instances`);
+        console.log(`📦 Restoring ${stateData.instances.length} instances...`);
 
-        // TODO: Implement instance restoration
-        // This requires integration with the main ARTexplorer polyhedron creation
-        // Each instance needs to be recreated with the correct geometry and transform
+        // Check if renderingAPI is available with createPolyhedronByType
+        if (!window.renderingAPI?.createPolyhedronByType) {
+          console.warn(
+            "⚠️ renderingAPI.createPolyhedronByType not available - instances not restored"
+          );
+        } else {
+          let restoredCount = 0;
+          let failedCount = 0;
+
+          stateData.instances.forEach(instanceData => {
+            try {
+              // Build options for polyhedron creation
+              const options = {
+                opacity: instanceData.appearance?.opacity ?? 0.25,
+              };
+
+              // Add geodesic-specific parameters if present
+              if (instanceData.parameters) {
+                if (instanceData.parameters.frequency !== undefined) {
+                  options.frequency = instanceData.parameters.frequency;
+                }
+                if (instanceData.parameters.projection !== undefined) {
+                  options.projection = instanceData.parameters.projection;
+                }
+                if (instanceData.parameters.matrixSize !== undefined) {
+                  options.matrixSize = instanceData.parameters.matrixSize;
+                }
+                if (instanceData.parameters.rotate45 !== undefined) {
+                  options.rotate45 = instanceData.parameters.rotate45;
+                }
+              }
+
+              // Create polyhedron group from type
+              const polyhedronGroup = window.renderingAPI.createPolyhedronByType(
+                instanceData.type,
+                options
+              );
+
+              if (!polyhedronGroup) {
+                console.warn(
+                  `⚠️ Failed to create polyhedron of type: ${instanceData.type}`
+                );
+                failedCount++;
+                return;
+              }
+
+              // Apply saved transform
+              if (instanceData.transform) {
+                const { position, rotation, scale } = instanceData.transform;
+
+                if (position) {
+                  polyhedronGroup.position.set(
+                    position.x ?? 0,
+                    position.y ?? 0,
+                    position.z ?? 0
+                  );
+                }
+
+                if (rotation) {
+                  polyhedronGroup.rotation.set(
+                    rotation.x ?? 0,
+                    rotation.y ?? 0,
+                    rotation.z ?? 0
+                  );
+                }
+
+                if (scale) {
+                  polyhedronGroup.scale.set(
+                    scale.x ?? 1,
+                    scale.y ?? 1,
+                    scale.z ?? 1
+                  );
+                }
+              }
+
+              // Set visibility
+              if (instanceData.appearance?.visible !== undefined) {
+                polyhedronGroup.visible = instanceData.appearance.visible;
+              }
+
+              // Register as instance via StateManager
+              const restoredInstance = this.stateManager.createInstance(
+                polyhedronGroup,
+                this.scene
+              );
+
+              if (restoredInstance) {
+                restoredCount++;
+                console.log(
+                  `  ✅ Restored: ${instanceData.type} at (${instanceData.transform?.position?.x?.toFixed(2) ?? 0}, ${instanceData.transform?.position?.y?.toFixed(2) ?? 0}, ${instanceData.transform?.position?.z?.toFixed(2) ?? 0})`
+                );
+              }
+            } catch (error) {
+              console.error(
+                `❌ Failed to restore instance ${instanceData.id}:`,
+                error
+              );
+              failedCount++;
+            }
+          });
+
+          console.log(
+            `📦 Instance restoration complete: ${restoredCount} restored, ${failedCount} failed`
+          );
+        }
       }
 
       console.log("✅ State imported successfully");

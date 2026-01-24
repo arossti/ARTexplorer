@@ -3210,6 +3210,165 @@ export function initScene(THREE, OrbitControls, RT) {
     return { ...colorPalette };
   }
 
+  /**
+   * Create a polyhedron group by type name (Factory for instance restoration)
+   * @param {string} type - Polyhedron type (e.g., 'cube', 'tetrahedron', 'geodesicIcosahedron')
+   * @param {Object} options - Creation options
+   * @param {number} options.scale - Scale/halfSize for the polyhedron
+   * @param {number} options.opacity - Opacity for rendering (default: current slider value)
+   * @param {number} options.frequency - Geodesic frequency (for geodesic types)
+   * @param {string} options.projection - Geodesic projection mode ('off'|'in'|'mid'|'out')
+   * @param {number} options.matrixSize - Matrix size (for matrix types)
+   * @param {boolean} options.rotate45 - Rotate matrix 45° (for matrix types)
+   * @returns {THREE.Group|null} New polyhedron group or null if type unknown
+   */
+  function createPolyhedronByType(type, options = {}) {
+    // Default options
+    const tetEdge = parseFloat(
+      document.getElementById("tetScaleSlider")?.value || "1"
+    );
+    const defaultScale = tetEdge / (2 * Math.sqrt(2));
+    const scale = options.scale ?? defaultScale;
+    const opacity =
+      options.opacity ??
+      parseFloat(document.getElementById("opacitySlider")?.value || "0.25");
+    const frequency = options.frequency ?? 1;
+    const projection = options.projection ?? "out";
+    const matrixSize = options.matrixSize ?? 1;
+    const rotate45 = options.rotate45 ?? false;
+
+    // Create new group
+    const group = new THREE.Group();
+    group.userData.type = type;
+
+    // Get color for this type
+    const color = colorPalette[type] || 0xffffff;
+
+    let geometry;
+
+    switch (type) {
+      // Regular polyhedra
+      case "cube":
+        geometry = Polyhedra.cube(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "tetrahedron":
+        geometry = Polyhedra.tetrahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "dualTetrahedron":
+        geometry = Polyhedra.dualTetrahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "octahedron":
+        geometry = Polyhedra.octahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "icosahedron":
+        geometry = Polyhedra.icosahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "dodecahedron":
+        geometry = Polyhedra.dodecahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "dualIcosahedron":
+        geometry = Polyhedra.dualIcosahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "cuboctahedron":
+        geometry = Polyhedra.cuboctahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "rhombicDodecahedron":
+        geometry = Polyhedra.rhombicDodecahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      // Geodesic polyhedra
+      case "geodesicIcosahedron":
+        geometry = Polyhedra.geodesicIcosahedron(scale, frequency, projection);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "geodesicTetrahedron":
+        geometry = Polyhedra.geodesicTetrahedron(scale, frequency, projection);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "geodesicOctahedron":
+        geometry = Polyhedra.geodesicOctahedron(scale, frequency, projection);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "geodesicDualTetrahedron":
+        geometry = Polyhedra.geodesicDualTetrahedron(
+          scale,
+          frequency,
+          projection
+        );
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "geodesicDualIcosahedron":
+        geometry = Polyhedra.geodesicDualIcosahedron(
+          scale,
+          frequency,
+          projection
+        );
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      // Quadray demonstrator polyhedra
+      case "quadrayTetrahedron":
+        geometry = Polyhedra.quadrayTetrahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "quadrayTetraDeformed":
+        geometry = Polyhedra.quadrayTetrahedronDeformed(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "quadrayDualTetrahedron":
+        geometry = Polyhedra.quadrayDualTetrahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      // Matrix forms - these need async import, return group immediately
+      // and populate asynchronously (planar and radial)
+      case "cubeMatrix":
+      case "tetMatrix":
+      case "octaMatrix":
+      case "cuboctaMatrix":
+      case "rhombicDodecMatrix":
+      case "radialTetrahedron":
+      case "radialOctahedron":
+      case "radialCuboctahedron":
+        // Matrix forms require async creation via rt-matrix-planar.js or rt-matrix-radial.js
+        // For now, we create empty group and let caller populate
+        console.warn(
+          `⚠️ Matrix type '${type}' requires special handling for restoration`
+        );
+        // TODO: Implement matrix restoration with stored matrixSize/rotate45 params
+        return group;
+
+      default:
+        console.warn(`⚠️ Unknown polyhedron type: ${type}`);
+        return null;
+    }
+
+    return group;
+  }
+
   // Return public API from initScene() factory
   return {
     // Core scene initialization
@@ -3250,6 +3409,9 @@ export function initScene(THREE, OrbitControls, RT) {
     getPolyhedronColor,
     updatePolyhedronColor,
     exportColorPalette,
+
+    // Instance restoration factory (for rt-filehandler.js)
+    createPolyhedronByType,
   };
 
   // ========================================================================
