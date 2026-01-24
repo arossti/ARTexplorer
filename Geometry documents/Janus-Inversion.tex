@@ -81,6 +81,52 @@ The four basis vectors $\mathbf{W}, \mathbf{X}, \mathbf{Y}, \mathbf{Z}$ point fr
 \item \textbf{All-Positive Spanning:} Critically, all points in ordinary 3D space can be expressed with \emph{non-negative} coordinates only
 \end{enumerate}
 
+\subsection{The Standard Quadray Rules and Our Extension}
+
+Kirby Urner's introduction to Quadray coordinates\footnote{\url{http://www.grunch.net/synergetics/quadintro.html}} presents two fundamental rules:
+
+\begin{enumerate}
+\item \textbf{Rule 1:} ``At least one of the four quadrays is always zero''
+\item \textbf{Rule 2:} ``Only positive numbers (and zero) are needed for any ray''
+\end{enumerate}
+
+These rules follow from the vectorial neutrality property: since $\mathbf{W} + \mathbf{X} + \mathbf{Y} + \mathbf{Z} = \mathbf{0}$, it follows that $-\mathbf{W} = \mathbf{X} + \mathbf{Y} + \mathbf{Z}$. To move in the ``opposite'' direction of W, you don't need a negative W coordinate---you simply use the sum of the other three basis vectors. Any point in 3D space lies in the positive span of at least three of the four basis vectors, making the fourth superfluous and one coordinate always zero.
+
+\textbf{Standard Quadray implementations enforce coordinate substitution:}
+\begin{equation}
+(-1, 0, 0, 0) \quad \longrightarrow \quad (0, 1, 1, 1) \quad \text{(equivalent position, all-positive form)}
+\end{equation}
+
+This substitution maintains the all-positive rule by replacing negative coordinates with their equivalent positive-sum representation.
+
+\begin{observation}[ARTexplorer's Intentional Extension]
+ARTexplorer \textbf{deliberately breaks} the all-positive rule to enable continuous motion through the origin. When you drag a form along $-\mathbf{W}$:
+\begin{itemize}
+\item The W coordinate continuously decreases through zero
+\item It naturally becomes negative
+\item We do \textbf{not} substitute $(0, 1, 1, 1)$---we preserve the signed coordinate path
+\end{itemize}
+This is not a bug or oversight. Coordinate substitution would obscure the geometry of scaling through origin and make Janus Inversion impossible to implement as a continuous operation.
+\end{observation}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{4cm}p{4cm}p{4cm}}
+\toprule
+\textbf{Aspect} & \textbf{Standard Quadray (Urner/Ace)} & \textbf{ARTexplorer Extended}\\
+\midrule
+Negative coordinates & Prohibited (substitute) & Permitted (meaningful)\\
+At axis crossing & Replace with positive sum & Continue smoothly\\
+Zero-sum constraint & Enforced (3 DOF) & Optional (native 4 DOF)\\
+Janus Inversion & Not applicable & Core feature\\
+Compatible with XYZ & Isomorphic & Extended (4D$^\pm$)\\
+\bottomrule
+\end{tabular}
+\caption{Standard Quadray vs.\ ARTexplorer's extended framework}
+\end{table}
+
+The standard Quadray rules define a \textbf{coordinate language} for ordinary 3D space---elegant, sufficient, and isomorphic to Cartesian. Our extension uses Quadray as a \textbf{foundation} for exploring regions and operations that the all-positive constraint deliberately excludes. We honor Urner's framework by understanding exactly what it achieves and why; we extend it by asking what becomes visible when the constraint is relaxed.
+
 \subsection{Native Degrees of Freedom: 3, 4, or 5?}
 
 Quadray coordinates are conventionally described as providing 3 degrees of freedom. This arises from the \textbf{zero-sum constraint}: if $W + X + Y + Z = k$ for some constant $k$, then knowing any three coordinates determines the fourth. This constraint is imposed to ensure Quadray maps onto Cartesian 3D space---it is a \emph{compatibility requirement}, not an intrinsic property of tetrahedral coordinates.
@@ -467,8 +513,8 @@ We are grateful for Dr.\ Barbour's engagement and particularly for his observati
 \item Wildberger, N.J. (2005). \emph{Divine Proportions: Rational Trigonometry to Universal Geometry}. Wild Egg Books.
 \item CPT Symmetry. \emph{Wikipedia}. \url{https://en.wikipedia.org/wiki/CPT_symmetry}
 \item Mandelbrot, B. ``Negative Fractal Dimensions and Multifractals.'' Yale University. \url{https://users.math.yale.edu/users/mandelbrot/web_pdfs/123negativeFractalDimensions.pdf}
-\item Kirby Urner - Quadray Introduction(http://www.grunch.net/synergetics/quadintro.html)-
-\item Tom Ace - Quadray Coordinates(http://minortriad.com/quadray.html) (C++ implementation)
+\item Urner, K. ``Quadray Coordinates: A Logical Alternative.'' \url{http://www.grunch.net/synergetics/quadintro.html}
+\item Ace, T. ``Quadray Coordinates.'' \url{http://minortriad.com/quadray.html} (C++ implementation)
 \end{enumerate}
 
 \vfill
