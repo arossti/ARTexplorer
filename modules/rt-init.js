@@ -3804,8 +3804,26 @@ function startARTexplorer(
   // KEYBOARD SHORTCUTS (ESC, Delete, Undo/Redo)
   // ========================================================================
   document.addEventListener("keydown", event => {
-    // ESC key - deselect all AND exit any active tool mode
+    // ESC key - cancel drag-copy, deselect all AND exit any active tool mode
     if (event.key === "Escape") {
+      // Cancel drag-copy mode if active and restore original position
+      if (isDragCopying && currentSelection) {
+        currentSelection.position.copy(dragCopyOriginalPosition);
+        currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
+        currentSelection.scale.copy(dragCopyOriginalScale);
+
+        // Update editing basis to follow restored original
+        if (editingBasis) {
+          editingBasis.position.copy(dragCopyOriginalPosition);
+        }
+
+        isDragCopying = false;
+        isFreeMoving = false;
+        isDragging = false;
+        console.log("❌ DRAG-COPY cancelled via Escape, original restored");
+        return; // Don't deselect, just cancel the copy operation
+      }
+
       if (currentGumballTool) {
         exitToolMode();
       }
