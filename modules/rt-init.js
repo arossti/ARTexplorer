@@ -1,22 +1,18 @@
 // MODULE IMPORTS
 // ========================================================================
 import { Polyhedra } from "./rt-polyhedra.js";
-// PerformanceClock removed - now used internally by rt-rendering.js
 import { RTPapercut } from "./rt-papercut.js";
-// RT removed - now used internally by rt-rendering.js (passed to createRenderingAPI)
 import { initQuadranceDemo } from "../demos/rt-quadrance-demo.js";
 import { initCrossDemo } from "../demos/rt-cross-demo.js";
 import { initWeierstrassDemo } from "../demos/rt-weierstrass-demo.js";
 import { openDemoModal } from "../demos/rt-demo-utils.js";
 import { colorTheoryModal } from "./color-theory-modal.js";
-
-// PHASE 6 EXTRACTION: Import rendering API factory
 import { initScene as createRenderingAPI } from "./rt-rendering.js";
 
 // Make RTPolyhedra available globally for node geometry creation
 window.RTPolyhedra = Polyhedra;
 
-// TODO: Uncomment when ready to extract gumball to module
+// TODO: Extract gumball to rt-controls.js module
 // import { RTControls } from "./modules/rt-controls.js";
 
 // ========================================================================
@@ -140,24 +136,15 @@ function startARTexplorer(
   initInfoModal();
 
   // ========================================================================
-  // PHASE 6 EXTRACTION: Create rendering API (TEST - does not replace inline functions yet)
+  // RENDERING API SETUP
   // ========================================================================
   const renderingAPI = createRenderingAPI(THREE, OrbitControls, RT);
-  console.log("[rt-init.js] ✅ Rendering API created:", renderingAPI);
-
-  // Make rendering API globally accessible for file handler color restoration
   window.renderingAPI = renderingAPI;
 
-  // ========================================================================
-  // THREE.JS SCENE SETUP
-  // ========================================================================
-  // PHASE 6 EXTRACTION: Assign updateGeometry EARLY so event listeners can reference it
-  // This function must be available BEFORE event listeners are registered (line ~2271)
+  // Assign updateGeometry EARLY so event listeners can reference it
   let updateGeometry = renderingAPI.updateGeometry;
-  // updateGeometryStats removed - called internally by renderingAPI.updateGeometry()
 
-  // PHASE 6 EXTRACTION: Declare variables that will be assigned AFTER initScene() is called
-  // These objects don't exist yet - they're created inside renderingAPI.initScene()
+  // Scene objects - assigned after initScene() is called
   let scene, camera, renderer, controls;
   let cubeGroup, tetrahedronGroup, dualTetrahedronGroup, octahedronGroup;
   let icosahedronGroup, dodecahedronGroup, dualIcosahedronGroup;
@@ -171,40 +158,6 @@ function startARTexplorer(
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup;
   let quadrayTetrahedronGroup, quadrayTetraDeformedGroup;
   let cartesianGrid, ivmPlanes;
-  // cartesianBasis, quadrayBasis removed - managed internally by renderingAPI
-
-  // PHASE 6 EXTRACTION: initScene() function now in rt-rendering.js
-  // (Commented code removed - using renderingAPI.initScene())
-
-  // PHASE 6 EXTRACTION: Grid creation functions now in rt-rendering.js
-  // (Orphaned functions removed - tessellation sliders now call renderingAPI.rebuildQuadrayGrids/rebuildCartesianGrids)
-  // Deleted ~370 lines: createCartesianGrid(), createQuadrayBasis(), createIVMGrid(), createIVMPlanes()
-
-  // ========================================================================
-  // NODE GEOMETRY CACHE (prevent repeated generation)
-  // ========================================================================
-  // NOTE: nodeGeometryCache removed - now managed by renderingAPI in rt-rendering.js
-  // const nodeGeometryCache = new Map(); // ← REMOVED: Now in rt-rendering.js
-
-  // PHASE 6 EXTRACTION: Helper functions now in rt-rendering.js
-  // Removed: getPolyhedronEdgeQuadrance(), getClosePackedRadius(), getCachedNodeGeometry(),
-  //          renderPolyhedron(), addMatrixNodes(), countGroupTriangles()
-  // All rendering logic now managed by renderingAPI
-
-  // PHASE 6 EXTRACTION: updateGeometry() and updateGeometryStats() now in rt-rendering.js
-  // (Commented code removed - using renderingAPI.updateGeometry())
-
-  // ========================================================================
-  // PERFORMANCE MONITORING INITIALIZATION
-  // ========================================================================
-  // Initialize PerformanceClock with scene groups after they're created
-  // (Happens in initScene() - see geodesicOctahedronGroup creation below)
-
-  // PHASE 6 EXTRACTION: animate() function commented out - using renderingAPI.animate()
-  // PHASE 6 EXTRACTION: animate() function now in rt-rendering.js
-  // (Commented code removed - using renderingAPI.animate())
-
-  // PHASE 6 EXTRACTION: onWindowResize() function now in rt-rendering.js
 
   // ========================================================================
   // EVENT HANDLERS
@@ -763,8 +716,6 @@ function startARTexplorer(
     });
   }
 
-  // RD space-fill toggle removed - RD is inherently space-filling
-
   // Radial Tetrahedron Matrix (Phase 3)
   const radialTetCheckbox = document.getElementById(
     "showRadialTetrahedronMatrix"
@@ -1165,8 +1116,6 @@ function startARTexplorer(
   // VIEW CONTROLS - Camera Presets
   // ========================================================================
 
-  // Note: orthographicCamera moved to rt-rendering.js (PHASE 6 EXTRACTION)
-
   // Enable view preset buttons and wire up event listeners
   const viewButtons = [
     { id: "viewTop", view: "top" },
@@ -1275,9 +1224,6 @@ function startARTexplorer(
   });
 
   // Node geometry type toggle (Classical vs RT)
-  // NOTE: useRTNodeGeometry variable removed - now managed by renderingAPI
-  // let useRTNodeGeometry = false; // ← REMOVED: Now in rt-rendering.js
-
   document
     .getElementById("nodeGeomClassical")
     .addEventListener("click", function () {
@@ -1458,14 +1404,8 @@ function startARTexplorer(
     // Update counter UI
     document.getElementById("nowCount").textContent =
       RTStateManager.getDepositedCount();
-
-    console.log(
-      `📦 Total deposited instances: ${RTStateManager.getDepositedCount()}`
-    );
-    console.log(`🏠 Forms reset to origin - ready for next transformation`);
   });
 
-  // INLINE BUTTON HANDLERS - RESTORED (Module extraction deferred)
   // Gumball tool selector functionality
   document.querySelectorAll(".toggle-btn.variant-tool").forEach(btn => {
     btn.addEventListener("click", function () {
@@ -1475,9 +1415,8 @@ function startARTexplorer(
       if (this.classList.contains("active")) {
         this.classList.remove("active");
         currentGumballTool = null;
-        controls.enabled = true; // Re-enable orbit controls
-        destroyEditingBasis(); // Remove editing basis
-        console.log("✅ Gumball disabled - orbit controls enabled");
+        controls.enabled = true;
+        destroyEditingBasis();
       } else {
         // Remove active from all gumball tool buttons
         document
@@ -1494,29 +1433,19 @@ function startARTexplorer(
           // Use first selected polyhedron's position and pass the object for sizing
           createEditingBasis(selected[0].position.clone(), selected[0]);
         }
-
-        console.log(`✅ Gumball tool: ${tool} - orbit controls disabled`);
       }
     });
   });
 
-  // Snap toggle button functionality (NOW HANDLED BY rt-controls.js)
+  // Snap toggle button functionality
   document.querySelectorAll(".toggle-btn.variant-snap").forEach(btn => {
     btn.addEventListener("click", function () {
       const snapMode = this.dataset.snapMode;
-
-      // Remove active from all snap buttons
       document.querySelectorAll(".toggle-btn.variant-snap").forEach(b => {
         b.classList.remove("active");
       });
-
-      // Add active to clicked button
       this.classList.add("active");
-
-      // Update global snap mode
       currentSnapMode = snapMode;
-
-      console.log(`📐 Snap mode changed to: ${snapMode.toUpperCase()}`);
     });
   });
 
@@ -1524,12 +1453,8 @@ function startARTexplorer(
   document.querySelectorAll(".toggle-btn.variant-objsnap").forEach(btn => {
     btn.addEventListener("click", function () {
       const snapType = this.dataset.objsnap;
-
-      // Toggle active state (these are independent toggles, not radio buttons)
       this.classList.toggle("active");
       const isActive = this.classList.contains("active");
-
-      // Update corresponding state variable
       if (snapType === "vertex") {
         objectSnapVertex = isActive;
       } else if (snapType === "edge") {
@@ -1537,9 +1462,6 @@ function startARTexplorer(
       } else if (snapType === "face") {
         objectSnapFace = isActive;
       }
-
-      const status = isActive ? "ON" : "OFF";
-      console.log(`🎯 Object snap ${snapType.toUpperCase()}: ${status}`);
     });
   });
 
@@ -1635,12 +1557,12 @@ function startARTexplorer(
    */
   function setupMoveCoordinateInputs() {
     const coordInputs = [
-      { id: "coordX", axis: "x", name: "X" },
-      { id: "coordY", axis: "y", name: "Y" },
-      { id: "coordZ", axis: "z", name: "Z" },
+      { id: "coordX", axis: "x" },
+      { id: "coordY", axis: "y" },
+      { id: "coordZ", axis: "z" },
     ];
 
-    coordInputs.forEach(({ id, axis, name }) => {
+    coordInputs.forEach(({ id, axis }) => {
       const input = document.getElementById(id);
       if (!input) return;
 
@@ -1658,7 +1580,6 @@ function startARTexplorer(
           // Apply position change
           selected.forEach(poly => {
             poly.position[axis] = value;
-            console.log(`📍 ${name} position set to ${value.toFixed(4)}`);
           });
 
           // Update WXYZ coordinates
@@ -2182,15 +2103,6 @@ function startARTexplorer(
     }
 
     scene.add(editingBasis);
-
-    // Log which coordinate systems are shown
-    const systems = [];
-    if (showQuadray) systems.push("WXYZ");
-    if (showCartesian) systems.push("XYZ");
-    const systemsStr = systems.length > 0 ? systems.join(" + ") : "NONE";
-    console.log(
-      `✅ Created editing basis (${systemsStr}) at position: ${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)}`
-    );
   }
 
   /**
@@ -2209,7 +2121,6 @@ function startARTexplorer(
     if (editingBasis) {
       scene.remove(editingBasis);
       editingBasis = null;
-      console.log("✅ Editing basis destroyed");
     }
   }
 
@@ -2235,10 +2146,6 @@ function startARTexplorer(
 
     // Apply highlight
     applyHighlight(polyhedron);
-
-    const type = polyhedron.userData.isInstance ? "Instance" : "Form";
-    const name = polyhedron.userData.type || "unknown";
-    console.log(`✅ Selected ${type}: ${name}`);
   }
 
   /**
@@ -2301,7 +2208,6 @@ function startARTexplorer(
       clearHighlight(currentSelection);
       currentSelection = null;
     }
-    console.log("✅ Deselected all");
   }
 
   /**
@@ -2312,10 +2218,8 @@ function startARTexplorer(
     if (isDragging) return;
 
     // Don't deselect immediately after completing a drag
-    // (mouseup fires, then click fires - we want to ignore the click)
     if (justFinishedDrag) {
       justFinishedDrag = false;
-      console.log("🚫 Ignoring click-after-drag (selection preserved)");
       return;
     }
 
@@ -2985,8 +2889,6 @@ function startARTexplorer(
       "mousedown",
       event => {
         // Only work if a gumball tool is active (Move, Scale, or Rotate mode)
-        // NOTE: This code is deprecated - gumball functionality moved to rt-controls.js
-        // Keeping this check for backward compatibility
         if (
           !currentGumballTool ||
           (currentGumballTool !== "move" &&
@@ -3012,13 +2914,7 @@ function startARTexplorer(
             }
           });
 
-          console.log(
-            `🎯 Editing basis exists, found ${hitTargets.length} hit targets`
-          );
-
           const intersects = raycaster.intersectObjects(hitTargets, false);
-
-          console.log(`🎯 Raycaster intersects: ${intersects.length}`);
 
           if (intersects.length > 0) {
             // Get the first intersected handle
@@ -3266,8 +3162,6 @@ function startARTexplorer(
         // Prevent orbit controls from receiving this event
         event.preventDefault();
         event.stopPropagation();
-
-        console.log("🔄 Dragging...");
 
         // Update mouse position
         const rect = renderer.domElement.getBoundingClientRect();
@@ -3769,16 +3663,11 @@ function startARTexplorer(
                 editingBasis.position.copy(pos);
               }
             }
-          } else {
-            console.log("✨ FREE MOVE: No snapping (full precision preserved)");
           }
 
           justFinishedDrag = true;
           isFreeMoving = false;
           selectedPolyhedra = [];
-
-          // Keep tool mode active for continued free movement
-          console.log("✅ FREE MOVE ended - selection and tool preserved");
           return;
         }
 
@@ -3896,10 +3785,8 @@ function startARTexplorer(
     ); // Capture phase to intercept before OrbitControls
   } // End initGumballEventListeners
 
-  // PHASE 6 EXTRACTION: Use renderingAPI.initScene() instead of inline function
+  // Initialize scene and get references
   renderingAPI.initScene();
-
-  // PHASE 6 EXTRACTION: NOW get references from API (objects now exist after initScene())
   scene = renderingAPI.getScene();
   camera = renderingAPI.getCamera();
   renderer = renderingAPI.getRenderer();
@@ -3933,9 +3820,6 @@ function startARTexplorer(
     quadrayTetrahedronGroup,
     quadrayTetraDeformedGroup,
   } = formGroups);
-
-  // NOTE: updateGeometry and updateGeometryStats were assigned earlier (line ~135-136)
-  // so that event listeners registered earlier in the code can reference them
 
   initGumballEventListeners(); // Initialize gumball after scene is ready
 
@@ -4035,7 +3919,7 @@ function startARTexplorer(
     mouseMoved = false;
   });
 
-  // PHASE 6 EXTRACTION: Use renderingAPI.animate() instead of inline function
+  // Start animation loop
   renderingAPI.animate();
 
   // ========================================================================
@@ -4085,34 +3969,22 @@ function startARTexplorer(
   document.addEventListener("keydown", event => {
     // ESC key - deselect all AND exit any active tool mode
     if (event.key === "Escape") {
-      // First exit any active tool mode (Move/Scale/Rotate)
       if (currentGumballTool) {
         exitToolMode();
-        console.log("⎋ ESC: Exited tool mode");
       }
-      // Then deselect all
       deselectAll();
-      console.log("⎋ ESC: Deselected all");
     }
 
     // Delete key - delete selected Instance
     if (event.key === "Delete" || event.key === "Backspace") {
       if (currentSelection && currentSelection.userData.isInstance) {
         const instanceId = currentSelection.userData.instanceId;
-
-        // Delete via StateManager
         RTStateManager.deleteInstance(instanceId, scene);
-
-        // Clear selection and highlight
         deselectAll();
-
-        // Update counter UI
         document.getElementById("nowCount").textContent =
           RTStateManager.getDepositedCount();
-
-        console.log(`🗑️  Instance deleted: ${instanceId}`);
       } else if (currentSelection && !currentSelection.userData.isInstance) {
-        console.warn("⚠️  Cannot delete Forms (templates), only Instances");
+        console.warn("⚠️ Cannot delete Forms (templates), only Instances");
       }
     }
 

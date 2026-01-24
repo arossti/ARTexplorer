@@ -329,8 +329,6 @@ export const RTStateManager = {
       id: instanceId,
       object: instance.threeObject,
     };
-
-    console.log(`✅ Instance selected: ${instanceId} (${instance.type})`);
     return instance;
   },
 
@@ -381,8 +379,6 @@ export const RTStateManager = {
 
     // Track modification for auto-save
     this.trackModification("update");
-
-    console.log(`✅ Instance updated: ${instanceId}`);
   },
 
   /**
@@ -448,21 +444,22 @@ export const RTStateManager = {
 
   /**
    * Select a Form (load at origin with editing basis)
-   * @param {string} formType - Form type to select
+   * @param {string} _formType - Form type (unused, kept for API consistency)
    * @param {THREE.Group} formGroup - THREE.js group for the Form
    */
-  selectForm(formType, formGroup) {
+  selectForm(_formType, formGroup) {
     this.state.selection = {
       type: "form",
       id: null,
       object: formGroup,
     };
-
-    console.log(`✅ Form selected: ${formType}`);
   },
 
   /**
    * Reset Form to origin (after instance creation)
+   * Resets transform AND UI sliders to defaults for consistent "fresh form" state
+   * Note: DOM manipulation here is intentional - resetForm is the single point
+   * for resetting form state, keeping UI sync logic centralized
    * @param {THREE.Group} formGroup - Form to reset
    */
   resetForm(formGroup) {
@@ -472,34 +469,44 @@ export const RTStateManager = {
 
     const formType = formGroup.userData.type || "unknown";
 
-    // Reset matrix-specific properties to defaults
-    if (formType === "cubeMatrix") {
-      const sizeSlider = document.getElementById("cubeMatrixSizeSlider");
-      const rotateCheckbox = document.getElementById("cubeMatrixRotate45");
-      if (sizeSlider) {
-        sizeSlider.value = "1";
-        document.getElementById("cubeMatrixSizeValue").textContent = "1×1";
-      }
-      if (rotateCheckbox) rotateCheckbox.checked = false;
-    } else if (formType === "tetMatrix") {
-      const sizeSlider = document.getElementById("tetMatrixSizeSlider");
-      const rotateCheckbox = document.getElementById("tetMatrixRotate45");
-      if (sizeSlider) {
-        sizeSlider.value = "1";
-        document.getElementById("tetMatrixSizeValue").textContent = "1×1";
-      }
-      if (rotateCheckbox) rotateCheckbox.checked = false;
-    } else if (formType === "octaMatrix") {
-      const sizeSlider = document.getElementById("octaMatrixSizeSlider");
-      const rotateCheckbox = document.getElementById("octaMatrixRotate45");
-      if (sizeSlider) {
-        sizeSlider.value = "1";
-        document.getElementById("octaMatrixSizeValue").textContent = "1×1";
-      }
-      if (rotateCheckbox) rotateCheckbox.checked = false;
-    }
+    // Reset matrix sliders to 1×1 defaults
+    const matrixSliderMap = {
+      cubeMatrix: [
+        "cubeMatrixSizeSlider",
+        "cubeMatrixSizeValue",
+        "cubeMatrixRotate45",
+      ],
+      tetMatrix: [
+        "tetMatrixSizeSlider",
+        "tetMatrixSizeValue",
+        "tetMatrixRotate45",
+      ],
+      octaMatrix: [
+        "octaMatrixSizeSlider",
+        "octaMatrixSizeValue",
+        "octaMatrixRotate45",
+      ],
+      cuboctaMatrix: [
+        "cuboctaMatrixSizeSlider",
+        "cuboctaMatrixSizeValue",
+        "cuboctaMatrixRotate45",
+      ],
+      rhombicDodecMatrix: [
+        "rhombicDodecMatrixSizeSlider",
+        "rhombicDodecMatrixSizeValue",
+        "rhombicDodecMatrixRotate45",
+      ],
+    };
 
-    console.log(`↩️  Form reset to origin: ${formType}`);
+    if (matrixSliderMap[formType]) {
+      const [sliderId, valueId, rotateId] = matrixSliderMap[formType];
+      const slider = document.getElementById(sliderId);
+      const valueEl = document.getElementById(valueId);
+      const rotateEl = document.getElementById(rotateId);
+      if (slider) slider.value = "1";
+      if (valueEl) valueEl.textContent = "1×1";
+      if (rotateEl) rotateEl.checked = false;
+    }
   },
 
   // ========================================================================

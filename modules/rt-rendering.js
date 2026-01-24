@@ -2905,10 +2905,9 @@ export function initScene(THREE, OrbitControls, RT) {
    * @param {boolean} toOrthographic - true for orthographic, false for perspective
    */
   function switchCameraType(toOrthographic) {
-    // CRITICAL: Store the original perspective camera on first call
+    // Store the original perspective camera on first call
     if (!originalPerspectiveCamera && !isOrthographic) {
       originalPerspectiveCamera = camera;
-      console.log("📸 Saved original perspective camera reference");
     }
 
     const container = document.getElementById("canvas-container");
@@ -2939,8 +2938,6 @@ export function initScene(THREE, OrbitControls, RT) {
       camera = orthographicCamera;
       controls.object = orthographicCamera;
       isOrthographic = true;
-
-      console.log("✅ Switched to Orthographic camera (parallel projection)");
     } else if (!toOrthographic && isOrthographic) {
       // Switch back to perspective - use ORIGINAL perspective camera
       if (!originalPerspectiveCamera) {
@@ -2957,8 +2954,6 @@ export function initScene(THREE, OrbitControls, RT) {
       camera = originalPerspectiveCamera;
       controls.object = originalPerspectiveCamera;
       isOrthographic = false;
-
-      console.log("✅ Switched to Perspective camera");
     }
 
     controls.update();
@@ -3188,8 +3183,6 @@ export function initScene(THREE, OrbitControls, RT) {
 
     cartesianBasis.visible = visibilityState.cartesianBasis ?? false;
     scene.add(cartesianBasis);
-
-    console.log(`✅ Rebuilt Cartesian grids with divisions=${divisions}`);
   }
 
   /**

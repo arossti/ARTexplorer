@@ -453,14 +453,11 @@ export const RTFileHandler = {
           const el = document.getElementById("radialVEFreqSlider");
           if (el) el.value = sliders.radialVEFreqSlider;
         }
-        console.log("✅ Slider values restored");
       }
 
       // Restore polyhedra checkbox states (forms at origin)
       if (stateData.environment?.polyhedraCheckboxes) {
         const checkboxes = stateData.environment.polyhedraCheckboxes;
-
-        // Iterate through all saved checkbox states and restore them
         Object.keys(checkboxes).forEach(checkboxId => {
           const el = document.getElementById(checkboxId);
           if (el) {
@@ -468,12 +465,9 @@ export const RTFileHandler = {
           }
         });
 
-        console.log("✅ Polyhedra checkbox states restored");
-
         // Trigger updateGeometry to render the restored forms
         if (window.renderingAPI?.updateGeometry) {
           window.renderingAPI.updateGeometry();
-          console.log("✅ Geometry updated with restored form states");
         }
       }
 
@@ -492,7 +486,6 @@ export const RTFileHandler = {
               colorPalette[polyType]
             );
           });
-          console.log("✅ Color palette restored from import");
         }
 
         // Save to localStorage for session persistence
@@ -508,8 +501,6 @@ export const RTFileHandler = {
 
       // Restore instances
       if (stateData.instances && Array.isArray(stateData.instances)) {
-        console.log(`📦 Restoring ${stateData.instances.length} instances...`);
-
         // Check if renderingAPI is available with createPolyhedronByType
         if (!window.renderingAPI?.createPolyhedronByType) {
           console.warn(
