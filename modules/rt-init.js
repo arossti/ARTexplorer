@@ -2645,6 +2645,9 @@ function startARTexplorer(
     renderer.domElement.addEventListener(
       "mousedown",
       event => {
+        // Skip right-click (button 2) - let context menu handle it
+        if (event.button === 2) return;
+
         // Only work if a gumball tool is active (Move, Scale, or Rotate mode)
         if (
           !currentGumballTool ||
