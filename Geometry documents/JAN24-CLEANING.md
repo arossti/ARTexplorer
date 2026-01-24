@@ -194,28 +194,29 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 
 ## Phase 4: Refactoring Opportunities
 
-**Status:** ⏸️ DEFERRED (documented for future work)
+**Status:** 🔧 IN PROGRESS (JAN24-EXTRACT branch)
 
-### 4.1 rt-init.js Module Extraction Candidates
+### 4.1 rt-init.js Module Extraction
 
-**Current state:** 4,147 lines - largest file, orchestration hub
+**Progress:** 4,147 → 3,777 lines (-370 lines, -9%)
 
-| Lines | Section | Target Module | Risk | Dependencies |
-|-------|---------|---------------|------|--------------|
-| 27-67 | Info Modal | `rt-info-modal.js` | Very Low | None (isolated DOM) |
-| 2334-2498 | Janus Inversion | `rt-janus.js` | Low | `scene`, `THREE` |
-| 2500-2888 | Object Snapping | `rt-snapping.js` | Low | `THREE` only |
-| 931-965 | Janus Detection | Part of `rt-janus.js` | Low | Pure logic |
-| 1468-1772 | Coord Input Handlers | `rt-input-handlers.js` | Medium | `Quadray`, `THREE`, gumball state |
-| 1318-2333+ | Gumball/Controls | `rt-controls.js` | High | Many state deps, event handlers |
+| Status | Section | Target Module | Lines Extracted |
+|--------|---------|---------------|-----------------|
+| ✅ Done | Info Modal | `rt-info-modal.js` | ~50 lines |
+| ✅ Done | Janus System | `rt-janus.js` | ~240 lines |
+| ⏸️ Defer | Object Snapping | `rt-snapping.js` | ~390 lines (tightly coupled*) |
+| ⏸️ Defer | Coord Input Handlers | `rt-input-handlers.js` | Medium risk |
+| ⏸️ Defer | Gumball/Controls | `rt-controls.js` | High risk |
 
-**Quick wins (low risk):**
-- [ ] Extract Info Modal (lines 27-67) → `rt-info-modal.js`
-- [ ] Extract Object Snapping helpers → `rt-snapping.js`
-- [ ] Extract Janus animation system → `rt-janus.js`
+*Object Snapping has ~20 hardcoded form group references - requires refactoring before extraction
 
-**Defer (high risk):**
-- [ ] rt-controls.js extraction (gumball) - complex state interdependencies
+**Completed extractions:**
+- [x] `rt-info-modal.js` - Info modal with sessionStorage, keyboard, click-outside
+- [x] `rt-janus.js` - Janus Point crossing detection, background animation, flash effect
+
+**Deferred (needs refactoring first):**
+- [ ] Object Snapping - needs form group references passed as dependency
+- [ ] rt-controls.js extraction - complex state interdependencies
 
 ### 4.2 rt-controls.js Status
 
@@ -225,7 +226,7 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 - Extraction requires: scene, camera, controls, Quadray, THREE, RTStateManager
 - **Decision:** Keep deferred until dedicated refactoring session
 
-### 4.3 Other Opportunities (Original)
+### 4.3 Other Opportunities
 
 - [ ] Review polyhedra generators for shared patterns
 - [ ] Identify functions > 50 lines for potential splitting
@@ -322,13 +323,13 @@ grep -rn "console.log" modules/
 | Phase 1 | Automated Checks         | ✅ Completed   |
 | Phase 2 | RT-Purity Scan           | ✅ Completed   |
 | Phase 3 | Code Quality Review      | ✅ Completed   |
-| Phase 4 | Refactoring              | ⏸️ Deferred    |
+| Phase 4 | Refactoring              | 🔧 In Progress |
 | Phase 5 | Documentation & Report   | ✅ Completed   |
 | Phase 6 | Commit & Close           | ✅ Completed   |
 
 ---
 
 **Created:** 2026-01-24
-**Updated:** 2026-01-24 (Audit complete, ready for merge)
-**Branch:** JAN24-CLEANUP2
+**Updated:** 2026-01-24 (Phase 4 extractions in progress)
+**Branch:** JAN24-EXTRACT
 **Reference:** [CODE-QUALITY-AUDIT.md](CODE-QUALITY-AUDIT.md)

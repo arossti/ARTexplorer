@@ -8,6 +8,7 @@
 \usepackage{booktabs}
 \usepackage{enumitem}
 \usepackage{xcolor}
+\usepackage{parskip}  % Adds vertical space between paragraphs
 
 \geometry{margin=1in}
 
@@ -111,9 +112,10 @@ This is not a bug or oversight. Coordinate substitution would obscure the geomet
 
 \begin{table}[h]
 \centering
-\begin{tabular}{p{4cm}p{4cm}p{4cm}}
+\small
+\begin{tabular}{lll}
 \toprule
-\textbf{Aspect} & \textbf{Standard Quadray (Urner/Ace)} & \textbf{ARTexplorer Extended}\\
+\textbf{Aspect} & \textbf{Standard Quadray} & \textbf{ARTexplorer Extended}\\
 \midrule
 Negative coordinates & Prohibited (substitute) & Permitted (meaningful)\\
 At axis crossing & Replace with positive sum & Continue smoothly\\
@@ -122,7 +124,7 @@ Janus Inversion & Not applicable & Core feature\\
 Compatible with XYZ & Isomorphic & Extended (4D$^\pm$)\\
 \bottomrule
 \end{tabular}
-\caption{Standard Quadray vs.\ ARTexplorer's extended framework}
+\caption{Standard Quadray (Urner/Ace) vs.\ ARTexplorer's extended framework}
 \end{table}
 
 The standard Quadray rules define a \textbf{coordinate language} for ordinary 3D space---elegant, sufficient, and isomorphic to Cartesian. Our extension uses Quadray as a \textbf{foundation} for exploring regions and operations that the all-positive constraint deliberately excludes. We honor Urner's framework by understanding exactly what it achieves and why; we extend it by asking what becomes visible when the constraint is relaxed.
