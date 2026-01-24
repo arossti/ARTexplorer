@@ -2103,6 +2103,14 @@ function startARTexplorer(
     }
 
     scene.add(editingBasis);
+
+    // Log basis sizing for tuning (tetEdge drives handle scale)
+    const systems = [];
+    if (showCartesian) systems.push("XYZ");
+    if (showQuadray) systems.push("WXYZ");
+    console.log(
+      `✅ Editing basis created: ${systems.join("+")} | tetEdge=${tetEdge.toFixed(2)} arrowLength=${arrowLength.toFixed(2)} headLength=${headLength}`
+    );
   }
 
   /**

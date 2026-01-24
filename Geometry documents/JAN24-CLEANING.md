@@ -171,6 +171,7 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 1. ✅ **rt-state-manager.js** - DOM manipulation refactored (now uses lookup table)
 2. ✅ **rt-init.js** - Removed PHASE 6 EXTRACTION comments, kept TODOs
 3. ✅ **console.log reduced** - 291 → 257 (removed interaction debug logs, kept RT verification)
+4. ✅ **Editing basis sizing log restored** - Added back for ongoing basis vector tuning
 
 ### 3.4 Fixes Applied
 
@@ -178,6 +179,7 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 - [x] Remove rt-init.js commented code blocks (keep TODOs)
 - [x] Reduce console.log from 291 to 257 (RT math logs preserved for demonstration)
 - [x] Run Prettier on changed files
+- [x] Restore editing basis sizing log (tetEdge, arrowLength, headLength) for tuning work
 
 ---
 
