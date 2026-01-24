@@ -3944,8 +3944,14 @@ function startARTexplorer(
   // KEYBOARD SHORTCUTS (ESC, Delete, Undo/Redo)
   // ========================================================================
   document.addEventListener("keydown", event => {
-    // ESC key - deselect all
+    // ESC key - deselect all AND exit any active tool mode
     if (event.key === "Escape") {
+      // First exit any active tool mode (Move/Scale/Rotate)
+      if (currentGumballTool) {
+        exitToolMode();
+        console.log("⎋ ESC: Exited tool mode");
+      }
+      // Then deselect all
       deselectAll();
       console.log("⎋ ESC: Deselected all");
     }
