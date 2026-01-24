@@ -12,7 +12,7 @@ rt-state-manager.js:107 ✅ RTStateManager initialized
  Grid interval (√6/4): 0.6123724356957945
  Exact value: 0.6123724356957945
  ✅ Central Angle grids created (corrected tessellation, 6 planes) with edge length: 2.8284
- [PerformanceClock] Initialized with 24 groups
+ [PerformanceClock] Initialized with 26 groups
  Cube: Expected Q=2.000000, Max error=0.00e+0
  [PurePhi] Icosahedron - High-precision symbolic construction:
    φ = (1 + 1√5)/2 = 1.618033988749895
@@ -64,23 +64,19 @@ rt-polyhedra.js:76 Cube: Expected Q=4.000000, Max error=0.00e+0
 rt-polyhedra.js:121 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0
 rt-filehandler.js:67 💾 Auto-save enabled (every 10 modifications)
 rt-filehandler.js:77 ✅ RTFileHandler initialized
-rt-init.js:3810 ✅ RTFileHandler module initialized
+rt-init.js:3854 ✅ RTFileHandler module initialized
 rt-papercut.js:321 ✂️ Cutplane range: [-10, 10] step=1.000000 (basis: cartesian, snap: XYZ)
-rt-context.js:178 [rt-context] ✅ Context menu initialized, listening on canvas
-rt-init.js:2181 ✅ Selected Form: cube
-rt-context.js:183 [rt-context] 🖱️ Right-click detected at: 783 304
-rt-context.js:95 [rt-context] Right-click at NDC: -0.015 0.221
-rt-context.js:108 [rt-context] Found polyhedra groups: 0 []
-rt-context.js:112 [rt-context] Raycast intersects: 0
-rt-context.js:183 [rt-context] 🖱️ Right-click detected at: 783 304
-rt-context.js:95 [rt-context] Right-click at NDC: -0.015 0.221
-rt-context.js:108 [rt-context] Found polyhedra groups: 0 []
-rt-context.js:112 [rt-context] Raycast intersects: 0
-rt-context.js:183 [rt-context] 🖱️ Right-click detected at: 783 304
-rt-context.js:95 [rt-context] Right-click at NDC: -0.015 0.221
-rt-context.js:108 [rt-context] Found polyhedra groups: 0 []
-rt-context.js:112 [rt-context] Raycast intersects: 0
-rt-context.js:183 [rt-context] 🖱️ Right-click detected at: 783 304
-rt-context.js:95 [rt-context] Right-click at NDC: -0.015 0.221
-rt-context.js:108 [rt-context] Found polyhedra groups: 0 []
-rt-context.js:112 [rt-context] Raycast intersects: 0
+rt-state-manager.js:733 🗑️  All instances cleared
+rt-filehandler.js:302 📦 Restoring 3 instances...
+rt-polyhedra.js:76 Cube: Expected Q=2.000000, Max error=0.00e+0
+rt-state-manager.js:303 ✅ Instance created: instance_1769263642085_7zjpyxjle9l (cube) at position (1.55, 1.55, 1.55)
+rt-filehandler.js:392   ✅ Restored: cube at (1.55, 1.55, 1.55)
+rt-polyhedra.js:76 Cube: Expected Q=2.000000, Max error=0.00e+0
+rt-state-manager.js:303 ✅ Instance created: instance_1769263642086_mxqac1kxb7j (cube) at position (-2.19, -2.19, 2.19)
+rt-filehandler.js:392   ✅ Restored: cube at (-2.19, -2.19, 2.19)
+rt-polyhedra.js:121 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:158 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-state-manager.js:303 ✅ Instance created: instance_1769263642087_fm0bvqppph (dualTetrahedron) at position (-0.31, 0.11, 2.35)
+rt-filehandler.js:392   ✅ Restored: dualTetrahedron at (-0.31, 0.11, 2.35)
+rt-filehandler.js:405 📦 Instance restoration complete: 3 restored, 0 failed
+rt-filehandler.js:411 ✅ State imported successfully
