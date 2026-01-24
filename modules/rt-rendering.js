@@ -1576,13 +1576,16 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       const projection = projectionRadio ? projectionRadio.value : "out";
 
-      const geometry = polyhedronFn(
-        scale,
-        isNaN(frequency) ? 1 : frequency,
-        projection
-      );
+      const actualFrequency = isNaN(frequency) ? 1 : frequency;
+      const geometry = polyhedronFn(scale, actualFrequency, projection);
       renderPolyhedron(group, geometry, color, opacity);
       group.visible = true;
+
+      // Store parameters for instance export (state manager captures these on deposit)
+      group.userData.parameters = {
+        frequency: actualFrequency,
+        projection: projection,
+      };
     } else {
       group.visible = false;
     }
@@ -3310,16 +3313,31 @@ export function initScene(THREE, OrbitControls, RT) {
       case "geodesicIcosahedron":
         geometry = Polyhedra.geodesicIcosahedron(scale, frequency, projection);
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          frequency: frequency,
+          projection: projection,
+        };
         break;
 
       case "geodesicTetrahedron":
         geometry = Polyhedra.geodesicTetrahedron(scale, frequency, projection);
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          frequency: frequency,
+          projection: projection,
+        };
         break;
 
       case "geodesicOctahedron":
         geometry = Polyhedra.geodesicOctahedron(scale, frequency, projection);
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          frequency: frequency,
+          projection: projection,
+        };
         break;
 
       case "geodesicDualTetrahedron":
@@ -3329,6 +3347,11 @@ export function initScene(THREE, OrbitControls, RT) {
           projection
         );
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          frequency: frequency,
+          projection: projection,
+        };
         break;
 
       case "geodesicDualIcosahedron":
@@ -3338,6 +3361,11 @@ export function initScene(THREE, OrbitControls, RT) {
           projection
         );
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          frequency: frequency,
+          projection: projection,
+        };
         break;
 
       // Quadray demonstrator polyhedra (with native WXYZ coordinate preservation)

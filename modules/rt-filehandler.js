@@ -229,6 +229,43 @@ export const RTFileHandler = {
       radialVEFreqSlider: parseInt(
         document.getElementById("radialVEFreqSlider")?.value || "1"
       ),
+      // Geodesic frequency sliders
+      geodesicTetraFrequency: parseInt(
+        document.getElementById("geodesicTetraFrequency")?.value || "1"
+      ),
+      geodesicDualTetraFrequency: parseInt(
+        document.getElementById("geodesicDualTetraFrequency")?.value || "1"
+      ),
+      geodesicOctaFrequency: parseInt(
+        document.getElementById("geodesicOctaFrequency")?.value || "1"
+      ),
+      geodesicIcosaFrequency: parseInt(
+        document.getElementById("geodesicIcosaFrequency")?.value || "1"
+      ),
+      geodesicDualIcosaFrequency: parseInt(
+        document.getElementById("geodesicDualIcosaFrequency")?.value || "1"
+      ),
+    };
+
+    // Get geodesic projection radio states
+    const geodesicProjections = {
+      geodesicTetraProjection:
+        document.querySelector('input[name="geodesicTetraProjection"]:checked')
+          ?.value || "out",
+      geodesicDualTetraProjection:
+        document.querySelector(
+          'input[name="geodesicDualTetraProjection"]:checked'
+        )?.value || "out",
+      geodesicOctaProjection:
+        document.querySelector('input[name="geodesicOctaProjection"]:checked')
+          ?.value || "out",
+      geodesicIcosaProjection:
+        document.querySelector('input[name="geodesicIcosaProjection"]:checked')
+          ?.value || "out",
+      geodesicDualIcosaProjection:
+        document.querySelector(
+          'input[name="geodesicDualIcosaProjection"]:checked'
+        )?.value || "out",
     };
 
     // Get active form state (legacy, kept for backwards compatibility)
@@ -272,6 +309,8 @@ export const RTFileHandler = {
         polyhedraCheckboxes: polyhedraCheckboxes,
         // Slider values (scale, opacity, matrix sizes, frequencies)
         sliderValues: sliderValues,
+        // Geodesic projection radio states (out/flat/in)
+        geodesicProjections: geodesicProjections,
         // Legacy form states (kept for backwards compatibility)
         forms: formStates,
         activeForm: activeForm,
@@ -281,6 +320,7 @@ export const RTFileHandler = {
         id: instance.id,
         timestamp: instance.timestamp,
         type: instance.type,
+        parameters: instance.parameters, // Geodesic frequency/projection, Quadray wxyz, etc.
         transform: instance.transform,
         appearance: instance.appearance,
         metadata: instance.metadata,
@@ -452,6 +492,71 @@ export const RTFileHandler = {
         if (sliders.radialVEFreqSlider !== undefined) {
           const el = document.getElementById("radialVEFreqSlider");
           if (el) el.value = sliders.radialVEFreqSlider;
+        }
+        // Geodesic frequency sliders
+        if (sliders.geodesicTetraFrequency !== undefined) {
+          const el = document.getElementById("geodesicTetraFrequency");
+          if (el) el.value = sliders.geodesicTetraFrequency;
+        }
+        if (sliders.geodesicDualTetraFrequency !== undefined) {
+          const el = document.getElementById("geodesicDualTetraFrequency");
+          if (el) el.value = sliders.geodesicDualTetraFrequency;
+        }
+        if (sliders.geodesicOctaFrequency !== undefined) {
+          const el = document.getElementById("geodesicOctaFrequency");
+          if (el) el.value = sliders.geodesicOctaFrequency;
+        }
+        if (sliders.geodesicIcosaFrequency !== undefined) {
+          const el = document.getElementById("geodesicIcosaFrequency");
+          if (el) el.value = sliders.geodesicIcosaFrequency;
+        }
+        if (sliders.geodesicDualIcosaFrequency !== undefined) {
+          const el = document.getElementById("geodesicDualIcosaFrequency");
+          if (el) el.value = sliders.geodesicDualIcosaFrequency;
+        }
+      }
+
+      // Restore geodesic projection radio states
+      if (stateData.environment?.geodesicProjections) {
+        const projections = stateData.environment.geodesicProjections;
+
+        // Helper to set radio by name and value
+        const setRadio = (name, value) => {
+          const radio = document.querySelector(
+            `input[name="${name}"][value="${value}"]`
+          );
+          if (radio) radio.checked = true;
+        };
+
+        if (projections.geodesicTetraProjection) {
+          setRadio(
+            "geodesicTetraProjection",
+            projections.geodesicTetraProjection
+          );
+        }
+        if (projections.geodesicDualTetraProjection) {
+          setRadio(
+            "geodesicDualTetraProjection",
+            projections.geodesicDualTetraProjection
+          );
+        }
+        if (projections.geodesicOctaProjection) {
+          setRadio(
+            "geodesicOctaProjection",
+            projections.geodesicOctaProjection
+          );
+        }
+        if (projections.geodesicIcosaProjection) {
+          setRadio(
+            "geodesicIcosaProjection",
+            projections.geodesicIcosaProjection
+          );
+        }
+        if (projections.geodesicDualIcosaProjection) {
+          setRadio(
+            "geodesicDualIcosaProjection",
+            projections.geodesicDualIcosaProjection
+          );
         }
       }
 

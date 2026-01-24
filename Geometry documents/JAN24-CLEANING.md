@@ -50,6 +50,15 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 - [x] Restore checkbox states and trigger updateGeometry()
 - [x] Separation maintained: forms restored via UI state, not as instances
 
+### 0.6 Geodesic Parameter Preservation (Added 2026-01-24)
+
+- [x] Export geodesic frequency sliders (geodesicTetraFrequency, geodesicOctaFrequency, etc.)
+- [x] Export geodesic projection radio states (out/flat/in per geodesic type)
+- [x] Restore geodesic frequencies and projections on environment import
+- [x] Store frequency/projection in userData.parameters for base geodesics (renderGeodesicPolyhedron)
+- [x] Store frequency/projection in userData.parameters for restored instances (createPolyhedronByType)
+- [x] Include parameters in instance export (file handler)
+
 ### 0.3 Supported Polyhedron Types
 
 **Regular:** cube, tetrahedron, dualTetrahedron, octahedron, icosahedron, dodecahedron, dualIcosahedron, cuboctahedron, rhombicDodecahedron
