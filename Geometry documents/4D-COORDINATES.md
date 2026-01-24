@@ -29,6 +29,8 @@
 10. [RT-Pure Operations in Quadray Space](#10-rt-pure-operations-in-quadray-space)
 11. [Implementation Notes](#11-implementation-notes)
 12. [References](#12-references)
+13. [Implementation: Janus Inversion](#13-implementation-janus-inversion-through-origin-scaling)
+14. [Quadray Demonstrators UI Controls](#14-quadray-demonstrators-ui-controls)
 
 ---
 
@@ -2061,6 +2063,67 @@ The current ARTexplorer demonstrates Janus Inversion through XYZ rendering, but 
 
 ---
 
-**Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation + theoretical context
+## 14. Quadray Demonstrators UI Controls
 
-**Last Updated:** 2026-01-22
+**Added:** 2026-01-24
+
+The Quadray Tetrahedron demonstrators are accessible via the Forms panel in the ARTexplorer UI.
+
+### 14.1 Control Panel Location
+
+In the Forms panel (left side), under the **"Quadray Demonstrators"** divider:
+
+| Control | Description |
+|---------|-------------|
+| **Quadray Tetrahedron (4D Native)** | Checkbox to show/hide the regular Quadray tetrahedron |
+| **Normalize** | Toggle zero-sum normalization on/off (visible when tetrahedron enabled) |
+| **Quadray Tetrahedron Deformed** | Checkbox to show/hide the deformed tetrahedron |
+| **Z-Stretch** | Slider (0.5 to 4.0) controlling the fourth vertex stretch factor |
+
+### 14.2 Visual Appearance
+
+| Form | Color | Notes |
+|------|-------|-------|
+| Quadray Tetrahedron | Bright teal/mint (#00ff88) | Vertices at (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,1) |
+| Quadray Tetrahedron Deformed | Coral-pink (#ff5577) | Z vertex stretched by slider value |
+
+### 14.3 Interactive Exploration
+
+**Normalization Toggle Experiment:**
+1. Enable "Quadray Tetrahedron (4D Native)"
+2. Toggle the "Normalize" checkbox
+3. Observe: With normalize OFF, the tetrahedron uses raw WXYZ coordinates
+4. With normalize ON, zero-sum normalization is applied (standard Quadray)
+
+**Deformation Experiment:**
+1. Enable "Quadray Tetrahedron Deformed"
+2. Adjust the Z-Stretch slider from 0.5 to 4.0
+3. Observe: One vertex moves closer or further from the other three
+4. This demonstrates that the 4th coordinate carries **real geometric information** when normalization is NOT applied
+
+### 14.4 Console Logging
+
+Both demonstrators log RT validation data to the browser console:
+
+```
+[RT] Quadray Tetrahedron: normalize=true, scale=1
+  WXYZ raw: [1,0,0,0] → [0,0,0,1]
+  WXYZ normalized: ["0.750","-0.250","-0.250","-0.250"]
+  Sample edge Q: 1.333333
+
+[RT] Deformed Quadray Tetrahedron: Z stretched by 2x
+  Standard tetrahedron: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,1)
+  Deformed tetrahedron: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,2)
+  With zero-sum: Z vertex would normalize to (0,0,0,1) — deformation LOST
+  Without zero-sum: Z vertex stays at (0,0,0,2) — deformation PRESERVED
+```
+
+### 14.5 Node Spheres
+
+Both Quadray demonstrators render node spheres at each vertex. The nodes follow the global node visibility and opacity settings from the Visual Options panel.
+
+---
+
+**Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation + Quadray Demonstrators UI
+
+**Last Updated:** 2026-01-24

@@ -169,6 +169,7 @@ function startARTexplorer(
   let cuboctaMatrixGroup, rhombicDodecMatrixGroup;
   let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup;
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup;
+  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup;
   let cartesianGrid, ivmPlanes;
   // cartesianBasis, quadrayBasis removed - managed internally by renderingAPI
 
@@ -2336,6 +2337,8 @@ function startARTexplorer(
       radialTetMatrixGroup,
       radialOctMatrixGroup,
       radialVEMatrixGroup,
+      quadrayTetrahedronGroup,
+      quadrayTetraDeformedGroup,
     ];
 
     formGroups.forEach(group => {
@@ -2742,6 +2745,8 @@ function startARTexplorer(
       radialTetMatrixGroup,
       radialOctMatrixGroup,
       radialVEMatrixGroup,
+      quadrayTetrahedronGroup,
+      quadrayTetraDeformedGroup,
     ];
 
     formGroups.forEach(group => {
@@ -3830,6 +3835,8 @@ function startARTexplorer(
     radialTetMatrixGroup,
     radialOctMatrixGroup,
     radialVEMatrixGroup,
+    quadrayTetrahedronGroup,
+    quadrayTetraDeformedGroup,
   } = formGroups);
 
   // NOTE: updateGeometry and updateGeometryStats were assigned earlier (line ~135-136)

@@ -2967,6 +2967,8 @@ export function initScene(THREE, OrbitControls, RT) {
       radialTetMatrixGroup,
       radialOctMatrixGroup,
       radialVEMatrixGroup,
+      quadrayTetrahedronGroup,
+      quadrayTetraDeformedGroup,
     };
   }
 
