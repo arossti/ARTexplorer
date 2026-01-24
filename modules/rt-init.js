@@ -169,6 +169,7 @@ function startARTexplorer(
   let cuboctaMatrixGroup, rhombicDodecMatrixGroup;
   let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup;
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup;
+  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup;
   let cartesianGrid, ivmPlanes;
   // cartesianBasis, quadrayBasis removed - managed internally by renderingAPI
 
@@ -460,6 +461,43 @@ function startARTexplorer(
   document
     .getElementById("showRhombicDodecahedron")
     .addEventListener("change", updateGeometry);
+
+  // Quadray Tetrahedron Demonstrators
+  const quadrayTetraCheckbox = document.getElementById("showQuadrayTetrahedron");
+  if (quadrayTetraCheckbox) {
+    quadrayTetraCheckbox.addEventListener("change", () => {
+      const controls = document.getElementById("quadray-tetra-controls");
+      if (controls) {
+        controls.style.display = quadrayTetraCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const quadrayTetraNormalizeCheckbox = document.getElementById("quadrayTetraNormalize");
+  if (quadrayTetraNormalizeCheckbox) {
+    quadrayTetraNormalizeCheckbox.addEventListener("change", updateGeometry);
+  }
+
+  const quadrayTetraDeformedCheckbox = document.getElementById("showQuadrayTetraDeformed");
+  if (quadrayTetraDeformedCheckbox) {
+    quadrayTetraDeformedCheckbox.addEventListener("change", () => {
+      const controls = document.getElementById("quadray-tetra-deformed-controls");
+      if (controls) {
+        controls.style.display = quadrayTetraDeformedCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const quadrayTetraZStretchSlider = document.getElementById("quadrayTetraZStretch");
+  if (quadrayTetraZStretchSlider) {
+    quadrayTetraZStretchSlider.addEventListener("input", e => {
+      const value = parseFloat(e.target.value);
+      e.target.nextElementSibling.textContent = value.toFixed(1);
+      updateGeometry();
+    });
+  }
 
   // Matrix forms (IVM Arrays)
   const cubeMatrixCheckbox = document.getElementById("showCubeMatrix");
@@ -2299,6 +2337,8 @@ function startARTexplorer(
       radialTetMatrixGroup,
       radialOctMatrixGroup,
       radialVEMatrixGroup,
+      quadrayTetrahedronGroup,
+      quadrayTetraDeformedGroup,
     ];
 
     formGroups.forEach(group => {
@@ -2705,6 +2745,8 @@ function startARTexplorer(
       radialTetMatrixGroup,
       radialOctMatrixGroup,
       radialVEMatrixGroup,
+      quadrayTetrahedronGroup,
+      quadrayTetraDeformedGroup,
     ];
 
     formGroups.forEach(group => {
@@ -3793,6 +3835,8 @@ function startARTexplorer(
     radialTetMatrixGroup,
     radialOctMatrixGroup,
     radialVEMatrixGroup,
+    quadrayTetrahedronGroup,
+    quadrayTetraDeformedGroup,
   } = formGroups);
 
   // NOTE: updateGeometry and updateGeometryStats were assigned earlier (line ~135-136)
@@ -3944,8 +3988,14 @@ function startARTexplorer(
   // KEYBOARD SHORTCUTS (ESC, Delete, Undo/Redo)
   // ========================================================================
   document.addEventListener("keydown", event => {
-    // ESC key - deselect all
+    // ESC key - deselect all AND exit any active tool mode
     if (event.key === "Escape") {
+      // First exit any active tool mode (Move/Scale/Rotate)
+      if (currentGumballTool) {
+        exitToolMode();
+        console.log("⎋ ESC: Exited tool mode");
+      }
+      // Then deselect all
       deselectAll();
       console.log("⎋ ESC: Deselected all");
     }

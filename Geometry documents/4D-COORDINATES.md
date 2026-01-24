@@ -29,6 +29,8 @@
 10. [RT-Pure Operations in Quadray Space](#10-rt-pure-operations-in-quadray-space)
 11. [Implementation Notes](#11-implementation-notes)
 12. [References](#12-references)
+13. [Implementation: Janus Inversion](#13-implementation-janus-inversion-through-origin-scaling)
+14. [Quadray Demonstrators UI Controls](#14-quadray-demonstrators-ui-controls)
 
 ---
 
@@ -95,6 +97,123 @@ The VE's 12 vectors can be understood as **three sets of 4 Quadray-like tetrahed
 - Fuller, R.B. *Synergetics* §420-430 (Vector Equilibrium)
 - [Synergetics (Fuller) - Wikipedia](https://en.wikipedia.org/wiki/Synergetics_(Fuller))
 - [Vector Equilibrium - Cosmometry](https://cosmometry.net/vector-equilibrium-&-isotropic-vector-matrix)
+
+### 2.1 Native Degrees of Freedom: 3, 4, or 5?
+
+**The Standard Claim (3 DOF):**
+
+Quadray coordinates are conventionally described as providing 3 degrees of freedom. This arises from the **zero-sum constraint**: if W + X + Y + Z = k for some constant k, then knowing any three coordinates determines the fourth. This constraint is imposed to ensure Quadray maps onto Cartesian 3D space—it is a *compatibility requirement*, not an intrinsic property of tetrahedral coordinates.
+
+**The Native Reality (4 DOF):**
+
+However, the tetrahedron—the minimum structural system capable of enclosing space—requires **four vertices** to define. You cannot specify a tetrahedron with three coordinates; the fourth is not redundant information but essential geometric content.
+
+Consider two points:
+- **(1, 1, 1, 1)** — equidistant from all four basis directions (the dual tetrahedron vertex)
+- **(1, 1, 1, 6)** — much closer to the Z-vertex than to W, X, or Y
+
+With the zero-sum constraint, these would be "normalized" to equivalent positions. But they describe fundamentally different geometric relationships: the first is symmetric, the second is a **deformed tetrahedron** stretched along the Z-axis. The fourth coordinate carries real information that the constraint destroys.
+
+| Framing | DOF | What it describes |
+|---------|-----|-------------------|
+| Quadray as XYZ substitute | 3 | Zero-sum constraint enforced; equivalent to Cartesian |
+| Quadray as native system | **4** | Four independent coordinates; no external constraint |
+| Quadray with Janus extension | **4 + 1** | Four coordinates plus dimensional polarity (±) |
+
+**The Fifth Degree: Dimensional Polarity (License Pending)**
+
+If we accept that positive and negative Quadray spaces (4D+ and 4D−) represent distinct dimensional realms separated by the Janus Point at origin, then a complete specification requires not only the four coordinates but also **which side of origin** the point occupies. This dimensional polarity is not a continuous degree of freedom but a discrete binary state—yet it represents information that four unsigned coordinates cannot capture.
+
+Whether this constitutes a "fifth dimension" or merely a binary flag on a 4D system is a matter of interpretation. No dimensional licensing board exists to adjudicate the question. The framework is coherent either way.*
+
+*\*Application submitted to the Universal Dimensional Licensing Board, 2026.January.Earthtime. Awaiting response.*
+
+**Example: The Deformed Tetrahedron**
+
+```
+Regular tetrahedron vertices:     Deformed tetrahedron vertices:
+  W: (1, 0, 0, 0)                   W: (1, 0, 0, 0)
+  X: (0, 1, 0, 0)                   X: (0, 1, 0, 0)
+  Y: (0, 0, 1, 0)                   Y: (0, 0, 1, 0)
+  Z: (0, 0, 0, 1)                   Z: (0, 0, 0, 6)  ← stretched!
+
+With zero-sum constraint:          Without constraint:
+  Z would normalize to (0,0,0,1)     Z remains at (0,0,0,6)
+  Information lost!                  Deformation preserved
+```
+
+The native Quadray system, without the zero-sum constraint, is a **4-dimensional coordinate system** that can describe tetrahedral deformations, asymmetries, and (with signed values) passage through the dimensional Janus Point. The 3 DOF interpretation is a projection onto Cartesian-compatible space—useful, but not the full picture.
+
+### 2.2 Critical Clarification: Negative Coordinates ≠ Negative Dimensional Space
+
+**For mathematicians and careful readers:** There is a crucial distinction between *negative coordinate values* and *negative dimensional space*. Conflating these would be a category error.
+
+**Movement vs. Inversion**
+
+When you translate an object along the -W direction (past the origin on the W axis), the W coordinate becomes negative. But you have **not** changed dimensional state—you are still in positive dimensional space, just located in a region where one coordinate happens to be negative.
+
+This is exactly analogous to Cartesian coordinates: moving from X = +5 to X = -5 doesn't transport you to another dimension. You're simply on the other side of the YZ plane.
+
+**The 16 Regions of Full Signed Quadray Space**
+
+In Cartesian XYZ:
+- 3 axes × 2 directions = 6 axial directions
+- 2³ = **8 octants** (all combinations of ±X, ±Y, ±Z)
+
+In full signed WXYZ (without zero-sum constraint):
+- 4 axes × 2 directions = **8 axial directions**
+- 2⁴ = **16 regions** (all combinations of ±W, ±X, ±Y, ±Z)
+
+| Sign Pattern | # Negative | Region Type | Dimensional State |
+|--------------|------------|-------------|-------------------|
+| (+,+,+,+) | 0 | Canonical positive | **4D+** (positive dimensional space) |
+| (+,+,+,−) | 1 | Single-negative | 4D+ (ordinary space) |
+| (+,+,−,−) | 2 | Double-negative | 4D+ (ordinary space) |
+| (+,−,−,−) | 3 | Triple-negative | 4D+ (ordinary space) |
+| (−,−,−,−) | 4 | Canonical negative | **4D−** (negative dimensional space) |
+
+*Plus 11 additional permutations of the mixed-sign patterns.*
+
+**What Triggers Janus Inversion?**
+
+The Janus Point transition occurs **only** when passing between the two canonical regions:
+- **(+,+,+,+)** → all coordinates positive
+- **(−,−,−,−)** → all coordinates negative
+
+This happens through **scaling through zero** (the form itself collapses through the origin and re-emerges inverted), NOT through translation past zero on individual axes.
+
+| Operation | Effect on Coordinates | Dimensional State Change? |
+|-----------|----------------------|---------------------------|
+| Translate along -W | W goes negative, others unchanged | **NO** — still in 4D+ |
+| Translate along -W, -X | W and X go negative | **NO** — still in 4D+ |
+| Scale uniformly through zero | ALL coordinates pass through zero simultaneously | **YES** — 4D+ ↔ 4D− |
+
+**ARTexplorer Implementation**
+
+This is exactly how ARTexplorer behaves:
+- **Translation** along any axis allows coordinates to go negative without triggering Janus effects (no background inversion, no golden flash)
+- **Scaling through zero** (via the gumball's central sphere) triggers the full Janus transition: golden flash at origin, background inverts black↔white, form emerges inverted
+
+The 14 mixed-sign regions are simply **ordinary navigable space**—they're "over there" relative to origin, but they're not dimensionally inverted.
+
+### 2.3 Summary: The Full Dimensional Accounting
+
+| Aspect | Count | Type | Notes |
+|--------|-------|------|-------|
+| Basis vectors | 4 | — | W, X, Y, Z |
+| Axial directions | 8 | — | ±W, ±X, ±Y, ±Z |
+| Spatial regions | 16 | — | 2⁴ sign combinations |
+| Continuous DOF (native) | **4** | Continuous | Position in tetrahedral space |
+| Dimensional polarity | **1** | Discrete binary | 4D+ or 4D− |
+| **Total specification** | **4 + 1** | Mixed | 4 continuous + 1 binary |
+
+Whether to call this a "5-dimensional system" is a matter of convention. The dimensional polarity is not a continuous degree of freedom like the four spatial coordinates—it's a discrete binary state. One could argue:
+
+- **"4D + binary flag"** — emphasizes the discrete nature of polarity
+- **"5D"** — emphasizes that full specification requires 5 pieces of information
+- **"4D±"** — our notation, which captures both the four continuous DOF and the ± polarity
+
+We prefer **4D±** as the most precise description: a 4-dimensional continuous space with a discrete positive/negative dimensional state.
 
 ---
 
@@ -1254,6 +1373,283 @@ See `DEV-PRIVATE.md` §7.2.4 for proposed implementation.
 
 ---
 
+## 11.4 Understanding Quadray Rules: "Only 3 of 4 Needed"
+
+**Reference:** [Kirby Urner - Quadray Introduction](http://www.grunch.net/synergetics/quadintro.html)
+
+The grunch.net introduction to Quadrays presents two fundamental rules:
+
+| Rule | Statement |
+|------|-----------|
+| **Rule 1** | "At least one of the four quadrays is always zero" |
+| **Rule 2** | "Only positive numbers (and zero) are needed for any ray" |
+
+These rules seem counterintuitive at first. How can we reach any point in 3D space using only three directions with positive values?
+
+### 11.4.1 The Geometric Intuition
+
+**The Laser Beam Analogy (Direction Only):**
+
+Imagine a laser at the origin. It can point in any direction. But pointing doesn't get you *to* a point—you need to travel a distance. The Quadray claim is about **reaching** points, not just pointing at them.
+
+**The Vector Addition Insight:**
+
+The key is **vector addition** (tip-to-tail combination), not single-vector extension. With three non-coplanar basis vectors, you can reach any point in their "positive span" by combining them with positive weights:
+
+```
+Point P = a·W + b·X + c·Y  (where a, b, c ≥ 0)
+```
+
+Since the four Quadray basis vectors together cover ALL directions, at least one set of three will have any target point P in their positive span. The fourth basis vector points "away" from P—you don't need it.
+
+**The "Behind You" Intuition:**
+
+Picture standing at the origin of a tetrahedron. You want to reach point P somewhere in space. Three of the four vertices will be "in front of you" (in the general direction of P), and one will be "behind you." You can reach P by combining the three forward-ish directions with positive weights. The backward direction is superfluous.
+
+### 11.4.2 How "Positive Only" Works
+
+In Cartesian coordinates, to go "left" you need negative X. But in Quadray, the four basis vectors **already cover all directions** with positive values.
+
+The magic comes from **vectorial neutrality**: W + X + Y + Z = 0 (in Cartesian terms).
+
+This means: **-W = X + Y + Z**
+
+To go "opposite" of W, you don't need -W; you use the sum of the other three. The "opposite" of any direction is the *sum* of the remaining three directions—no negatives required!
+
+### 11.4.3 The Normalization Choice
+
+Two normalization methods are described:
+
+| Method | Constraint | Effect |
+|--------|------------|--------|
+| **All-positive** | Add (k,k,k,k) to eliminate negatives | Brings most negative to zero |
+| **Zero-sum** | a+b+c+d = 0 | Reduces 4 DOF to 3 DOF |
+
+This is the **±(1,1,1,1) bridge** we use for tetrahedron ↔ dual tetrahedron conversion.
+
+### 11.4.4 The ARTexplorer Tension: Continuous Motion vs. Coordinate Substitution
+
+**The grunch.net rules require coordinate substitution:**
+```
+Instead of:  (-1, 0, 0, 0)  ← "negative W"
+Use:         (0, 1, 1, 1)   ← "sum of X+Y+Z" (equivalent position)
+```
+
+**But in ARTexplorer, when you drag along -W:**
+- The W coordinate continuously decreases through zero
+- It naturally becomes negative
+- We do NOT substitute (0, 1, 1, 1)—we preserve the native coordinate path
+
+**This is correct for our framework because:**
+
+1. We do NOT enforce zero-sum normalization
+2. We preserve the native 4-DOF system
+3. Negative coordinates are *meaningful* in our Janus framework (see §5)
+4. Coordinate substitution would obscure the geometry of scaling through origin
+
+**The grunch.net "positive only" rule is a constraint choice, not a geometric necessity.** Our framework deliberately breaks it to explore the full signed Quadray space, including passage through the Janus Point.
+
+### 11.4.5 Reconciling the Frameworks
+
+| Aspect | Standard Quadray (grunch.net) | ARTexplorer Native Quadray |
+|--------|-------------------------------|---------------------------|
+| Negatives allowed? | No (substitute with sum of others) | Yes (required for Janus) |
+| Zero-sum constraint | Enforced (3 DOF) | Optional (native 4 DOF) |
+| Coordinate substitution | Required at axis crossing | Never (continuous motion) |
+| Compatible with Cartesian | Yes (isomorphic) | Extended (4D±) |
+
+The standard Quadray system is a **coordinate language** for 3D Cartesian space. Our extended system is a **native 4D± framework** that uses Quadray as its foundation but explores regions and operations that the standard constraint system deliberately excludes.
+
+---
+
+## 11.5 The 4D-Tetrahedron Demonstrator
+
+To visualize the difference between standard Quadray (with substitution) and native Quadray (continuous signed coordinates), we implement a special polyhedron defined purely in Quadray space.
+
+### 11.5.1 Design Goals
+
+| Feature | Purpose |
+|---------|---------|
+| **Native WXYZ definition** | Vertices defined as [w,x,y,z] tuples, not XYZ |
+| **Deferred conversion** | XYZ computed only at render time |
+| **Normalization options** | Toggle zero-sum constraint on/off |
+| **Dual display** | Show both coordinate systems simultaneously |
+| **Deformation support** | Allow (1,1,1,6) "stretched" tetrahedra |
+
+### 11.5.2 Implementation
+
+**File:** `modules/rt-polyhedra.js`
+
+```javascript
+/**
+ * Quadray Tetrahedron (4D-Tetrahedron Demonstrator)
+ * Defined NATIVELY in Quadray coordinates, converted to XYZ only at render time.
+ *
+ * This polyhedron demonstrates:
+ * - Native WXYZ coordinate definition
+ * - Optional zero-sum normalization
+ * - The difference between standard Quadray and extended 4D± Quadray
+ *
+ * @param {number} scale - Uniform scale factor
+ * @param {Object} options - Configuration options
+ * @param {boolean} options.normalize - Apply zero-sum normalization (default: true)
+ * @param {Array} options.wxyz - Custom vertex coordinates (default: unit tetrahedron)
+ * @returns {Object} - {vertices, edges, faces, wxyz_raw, wxyz_normalized}
+ */
+quadrayTetrahedron: (scale = 1, options = {}) => {
+  const { normalize = true, wxyz = null } = options;
+
+  // Default: unit tetrahedron in Quadray (single active coordinate per vertex)
+  const wxyz_raw = wxyz || [
+    [1, 0, 0, 0],  // W-axis vertex
+    [0, 1, 0, 0],  // X-axis vertex
+    [0, 0, 1, 0],  // Y-axis vertex
+    [0, 0, 0, 1],  // Z-axis vertex
+  ];
+
+  // Optional: Apply zero-sum normalization
+  // Standard: w + x + y + z = 0 (subtracts average from each coordinate)
+  const wxyz_normalized = wxyz_raw.map(([w, x, y, z]) => {
+    if (!normalize) return [w, x, y, z];
+    const sum = w + x + y + z;
+    const avg = sum / 4;
+    return [w - avg, x - avg, y - avg, z - avg];
+  });
+
+  // Convert to Cartesian for THREE.js rendering
+  // Uses Quadray.toCartesian() from rt-math.js
+  const vertices = wxyz_normalized.map(([w, x, y, z]) => {
+    // Basis vectors (normalized to unit length)
+    const W = new THREE.Vector3(1, 1, 1).normalize();
+    const X = new THREE.Vector3(1, -1, -1).normalize();
+    const Y = new THREE.Vector3(-1, 1, -1).normalize();
+    const Z = new THREE.Vector3(-1, -1, 1).normalize();
+
+    // Linear combination
+    return new THREE.Vector3()
+      .addScaledVector(W, w * scale)
+      .addScaledVector(X, x * scale)
+      .addScaledVector(Y, y * scale)
+      .addScaledVector(Z, z * scale);
+  });
+
+  // Standard tetrahedron topology
+  const edges = [
+    [0, 1], [0, 2], [0, 3],
+    [1, 2], [1, 3], [2, 3],
+  ];
+
+  const faces = [
+    [0, 1, 2],
+    [0, 3, 1],
+    [0, 2, 3],
+    [1, 3, 2],
+  ];
+
+  // RT VALIDATION
+  const sampleQ = RT.quadrance(vertices[0], vertices[1]);
+  console.log(`[RT] Quadray Tetrahedron: normalize=${normalize}, scale=${scale}`);
+  console.log(`  WXYZ raw: ${JSON.stringify(wxyz_raw[0])} → ${JSON.stringify(wxyz_raw[3])}`);
+  console.log(`  WXYZ normalized: ${JSON.stringify(wxyz_normalized[0].map(n => n.toFixed(3)))}`);
+  console.log(`  Sample edge Q: ${sampleQ.toFixed(6)}`);
+
+  return {
+    vertices,
+    edges,
+    faces,
+    // Preserve Quadray coordinates for display/inspection
+    wxyz_raw,
+    wxyz_normalized,
+    metadata: {
+      coordinateSystem: 'quadray',
+      normalized: normalize,
+      scale: scale,
+    }
+  };
+},
+
+/**
+ * Deformed Quadray Tetrahedron
+ * Demonstrates that the fourth coordinate carries real geometric information
+ * when zero-sum normalization is NOT applied.
+ *
+ * @param {number} scale - Base scale
+ * @param {number} zStretch - Stretch factor for Z vertex (default: 1 = regular)
+ * @returns {Object} - Geometry with deformed tetrahedron
+ */
+quadrayTetrahedronDeformed: (scale = 1, zStretch = 2) => {
+  // Stretch the Z vertex while keeping W, X, Y at unit distance
+  const wxyz = [
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, zStretch],  // Stretched!
+  ];
+
+  console.log(`[RT] Deformed Quadray Tetrahedron: Z stretched by ${zStretch}x`);
+  console.log(`  Standard tetrahedron: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,1)`);
+  console.log(`  Deformed tetrahedron: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,${zStretch})`);
+  console.log(`  With zero-sum: Z vertex would normalize to (0,0,0,1) — deformation LOST`);
+  console.log(`  Without zero-sum: Z vertex stays at (0,0,0,${zStretch}) — deformation PRESERVED`);
+
+  // Return WITHOUT normalization to preserve deformation
+  return Polyhedra.quadrayTetrahedron(scale, {
+    normalize: false,
+    wxyz: wxyz,
+  });
+},
+```
+
+### 11.5.3 Usage Examples
+
+**Regular Tetrahedron (standard normalized):**
+```javascript
+const regularTet = Polyhedra.quadrayTetrahedron(1, { normalize: true });
+// Vertices at basis vector directions, equal edge lengths
+```
+
+**Regular Tetrahedron (native 4D, no normalization):**
+```javascript
+const nativeTet = Polyhedra.quadrayTetrahedron(1, { normalize: false });
+// Same geometry, but wxyz_normalized preserves original coordinates
+```
+
+**Deformed Tetrahedron (Z-stretched):**
+```javascript
+const stretchedTet = Polyhedra.quadrayTetrahedronDeformed(1, 3);
+// Z vertex at (0,0,0,3) — three times further than others
+// Demonstrates that 4th coordinate carries real geometric information
+```
+
+### 11.5.4 What This Demonstrates
+
+| With normalize: true | With normalize: false |
+|---------------------|----------------------|
+| (1,0,0,0) → (0.75, -0.25, -0.25, -0.25) | (1,0,0,0) → (1,0,0,0) |
+| Zero-sum constraint enforced | Native 4-tuple preserved |
+| Equivalent to standard 3D Quadray | Extended 4D± system |
+| (1,1,1,6) collapses to regular tetrahedron | (1,1,1,6) renders as stretched tetrahedron |
+
+The deformed tetrahedron is the key insight: **the fourth coordinate carries real geometric information that zero-sum normalization destroys.**
+
+### 11.5.5 Rendering Pipeline
+
+```
+WXYZ Definition → [Optional Normalization] → Quadray.toCartesian() → THREE.Vector3 → GPU
+     ↑                    ↑                           ↑                    ↑
+  Your math          Constraint choice          One-time              Rendering
+  (pure Quadray)     (on/off toggle)           conversion            (standard)
+```
+
+The conversion to XYZ happens at the *definition* stage, not during rendering. The GPU receives standard THREE.Vector3 positions—it doesn't know or care that they originated from Quadray coordinates.
+
+**This means:**
+- No performance penalty for Quadray-defined polyhedra
+- All existing rendering, interaction, and Janus inversion works unchanged
+- We can toggle normalization to explore both standard and extended Quadray
+
+---
+
 ## 12. References
 
 ### Primary Sources
@@ -1536,6 +1932,38 @@ Barbour's work proposes that time flows in two directions from a minimal-order "
 - [The Janus Point (Amazon)](https://www.amazon.com/Janus-Point-New-Theory-Time/dp/0465095461)
 - [arXiv critique](https://arxiv.org/pdf/1601.02790)
 
+#### Correspondence with Dr. Julian Barbour (22 January 2026)
+
+In response to an early draft of this work shared by email, Dr. Julian Barbour graciously replied:
+
+> Dear Andy,
+>
+> Thanks for this and for your kind comments. However, I am afraid I am a bit too old and out of your field to grasp the full significance of what you have said. However, I do find things like the Platonic solids very interesting. This is because I'm getting more and more convinced that science should be about shapes rather than dynamics. In fact one can see from early Greek thinking, starting with the myths associated with the constellations, and then the ideas of Plato and the atomists, who according to Lucretius were trying to explain the shapes of microscopic object and creatures of different genera, that very naturally they were trying to understand the origin of shapes. I think it is just possible that the development of dynamics, which happened at about the same time as Lucretius wrote his book when Hipparchus developed the first dynamical theory, his theory of the motion of the Sun around the ecliptic with the rotation of the Earth defining time, may have marked a wrong turn. I'm currently writing a book which will include discussion of that.
+>
+> One other thing that I might say is that I am now not quite so keen on the Janus-point solutions in Newton gravity. That is not because there is anything wrong in what I said about them in my recent book but rather that if one eliminates all the absolute elements with which I would say Newton corrupted his own theory, then all that is left is Big Bang solutions as described in chapter 16 of my book. In this case bidirectional arrows of time are replaced by a monodirectional one.
+>
+> Best wishes and thanks again for your interest,
+>
+> Julian.
+
+**Analysis and Implications for This Work:**
+
+Dr. Barbour's response contains several significant points:
+
+1. **"Science should be about shapes rather than dynamics"** — This observation *strengthens* the relevance of our geometric approach. We are doing precisely this: exploring the shapes of space through tetrahedral geometry rather than tracking motions through time. Barbour's suggestion that Hipparchus's dynamical turn "may have marked a wrong turn" aligns remarkably with Fuller's critique of Cartesian/Newtonian frameworks.
+
+2. **Revised view on Janus Points** — Barbour now favors **monodirectional** Big Bang solutions (Chapter 16 of *The Janus Point*) over bidirectional Janus Point solutions when Newtonian absolute elements are fully eliminated. This is an important clarification of his current thinking.
+
+3. **Our domain is different** — Critically, our geometric extension applies the Janus Point concept to *spatial* rather than *temporal* structure. The geometric Janus Point we describe is a property of tetrahedral coordinate systems—the origin as a transition point between positive and negative dimensional spaces—not a claim about the cosmological arrow of time. Barbour's refinement of his temporal theory does not affect our spatial/geometric application.
+
+4. **Shapes vs. Dynamics alignment** — Barbour's intuition that science took a "wrong turn" toward dynamics resonates with:
+   - Fuller's emphasis on structure over motion
+   - Wildberger's algebraic approach to geometry (avoiding limits and infinitesimals)
+   - Our use of Quadrance and Spread rather than distance and angle
+   - The fundamental claim that the tetrahedron (a shape) is the minimum system, not any dynamic process
+
+We are grateful for Dr. Barbour's engagement and particularly for his encouragement that "science should be about shapes rather than dynamics." This view aligns naturally with everything we are attempting here.
+
 **CPT Symmetry (Lüders, Pauli, Schwinger - 1951-1954)**
 The CPT theorem describes a theoretical "mirror universe" where charge, parity, and time are simultaneously inverted. This is established physics but concerns antimatter and mirrored particle interactions, not geometric scaling through an origin into negative dimensionality.
 - [CPT Symmetry (Wikipedia)](https://en.wikipedia.org/wiki/CPT_symmetry)
@@ -1635,6 +2063,67 @@ The current ARTexplorer demonstrates Janus Inversion through XYZ rendering, but 
 
 ---
 
-**Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation + theoretical context
+## 14. Quadray Demonstrators UI Controls
 
-**Last Updated:** 2026-01-22
+**Added:** 2026-01-24
+
+The Quadray Tetrahedron demonstrators are accessible via the Forms panel in the ARTexplorer UI.
+
+### 14.1 Control Panel Location
+
+In the Forms panel (left side), under the **"Quadray Demonstrators"** divider:
+
+| Control | Description |
+|---------|-------------|
+| **Quadray Tetrahedron (4D Native)** | Checkbox to show/hide the regular Quadray tetrahedron |
+| **Normalize** | Toggle zero-sum normalization on/off (visible when tetrahedron enabled) |
+| **Quadray Tetrahedron Deformed** | Checkbox to show/hide the deformed tetrahedron |
+| **Z-Stretch** | Slider (0.5 to 4.0) controlling the fourth vertex stretch factor |
+
+### 14.2 Visual Appearance
+
+| Form | Color | Notes |
+|------|-------|-------|
+| Quadray Tetrahedron | Bright teal/mint (#00ff88) | Vertices at (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,1) |
+| Quadray Tetrahedron Deformed | Coral-pink (#ff5577) | Z vertex stretched by slider value |
+
+### 14.3 Interactive Exploration
+
+**Normalization Toggle Experiment:**
+1. Enable "Quadray Tetrahedron (4D Native)"
+2. Toggle the "Normalize" checkbox
+3. Observe: With normalize OFF, the tetrahedron uses raw WXYZ coordinates
+4. With normalize ON, zero-sum normalization is applied (standard Quadray)
+
+**Deformation Experiment:**
+1. Enable "Quadray Tetrahedron Deformed"
+2. Adjust the Z-Stretch slider from 0.5 to 4.0
+3. Observe: One vertex moves closer or further from the other three
+4. This demonstrates that the 4th coordinate carries **real geometric information** when normalization is NOT applied
+
+### 14.4 Console Logging
+
+Both demonstrators log RT validation data to the browser console:
+
+```
+[RT] Quadray Tetrahedron: normalize=true, scale=1
+  WXYZ raw: [1,0,0,0] → [0,0,0,1]
+  WXYZ normalized: ["0.750","-0.250","-0.250","-0.250"]
+  Sample edge Q: 1.333333
+
+[RT] Deformed Quadray Tetrahedron: Z stretched by 2x
+  Standard tetrahedron: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,1)
+  Deformed tetrahedron: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,2)
+  With zero-sum: Z vertex would normalize to (0,0,0,1) — deformation LOST
+  Without zero-sum: Z vertex stays at (0,0,0,2) — deformation PRESERVED
+```
+
+### 14.5 Node Spheres
+
+Both Quadray demonstrators render node spheres at each vertex. The nodes follow the global node visibility and opacity settings from the Visual Options panel.
+
+---
+
+**Document Status:** Complete polyhedra reference with RT-pure operations + Janus Inversion implementation + Quadray Demonstrators UI
+
+**Last Updated:** 2026-01-24

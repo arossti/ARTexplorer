@@ -51,7 +51,7 @@ This work draws significant inspiration from Julian Barbour's \emph{The Janus Po
 
 Barbour's insight that the Big Bang may represent not a beginning but a \emph{pivot point}---the Janus Point---from which time extends in two directions, provides the conceptual foundation for what we propose here: that spatial geometry may possess an analogous structure, with the origin serving as a dimensional transition point between positive and negative geometric spaces.
 
-We acknowledge that Barbour's work addresses \emph{temporal} reversal and the arrow of time, not spatial inversion. What follows is an independent extension of the Janus Point concept to geometry, developed through the lens of R. Buckminster Fuller's synergetic geometry and N.J. Wildberger's rational trigonometry. We present this not as established physics but as a geometric framework awaiting rigorous formalization.
+We acknowledge that Barbour's work addresses \emph{temporal} reversal and the arrow of time, not spatial inversion. What follows is an independent extension of the Janus Point concept to geometry, developed through the lens of R. Buckminster Fuller's synergetic geometry, Kirby Urner's Quadray concepts and N.J. Wildberger's rational trigonometry. We present this not as established physics but as a geometric framework awaiting rigorous formalization.
 
 %==============================================================================
 \section{Tetrahedral (Quadray) Coordinates}
@@ -75,11 +75,150 @@ The four basis vectors $\mathbf{W}, \mathbf{X}, \mathbf{Y}, \mathbf{Z}$ point fr
 
 \begin{enumerate}[label=(\roman*)]
 \item \textbf{Vectorial Neutrality:} $\mathbf{W} + \mathbf{X} + \mathbf{Y} + \mathbf{Z} = \mathbf{0}$ (sum to zero in Cartesian space)
-\item \textbf{Tetrahedral Angle:} The angle between any pair of basis vectors is $\arccos(-\frac{1}{3}) \approx 109.47°$
+\item \textbf{Tetrahedral Angle:} The angle between any pair of basis vectors is $\arccos(-\frac{1}{3}) \approx 109.47^\circ$
 \item \textbf{Spread:} Using rational trigonometry, the spread between any pair is $s = \frac{8}{9}$
 \item \textbf{Zero-Sum Constraint:} For any point $P = (w, x, y, z)$, normalization requires $w + x + y + z = k$ for some constant $k$, reducing 4 coordinates to 3 effective degrees of freedom
 \item \textbf{All-Positive Spanning:} Critically, all points in ordinary 3D space can be expressed with \emph{non-negative} coordinates only
 \end{enumerate}
+
+\subsection{The Standard Quadray Rules and Our Extension}
+
+Kirby Urner's introduction to Quadray coordinates\footnote{\url{http://www.grunch.net/synergetics/quadintro.html}} presents two fundamental rules:
+
+\begin{enumerate}
+\item \textbf{Rule 1:} ``At least one of the four quadrays is always zero''
+\item \textbf{Rule 2:} ``Only positive numbers (and zero) are needed for any ray''
+\end{enumerate}
+
+These rules follow from the vectorial neutrality property: since $\mathbf{W} + \mathbf{X} + \mathbf{Y} + \mathbf{Z} = \mathbf{0}$, it follows that $-\mathbf{W} = \mathbf{X} + \mathbf{Y} + \mathbf{Z}$. To move in the ``opposite'' direction of W, you don't need a negative W coordinate---you simply use the sum of the other three basis vectors. Any point in 3D space lies in the positive span of at least three of the four basis vectors, making the fourth superfluous and one coordinate always zero.
+
+\textbf{Standard Quadray implementations enforce coordinate substitution:}
+\begin{equation}
+(-1, 0, 0, 0) \quad \longrightarrow \quad (0, 1, 1, 1) \quad \text{(equivalent position, all-positive form)}
+\end{equation}
+
+This substitution maintains the all-positive rule by replacing negative coordinates with their equivalent positive-sum representation.
+
+\begin{observation}[ARTexplorer's Intentional Extension]
+ARTexplorer \textbf{deliberately breaks} the all-positive rule to enable continuous motion through the origin. When you drag a form along $-\mathbf{W}$:
+\begin{itemize}
+\item The W coordinate continuously decreases through zero
+\item It naturally becomes negative
+\item We do \textbf{not} substitute $(0, 1, 1, 1)$---we preserve the signed coordinate path
+\end{itemize}
+This is not a bug or oversight. Coordinate substitution would obscure the geometry of scaling through origin and make Janus Inversion impossible to implement as a continuous operation.
+\end{observation}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{4cm}p{4cm}p{4cm}}
+\toprule
+\textbf{Aspect} & \textbf{Standard Quadray (Urner/Ace)} & \textbf{ARTexplorer Extended}\\
+\midrule
+Negative coordinates & Prohibited (substitute) & Permitted (meaningful)\\
+At axis crossing & Replace with positive sum & Continue smoothly\\
+Zero-sum constraint & Enforced (3 DOF) & Optional (native 4 DOF)\\
+Janus Inversion & Not applicable & Core feature\\
+Compatible with XYZ & Isomorphic & Extended (4D$^\pm$)\\
+\bottomrule
+\end{tabular}
+\caption{Standard Quadray vs.\ ARTexplorer's extended framework}
+\end{table}
+
+The standard Quadray rules define a \textbf{coordinate language} for ordinary 3D space---elegant, sufficient, and isomorphic to Cartesian. Our extension uses Quadray as a \textbf{foundation} for exploring regions and operations that the all-positive constraint deliberately excludes. We honor Urner's framework by understanding exactly what it achieves and why; we extend it by asking what becomes visible when the constraint is relaxed.
+
+\subsection{Native Degrees of Freedom: 3, 4, or 5?}
+
+Quadray coordinates are conventionally described as providing 3 degrees of freedom. This arises from the \textbf{zero-sum constraint}: if $W + X + Y + Z = k$ for some constant $k$, then knowing any three coordinates determines the fourth. This constraint is imposed to ensure Quadray maps onto Cartesian 3D space---it is a \emph{compatibility requirement}, not an intrinsic property of tetrahedral coordinates.
+
+However, the tetrahedron---the minimum structural system capable of enclosing space---requires \textbf{four vertices} to define. You cannot specify a tetrahedron with three coordinates; the fourth is not redundant information but essential geometric content.
+
+\begin{observation}[The Deformed Tetrahedron]
+Consider two points: $(1, 1, 1, 1)$ and $(1, 1, 1, 6)$. With the zero-sum constraint, these would be normalized to equivalent positions. But they describe fundamentally different geometric relationships: the first is symmetric (equidistant from all basis directions), the second represents a \textbf{deformed tetrahedron} stretched along the Z-axis. The fourth coordinate carries real information that the constraint destroys.
+\end{observation}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccp{7cm}}
+\toprule
+\textbf{Framing} & \textbf{DOF} & \textbf{What it describes}\\
+\midrule
+Quadray as XYZ substitute & 3 & Zero-sum constraint enforced; equivalent to Cartesian\\
+Quadray as native system & \textbf{4} & Four independent coordinates; no external constraint\\
+Quadray with Janus extension & \textbf{4 + 1} & Four coordinates plus dimensional polarity ($\pm$)\\
+\bottomrule
+\end{tabular}
+\caption{Degrees of freedom under different interpretations}
+\end{table}
+
+\textbf{The Fifth Degree: Dimensional Polarity (License Pending).} If we accept that positive and negative Quadray spaces (4D$^+$ and 4D$^-$) represent distinct dimensional realms separated by the Janus Point at origin, then a complete specification requires not only the four coordinates but also \emph{which side of origin} the point occupies. This dimensional polarity is not a continuous degree of freedom but a discrete binary state---yet it represents information that four unsigned coordinates cannot capture.
+
+Whether this constitutes a ``fifth dimension'' or merely a binary flag on a 4D system is a matter of interpretation. No dimensional licensing board exists to adjudicate the question. The framework is coherent either way.\footnote{Application submitted to the Universal Dimensional Licensing Board, 2026.January.Earthtime. Awaiting response.}
+
+The native Quadray system, without the zero-sum constraint, is a \textbf{4-dimensional coordinate system} that can describe tetrahedral deformations, asymmetries, and (with signed values) passage through the dimensional Janus Point. The 3 DOF interpretation is a projection onto Cartesian-compatible space---useful, but not the full picture.
+
+\subsection{Critical Clarification: Negative Coordinates $\neq$ Negative Dimensional Space}
+
+\textbf{For mathematicians and careful readers:} There is a crucial distinction between \emph{negative coordinate values} and \emph{negative dimensional space}. Conflating these would be a category error.
+
+When you translate an object along the $-W$ direction (past the origin on the W axis), the W coordinate becomes negative. But you have \textbf{not} changed dimensional state---you are still in positive dimensional space, just located in a region where one coordinate happens to be negative. This is exactly analogous to Cartesian coordinates: moving from $X = +5$ to $X = -5$ doesn't transport you to another dimension.
+
+\textbf{The 16 Regions of Full Signed Quadray Space.} In Cartesian XYZ, we have $2^3 = 8$ octants. In full signed WXYZ (without zero-sum constraint), we have $2^4 = 16$ regions:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cccp{4.5cm}}
+\toprule
+\textbf{Sign Pattern} & \textbf{\# Neg} & \textbf{Dimensional State} & \textbf{Notes}\\
+\midrule
+$(+,+,+,+)$ & 0 & \textbf{4D$^+$} & Canonical positive space\\
+$(+,+,+,-)$ & 1 & 4D$^+$ & Ordinary space (one negative)\\
+$(+,+,-,-)$ & 2 & 4D$^+$ & Ordinary space (two negative)\\
+$(+,-,-,-)$ & 3 & 4D$^+$ & Ordinary space (three negative)\\
+$(-,-,-,-)$ & 4 & \textbf{4D$^-$} & Canonical negative space\\
+\bottomrule
+\end{tabular}
+\caption{The 16 regions of signed Quadray space (5 representative patterns shown; 11 additional permutations exist for mixed-sign cases)}
+\end{table}
+
+\textbf{What Triggers Janus Inversion?} The Janus Point transition occurs \textbf{only} when passing between the two canonical regions: $(+,+,+,+) \longleftrightarrow (-,-,-,-)$. This happens through \textbf{scaling through zero}---the form itself collapses through the origin and re-emerges inverted---NOT through translation past zero on individual axes.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{4cm}p{4.5cm}c}
+\toprule
+\textbf{Operation} & \textbf{Effect} & \textbf{State Change?}\\
+\midrule
+Translate along $-W$ & W goes negative, others unchanged & \textbf{NO}\\
+Translate along $-W$, $-X$ & W and X go negative & \textbf{NO}\\
+Scale uniformly through zero & ALL coordinates pass through zero & \textbf{YES}\\
+\bottomrule
+\end{tabular}
+\caption{Translation vs. scaling: only uniform scaling through zero triggers dimensional inversion}
+\end{table}
+
+The 14 mixed-sign regions are simply \textbf{ordinary navigable space}---they're ``over there'' relative to origin, but they're not dimensionally inverted. This is exactly how ARTexplorer behaves: translation allows negative coordinates without Janus effects; scaling through zero triggers the full transition.
+
+\subsection{Summary: The Full Dimensional Accounting}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cccp{5cm}}
+\toprule
+\textbf{Aspect} & \textbf{Count} & \textbf{Type} & \textbf{Notes}\\
+\midrule
+Basis vectors & 4 & --- & W, X, Y, Z\\
+Axial directions & 8 & --- & $\pm$W, $\pm$X, $\pm$Y, $\pm$Z\\
+Spatial regions & 16 & --- & $2^4$ sign combinations\\
+Continuous DOF & \textbf{4} & Continuous & Position in tetrahedral space\\
+Dimensional polarity & \textbf{1} & Binary & 4D$^+$ or 4D$^-$\\
+\textbf{Total specification} & \textbf{4 + 1} & Mixed & 4 continuous + 1 binary\\
+\bottomrule
+\end{tabular}
+\caption{Complete dimensional accounting for the Quadray system}
+\end{table}
+
+Whether to call this a ``5-dimensional system'' is a matter of convention. The dimensional polarity is not a continuous degree of freedom---it's a discrete binary state. We prefer the notation \textbf{4D$^\pm$} as the most precise description: a 4-dimensional continuous space with a discrete positive/negative dimensional state.
 
 \subsection{The Unit Tetrahedron}
 
@@ -171,17 +310,18 @@ R. Buckminster Fuller criticized ``Up'' and ``Down'' as flat-earth artifacts. On
 A form with all-negative Quadray coordinates has not merely ``moved to the other side''---it has passed \emph{through} the origin into what we term \textbf{negative dimensional space} (4D$^-$).
 
 
-\begin{figure}
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.75\linewidth]{Screenshot 2026-01-22 at 12.03.30 PM.png}
-    \caption{Our Quadray Basis vector with Tetrahedral Arrows point Outwards indicating Positive space. }
-    \label{fig:placeholder}
+    \caption{Quadray basis vectors with tetrahedral arrows pointing outward, indicating positive dimensional space (4D$^+$).}
+    \label{fig:positive-space}
 \end{figure}
-\begin{figure}
+
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.75\linewidth]{Screenshot 2026-01-22 at 12.03.17 PM.png}
-    \caption{Inversion reverses tetrahedral coordinates to its dual, background converts to white, Tetrahedral basis vector arrows direct to origin as we have passed into negative dimensionality}
-    \label{fig:placeholder}
+    \caption{After Janus Inversion: tetrahedral coordinates invert to dual form, background converts to white, basis vector arrows point toward origin indicating negative dimensional space (4D$^-$).}
+    \label{fig:negative-space}
 \end{figure}
 %==============================================================================
 \section{The Cartesian Blind Spot}
@@ -355,6 +495,14 @@ Special thanks to:
 \item Enzyme APD, for encouraging the pursuit of these ideas against all odds
 \end{itemize}
 
+\subsection*{Note on the Janus Point (January 2026)}
+
+In correspondence with the author (22 January 2026, by email), Dr.\ Julian Barbour graciously responded to an early draft of this work. He indicated that he now favors \textbf{monodirectional} Big Bang solutions (as described in Chapter 16 of \emph{The Janus Point}) over bidirectional Janus Point solutions when Newtonian absolute elements are fully eliminated from the theory.
+
+Our geometric extension---applying the Janus Point concept to spatial rather than temporal structure---operates in a different domain and does not depend on the cosmological resolution of this question. The geometric Janus Point we describe is a property of tetrahedral coordinate systems, not a claim about the arrow of time.
+
+We are grateful for Dr.\ Barbour's engagement and particularly for his observation that ``science should be about shapes rather than dynamics''---a view that aligns naturally with our tetrahedral geometric approach and with Fuller's emphasis on structure over motion.
+
 %==============================================================================
 \section*{References}
 %==============================================================================
@@ -366,8 +514,8 @@ Special thanks to:
 \item Wildberger, N.J. (2005). \emph{Divine Proportions: Rational Trigonometry to Universal Geometry}. Wild Egg Books.
 \item CPT Symmetry. \emph{Wikipedia}. \url{https://en.wikipedia.org/wiki/CPT_symmetry}
 \item Mandelbrot, B. ``Negative Fractal Dimensions and Multifractals.'' Yale University. \url{https://users.math.yale.edu/users/mandelbrot/web_pdfs/123negativeFractalDimensions.pdf}
-\item Kirby Urner - Quadray Introduction(http://www.grunch.net/synergetics/quadintro.html)-
-\item Tom Ace - Quadray Coordinates(http://minortriad.com/quadray.html) (C++ implementation)
+\item Urner, K. ``Quadray Coordinates: A Logical Alternative.'' \url{http://www.grunch.net/synergetics/quadintro.html}
+\item Ace, T. ``Quadray Coordinates.'' \url{http://minortriad.com/quadray.html} (C++ implementation)
 \end{enumerate}
 
 \vfill
