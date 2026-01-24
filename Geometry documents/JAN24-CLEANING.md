@@ -35,6 +35,21 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 - [x] Support geodesic parameters (frequency, projection)
 - [x] Add error handling and progress logging
 
+### 0.4 Quadray Parameter Preservation
+
+- [x] Store Quadray parameters (normalize, zStretch, wxyz) in userData during rendering
+- [x] Capture parameters in rt-state-manager.js createInstance()
+- [x] Pass Quadray parameters during instance restoration
+- [x] Update createPolyhedronByType to accept Quadray options
+
+### 0.5 Environment State Export/Import
+
+- [x] Export polyhedra checkbox states (all forms at origin)
+- [x] Export slider values (scale, opacity, matrix sizes, frequencies)
+- [x] Restore slider values BEFORE checkboxes (correct rendering order)
+- [x] Restore checkbox states and trigger updateGeometry()
+- [x] Separation maintained: forms restored via UI state, not as instances
+
 ### 0.3 Supported Polyhedron Types
 
 **Regular:** cube, tetrahedron, dualTetrahedron, octahedron, icosahedron, dodecahedron, dualIcosahedron, cuboctahedron, rhombicDodecahedron

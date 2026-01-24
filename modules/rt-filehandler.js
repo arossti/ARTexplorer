@@ -114,14 +114,73 @@ export const RTFileHandler = {
       document.getElementById("cartesianTessSlider")?.value || 10
     );
 
-    // Get active form state
+    // Get polyhedra checkbox states (forms visible at origin)
+    const polyhedraCheckboxes = {
+      // Regular polyhedra
+      showCube: document.getElementById("showCube")?.checked || false,
+      showTetrahedron: document.getElementById("showTetrahedron")?.checked || false,
+      showDualTetrahedron: document.getElementById("showDualTetrahedron")?.checked || false,
+      showOctahedron: document.getElementById("showOctahedron")?.checked || false,
+      showIcosahedron: document.getElementById("showIcosahedron")?.checked || false,
+      showDodecahedron: document.getElementById("showDodecahedron")?.checked || false,
+      showDualIcosahedron: document.getElementById("showDualIcosahedron")?.checked || false,
+      showCuboctahedron: document.getElementById("showCuboctahedron")?.checked || false,
+      showRhombicDodecahedron: document.getElementById("showRhombicDodecahedron")?.checked || false,
+      // Geodesic polyhedra
+      showGeodesicTetrahedron: document.getElementById("showGeodesicTetrahedron")?.checked || false,
+      showGeodesicDualTetrahedron: document.getElementById("showGeodesicDualTetrahedron")?.checked || false,
+      showGeodesicOctahedron: document.getElementById("showGeodesicOctahedron")?.checked || false,
+      showGeodesicIcosahedron: document.getElementById("showGeodesicIcosahedron")?.checked || false,
+      showGeodesicDualIcosahedron: document.getElementById("showGeodesicDualIcosahedron")?.checked || false,
+      // Quadray polyhedra
+      showQuadrayTetrahedron: document.getElementById("showQuadrayTetrahedron")?.checked || false,
+      showQuadrayTetraDeformed: document.getElementById("showQuadrayTetraDeformed")?.checked || false,
+      // Planar matrices
+      showCubeMatrix: document.getElementById("showCubeMatrix")?.checked || false,
+      showTetMatrix: document.getElementById("showTetMatrix")?.checked || false,
+      showOctaMatrix: document.getElementById("showOctaMatrix")?.checked || false,
+      showCuboctahedronMatrix: document.getElementById("showCuboctahedronMatrix")?.checked || false,
+      showRhombicDodecMatrix: document.getElementById("showRhombicDodecMatrix")?.checked || false,
+      // Radial matrices
+      showRadialCubeMatrix: document.getElementById("showRadialCubeMatrix")?.checked || false,
+      showRadialRhombicDodecMatrix: document.getElementById("showRadialRhombicDodecMatrix")?.checked || false,
+      showRadialTetrahedronMatrix: document.getElementById("showRadialTetrahedronMatrix")?.checked || false,
+      showRadialOctahedronMatrix: document.getElementById("showRadialOctahedronMatrix")?.checked || false,
+      showRadialCuboctahedronMatrix: document.getElementById("showRadialCuboctahedronMatrix")?.checked || false,
+      // Basis vectors
+      showCartesianBasis: document.getElementById("showCartesianBasis")?.checked || false,
+      showQuadray: document.getElementById("showQuadray")?.checked || false,
+    };
+
+    // Get slider values
+    const sliderValues = {
+      // Scale sliders
+      scaleSlider: parseFloat(document.getElementById("scaleSlider")?.value || "1"),
+      tetScaleSlider: parseFloat(document.getElementById("tetScaleSlider")?.value || "1"),
+      opacitySlider: parseFloat(document.getElementById("opacitySlider")?.value || "0.25"),
+      nodeOpacitySlider: parseFloat(document.getElementById("nodeOpacitySlider")?.value || "0.25"),
+      // Planar matrix size sliders
+      cubeMatrixSizeSlider: parseInt(document.getElementById("cubeMatrixSizeSlider")?.value || "1"),
+      tetMatrixSizeSlider: parseInt(document.getElementById("tetMatrixSizeSlider")?.value || "1"),
+      octaMatrixSizeSlider: parseInt(document.getElementById("octaMatrixSizeSlider")?.value || "1"),
+      cuboctaMatrixSizeSlider: parseInt(document.getElementById("cuboctaMatrixSizeSlider")?.value || "1"),
+      rhombicDodecMatrixSizeSlider: parseInt(document.getElementById("rhombicDodecMatrixSizeSlider")?.value || "1"),
+      // Radial matrix frequency sliders
+      radialCubeFreqSlider: parseInt(document.getElementById("radialCubeFreqSlider")?.value || "1"),
+      radialRhombicDodecFreqSlider: parseInt(document.getElementById("radialRhombicDodecFreqSlider")?.value || "1"),
+      radialTetFreqSlider: parseInt(document.getElementById("radialTetFreqSlider")?.value || "1"),
+      radialOctFreqSlider: parseInt(document.getElementById("radialOctFreqSlider")?.value || "1"),
+      radialVEFreqSlider: parseInt(document.getElementById("radialVEFreqSlider")?.value || "1"),
+    };
+
+    // Get active form state (legacy, kept for backwards compatibility)
     const formButtons = document.querySelectorAll(".form-btn");
     const activeFormButton = Array.from(formButtons).find(btn =>
       btn.classList.contains("active")
     );
     const activeForm = activeFormButton?.dataset.form || null;
 
-    // Get form visibility states
+    // Get form visibility states (legacy)
     const formStates = {};
     formButtons.forEach(btn => {
       const formType = btn.dataset.form;
@@ -151,6 +210,11 @@ export const RTFileHandler = {
             tessellation: cartesianTess,
           },
         },
+        // Polyhedra checkbox states (forms at origin)
+        polyhedraCheckboxes: polyhedraCheckboxes,
+        // Slider values (scale, opacity, matrix sizes, frequencies)
+        sliderValues: sliderValues,
+        // Legacy form states (kept for backwards compatibility)
         forms: formStates,
         activeForm: activeForm,
       },
@@ -266,6 +330,93 @@ export const RTFileHandler = {
         document
           .getElementById("cartesian-checkbox")
           ?.dispatchEvent(rebuildEvent);
+      }
+
+      // Restore slider values FIRST (before checkboxes, so geometry uses correct values)
+      if (stateData.environment?.sliderValues) {
+        const sliders = stateData.environment.sliderValues;
+
+        // Scale and opacity sliders
+        if (sliders.scaleSlider !== undefined) {
+          const el = document.getElementById("scaleSlider");
+          if (el) el.value = sliders.scaleSlider;
+        }
+        if (sliders.tetScaleSlider !== undefined) {
+          const el = document.getElementById("tetScaleSlider");
+          if (el) el.value = sliders.tetScaleSlider;
+        }
+        if (sliders.opacitySlider !== undefined) {
+          const el = document.getElementById("opacitySlider");
+          if (el) el.value = sliders.opacitySlider;
+        }
+        if (sliders.nodeOpacitySlider !== undefined) {
+          const el = document.getElementById("nodeOpacitySlider");
+          if (el) el.value = sliders.nodeOpacitySlider;
+        }
+        // Planar matrix size sliders
+        if (sliders.cubeMatrixSizeSlider !== undefined) {
+          const el = document.getElementById("cubeMatrixSizeSlider");
+          if (el) el.value = sliders.cubeMatrixSizeSlider;
+        }
+        if (sliders.tetMatrixSizeSlider !== undefined) {
+          const el = document.getElementById("tetMatrixSizeSlider");
+          if (el) el.value = sliders.tetMatrixSizeSlider;
+        }
+        if (sliders.octaMatrixSizeSlider !== undefined) {
+          const el = document.getElementById("octaMatrixSizeSlider");
+          if (el) el.value = sliders.octaMatrixSizeSlider;
+        }
+        if (sliders.cuboctaMatrixSizeSlider !== undefined) {
+          const el = document.getElementById("cuboctaMatrixSizeSlider");
+          if (el) el.value = sliders.cuboctaMatrixSizeSlider;
+        }
+        if (sliders.rhombicDodecMatrixSizeSlider !== undefined) {
+          const el = document.getElementById("rhombicDodecMatrixSizeSlider");
+          if (el) el.value = sliders.rhombicDodecMatrixSizeSlider;
+        }
+        // Radial matrix frequency sliders
+        if (sliders.radialCubeFreqSlider !== undefined) {
+          const el = document.getElementById("radialCubeFreqSlider");
+          if (el) el.value = sliders.radialCubeFreqSlider;
+        }
+        if (sliders.radialRhombicDodecFreqSlider !== undefined) {
+          const el = document.getElementById("radialRhombicDodecFreqSlider");
+          if (el) el.value = sliders.radialRhombicDodecFreqSlider;
+        }
+        if (sliders.radialTetFreqSlider !== undefined) {
+          const el = document.getElementById("radialTetFreqSlider");
+          if (el) el.value = sliders.radialTetFreqSlider;
+        }
+        if (sliders.radialOctFreqSlider !== undefined) {
+          const el = document.getElementById("radialOctFreqSlider");
+          if (el) el.value = sliders.radialOctFreqSlider;
+        }
+        if (sliders.radialVEFreqSlider !== undefined) {
+          const el = document.getElementById("radialVEFreqSlider");
+          if (el) el.value = sliders.radialVEFreqSlider;
+        }
+        console.log("✅ Slider values restored");
+      }
+
+      // Restore polyhedra checkbox states (forms at origin)
+      if (stateData.environment?.polyhedraCheckboxes) {
+        const checkboxes = stateData.environment.polyhedraCheckboxes;
+
+        // Iterate through all saved checkbox states and restore them
+        Object.keys(checkboxes).forEach(checkboxId => {
+          const el = document.getElementById(checkboxId);
+          if (el) {
+            el.checked = checkboxes[checkboxId];
+          }
+        });
+
+        console.log("✅ Polyhedra checkbox states restored");
+
+        // Trigger updateGeometry to render the restored forms
+        if (window.renderingAPI?.updateGeometry) {
+          window.renderingAPI.updateGeometry();
+          console.log("✅ Geometry updated with restored form states");
+        }
       }
 
       // Restore color palette (environment settings)
