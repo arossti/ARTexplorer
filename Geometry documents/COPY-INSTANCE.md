@@ -4,7 +4,7 @@
 
 **Branch:** `DRAG-COPY`
 **Created:** January 2026
-**Status:** Planning
+**Status:** In Progress (v1 implemented, refinements needed)
 
 ---
 
@@ -14,174 +14,179 @@ Implement macOS-native Option+click drag behavior to create copies of polyhedra 
 
 ---
 
-## Current Architecture Summary
+## Current Implementation Status (v1)
+
+### What Works
+- [x] Alt/Option key detected on mousedown
+- [x] Original transform stored at drag start
+- [x] Instance created at release position via `RTStateManager.createInstance()`
+- [x] Original restored to starting position after copy
+- [x] NOW counter updates
+- [x] Works with gumball axis drag (when Move/Scale/Rotate tool active)
+- [x] Works with free movement drag (clicking on selected poly body)
+
+### Known Issues / Refinements Needed
+
+1. **Alt must be held throughout drag** (not just on mousedown)
+   - Currently: Alt checked only at mousedown
+   - Expected: Alt must be held at mouseup to confirm copy intent
+   - If Alt released mid-drag, should cancel copy mode
+
+2. **Escape should cancel drag-copy cleanly**
+   - Currently: Escape doesn't clear `isDragCopying` state
+   - Result: Next click deposits an unintended instance
+   - Fix: Add escape key handler to reset `isDragCopying = false` and restore original position
+
+3. **Alt-click should auto-engage move mode**
+   - Currently: Requires Move tool to be active first (left-click = orbit otherwise)
+   - Expected: Alt+click on selected polyhedron should implicitly start move+copy
+   - This bypasses the need to manually activate Move tool first
+
+4. **Multiple copies while Alt held**
+   - Currently: Works, but feels wrong due to issues #1-3
+   - Expected: Each drag-release cycle while Alt held creates a copy
+   - With fixes above, this becomes the natural continuous-copy workflow
+
+---
+
+## Architecture Summary
 
 ### Key Locations
 
 | Component | File | Line Range | Purpose |
 |-----------|------|------------|---------|
-| Gumball initialization | rt-init.js | ~2633 | `initGumballEventListeners()` |
-| Mouse drag handling | rt-init.js | ~2640-3289 | `onMouseDown`, `onMouseMove`, `onMouseUp` |
-| Selection logic | rt-init.js | ~2170, ~2233 | Click-to-select, `getSelectedPolyhedra()` |
-| NOW button handler | rt-init.js | ~1259 | Deposit logic reference |
-| Editing basis (gumball) | rt-init.js | ~2570 | `createEditingBasis()` |
+| Drag-copy state vars | rt-init.js | ~1259 | `isDragCopying`, `dragCopyOriginal*` |
+| Gumball mousedown | rt-init.js | ~2682 | Alt detection for axis drag |
+| Free move mousedown | rt-init.js | ~2769 | Alt detection for body drag |
+| Free move mouseup | rt-init.js | ~3444 | Copy creation (free move) |
+| Gumball mouseup | rt-init.js | ~3565 | Copy creation (axis drag) |
 | Instance creation | rt-state-manager.js | ~162 | `RTStateManager.createInstance()` |
-| Form reset | rt-state-manager.js | ~465 | `RTStateManager.resetForm()` |
 
-### Current Selection State
-
-- `currentSelection`: Single THREE.Group (Form or Instance)
-- Selection triggered by click → raycaster → `selectPolyhedron(parentGroup)`
-- `userData.isInstance`: Boolean distinguishing instances from forms
-- `userData.instanceId`: Unique ID for instances
-
-### Current Drag Flow
-
-1. **MOUSEDOWN**: Check tool active → raycast handles → set `isDragging` or `isFreeMoving`
-2. **MOUSEMOVE**: Apply transform to selected polyhedra, update UI
-3. **MOUSEUP**: Apply snapping, clear drag state
-
-### Existing Instance Creation (NOW Button)
+### State Variables (added in v1)
 
 ```javascript
-// Current deposit flow (rt-init.js ~1259)
-RTStateManager.createInstance(poly, scene);  // Clone at current position
-RTStateManager.resetForm(poly);              // Reset form to origin
+let isDragCopying = false;              // Alt/Option key held during drag
+let dragCopyOriginalPosition = new THREE.Vector3();
+let dragCopyOriginalQuaternion = new THREE.Quaternion();
+let dragCopyOriginalScale = new THREE.Vector3();
 ```
 
 ---
 
-## Implementation Plan
+## Refinement Plan
 
-### Phase 1: Modifier Key Detection
+### Phase 1: Alt-held-at-release check
 
 **File:** `rt-init.js`
-**Location:** `onMouseDown()` handler (~2640)
+**Locations:** Both mouseup handlers (~3444 and ~3565)
 
-**Changes:**
-1. Detect `event.altKey` (Option on macOS, Alt on Windows)
-2. Set new state flag: `isDragCopying = true`
-3. Only enable when:
-   - A polyhedron is selected (`currentSelection !== null`)
-   - A tool is active (move/scale/rotate) OR clicking on selected polyhedron body
-   - Alt/Option key is held
-
-**State Variables to Add:**
+**Change:**
 ```javascript
-let isDragCopying = false;      // Opt-drag copy mode active
-let dragCopySource = null;       // Reference to original being copied
-let dragCopyPreview = null;      // Visual preview of copy (optional)
+// Only create copy if Alt is STILL held at release
+if (isDragCopying && currentSelection && event.altKey) {
+  // ... existing copy logic
+}
+
+// Always clear isDragCopying on mouseup
+isDragCopying = false;
 ```
 
-### Phase 2: Visual Feedback (Optional)
+### Phase 2: Escape key cancellation
 
 **File:** `rt-init.js`
-**Location:** `onMouseMove()` handler (~2830)
+**Location:** Add to existing keydown handler or create new one
 
-**Changes:**
-1. If `isDragCopying`:
-   - Show translucent preview of the copied form at cursor position
-   - OR change cursor style to indicate copy mode
-   - OR show "+ Copy" badge near cursor
+**Change:**
+```javascript
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && isDragCopying) {
+    // Cancel drag-copy mode
+    isDragCopying = false;
 
-**Consideration:** Keep it simple initially. The existing gumball visual may be sufficient feedback.
+    // Restore original position
+    if (currentSelection) {
+      currentSelection.position.copy(dragCopyOriginalPosition);
+      currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
+      currentSelection.scale.copy(dragCopyOriginalScale);
+    }
 
-### Phase 3: Copy on Release
+    // Update editing basis
+    if (editingBasis) {
+      editingBasis.position.copy(dragCopyOriginalPosition);
+    }
 
-**File:** `rt-init.js`
-**Location:** `onMouseUp()` handler (~3298)
+    console.log("❌ DRAG-COPY cancelled via Escape");
+  }
+});
+```
 
-**Changes:**
-1. If `isDragCopying` and drag completed:
-   ```javascript
-   // Before clearing drag state
-   if (isDragCopying && dragCopySource) {
-     // Create instance at current (dragged) position
-     RTStateManager.createInstance(dragCopySource, scene);
-
-     // Reset source to original position (stored at drag start)
-     dragCopySource.position.copy(dragStartPosition);
-     dragCopySource.quaternion.copy(dragStartQuaternion);
-     dragCopySource.scale.copy(dragStartScale);
-
-     // Update counter
-     updateNowCount();
-   }
-   ```
-
-2. Clear copy state:
-   ```javascript
-   isDragCopying = false;
-   dragCopySource = null;
-   ```
-
-### Phase 4: Store Original Transform
+### Phase 3: Alt-click auto-engages move mode
 
 **File:** `rt-init.js`
-**Location:** `onMouseDown()` handler
+**Location:** Before existing mousedown gumball check (~2640)
 
-**Changes:**
-1. When `isDragCopying` starts, store original transform:
-   ```javascript
-   const dragStartPosition = currentSelection.position.clone();
-   const dragStartQuaternion = currentSelection.quaternion.clone();
-   const dragStartScale = currentSelection.scale.clone();
-   ```
+**Change:**
+```javascript
+// ALT-CLICK AUTO-MOVE: If Alt held + clicking on selected poly, auto-engage move
+if (event.altKey && currentSelection && !currentGumballTool) {
+  // Check if clicking on the selected polyhedron
+  const selectableObjects = [];
+  currentSelection.traverse(obj => {
+    if (obj.isMesh || obj.isLine) selectableObjects.push(obj);
+  });
 
-### Phase 5: Edge Cases
+  const polyIntersects = raycaster.intersectObjects(selectableObjects, false);
 
-**Handle these scenarios:**
+  if (polyIntersects.length > 0) {
+    // Temporarily engage move mode for this drag
+    // Set up free movement with drag-copy enabled
+    event.preventDefault();
+    event.stopPropagation();
 
-1. **Escape key during drag-copy**: Cancel and restore original position
-2. **Tool change during drag**: Cancel copy operation
-3. **Deselect during drag**: Cancel copy operation
-4. **Matrix forms**: Copy entire matrix (uses existing deep-clone in StateManager)
-5. **Geodesic forms**: Preserve frequency/projection settings (already in userData)
+    isFreeMoving = true;
+    isDragCopying = true;
+    // ... store original transform, set up drag plane, etc.
+  }
+}
+```
+
+**Note:** This requires bypassing OrbitControls. May need to disable controls temporarily or use capture phase carefully.
 
 ---
 
 ## Testing Checklist
 
-- [ ] Opt+click on selected polyhedron initiates drag-copy
-- [ ] Original stays at starting position after release
-- [ ] New instance created at release position
-- [ ] Works with Move tool active
-- [ ] Works with Scale tool active
-- [ ] Works with Rotate tool active
-- [ ] Works with free-body drag (no tool, just clicking on selected poly)
-- [ ] Snapping applies to copied instance position
-- [ ] Object snaps (vertex/edge/face) work during drag-copy
-- [ ] NOW counter increments
-- [ ] Undo works (removes copied instance)
-- [ ] Works on Forms (base polyhedra)
-- [ ] Works on Instances (existing deposits)
-- [ ] Matrix forms copy entire matrix
-- [ ] Escape cancels drag-copy cleanly
-- [ ] Release outside canvas area cancels gracefully
+### v1 Tests (current)
+- [x] Opt+drag on selected polyhedron with Move tool active creates copy
+- [x] Original returns to starting position after release
+- [x] NOW counter increments
+- [x] Works with gumball axis handles
+- [x] Works with free body drag
+
+### v2 Tests (after refinements)
+- [ ] Releasing Alt mid-drag cancels copy (no instance created)
+- [ ] Escape during drag-copy restores original, no instance created
+- [ ] Alt+click on selected poly (no tool active) starts move+copy
+- [ ] Multiple drag-release cycles while Alt held creates multiple copies
+- [ ] Snapping works during drag-copy
+- [ ] Undo removes copied instance
+- [ ] Works on both Forms and Instances
 
 ---
 
 ## Future Considerations
 
-1. **Multi-select copy**: If multi-select is implemented, copy all selected
-2. **Copy with offset**: Shift+Opt for array/linear copy with fixed offset
-3. **Context menu integration**: Add "Duplicate" option to right-click menu
-4. **Keyboard shortcut**: Cmd+D to duplicate selected at same position
-
----
-
-## Dependencies
-
-- Selection must be active before opt-click works
-- Relies on existing `RTStateManager.createInstance()` for cloning
-- Uses existing snapping infrastructure
-- Uses existing undo/redo system via StateManager
+1. **Visual feedback**: Cursor change or translucent preview during drag-copy
+2. **Shift+Alt**: Array copy with fixed offset
+3. **Cmd+D**: Duplicate in place (no drag needed)
+4. **Context menu**: Add "Duplicate" option to right-click menu
+5. **Multi-select**: Copy all selected polyhedra together
 
 ---
 
 ## Notes
 
-- This is purely additive; no refactoring of existing drag logic required
-- The modifier key check is a simple gate on existing behavior
-- StateManager already handles deep cloning of complex geometries
-- UI updates (coordinate displays, NOW counter) use existing functions
+- The v1 implementation uses existing `RTStateManager.createInstance()` which handles deep cloning
+- No changes to StateManager were required
+- The feature is purely additive to existing drag logic
+- Alt key is cross-platform (Option on macOS, Alt on Windows/Linux)
