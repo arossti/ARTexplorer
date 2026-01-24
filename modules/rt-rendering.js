@@ -111,6 +111,13 @@ export function initScene(THREE, OrbitControls, RT) {
     controls.enableZoom = true;
     controls.enablePan = true;
 
+    // Reassign mouse buttons: Left=orbit, Middle=pan, Right=freed for context menu
+    controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.PAN,
+      RIGHT: null // Disable to free right-click for context menu
+    };
+
     // Ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);

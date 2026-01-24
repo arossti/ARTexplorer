@@ -2041,6 +2041,56 @@
     </div>
 
     <!-- ========================================
+         RIGHT-CLICK CONTEXT MENU
+         ======================================== -->
+    <div id="polyhedron-context-menu" class="context-menu hidden">
+      <div class="context-menu-header">
+        <span id="context-menu-title">Polyhedron</span>
+      </div>
+      <div class="context-menu-section">
+        <div class="context-menu-label">Tool Mode</div>
+        <div class="context-menu-btn-group">
+          <button class="context-btn" data-action="tool-move">Move</button>
+          <button class="context-btn" data-action="tool-scale">Scale</button>
+          <button class="context-btn" data-action="tool-rotate">Rotate</button>
+        </div>
+      </div>
+      <div class="context-menu-section">
+        <div class="context-menu-label">Grid Snap</div>
+        <div class="context-menu-btn-group">
+          <button class="context-btn" data-action="snap-free">Free</button>
+          <button class="context-btn" data-action="snap-xyz">XYZ</button>
+          <button class="context-btn" data-action="snap-wxyz">WXYZ</button>
+        </div>
+      </div>
+      <div class="context-menu-section">
+        <div class="context-menu-label">Object Snaps</div>
+        <div class="context-menu-btn-group">
+          <button class="context-btn toggle" data-action="objsnap-vertex"
+            >Vertex</button
+          >
+          <button class="context-btn toggle" data-action="objsnap-edge"
+            >Edge</button
+          >
+          <button class="context-btn toggle" data-action="objsnap-face"
+            >Face</button
+          >
+        </div>
+      </div>
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-section">
+        <button class="context-btn action-btn" data-action="deposit">
+          <span class="btn-icon">🕐</span> NOW (Deposit)
+        </button>
+      </div>
+      <div class="context-menu-section">
+        <button class="context-btn danger-btn" data-action="delete">
+          <span class="btn-icon">🗑</span> Delete
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================
          DEMO MODALS
          ======================================== -->
 
@@ -2083,5 +2133,28 @@
 
     <!-- Application Initialization -->
     <script type="module" src="modules/rt-init.js"></script>
+
+    <!-- Context Menu Initialization -->
+    <script type="module">
+      import { initContextMenu } from "./modules/rt-context.js";
+
+      // Wait for app initialization
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          if (window.THREE && window.renderingAPI) {
+            // Use getter functions from renderingAPI
+            const scene = window.renderingAPI.getScene();
+            const camera = window.renderingAPI.getCamera();
+            const renderer = window.renderingAPI.getRenderer();
+            window.contextMenuAPI = initContextMenu(
+              window.THREE,
+              scene,
+              camera,
+              renderer
+            );
+          }
+        }, 100);
+      });
+    </script>
   </body>
 </html>

@@ -1716,3 +1716,123 @@ button:disabled {
   overflow-y: auto;
   white-space: pre-wrap;
 }
+
+/* ========================================================================
+   RIGHT-CLICK CONTEXT MENU
+   ======================================================================== */
+
+.context-menu {
+  position: fixed;
+  background: rgba(42, 42, 42, 0.95);
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  backdrop-filter: blur(8px);
+}
+
+.context-menu.hidden {
+  display: none;
+}
+
+.context-menu-header {
+  padding: 6px 12px 8px;
+  border-bottom: 1px solid #444;
+  margin-bottom: 6px;
+}
+
+#context-menu-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7ab8ff;
+}
+
+.context-menu-section {
+  padding: 4px 10px;
+}
+
+.context-menu-label {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.context-menu-btn-group {
+  display: flex;
+  gap: 4px;
+}
+
+.context-btn {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 11px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #b0b0b0;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.context-btn:hover {
+  background: #2a2a2a;
+  border-color: #666;
+  color: #e0e0e0;
+}
+
+.context-btn.active {
+  background: #4a9eff;
+  border-color: #4a9eff;
+  color: white;
+}
+
+.context-btn.toggle.active {
+  background: #2a2a3a;
+  border-color: #ff9944;
+  color: #ff9944;
+}
+
+.context-btn.action-btn {
+  width: 100%;
+  background: #00cc6a;
+  border-color: #00cc6a;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.context-btn.action-btn:hover {
+  background: #00ff88;
+  border-color: #00ff88;
+}
+
+.context-btn.danger-btn {
+  width: 100%;
+  background: transparent;
+  border-color: #663333;
+  color: #ff6666;
+}
+
+.context-btn.danger-btn:hover {
+  background: #331a1a;
+  border-color: #ff6666;
+}
+
+.context-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.context-menu-divider {
+  height: 1px;
+  background: #444;
+  margin: 6px 10px;
+}
+
+.btn-icon {
+  margin-right: 4px;
+}
