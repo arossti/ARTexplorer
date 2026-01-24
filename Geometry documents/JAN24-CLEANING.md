@@ -194,23 +194,42 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 
 ## Phase 4: Refactoring Opportunities
 
-### 4.1 Duplicate Code Consolidation
+**Status:** ⏸️ DEFERRED (documented for future work)
+
+### 4.1 rt-init.js Module Extraction Candidates
+
+**Current state:** 4,147 lines - largest file, orchestration hub
+
+| Lines | Section | Target Module | Risk | Dependencies |
+|-------|---------|---------------|------|--------------|
+| 27-67 | Info Modal | `rt-info-modal.js` | Very Low | None (isolated DOM) |
+| 2334-2498 | Janus Inversion | `rt-janus.js` | Low | `scene`, `THREE` |
+| 2500-2888 | Object Snapping | `rt-snapping.js` | Low | `THREE` only |
+| 931-965 | Janus Detection | Part of `rt-janus.js` | Low | Pure logic |
+| 1468-1772 | Coord Input Handlers | `rt-input-handlers.js` | Medium | `Quadray`, `THREE`, gumball state |
+| 1318-2333+ | Gumball/Controls | `rt-controls.js` | High | Many state deps, event handlers |
+
+**Quick wins (low risk):**
+- [ ] Extract Info Modal (lines 27-67) → `rt-info-modal.js`
+- [ ] Extract Object Snapping helpers → `rt-snapping.js`
+- [ ] Extract Janus animation system → `rt-janus.js`
+
+**Defer (high risk):**
+- [ ] rt-controls.js extraction (gumball) - complex state interdependencies
+
+### 4.2 rt-controls.js Status
+
+- File exists (1,065 lines) but NOT imported
+- Duplicates gumball code in rt-init.js
+- Well-structured with `init()` accepting dependencies
+- Extraction requires: scene, camera, controls, Quadray, THREE, RTStateManager
+- **Decision:** Keep deferred until dedicated refactoring session
+
+### 4.3 Other Opportunities (Original)
 
 - [ ] Review polyhedra generators for shared patterns
-- [ ] Identify any repeated calculation patterns across files
-- [ ] Document consolidation opportunities (don't over-engineer)
-
-### 4.2 Function Length Review
-
-- [ ] Identify functions > 50 lines
-- [ ] Evaluate if splitting improves clarity
-- [ ] Only split if genuinely beneficial (avoid premature abstraction)
-
-### 4.3 Early Return Pattern
-
-- [ ] Review nested conditionals
+- [ ] Identify functions > 50 lines for potential splitting
 - [ ] Apply early return pattern where clarity improves
-- [ ] Avoid over-flattening simple logic
 
 ---
 
