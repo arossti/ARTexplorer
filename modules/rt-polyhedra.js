@@ -1563,9 +1563,7 @@ export const Polyhedra = {
     console.log(
       `[RT] Quadray Tetrahedron: normalize=${normalize}, scale=${scale}`
     );
-    console.log(
-      `  WXYZ raw: [${wxyz_raw[0]}] → [${wxyz_raw[3]}]`
-    );
+    console.log(`  WXYZ raw: [${wxyz_raw[0]}] → [${wxyz_raw[3]}]`);
     console.log(
       `  WXYZ normalized: [${wxyz_normalized[0].map(n => n.toFixed(3)).join(", ")}]`
     );
@@ -1614,9 +1612,7 @@ export const Polyhedra = {
     console.log(
       `[RT] Deformed Quadray Tetrahedron: Z stretched by ${zStretch}x`
     );
-    console.log(
-      `  Standard: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,1)`
-    );
+    console.log(`  Standard: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,1)`);
     console.log(
       `  Deformed: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,${zStretch})`
     );
@@ -1658,8 +1654,12 @@ export const Polyhedra = {
     ];
 
     console.log(`[RT] Quadray Dual Tetrahedron: scale=${scale}`);
-    console.log(`  Vertices: (0,1,1,1) permutations (single inactive coordinate)`);
-    console.log(`  Relationship: dual = base inverted through origin + (1,1,1,1)`);
+    console.log(
+      `  Vertices: (0,1,1,1) permutations (single inactive coordinate)`
+    );
+    console.log(
+      `  Relationship: dual = base inverted through origin + (1,1,1,1)`
+    );
 
     return Polyhedra.quadrayTetrahedron(scale, {
       normalize: normalize,

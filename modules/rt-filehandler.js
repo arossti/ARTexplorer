@@ -118,59 +118,117 @@ export const RTFileHandler = {
     const polyhedraCheckboxes = {
       // Regular polyhedra
       showCube: document.getElementById("showCube")?.checked || false,
-      showTetrahedron: document.getElementById("showTetrahedron")?.checked || false,
-      showDualTetrahedron: document.getElementById("showDualTetrahedron")?.checked || false,
-      showOctahedron: document.getElementById("showOctahedron")?.checked || false,
-      showIcosahedron: document.getElementById("showIcosahedron")?.checked || false,
-      showDodecahedron: document.getElementById("showDodecahedron")?.checked || false,
-      showDualIcosahedron: document.getElementById("showDualIcosahedron")?.checked || false,
-      showCuboctahedron: document.getElementById("showCuboctahedron")?.checked || false,
-      showRhombicDodecahedron: document.getElementById("showRhombicDodecahedron")?.checked || false,
+      showTetrahedron:
+        document.getElementById("showTetrahedron")?.checked || false,
+      showDualTetrahedron:
+        document.getElementById("showDualTetrahedron")?.checked || false,
+      showOctahedron:
+        document.getElementById("showOctahedron")?.checked || false,
+      showIcosahedron:
+        document.getElementById("showIcosahedron")?.checked || false,
+      showDodecahedron:
+        document.getElementById("showDodecahedron")?.checked || false,
+      showDualIcosahedron:
+        document.getElementById("showDualIcosahedron")?.checked || false,
+      showCuboctahedron:
+        document.getElementById("showCuboctahedron")?.checked || false,
+      showRhombicDodecahedron:
+        document.getElementById("showRhombicDodecahedron")?.checked || false,
       // Geodesic polyhedra
-      showGeodesicTetrahedron: document.getElementById("showGeodesicTetrahedron")?.checked || false,
-      showGeodesicDualTetrahedron: document.getElementById("showGeodesicDualTetrahedron")?.checked || false,
-      showGeodesicOctahedron: document.getElementById("showGeodesicOctahedron")?.checked || false,
-      showGeodesicIcosahedron: document.getElementById("showGeodesicIcosahedron")?.checked || false,
-      showGeodesicDualIcosahedron: document.getElementById("showGeodesicDualIcosahedron")?.checked || false,
+      showGeodesicTetrahedron:
+        document.getElementById("showGeodesicTetrahedron")?.checked || false,
+      showGeodesicDualTetrahedron:
+        document.getElementById("showGeodesicDualTetrahedron")?.checked ||
+        false,
+      showGeodesicOctahedron:
+        document.getElementById("showGeodesicOctahedron")?.checked || false,
+      showGeodesicIcosahedron:
+        document.getElementById("showGeodesicIcosahedron")?.checked || false,
+      showGeodesicDualIcosahedron:
+        document.getElementById("showGeodesicDualIcosahedron")?.checked ||
+        false,
       // Quadray polyhedra
-      showQuadrayTetrahedron: document.getElementById("showQuadrayTetrahedron")?.checked || false,
-      showQuadrayTetraDeformed: document.getElementById("showQuadrayTetraDeformed")?.checked || false,
+      showQuadrayTetrahedron:
+        document.getElementById("showQuadrayTetrahedron")?.checked || false,
+      showQuadrayTetraDeformed:
+        document.getElementById("showQuadrayTetraDeformed")?.checked || false,
       // Planar matrices
-      showCubeMatrix: document.getElementById("showCubeMatrix")?.checked || false,
+      showCubeMatrix:
+        document.getElementById("showCubeMatrix")?.checked || false,
       showTetMatrix: document.getElementById("showTetMatrix")?.checked || false,
-      showOctaMatrix: document.getElementById("showOctaMatrix")?.checked || false,
-      showCuboctahedronMatrix: document.getElementById("showCuboctahedronMatrix")?.checked || false,
-      showRhombicDodecMatrix: document.getElementById("showRhombicDodecMatrix")?.checked || false,
+      showOctaMatrix:
+        document.getElementById("showOctaMatrix")?.checked || false,
+      showCuboctahedronMatrix:
+        document.getElementById("showCuboctahedronMatrix")?.checked || false,
+      showRhombicDodecMatrix:
+        document.getElementById("showRhombicDodecMatrix")?.checked || false,
       // Radial matrices
-      showRadialCubeMatrix: document.getElementById("showRadialCubeMatrix")?.checked || false,
-      showRadialRhombicDodecMatrix: document.getElementById("showRadialRhombicDodecMatrix")?.checked || false,
-      showRadialTetrahedronMatrix: document.getElementById("showRadialTetrahedronMatrix")?.checked || false,
-      showRadialOctahedronMatrix: document.getElementById("showRadialOctahedronMatrix")?.checked || false,
-      showRadialCuboctahedronMatrix: document.getElementById("showRadialCuboctahedronMatrix")?.checked || false,
+      showRadialCubeMatrix:
+        document.getElementById("showRadialCubeMatrix")?.checked || false,
+      showRadialRhombicDodecMatrix:
+        document.getElementById("showRadialRhombicDodecMatrix")?.checked ||
+        false,
+      showRadialTetrahedronMatrix:
+        document.getElementById("showRadialTetrahedronMatrix")?.checked ||
+        false,
+      showRadialOctahedronMatrix:
+        document.getElementById("showRadialOctahedronMatrix")?.checked || false,
+      showRadialCuboctahedronMatrix:
+        document.getElementById("showRadialCuboctahedronMatrix")?.checked ||
+        false,
       // Basis vectors
-      showCartesianBasis: document.getElementById("showCartesianBasis")?.checked || false,
+      showCartesianBasis:
+        document.getElementById("showCartesianBasis")?.checked || false,
       showQuadray: document.getElementById("showQuadray")?.checked || false,
     };
 
     // Get slider values
     const sliderValues = {
       // Scale sliders
-      scaleSlider: parseFloat(document.getElementById("scaleSlider")?.value || "1"),
-      tetScaleSlider: parseFloat(document.getElementById("tetScaleSlider")?.value || "1"),
-      opacitySlider: parseFloat(document.getElementById("opacitySlider")?.value || "0.25"),
-      nodeOpacitySlider: parseFloat(document.getElementById("nodeOpacitySlider")?.value || "0.25"),
+      scaleSlider: parseFloat(
+        document.getElementById("scaleSlider")?.value || "1"
+      ),
+      tetScaleSlider: parseFloat(
+        document.getElementById("tetScaleSlider")?.value || "1"
+      ),
+      opacitySlider: parseFloat(
+        document.getElementById("opacitySlider")?.value || "0.25"
+      ),
+      nodeOpacitySlider: parseFloat(
+        document.getElementById("nodeOpacitySlider")?.value || "0.25"
+      ),
       // Planar matrix size sliders
-      cubeMatrixSizeSlider: parseInt(document.getElementById("cubeMatrixSizeSlider")?.value || "1"),
-      tetMatrixSizeSlider: parseInt(document.getElementById("tetMatrixSizeSlider")?.value || "1"),
-      octaMatrixSizeSlider: parseInt(document.getElementById("octaMatrixSizeSlider")?.value || "1"),
-      cuboctaMatrixSizeSlider: parseInt(document.getElementById("cuboctaMatrixSizeSlider")?.value || "1"),
-      rhombicDodecMatrixSizeSlider: parseInt(document.getElementById("rhombicDodecMatrixSizeSlider")?.value || "1"),
+      cubeMatrixSizeSlider: parseInt(
+        document.getElementById("cubeMatrixSizeSlider")?.value || "1"
+      ),
+      tetMatrixSizeSlider: parseInt(
+        document.getElementById("tetMatrixSizeSlider")?.value || "1"
+      ),
+      octaMatrixSizeSlider: parseInt(
+        document.getElementById("octaMatrixSizeSlider")?.value || "1"
+      ),
+      cuboctaMatrixSizeSlider: parseInt(
+        document.getElementById("cuboctaMatrixSizeSlider")?.value || "1"
+      ),
+      rhombicDodecMatrixSizeSlider: parseInt(
+        document.getElementById("rhombicDodecMatrixSizeSlider")?.value || "1"
+      ),
       // Radial matrix frequency sliders
-      radialCubeFreqSlider: parseInt(document.getElementById("radialCubeFreqSlider")?.value || "1"),
-      radialRhombicDodecFreqSlider: parseInt(document.getElementById("radialRhombicDodecFreqSlider")?.value || "1"),
-      radialTetFreqSlider: parseInt(document.getElementById("radialTetFreqSlider")?.value || "1"),
-      radialOctFreqSlider: parseInt(document.getElementById("radialOctFreqSlider")?.value || "1"),
-      radialVEFreqSlider: parseInt(document.getElementById("radialVEFreqSlider")?.value || "1"),
+      radialCubeFreqSlider: parseInt(
+        document.getElementById("radialCubeFreqSlider")?.value || "1"
+      ),
+      radialRhombicDodecFreqSlider: parseInt(
+        document.getElementById("radialRhombicDodecFreqSlider")?.value || "1"
+      ),
+      radialTetFreqSlider: parseInt(
+        document.getElementById("radialTetFreqSlider")?.value || "1"
+      ),
+      radialOctFreqSlider: parseInt(
+        document.getElementById("radialOctFreqSlider")?.value || "1"
+      ),
+      radialVEFreqSlider: parseInt(
+        document.getElementById("radialVEFreqSlider")?.value || "1"
+      ),
     };
 
     // Get active form state (legacy, kept for backwards compatibility)
@@ -497,10 +555,11 @@ export const RTFileHandler = {
               }
 
               // Create polyhedron group from type
-              const polyhedronGroup = window.renderingAPI.createPolyhedronByType(
-                instanceData.type,
-                options
-              );
+              const polyhedronGroup =
+                window.renderingAPI.createPolyhedronByType(
+                  instanceData.type,
+                  options
+                );
 
               if (!polyhedronGroup) {
                 console.warn(
@@ -611,7 +670,7 @@ export const RTFileHandler = {
     const {
       binary = true,
       includeGrids = false,
-      includeGumball = false,
+      _includeGumball = false,
       filename = null,
     } = options;
 

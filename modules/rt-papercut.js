@@ -491,7 +491,6 @@ export const RTPapercut = {
     RTPapercut.state.cutplaneNormal = plane;
 
     // 2. Apply clipping plane to all renderable objects
-    let materialCount = 0;
     scene.traverse(object => {
       if (object.material) {
         if (Array.isArray(object.material)) {
@@ -499,17 +498,14 @@ export const RTPapercut = {
             mat.clippingPlanes = [plane];
             mat.clipShadows = true;
             mat.needsUpdate = true;
-            materialCount++;
           });
         } else {
           object.material.clippingPlanes = [plane];
           object.material.clipShadows = true;
           object.material.needsUpdate = true;
-          materialCount++;
         }
       }
     });
-    // Applied clipping plane to materials
 
     // 3. Enable renderer local clipping
     if (RTPapercut._renderer) {

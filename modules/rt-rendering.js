@@ -119,7 +119,7 @@ export function initScene(THREE, OrbitControls, RT) {
     controls.mouseButtons = {
       LEFT: THREE.MOUSE.ROTATE,
       MIDDLE: THREE.MOUSE.PAN,
-      RIGHT: null // Disable to free right-click for context menu
+      RIGHT: null, // Disable to free right-click for context menu
     };
 
     // Ambient light
@@ -555,7 +555,8 @@ export function initScene(THREE, OrbitControls, RT) {
     const shaftLength = totalBasisLength - headTipExtension; // ≈ 1.577
 
     const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00]; // R, G, B, Y
-    const labels = ["W", "X", "Y", "Z"];
+    // TODO: Add text labels to quadray basis arrows
+    const _labels = ["W", "X", "Y", "Z"];
 
     Quadray.basisVectors.forEach((vec, i) => {
       const arrow = createTetrahedralArrow(
@@ -3247,8 +3248,9 @@ export function initScene(THREE, OrbitControls, RT) {
       parseFloat(document.getElementById("opacitySlider")?.value || "0.25");
     const frequency = options.frequency ?? 1;
     const projection = options.projection ?? "out";
-    const matrixSize = options.matrixSize ?? 1;
-    const rotate45 = options.rotate45 ?? false;
+    // TODO: Implement matrix type instance restoration (requires async creation)
+    const _matrixSize = options.matrixSize ?? 1;
+    const _rotate45 = options.rotate45 ?? false;
 
     // Quadray-specific options
     const normalize = options.normalize ?? true;

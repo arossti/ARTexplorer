@@ -463,34 +463,48 @@ function startARTexplorer(
     .addEventListener("change", updateGeometry);
 
   // Quadray Tetrahedron Demonstrators
-  const quadrayTetraCheckbox = document.getElementById("showQuadrayTetrahedron");
+  const quadrayTetraCheckbox = document.getElementById(
+    "showQuadrayTetrahedron"
+  );
   if (quadrayTetraCheckbox) {
     quadrayTetraCheckbox.addEventListener("change", () => {
       const controls = document.getElementById("quadray-tetra-controls");
       if (controls) {
-        controls.style.display = quadrayTetraCheckbox.checked ? "block" : "none";
+        controls.style.display = quadrayTetraCheckbox.checked
+          ? "block"
+          : "none";
       }
       updateGeometry();
     });
   }
 
-  const quadrayTetraNormalizeCheckbox = document.getElementById("quadrayTetraNormalize");
+  const quadrayTetraNormalizeCheckbox = document.getElementById(
+    "quadrayTetraNormalize"
+  );
   if (quadrayTetraNormalizeCheckbox) {
     quadrayTetraNormalizeCheckbox.addEventListener("change", updateGeometry);
   }
 
-  const quadrayTetraDeformedCheckbox = document.getElementById("showQuadrayTetraDeformed");
+  const quadrayTetraDeformedCheckbox = document.getElementById(
+    "showQuadrayTetraDeformed"
+  );
   if (quadrayTetraDeformedCheckbox) {
     quadrayTetraDeformedCheckbox.addEventListener("change", () => {
-      const controls = document.getElementById("quadray-tetra-deformed-controls");
+      const controls = document.getElementById(
+        "quadray-tetra-deformed-controls"
+      );
       if (controls) {
-        controls.style.display = quadrayTetraDeformedCheckbox.checked ? "block" : "none";
+        controls.style.display = quadrayTetraDeformedCheckbox.checked
+          ? "block"
+          : "none";
       }
       updateGeometry();
     });
   }
 
-  const quadrayTetraZStretchSlider = document.getElementById("quadrayTetraZStretch");
+  const quadrayTetraZStretchSlider = document.getElementById(
+    "quadrayTetraZStretch"
+  );
   if (quadrayTetraZStretchSlider) {
     quadrayTetraZStretchSlider.addEventListener("input", e => {
       const value = parseFloat(e.target.value);
@@ -959,7 +973,7 @@ function startARTexplorer(
   // Track global dimensional state for slider-based scaling
   // State tracking: actual dimensional state is 'positive' or 'negative'
   // Sign tracking: last non-zero sign seen (1 or -1), prevents double-trigger
-  let globalDimensionalState = 'positive';
+  let globalDimensionalState = "positive";
   let previousGlobalSign = 1; // Last non-zero sign: 1 or -1
   let hasTriggeredAtZero = false; // Debounce: prevent double-trigger when passing through 0
 
@@ -977,7 +991,7 @@ function startARTexplorer(
     if (newSign === 0) {
       // Landing on zero: trigger transition if we haven't already
       if (!hasTriggeredAtZero) {
-        direction = previousGlobalSign > 0 ? 'inward' : 'outward';
+        direction = previousGlobalSign > 0 ? "inward" : "outward";
         hasTriggeredAtZero = true;
       }
       // Don't update previousGlobalSign at zero - keep last known direction
@@ -987,7 +1001,7 @@ function startARTexplorer(
         // Actual sign change (e.g., from positive to negative)
         if (!hasTriggeredAtZero) {
           // Crossed directly without landing on zero
-          direction = previousGlobalSign > 0 ? 'inward' : 'outward';
+          direction = previousGlobalSign > 0 ? "inward" : "outward";
         }
         // Update to new sign
         previousGlobalSign = newSign;
@@ -1020,12 +1034,18 @@ function startARTexplorer(
     const crossDirection = checkGlobalJanusCrossing(cubeEdge);
 
     if (crossDirection) {
-      globalDimensionalState = globalDimensionalState === 'positive' ? 'negative' : 'positive';
-      console.log(`🌀 GLOBAL JANUS: All forms crossed origin (${crossDirection}) → ${globalDimensionalState} space`);
-      console.log(`   Previous sign: ${previousGlobalSign}, Current value: ${cubeEdge}`);
+      globalDimensionalState =
+        globalDimensionalState === "positive" ? "negative" : "positive";
+      console.log(
+        `🌀 GLOBAL JANUS: All forms crossed origin (${crossDirection}) → ${globalDimensionalState} space`
+      );
+      console.log(
+        `   Previous sign: ${previousGlobalSign}, Current value: ${cubeEdge}`
+      );
 
       // Animate background inversion
-      const targetColor = globalDimensionalState === 'negative' ? 0xffffff : 0x1a1a1a;
+      const targetColor =
+        globalDimensionalState === "negative" ? 0xffffff : 0x1a1a1a;
       animateBackgroundColor(targetColor, 300);
 
       // Create flash effect at origin
@@ -1056,12 +1076,18 @@ function startARTexplorer(
     const crossDirection = checkGlobalJanusCrossing(tetEdge);
 
     if (crossDirection) {
-      globalDimensionalState = globalDimensionalState === 'positive' ? 'negative' : 'positive';
-      console.log(`🌀 GLOBAL JANUS: All forms crossed origin (${crossDirection}) → ${globalDimensionalState} space`);
-      console.log(`   Previous sign: ${previousGlobalSign}, Current value: ${tetEdge}`);
+      globalDimensionalState =
+        globalDimensionalState === "positive" ? "negative" : "positive";
+      console.log(
+        `🌀 GLOBAL JANUS: All forms crossed origin (${crossDirection}) → ${globalDimensionalState} space`
+      );
+      console.log(
+        `   Previous sign: ${previousGlobalSign}, Current value: ${tetEdge}`
+      );
 
       // Animate background inversion
-      const targetColor = globalDimensionalState === 'negative' ? 0xffffff : 0x1a1a1a;
+      const targetColor =
+        globalDimensionalState === "negative" ? 0xffffff : 0x1a1a1a;
       animateBackgroundColor(targetColor, 300);
 
       // Create flash effect at origin
@@ -1139,8 +1165,7 @@ function startARTexplorer(
   // VIEW CONTROLS - Camera Presets
   // ========================================================================
 
-  let orthographicCamera = null;
-  // PHASE 6 EXTRACTION: switchCameraType() and setCameraPreset() functions now in rt-rendering.js
+  // Note: orthographicCamera moved to rt-rendering.js (PHASE 6 EXTRACTION)
 
   // Enable view preset buttons and wire up event listeners
   const viewButtons = [
@@ -1393,8 +1418,8 @@ function startARTexplorer(
     selected.forEach(poly => {
       const formType = poly.userData.type;
 
-      // Create instance using RTStateManager
-      const instance = RTStateManager.createInstance(poly, scene);
+      // Create instance using RTStateManager (side effect only, return value unused)
+      RTStateManager.createInstance(poly, scene);
 
       // Reset Form to origin
       RTStateManager.resetForm(poly);
@@ -1676,7 +1701,7 @@ function startARTexplorer(
       { id: "coordZ2", index: 3, name: "Z" },
     ];
 
-    coordInputs.forEach(({ id, index, name }) => {
+    coordInputs.forEach(({ id }) => {
       const input = document.getElementById(id);
       if (!input) return;
 
@@ -1852,8 +1877,9 @@ function startARTexplorer(
    *
    * @param {THREE.Vector3} position - Position to create the basis at
    * @param {THREE.Group} selectedObject - The selected form/instance for sizing
+   * @todo TODO: Use selectedObject bounding box to scale handles for large matrices
    */
-  function createEditingBasis(position, selectedObject) {
+  function createEditingBasis(position, _selectedObject) {
     // Remove existing editing basis if any
     if (editingBasis) {
       scene.remove(editingBasis);
@@ -1888,8 +1914,6 @@ function startARTexplorer(
     // Determine handle type based on active tool
     const isScaleMode = currentGumballTool === "scale";
     const isRotateMode = currentGumballTool === "rotate";
-
-    let basisCount = 0;
 
     // ========================================================================
     // QUADRAY BASIS VECTORS (WXYZ) - Tetrahedral coordinate system
@@ -2008,7 +2032,6 @@ function startARTexplorer(
           editingBasis.add(handle);
         }
       });
-      basisCount++;
     }
 
     // ========================================================================
@@ -2133,7 +2156,6 @@ function startARTexplorer(
           editingBasis.add(handle);
         }
       });
-      basisCount++;
     }
 
     // ========================================================================
@@ -2408,13 +2430,17 @@ function startARTexplorer(
    * @param {Array} selectedPolyhedra - Array of currently selected polyhedra
    */
   function triggerJanusTransition(poly, direction, selectedPolyhedra) {
-    const isEnteringNegative = direction === 'inward';
+    const isEnteringNegative = direction === "inward";
 
     // ================================================================
     // Phase 1: Ghost non-selected forms
     // ================================================================
     scene.traverse(child => {
-      if (child.userData && child.userData.type && !selectedPolyhedra.includes(child)) {
+      if (
+        child.userData &&
+        child.userData.type &&
+        !selectedPolyhedra.includes(child)
+      ) {
         // This is a polyhedron that is NOT being scaled - ghost it
         child.traverse(mesh => {
           if (mesh.isMesh && mesh.material) {
@@ -2448,12 +2474,20 @@ function startARTexplorer(
     // ================================================================
     setTimeout(() => {
       scene.traverse(child => {
-        if (child.userData && child.userData.type && !selectedPolyhedra.includes(child)) {
+        if (
+          child.userData &&
+          child.userData.type &&
+          !selectedPolyhedra.includes(child)
+        ) {
           child.traverse(mesh => {
-            if (mesh.isMesh && mesh.material && mesh.userData.originalOpacity !== undefined) {
+            if (
+              mesh.isMesh &&
+              mesh.material &&
+              mesh.userData.originalOpacity !== undefined
+            ) {
               // Restore original opacity (or keep ghosted if we're in negative space)
-              const hasNegativeForms = scene.children.some(c =>
-                c.userData && c.userData.dimensionalState === 'negative'
+              const hasNegativeForms = scene.children.some(
+                c => c.userData && c.userData.dimensionalState === "negative"
               );
               if (hasNegativeForms) {
                 // Keep ghosted while any form is in negative space
@@ -2470,7 +2504,9 @@ function startARTexplorer(
       });
     }, 550); // After animation completes (200 + 50 + 200 + 100ms)
 
-    console.log(`💫 Janus transition: ${direction} → background ${isEnteringNegative ? 'WHITE' : 'BLACK'}`);
+    console.log(
+      `💫 Janus transition: ${direction} → background ${isEnteringNegative ? "WHITE" : "BLACK"}`
+    );
   }
 
   /**
@@ -2488,9 +2524,10 @@ function startARTexplorer(
       const progress = Math.min(elapsed / duration, 1);
 
       // Ease-in-out cubic
-      const eased = progress < 0.5
-        ? 4 * progress * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      const eased =
+        progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
       scene.background.copy(startColor).lerp(endColor, eased);
 
@@ -2612,7 +2649,11 @@ function startARTexplorer(
         if (posAttr && index) {
           // Indexed geometry - extract edges from triangles
           for (let i = 0; i < index.count; i += 3) {
-            const indices = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+            const indices = [
+              index.getX(i),
+              index.getX(i + 1),
+              index.getX(i + 2),
+            ];
 
             // Three edges per triangle
             const edges = [
@@ -2694,7 +2735,11 @@ function startARTexplorer(
             );
 
             // Calculate centroid in local space
-            const centroid = v1.clone().add(v2).add(v3).multiplyScalar(1 / 3);
+            const centroid = v1
+              .clone()
+              .add(v2)
+              .add(v3)
+              .multiplyScalar(1 / 3);
 
             // Transform to world coordinates
             obj.localToWorld(centroid);
@@ -2750,7 +2795,12 @@ function startARTexplorer(
     ];
 
     formGroups.forEach(group => {
-      if (group && group.visible && group !== excludeGroup && group.children.length > 0) {
+      if (
+        group &&
+        group.visible &&
+        group !== excludeGroup &&
+        group.children.length > 0
+      ) {
         targetGroups.push(group);
       }
     });
@@ -2761,7 +2811,11 @@ function startARTexplorer(
     // console.log(`🔍 SNAP DEBUG: ${allInstances.length} instances in RTStateManager`);
     allInstances.forEach(instance => {
       // console.log(`  Instance: ${instance.id}, visible: ${instance.threeObject?.visible}, excluded: ${instance.threeObject === excludeGroup}`);
-      if (instance.threeObject && instance.threeObject.visible && instance.threeObject !== excludeGroup) {
+      if (
+        instance.threeObject &&
+        instance.threeObject.visible &&
+        instance.threeObject !== excludeGroup
+      ) {
         targetGroups.push(instance.threeObject);
       }
     });
@@ -2769,9 +2823,15 @@ function startARTexplorer(
     // console.log(`🔍 SNAP DEBUG: ${targetGroups.length} target groups found (excluding dragged object)`);
 
     // Get source object's snap points (we need to compare geometry-to-geometry)
-    const sourceVertices = objectSnapVertex ? getPolyhedronVertices(excludeGroup) : [];
-    const sourceEdges = objectSnapEdge ? getPolyhedronEdgeMidpoints(excludeGroup) : [];
-    const sourceFaces = objectSnapFace ? getPolyhedronFaceCentroids(excludeGroup) : [];
+    const sourceVertices = objectSnapVertex
+      ? getPolyhedronVertices(excludeGroup)
+      : [];
+    const sourceEdges = objectSnapEdge
+      ? getPolyhedronEdgeMidpoints(excludeGroup)
+      : [];
+    const sourceFaces = objectSnapFace
+      ? getPolyhedronFaceCentroids(excludeGroup)
+      : [];
 
     // console.log(`🔍 SNAP DEBUG: Source has ${sourceVertices.length} vertices, ${sourceEdges.length} edges, ${sourceFaces.length} faces`);
 
@@ -3036,7 +3096,10 @@ function startARTexplorer(
               }
             });
 
-            const polyIntersects = raycaster.intersectObjects(selectableObjects, false);
+            const polyIntersects = raycaster.intersectObjects(
+              selectableObjects,
+              false
+            );
 
             if (polyIntersects.length > 0) {
               // Clicked on the selected polyhedron body - start free movement
@@ -3058,7 +3121,9 @@ function startARTexplorer(
               raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
 
               // Calculate offset from click point to object center (prevents jumping)
-              freeMoveDragOffset.copy(currentSelection.position).sub(dragStartPoint);
+              freeMoveDragOffset
+                .copy(currentSelection.position)
+                .sub(dragStartPoint);
 
               console.log(
                 `🖐️ FREE MOVE started: ${currentSelection.userData.type}, polyhedra count: ${selectedPolyhedra.length}`
@@ -3076,7 +3141,10 @@ function startARTexplorer(
             }
           });
 
-          const polyIntersects = raycaster.intersectObjects(selectableObjects, false);
+          const polyIntersects = raycaster.intersectObjects(
+            selectableObjects,
+            false
+          );
 
           if (polyIntersects.length > 0) {
             event.preventDefault();
@@ -3093,7 +3161,9 @@ function startARTexplorer(
             );
 
             raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
-            freeMoveDragOffset.copy(currentSelection.position).sub(dragStartPoint);
+            freeMoveDragOffset
+              .copy(currentSelection.position)
+              .sub(dragStartPoint);
 
             console.log(
               `🖐️ FREE MOVE started (no basis): ${currentSelection.userData.type}`
@@ -3142,7 +3212,10 @@ function startARTexplorer(
 
               if (snapTarget) {
                 // Show snap preview marker at the TARGET point (where snap will attach)
-                updateSnapPreviewMarker(snapTarget.targetPoint, snapTarget.type);
+                updateSnapPreviewMarker(
+                  snapTarget.targetPoint,
+                  snapTarget.type
+                );
                 currentSnapTarget = snapTarget;
 
                 // Preview snap position (object will snap on release)
@@ -3285,7 +3358,7 @@ function startARTexplorer(
                 }
                 // Initialize dimensional state if not set
                 if (!poly.userData.dimensionalState) {
-                  poly.userData.dimensionalState = 'positive';
+                  poly.userData.dimensionalState = "positive";
                 }
 
                 // JANUS INVERSION: Use ADDITIVE scaling to allow crossing through zero
@@ -3305,7 +3378,8 @@ function startARTexplorer(
                 // KEY: Detect when we're AT the minimum and still pushing toward zero
                 // This is the moment to cross through the Janus Point
                 const atPositiveMin = Math.abs(previousScale - minScale) < 0.01;
-                const atNegativeMin = Math.abs(previousScale - (-minScale)) < 0.01;
+                const atNegativeMin =
+                  Math.abs(previousScale - -minScale) < 0.01;
                 const pushingInward = scaleIncrement < -0.0001;
                 const pushingOutward = scaleIncrement > 0.0001;
 
@@ -3313,30 +3387,38 @@ function startARTexplorer(
                   // At +0.05 and pushing inward → CROSS TO NEGATIVE SPACE
                   clampedScale = -minScale;
                   crossedJanus = true;
-                  console.log(`🌀 CROSSING: +${minScale} → -${minScale} (pushing inward)`);
+                  console.log(
+                    `🌀 CROSSING: +${minScale} → -${minScale} (pushing inward)`
+                  );
                 } else if (atNegativeMin && pushingOutward) {
                   // At -0.05 and pushing outward → CROSS BACK TO POSITIVE SPACE
                   clampedScale = minScale;
                   crossedJanus = true;
-                  console.log(`🌀 CROSSING: -${minScale} → +${minScale} (pushing outward)`);
+                  console.log(
+                    `🌀 CROSSING: -${minScale} → +${minScale} (pushing outward)`
+                  );
                 } else if (Math.abs(newScale) < minScale) {
                   // In the "zero zone" but not crossing - clamp to current side
                   clampedScale = previousScale > 0 ? minScale : -minScale;
                 } else {
                   // Normal scaling - just clamp max
-                  clampedScale = Math.sign(newScale) * Math.min(maxScale, Math.abs(newScale));
+                  clampedScale =
+                    Math.sign(newScale) *
+                    Math.min(maxScale, Math.abs(newScale));
                 }
 
                 // ================================================================
                 // JANUS INVERSION: Trigger transition when crossing detected
                 // ================================================================
                 if (crossedJanus) {
-                  const direction = previousScale > 0 ? 'inward' : 'outward';
+                  const direction = previousScale > 0 ? "inward" : "outward";
                   poly.userData.dimensionalState =
-                    poly.userData.dimensionalState === 'positive' ? 'negative' : 'positive';
+                    poly.userData.dimensionalState === "positive"
+                      ? "negative"
+                      : "positive";
 
                   console.log(
-                    `🌀 JANUS POINT: ${poly.userData.type || 'Form'} crossed origin (${direction}) → ${poly.userData.dimensionalState} space`
+                    `🌀 JANUS POINT: ${poly.userData.type || "Form"} crossed origin (${direction}) → ${poly.userData.dimensionalState} space`
                   );
 
                   // Trigger Janus transition (animation + ghost + background)
@@ -3613,7 +3695,9 @@ function startARTexplorer(
             justFinishedDrag = true;
             isFreeMoving = false;
             selectedPolyhedra = [];
-            console.log("✅ FREE MOVE ended with OBJECT SNAP - selection and tool preserved");
+            console.log(
+              "✅ FREE MOVE ended with OBJECT SNAP - selection and tool preserved"
+            );
             return;
           }
 
@@ -3625,9 +3709,12 @@ function startARTexplorer(
             selectedPolyhedra.forEach(poly => {
               if (currentSnapMode === "xyz") {
                 const gridSize = 0.1;
-                poly.position.x = Math.round(poly.position.x / gridSize) * gridSize;
-                poly.position.y = Math.round(poly.position.y / gridSize) * gridSize;
-                poly.position.z = Math.round(poly.position.z / gridSize) * gridSize;
+                poly.position.x =
+                  Math.round(poly.position.x / gridSize) * gridSize;
+                poly.position.y =
+                  Math.round(poly.position.y / gridSize) * gridSize;
+                poly.position.z =
+                  Math.round(poly.position.z / gridSize) * gridSize;
                 console.log(
                   `📐 FREE MOVE XYZ snap: (${poly.position.x.toFixed(2)}, ${poly.position.y.toFixed(2)}, ${poly.position.z.toFixed(2)})`
                 );
@@ -3640,8 +3727,16 @@ function startARTexplorer(
                 const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
                 wxyz = wxyz.map(c => c - mean);
                 const quadrayGridSize = RT.PureRadicals.QUADRAY_GRID_INTERVAL;
-                wxyz = wxyz.map(c => Math.round(c / quadrayGridSize) * quadrayGridSize);
-                const snappedPos = Quadray.toCartesian(wxyz[0], wxyz[1], wxyz[2], wxyz[3], THREE);
+                wxyz = wxyz.map(
+                  c => Math.round(c / quadrayGridSize) * quadrayGridSize
+                );
+                const snappedPos = Quadray.toCartesian(
+                  wxyz[0],
+                  wxyz[1],
+                  wxyz[2],
+                  wxyz[3],
+                  THREE
+                );
                 poly.position.copy(snappedPos);
                 console.log(
                   `📐 FREE MOVE WXYZ snap: (W:${wxyz[0].toFixed(3)}, X:${wxyz[1].toFixed(3)}, Y:${wxyz[2].toFixed(3)}, Z:${wxyz[3].toFixed(3)})`
