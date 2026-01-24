@@ -317,19 +317,31 @@ export const RTFileHandler = {
                 opacity: instanceData.appearance?.opacity ?? 0.25,
               };
 
-              // Add geodesic-specific parameters if present
+              // Add type-specific parameters if present
               if (instanceData.parameters) {
+                // Geodesic parameters
                 if (instanceData.parameters.frequency !== undefined) {
                   options.frequency = instanceData.parameters.frequency;
                 }
                 if (instanceData.parameters.projection !== undefined) {
                   options.projection = instanceData.parameters.projection;
                 }
+                // Matrix parameters
                 if (instanceData.parameters.matrixSize !== undefined) {
                   options.matrixSize = instanceData.parameters.matrixSize;
                 }
                 if (instanceData.parameters.rotate45 !== undefined) {
                   options.rotate45 = instanceData.parameters.rotate45;
+                }
+                // Quadray parameters (preserves native WXYZ coordinates)
+                if (instanceData.parameters.normalize !== undefined) {
+                  options.normalize = instanceData.parameters.normalize;
+                }
+                if (instanceData.parameters.zStretch !== undefined) {
+                  options.zStretch = instanceData.parameters.zStretch;
+                }
+                if (instanceData.parameters.wxyz !== undefined) {
+                  options.wxyz = instanceData.parameters.wxyz;
                 }
               }
 

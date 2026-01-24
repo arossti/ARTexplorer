@@ -246,6 +246,10 @@ export const RTStateManager = {
       timestamp: timestamp,
       type: polyhedronGroup.userData.type || "unknown",
 
+      // Polyhedron-specific parameters (for geodesics, quadray, matrices)
+      // These are needed to recreate the exact geometry on import
+      parameters: polyhedronGroup.userData.parameters || null,
+
       // Transform state
       transform: {
         position: {
@@ -662,6 +666,7 @@ export const RTStateManager = {
         id: instance.id,
         timestamp: instance.timestamp,
         type: instance.type,
+        parameters: instance.parameters, // Geodesic/Quadray/Matrix params
         transform: instance.transform,
         appearance: instance.appearance,
         metadata: instance.metadata,

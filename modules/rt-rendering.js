@@ -2009,6 +2009,11 @@ export function initScene(THREE, OrbitControls, RT) {
         colorPalette.quadrayTetrahedron,
         opacity
       );
+      // Store parameters for export/import (preserves native Quadray coordinates)
+      quadrayTetrahedronGroup.userData.parameters = {
+        normalize: normalize,
+        wxyz: quadrayTet.wxyz_normalized, // Store the actual WXYZ coords
+      };
       quadrayTetrahedronGroup.visible = true;
     } else {
       quadrayTetrahedronGroup.visible = false;
@@ -2029,6 +2034,11 @@ export function initScene(THREE, OrbitControls, RT) {
         colorPalette.quadrayTetraDeformed,
         opacity
       );
+      // Store parameters for export/import (preserves deformation)
+      quadrayTetraDeformedGroup.userData.parameters = {
+        zStretch: zStretch,
+        wxyz: quadrayTetDeformed.wxyz_normalized, // Store the actual WXYZ coords
+      };
       quadrayTetraDeformedGroup.visible = true;
     } else {
       quadrayTetraDeformedGroup.visible = false;
@@ -3220,6 +3230,9 @@ export function initScene(THREE, OrbitControls, RT) {
    * @param {string} options.projection - Geodesic projection mode ('off'|'in'|'mid'|'out')
    * @param {number} options.matrixSize - Matrix size (for matrix types)
    * @param {boolean} options.rotate45 - Rotate matrix 45° (for matrix types)
+   * @param {boolean} options.normalize - Quadray zero-sum normalization (default: true)
+   * @param {number} options.zStretch - Quadray deformed Z stretch factor (default: 2)
+   * @param {Array} options.wxyz - Native WXYZ coordinates to restore (4x4 array)
    * @returns {THREE.Group|null} New polyhedron group or null if type unknown
    */
   function createPolyhedronByType(type, options = {}) {
@@ -3236,6 +3249,11 @@ export function initScene(THREE, OrbitControls, RT) {
     const projection = options.projection ?? "out";
     const matrixSize = options.matrixSize ?? 1;
     const rotate45 = options.rotate45 ?? false;
+
+    // Quadray-specific options
+    const normalize = options.normalize ?? true;
+    const zStretch = options.zStretch ?? 2;
+    const wxyz = options.wxyz ?? null; // Native WXYZ coordinates
 
     // Create new group
     const group = new THREE.Group();
@@ -3327,20 +3345,38 @@ export function initScene(THREE, OrbitControls, RT) {
         renderPolyhedron(group, geometry, color, opacity);
         break;
 
-      // Quadray demonstrator polyhedra
+      // Quadray demonstrator polyhedra (with native WXYZ coordinate preservation)
       case "quadrayTetrahedron":
-        geometry = Polyhedra.quadrayTetrahedron(scale);
+        geometry = Polyhedra.quadrayTetrahedron(scale, {
+          normalize: normalize,
+          wxyz: wxyz, // Restore exact WXYZ coords if provided
+        });
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          normalize: normalize,
+          wxyz: geometry.wxyz_normalized,
+        };
         break;
 
       case "quadrayTetraDeformed":
-        geometry = Polyhedra.quadrayTetrahedronDeformed(scale);
+        geometry = Polyhedra.quadrayTetrahedronDeformed(scale, zStretch);
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          zStretch: zStretch,
+          wxyz: geometry.wxyz_normalized,
+        };
         break;
 
       case "quadrayDualTetrahedron":
-        geometry = Polyhedra.quadrayDualTetrahedron(scale);
+        geometry = Polyhedra.quadrayDualTetrahedron(scale, { normalize });
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          normalize: normalize,
+          wxyz: geometry.wxyz_normalized,
+        };
         break;
 
       // Matrix forms - these need async import, return group immediately
