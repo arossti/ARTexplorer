@@ -1255,6 +1255,12 @@ function startARTexplorer(
   // ========================================================================
   let currentSelection = null; // Currently selected polyhedron (Form or Instance)
 
+  // Opt-click drag-to-copy state
+  let isDragCopying = false; // Alt/Option key held during drag
+  let dragCopyOriginalPosition = new THREE.Vector3();
+  let dragCopyOriginalQuaternion = new THREE.Quaternion();
+  let dragCopyOriginalScale = new THREE.Vector3();
+
   // NOW button - deposit current Form as Instance using RTStateManager
   document.getElementById("nowButton").addEventListener("click", function () {
     const selected = getSelectedPolyhedra();
@@ -2676,6 +2682,15 @@ function startARTexplorer(
               event.stopPropagation();
 
               isDragging = true;
+
+              // OPT-CLICK DRAG-COPY: Store original transform if Alt/Option held
+              if (event.altKey && currentSelection) {
+                isDragCopying = true;
+                dragCopyOriginalPosition.copy(currentSelection.position);
+                dragCopyOriginalQuaternion.copy(currentSelection.quaternion);
+                dragCopyOriginalScale.copy(currentSelection.scale);
+                console.log("📋 DRAG-COPY mode: Alt key detected, will create copy on release");
+              }
               // Note: controls.enabled already false when tool is active
 
               // Get the basis vector direction and type from userData
@@ -2754,6 +2769,15 @@ function startARTexplorer(
               event.stopPropagation();
 
               isFreeMoving = true;
+
+              // OPT-CLICK DRAG-COPY: Store original transform if Alt/Option held
+              if (event.altKey && currentSelection) {
+                isDragCopying = true;
+                dragCopyOriginalPosition.copy(currentSelection.position);
+                dragCopyOriginalQuaternion.copy(currentSelection.quaternion);
+                dragCopyOriginalScale.copy(currentSelection.scale);
+                console.log("📋 DRAG-COPY mode (free move): Alt key detected, will create copy on release");
+              }
               selectedPolyhedra = getSelectedPolyhedra();
 
               // Create drag plane perpendicular to camera, through object's position
@@ -3420,6 +3444,32 @@ function startARTexplorer(
             }
           }
 
+          // OPT-CLICK DRAG-COPY: Create instance at current position, restore original
+          if (isDragCopying && currentSelection) {
+            // Create instance at the dragged position
+            RTStateManager.createInstance(currentSelection, scene);
+
+            // Restore original to its starting position
+            currentSelection.position.copy(dragCopyOriginalPosition);
+            currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
+            currentSelection.scale.copy(dragCopyOriginalScale);
+
+            // Update editing basis to follow restored original
+            if (editingBasis) {
+              editingBasis.position.copy(dragCopyOriginalPosition);
+            }
+
+            // Update NOW counter display
+            const nowCountEl = document.getElementById("nowCount");
+            if (nowCountEl) {
+              const instances = RTStateManager.getInstances();
+              nowCountEl.textContent = instances.length;
+            }
+
+            console.log("✅ DRAG-COPY complete: Instance created, original restored");
+            isDragCopying = false;
+          }
+
           justFinishedDrag = true;
           isFreeMoving = false;
           selectedPolyhedra = [];
@@ -3513,6 +3563,32 @@ function startARTexplorer(
             console.log(
               "✨ Free mode - no snapping applied (full precision preserved)"
             );
+          }
+
+          // OPT-CLICK DRAG-COPY: Create instance at current position, restore original
+          if (isDragCopying && currentSelection) {
+            // Create instance at the dragged position
+            RTStateManager.createInstance(currentSelection, scene);
+
+            // Restore original to its starting position
+            currentSelection.position.copy(dragCopyOriginalPosition);
+            currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
+            currentSelection.scale.copy(dragCopyOriginalScale);
+
+            // Update editing basis to follow restored original
+            if (editingBasis) {
+              editingBasis.position.copy(dragCopyOriginalPosition);
+            }
+
+            // Update NOW counter display
+            const nowCountEl = document.getElementById("nowCount");
+            if (nowCountEl) {
+              const instances = RTStateManager.getInstances();
+              nowCountEl.textContent = instances.length;
+            }
+
+            console.log("✅ DRAG-COPY complete: Instance created, original restored");
+            isDragCopying = false;
           }
 
           // Mark that we just finished a drag to prevent click-after-drag deselection
