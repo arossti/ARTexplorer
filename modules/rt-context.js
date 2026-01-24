@@ -92,33 +92,24 @@ export function initContextMenu(THREE, scene, camera, renderer) {
     state.mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
     state.mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
-    console.log("[rt-context] Right-click at NDC:", state.mouse.x.toFixed(3), state.mouse.y.toFixed(3));
-
     state.raycaster.setFromCamera(state.mouse, camera);
 
     // Collect visible polyhedra (userData.type is the property used in rt-rendering.js)
     const polyhedra = [];
     scene.traverse(obj => {
-      // Look for Groups with userData.type (polyhedra use .type not .polyhedronType)
       if (obj.userData?.type && obj.visible) {
         polyhedra.push(obj);
       }
     });
 
-    console.log("[rt-context] Found polyhedra groups:", polyhedra.length, polyhedra.map(p => p.userData?.type));
-
     const intersects = state.raycaster.intersectObjects(polyhedra, true);
 
-    console.log("[rt-context] Raycast intersects:", intersects.length);
-
     if (intersects.length > 0) {
-      console.log("[rt-context] Hit object:", intersects[0].object.type, intersects[0].object.name);
       // Walk up to find polyhedron group
       let target = intersects[0].object;
       while (target.parent && !target.userData?.type) {
         target = target.parent;
       }
-      console.log("[rt-context] Resolved target:", target.userData?.type);
       return target;
     }
     return null;
@@ -175,12 +166,10 @@ export function initContextMenu(THREE, scene, camera, renderer) {
   }
 
   // Event: Right-click on canvas
-  console.log("[rt-context] ✅ Context menu initialized, listening on canvas");
   renderer.domElement.addEventListener(
     "contextmenu",
     event => {
       event.preventDefault();
-      console.log("[rt-context] 🖱️ Right-click detected at:", event.clientX, event.clientY);
 
       const target = findPolyhedronAt(event.clientX, event.clientY);
 
