@@ -1520,11 +1520,13 @@ export const Polyhedra = {
       return [w - avg, x - avg, y - avg, z - avg];
     });
 
-    // Quadray basis vectors (normalized to unit length, matching rt-math.js)
-    const basisW = new THREE.Vector3(1, 1, 1).normalize();
-    const basisX = new THREE.Vector3(1, -1, -1).normalize();
-    const basisY = new THREE.Vector3(-1, 1, -1).normalize();
-    const basisZ = new THREE.Vector3(-1, -1, 1).normalize();
+    // RT-PURE: Use raw basis vectors (NOT normalized to unit Cartesian length)
+    // This gives edge Q = 8 with zero-sum normalized coordinates, matching IVM grid exactly
+    // The basis vectors point to alternating vertices of a cube inscribed in the tetrahedron
+    const basisW = new THREE.Vector3(1, 1, 1);
+    const basisX = new THREE.Vector3(1, -1, -1);
+    const basisY = new THREE.Vector3(-1, 1, -1);
+    const basisZ = new THREE.Vector3(-1, -1, 1);
 
     // Convert to Cartesian for THREE.js rendering
     const vertices = wxyz_normalized.map(([w, x, y, z]) => {
@@ -1555,9 +1557,9 @@ export const Polyhedra = {
 
     // RT VALIDATION
     const sampleQ = RT.quadrance(vertices[0], vertices[1]);
-    const validation = RT.validateEdges(vertices, edges, sampleQ);
-    const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
 
+    // Expected Q = 8 * scale² (matches IVM grid when scale=1)
+    const expectedQ = 8 * scale * scale;
     console.log(
       `[RT] Quadray Tetrahedron: normalize=${normalize}, scale=${scale}`
     );
@@ -1568,7 +1570,7 @@ export const Polyhedra = {
       `  WXYZ normalized: [${wxyz_normalized[0].map(n => n.toFixed(3)).join(", ")}]`
     );
     console.log(
-      `  Edge quadrance: Q=${sampleQ.toFixed(6)}, max error=${maxError.toExponential(2)}`
+      `  Edge Q: expected=${expectedQ.toFixed(6)}, actual=${sampleQ.toFixed(6)}, error=${Math.abs(sampleQ - expectedQ).toExponential(2)}`
     );
 
     return {

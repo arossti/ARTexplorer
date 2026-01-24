@@ -876,6 +876,22 @@ export function initScene(THREE, OrbitControls, RT) {
         return getPolyhedronEdgeQuadrance(baseType, scale);
       }
 
+      case "quadrayTetrahedron":
+        // RT-PURE Quadray Tetrahedron: Edge Q = 8s² (matches standard tetrahedron)
+        // Raw basis vectors (1,1,1), (1,-1,-1), (-1,1,-1), (-1,-1,1) without .normalize()
+        // Zero-sum normalized coords (0.75,-0.25,-0.25,-0.25) → Cartesian (1,1,1)
+        // Edge Q = |(1,1,1) - (1,-1,-1)|² = |0,2,2|² = 8
+        return 8 * s2;
+
+      case "quadrayTetraDeformed": {
+        // Deformed Quadray Tetrahedron: Variable edge lengths
+        // Z vertex stretched by zStretch factor (default 2)
+        // For close-packing, use SHORTEST edge (between W,X,Y vertices) = Q = 8s²
+        // Edges to Z vertex are longer: Q = 8s² * zStretch (approximately)
+        // Conservative approach: use base edge Q = 8s² for tight packing on shorter edges
+        return 8 * s2;
+      }
+
       default:
         console.warn(
           `Unknown polyhedron type: ${type}, using default cube Q=4s²`
