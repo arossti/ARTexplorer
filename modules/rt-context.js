@@ -12,7 +12,7 @@ export function initContextMenu(THREE, scene, camera, renderer) {
     titleEl: null,
     target: null,
     raycaster: new THREE.Raycaster(),
-    mouse: new THREE.Vector2()
+    mouse: new THREE.Vector2(),
   };
 
   // Initialize DOM references
@@ -157,7 +157,9 @@ export function initContextMenu(THREE, scene, camera, renderer) {
         }
         // Notify state manager if available
         if (window.RTStateManager?.deleteInstance) {
-          window.RTStateManager.deleteInstance(state.target.userData.instanceId);
+          window.RTStateManager.deleteInstance(
+            state.target.userData.instanceId
+          );
         }
       }
       hide();
@@ -218,6 +220,6 @@ export function initContextMenu(THREE, scene, camera, renderer) {
     show,
     hide,
     syncState,
-    getTarget: () => state.target
+    getTarget: () => state.target,
   };
 }

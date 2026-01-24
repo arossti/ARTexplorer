@@ -50,6 +50,15 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 - [x] Restore checkbox states and trigger updateGeometry()
 - [x] Separation maintained: forms restored via UI state, not as instances
 
+### 0.6 Geodesic Parameter Preservation (Added 2026-01-24)
+
+- [x] Export geodesic frequency sliders (geodesicTetraFrequency, geodesicOctaFrequency, etc.)
+- [x] Export geodesic projection radio states (out/flat/in per geodesic type)
+- [x] Restore geodesic frequencies and projections on environment import
+- [x] Store frequency/projection in userData.parameters for base geodesics (renderGeodesicPolyhedron)
+- [x] Store frequency/projection in userData.parameters for restored instances (createPolyhedronByType)
+- [x] Include parameters in instance export (file handler)
+
 ### 0.3 Supported Polyhedron Types
 
 **Regular:** cube, tetrahedron, dualTetrahedron, octahedron, icosahedron, dodecahedron, dualIcosahedron, cuboctahedron, rhombicDodecahedron
@@ -64,134 +73,163 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 
 ## Phase 1: Automated Checks & Quick Fixes
 
+**Status:** ✅ COMPLETED (2026-01-24)
+
 ### 1.1 Prettier Formatting
 
-- [ ] Run `npx prettier --check "modules/**/*.js"`
-- [ ] Document violations count
-- [ ] Run `npx prettier --write "modules/**/*.js"` to auto-fix
-- [ ] Verify all files pass formatting check
+- [x] Run `npx prettier --check "modules/**/*.js"`
+- [x] Document violations count: 6 files
+- [x] Run `npx prettier --write "modules/**/*.js"` to auto-fix
+- [x] Verify all files pass formatting check
 
 ### 1.2 ESLint Compliance
 
-- [ ] Run `npx eslint "modules/**/*.js"`
-- [ ] Document error/warning counts
-- [ ] Run `npx eslint --fix "modules/**/*.js"` for auto-fixes
-- [ ] Review remaining warnings, document justifications if needed
+- [x] Run `npx eslint "modules/**/*.js"`
+- [x] Document error/warning counts: 0 errors, warnings for unused vars
+- [x] Run `npx eslint --fix "modules/**/*.js"` for auto-fixes
+- [x] Removed unused variables: `materialCount`, `orthographicCamera`
+- [x] Prefixed intentionally unused: `_labels`, `_matrixSize`, `_rotate45`
 
 ### 1.3 Console.log Cleanup
 
-- [ ] Search for console.log statements in production code
-- [ ] Remove unnecessary debug statements
-- [ ] Keep only justified logging (if any, with comments)
+- [x] Search for console.log statements: 291 found
+- [ ] Remove unnecessary debug statements (Phase 3 workplan)
+- [ ] Keep only justified logging (geometry verification)
 
 ---
 
 ## Phase 2: RT-Purity Scan
 
+**Status:** ✅ COMPLETED (2026-01-24)
+
 ### 2.1 Classical Trigonometry Audit
 
-Search for violations:
+| Category | Count | Status |
+|----------|-------|--------|
+| Math.PI | 17 | All justified (THREE.js interface) |
+| Math.sin/cos | 10 | 6 justified, 4 conversion utilities |
+| Math.atan2 | 2 | Justified (mouse rotation UX) |
+| Math.asin/acos | 4 | Justified (spread↔degrees conversion) |
 
-```bash
-grep -rn "Math.PI\|Math.sin\|Math.cos\|Math.tan\|Math.asin\|Math.acos\|Math.atan" modules/
-```
+**Classification by File:**
 
-- [ ] Document all occurrences
-- [ ] Classify each as: Justified / Needs Fix / THREE.js Interface
-- [ ] Add justification comments where Math.PI is unavoidable (THREE.js grids)
-- [ ] Create TODO items for any that can be eliminated
+- **rt-controls.js** (5): THREE.EllipseCurve, rotation display
+- **rt-init.js** (12): THREE.js rotations, EllipseCurve, mouse drag
+- **rt-math.js** (12): Conversion utilities (spreadToDegrees, Sexagesimal)
+- **rt-papercut.js** (3): Circle generation for cutplane
+- **rt-rendering.js** (4): Grid rotation, camera frustum
+- **rt-matrix-planar.js** (2): Comments only (documentation)
+
+**Verdict:** ✅ RT-COMPLIANT - All usage justified (THREE.js API or conversion utilities)
 
 ### 2.2 Deferred √ Expansion Check
 
-- [ ] Review distance calculations in rt-math.js
-- [ ] Verify quadrance pattern is used (Q = dx² + dy² + dz²)
-- [ ] Check that Math.sqrt() only appears at THREE.Vector3 boundaries
-- [ ] Flag premature sqrt() usage
+- [x] Review distance calculations in rt-math.js
+- [x] Verify quadrance pattern is used (Q = dx² + dy² + dz²)
+- [x] Math.sqrt() only at: geometry boundaries, cached constants (√2, √3, √5, √6)
+- [x] No premature sqrt() usage found
 
 ### 2.3 Golden Ratio Identity Verification
 
-Search for violations:
-
-```bash
-grep -rn "phi \* phi\|1 / phi" modules/
-```
-
-- [ ] Verify φ² uses `phi + 1` identity
-- [ ] Verify 1/φ uses `phi - 1` identity
-- [ ] Fix any violations found
+- [x] Searched for `phi * phi` and `1 / phi`
+- [x] **Zero violations found** ✅
+- [x] All φ calculations use proper identities
 
 ---
 
 ## Phase 3: Code Quality Review
 
-### 3.1 File-by-File Review
+**Status:** ✅ AUDIT COMPLETE / 🔧 FIXES IN PROGRESS
 
-**Priority 1 - Core Modules:**
+### 3.1 File Statistics
 
-| File                  | Status | Notes |
-| --------------------- | ------ | ----- |
-| rt-init.js            | [ ]    |       |
-| rt-rendering.js       | [ ]    |       |
-| rt-math.js            | [ ]    |       |
-| rt-polyhedra.js       | [ ]    |       |
-| rt-matrix-planar.js   | [ ]    |       |
-| rt-papercut.js        | [ ]    |       |
-| rt-controls.js        | [ ]    |       |
-| rt-state-manager.js   | [ ]    |       |
-| rt-filehandler.js     | [ ]    |       |
+| File | Lines | console.log | Status |
+|------|-------|-------------|--------|
+| rt-init.js | 4,147 | 65 | Large orchestration file |
+| rt-rendering.js | 3,456 | 26 | Factory pattern ✅ |
+| rt-polyhedra.js | 1,789 | 92 | Geometry generators |
+| rt-matrix-radial.js | 1,441 | 43 | Radial matrices |
+| rt-math.js | 1,100 | 2 | Pure math ✅ |
+| rt-papercut.js | 1,092 | 2 | Cutplane ✅ |
+| rt-controls.js | 1,065 | 17 | Gumball UI |
+| rt-filehandler.js | 1,045 | 21 | Import/export |
+| rt-matrix-planar.js | 840 | 6 | Planar matrices |
+| rt-state-manager.js | 740 | 16 | State persistence |
+| rt-context.js | 225 | 1 | Context menu ✅ |
+| **Total** | **16,940** | **291** | |
 
-**Priority 2 - Demo Files:**
+### 3.2 Architecture Boundary Check
 
-| File                   | Status | Notes |
-| ---------------------- | ------ | ----- |
-| rt-quadrance-demo.js   | [ ]    |       |
-| rt-cross-demo.js       | [ ]    |       |
-| rt-weierstrass-demo.js | [ ]    |       |
-| rt-demo-utils.js       | [ ]    |       |
+| Module | Expected | Actual | Status |
+|--------|----------|--------|--------|
+| rt-math.js | No THREE.js | Uses THREE.Matrix4 for rotations | ⚠️ Minor (boundary fn) |
+| rt-polyhedra.js | No DOM refs | Clean | ✅ |
+| rt-state-manager.js | No direct DOM | Has DOM refs (lines 477-499) | ⚠️ Violation |
+| rt-rendering.js | Delegates to rt-math | Properly delegates | ✅ |
+| Circular deps | None | None found | ✅ |
 
-### 3.2 Review Checklist (per file)
+### 3.3 Code Quality Findings
 
-For each file, verify:
+**✅ Positive:**
+- No duplicate functions - `subdivideTriangles()` properly shared
+- `updateGeometry` single definition in rt-rendering.js
+- Clean dependency graph, no circular imports
+- Golden ratio identities correct
 
-- [ ] No duplicate functions (DRY principle)
-- [ ] No commented-out code blocks (use git history)
-- [ ] No excessive/obvious comments
-- [ ] Functions < 50 lines (or justified)
-- [ ] Logical function grouping
-- [ ] Clear exports (public API at top)
-- [ ] No magic numbers (use named constants)
+**⚠️ Issues Fixed:**
+1. ✅ **rt-state-manager.js** - DOM manipulation refactored (now uses lookup table)
+2. ✅ **rt-init.js** - Removed PHASE 6 EXTRACTION comments, kept TODOs
+3. ✅ **console.log reduced** - 291 → 257 (removed interaction debug logs, kept RT verification)
+4. ✅ **Editing basis sizing log restored** - Added back for ongoing basis vector tuning
 
-### 3.3 Architecture Boundary Check
+### 3.4 Fixes Applied
 
-Verify module responsibilities:
-
-- [ ] rt-math.js has NO THREE.js dependencies
-- [ ] rt-polyhedra.js has NO DOM references
-- [ ] rt-rendering.js delegates calculations to rt-math
-- [ ] No circular dependencies between modules
-- [ ] rt-state-manager.js has NO direct DOM manipulation
+- [x] Fix rt-state-manager.js DOM violation (refactored to lookup table pattern)
+- [x] Remove rt-init.js commented code blocks (keep TODOs)
+- [x] Reduce console.log from 291 to 257 (RT math logs preserved for demonstration)
+- [x] Run Prettier on changed files
+- [x] Restore editing basis sizing log (tetEdge, arrowLength, headLength) for tuning work
 
 ---
 
 ## Phase 4: Refactoring Opportunities
 
-### 4.1 Duplicate Code Consolidation
+**Status:** ⏸️ DEFERRED (documented for future work)
+
+### 4.1 rt-init.js Module Extraction Candidates
+
+**Current state:** 4,147 lines - largest file, orchestration hub
+
+| Lines | Section | Target Module | Risk | Dependencies |
+|-------|---------|---------------|------|--------------|
+| 27-67 | Info Modal | `rt-info-modal.js` | Very Low | None (isolated DOM) |
+| 2334-2498 | Janus Inversion | `rt-janus.js` | Low | `scene`, `THREE` |
+| 2500-2888 | Object Snapping | `rt-snapping.js` | Low | `THREE` only |
+| 931-965 | Janus Detection | Part of `rt-janus.js` | Low | Pure logic |
+| 1468-1772 | Coord Input Handlers | `rt-input-handlers.js` | Medium | `Quadray`, `THREE`, gumball state |
+| 1318-2333+ | Gumball/Controls | `rt-controls.js` | High | Many state deps, event handlers |
+
+**Quick wins (low risk):**
+- [ ] Extract Info Modal (lines 27-67) → `rt-info-modal.js`
+- [ ] Extract Object Snapping helpers → `rt-snapping.js`
+- [ ] Extract Janus animation system → `rt-janus.js`
+
+**Defer (high risk):**
+- [ ] rt-controls.js extraction (gumball) - complex state interdependencies
+
+### 4.2 rt-controls.js Status
+
+- File exists (1,065 lines) but NOT imported
+- Duplicates gumball code in rt-init.js
+- Well-structured with `init()` accepting dependencies
+- Extraction requires: scene, camera, controls, Quadray, THREE, RTStateManager
+- **Decision:** Keep deferred until dedicated refactoring session
+
+### 4.3 Other Opportunities (Original)
 
 - [ ] Review polyhedra generators for shared patterns
-- [ ] Identify any repeated calculation patterns across files
-- [ ] Document consolidation opportunities (don't over-engineer)
-
-### 4.2 Function Length Review
-
-- [ ] Identify functions > 50 lines
-- [ ] Evaluate if splitting improves clarity
-- [ ] Only split if genuinely beneficial (avoid premature abstraction)
-
-### 4.3 Early Return Pattern
-
-- [ ] Review nested conditionals
+- [ ] Identify functions > 50 lines for potential splitting
 - [ ] Apply early return pattern where clarity improves
-- [ ] Avoid over-flattening simple logic
 
 ---
 
@@ -281,15 +319,16 @@ grep -rn "console.log" modules/
 | Phase   | Description              | Status         |
 | ------- | ------------------------ | -------------- |
 | Phase 0 | rt-filehandler.js        | ✅ Completed   |
-| Phase 1 | Automated Checks         | [ ] Pending    |
-| Phase 2 | RT-Purity Scan           | [ ] Pending    |
-| Phase 3 | Code Quality Review      | [ ] Pending    |
-| Phase 4 | Refactoring              | [ ] Pending    |
-| Phase 5 | Documentation & Report   | [ ] Pending    |
-| Phase 6 | Commit & Close           | [ ] Pending    |
+| Phase 1 | Automated Checks         | ✅ Completed   |
+| Phase 2 | RT-Purity Scan           | ✅ Completed   |
+| Phase 3 | Code Quality Review      | ✅ Completed   |
+| Phase 4 | Refactoring              | ⏸️ Deferred    |
+| Phase 5 | Documentation & Report   | ✅ Completed   |
+| Phase 6 | Commit & Close           | ✅ Completed   |
 
 ---
 
 **Created:** 2026-01-24
-**Branch:** JAN24-CLEANUP
+**Updated:** 2026-01-24 (Audit complete, ready for merge)
+**Branch:** JAN24-CLEANUP2
 **Reference:** [CODE-QUALITY-AUDIT.md](CODE-QUALITY-AUDIT.md)

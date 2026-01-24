@@ -119,7 +119,7 @@ export function initScene(THREE, OrbitControls, RT) {
     controls.mouseButtons = {
       LEFT: THREE.MOUSE.ROTATE,
       MIDDLE: THREE.MOUSE.PAN,
-      RIGHT: null // Disable to free right-click for context menu
+      RIGHT: null, // Disable to free right-click for context menu
     };
 
     // Ambient light
@@ -555,7 +555,8 @@ export function initScene(THREE, OrbitControls, RT) {
     const shaftLength = totalBasisLength - headTipExtension; // ≈ 1.577
 
     const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00]; // R, G, B, Y
-    const labels = ["W", "X", "Y", "Z"];
+    // TODO: Add text labels to quadray basis arrows
+    const _labels = ["W", "X", "Y", "Z"];
 
     Quadray.basisVectors.forEach((vec, i) => {
       const arrow = createTetrahedralArrow(
@@ -1575,13 +1576,16 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       const projection = projectionRadio ? projectionRadio.value : "out";
 
-      const geometry = polyhedronFn(
-        scale,
-        isNaN(frequency) ? 1 : frequency,
-        projection
-      );
+      const actualFrequency = isNaN(frequency) ? 1 : frequency;
+      const geometry = polyhedronFn(scale, actualFrequency, projection);
       renderPolyhedron(group, geometry, color, opacity);
       group.visible = true;
+
+      // Store parameters for instance export (state manager captures these on deposit)
+      group.userData.parameters = {
+        frequency: actualFrequency,
+        projection: projection,
+      };
     } else {
       group.visible = false;
     }
@@ -2904,10 +2908,9 @@ export function initScene(THREE, OrbitControls, RT) {
    * @param {boolean} toOrthographic - true for orthographic, false for perspective
    */
   function switchCameraType(toOrthographic) {
-    // CRITICAL: Store the original perspective camera on first call
+    // Store the original perspective camera on first call
     if (!originalPerspectiveCamera && !isOrthographic) {
       originalPerspectiveCamera = camera;
-      console.log("📸 Saved original perspective camera reference");
     }
 
     const container = document.getElementById("canvas-container");
@@ -2938,8 +2941,6 @@ export function initScene(THREE, OrbitControls, RT) {
       camera = orthographicCamera;
       controls.object = orthographicCamera;
       isOrthographic = true;
-
-      console.log("✅ Switched to Orthographic camera (parallel projection)");
     } else if (!toOrthographic && isOrthographic) {
       // Switch back to perspective - use ORIGINAL perspective camera
       if (!originalPerspectiveCamera) {
@@ -2956,8 +2957,6 @@ export function initScene(THREE, OrbitControls, RT) {
       camera = originalPerspectiveCamera;
       controls.object = originalPerspectiveCamera;
       isOrthographic = false;
-
-      console.log("✅ Switched to Perspective camera");
     }
 
     controls.update();
@@ -3187,8 +3186,6 @@ export function initScene(THREE, OrbitControls, RT) {
 
     cartesianBasis.visible = visibilityState.cartesianBasis ?? false;
     scene.add(cartesianBasis);
-
-    console.log(`✅ Rebuilt Cartesian grids with divisions=${divisions}`);
   }
 
   /**
@@ -3247,8 +3244,9 @@ export function initScene(THREE, OrbitControls, RT) {
       parseFloat(document.getElementById("opacitySlider")?.value || "0.25");
     const frequency = options.frequency ?? 1;
     const projection = options.projection ?? "out";
-    const matrixSize = options.matrixSize ?? 1;
-    const rotate45 = options.rotate45 ?? false;
+    // TODO: Implement matrix type instance restoration (requires async creation)
+    const _matrixSize = options.matrixSize ?? 1;
+    const _rotate45 = options.rotate45 ?? false;
 
     // Quadray-specific options
     const normalize = options.normalize ?? true;
@@ -3315,16 +3313,31 @@ export function initScene(THREE, OrbitControls, RT) {
       case "geodesicIcosahedron":
         geometry = Polyhedra.geodesicIcosahedron(scale, frequency, projection);
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          frequency: frequency,
+          projection: projection,
+        };
         break;
 
       case "geodesicTetrahedron":
         geometry = Polyhedra.geodesicTetrahedron(scale, frequency, projection);
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          frequency: frequency,
+          projection: projection,
+        };
         break;
 
       case "geodesicOctahedron":
         geometry = Polyhedra.geodesicOctahedron(scale, frequency, projection);
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          frequency: frequency,
+          projection: projection,
+        };
         break;
 
       case "geodesicDualTetrahedron":
@@ -3334,6 +3347,11 @@ export function initScene(THREE, OrbitControls, RT) {
           projection
         );
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          frequency: frequency,
+          projection: projection,
+        };
         break;
 
       case "geodesicDualIcosahedron":
@@ -3343,6 +3361,11 @@ export function initScene(THREE, OrbitControls, RT) {
           projection
         );
         renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          frequency: frequency,
+          projection: projection,
+        };
         break;
 
       // Quadray demonstrator polyhedra (with native WXYZ coordinate preservation)
