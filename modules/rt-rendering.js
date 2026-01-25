@@ -2062,13 +2062,15 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Quadray Cuboctahedron (Vector Equilibrium - 4D Native)
-    // NOTE: The central vectors visible when this is shown are from quadrayBasis (WXYZ arrows),
-    // not from the cuboctahedron edges. Toggle "Show Quadray Basis" to hide them if desired.
+    // Central vectors show the 12-around-1 sphere packing relationship (IVM lattice)
     if (document.getElementById("showQuadrayCuboctahedron")?.checked) {
       const normalize =
         document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
+      const showCentralVectors =
+        document.getElementById("quadrayCuboctaCentralVectors")?.checked ?? true;
       const quadrayCubocta = Polyhedra.quadrayCuboctahedron(scale, {
         normalize: normalize,
+        showCentralVectors: showCentralVectors,
       });
       renderPolyhedron(
         quadrayCuboctahedronGroup,
@@ -2079,6 +2081,7 @@ export function initScene(THREE, OrbitControls, RT) {
       // Store parameters for export/import
       quadrayCuboctahedronGroup.userData.parameters = {
         normalize: normalize,
+        showCentralVectors: showCentralVectors,
         wxyz: quadrayCubocta.wxyz_normalized, // Store the actual WXYZ coords
       };
       quadrayCuboctahedronGroup.visible = true;

@@ -443,6 +443,13 @@ function startARTexplorer(
     quadrayCuboctaNormalizeCheckbox.addEventListener("change", updateGeometry);
   }
 
+  const quadrayCuboctaCentralVectorsCheckbox = document.getElementById(
+    "quadrayCuboctaCentralVectors"
+  );
+  if (quadrayCuboctaCentralVectorsCheckbox) {
+    quadrayCuboctaCentralVectorsCheckbox.addEventListener("change", updateGeometry);
+  }
+
   // Matrix forms (IVM Arrays)
   const cubeMatrixCheckbox = document.getElementById("showCubeMatrix");
   if (cubeMatrixCheckbox) {
