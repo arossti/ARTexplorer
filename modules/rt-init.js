@@ -1257,7 +1257,9 @@ function startARTexplorer(
 
   // Opt-click drag-to-copy state
   let isDragCopying = false; // Alt/Option key held during drag
-  let dragCopyClone = null;  // The clone being dragged (original stays put)
+  let dragCopyOriginalPosition = new THREE.Vector3();
+  let dragCopyOriginalQuaternion = new THREE.Quaternion();
+  let dragCopyOriginalScale = new THREE.Vector3();
 
   // NOW button - deposit current Form as Instance using RTStateManager
   document.getElementById("nowButton").addEventListener("click", function () {
@@ -2684,12 +2686,13 @@ function startARTexplorer(
 
               isDragging = true;
 
-              // OPT-CLICK DRAG-COPY: Create clone immediately, original stays put
+              // OPT-CLICK DRAG-COPY: Store original transform if Alt/Option held
               if (event.altKey && currentSelection) {
                 isDragCopying = true;
-                // Create clone at same position - this becomes what we drag
-                dragCopyClone = RTStateManager.createInstance(currentSelection, scene);
-                console.log("📋 DRAG-COPY mode: Clone created, original stays in place");
+                dragCopyOriginalPosition.copy(currentSelection.position);
+                dragCopyOriginalQuaternion.copy(currentSelection.quaternion);
+                dragCopyOriginalScale.copy(currentSelection.scale);
+                console.log("📋 DRAG-COPY mode: Alt key detected, will create copy on release");
               }
               // Note: controls.enabled already false when tool is active
 
@@ -2770,12 +2773,13 @@ function startARTexplorer(
 
               isFreeMoving = true;
 
-              // OPT-CLICK DRAG-COPY: Create clone immediately, original stays put
+              // OPT-CLICK DRAG-COPY: Store original transform if Alt/Option held
               if (event.altKey && currentSelection) {
                 isDragCopying = true;
-                // Create clone at same position - this becomes what we drag
-                dragCopyClone = RTStateManager.createInstance(currentSelection, scene);
-                console.log("📋 DRAG-COPY mode (free move): Clone created, original stays in place");
+                dragCopyOriginalPosition.copy(currentSelection.position);
+                dragCopyOriginalQuaternion.copy(currentSelection.quaternion);
+                dragCopyOriginalScale.copy(currentSelection.scale);
+                console.log("📋 DRAG-COPY mode (free move): Alt key detected, will create copy on release");
               }
               selectedPolyhedra = getSelectedPolyhedra();
 
@@ -2897,20 +2901,14 @@ function startARTexplorer(
               }
             }
 
-            // Move polyhedra - if drag-copying, move clone only; otherwise move originals
-            if (isDragCopying && dragCopyClone) {
-              // Move only the clone, original stays put
-              dragCopyClone.position.copy(newPosition);
-            } else {
-              // Normal move - move all selected polyhedra
-              selectedPolyhedra.forEach(poly => {
-                poly.position.copy(newPosition);
-              });
+            // Move all selected polyhedra
+            selectedPolyhedra.forEach(poly => {
+              poly.position.copy(newPosition);
+            });
 
-              // Update editing basis position if it exists
-              if (editingBasis) {
-                editingBasis.position.copy(newPosition);
-              }
+            // Update editing basis position if it exists
+            if (editingBasis) {
+              editingBasis.position.copy(newPosition);
             }
 
             // Update coordinate displays
@@ -2981,21 +2979,15 @@ function startARTexplorer(
               `Movement: ${(axisMovement * sensitivity).toFixed(4)}, Polyhedra: ${selectedPolyhedra.length}`
             );
 
-            // Move polyhedra - if drag-copying, move clone only; otherwise move originals
-            if (isDragCopying && dragCopyClone) {
-              // Move only the clone, original stays put
-              dragCopyClone.position.add(constrainedMovement);
-            } else {
-              // Normal move - all selected polyhedra (FULL PRECISION - no snapping during drag)
-              selectedPolyhedra.forEach(poly => {
-                poly.position.add(constrainedMovement);
-                // Snapping will be applied at mouseup based on currentSnapMode
-              });
+            // Move all selected polyhedra (FULL PRECISION - no snapping during drag)
+            selectedPolyhedra.forEach(poly => {
+              poly.position.add(constrainedMovement);
+              // Snapping will be applied at mouseup based on currentSnapMode
+            });
 
-              // Update editing basis to follow the Forms
-              if (selectedPolyhedra.length > 0) {
-                updateEditingBasisPosition(selectedPolyhedra[0].position);
-              }
+            // Update editing basis to follow the Forms
+            if (selectedPolyhedra.length > 0) {
+              updateEditingBasisPosition(selectedPolyhedra[0].position);
             }
           } else if (currentGumballTool === "scale") {
             // ====================================================================
@@ -3455,12 +3447,29 @@ function startARTexplorer(
             }
           }
 
-          // OPT-CLICK DRAG-COPY: Clone already created on mousedown, just finalize
-          if (isDragCopying && dragCopyClone) {
-            // Clone was already created as instance on mousedown
-            // It's now at the dragged position - just clear state
-            console.log("✅ DRAG-COPY complete (free move): Clone deposited, original unchanged");
-            dragCopyClone = null;
+          // OPT-CLICK DRAG-COPY: Create instance at current position, restore original
+          if (isDragCopying && currentSelection) {
+            // Create instance at the dragged position
+            RTStateManager.createInstance(currentSelection, scene);
+
+            // Restore original to its starting position
+            currentSelection.position.copy(dragCopyOriginalPosition);
+            currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
+            currentSelection.scale.copy(dragCopyOriginalScale);
+
+            // Update editing basis to follow restored original
+            if (editingBasis) {
+              editingBasis.position.copy(dragCopyOriginalPosition);
+            }
+
+            // Update NOW counter display
+            const nowCountEl = document.getElementById("nowCount");
+            if (nowCountEl) {
+              const instances = RTStateManager.getInstances();
+              nowCountEl.textContent = instances.length;
+            }
+
+            console.log("✅ DRAG-COPY complete: Instance created, original restored");
             isDragCopying = false;
           }
 
@@ -3559,12 +3568,29 @@ function startARTexplorer(
             );
           }
 
-          // OPT-CLICK DRAG-COPY: Clone already created on mousedown, just finalize
-          if (isDragCopying && dragCopyClone) {
-            // Clone was already created as instance on mousedown
-            // It's now at the dragged position - just clear state
-            console.log("✅ DRAG-COPY complete (gumball): Clone deposited, original unchanged");
-            dragCopyClone = null;
+          // OPT-CLICK DRAG-COPY: Create instance at current position, restore original
+          if (isDragCopying && currentSelection) {
+            // Create instance at the dragged position
+            RTStateManager.createInstance(currentSelection, scene);
+
+            // Restore original to its starting position
+            currentSelection.position.copy(dragCopyOriginalPosition);
+            currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
+            currentSelection.scale.copy(dragCopyOriginalScale);
+
+            // Update editing basis to follow restored original
+            if (editingBasis) {
+              editingBasis.position.copy(dragCopyOriginalPosition);
+            }
+
+            // Update NOW counter display
+            const nowCountEl = document.getElementById("nowCount");
+            if (nowCountEl) {
+              const instances = RTStateManager.getInstances();
+              nowCountEl.textContent = instances.length;
+            }
+
+            console.log("✅ DRAG-COPY complete: Instance created, original restored");
             isDragCopying = false;
           }
 
@@ -3780,17 +3806,21 @@ function startARTexplorer(
   document.addEventListener("keydown", event => {
     // ESC key - cancel drag-copy, deselect all AND exit any active tool mode
     if (event.key === "Escape") {
-      // Cancel drag-copy mode if active - delete the clone
-      if (isDragCopying && dragCopyClone) {
-        // Delete the clone that was being dragged
-        const instanceId = dragCopyClone.userData.instanceId;
-        RTStateManager.deleteInstance(instanceId, scene);
+      // Cancel drag-copy mode if active and restore original position
+      if (isDragCopying && currentSelection) {
+        currentSelection.position.copy(dragCopyOriginalPosition);
+        currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
+        currentSelection.scale.copy(dragCopyOriginalScale);
 
-        dragCopyClone = null;
+        // Update editing basis to follow restored original
+        if (editingBasis) {
+          editingBasis.position.copy(dragCopyOriginalPosition);
+        }
+
         isDragCopying = false;
         isFreeMoving = false;
         isDragging = false;
-        console.log("❌ DRAG-COPY cancelled via Escape, clone deleted");
+        console.log("❌ DRAG-COPY cancelled via Escape, original restored");
         return; // Don't deselect, just cancel the copy operation
       }
 
