@@ -1735,64 +1735,11 @@ export const Polyhedra = {
         .addScaledVector(basisZ, z * scale);
     });
 
-    // 24 edges - cuboctahedron has 24 edges (all equal length)
-    // Each vertex connects to 4 neighbors
-    const edges = [
-      // Edges from vertex 0 (2,1,1,0)
-      [0, 1],
-      [0, 3],
-      [0, 6],
-      [0, 9],
-      // Edges from vertex 1 (2,1,0,1)
-      [1, 2],
-      [1, 4],
-      [1, 10],
-      // Edges from vertex 2 (2,0,1,1)
-      [2, 7],
-      [2, 10],
-      // Edges from vertex 3 (1,2,1,0)
-      [3, 4],
-      [3, 6],
-      // Edges from vertex 4 (1,2,0,1)
-      [4, 5],
-      [4, 9],
-      // Edges from vertex 5 (0,2,1,1)
-      [5, 7],
-      [5, 8],
-      [5, 11],
-      // Edges from vertex 6 (1,1,2,0)
-      [6, 7],
-      [6, 8],
-      // Edges from vertex 7 (1,0,2,1)
-      [7, 10],
-      // Edges from vertex 8 (0,1,2,1)
-      [8, 11],
-      // Edges from vertex 9 (1,1,0,2)
-      [9, 10],
-      [9, 11],
-      // Edges from vertex 10 (1,0,1,2)
-      [10, 11],
-      // Vertex 11 (0,1,1,2) - all edges already defined
-    ];
-
-    // RT VALIDATION
-    const sampleQ = RT.quadrance(vertices[0], vertices[1]);
-
-    console.log(
-      `[RT] Quadray Cuboctahedron (Vector Equilibrium): normalize=${normalize}, scale=${scale}`
-    );
-    console.log(`  WXYZ raw: {2,1,1,0} permutations — 12 vertices`);
-    console.log(`  Sum of each vertex coordinates: 4 (consistent)`);
-    console.log(
-      `  Physical meaning: 12-around-1 closest sphere packing (IVM lattice)`
-    );
-    console.log(`  Edge Q: ${sampleQ.toFixed(6)}`);
-
-    // For proper faces, we need to identify which vertices are adjacent
-    // Two vertices are adjacent if they differ in exactly 2 positions
+    // For proper edges and faces, we need to identify which vertices are adjacent
+    // Two vertices are adjacent if they share exactly 2 coordinate values
     // (one position changes from 2→1 or 1→2, another from 0→1 or 1→0)
 
-    // Build adjacency list to verify our edges
+    // Build adjacency list - this determines the TRUE edges
     const adjList = new Map();
     for (let i = 0; i < 12; i++) {
       adjList.set(i, []);
@@ -1823,6 +1770,31 @@ export const Polyhedra = {
         );
       }
     }
+
+    // Extract edges from adjacency list (each edge appears once)
+    // 24 edges total: 12 vertices × 4 neighbors / 2 = 24
+    const edges = [];
+    for (let i = 0; i < 12; i++) {
+      for (const j of adjList.get(i)) {
+        if (i < j) {
+          edges.push([i, j]);
+        }
+      }
+    }
+
+    // RT VALIDATION
+    const sampleQ = RT.quadrance(vertices[0], vertices[1]);
+
+    console.log(
+      `[RT] Quadray Cuboctahedron (Vector Equilibrium): normalize=${normalize}, scale=${scale}`
+    );
+    console.log(`  WXYZ raw: {2,1,1,0} permutations — 12 vertices`);
+    console.log(`  Sum of each vertex coordinates: 4 (consistent)`);
+    console.log(
+      `  Physical meaning: 12-around-1 closest sphere packing (IVM lattice)`
+    );
+    console.log(`  Edges: ${edges.length} (expected 24)`);
+    console.log(`  Edge Q: ${sampleQ.toFixed(6)}`);
 
     // Build proper faces using adjacency
     // Triangular faces: 3 mutually adjacent vertices

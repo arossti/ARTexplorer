@@ -110,7 +110,7 @@ function startARTexplorer(
   let cuboctaMatrixGroup, rhombicDodecMatrixGroup;
   let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup;
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup;
-  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup;
+  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup, quadrayCuboctahedronGroup;
   let cartesianGrid, ivmPlanes;
 
   // ========================================================================
@@ -2209,6 +2209,7 @@ function startARTexplorer(
       radialVEMatrixGroup,
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
+      quadrayCuboctahedronGroup,
     ];
 
     formGroups.forEach(group => {
@@ -2476,6 +2477,7 @@ function startARTexplorer(
       radialVEMatrixGroup,
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
+      quadrayCuboctahedronGroup,
     ];
 
     formGroups.forEach(group => {
@@ -3749,6 +3751,7 @@ function startARTexplorer(
     radialVEMatrixGroup,
     quadrayTetrahedronGroup,
     quadrayTetraDeformedGroup,
+    quadrayCuboctahedronGroup,
   } = formGroups);
 
   initGumballEventListeners(); // Initialize gumball after scene is ready

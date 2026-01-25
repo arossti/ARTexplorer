@@ -2678,6 +2678,42 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
     }
 
+    // Quadray Tetrahedron (4D Native)
+    if (document.getElementById("showQuadrayTetrahedron")?.checked) {
+      const normalize = document.getElementById("quadrayTetraNormalize")?.checked ?? true;
+      const quadrayTet = Polyhedra.quadrayTetrahedron(1, { normalize });
+      const eulerOK = RT.verifyEuler(
+        quadrayTet.vertices.length,
+        quadrayTet.edges.length,
+        quadrayTet.faces.length
+      );
+      html += `<div style="margin-top: 10px;"><strong>Quadray Tetrahedron:</strong></div>`;
+      html += `<div>WXYZ: {1,0,0,0} permutations</div>`;
+      html += `<div>Normalized: ${normalize ? "Yes" : "No"}</div>`;
+      html += `<div>V: ${quadrayTet.vertices.length}, E: ${quadrayTet.edges.length}, F: ${quadrayTet.faces.length}</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+    }
+
+    // Quadray Cuboctahedron (Vector Equilibrium)
+    if (document.getElementById("showQuadrayCuboctahedron")?.checked) {
+      const normalize = document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
+      const quadrayCubocta = Polyhedra.quadrayCuboctahedron(1, { normalize });
+      const eulerOK = RT.verifyEuler(
+        quadrayCubocta.vertices.length,
+        quadrayCubocta.edges.length,
+        quadrayCubocta.faces.length
+      );
+      const triangles = quadrayCubocta.faces.filter(f => f.length === 3).length;
+      const squares = quadrayCubocta.faces.filter(f => f.length === 4).length;
+      html += `<div style="margin-top: 10px;"><strong>Quadray Cuboctahedron (VE):</strong></div>`;
+      html += `<div>WXYZ: {2,1,1,0} permutations</div>`;
+      html += `<div>Normalized: ${normalize ? "Yes" : "No"}</div>`;
+      html += `<div>V: ${quadrayCubocta.vertices.length}, E: ${quadrayCubocta.edges.length}, F: ${quadrayCubocta.faces.length}</div>`;
+      html += `<div>Faces: ${triangles} △ + ${squares} □</div>`;
+      html += `<div>IVM: 12-around-1 sphere packing</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+    }
+
     stats.innerHTML = html || "Select a polyhedron to see stats";
   }
 
