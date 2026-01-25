@@ -1255,6 +1255,12 @@ function startARTexplorer(
   // ========================================================================
   let currentSelection = null; // Currently selected polyhedron (Form or Instance)
 
+  // Opt-click drag-to-copy state
+  let isDragCopying = false; // Alt/Option key held during drag
+  let dragCopyOriginalPosition = new THREE.Vector3();
+  let dragCopyOriginalQuaternion = new THREE.Quaternion();
+  let dragCopyOriginalScale = new THREE.Vector3();
+
   // NOW button - deposit current Form as Instance using RTStateManager
   document.getElementById("nowButton").addEventListener("click", function () {
     const selected = getSelectedPolyhedra();
@@ -2639,6 +2645,68 @@ function startARTexplorer(
     renderer.domElement.addEventListener(
       "mousedown",
       event => {
+        // Skip right-click (button 2) - let context menu handle it
+        if (event.button === 2) return;
+
+        // ================================================================
+        // ALT-CLICK AUTO-MOVE: Bypass tool requirement for drag-copy
+        // If Alt held + clicking on selected poly + no tool active → start move+copy
+        // ================================================================
+        if (event.altKey && currentSelection && !currentGumballTool) {
+          // Convert mouse position
+          const rect = renderer.domElement.getBoundingClientRect();
+          mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+          raycaster.setFromCamera(mouse, camera);
+
+          // Check if clicking on the selected polyhedron
+          const selectableObjects = [];
+          currentSelection.traverse(obj => {
+            if (obj.isMesh || obj.isLine) selectableObjects.push(obj);
+          });
+
+          const polyIntersects = raycaster.intersectObjects(
+            selectableObjects,
+            false
+          );
+
+          if (polyIntersects.length > 0) {
+            // Alt+click on selected poly - start free move with drag-copy
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Disable orbit controls for this drag
+            controls.enabled = false;
+
+            isFreeMoving = true;
+            isDragCopying = true;
+            dragCopyOriginalPosition.copy(currentSelection.position);
+            dragCopyOriginalQuaternion.copy(currentSelection.quaternion);
+            dragCopyOriginalScale.copy(currentSelection.scale);
+
+            selectedPolyhedra = getSelectedPolyhedra();
+
+            // Create drag plane perpendicular to camera
+            const cameraDirection = new THREE.Vector3();
+            camera.getWorldDirection(cameraDirection);
+            dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+              cameraDirection,
+              currentSelection.position.clone()
+            );
+
+            // Get click point and offset
+            raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
+            freeMoveDragOffset
+              .copy(currentSelection.position)
+              .sub(dragStartPoint);
+
+            console.log(
+              "📋 ALT-CLICK AUTO-MOVE: Drag-copy started without tool activation"
+            );
+            return; // Don't fall through to normal tool handling
+          }
+        }
+
         // Only work if a gumball tool is active (Move, Scale, or Rotate mode)
         if (
           !currentGumballTool ||
@@ -2676,6 +2744,17 @@ function startARTexplorer(
               event.stopPropagation();
 
               isDragging = true;
+
+              // OPT-CLICK DRAG-COPY: Store original transform if Alt/Option held
+              if (event.altKey && currentSelection) {
+                isDragCopying = true;
+                dragCopyOriginalPosition.copy(currentSelection.position);
+                dragCopyOriginalQuaternion.copy(currentSelection.quaternion);
+                dragCopyOriginalScale.copy(currentSelection.scale);
+                console.log(
+                  "📋 DRAG-COPY mode: Alt key detected, will create copy on release"
+                );
+              }
               // Note: controls.enabled already false when tool is active
 
               // Get the basis vector direction and type from userData
@@ -2754,6 +2833,17 @@ function startARTexplorer(
               event.stopPropagation();
 
               isFreeMoving = true;
+
+              // OPT-CLICK DRAG-COPY: Store original transform if Alt/Option held
+              if (event.altKey && currentSelection) {
+                isDragCopying = true;
+                dragCopyOriginalPosition.copy(currentSelection.position);
+                dragCopyOriginalQuaternion.copy(currentSelection.quaternion);
+                dragCopyOriginalScale.copy(currentSelection.scale);
+                console.log(
+                  "📋 DRAG-COPY mode (free move): Alt key detected, will create copy on release"
+                );
+              }
               selectedPolyhedra = getSelectedPolyhedra();
 
               // Create drag plane perpendicular to camera, through object's position
@@ -3420,6 +3510,38 @@ function startARTexplorer(
             }
           }
 
+          // OPT-CLICK DRAG-COPY: Create instance at current position, restore original
+          if (isDragCopying && currentSelection) {
+            // Create instance at the dragged position
+            RTStateManager.createInstance(currentSelection, scene);
+
+            // Restore original to its starting position
+            currentSelection.position.copy(dragCopyOriginalPosition);
+            currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
+            currentSelection.scale.copy(dragCopyOriginalScale);
+
+            // Update editing basis to follow restored original
+            if (editingBasis) {
+              editingBasis.position.copy(dragCopyOriginalPosition);
+            }
+
+            // Update NOW counter display
+            const nowCountEl = document.getElementById("nowCount");
+            if (nowCountEl) {
+              nowCountEl.textContent = RTStateManager.getDepositedCount();
+            }
+
+            console.log(
+              "✅ DRAG-COPY complete: Instance created, original restored"
+            );
+            isDragCopying = false;
+
+            // Re-enable orbit controls if no tool is active (alt-click auto-move case)
+            if (!currentGumballTool) {
+              controls.enabled = true;
+            }
+          }
+
           justFinishedDrag = true;
           isFreeMoving = false;
           selectedPolyhedra = [];
@@ -3513,6 +3635,33 @@ function startARTexplorer(
             console.log(
               "✨ Free mode - no snapping applied (full precision preserved)"
             );
+          }
+
+          // OPT-CLICK DRAG-COPY: Create instance at current position, restore original
+          if (isDragCopying && currentSelection) {
+            // Create instance at the dragged position
+            RTStateManager.createInstance(currentSelection, scene);
+
+            // Restore original to its starting position
+            currentSelection.position.copy(dragCopyOriginalPosition);
+            currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
+            currentSelection.scale.copy(dragCopyOriginalScale);
+
+            // Update editing basis to follow restored original
+            if (editingBasis) {
+              editingBasis.position.copy(dragCopyOriginalPosition);
+            }
+
+            // Update NOW counter display
+            const nowCountEl = document.getElementById("nowCount");
+            if (nowCountEl) {
+              nowCountEl.textContent = RTStateManager.getDepositedCount();
+            }
+
+            console.log(
+              "✅ DRAG-COPY complete: Instance created, original restored"
+            );
+            isDragCopying = false;
           }
 
           // Mark that we just finished a drag to prevent click-after-drag deselection
@@ -3725,8 +3874,32 @@ function startARTexplorer(
   // KEYBOARD SHORTCUTS (ESC, Delete, Undo/Redo)
   // ========================================================================
   document.addEventListener("keydown", event => {
-    // ESC key - deselect all AND exit any active tool mode
+    // ESC key - cancel drag-copy, deselect all AND exit any active tool mode
     if (event.key === "Escape") {
+      // Cancel drag-copy mode if active and restore original position
+      if (isDragCopying && currentSelection) {
+        currentSelection.position.copy(dragCopyOriginalPosition);
+        currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
+        currentSelection.scale.copy(dragCopyOriginalScale);
+
+        // Update editing basis to follow restored original
+        if (editingBasis) {
+          editingBasis.position.copy(dragCopyOriginalPosition);
+        }
+
+        isDragCopying = false;
+        isFreeMoving = false;
+        isDragging = false;
+
+        // Re-enable orbit controls if no tool is active
+        if (!currentGumballTool) {
+          controls.enabled = true;
+        }
+
+        console.log("❌ DRAG-COPY cancelled via Escape, original restored");
+        return; // Don't deselect, just cancel the copy operation
+      }
+
       if (currentGumballTool) {
         exitToolMode();
       }
