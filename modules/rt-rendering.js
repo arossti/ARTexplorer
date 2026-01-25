@@ -901,10 +901,11 @@ export function initScene(THREE, OrbitControls, RT) {
 
       case "quadrayCuboctahedron":
         // Quadray Cuboctahedron (Vector Equilibrium): {2,1,1,0} permutations
-        // 12 vertices from sphere packing - edge Q depends on normalization
-        // With zero-sum: consistent edge quadrance across all 24 edges
-        // Edge Q ≈ 8s² (similar to base cuboctahedron scaling)
-        return 8 * s2;
+        // 12 vertices from sphere packing - matches XYZ cuboctahedron geometry
+        // The Quadray VE is rendered at scale/2 to match XYZ cuboctahedron size
+        // Edge quadrance matches regular cuboctahedron: Q = 2s²
+        // This ensures packed nodes are correctly sized for the actual geometry
+        return 2 * s2;
 
       default:
         console.warn(
@@ -2067,7 +2068,10 @@ export function initScene(THREE, OrbitControls, RT) {
     if (document.getElementById("showQuadrayCuboctahedron")?.checked) {
       const normalize =
         document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
-      const quadrayCubocta = Polyhedra.quadrayCuboctahedron(scale, {
+      // Scale by 1/2 to match XYZ cuboctahedron size
+      // Quadray {2,1,1,0} normalized produces vertices at distance 2√2 from origin
+      // XYZ cuboctahedron (at same slider scale) has vertices at distance √2 from origin
+      const quadrayCubocta = Polyhedra.quadrayCuboctahedron(scale / 2, {
         normalize: normalize,
       });
       renderPolyhedron(
