@@ -831,9 +831,10 @@ export function initScene(THREE, OrbitControls, RT) {
    * Uses RT-pure algebraic formulas (defers sqrt to last possible moment)
    * @param {string} type - Polyhedron type (tetrahedron, cube, octahedron, etc.)
    * @param {number} scale - halfSize parameter (s)
+   * @param {Object} options - Optional parameters (e.g., {sides: 3} for polygon)
    * @returns {number} Edge quadrance Q = a² (NOT edge length!)
    */
-  function getPolyhedronEdgeQuadrance(type, scale) {
+  function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
     const s2 = scale * scale; // Pre-compute s² for RT calculations
 
     switch (type) {
@@ -851,8 +852,8 @@ export function initScene(THREE, OrbitControls, RT) {
         // Polygon edge quadrance depends on circumradius quadrance and number of sides
         // Q_edge = 4·Q_R·spread(π/n) where spread = sin²(θ)
         // scale is the circumradius quadrance (Q_R)
-        // Need to get sides from userData.parameters
-        const sides = options?.sides || 3;
+        // sides comes from options parameter (passed from group.userData.parameters)
+        const sides = options.sides || 3;
         const centralAngle = Math.PI / sides;
         const spread = Math.pow(Math.sin(centralAngle), 2);
         return 4 * scale * spread;
@@ -977,11 +978,12 @@ export function initScene(THREE, OrbitControls, RT) {
    *
    * @param {string} type - Polyhedron type
    * @param {number} scale - halfSize parameter
+   * @param {Object} options - Optional parameters (e.g., {sides: 3} for polygon)
    * @returns {number} Vertex sphere radius for close-packing
    */
-  function getClosePackedRadius(type, scale) {
+  function getClosePackedRadius(type, scale, options = {}) {
     // RT-PURE: Work in quadrance space (no sqrt until final step!)
-    const Q_edge = getPolyhedronEdgeQuadrance(type, scale);
+    const Q_edge = getPolyhedronEdgeQuadrance(type, scale, options);
 
     // Handle forms without edges (e.g., Point)
     if (Q_edge === null || Q_edge === 0) {
@@ -1015,10 +1017,13 @@ export function initScene(THREE, OrbitControls, RT) {
    * @param {string} nodeSize - Size ('sm', 'md', 'lg', 'packed', 'off')
    * @param {string} polyhedronType - Type for close-pack calculations
    * @param {number} scale - halfSize for close-pack calculations
+   * @param {Object} options - Optional parameters (e.g., {sides: 3} for polygon)
    * @returns {Object} {geometry: THREE.BufferGeometry, triangles: number}
    */
-  function getCachedNodeGeometry(useRT, nodeSize, polyhedronType, scale) {
-    const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}`;
+  function getCachedNodeGeometry(useRT, nodeSize, polyhedronType, scale, options = {}) {
+    // Include options.sides in cache key for polygon (different n-gons have different edge quadrance)
+    const sidesKey = options.sides ? `-n${options.sides}` : "";
+    const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}${sidesKey}`;
 
     if (nodeGeometryCache.has(cacheKey)) {
       return nodeGeometryCache.get(cacheKey);
@@ -1036,7 +1041,7 @@ export function initScene(THREE, OrbitControls, RT) {
         );
         radius = 0.04; // Fallback to medium size
       } else {
-        radius = getClosePackedRadius(polyhedronType, scale);
+        radius = getClosePackedRadius(polyhedronType, scale, options);
         // Fallback if packed not available (e.g., Point has no edges)
         if (radius === null) {
           radius = 0.04; // "md" size fallback
@@ -1607,11 +1612,16 @@ export function initScene(THREE, OrbitControls, RT) {
       // Get polyhedron type and scale from group for close-pack calculations
       const polyType = group.userData.type;
 
-      // For Line primitive, scale IS the quadrance (stored in parameters)
+      // For Line/Polygon primitives, scale IS the quadrance (stored in parameters)
       // For all other polyhedra, scale derives from tetScaleSlider
       let scale;
+      let nodeOptions = {}; // Options for polygon (sides) etc.
+
       if (polyType === "line" && group.userData.parameters?.quadrance) {
         scale = group.userData.parameters.quadrance;
+      } else if (polyType === "polygon" && group.userData.parameters?.quadrance) {
+        scale = group.userData.parameters.quadrance;
+        nodeOptions = { sides: group.userData.parameters.sides || 3 };
       } else {
         const tetEdge = parseFloat(
           document.getElementById("tetScaleSlider").value
@@ -1620,14 +1630,14 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // Get cached geometry (prevents repeated generation)
-      // Pass polyhedronType and scale for 'packed' mode calculations
+      // Pass polyhedronType, scale, and options for 'packed' mode calculations
       const { geometry: nodeGeometry, triangles: trianglesPerNode } =
-        getCachedNodeGeometry(useRTNodeGeometry, nodeSize, polyType, scale);
+        getCachedNodeGeometry(useRTNodeGeometry, nodeSize, polyType, scale, nodeOptions);
 
       // Calculate node radius for userData (same logic as getCachedNodeGeometry)
       let nodeRadius;
       if (nodeSize === "packed") {
-        nodeRadius = getClosePackedRadius(polyType, scale);
+        nodeRadius = getClosePackedRadius(polyType, scale, nodeOptions);
         // Fallback to "md" if packed not available (e.g., Point has no edges)
         if (nodeRadius === null) {
           nodeRadius = 0.04; // "md" size fallback
