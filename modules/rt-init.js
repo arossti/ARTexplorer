@@ -2159,19 +2159,32 @@ function startARTexplorer(
   function applyHighlight(polyhedron) {
     polyhedron.traverse(obj => {
       if (obj.isMesh) {
-        // Store original emissive for restoration
-        obj.userData.originalEmissive = obj.material.emissive.clone();
-        obj.userData.originalEmissiveIntensity = obj.material.emissiveIntensity;
+        // Store original emissive for restoration (check if emissive exists)
+        if (obj.material.emissive) {
+          obj.userData.originalEmissive = obj.material.emissive.clone();
+          obj.userData.originalEmissiveIntensity =
+            obj.material.emissiveIntensity;
 
-        // Apply bright cyan glow (more intense and visible)
-        obj.material.emissive.setHex(0x00ffff);
-        obj.material.emissiveIntensity = 0.8;
+          // Apply bright cyan glow (more intense and visible)
+          obj.material.emissive.setHex(0x00ffff);
+          obj.material.emissiveIntensity = 0.8;
+        }
       } else if (obj.isLine) {
-        // Store original line width
+        // Store original line width and color
         obj.userData.originalLineWidth = obj.material.linewidth || 1;
 
-        // Increase line width for selected edges (more visible)
-        obj.material.linewidth = 3;
+        // Handle LineMaterial (Line2) vs LineBasicMaterial
+        if (obj.material.isLineMaterial) {
+          // LineMaterial stores color as a Color object
+          obj.userData.originalColor = obj.material.color.getHex();
+          obj.material.color.setHex(0x00ffff); // Cyan highlight
+          obj.material.linewidth = (obj.userData.originalLineWidth || 0.002) * 1.5;
+        } else if (obj.material.color) {
+          // LineBasicMaterial
+          obj.userData.originalColor = obj.material.color.getHex();
+          obj.material.color.setHex(0x00ffff);
+          obj.material.linewidth = 3;
+        }
       }
     });
   }
@@ -2190,16 +2203,24 @@ function startARTexplorer(
           // Clean up stored data
           delete obj.userData.originalEmissive;
           delete obj.userData.originalEmissiveIntensity;
-        } else {
+        } else if (obj.material.emissive) {
           // Fallback: reset to black emissive (default for non-node meshes)
           // Note: Node meshes should have originalEmissive saved, but this
           // catches any edge cases where it wasn't stored
           obj.material.emissive.setHex(0x000000);
           obj.material.emissiveIntensity = 0;
         }
-      } else if (obj.isLine && obj.userData.originalLineWidth !== undefined) {
-        obj.material.linewidth = obj.userData.originalLineWidth;
-        delete obj.userData.originalLineWidth;
+      } else if (obj.isLine) {
+        // Restore original line width
+        if (obj.userData.originalLineWidth !== undefined) {
+          obj.material.linewidth = obj.userData.originalLineWidth;
+          delete obj.userData.originalLineWidth;
+        }
+        // Restore original color
+        if (obj.userData.originalColor !== undefined && obj.material.color) {
+          obj.material.color.setHex(obj.userData.originalColor);
+          delete obj.userData.originalColor;
+        }
       }
     });
   }
