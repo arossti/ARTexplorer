@@ -116,6 +116,9 @@ export const RTFileHandler = {
 
     // Get polyhedra checkbox states (forms visible at origin)
     const polyhedraCheckboxes = {
+      // Primitives
+      showPoint: document.getElementById("showPoint")?.checked || false,
+      showLine: document.getElementById("showLine")?.checked || false,
       // Regular polyhedra
       showCube: document.getElementById("showCube")?.checked || false,
       showTetrahedron:
@@ -196,6 +199,16 @@ export const RTFileHandler = {
       ),
       nodeOpacitySlider: parseFloat(
         document.getElementById("nodeOpacitySlider")?.value || "0.25"
+      ),
+      // Line primitive parameters
+      lineQuadrance: parseFloat(
+        document.getElementById("lineQuadrance")?.value || "1"
+      ),
+      lineLength: parseFloat(
+        document.getElementById("lineLength")?.value || "1"
+      ),
+      lineWeight: parseInt(
+        document.getElementById("lineWeight")?.value || "2"
       ),
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
@@ -451,6 +464,21 @@ export const RTFileHandler = {
           const el = document.getElementById("nodeOpacitySlider");
           if (el) el.value = sliders.nodeOpacitySlider;
         }
+        // Line primitive parameters
+        if (sliders.lineQuadrance !== undefined) {
+          const el = document.getElementById("lineQuadrance");
+          if (el) el.value = sliders.lineQuadrance;
+        }
+        if (sliders.lineLength !== undefined) {
+          const el = document.getElementById("lineLength");
+          if (el) el.value = sliders.lineLength;
+        }
+        if (sliders.lineWeight !== undefined) {
+          const el = document.getElementById("lineWeight");
+          const valEl = document.getElementById("lineWeightValue");
+          if (el) el.value = sliders.lineWeight;
+          if (valEl) valEl.textContent = sliders.lineWeight;
+        }
         // Planar matrix size sliders
         if (sliders.cubeMatrixSizeSlider !== undefined) {
           const el = document.getElementById("cubeMatrixSizeSlider");
@@ -569,6 +597,12 @@ export const RTFileHandler = {
             el.checked = checkboxes[checkboxId];
           }
         });
+
+        // Show/hide Line controls based on checkbox state
+        const lineControls = document.getElementById("line-controls");
+        if (lineControls && checkboxes.showLine) {
+          lineControls.style.display = "block";
+        }
 
         // Trigger updateGeometry to render the restored forms
         if (window.renderingAPI?.updateGeometry) {

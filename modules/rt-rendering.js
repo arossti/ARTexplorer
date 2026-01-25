@@ -15,6 +15,11 @@ import { Polyhedra } from "./rt-polyhedra.js";
 import { PerformanceClock } from "./performance-clock.js";
 import { RTPapercut } from "./rt-papercut.js";
 
+// Line2 addons for variable lineweight (cross-platform support)
+import { Line2 } from "three/addons/lines/Line2.js";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+import { LineGeometry } from "three/addons/lines/LineGeometry.js";
+
 // Re-export PerformanceClock so rt-init.js can import it from here
 export { PerformanceClock };
 
@@ -1448,8 +1453,14 @@ export function initScene(THREE, OrbitControls, RT) {
   /**
    * Render a polyhedron from vertices, edges, faces
    * Uses proper geometry with indexed faces for clean rendering
+   * @param {THREE.Group} group - Group to render into
+   * @param {Object} geometry - {vertices, edges, faces}
+   * @param {number} color - Hex color
+   * @param {number} opacity - Face opacity
+   * @param {Object} options - Optional rendering options
+   * @param {number} options.lineWidth - Edge line width (default 1)
    */
-  function renderPolyhedron(group, geometry, color, opacity) {
+  function renderPolyhedron(group, geometry, color, opacity, options = {}) {
     // Clear existing geometry
     while (group.children.length > 0) {
       group.remove(group.children[0]);
@@ -1505,30 +1516,67 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Render edges using LineSegments for efficiency
-    const edgePositions = [];
-    edges.forEach(([i, j]) => {
-      const v1 = vertices[i];
-      const v2 = vertices[j];
-      edgePositions.push(v1.x, v1.y, v1.z);
-      edgePositions.push(v2.x, v2.y, v2.z);
-    });
+    // For Line primitive with lineWidth option, use Line2/LineMaterial for cross-platform support
+    const polyType = group.userData.type;
+    const useThickLine = polyType === "line" && options.lineWidth && options.lineWidth > 1;
 
-    const edgeGeometry = new THREE.BufferGeometry();
-    edgeGeometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(edgePositions, 3)
-    );
+    if (useThickLine && edges.length > 0) {
+      // Use Line2/LineMaterial for variable lineweight (works on all platforms)
+      edges.forEach(([i, j]) => {
+        const v1 = vertices[i];
+        const v2 = vertices[j];
+        const positions = [v1.x, v1.y, v1.z, v2.x, v2.y, v2.z];
 
-    const edgeMaterial = new THREE.LineBasicMaterial({
-      color: color,
-      linewidth: 1, // WebGL limitation
-      depthTest: true,
-      depthWrite: true,
-    });
+        const lineGeometry = new LineGeometry();
+        lineGeometry.setPositions(positions);
 
-    const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-    edgeLines.renderOrder = 2; // Render edges after faces
-    group.add(edgeLines);
+        const lineMaterial = new LineMaterial({
+          color: color,
+          linewidth: options.lineWidth * 0.002, // Convert to world units (scaled for visibility)
+          worldUnits: true,
+          depthTest: true,
+          depthWrite: true,
+        });
+
+        // Set resolution for proper line rendering
+        if (renderer) {
+          const size = new THREE.Vector2();
+          renderer.getSize(size);
+          lineMaterial.resolution.set(size.x, size.y);
+        }
+
+        const line = new Line2(lineGeometry, lineMaterial);
+        line.computeLineDistances(); // Required for LineMaterial
+        line.renderOrder = 2;
+        group.add(line);
+      });
+    } else {
+      // Standard LineSegments for other polyhedra (faster for many edges)
+      const edgePositions = [];
+      edges.forEach(([i, j]) => {
+        const v1 = vertices[i];
+        const v2 = vertices[j];
+        edgePositions.push(v1.x, v1.y, v1.z);
+        edgePositions.push(v2.x, v2.y, v2.z);
+      });
+
+      const edgeGeometry = new THREE.BufferGeometry();
+      edgeGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(edgePositions, 3)
+      );
+
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: color,
+        linewidth: 1, // WebGL limitation - always 1px on most platforms
+        depthTest: true,
+        depthWrite: true,
+      });
+
+      const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+      edgeLines.renderOrder = 2; // Render edges after faces
+      group.add(edgeLines);
+    }
 
     // Render vertex nodes using cached geometry for efficiency
     if (showNodes) {
@@ -3459,14 +3507,16 @@ export function initScene(THREE, OrbitControls, RT) {
         const lineQuadrance = options.quadrance ?? scale;
         const lineWeight = options.lineWeight ?? 2;
         geometry = Polyhedra.line(lineQuadrance);
-        renderPolyhedron(group, geometry, color, opacity, {
-          lineWidth: lineWeight,
-        });
+        // Set type and parameters BEFORE renderPolyhedron so Line2 path is triggered
+        group.userData.type = "line";
         group.userData.parameters = {
           quadrance: lineQuadrance,
           length: Math.sqrt(lineQuadrance),
           lineWeight: lineWeight,
         };
+        renderPolyhedron(group, geometry, color, opacity, {
+          lineWidth: lineWeight,
+        });
         break;
       }
 
