@@ -2665,7 +2665,10 @@ function startARTexplorer(
             if (obj.isMesh || obj.isLine) selectableObjects.push(obj);
           });
 
-          const polyIntersects = raycaster.intersectObjects(selectableObjects, false);
+          const polyIntersects = raycaster.intersectObjects(
+            selectableObjects,
+            false
+          );
 
           if (polyIntersects.length > 0) {
             // Alt+click on selected poly - start free move with drag-copy
@@ -2693,9 +2696,13 @@ function startARTexplorer(
 
             // Get click point and offset
             raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
-            freeMoveDragOffset.copy(currentSelection.position).sub(dragStartPoint);
+            freeMoveDragOffset
+              .copy(currentSelection.position)
+              .sub(dragStartPoint);
 
-            console.log("📋 ALT-CLICK AUTO-MOVE: Drag-copy started without tool activation");
+            console.log(
+              "📋 ALT-CLICK AUTO-MOVE: Drag-copy started without tool activation"
+            );
             return; // Don't fall through to normal tool handling
           }
         }
@@ -2744,7 +2751,9 @@ function startARTexplorer(
                 dragCopyOriginalPosition.copy(currentSelection.position);
                 dragCopyOriginalQuaternion.copy(currentSelection.quaternion);
                 dragCopyOriginalScale.copy(currentSelection.scale);
-                console.log("📋 DRAG-COPY mode: Alt key detected, will create copy on release");
+                console.log(
+                  "📋 DRAG-COPY mode: Alt key detected, will create copy on release"
+                );
               }
               // Note: controls.enabled already false when tool is active
 
@@ -2831,7 +2840,9 @@ function startARTexplorer(
                 dragCopyOriginalPosition.copy(currentSelection.position);
                 dragCopyOriginalQuaternion.copy(currentSelection.quaternion);
                 dragCopyOriginalScale.copy(currentSelection.scale);
-                console.log("📋 DRAG-COPY mode (free move): Alt key detected, will create copy on release");
+                console.log(
+                  "📋 DRAG-COPY mode (free move): Alt key detected, will create copy on release"
+                );
               }
               selectedPolyhedra = getSelectedPolyhedra();
 
@@ -3520,7 +3531,9 @@ function startARTexplorer(
               nowCountEl.textContent = RTStateManager.getDepositedCount();
             }
 
-            console.log("✅ DRAG-COPY complete: Instance created, original restored");
+            console.log(
+              "✅ DRAG-COPY complete: Instance created, original restored"
+            );
             isDragCopying = false;
 
             // Re-enable orbit controls if no tool is active (alt-click auto-move case)
@@ -3645,7 +3658,9 @@ function startARTexplorer(
               nowCountEl.textContent = RTStateManager.getDepositedCount();
             }
 
-            console.log("✅ DRAG-COPY complete: Instance created, original restored");
+            console.log(
+              "✅ DRAG-COPY complete: Instance created, original restored"
+            );
             isDragCopying = false;
           }
 
