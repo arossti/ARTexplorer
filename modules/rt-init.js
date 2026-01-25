@@ -102,6 +102,7 @@ function startARTexplorer(
   let scene, camera, renderer, controls;
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
+  let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
   let cubeGroup, tetrahedronGroup, dualTetrahedronGroup, octahedronGroup;
   let icosahedronGroup, dodecahedronGroup, dualIcosahedronGroup;
   let cuboctahedronGroup, rhombicDodecahedronGroup;
@@ -239,6 +240,59 @@ function startARTexplorer(
   if (lineWeightSlider && lineWeightValue) {
     lineWeightSlider.addEventListener("input", () => {
       lineWeightValue.textContent = lineWeightSlider.value;
+      updateGeometry();
+    });
+  }
+
+  // Polygon (2D primitive - n vertices, n edges, 1 face)
+  const polygonCheckbox = document.getElementById("showPolygon");
+  const polygonControls = document.getElementById("polygon-controls");
+  const polygonSidesInput = document.getElementById("polygonSides");
+  const polygonQuadranceInput = document.getElementById("polygonQuadrance");
+  const polygonRadiusInput = document.getElementById("polygonRadius");
+  const polygonShowFaceCheckbox = document.getElementById("polygonShowFace");
+  const polygonEdgeWeightSlider = document.getElementById("polygonEdgeWeight");
+  const polygonEdgeWeightValue = document.getElementById("polygonEdgeWeightValue");
+
+  if (polygonCheckbox) {
+    polygonCheckbox.addEventListener("change", () => {
+      // Show/hide polygon controls when checkbox toggled
+      if (polygonControls) {
+        polygonControls.style.display = polygonCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  // Polygon sides input
+  if (polygonSidesInput) {
+    polygonSidesInput.addEventListener("input", updateGeometry);
+  }
+
+  // Bidirectional Quadrance/Radius conversion (Q_R = R², R = √Q_R)
+  if (polygonQuadranceInput && polygonRadiusInput) {
+    polygonQuadranceInput.addEventListener("input", () => {
+      const Q = parseFloat(polygonQuadranceInput.value) || 1;
+      polygonRadiusInput.value = Math.sqrt(Q).toFixed(4);
+      updateGeometry();
+    });
+
+    polygonRadiusInput.addEventListener("input", () => {
+      const R = parseFloat(polygonRadiusInput.value) || 1;
+      polygonQuadranceInput.value = (R * R).toFixed(4);
+      updateGeometry();
+    });
+  }
+
+  // Polygon show face checkbox
+  if (polygonShowFaceCheckbox) {
+    polygonShowFaceCheckbox.addEventListener("change", updateGeometry);
+  }
+
+  // Polygon edge weight slider
+  if (polygonEdgeWeightSlider && polygonEdgeWeightValue) {
+    polygonEdgeWeightSlider.addEventListener("input", () => {
+      polygonEdgeWeightValue.textContent = polygonEdgeWeightSlider.value;
       updateGeometry();
     });
   }
@@ -2268,6 +2322,7 @@ function startARTexplorer(
     const formGroups = [
       pointGroup,
       lineGroup,
+      polygonGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -2538,6 +2593,7 @@ function startARTexplorer(
     const formGroups = [
       pointGroup,
       lineGroup,
+      polygonGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -3814,6 +3870,7 @@ function startARTexplorer(
   ({
     pointGroup,
     lineGroup,
+    polygonGroup,
     cubeGroup,
     tetrahedronGroup,
     dualTetrahedronGroup,

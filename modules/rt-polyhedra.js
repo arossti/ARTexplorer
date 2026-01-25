@@ -77,6 +77,75 @@ export const Polyhedra = {
   },
 
   /**
+   * Polygon (n-gon) - Regular polygon in XY plane
+   * 2D primitive: N vertices, N edges, 1 face (optional)
+   * Parameterized by circumradius quadrance (Q_R = R²) for RT purity
+   * This matches how polyhedra scale (by circumradius) in ARTExplorer
+   *
+   * Packed nodes: r = edgeLength/2 = √(Q_edge)/2
+   * Edge quadrance: Q_edge = 4·Q_R·spread(π/n) where spread = sin²(θ)
+   *
+   * Euler: V - E + F = N - N + 1 = 1 (open form, doesn't satisfy χ=2)
+   *
+   * @param {number} quadrance - The circumradius quadrance (R²)
+   * @param {Object} options - Configuration: sides, showFace, doubleSided
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  polygon: (quadrance = 1, options = {}) => {
+    const n = options.sides || 3; // Default triangle
+    const showFace = options.showFace !== false; // Default true
+
+    // Circumradius R = √Q_R
+    const R = Math.sqrt(quadrance);
+
+    // Calculate spread and edge quadrance for RT purity
+    // spread(π/n) = sin²(π/n)
+    const centralAngle = Math.PI / n;
+    const spread = Math.pow(Math.sin(centralAngle), 2);
+    // Q_edge = 4·R²·spread = 4·Q_R·spread
+    const Q_edge = 4 * quadrance * spread;
+    const edgeLength = Math.sqrt(Q_edge);
+
+    // Generate vertices around circumcircle in XY plane
+    // Start at angle 0 (positive X axis) and go CCW
+    const vertices = [];
+    for (let i = 0; i < n; i++) {
+      const angle = (2 * Math.PI * i) / n;
+      vertices.push(
+        new THREE.Vector3(R * Math.cos(angle), R * Math.sin(angle), 0)
+      );
+    }
+
+    // Edges connect consecutive vertices (closed loop)
+    const edges = [];
+    for (let i = 0; i < n; i++) {
+      edges.push([i, (i + 1) % n]);
+    }
+
+    // Face: single n-gon with CCW winding for +Z normal
+    const faces = showFace ? [Array.from({ length: n }, (_, i) => i)] : [];
+
+    console.log(
+      `[RT] Polygon: n=${n}, Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, Q_edge=${Q_edge.toFixed(6)}, edge=${edgeLength.toFixed(6)}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        sides: n,
+        quadrance, // circumradius quadrance
+        circumradius: R,
+        edgeQuadrance: Q_edge,
+        edgeLength,
+        spread,
+        showFace,
+      },
+    };
+  },
+
+  /**
    * Hexahedron (Cube) - vertices at (±1, ±1, ±1)
    * Edge quadrance Q = 4 (edge length = 2)
    * Z-up convention: Z is vertical axis

@@ -62,8 +62,9 @@ const colorPalette = {
   quadrayTetraDeformed: 0xff5577, // Coral-pink (visually distinct for deformed)
   quadrayCuboctahedron: 0x88ff00, // Lime-yellow (VE in native Quadray)
   // Primitives
-  point: 0xffffff, // White - neutral coordinate exploration point
+  point: 0xff00ff, // Fuchsia/bright pink - highly visible coordinate exploration point
   line: 0xff0000, // Red - 1D primitive
+  polygon: 0x00ff00, // Green - 2D primitive (distinct from Line red, Point fuchsia)
 };
 
 /**
@@ -91,6 +92,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let quadrayTetrahedronGroup, quadrayTetraDeformedGroup, quadrayCuboctahedronGroup; // Quadray demonstrators
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
+  let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -156,6 +158,10 @@ export function initScene(THREE, OrbitControls, RT) {
     lineGroup = new THREE.Group();
     lineGroup.userData.type = "line";
     // Line allows all tools (Move, Scale, Rotate)
+
+    polygonGroup = new THREE.Group();
+    polygonGroup.userData.type = "polygon";
+    // Polygon allows all tools (Move, Scale, Rotate)
 
     cubeGroup = new THREE.Group();
     cubeGroup.userData.type = "cube";
@@ -254,6 +260,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     scene.add(pointGroup);
     scene.add(lineGroup);
+    scene.add(polygonGroup);
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -839,6 +846,17 @@ export function initScene(THREE, OrbitControls, RT) {
         // Stored in group.userData.parameters.quadrance
         // For close-packing: r = √Q / 2, so Q_vertex = Q_edge / 4
         return scale; // scale IS the quadrance for line primitive
+
+      case "polygon": {
+        // Polygon edge quadrance depends on circumradius quadrance and number of sides
+        // Q_edge = 4·Q_R·spread(π/n) where spread = sin²(θ)
+        // scale is the circumradius quadrance (Q_R)
+        // Need to get sides from userData.parameters
+        const sides = options?.sides || 3;
+        const centralAngle = Math.PI / sides;
+        const spread = Math.pow(Math.sin(centralAngle), 2);
+        return 4 * scale * spread;
+      }
 
       case "tetrahedron":
         // Edge quadrance Q = 8s² (edge = 2s√2)
@@ -1752,6 +1770,46 @@ export function initScene(THREE, OrbitControls, RT) {
       lineGroup.visible = false;
     }
 
+    // Polygon (2D primitive - n vertices, n edges, 1 face)
+    if (document.getElementById("showPolygon")?.checked) {
+      // Get circumradius quadrance from input field (default 1)
+      const polygonQuadrance = parseFloat(
+        document.getElementById("polygonQuadrance")?.value || "1"
+      );
+      // Get number of sides (default 3 = triangle)
+      const polygonSides = parseInt(
+        document.getElementById("polygonSides")?.value || "3"
+      );
+      // Get edge weight from input field (default 2)
+      const polygonEdgeWeight = parseFloat(
+        document.getElementById("polygonEdgeWeight")?.value || "2"
+      );
+      // Get face visibility
+      const polygonShowFace =
+        document.getElementById("polygonShowFace")?.checked !== false;
+
+      const polygonData = Polyhedra.polygon(polygonQuadrance, {
+        sides: polygonSides,
+        showFace: polygonShowFace,
+      });
+      renderPolyhedron(polygonGroup, polygonData, colorPalette.polygon, opacity, {
+        lineWidth: polygonEdgeWeight,
+      });
+      polygonGroup.userData.type = "polygon";
+      polygonGroup.userData.parameters = {
+        quadrance: polygonQuadrance,
+        circumradius: Math.sqrt(polygonQuadrance),
+        sides: polygonSides,
+        edgeQuadrance: polygonData.metadata.edgeQuadrance,
+        edgeLength: polygonData.metadata.edgeLength,
+        edgeWeight: polygonEdgeWeight,
+        showFace: polygonShowFace,
+      };
+      polygonGroup.visible = true;
+    } else {
+      polygonGroup.visible = false;
+    }
+
     // Cube (Blue)
     if (document.getElementById("showCube").checked) {
       const cube = Polyhedra.cube(scale);
@@ -2635,6 +2693,26 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Q: ${lineQ.toFixed(4)}, L: ${lineL.toFixed(4)}</div>`;
     }
 
+    if (document.getElementById("showPolygon")?.checked) {
+      const polyQ = parseFloat(
+        document.getElementById("polygonQuadrance")?.value || "1"
+      );
+      const polySides = parseInt(
+        document.getElementById("polygonSides")?.value || "3"
+      );
+      const polyR = Math.sqrt(polyQ);
+      const spread = Math.pow(Math.sin(Math.PI / polySides), 2);
+      const polyEdgeQ = 4 * polyQ * spread;
+      const polyEdgeL = Math.sqrt(polyEdgeQ);
+      const showFace = document.getElementById("polygonShowFace")?.checked;
+      const faceCount = showFace ? 1 : 0;
+      html += `<div style="margin-top: 10px;"><strong>Polygon (${polySides}-gon):</strong></div>`;
+      html += `<div>V: ${polySides}, E: ${polySides}, F: ${faceCount}</div>`;
+      html += `<div>Euler: N/A (open form, χ=1)</div>`;
+      html += `<div>Q_R: ${polyQ.toFixed(4)}, R: ${polyR.toFixed(4)}</div>`;
+      html += `<div>Q_edge: ${polyEdgeQ.toFixed(4)}, edge: ${polyEdgeL.toFixed(4)}</div>`;
+    }
+
     if (document.getElementById("showCube").checked) {
       const cube = Polyhedra.cube(1);
       const eulerOK = RT.verifyEuler(
@@ -3199,6 +3277,7 @@ export function initScene(THREE, OrbitControls, RT) {
     return {
       pointGroup,
       lineGroup,
+      polygonGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -3516,6 +3595,33 @@ export function initScene(THREE, OrbitControls, RT) {
         };
         renderPolyhedron(group, geometry, color, opacity, {
           lineWidth: lineWeight,
+        });
+        break;
+      }
+
+      case "polygon": {
+        // Polygon uses circumradius quadrance from options.quadrance or scale
+        const polyQuadrance = options.quadrance ?? scale;
+        const polySides = options.sides ?? 3;
+        const polyEdgeWeight = options.edgeWeight ?? 2;
+        const polyShowFace = options.showFace !== false;
+        geometry = Polyhedra.polygon(polyQuadrance, {
+          sides: polySides,
+          showFace: polyShowFace,
+        });
+        // Set type and parameters BEFORE renderPolyhedron
+        group.userData.type = "polygon";
+        group.userData.parameters = {
+          quadrance: polyQuadrance,
+          circumradius: Math.sqrt(polyQuadrance),
+          sides: polySides,
+          edgeQuadrance: geometry.metadata.edgeQuadrance,
+          edgeLength: geometry.metadata.edgeLength,
+          edgeWeight: polyEdgeWeight,
+          showFace: polyShowFace,
+        };
+        renderPolyhedron(group, geometry, color, opacity, {
+          lineWidth: polyEdgeWeight,
         });
         break;
       }

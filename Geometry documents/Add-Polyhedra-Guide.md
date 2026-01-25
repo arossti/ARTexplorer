@@ -310,18 +310,48 @@ const fixWinding = (faceIndices, vertices) => {
 
 ## Primitives (Non-Polyhedra Forms)
 
-Primitives like Point, Line, and Polygon don't follow standard polyhedron patterns. They require special handling for tool restrictions, edge quadrance, and close-packing.
+Primitives like Point, Line, and Polygon don't follow standard polyhedron patterns. They require special handling for tool restrictions, edge quadrance, close-packing, and selection highlighting.
 
-### Point (0D Primitive)
+### Quick Reference: Primitive Characteristics
+
+| Primitive | Vertices | Edges | Faces | Euler | Packed Nodes | Tool Restrictions |
+|-----------|----------|-------|-------|-------|--------------|-------------------|
+| Point (0D) | 1 | 0 | 0 | N/A | No (fallback to Md) | Move only |
+| Line (1D) | 2 | 1 | 0 | 1 (open) | Yes (r = L/2) | All tools |
+| Polygon (2D) | N | N | 1-2 | 1 (open) | Yes (by n-gon) | All tools |
+
+---
+
+### Point (0D Primitive) - IMPLEMENTED
 
 **Characteristics:**
 - Single vertex at origin, no edges, no faces
 - Euler formula doesn't apply (degenerate)
 - No valid edge quadrance for close-packing
+- Color: Fuchsia/Bright Pink (`0xFF00FF`) - highly visible
 
-**Special Handling Required:**
+**Implementation Files:**
 
-1. **Tool Restrictions** - Point only supports Move (no Scale/Rotate):
+| File | What Was Added |
+|------|----------------|
+| `modules/rt-polyhedra.js` | `point()` generator returning single vertex |
+| `modules/rt-rendering.js` | Color, group, rendering block, edge quadrance null case |
+| `index.html` | Checkbox "Point (Single Vertex)" |
+| `modules/rt-init.js` | Event handler, selection arrays, tool restriction logic |
+| `modules/rt-filehandler.js` | State save/restore for `showPoint` |
+
+**1. Geometry Generator** (`rt-polyhedra.js`):
+```javascript
+point: (halfSize = 1) => {
+  const vertices = [new THREE.Vector3(0, 0, 0)];
+  const edges = [];
+  const faces = [];
+  console.log('[RT] Point: single vertex at origin');
+  return { vertices, edges, faces };
+},
+```
+
+**2. Tool Restrictions** - Point only supports Move (no Scale/Rotate):
 ```javascript
 // In group initialization (rt-rendering.js)
 pointGroup.userData.allowedTools = ["move"];
@@ -336,14 +366,14 @@ if (currentSelection) {
 }
 ```
 
-2. **Edge Quadrance** - Return `null` for edgeless forms:
+**3. Edge Quadrance** - Return `null` for edgeless forms:
 ```javascript
 // In getPolyhedronEdgeQuadrance()
 case "point":
   return null;  // No edges - packed sizing not applicable
 ```
 
-3. **Close-Pack Fallback** - Handle null in `getClosePackedRadius()`:
+**4. Close-Pack Fallback** - Handle null in `getClosePackedRadius()`:
 ```javascript
 const Q_edge = getPolyhedronEdgeQuadrance(type, scale);
 if (Q_edge === null || Q_edge === 0) {
@@ -351,7 +381,7 @@ if (Q_edge === null || Q_edge === 0) {
 }
 ```
 
-4. **Node Size Fallback** - In `renderPolyhedron()` and `getCachedNodeGeometry()`:
+**5. Node Size Fallback** - In `renderPolyhedron()`:
 ```javascript
 if (nodeSize === "packed") {
   nodeRadius = getClosePackedRadius(polyType, scale);
@@ -361,59 +391,416 @@ if (nodeSize === "packed") {
 }
 ```
 
-5. **Geometry Stats** - No Euler validation:
+**6. Geometry Stats** - No Euler validation:
 ```javascript
 html += `<div>V: 1, E: 0, F: 0</div>`;
 html += `<div>Euler: N/A (degenerate)</div>`;
 ```
 
-### Line (1D Primitive) - Future
+**7. State Save/Restore** (`rt-filehandler.js`):
+```javascript
+// In polyhedraCheckboxes array
+"showPoint",
+
+// Checkbox is automatically handled by generic polyhedra restore logic
+```
+
+---
+
+### Line (1D Primitive) - IMPLEMENTED
 
 **Characteristics:**
 - 2 vertices, 1 edge, no faces
 - Euler: V - E + F = 2 - 1 + 0 = 1 (not satisfied - open form)
+- RT-Pure parameterization: Q (Quadrance) as primary input, L (Length) derived
+- Color: Red (`0xFF0000`)
+- Variable lineweight using Line2/LineMaterial (cross-platform)
 
-**Close-Packing:**
+**Implementation Files:**
+
+| File | What Was Added |
+|------|----------------|
+| `modules/rt-polyhedra.js` | `line(quadrance)` generator |
+| `modules/rt-rendering.js` | Line2 imports, color, group, rendering with thick lines |
+| `index.html` | Checkbox, Q/L inputs, lineweight slider |
+| `modules/rt-init.js` | Bidirectional Q↔L handlers, LineMaterial highlight fix |
+| `modules/rt-filehandler.js` | State save/restore for Q, L, and lineweight |
+
+**1. Geometry Generator** (`rt-polyhedra.js`):
 ```javascript
-// Packed node radius = half edge length
-// Q_vertex = Q_edge / 4, so r = edgeLength / 2
-case "line":
-  return scale * scale;  // Q = s² for line of length s (or parameterized)
+line: (quadrance = 1, options = {}) => {
+  const length = Math.sqrt(quadrance);
+  const halfLength = length / 2;
+  const vertices = [
+    new THREE.Vector3(0, 0, -halfLength),
+    new THREE.Vector3(0, 0, halfLength),
+  ];
+  const edges = [[0, 1]];
+  const faces = [];
+  console.log(`[RT] Line: Q=${quadrance.toFixed(6)}, length=${length.toFixed(6)}`);
+  return { vertices, edges, faces, metadata: { quadrance, length } };
+},
 ```
 
-**Tool Restrictions:**
-- Move: Yes
-- Scale: Yes (stretch along line axis)
-- Rotate: Yes (orient line in space)
+**2. Line2 Imports** (`rt-rendering.js`):
+```javascript
+import { Line2 } from "three/addons/lines/Line2.js";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+import { LineGeometry } from "three/addons/lines/LineGeometry.js";
+```
 
-### Polygon (2D Primitive) - Future
+**3. Edge Quadrance** - Returns the quadrance directly:
+```javascript
+// In getPolyhedronEdgeQuadrance()
+case "line":
+  return scale;  // scale IS the quadrance for line primitive
+```
+
+**4. Close-Packing** - Packed nodes touch at line midpoint:
+```javascript
+// Q_vertex = Q_edge / 4, so r = √(Q/4) = L/2
+// For line, packed radius = edgeLength / 2 = √quadrance / 2
+```
+
+**5. Line2 Rendering** (in `renderPolyhedron()`):
+```javascript
+// Use Line2 for variable lineweight (WebGL limitation workaround)
+if (useThickLine && edges.length > 0) {
+  edges.forEach(([i, j]) => {
+    const lineMaterial = new LineMaterial({
+      color: color,
+      linewidth: options.lineWidth * 0.002,  // Scale factor
+      worldUnits: true,
+      depthTest: true,
+      depthWrite: true,
+    });
+    lineMaterial.resolution.set(window.innerWidth, window.innerHeight);
+
+    const positions = [
+      vertices[i].x, vertices[i].y, vertices[i].z,
+      vertices[j].x, vertices[j].y, vertices[j].z,
+    ];
+    const lineGeometry = new LineGeometry();
+    lineGeometry.setPositions(positions);
+
+    const line2 = new Line2(lineGeometry, lineMaterial);
+    line2.computeLineDistances();
+    group.add(line2);
+  });
+}
+```
+
+**6. LineMaterial Selection Highlight** (`rt-init.js`):
+
+LineMaterial handles color differently than LineBasicMaterial (no `emissive` property):
+```javascript
+// In applyHighlight()
+} else if (obj.isLine) {
+  obj.userData.originalLineWidth = obj.material.linewidth || 1;
+  if (obj.material.isLineMaterial) {
+    // LineMaterial: use getHex()/setHex() for color
+    obj.userData.originalColor = obj.material.color.getHex();
+    obj.material.color.setHex(0x00ffff);  // Cyan highlight
+    obj.material.linewidth = (obj.userData.originalLineWidth || 0.002) * 1.5;
+  } else if (obj.material.color) {
+    // LineBasicMaterial fallback
+    obj.userData.originalColor = obj.material.color.getHex();
+    obj.material.color.setHex(0x00ffff);
+    obj.material.linewidth = 3;
+  }
+}
+
+// In clearHighlight()
+} else if (obj.isLine) {
+  if (obj.material.isLineMaterial) {
+    if (obj.userData.originalColor !== undefined) {
+      obj.material.color.setHex(obj.userData.originalColor);
+    }
+    if (obj.userData.originalLineWidth !== undefined) {
+      obj.material.linewidth = obj.userData.originalLineWidth;
+    }
+  } else if (obj.material.color && obj.userData.originalColor !== undefined) {
+    obj.material.color.setHex(obj.userData.originalColor);
+  }
+}
+```
+
+**7. UI Controls** (`index.html`):
+```html
+<div class="control-item">
+  <label class="checkbox-label">
+    <input type="checkbox" id="showLine" />
+    Line (1D Primitive)
+  </label>
+  <div id="line-controls" style="display: none; margin-left: 20px;">
+    <div class="line-quadrance-container">
+      <label>Q:</label>
+      <input type="number" id="lineQuadrance" value="1" step="0.1" min="0.001" />
+      <label>L:</label>
+      <input type="number" id="lineLength" value="1" step="0.1" min="0.001" />
+    </div>
+    <div class="line-weight-container">
+      <label>Weight:</label>
+      <input type="range" id="lineWeight" min="1" max="10" value="2" />
+      <span id="lineWeightValue">2</span>
+    </div>
+  </div>
+</div>
+```
+
+**8. Bidirectional Q↔L Conversion** (`rt-init.js`):
+```javascript
+// Q changes → update L
+lineQuadranceInput.addEventListener("input", () => {
+  const Q = parseFloat(lineQuadranceInput.value) || 1;
+  lineLengthInput.value = Math.sqrt(Q).toFixed(4);
+  updateGeometry();
+});
+
+// L changes → update Q
+lineLengthInput.addEventListener("input", () => {
+  const L = parseFloat(lineLengthInput.value) || 1;
+  lineQuadranceInput.value = (L * L).toFixed(4);
+  updateGeometry();
+});
+```
+
+**9. State Save/Restore** (`rt-filehandler.js`):
+```javascript
+// In polyhedraCheckboxes array
+"showLine",
+
+// In sliderValues object
+lineQuadrance: "lineQuadrance",
+lineLength: "lineLength",
+lineWeight: "lineWeight",
+
+// Show/hide line-controls on restore
+if (document.getElementById("showLine")?.checked) {
+  const lineControls = document.getElementById("line-controls");
+  if (lineControls) lineControls.style.display = "block";
+}
+```
+
+**10. createPolyhedronByType()** - Set userData BEFORE rendering:
+```javascript
+case "line": {
+  const quadrance = params.quadrance || 1;
+  const length = params.length || Math.sqrt(quadrance);
+  const lineWeight = params.lineWeight || 2;
+  const geometry = Polyhedra.line(quadrance);
+  group.userData.type = "line";  // Set BEFORE renderPolyhedron
+  group.userData.parameters = { quadrance, length, lineWeight };
+  renderPolyhedron(group, geometry, color, opacity, { lineWidth: lineWeight });
+  break;
+}
+```
+
+---
+
+### Polygon (2D Primitive) - IMPLEMENTED
 
 **Characteristics:**
-- N vertices, N edges, 1 face (or 2 if double-sided)
+- N vertices, N edges, 1 face (optional)
 - Euler: V - E + F = N - N + 1 = 1 (open form)
+- RT-Pure parameterization: Q_R (circumradius quadrance) as primary input
+- Drawn on XY plane (Z=0), face normal pointing +Z
+- Color: Green (`0x00FF00`) - distinct from Line (red) and Point (fuchsia)
 
-**Close-Packing by N-gon type:**
+**Implementation Files:**
+
+| File | What Was Added |
+|------|----------------|
+| `modules/rt-polyhedra.js` | `polygon(quadrance, options)` generator |
+| `modules/rt-rendering.js` | Color, group, rendering block, edge quadrance case |
+| `index.html` | Checkbox, sides input, Q_R/R inputs, face toggle, edge weight |
+| `modules/rt-init.js` | Bidirectional Q_R↔R handlers, event handlers |
+| `modules/rt-filehandler.js` | State save/restore for all polygon parameters |
+
+**1. Geometry Generator** (`rt-polyhedra.js`):
 ```javascript
-case "polygon":
-  const n = options.sides || 3;
-  // For regular n-gon with circumradius R:
-  // Edge length a = 2R·sin(π/n)
-  // Q_edge = 4R²·sin²(π/n) = 4R²·spread(π/n)
+polygon: (quadrance = 1, options = {}) => {
+  const n = options.sides || 3;  // Default triangle
+  const showFace = options.showFace !== false;  // Default true
 
-  // Using RT spread: s = sin²(θ)
-  // For triangle (n=3): s = 3/4, Q_edge = 3R²
-  // For square (n=4): s = 1/2, Q_edge = 2R²
-  // For pentagon (n=5): s ≈ 0.345, Q_edge ≈ 1.38R²
-  // For hexagon (n=6): s = 1/4, Q_edge = R²
+  // Circumradius R = √Q_R
+  const R = Math.sqrt(quadrance);
 
-  const spread = RT.spreadFromAngle(Math.PI / n);  // Or use RT lookup table
-  return 4 * scale * scale * spread;
+  // Calculate spread and edge quadrance for RT purity
+  // spread(π/n) = sin²(π/n)
+  const centralAngle = Math.PI / n;
+  const spread = Math.pow(Math.sin(centralAngle), 2);
+  // Q_edge = 4·R²·spread = 4·Q_R·spread
+  const Q_edge = 4 * quadrance * spread;
+  const edgeLength = Math.sqrt(Q_edge);
+
+  // Generate vertices around circumcircle in XY plane
+  const vertices = [];
+  for (let i = 0; i < n; i++) {
+    const angle = (2 * Math.PI * i) / n;
+    vertices.push(new THREE.Vector3(
+      R * Math.cos(angle),
+      R * Math.sin(angle),
+      0
+    ));
+  }
+
+  // Edges connect consecutive vertices (closed loop)
+  const edges = [];
+  for (let i = 0; i < n; i++) {
+    edges.push([i, (i + 1) % n]);
+  }
+
+  // Face: single n-gon with CCW winding for +Z normal
+  const faces = showFace ? [Array.from({ length: n }, (_, i) => i)] : [];
+
+  console.log(`[RT] Polygon: n=${n}, Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, Q_edge=${Q_edge.toFixed(6)}`);
+
+  return {
+    vertices,
+    edges,
+    faces,
+    metadata: {
+      sides: n,
+      quadrance,  // circumradius quadrance
+      circumradius: R,
+      edgeQuadrance: Q_edge,
+      edgeLength,
+      spread,
+      showFace,
+    }
+  };
+},
 ```
 
-**Tool Restrictions:**
+**2. Edge Quadrance** - Calculated from circumradius quadrance and sides:
+```javascript
+// In getPolyhedronEdgeQuadrance()
+case "polygon": {
+  // Q_edge = 4·Q_R·spread(π/n) where spread = sin²(θ)
+  // scale is the circumradius quadrance (Q_R)
+  const sides = options?.sides || 3;
+  const centralAngle = Math.PI / sides;
+  const spread = Math.pow(Math.sin(centralAngle), 2);
+  return 4 * scale * spread;
+}
+```
+
+**3. Close-Packing** - Packed nodes recalculate based on n-gon edge quadrance:
+```javascript
+// Packed node radius = √(Q_edge/4) = edgeLength / 2
+// Q_vertex = Q_edge / 4
+// Same formula as Line - nodes touch at edge midpoints
+```
+
+**4. RT Spread Reference Table**:
+
+| n-gon | Central Angle | Spread s = sin²(π/n) | Q_edge / Q_R |
+|-------|---------------|----------------------|--------------|
+| Triangle (3) | 60° | 3/4 = 0.75 | 3 |
+| Square (4) | 45° | 1/2 = 0.5 | 2 |
+| Pentagon (5) | 36° | ≈0.345 | ≈1.38 |
+| Hexagon (6) | 30° | 1/4 = 0.25 | 1 |
+| Octagon (8) | 22.5° | ≈0.146 | ≈0.586 |
+| Decagon (10) | 18° | ≈0.095 | ≈0.382 |
+
+**5. UI Controls** (`index.html`):
+```html
+<div class="control-item">
+  <label class="checkbox-label">
+    <input type="checkbox" id="showPolygon" />
+    Polygon (2D Primitive)
+  </label>
+  <div id="polygon-controls" style="display: none; margin-left: 20px;">
+    <div class="polygon-sides-container">
+      <label>Sides:</label>
+      <input type="number" id="polygonSides" value="3" min="3" max="24" />
+    </div>
+    <div class="polygon-quadrance-container">
+      <label>Q<sub>R</sub>:</label>
+      <input type="number" id="polygonQuadrance" value="1" step="0.1" min="0.001" />
+      <label>R:</label>
+      <input type="number" id="polygonRadius" value="1" step="0.1" min="0.001" />
+    </div>
+    <div class="polygon-face-container">
+      <label class="checkbox-label">
+        <input type="checkbox" id="polygonShowFace" checked />
+        Show Face
+      </label>
+    </div>
+    <div class="polygon-weight-container">
+      <label>Edge Weight:</label>
+      <input type="range" id="polygonEdgeWeight" min="1" max="10" value="2" />
+      <span id="polygonEdgeWeightValue">2</span>
+    </div>
+  </div>
+</div>
+```
+
+**6. Bidirectional Q_R↔R Conversion** (`rt-init.js`):
+```javascript
+// Q_R changes → update R
+polygonQuadranceInput.addEventListener("input", () => {
+  const Q = parseFloat(polygonQuadranceInput.value) || 1;
+  polygonRadiusInput.value = Math.sqrt(Q).toFixed(4);
+  updateGeometry();
+});
+
+// R changes → update Q_R
+polygonRadiusInput.addEventListener("input", () => {
+  const R = parseFloat(polygonRadiusInput.value) || 1;
+  polygonQuadranceInput.value = (R * R).toFixed(4);
+  updateGeometry();
+});
+```
+
+**7. State Save/Restore** (`rt-filehandler.js`):
+```javascript
+// In polyhedraCheckboxes
+showPolygon: document.getElementById("showPolygon")?.checked || false,
+
+// In sliderValues
+polygonSides: parseInt(document.getElementById("polygonSides")?.value || "3"),
+polygonQuadrance: parseFloat(document.getElementById("polygonQuadrance")?.value || "1"),
+polygonRadius: parseFloat(document.getElementById("polygonRadius")?.value || "1"),
+polygonEdgeWeight: parseInt(document.getElementById("polygonEdgeWeight")?.value || "2"),
+polygonShowFace: document.getElementById("polygonShowFace")?.checked !== false,
+
+// Show/hide polygon-controls on restore
+if (polygonControls && checkboxes.showPolygon) {
+  polygonControls.style.display = "block";
+}
+```
+
+**8. createPolyhedronByType()** - Set userData BEFORE rendering:
+```javascript
+case "polygon": {
+  const polyQuadrance = options.quadrance ?? scale;
+  const polySides = options.sides ?? 3;
+  const polyEdgeWeight = options.edgeWeight ?? 2;
+  const polyShowFace = options.showFace !== false;
+  geometry = Polyhedra.polygon(polyQuadrance, { sides: polySides, showFace: polyShowFace });
+  group.userData.type = "polygon";
+  group.userData.parameters = {
+    quadrance: polyQuadrance,
+    circumradius: Math.sqrt(polyQuadrance),
+    sides: polySides,
+    edgeQuadrance: geometry.metadata.edgeQuadrance,
+    edgeLength: geometry.metadata.edgeLength,
+    edgeWeight: polyEdgeWeight,
+    showFace: polyShowFace,
+  };
+  renderPolyhedron(group, geometry, color, opacity, { lineWidth: polyEdgeWeight });
+  break;
+}
+```
+
+**9. Tool Restrictions**:
 - Move: Yes
-- Scale: Yes (uniform or per-axis)
-- Rotate: Yes
+- Scale: Yes (uniform scaling preserves regular polygon)
+- Rotate: Yes (useful for orienting the plane in 3D space)
+
+---
 
 ### General Pattern for Primitives
 
@@ -424,6 +811,10 @@ When adding any primitive:
 3. **Handle close-packing edge cases** - Provide fallback when packing undefined
 4. **Skip Euler validation** - Open forms don't satisfy V - E + F = 2
 5. **Consider coordinate display** - Primitives are useful for exploring coordinate mappings
+6. **Use Line2/LineMaterial** - For cross-platform variable lineweight (WebGL limitation)
+7. **Handle LineMaterial in selection** - No `emissive` property; use `getHex()`/`setHex()`
+8. **State save/restore** - Add checkbox to `polyhedraCheckboxes`, parameters to `sliderValues`
+9. **Set userData.type BEFORE renderPolyhedron** - Required for proper edge quadrance lookup
 
 ---
 
