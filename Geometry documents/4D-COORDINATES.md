@@ -25,6 +25,7 @@
    - 6.4 [Relationship to Tetrahedra](#64-relationship-to-tetrahedra)
 7. [The Octahedron in Quadray Space](#7-the-octahedron-in-quadray-space)
 8. [Complete Polyhedra Reference in Quadray Coordinates](#8-complete-polyhedra-reference-in-quadray-coordinates)
+   - 8.11 [Integer Quadray Lattice Positions (IVM Sphere Packing)](#811-integer-quadray-lattice-positions-ivm-sphere-packing)
 9. [Conversion Between Quadray and Cartesian](#9-conversion-between-quadray-and-cartesian)
 10. [RT-Pure Operations in Quadray Space](#10-rt-pure-operations-in-quadray-space)
 11. [Implementation Notes](#11-implementation-notes)
@@ -957,6 +958,89 @@ Cuboctahedron (12 vertices)
     ↓ dual
 Rhombic Dodecahedron (14 vertices)
 ```
+
+---
+
+## 8.11 Integer Quadray Lattice Positions (IVM Sphere Packing)
+
+**Key Insight from Kirby Urner (January 2026):**
+
+> "Given how I've calibrated quadrays, from (0,0,0,0) the 12 surrounding ball centers at the corners of a cuboctahedron are all unique permutations of {2,1,1,0} as in (2,1,0,1) (0,2,1,1) (1,2,0,1) and so on — 12 possibilities."
+
+This reveals a beautiful pattern: the fundamental polyhedra of the IVM (Isotropic Vector Matrix) lattice can be expressed as **pure positive integer Quadray coordinates** — no scaling factors, no √2, no φ. This is the native language of closest sphere packing.
+
+### The Integer Quadray Progression
+
+| Polyhedron | Quadray Pattern | # Permutations | Sum | IVM Role |
+|------------|-----------------|----------------|-----|----------|
+| **Tetrahedron** | {1, 0, 0, 0} | 4 | 1 | Fundamental unit |
+| **Octahedron** | {1, 1, 0, 0} | 6 | 2 | Edge midpoints |
+| **Dual Tetrahedron** | {0, 1, 1, 1} | 4 | 3 | Inverted fundamental |
+| **Cuboctahedron** | {2, 1, 1, 0} | 12 | 4 | 12-around-1 sphere packing |
+| **Cube** | {2, 1, 1, 0} perms | 8 (subset) | 4 | Alternating corners |
+
+### The 12 Cuboctahedron Vertices
+
+All unique permutations of {2, 1, 1, 0}:
+
+| Vertex | Quadray (W, X, Y, Z) | Sum | Cartesian Direction |
+|--------|----------------------|-----|---------------------|
+| VE₀ | (2, 1, 1, 0) | 4 | (+,+,0) region |
+| VE₁ | (2, 1, 0, 1) | 4 | (+,0,+) region |
+| VE₂ | (2, 0, 1, 1) | 4 | (0,+,+) region |
+| VE₃ | (1, 2, 1, 0) | 4 | (+,+,0) region |
+| VE₄ | (1, 2, 0, 1) | 4 | (+,0,-) region |
+| VE₅ | (1, 1, 2, 0) | 4 | (+,-,0) region |
+| VE₆ | (1, 1, 0, 2) | 4 | (0,+,-) region |
+| VE₇ | (1, 0, 2, 1) | 4 | (-,+,0) region |
+| VE₈ | (1, 0, 1, 2) | 4 | (0,-,+) region |
+| VE₉ | (0, 2, 1, 1) | 4 | (-,0,+) region |
+| VE₁₀ | (0, 1, 2, 1) | 4 | (-,-,0) region |
+| VE₁₁ | (0, 1, 1, 2) | 4 | (0,-,-) region |
+
+**Combinatorial Verification:** C(4,1) × C(3,2) = 4 × 3 = 12 ✓
+
+The "2" can be in any of 4 positions (W, X, Y, or Z), and the "0" can be in any of the remaining 3 positions. The two "1"s fill the remaining slots.
+
+### Physical Interpretation: 12-Around-1 Sphere Packing
+
+In closest sphere packing, when you place a sphere at the origin, exactly **12 spheres** can touch it simultaneously. The centers of these 12 touching spheres form a cuboctahedron (Vector Equilibrium).
+
+```
+Central sphere: (0, 0, 0, 0)
+12 touching spheres: all permutations of {2, 1, 1, 0}
+```
+
+The integer "2" represents moving 2 units along one Quadray axis — exactly the distance to the next sphere center in the IVM lattice. The combination {2, 1, 1, 0} encodes the tetrahedral close-packing relationship directly.
+
+### The Janus Extension: Negative Cuboctahedron
+
+Following our 4D± framework, the **negative cuboctahedron** exists in 4D⁻ space:
+
+| Positive (4D⁺) | Negative (4D⁻) | Relationship |
+|----------------|----------------|--------------|
+| {2, 1, 1, 0} perms | {-2, -1, -1, 0} perms | Janus inversion |
+| Sum = 4 | Sum = -4 | Sign-inverted |
+| 12 vertices | 12 vertices | Mirrored through origin |
+
+The negative cuboctahedron represents the "inside-out" VE — a Vector Equilibrium that has passed through the geometric Janus Point at origin.
+
+### Why Integer Coordinates Matter
+
+1. **Exact Arithmetic:** No floating-point errors accumulate in lattice calculations
+2. **Natural Discretization:** The IVM is inherently discrete; integer Quadrays honor this
+3. **Combinatorial Clarity:** Vertex counts are simply permutation counts
+4. **Fuller's Vision Realized:** "The coordinate system Universe is actually using"
+
+### Implementation: Native Quadray Demonstrators
+
+ARTexplorer implements these as "Quadray Demonstrators" that define geometry in native WXYZ coordinates, converting to XYZ only at the GPU boundary:
+
+- `quadrayTetrahedron` — {1, 0, 0, 0} permutations
+- `quadrayDualTetrahedron` — {0, 1, 1, 1} permutations
+- `quadrayCuboctahedron` — {2, 1, 1, 0} permutations (Kirby's calibration)
+
+These demonstrators preserve the integer Quadray coordinates in metadata, allowing inspection of the native representation alongside the rendered Cartesian form.
 
 ---
 

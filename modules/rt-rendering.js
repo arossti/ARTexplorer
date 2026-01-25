@@ -55,6 +55,7 @@ const colorPalette = {
   // Quadray demonstrators
   quadrayTetrahedron: 0x00ff88, // Bright teal/mint (distinct from other forms)
   quadrayTetraDeformed: 0xff5577, // Coral-pink (visually distinct for deformed)
+  quadrayCuboctahedron: 0x88ff00, // Lime-yellow (VE in native Quadray)
 };
 
 /**
@@ -79,7 +80,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let rhombicDodecMatrixGroup; // Rhombic dodecahedron matrix (space-filling array)
   let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup; // Radial matrix forms (Phase 2)
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup; // Radial matrix forms (Phase 3)
-  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup; // Quadray demonstrators
+  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup, quadrayCuboctahedronGroup; // Quadray demonstrators
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -229,6 +230,9 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayTetraDeformedGroup = new THREE.Group();
     quadrayTetraDeformedGroup.userData.type = "quadrayTetraDeformed";
 
+    quadrayCuboctahedronGroup = new THREE.Group();
+    quadrayCuboctahedronGroup.userData.type = "quadrayCuboctahedron";
+
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -255,6 +259,7 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(radialVEMatrixGroup);
     scene.add(quadrayTetrahedronGroup);
     scene.add(quadrayTetraDeformedGroup);
+    scene.add(quadrayCuboctahedronGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -284,6 +289,7 @@ export function initScene(THREE, OrbitControls, RT) {
       radialVEMatrixGroup,
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
+      quadrayCuboctahedronGroup,
     ]);
 
     // Initial render
@@ -892,6 +898,13 @@ export function initScene(THREE, OrbitControls, RT) {
         // Conservative approach: use base edge Q = 8s² for tight packing on shorter edges
         return 8 * s2;
       }
+
+      case "quadrayCuboctahedron":
+        // Quadray Cuboctahedron (Vector Equilibrium): {2,1,1,0} permutations
+        // 12 vertices from sphere packing - edge Q depends on normalization
+        // With zero-sum: consistent edge quadrance across all 24 edges
+        // Edge Q ≈ 8s² (similar to base cuboctahedron scaling)
+        return 8 * s2;
 
       default:
         console.warn(
@@ -2048,6 +2061,31 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayTetraDeformedGroup.visible = false;
     }
 
+    // Quadray Cuboctahedron (Vector Equilibrium - 4D Native)
+    // NOTE: The central vectors visible when this is shown are from quadrayBasis (WXYZ arrows),
+    // not from the cuboctahedron edges. Toggle "Show Quadray Basis" to hide them if desired.
+    if (document.getElementById("showQuadrayCuboctahedron")?.checked) {
+      const normalize =
+        document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
+      const quadrayCubocta = Polyhedra.quadrayCuboctahedron(scale, {
+        normalize: normalize,
+      });
+      renderPolyhedron(
+        quadrayCuboctahedronGroup,
+        quadrayCubocta,
+        colorPalette.quadrayCuboctahedron,
+        opacity
+      );
+      // Store parameters for export/import
+      quadrayCuboctahedronGroup.userData.parameters = {
+        normalize: normalize,
+        wxyz: quadrayCubocta.wxyz_normalized, // Store the actual WXYZ coords
+      };
+      quadrayCuboctahedronGroup.visible = true;
+    } else {
+      quadrayCuboctahedronGroup.visible = false;
+    }
+
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
     if (document.getElementById("showRhombicDodecMatrix").checked) {
       const matrixSize = parseInt(
@@ -2642,6 +2680,42 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
     }
 
+    // Quadray Tetrahedron (4D Native)
+    if (document.getElementById("showQuadrayTetrahedron")?.checked) {
+      const normalize = document.getElementById("quadrayTetraNormalize")?.checked ?? true;
+      const quadrayTet = Polyhedra.quadrayTetrahedron(1, { normalize });
+      const eulerOK = RT.verifyEuler(
+        quadrayTet.vertices.length,
+        quadrayTet.edges.length,
+        quadrayTet.faces.length
+      );
+      html += `<div style="margin-top: 10px;"><strong>Quadray Tetrahedron:</strong></div>`;
+      html += `<div>WXYZ: {1,0,0,0} permutations</div>`;
+      html += `<div>Normalized: ${normalize ? "Yes" : "No"}</div>`;
+      html += `<div>V: ${quadrayTet.vertices.length}, E: ${quadrayTet.edges.length}, F: ${quadrayTet.faces.length}</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+    }
+
+    // Quadray Cuboctahedron (Vector Equilibrium)
+    if (document.getElementById("showQuadrayCuboctahedron")?.checked) {
+      const normalize = document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
+      const quadrayCubocta = Polyhedra.quadrayCuboctahedron(1, { normalize });
+      const eulerOK = RT.verifyEuler(
+        quadrayCubocta.vertices.length,
+        quadrayCubocta.edges.length,
+        quadrayCubocta.faces.length
+      );
+      const triangles = quadrayCubocta.faces.filter(f => f.length === 3).length;
+      const squares = quadrayCubocta.faces.filter(f => f.length === 4).length;
+      html += `<div style="margin-top: 10px;"><strong>Quadray Cuboctahedron (VE):</strong></div>`;
+      html += `<div>WXYZ: {2,1,1,0} permutations</div>`;
+      html += `<div>Normalized: ${normalize ? "Yes" : "No"}</div>`;
+      html += `<div>V: ${quadrayCubocta.vertices.length}, E: ${quadrayCubocta.edges.length}, F: ${quadrayCubocta.faces.length}</div>`;
+      html += `<div>Faces: ${triangles} △ + ${squares} □</div>`;
+      html += `<div>IVM: 12-around-1 sphere packing</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+    }
+
     stats.innerHTML = html || "Select a polyhedron to see stats";
   }
 
@@ -2994,6 +3068,7 @@ export function initScene(THREE, OrbitControls, RT) {
       radialVEMatrixGroup,
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
+      quadrayCuboctahedronGroup,
     };
   }
 
@@ -3394,6 +3469,16 @@ export function initScene(THREE, OrbitControls, RT) {
 
       case "quadrayDualTetrahedron":
         geometry = Polyhedra.quadrayDualTetrahedron(scale, { normalize });
+        renderPolyhedron(group, geometry, color, opacity);
+        // Store parameters for re-export
+        group.userData.parameters = {
+          normalize: normalize,
+          wxyz: geometry.wxyz_normalized,
+        };
+        break;
+
+      case "quadrayCuboctahedron":
+        geometry = Polyhedra.quadrayCuboctahedron(scale, { normalize });
         renderPolyhedron(group, geometry, color, opacity);
         // Store parameters for re-export
         group.userData.parameters = {

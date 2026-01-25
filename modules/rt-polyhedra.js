@@ -1666,6 +1666,252 @@ export const Polyhedra = {
       wxyz: wxyz,
     });
   },
+
+  /**
+   * Quadray Cuboctahedron (Vector Equilibrium - 4D Native)
+   * Defined NATIVELY in integer Quadray coordinates per Kirby Urner's calibration.
+   *
+   * Key insight: The 12 vertices of a cuboctahedron are ALL unique permutations
+   * of {2, 1, 1, 0} in Quadray space — pure positive integers!
+   *
+   * This represents the 12-around-1 closest sphere packing configuration.
+   * In the IVM lattice, these are the centers of the 12 spheres touching
+   * a central sphere at origin (0,0,0,0).
+   *
+   * Reference: Kirby Urner correspondence, January 2026
+   * See also: Geometry documents/4D-COORDINATES.md §8.11
+   *
+   * @param {number} scale - Uniform scale factor
+   * @param {Object} options - Configuration options
+   * @param {boolean} options.normalize - Apply zero-sum normalization (default: true)
+   * @returns {Object} - {vertices, edges, faces, wxyz_raw, wxyz_normalized, metadata}
+   */
+  quadrayCuboctahedron: (scale = 1, options = {}) => {
+    const { normalize = true } = options;
+
+    // All 12 unique permutations of {2, 1, 1, 0}
+    // Combinatorics: "2" in 4 positions × "0" in 3 remaining = 12 vertices
+    const wxyz_raw = [
+      // "2" in W position (3 permutations)
+      [2, 1, 1, 0], // 0: W dominant, Z absent
+      [2, 1, 0, 1], // 1: W dominant, Y absent
+      [2, 0, 1, 1], // 2: W dominant, X absent
+      // "2" in X position (3 permutations)
+      [1, 2, 1, 0], // 3: X dominant, Z absent
+      [1, 2, 0, 1], // 4: X dominant, Y absent
+      [0, 2, 1, 1], // 5: X dominant, W absent
+      // "2" in Y position (3 permutations)
+      [1, 1, 2, 0], // 6: Y dominant, Z absent
+      [1, 0, 2, 1], // 7: Y dominant, X absent
+      [0, 1, 2, 1], // 8: Y dominant, W absent
+      // "2" in Z position (3 permutations)
+      [1, 1, 0, 2], // 9: Z dominant, Y absent
+      [1, 0, 1, 2], // 10: Z dominant, X absent
+      [0, 1, 1, 2], // 11: Z dominant, W absent
+    ];
+
+    // Optional: Apply zero-sum normalization
+    // Standard: w + x + y + z = 0 (subtracts average from each coordinate)
+    const wxyz_normalized = wxyz_raw.map(([w, x, y, z]) => {
+      if (!normalize) return [w, x, y, z];
+      const sum = w + x + y + z;
+      const avg = sum / 4;
+      return [w - avg, x - avg, y - avg, z - avg];
+    });
+
+    // RT-PURE: Use raw basis vectors (NOT normalized to unit Cartesian length)
+    // These point to alternating vertices of a cube inscribed in the tetrahedron
+    const basisW = new THREE.Vector3(1, 1, 1);
+    const basisX = new THREE.Vector3(1, -1, -1);
+    const basisY = new THREE.Vector3(-1, 1, -1);
+    const basisZ = new THREE.Vector3(-1, -1, 1);
+
+    // Convert to Cartesian for THREE.js rendering
+    const vertices = wxyz_normalized.map(([w, x, y, z]) => {
+      return new THREE.Vector3()
+        .addScaledVector(basisW, w * scale)
+        .addScaledVector(basisX, x * scale)
+        .addScaledVector(basisY, y * scale)
+        .addScaledVector(basisZ, z * scale);
+    });
+
+    // For proper edges and faces, we need to identify which vertices are adjacent
+    // Two vertices are adjacent if they share exactly 2 coordinate values
+    // (one position changes from 2→1 or 1→2, another from 0→1 or 1→0)
+
+    // Build adjacency list - this determines the TRUE edges
+    const adjList = new Map();
+    for (let i = 0; i < 12; i++) {
+      adjList.set(i, []);
+    }
+
+    for (let i = 0; i < 12; i++) {
+      for (let j = i + 1; j < 12; j++) {
+        // Check if vertices i and j are adjacent
+        // Adjacent vertices share exactly 2 coordinate values AND
+        // either the "2" position or the "0" position stays the same
+        // (opposite vertices have both positions swapped)
+        const vi = wxyz_raw[i];
+        const vj = wxyz_raw[j];
+        let matches = 0;
+        for (let k = 0; k < 4; k++) {
+          if (vi[k] === vj[k]) matches++;
+        }
+        if (matches === 2) {
+          // Additional check: exclude opposite vertices where 2 and 0 both swap
+          const pos2_i = vi.indexOf(2), pos2_j = vj.indexOf(2);
+          const pos0_i = vi.indexOf(0), pos0_j = vj.indexOf(0);
+          const bothSwap = pos2_i !== pos2_j && pos0_i !== pos0_j;
+          if (!bothSwap) {
+            adjList.get(i).push(j);
+            adjList.get(j).push(i);
+          }
+        }
+      }
+    }
+
+    // Verify: each vertex should have exactly 4 neighbors
+    for (let i = 0; i < 12; i++) {
+      if (adjList.get(i).length !== 4) {
+        console.warn(
+          `Vertex ${i} has ${adjList.get(i).length} neighbors (expected 4)`
+        );
+      }
+    }
+
+    // Extract edges from adjacency list (each edge appears once)
+    // 24 edges total: 12 vertices × 4 neighbors / 2 = 24
+    const edges = [];
+    for (let i = 0; i < 12; i++) {
+      for (const j of adjList.get(i)) {
+        if (i < j) {
+          edges.push([i, j]);
+        }
+      }
+    }
+
+    // RT VALIDATION
+    const sampleQ = RT.quadrance(vertices[0], vertices[1]);
+
+    console.log(
+      `[RT] Quadray Cuboctahedron (Vector Equilibrium): normalize=${normalize}, scale=${scale}`
+    );
+    console.log(`  WXYZ raw: {2,1,1,0} permutations — 12 vertices`);
+    console.log(`  Sum of each vertex coordinates: 4 (consistent)`);
+    console.log(
+      `  Physical meaning: 12-around-1 closest sphere packing (IVM lattice)`
+    );
+    console.log(`  Edges: ${edges.length} (expected 24)`);
+    console.log(`  Edge Q: ${sampleQ.toFixed(6)}`);
+
+    // Build proper faces using adjacency
+    // Triangular faces: 3 mutually adjacent vertices
+    const triangleFaces = [];
+    const squareFaces = [];
+
+    // Find triangular faces
+    for (let i = 0; i < 12; i++) {
+      const neighbors = adjList.get(i);
+      for (let j = 0; j < neighbors.length; j++) {
+        for (let k = j + 1; k < neighbors.length; k++) {
+          const n1 = neighbors[j];
+          const n2 = neighbors[k];
+          // Check if n1 and n2 are also adjacent to each other
+          if (adjList.get(n1).includes(n2)) {
+            // Found a triangle: i, n1, n2
+            const tri = [i, n1, n2].sort((a, b) => a - b);
+            const key = tri.join(",");
+            // Avoid duplicates
+            if (
+              !triangleFaces.some(
+                f => f.sort((a, b) => a - b).join(",") === key
+              )
+            ) {
+              triangleFaces.push([i, n1, n2]);
+            }
+          }
+        }
+      }
+    }
+
+    // Find square faces: 4 vertices forming a cycle
+    // For each pair of opposite vertices (not adjacent)
+    for (let i = 0; i < 12; i++) {
+      const iNeighbors = adjList.get(i);
+      for (let j = i + 1; j < 12; j++) {
+        if (iNeighbors.includes(j)) continue; // Skip adjacent pairs
+        const jNeighbors = adjList.get(j);
+        // Find common neighbors of i and j
+        const common = iNeighbors.filter(n => jNeighbors.includes(n));
+        if (common.length === 2) {
+          // Square vertices in CYCLIC order: common[0] -> i -> common[1] -> j
+          // This ensures fan triangulation doesn't create diagonal i-j
+          // (i and j are opposite vertices, common[0] and common[1] are the other pair)
+          const sq = [common[0], i, common[1], j];
+          const sorted = [...sq].sort((a, b) => a - b);
+          const key = sorted.join(",");
+          if (
+            !squareFaces.some(f => [...f].sort((a, b) => a - b).join(",") === key)
+          ) {
+            squareFaces.push(sq);
+          }
+        }
+      }
+    }
+
+    console.log(
+      `  Faces computed: ${triangleFaces.length} triangles, ${squareFaces.length} squares`
+    );
+
+    // Now fix winding order for each face
+    // Face normal should point away from origin (outward)
+    const fixedFaces = [];
+
+    const fixWinding = faceIndices => {
+      const v0 = vertices[faceIndices[0]];
+      const v1 = vertices[faceIndices[1]];
+      const v2 = vertices[faceIndices[2]];
+
+      // Compute face normal using cross product (v1-v0) × (v2-v0)
+      const edge1 = new THREE.Vector3().subVectors(v1, v0);
+      const edge2 = new THREE.Vector3().subVectors(v2, v0);
+      const normal = new THREE.Vector3().crossVectors(edge1, edge2);
+
+      // Face center
+      const center = new THREE.Vector3();
+      faceIndices.forEach(idx => center.add(vertices[idx]));
+      center.divideScalar(faceIndices.length);
+
+      // Outward direction (from origin to face center)
+      const outward = center.clone().normalize();
+
+      // If normal points inward (dot < 0), reverse the winding
+      if (normal.dot(outward) < 0) {
+        return [...faceIndices].reverse();
+      }
+      return faceIndices;
+    };
+
+    triangleFaces.forEach(f => fixedFaces.push(fixWinding(f)));
+    squareFaces.forEach(f => fixedFaces.push(fixWinding(f)));
+
+    return {
+      vertices,
+      edges,
+      faces: fixedFaces,
+      // Preserve Quadray coordinates for display/inspection
+      wxyz_raw,
+      wxyz_normalized,
+      metadata: {
+        coordinateSystem: "quadray",
+        pattern: "{2,1,1,0} permutations",
+        normalized: normalize,
+        scale: scale,
+        physicalMeaning: "12-around-1 closest sphere packing (IVM lattice)",
+        attribution: "Kirby Urner calibration, January 2026",
+      },
+    };
+  },
 };
 
 /**

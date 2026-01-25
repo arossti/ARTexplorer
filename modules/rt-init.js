@@ -110,7 +110,7 @@ function startARTexplorer(
   let cuboctaMatrixGroup, rhombicDodecMatrixGroup;
   let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup;
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup;
-  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup;
+  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup, quadrayCuboctahedronGroup;
   let cartesianGrid, ivmPlanes;
 
   // ========================================================================
@@ -418,6 +418,29 @@ function startARTexplorer(
       e.target.nextElementSibling.textContent = value.toFixed(1);
       updateGeometry();
     });
+  }
+
+  // Quadray Cuboctahedron (Vector Equilibrium - 4D Native)
+  const quadrayCuboctaCheckbox = document.getElementById(
+    "showQuadrayCuboctahedron"
+  );
+  if (quadrayCuboctaCheckbox) {
+    quadrayCuboctaCheckbox.addEventListener("change", () => {
+      const controls = document.getElementById("quadray-cuboctahedron-controls");
+      if (controls) {
+        controls.style.display = quadrayCuboctaCheckbox.checked
+          ? "block"
+          : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const quadrayCuboctaNormalizeCheckbox = document.getElementById(
+    "quadrayCuboctaNormalize"
+  );
+  if (quadrayCuboctaNormalizeCheckbox) {
+    quadrayCuboctaNormalizeCheckbox.addEventListener("change", updateGeometry);
   }
 
   // Matrix forms (IVM Arrays)
@@ -2186,6 +2209,7 @@ function startARTexplorer(
       radialVEMatrixGroup,
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
+      quadrayCuboctahedronGroup,
     ];
 
     formGroups.forEach(group => {
@@ -2453,6 +2477,7 @@ function startARTexplorer(
       radialVEMatrixGroup,
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
+      quadrayCuboctahedronGroup,
     ];
 
     formGroups.forEach(group => {
@@ -3726,6 +3751,7 @@ function startARTexplorer(
     radialVEMatrixGroup,
     quadrayTetrahedronGroup,
     quadrayTetraDeformedGroup,
+    quadrayCuboctahedronGroup,
   } = formGroups);
 
   initGumballEventListeners(); // Initialize gumball after scene is ready
