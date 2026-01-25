@@ -130,7 +130,16 @@ function getAllFormGroups() {
 }
 ```
 
-### 2.9 Export in Return Object (line ~3480+)
+### 2.9 Add to createPolyhedronByType() (line ~3391)
+Required for instance restoration from saved files:
+```javascript
+case "newPolyhedron":
+  geometry = Polyhedra.newPolyhedron(scale);
+  renderPolyhedron(group, geometry, color, opacity);
+  break;
+```
+
+### 2.10 Export in Return Object (line ~3480+)
 If needed for external access, add to the module's return object.
 
 ---
@@ -296,6 +305,125 @@ const fixWinding = (faceIndices, vertices) => {
   - Matrix/array forms: Variations of base polyhedron color
 
 - **Performance**: For high-vertex-count forms, consider caching geometry or using instanced rendering.
+
+---
+
+## Primitives (Non-Polyhedra Forms)
+
+Primitives like Point, Line, and Polygon don't follow standard polyhedron patterns. They require special handling for tool restrictions, edge quadrance, and close-packing.
+
+### Point (0D Primitive)
+
+**Characteristics:**
+- Single vertex at origin, no edges, no faces
+- Euler formula doesn't apply (degenerate)
+- No valid edge quadrance for close-packing
+
+**Special Handling Required:**
+
+1. **Tool Restrictions** - Point only supports Move (no Scale/Rotate):
+```javascript
+// In group initialization (rt-rendering.js)
+pointGroup.userData.allowedTools = ["move"];
+
+// In tool button handler (rt-init.js), after extracting tool:
+if (currentSelection) {
+  const allowedTools = currentSelection.userData?.allowedTools;
+  if (allowedTools && !allowedTools.includes(tool)) {
+    console.log(`[Tool] '${tool}' not allowed for ${currentSelection.userData.type}`);
+    return;  // Block disallowed tool
+  }
+}
+```
+
+2. **Edge Quadrance** - Return `null` for edgeless forms:
+```javascript
+// In getPolyhedronEdgeQuadrance()
+case "point":
+  return null;  // No edges - packed sizing not applicable
+```
+
+3. **Close-Pack Fallback** - Handle null in `getClosePackedRadius()`:
+```javascript
+const Q_edge = getPolyhedronEdgeQuadrance(type, scale);
+if (Q_edge === null || Q_edge === 0) {
+  return null;  // Signal packed not available
+}
+```
+
+4. **Node Size Fallback** - In `renderPolyhedron()` and `getCachedNodeGeometry()`:
+```javascript
+if (nodeSize === "packed") {
+  nodeRadius = getClosePackedRadius(polyType, scale);
+  if (nodeRadius === null) {
+    nodeRadius = 0.04;  // Fall back to "md" size
+  }
+}
+```
+
+5. **Geometry Stats** - No Euler validation:
+```javascript
+html += `<div>V: 1, E: 0, F: 0</div>`;
+html += `<div>Euler: N/A (degenerate)</div>`;
+```
+
+### Line (1D Primitive) - Future
+
+**Characteristics:**
+- 2 vertices, 1 edge, no faces
+- Euler: V - E + F = 2 - 1 + 0 = 1 (not satisfied - open form)
+
+**Close-Packing:**
+```javascript
+// Packed node radius = half edge length
+// Q_vertex = Q_edge / 4, so r = edgeLength / 2
+case "line":
+  return scale * scale;  // Q = s² for line of length s (or parameterized)
+```
+
+**Tool Restrictions:**
+- Move: Yes
+- Scale: Yes (stretch along line axis)
+- Rotate: Yes (orient line in space)
+
+### Polygon (2D Primitive) - Future
+
+**Characteristics:**
+- N vertices, N edges, 1 face (or 2 if double-sided)
+- Euler: V - E + F = N - N + 1 = 1 (open form)
+
+**Close-Packing by N-gon type:**
+```javascript
+case "polygon":
+  const n = options.sides || 3;
+  // For regular n-gon with circumradius R:
+  // Edge length a = 2R·sin(π/n)
+  // Q_edge = 4R²·sin²(π/n) = 4R²·spread(π/n)
+
+  // Using RT spread: s = sin²(θ)
+  // For triangle (n=3): s = 3/4, Q_edge = 3R²
+  // For square (n=4): s = 1/2, Q_edge = 2R²
+  // For pentagon (n=5): s ≈ 0.345, Q_edge ≈ 1.38R²
+  // For hexagon (n=6): s = 1/4, Q_edge = R²
+
+  const spread = RT.spreadFromAngle(Math.PI / n);  // Or use RT lookup table
+  return 4 * scale * scale * spread;
+```
+
+**Tool Restrictions:**
+- Move: Yes
+- Scale: Yes (uniform or per-axis)
+- Rotate: Yes
+
+### General Pattern for Primitives
+
+When adding any primitive:
+
+1. **Determine tool applicability** - What operations make geometric sense?
+2. **Calculate edge quadrance** - Or return `null` if no edges exist
+3. **Handle close-packing edge cases** - Provide fallback when packing undefined
+4. **Skip Euler validation** - Open forms don't satisfy V - E + F = 2
+5. **Consider coordinate display** - Primitives are useful for exploring coordinate mappings
 
 ---
 
