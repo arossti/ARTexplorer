@@ -56,6 +56,8 @@ const colorPalette = {
   quadrayTetrahedron: 0x00ff88, // Bright teal/mint (distinct from other forms)
   quadrayTetraDeformed: 0xff5577, // Coral-pink (visually distinct for deformed)
   quadrayCuboctahedron: 0x88ff00, // Lime-yellow (VE in native Quadray)
+  // Primitives
+  point: 0xffffff, // White - neutral coordinate exploration point
 };
 
 /**
@@ -81,6 +83,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup; // Radial matrix forms (Phase 2)
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup; // Radial matrix forms (Phase 3)
   let quadrayTetrahedronGroup, quadrayTetraDeformedGroup, quadrayCuboctahedronGroup; // Quadray demonstrators
+  let pointGroup; // Point primitive (single vertex)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -138,6 +141,11 @@ export function initScene(THREE, OrbitControls, RT) {
     createIVMPlanes();
 
     // Create polyhedra groups
+    // Point primitive (single vertex - Move only, no Scale/Rotate)
+    pointGroup = new THREE.Group();
+    pointGroup.userData.type = "point";
+    pointGroup.userData.allowedTools = ["move"]; // Only Move allowed
+
     cubeGroup = new THREE.Group();
     cubeGroup.userData.type = "cube";
 
@@ -233,6 +241,7 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayCuboctahedronGroup = new THREE.Group();
     quadrayCuboctahedronGroup.userData.type = "quadrayCuboctahedron";
 
+    scene.add(pointGroup);
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -263,6 +272,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
+      pointGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -808,6 +818,10 @@ export function initScene(THREE, OrbitControls, RT) {
     const s2 = scale * scale; // Pre-compute s² for RT calculations
 
     switch (type) {
+      case "point":
+        // Points have no edges - packed sizing not applicable
+        return null;
+
       case "tetrahedron":
         // Edge quadrance Q = 8s² (edge = 2s√2)
         return 8 * s2;
@@ -933,6 +947,12 @@ export function initScene(THREE, OrbitControls, RT) {
     // RT-PURE: Work in quadrance space (no sqrt until final step!)
     const Q_edge = getPolyhedronEdgeQuadrance(type, scale);
 
+    // Handle forms without edges (e.g., Point)
+    if (Q_edge === null || Q_edge === 0) {
+      console.log(`⚠️ Close-pack not available for ${type} (no edges)`);
+      return null; // Signal packed sizing not available
+    }
+
     // UNIVERSAL CLOSE-PACKING LAW (Rational Trigonometry form):
     // Q_vertex = Q_edge / 4
     // Pure algebraic relationship - no transcendental functions!
@@ -981,6 +1001,10 @@ export function initScene(THREE, OrbitControls, RT) {
         radius = 0.04; // Fallback to medium size
       } else {
         radius = getClosePackedRadius(polyhedronType, scale);
+        // Fallback if packed not available (e.g., Point has no edges)
+        if (radius === null) {
+          radius = 0.04; // "md" size fallback
+        }
       }
     } else {
       // FIXED SIZE MODE: Use predefined sizes
@@ -1514,6 +1538,11 @@ export function initScene(THREE, OrbitControls, RT) {
       let nodeRadius;
       if (nodeSize === "packed") {
         nodeRadius = getClosePackedRadius(polyType, scale);
+        // Fallback to "md" if packed not available (e.g., Point has no edges)
+        if (nodeRadius === null) {
+          nodeRadius = 0.04; // "md" size fallback
+          console.log(`[Node] Packed fallback to md for ${polyType}`);
+        }
       } else {
         const nodeSizes = { sm: 0.02, md: 0.04, lg: 0.08 };
         nodeRadius = nodeSizes[nodeSize] || 0.04;
@@ -1617,6 +1646,17 @@ export function initScene(THREE, OrbitControls, RT) {
     const tetEdge = parseFloat(document.getElementById("tetScaleSlider").value);
     const scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
     const opacity = parseFloat(document.getElementById("opacitySlider").value);
+
+    // Point (single vertex - coordinate exploration tool)
+    if (document.getElementById("showPoint")?.checked) {
+      const pointData = Polyhedra.point(scale);
+      renderPolyhedron(pointGroup, pointData, colorPalette.point, opacity);
+      pointGroup.userData.type = "point";
+      pointGroup.userData.allowedTools = ["move"]; // Only Move allowed
+      pointGroup.visible = true;
+    } else {
+      pointGroup.visible = false;
+    }
 
     // Cube (Blue)
     if (document.getElementById("showCube").checked) {
@@ -2484,6 +2524,12 @@ export function initScene(THREE, OrbitControls, RT) {
     const stats = document.getElementById("geometryStats");
     let html = "";
 
+    if (document.getElementById("showPoint")?.checked) {
+      html += `<div><strong>Point:</strong></div>`;
+      html += `<div>V: 1, E: 0, F: 0</div>`;
+      html += `<div>Euler: N/A (degenerate)</div>`;
+    }
+
     if (document.getElementById("showCube").checked) {
       const cube = Polyhedra.cube(1);
       const eulerOK = RT.verifyEuler(
@@ -3046,6 +3092,7 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function getAllFormGroups() {
     return {
+      pointGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,

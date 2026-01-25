@@ -20,6 +20,22 @@ import { RT } from "./rt-math.js";
  */
 export const Polyhedra = {
   /**
+   * Point - simplest form: single vertex at origin
+   * No edges, no faces - purely a coordinate exploration tool
+   * Responds to Sm/Md/Lg node sizes, NOT Packed (no edge quadrance)
+   */
+  point: (halfSize = 1) => {
+    // A point has a single vertex at origin (positioned via gumball)
+    const vertices = [new THREE.Vector3(0, 0, 0)];
+    const edges = []; // No edges
+    const faces = []; // No faces
+
+    console.log("[RT] Point: single vertex at origin");
+
+    return { vertices, edges, faces };
+  },
+
+  /**
    * Hexahedron (Cube) - vertices at (±1, ±1, ±1)
    * Edge quadrance Q = 4 (edge length = 2)
    * Z-up convention: Z is vertical axis

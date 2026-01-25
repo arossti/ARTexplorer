@@ -100,6 +100,7 @@ function startARTexplorer(
 
   // Scene objects - assigned after initScene() is called
   let scene, camera, renderer, controls;
+  let pointGroup; // Point primitive (single vertex)
   let cubeGroup, tetrahedronGroup, dualTetrahedronGroup, octahedronGroup;
   let icosahedronGroup, dodecahedronGroup, dualIcosahedronGroup;
   let cuboctahedronGroup, rhombicDodecahedronGroup;
@@ -194,6 +195,12 @@ function startARTexplorer(
   });
 
   // Polyhedra toggles
+  // Point (single vertex - coordinate exploration tool)
+  const pointCheckbox = document.getElementById("showPoint");
+  if (pointCheckbox) {
+    pointCheckbox.addEventListener("change", updateGeometry);
+  }
+
   document
     .getElementById("showCube")
     .addEventListener("change", updateGeometry);
@@ -1347,6 +1354,17 @@ function startARTexplorer(
     btn.addEventListener("click", function () {
       const tool = this.dataset.gumballTool;
 
+      // Check if selected form allows this tool (Point only allows "move")
+      if (currentSelection) {
+        const allowedTools = currentSelection.userData?.allowedTools;
+        if (allowedTools && !allowedTools.includes(tool)) {
+          console.log(
+            `[Tool] '${tool}' not allowed for ${currentSelection.userData.type}`
+          );
+          return; // Don't activate disallowed tool
+        }
+      }
+
       // Toggle: if clicking active button, deactivate it
       if (this.classList.contains("active")) {
         this.classList.remove("active");
@@ -2185,6 +2203,7 @@ function startARTexplorer(
 
     // Forms (including geodesics and matrix forms)
     const formGroups = [
+      pointGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -2453,6 +2472,7 @@ function startARTexplorer(
 
     // Forms
     const formGroups = [
+      pointGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -3727,6 +3747,7 @@ function startARTexplorer(
   // Get all form groups for selection system
   const formGroups = renderingAPI.getAllFormGroups();
   ({
+    pointGroup,
     cubeGroup,
     tetrahedronGroup,
     dualTetrahedronGroup,
