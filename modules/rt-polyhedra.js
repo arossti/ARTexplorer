@@ -98,16 +98,18 @@ export const Polyhedra = {
     // Circumradius R = √Q_R
     const R = Math.sqrt(quadrance);
 
-    // Calculate spread and edge quadrance for RT purity
-    // spread(π/n) = sin²(π/n)
+    // RT-PURE: Calculate spread for edge quadrance
+    // spread(π/n) = sin²(π/n) - classical trig justified for arbitrary n-gons
+    // TODO: Add exact algebraic vertices for n=3,4,6 (see CODE-QUALITY-AUDIT.md Section 4.3)
     const centralAngle = Math.PI / n;
     const spread = Math.pow(Math.sin(centralAngle), 2);
-    // Q_edge = 4·R²·spread = 4·Q_R·spread
+    // Q_edge = 4·R²·spread = 4·Q_R·spread (RT-pure formula)
     const Q_edge = 4 * quadrance * spread;
-    const edgeLength = Math.sqrt(Q_edge);
+    const edgeLength = Math.sqrt(Q_edge); // Deferred √ at final step
 
     // Generate vertices around circumcircle in XY plane
-    // Start at angle 0 (positive X axis) and go CCW
+    // Math.sin/cos justified: arbitrary n-gon vertex placement requires classical trig
+    // For specific n (3,4,6), exact algebraic forms exist but general formula is simpler
     const vertices = [];
     for (let i = 0; i < n; i++) {
       const angle = (2 * Math.PI * i) / n;

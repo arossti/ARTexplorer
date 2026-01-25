@@ -849,14 +849,14 @@ export function initScene(THREE, OrbitControls, RT) {
         return scale; // scale IS the quadrance for line primitive
 
       case "polygon": {
-        // Polygon edge quadrance depends on circumradius quadrance and number of sides
+        // RT-PURE: Polygon edge quadrance from circumradius quadrance
         // Q_edge = 4·Q_R·spread(π/n) where spread = sin²(θ)
-        // scale is the circumradius quadrance (Q_R)
-        // sides comes from options parameter (passed from group.userData.parameters)
+        // Math.sin justified: arbitrary n-gon spread requires classical trig
+        // scale = circumradius quadrance (Q_R), sides from options parameter
         const sides = options.sides || 3;
         const centralAngle = Math.PI / sides;
         const spread = Math.pow(Math.sin(centralAngle), 2);
-        return 4 * scale * spread;
+        return 4 * scale * spread; // RT-pure quadrance result
       }
 
       case "tetrahedron":
@@ -2714,8 +2714,9 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("polygonSides")?.value || "3"
       );
       const polyR = Math.sqrt(polyQ);
+      // Math.sin justified: arbitrary n-gon spread calculation (see CODE-QUALITY-AUDIT.md)
       const spread = Math.pow(Math.sin(Math.PI / polySides), 2);
-      const polyEdgeQ = 4 * polyQ * spread;
+      const polyEdgeQ = 4 * polyQ * spread; // RT-pure formula
       const polyEdgeL = Math.sqrt(polyEdgeQ);
       const showFace = document.getElementById("polygonShowFace")?.checked;
       const faceCount = showFace ? 1 : 0;
