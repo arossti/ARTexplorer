@@ -3517,8 +3517,7 @@ function startARTexplorer(
             // Update NOW counter display
             const nowCountEl = document.getElementById("nowCount");
             if (nowCountEl) {
-              const instances = RTStateManager.getInstances();
-              nowCountEl.textContent = instances.length;
+              nowCountEl.textContent = RTStateManager.getDepositedCount();
             }
 
             console.log("✅ DRAG-COPY complete: Instance created, original restored");
@@ -3643,8 +3642,7 @@ function startARTexplorer(
             // Update NOW counter display
             const nowCountEl = document.getElementById("nowCount");
             if (nowCountEl) {
-              const instances = RTStateManager.getInstances();
-              nowCountEl.textContent = instances.length;
+              nowCountEl.textContent = RTStateManager.getDepositedCount();
             }
 
             console.log("✅ DRAG-COPY complete: Instance created, original restored");
