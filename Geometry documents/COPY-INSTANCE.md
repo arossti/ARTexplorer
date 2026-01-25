@@ -28,8 +28,9 @@ Implement macOS-native Option+click drag behavior to create copies of polyhedra 
 ### Known Issues / Refinements Needed
 
 1. **Original should remain visible during drag ("ghost" behavior)** ⚠️ CRITICAL
-   - Currently: The original form moves with the drag, then snaps back after release
-   - During drag, user cannot see where the original is
+   - Currently: The original form moves with the drag and STAYS at the new position
+   - An instance is created, but it's at the same position as the moved original
+   - The original is effectively "lost" - subsequent drags move it further away
    - Expected: Original stays in place (like a ghost), user drags a *copy* away from it
    - The original never moves - standard macOS opt-drag behavior
    - Implementation: On alt-mousedown, immediately create a clone for dragging; original stays put
