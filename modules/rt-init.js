@@ -2648,6 +2648,58 @@ function startARTexplorer(
         // Skip right-click (button 2) - let context menu handle it
         if (event.button === 2) return;
 
+        // ================================================================
+        // ALT-CLICK AUTO-MOVE: Bypass tool requirement for drag-copy
+        // If Alt held + clicking on selected poly + no tool active → start move+copy
+        // ================================================================
+        if (event.altKey && currentSelection && !currentGumballTool) {
+          // Convert mouse position
+          const rect = renderer.domElement.getBoundingClientRect();
+          mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+          raycaster.setFromCamera(mouse, camera);
+
+          // Check if clicking on the selected polyhedron
+          const selectableObjects = [];
+          currentSelection.traverse(obj => {
+            if (obj.isMesh || obj.isLine) selectableObjects.push(obj);
+          });
+
+          const polyIntersects = raycaster.intersectObjects(selectableObjects, false);
+
+          if (polyIntersects.length > 0) {
+            // Alt+click on selected poly - start free move with drag-copy
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Disable orbit controls for this drag
+            controls.enabled = false;
+
+            isFreeMoving = true;
+            isDragCopying = true;
+            dragCopyOriginalPosition.copy(currentSelection.position);
+            dragCopyOriginalQuaternion.copy(currentSelection.quaternion);
+            dragCopyOriginalScale.copy(currentSelection.scale);
+
+            selectedPolyhedra = getSelectedPolyhedra();
+
+            // Create drag plane perpendicular to camera
+            const cameraDirection = new THREE.Vector3();
+            camera.getWorldDirection(cameraDirection);
+            dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+              cameraDirection,
+              currentSelection.position.clone()
+            );
+
+            // Get click point and offset
+            raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
+            freeMoveDragOffset.copy(currentSelection.position).sub(dragStartPoint);
+
+            console.log("📋 ALT-CLICK AUTO-MOVE: Drag-copy started without tool activation");
+            return; // Don't fall through to normal tool handling
+          }
+        }
+
         // Only work if a gumball tool is active (Move, Scale, or Rotate mode)
         if (
           !currentGumballTool ||
@@ -3471,6 +3523,11 @@ function startARTexplorer(
 
             console.log("✅ DRAG-COPY complete: Instance created, original restored");
             isDragCopying = false;
+
+            // Re-enable orbit controls if no tool is active (alt-click auto-move case)
+            if (!currentGumballTool) {
+              controls.enabled = true;
+            }
           }
 
           justFinishedDrag = true;
@@ -3820,6 +3877,12 @@ function startARTexplorer(
         isDragCopying = false;
         isFreeMoving = false;
         isDragging = false;
+
+        // Re-enable orbit controls if no tool is active
+        if (!currentGumballTool) {
+          controls.enabled = true;
+        }
+
         console.log("❌ DRAG-COPY cancelled via Escape, original restored");
         return; // Don't deselect, just cancel the copy operation
       }
