@@ -1836,8 +1836,10 @@ export const Polyhedra = {
         // Find common neighbors of i and j
         const common = iNeighbors.filter(n => jNeighbors.includes(n));
         if (common.length === 2) {
-          // Found a square: i, common[0], j, common[1]
-          const sq = [i, common[0], j, common[1]];
+          // Square vertices in CYCLIC order: common[0] -> i -> common[1] -> j
+          // This ensures fan triangulation doesn't create diagonal i-j
+          // (i and j are opposite vertices, common[0] and common[1] are the other pair)
+          const sq = [common[0], i, common[1], j];
           const sorted = [...sq].sort((a, b) => a - b);
           const key = sorted.join(",");
           if (
