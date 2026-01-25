@@ -1687,7 +1687,7 @@ export const Polyhedra = {
    * @returns {Object} - {vertices, edges, faces, wxyz_raw, wxyz_normalized, metadata}
    */
   quadrayCuboctahedron: (scale = 1, options = {}) => {
-    const { normalize = true, showCentralVectors = true } = options;
+    const { normalize = true } = options;
 
     // All 12 unique permutations of {2, 1, 1, 0}
     // Combinatorics: "2" in 4 positions × "0" in 3 remaining = 12 vertices
@@ -1885,25 +1885,9 @@ export const Polyhedra = {
     triangleFaces.forEach(f => fixedFaces.push(fixWinding(f)));
     squareFaces.forEach(f => fixedFaces.push(fixWinding(f)));
 
-    // Optionally add central vectors (origin to each vertex)
-    // This shows the 12-around-1 sphere packing relationship
-    let finalVertices = vertices;
-    let finalEdges = edges;
-
-    if (showCentralVectors) {
-      // Add origin as vertex 12
-      finalVertices = [...vertices, new THREE.Vector3(0, 0, 0)];
-      // Add edges from origin (index 12) to each outer vertex (0-11)
-      const centralEdges = [];
-      for (let i = 0; i < 12; i++) {
-        centralEdges.push([12, i]);
-      }
-      finalEdges = [...edges, ...centralEdges];
-    }
-
     return {
-      vertices: finalVertices,
-      edges: finalEdges,
+      vertices,
+      edges,
       faces: fixedFaces,
       // Preserve Quadray coordinates for display/inspection
       wxyz_raw,
