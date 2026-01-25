@@ -27,23 +27,30 @@ Implement macOS-native Option+click drag behavior to create copies of polyhedra 
 
 ### Known Issues / Refinements Needed
 
-1. **Alt must be held throughout drag** (not just on mousedown)
+1. **Original should remain visible during drag ("ghost" behavior)** ⚠️ CRITICAL
+   - Currently: The original form moves with the drag, then snaps back after release
+   - During drag, user cannot see where the original is
+   - Expected: Original stays in place (like a ghost), user drags a *copy* away from it
+   - The original never moves - standard macOS opt-drag behavior
+   - Implementation: On alt-mousedown, immediately create a clone for dragging; original stays put
+
+2. **Alt must be held throughout drag** (not just on mousedown)
    - Currently: Alt checked only at mousedown
    - Expected: Alt must be held at mouseup to confirm copy intent
-   - If Alt released mid-drag, should cancel copy mode
+   - If Alt released mid-drag, should cancel copy mode (delete the dragged clone)
 
-2. **Escape should cancel drag-copy cleanly**
-   - Currently: Escape doesn't clear `isDragCopying` state
-   - Result: Next click deposits an unintended instance
-   - Fix: Add escape key handler to reset `isDragCopying = false` and restore original position
+3. **Escape should cancel drag-copy cleanly** ✅ DONE
+   - ~~Currently: Escape doesn't clear `isDragCopying` state~~
+   - ~~Result: Next click deposits an unintended instance~~
+   - Fixed: Escape restores original position and clears isDragCopying
 
-3. **Alt-click should auto-engage move mode**
+4. **Alt-click should auto-engage move mode**
    - Currently: Requires Move tool to be active first (left-click = orbit otherwise)
    - Expected: Alt+click on selected polyhedron should implicitly start move+copy
    - This bypasses the need to manually activate Move tool first
 
-4. **Multiple copies while Alt held**
-   - Currently: Works, but feels wrong due to issues #1-3
+5. **Multiple copies while Alt held**
+   - Currently: Works, but feels wrong due to issues #1-4
    - Expected: Each drag-release cycle while Alt held creates a copy
    - With fixes above, this becomes the natural continuous-copy workflow
 
@@ -75,52 +82,79 @@ let dragCopyOriginalScale = new THREE.Vector3();
 
 ## Refinement Plan
 
-### Phase 1: Alt-held-at-release check
+### Phase 1: Ghost behavior - Clone on mousedown, original stays put ⚠️ PRIORITY
 
-**File:** `rt-init.js`
-**Locations:** Both mouseup handlers (~3444 and ~3565)
+**Architectural Change Required:**
 
-**Change:**
+Current flow:
+1. Alt+mousedown → store original position
+2. User drags → original moves with cursor
+3. Mouseup → create instance at current pos, restore original
+
+New flow:
+1. Alt+mousedown → immediately create a draggable clone
+2. Original stays exactly where it is (never moves)
+3. User drags → clone moves with cursor
+4. Mouseup → finalize clone as instance (or delete if Alt released/Escape pressed)
+
+**Implementation:**
 ```javascript
-// Only create copy if Alt is STILL held at release
-if (isDragCopying && currentSelection && event.altKey) {
-  // ... existing copy logic
+// On Alt+mousedown:
+if (event.altKey && currentSelection) {
+  // Create clone immediately
+  dragCopyClone = RTStateManager.createInstance(currentSelection, scene);
+
+  // The clone becomes what we're dragging
+  // Original stays put - we don't touch it at all
+
+  isDragCopying = true;
+  // ... set up drag plane based on clone position
 }
 
-// Always clear isDragCopying on mouseup
-isDragCopying = false;
+// On mousemove: move the clone, not the original
+if (isDragCopying && dragCopyClone) {
+  dragCopyClone.position.copy(newPosition);
+}
+
+// On mouseup with Alt held: clone stays (already an instance)
+// On mouseup without Alt: delete the clone
+// On Escape: delete the clone
 ```
 
-### Phase 2: Escape key cancellation
+**New state variable needed:**
+```javascript
+let dragCopyClone = null;  // The clone being dragged
+```
+
+### Phase 2: Escape key cancellation ✅ DONE
+
+Implemented - Escape cancels drag-copy and restores original.
+(Will need update to delete clone instead of restoring original once Phase 1 is done)
+
+### Phase 3: Alt-held-at-release check
 
 **File:** `rt-init.js`
-**Location:** Add to existing keydown handler or create new one
+**Locations:** Both mouseup handlers
 
 **Change:**
 ```javascript
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape" && isDragCopying) {
-    // Cancel drag-copy mode
-    isDragCopying = false;
-
-    // Restore original position
-    if (currentSelection) {
-      currentSelection.position.copy(dragCopyOriginalPosition);
-      currentSelection.quaternion.copy(dragCopyOriginalQuaternion);
-      currentSelection.scale.copy(dragCopyOriginalScale);
-    }
-
-    // Update editing basis
-    if (editingBasis) {
-      editingBasis.position.copy(dragCopyOriginalPosition);
-    }
-
-    console.log("❌ DRAG-COPY cancelled via Escape");
+// Only keep clone if Alt is STILL held at release
+if (isDragCopying && dragCopyClone) {
+  if (event.altKey) {
+    // Keep the clone - it's already an instance
+    console.log("✅ DRAG-COPY complete: Clone deposited");
+  } else {
+    // Alt released - delete the clone
+    scene.remove(dragCopyClone);
+    RTStateManager.deleteInstance(dragCopyClone.userData.instanceId, scene);
+    console.log("⚠️ DRAG-COPY cancelled: Alt released");
   }
-});
+  dragCopyClone = null;
+  isDragCopying = false;
+}
 ```
 
-### Phase 3: Alt-click auto-engages move mode
+### Phase 4: Alt-click auto-engages move mode
 
 **File:** `rt-init.js`
 **Location:** Before existing mousedown gumball check (~2640)
