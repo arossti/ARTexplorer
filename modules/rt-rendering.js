@@ -1534,9 +1534,12 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Render edges using LineSegments for efficiency
-    // For Line primitive with lineWidth option, use Line2/LineMaterial for cross-platform support
+    // For Line/Polygon primitives with lineWidth option, use Line2/LineMaterial for cross-platform support
     const polyType = group.userData.type;
-    const useThickLine = polyType === "line" && options.lineWidth && options.lineWidth > 1;
+    const useThickLine =
+      (polyType === "line" || polyType === "polygon") &&
+      options.lineWidth &&
+      options.lineWidth > 1;
 
     if (useThickLine && edges.length > 0) {
       // Use Line2/LineMaterial for variable lineweight (works on all platforms)
