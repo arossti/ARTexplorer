@@ -420,6 +420,29 @@ function startARTexplorer(
     });
   }
 
+  // Quadray Cuboctahedron (Vector Equilibrium - 4D Native)
+  const quadrayCuboctaCheckbox = document.getElementById(
+    "showQuadrayCuboctahedron"
+  );
+  if (quadrayCuboctaCheckbox) {
+    quadrayCuboctaCheckbox.addEventListener("change", () => {
+      const controls = document.getElementById("quadray-cuboctahedron-controls");
+      if (controls) {
+        controls.style.display = quadrayCuboctaCheckbox.checked
+          ? "block"
+          : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  const quadrayCuboctaNormalizeCheckbox = document.getElementById(
+    "quadrayCuboctaNormalize"
+  );
+  if (quadrayCuboctaNormalizeCheckbox) {
+    quadrayCuboctaNormalizeCheckbox.addEventListener("change", updateGeometry);
+  }
+
   // Matrix forms (IVM Arrays)
   const cubeMatrixCheckbox = document.getElementById("showCubeMatrix");
   if (cubeMatrixCheckbox) {

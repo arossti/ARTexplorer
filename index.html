@@ -877,6 +877,33 @@
               </div>
             </div>
 
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayCuboctahedron" />
+                Quadray Cuboctahedron (VE)
+              </label>
+              <div
+                id="quadray-cuboctahedron-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="quadrayCuboctaNormalize"
+                      checked
+                    />
+                    Zero-Sum Normalize (3 DOF)
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    {2,1,1,0} permutations — 12-around-1 sphere packing<br />
+                    (Kirby Urner calibration)
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <!-- ========== MATRICES ========== -->
             <div class="matrix-divider">
               <label class="matrix-divider-label">Matrices</label>
