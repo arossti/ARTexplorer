@@ -36,6 +36,47 @@ export const Polyhedra = {
   },
 
   /**
+   * Line - 1D primitive: two vertices connected by a single edge
+   * Parameterized by quadrance (Q = length²) for RT purity
+   * Packed nodes: r = √Q / 2 (half edge length)
+   * Euler: V - E + F = 2 - 1 + 0 = 1 (open form, doesn't satisfy χ=2)
+   * @param {number} quadrance - The quadrance (squared length) of the line
+   * @param {Object} options - Optional configuration
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  line: (quadrance = 1, options = {}) => {
+    // Length = √Q (only compute sqrt when needed for geometry)
+    const length = Math.sqrt(quadrance);
+    const halfLength = length / 2;
+
+    // Two vertices along Z-axis (vertical by default)
+    const vertices = [
+      new THREE.Vector3(0, 0, -halfLength), // Bottom vertex
+      new THREE.Vector3(0, 0, halfLength), // Top vertex
+    ];
+
+    // Single edge connecting the two vertices
+    const edges = [[0, 1]];
+
+    // No faces (1D primitive)
+    const faces = [];
+
+    console.log(
+      `[RT] Line: Q=${quadrance.toFixed(6)}, length=${length.toFixed(6)}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        quadrance,
+        length,
+      },
+    };
+  },
+
+  /**
    * Hexahedron (Cube) - vertices at (±1, ±1, ±1)
    * Edge quadrance Q = 4 (edge length = 2)
    * Z-up convention: Z is vertical axis

@@ -101,6 +101,7 @@ function startARTexplorer(
   // Scene objects - assigned after initScene() is called
   let scene, camera, renderer, controls;
   let pointGroup; // Point primitive (single vertex)
+  let lineGroup; // Line primitive (two vertices, one edge)
   let cubeGroup, tetrahedronGroup, dualTetrahedronGroup, octahedronGroup;
   let icosahedronGroup, dodecahedronGroup, dualIcosahedronGroup;
   let cuboctahedronGroup, rhombicDodecahedronGroup;
@@ -199,6 +200,47 @@ function startARTexplorer(
   const pointCheckbox = document.getElementById("showPoint");
   if (pointCheckbox) {
     pointCheckbox.addEventListener("change", updateGeometry);
+  }
+
+  // Line (1D primitive - two vertices, one edge)
+  const lineCheckbox = document.getElementById("showLine");
+  const lineControls = document.getElementById("line-controls");
+  const lineQuadranceInput = document.getElementById("lineQuadrance");
+  const lineLengthInput = document.getElementById("lineLength");
+  const lineWeightSlider = document.getElementById("lineWeight");
+  const lineWeightValue = document.getElementById("lineWeightValue");
+
+  if (lineCheckbox) {
+    lineCheckbox.addEventListener("change", () => {
+      // Show/hide line controls when checkbox toggled
+      if (lineControls) {
+        lineControls.style.display = lineCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  // Bidirectional Quadrance/Length conversion (Q = L², L = √Q)
+  if (lineQuadranceInput && lineLengthInput) {
+    lineQuadranceInput.addEventListener("input", () => {
+      const Q = parseFloat(lineQuadranceInput.value) || 1;
+      lineLengthInput.value = Math.sqrt(Q).toFixed(4);
+      updateGeometry();
+    });
+
+    lineLengthInput.addEventListener("input", () => {
+      const L = parseFloat(lineLengthInput.value) || 1;
+      lineQuadranceInput.value = (L * L).toFixed(4);
+      updateGeometry();
+    });
+  }
+
+  // Lineweight slider
+  if (lineWeightSlider && lineWeightValue) {
+    lineWeightSlider.addEventListener("input", () => {
+      lineWeightValue.textContent = lineWeightSlider.value;
+      updateGeometry();
+    });
   }
 
   document
@@ -2204,6 +2246,7 @@ function startARTexplorer(
     // Forms (including geodesics and matrix forms)
     const formGroups = [
       pointGroup,
+      lineGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -2473,6 +2516,7 @@ function startARTexplorer(
     // Forms
     const formGroups = [
       pointGroup,
+      lineGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -3748,6 +3792,7 @@ function startARTexplorer(
   const formGroups = renderingAPI.getAllFormGroups();
   ({
     pointGroup,
+    lineGroup,
     cubeGroup,
     tetrahedronGroup,
     dualTetrahedronGroup,

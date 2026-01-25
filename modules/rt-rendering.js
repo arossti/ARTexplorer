@@ -58,6 +58,7 @@ const colorPalette = {
   quadrayCuboctahedron: 0x88ff00, // Lime-yellow (VE in native Quadray)
   // Primitives
   point: 0xffffff, // White - neutral coordinate exploration point
+  line: 0xff0000, // Red - 1D primitive
 };
 
 /**
@@ -84,6 +85,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup; // Radial matrix forms (Phase 3)
   let quadrayTetrahedronGroup, quadrayTetraDeformedGroup, quadrayCuboctahedronGroup; // Quadray demonstrators
   let pointGroup; // Point primitive (single vertex)
+  let lineGroup; // Line primitive (two vertices, one edge)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -145,6 +147,10 @@ export function initScene(THREE, OrbitControls, RT) {
     pointGroup = new THREE.Group();
     pointGroup.userData.type = "point";
     pointGroup.userData.allowedTools = ["move"]; // Only Move allowed
+
+    lineGroup = new THREE.Group();
+    lineGroup.userData.type = "line";
+    // Line allows all tools (Move, Scale, Rotate)
 
     cubeGroup = new THREE.Group();
     cubeGroup.userData.type = "cube";
@@ -242,6 +248,7 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayCuboctahedronGroup.userData.type = "quadrayCuboctahedron";
 
     scene.add(pointGroup);
+    scene.add(lineGroup);
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -821,6 +828,12 @@ export function initScene(THREE, OrbitControls, RT) {
       case "point":
         // Points have no edges - packed sizing not applicable
         return null;
+
+      case "line":
+        // Line edge quadrance is the line's quadrance parameter
+        // Stored in group.userData.parameters.quadrance
+        // For close-packing: r = √Q / 2, so Q_vertex = Q_edge / 4
+        return scale; // scale IS the quadrance for line primitive
 
       case "tetrahedron":
         // Edge quadrance Q = 8s² (edge = 2s√2)
@@ -1524,10 +1537,18 @@ export function initScene(THREE, OrbitControls, RT) {
 
       // Get polyhedron type and scale from group for close-pack calculations
       const polyType = group.userData.type;
-      const tetEdge = parseFloat(
-        document.getElementById("tetScaleSlider").value
-      );
-      const scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
+
+      // For Line primitive, scale IS the quadrance (stored in parameters)
+      // For all other polyhedra, scale derives from tetScaleSlider
+      let scale;
+      if (polyType === "line" && group.userData.parameters?.quadrance) {
+        scale = group.userData.parameters.quadrance;
+      } else {
+        const tetEdge = parseFloat(
+          document.getElementById("tetScaleSlider").value
+        );
+        scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
+      }
 
       // Get cached geometry (prevents repeated generation)
       // Pass polyhedronType and scale for 'packed' mode calculations
@@ -1656,6 +1677,31 @@ export function initScene(THREE, OrbitControls, RT) {
       pointGroup.visible = true;
     } else {
       pointGroup.visible = false;
+    }
+
+    // Line (1D primitive - two vertices, one edge)
+    if (document.getElementById("showLine")?.checked) {
+      // Get quadrance from input field (default 1)
+      const lineQuadrance = parseFloat(
+        document.getElementById("lineQuadrance")?.value || "1"
+      );
+      // Get lineweight from input field (default 2)
+      const lineWeight = parseFloat(
+        document.getElementById("lineWeight")?.value || "2"
+      );
+      const lineData = Polyhedra.line(lineQuadrance);
+      renderPolyhedron(lineGroup, lineData, colorPalette.line, opacity, {
+        lineWidth: lineWeight,
+      });
+      lineGroup.userData.type = "line";
+      lineGroup.userData.parameters = {
+        quadrance: lineQuadrance,
+        length: Math.sqrt(lineQuadrance),
+        lineWeight: lineWeight,
+      };
+      lineGroup.visible = true;
+    } else {
+      lineGroup.visible = false;
     }
 
     // Cube (Blue)
@@ -2530,6 +2576,17 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Euler: N/A (degenerate)</div>`;
     }
 
+    if (document.getElementById("showLine")?.checked) {
+      const lineQ = parseFloat(
+        document.getElementById("lineQuadrance")?.value || "1"
+      );
+      const lineL = Math.sqrt(lineQ);
+      html += `<div style="margin-top: 10px;"><strong>Line:</strong></div>`;
+      html += `<div>V: 2, E: 1, F: 0</div>`;
+      html += `<div>Euler: N/A (open form, χ=1)</div>`;
+      html += `<div>Q: ${lineQ.toFixed(4)}, L: ${lineL.toFixed(4)}</div>`;
+    }
+
     if (document.getElementById("showCube").checked) {
       const cube = Polyhedra.cube(1);
       const eulerOK = RT.verifyEuler(
@@ -3093,6 +3150,7 @@ export function initScene(THREE, OrbitControls, RT) {
   function getAllFormGroups() {
     return {
       pointGroup,
+      lineGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -3395,6 +3453,22 @@ export function initScene(THREE, OrbitControls, RT) {
         renderPolyhedron(group, geometry, color, opacity);
         group.userData.allowedTools = ["move"]; // Point only supports Move
         break;
+
+      case "line": {
+        // Line uses quadrance from options.quadrance or scale as quadrance
+        const lineQuadrance = options.quadrance ?? scale;
+        const lineWeight = options.lineWeight ?? 2;
+        geometry = Polyhedra.line(lineQuadrance);
+        renderPolyhedron(group, geometry, color, opacity, {
+          lineWidth: lineWeight,
+        });
+        group.userData.parameters = {
+          quadrance: lineQuadrance,
+          length: Math.sqrt(lineQuadrance),
+          lineWeight: lineWeight,
+        };
+        break;
+      }
 
       // Regular polyhedra
       case "cube":
