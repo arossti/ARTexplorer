@@ -1748,7 +1748,9 @@ export const Polyhedra = {
     for (let i = 0; i < 12; i++) {
       for (let j = i + 1; j < 12; j++) {
         // Check if vertices i and j are adjacent
-        // They're adjacent if they share exactly 2 coordinate values
+        // Adjacent vertices share exactly 2 coordinate values AND
+        // either the "2" position or the "0" position stays the same
+        // (opposite vertices have both positions swapped)
         const vi = wxyz_raw[i];
         const vj = wxyz_raw[j];
         let matches = 0;
@@ -1756,8 +1758,14 @@ export const Polyhedra = {
           if (vi[k] === vj[k]) matches++;
         }
         if (matches === 2) {
-          adjList.get(i).push(j);
-          adjList.get(j).push(i);
+          // Additional check: exclude opposite vertices where 2 and 0 both swap
+          const pos2_i = vi.indexOf(2), pos2_j = vj.indexOf(2);
+          const pos0_i = vi.indexOf(0), pos0_j = vj.indexOf(0);
+          const bothSwap = pos2_i !== pos2_j && pos0_i !== pos0_j;
+          if (!bothSwap) {
+            adjList.get(i).push(j);
+            adjList.get(j).push(i);
+          }
         }
       }
     }
