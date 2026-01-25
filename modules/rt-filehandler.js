@@ -116,6 +116,10 @@ export const RTFileHandler = {
 
     // Get polyhedra checkbox states (forms visible at origin)
     const polyhedraCheckboxes = {
+      // Primitives
+      showPoint: document.getElementById("showPoint")?.checked || false,
+      showLine: document.getElementById("showLine")?.checked || false,
+      showPolygon: document.getElementById("showPolygon")?.checked || false,
       // Regular polyhedra
       showCube: document.getElementById("showCube")?.checked || false,
       showTetrahedron:
@@ -197,6 +201,31 @@ export const RTFileHandler = {
       nodeOpacitySlider: parseFloat(
         document.getElementById("nodeOpacitySlider")?.value || "0.25"
       ),
+      // Line primitive parameters
+      lineQuadrance: parseFloat(
+        document.getElementById("lineQuadrance")?.value || "1"
+      ),
+      lineLength: parseFloat(
+        document.getElementById("lineLength")?.value || "1"
+      ),
+      lineWeight: parseInt(
+        document.getElementById("lineWeight")?.value || "2"
+      ),
+      // Polygon primitive parameters
+      polygonSides: parseInt(
+        document.getElementById("polygonSides")?.value || "3"
+      ),
+      polygonQuadrance: parseFloat(
+        document.getElementById("polygonQuadrance")?.value || "1"
+      ),
+      polygonRadius: parseFloat(
+        document.getElementById("polygonRadius")?.value || "1"
+      ),
+      polygonEdgeWeight: parseInt(
+        document.getElementById("polygonEdgeWeight")?.value || "2"
+      ),
+      polygonShowFace:
+        document.getElementById("polygonShowFace")?.checked !== false,
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -451,6 +480,44 @@ export const RTFileHandler = {
           const el = document.getElementById("nodeOpacitySlider");
           if (el) el.value = sliders.nodeOpacitySlider;
         }
+        // Line primitive parameters
+        if (sliders.lineQuadrance !== undefined) {
+          const el = document.getElementById("lineQuadrance");
+          if (el) el.value = sliders.lineQuadrance;
+        }
+        if (sliders.lineLength !== undefined) {
+          const el = document.getElementById("lineLength");
+          if (el) el.value = sliders.lineLength;
+        }
+        if (sliders.lineWeight !== undefined) {
+          const el = document.getElementById("lineWeight");
+          const valEl = document.getElementById("lineWeightValue");
+          if (el) el.value = sliders.lineWeight;
+          if (valEl) valEl.textContent = sliders.lineWeight;
+        }
+        // Polygon primitive parameters
+        if (sliders.polygonSides !== undefined) {
+          const el = document.getElementById("polygonSides");
+          if (el) el.value = sliders.polygonSides;
+        }
+        if (sliders.polygonQuadrance !== undefined) {
+          const el = document.getElementById("polygonQuadrance");
+          if (el) el.value = sliders.polygonQuadrance;
+        }
+        if (sliders.polygonRadius !== undefined) {
+          const el = document.getElementById("polygonRadius");
+          if (el) el.value = sliders.polygonRadius;
+        }
+        if (sliders.polygonEdgeWeight !== undefined) {
+          const el = document.getElementById("polygonEdgeWeight");
+          const valEl = document.getElementById("polygonEdgeWeightValue");
+          if (el) el.value = sliders.polygonEdgeWeight;
+          if (valEl) valEl.textContent = sliders.polygonEdgeWeight;
+        }
+        if (sliders.polygonShowFace !== undefined) {
+          const el = document.getElementById("polygonShowFace");
+          if (el) el.checked = sliders.polygonShowFace;
+        }
         // Planar matrix size sliders
         if (sliders.cubeMatrixSizeSlider !== undefined) {
           const el = document.getElementById("cubeMatrixSizeSlider");
@@ -569,6 +636,18 @@ export const RTFileHandler = {
             el.checked = checkboxes[checkboxId];
           }
         });
+
+        // Show/hide Line controls based on checkbox state
+        const lineControls = document.getElementById("line-controls");
+        if (lineControls && checkboxes.showLine) {
+          lineControls.style.display = "block";
+        }
+
+        // Show/hide Polygon controls based on checkbox state
+        const polygonControls = document.getElementById("polygon-controls");
+        if (polygonControls && checkboxes.showPolygon) {
+          polygonControls.style.display = "block";
+        }
 
         // Trigger updateGeometry to render the restored forms
         if (window.renderingAPI?.updateGeometry) {

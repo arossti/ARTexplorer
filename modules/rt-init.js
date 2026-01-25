@@ -100,6 +100,9 @@ function startARTexplorer(
 
   // Scene objects - assigned after initScene() is called
   let scene, camera, renderer, controls;
+  let pointGroup; // Point primitive (single vertex)
+  let lineGroup; // Line primitive (two vertices, one edge)
+  let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
   let cubeGroup, tetrahedronGroup, dualTetrahedronGroup, octahedronGroup;
   let icosahedronGroup, dodecahedronGroup, dualIcosahedronGroup;
   let cuboctahedronGroup, rhombicDodecahedronGroup;
@@ -194,6 +197,106 @@ function startARTexplorer(
   });
 
   // Polyhedra toggles
+  // Point (single vertex - coordinate exploration tool)
+  const pointCheckbox = document.getElementById("showPoint");
+  if (pointCheckbox) {
+    pointCheckbox.addEventListener("change", updateGeometry);
+  }
+
+  // Line (1D primitive - two vertices, one edge)
+  const lineCheckbox = document.getElementById("showLine");
+  const lineControls = document.getElementById("line-controls");
+  const lineQuadranceInput = document.getElementById("lineQuadrance");
+  const lineLengthInput = document.getElementById("lineLength");
+  const lineWeightSlider = document.getElementById("lineWeight");
+  const lineWeightValue = document.getElementById("lineWeightValue");
+
+  if (lineCheckbox) {
+    lineCheckbox.addEventListener("change", () => {
+      // Show/hide line controls when checkbox toggled
+      if (lineControls) {
+        lineControls.style.display = lineCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  // Bidirectional Quadrance/Length conversion (Q = L², L = √Q)
+  if (lineQuadranceInput && lineLengthInput) {
+    lineQuadranceInput.addEventListener("input", () => {
+      const Q = parseFloat(lineQuadranceInput.value) || 1;
+      lineLengthInput.value = Math.sqrt(Q).toFixed(4);
+      updateGeometry();
+    });
+
+    lineLengthInput.addEventListener("input", () => {
+      const L = parseFloat(lineLengthInput.value) || 1;
+      lineQuadranceInput.value = (L * L).toFixed(4);
+      updateGeometry();
+    });
+  }
+
+  // Lineweight slider
+  if (lineWeightSlider && lineWeightValue) {
+    lineWeightSlider.addEventListener("input", () => {
+      lineWeightValue.textContent = lineWeightSlider.value;
+      updateGeometry();
+    });
+  }
+
+  // Polygon (2D primitive - n vertices, n edges, 1 face)
+  const polygonCheckbox = document.getElementById("showPolygon");
+  const polygonControls = document.getElementById("polygon-controls");
+  const polygonSidesInput = document.getElementById("polygonSides");
+  const polygonQuadranceInput = document.getElementById("polygonQuadrance");
+  const polygonRadiusInput = document.getElementById("polygonRadius");
+  const polygonShowFaceCheckbox = document.getElementById("polygonShowFace");
+  const polygonEdgeWeightSlider = document.getElementById("polygonEdgeWeight");
+  const polygonEdgeWeightValue = document.getElementById("polygonEdgeWeightValue");
+
+  if (polygonCheckbox) {
+    polygonCheckbox.addEventListener("change", () => {
+      // Show/hide polygon controls when checkbox toggled
+      if (polygonControls) {
+        polygonControls.style.display = polygonCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  // Polygon sides input
+  if (polygonSidesInput) {
+    polygonSidesInput.addEventListener("input", updateGeometry);
+  }
+
+  // Bidirectional Quadrance/Radius conversion (Q_R = R², R = √Q_R)
+  if (polygonQuadranceInput && polygonRadiusInput) {
+    polygonQuadranceInput.addEventListener("input", () => {
+      const Q = parseFloat(polygonQuadranceInput.value) || 1;
+      polygonRadiusInput.value = Math.sqrt(Q).toFixed(4);
+      updateGeometry();
+    });
+
+    polygonRadiusInput.addEventListener("input", () => {
+      const R = parseFloat(polygonRadiusInput.value) || 1;
+      polygonQuadranceInput.value = (R * R).toFixed(4);
+      updateGeometry();
+    });
+  }
+
+  // Polygon show face checkbox
+  if (polygonShowFaceCheckbox) {
+    polygonShowFaceCheckbox.addEventListener("change", updateGeometry);
+  }
+
+  // Polygon edge weight slider
+  if (polygonEdgeWeightSlider && polygonEdgeWeightValue) {
+    polygonEdgeWeightSlider.addEventListener("input", () => {
+      polygonEdgeWeightValue.textContent = polygonEdgeWeightSlider.value;
+      updateGeometry();
+    });
+  }
+
   document
     .getElementById("showCube")
     .addEventListener("change", updateGeometry);
@@ -1347,6 +1450,17 @@ function startARTexplorer(
     btn.addEventListener("click", function () {
       const tool = this.dataset.gumballTool;
 
+      // Check if selected form allows this tool (Point only allows "move")
+      if (currentSelection) {
+        const allowedTools = currentSelection.userData?.allowedTools;
+        if (allowedTools && !allowedTools.includes(tool)) {
+          console.log(
+            `[Tool] '${tool}' not allowed for ${currentSelection.userData.type}`
+          );
+          return; // Don't activate disallowed tool
+        }
+      }
+
       // Toggle: if clicking active button, deactivate it
       if (this.classList.contains("active")) {
         this.classList.remove("active");
@@ -2099,19 +2213,32 @@ function startARTexplorer(
   function applyHighlight(polyhedron) {
     polyhedron.traverse(obj => {
       if (obj.isMesh) {
-        // Store original emissive for restoration
-        obj.userData.originalEmissive = obj.material.emissive.clone();
-        obj.userData.originalEmissiveIntensity = obj.material.emissiveIntensity;
+        // Store original emissive for restoration (check if emissive exists)
+        if (obj.material.emissive) {
+          obj.userData.originalEmissive = obj.material.emissive.clone();
+          obj.userData.originalEmissiveIntensity =
+            obj.material.emissiveIntensity;
 
-        // Apply bright cyan glow (more intense and visible)
-        obj.material.emissive.setHex(0x00ffff);
-        obj.material.emissiveIntensity = 0.8;
+          // Apply bright cyan glow (more intense and visible)
+          obj.material.emissive.setHex(0x00ffff);
+          obj.material.emissiveIntensity = 0.8;
+        }
       } else if (obj.isLine) {
-        // Store original line width
+        // Store original line width and color
         obj.userData.originalLineWidth = obj.material.linewidth || 1;
 
-        // Increase line width for selected edges (more visible)
-        obj.material.linewidth = 3;
+        // Handle LineMaterial (Line2) vs LineBasicMaterial
+        if (obj.material.isLineMaterial) {
+          // LineMaterial stores color as a Color object
+          obj.userData.originalColor = obj.material.color.getHex();
+          obj.material.color.setHex(0x00ffff); // Cyan highlight
+          obj.material.linewidth = (obj.userData.originalLineWidth || 0.002) * 1.5;
+        } else if (obj.material.color) {
+          // LineBasicMaterial
+          obj.userData.originalColor = obj.material.color.getHex();
+          obj.material.color.setHex(0x00ffff);
+          obj.material.linewidth = 3;
+        }
       }
     });
   }
@@ -2130,16 +2257,24 @@ function startARTexplorer(
           // Clean up stored data
           delete obj.userData.originalEmissive;
           delete obj.userData.originalEmissiveIntensity;
-        } else {
+        } else if (obj.material.emissive) {
           // Fallback: reset to black emissive (default for non-node meshes)
           // Note: Node meshes should have originalEmissive saved, but this
           // catches any edge cases where it wasn't stored
           obj.material.emissive.setHex(0x000000);
           obj.material.emissiveIntensity = 0;
         }
-      } else if (obj.isLine && obj.userData.originalLineWidth !== undefined) {
-        obj.material.linewidth = obj.userData.originalLineWidth;
-        delete obj.userData.originalLineWidth;
+      } else if (obj.isLine) {
+        // Restore original line width
+        if (obj.userData.originalLineWidth !== undefined) {
+          obj.material.linewidth = obj.userData.originalLineWidth;
+          delete obj.userData.originalLineWidth;
+        }
+        // Restore original color
+        if (obj.userData.originalColor !== undefined && obj.material.color) {
+          obj.material.color.setHex(obj.userData.originalColor);
+          delete obj.userData.originalColor;
+        }
       }
     });
   }
@@ -2185,6 +2320,9 @@ function startARTexplorer(
 
     // Forms (including geodesics and matrix forms)
     const formGroups = [
+      pointGroup,
+      lineGroup,
+      polygonGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -2453,6 +2591,9 @@ function startARTexplorer(
 
     // Forms
     const formGroups = [
+      pointGroup,
+      lineGroup,
+      polygonGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -3727,6 +3868,9 @@ function startARTexplorer(
   // Get all form groups for selection system
   const formGroups = renderingAPI.getAllFormGroups();
   ({
+    pointGroup,
+    lineGroup,
+    polygonGroup,
     cubeGroup,
     tetrahedronGroup,
     dualTetrahedronGroup,

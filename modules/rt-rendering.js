@@ -15,6 +15,11 @@ import { Polyhedra } from "./rt-polyhedra.js";
 import { PerformanceClock } from "./performance-clock.js";
 import { RTPapercut } from "./rt-papercut.js";
 
+// Line2 addons for variable lineweight (cross-platform support)
+import { Line2 } from "three/addons/lines/Line2.js";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+import { LineGeometry } from "three/addons/lines/LineGeometry.js";
+
 // Re-export PerformanceClock so rt-init.js can import it from here
 export { PerformanceClock };
 
@@ -56,6 +61,10 @@ const colorPalette = {
   quadrayTetrahedron: 0x00ff88, // Bright teal/mint (distinct from other forms)
   quadrayTetraDeformed: 0xff5577, // Coral-pink (visually distinct for deformed)
   quadrayCuboctahedron: 0x88ff00, // Lime-yellow (VE in native Quadray)
+  // Primitives
+  point: 0xff00ff, // Fuchsia/bright pink - highly visible coordinate exploration point
+  line: 0xff0000, // Red - 1D primitive
+  polygon: 0x00ff00, // Green - 2D primitive (distinct from Line red, Point fuchsia)
 };
 
 /**
@@ -81,6 +90,9 @@ export function initScene(THREE, OrbitControls, RT) {
   let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup; // Radial matrix forms (Phase 2)
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup; // Radial matrix forms (Phase 3)
   let quadrayTetrahedronGroup, quadrayTetraDeformedGroup, quadrayCuboctahedronGroup; // Quadray demonstrators
+  let pointGroup; // Point primitive (single vertex)
+  let lineGroup; // Line primitive (two vertices, one edge)
+  let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -138,6 +150,19 @@ export function initScene(THREE, OrbitControls, RT) {
     createIVMPlanes();
 
     // Create polyhedra groups
+    // Point primitive (single vertex - Move only, no Scale/Rotate)
+    pointGroup = new THREE.Group();
+    pointGroup.userData.type = "point";
+    pointGroup.userData.allowedTools = ["move"]; // Only Move allowed
+
+    lineGroup = new THREE.Group();
+    lineGroup.userData.type = "line";
+    // Line allows all tools (Move, Scale, Rotate)
+
+    polygonGroup = new THREE.Group();
+    polygonGroup.userData.type = "polygon";
+    // Polygon allows all tools (Move, Scale, Rotate)
+
     cubeGroup = new THREE.Group();
     cubeGroup.userData.type = "cube";
 
@@ -233,6 +258,9 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayCuboctahedronGroup = new THREE.Group();
     quadrayCuboctahedronGroup.userData.type = "quadrayCuboctahedron";
 
+    scene.add(pointGroup);
+    scene.add(lineGroup);
+    scene.add(polygonGroup);
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -263,6 +291,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
+      pointGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -802,12 +831,34 @@ export function initScene(THREE, OrbitControls, RT) {
    * Uses RT-pure algebraic formulas (defers sqrt to last possible moment)
    * @param {string} type - Polyhedron type (tetrahedron, cube, octahedron, etc.)
    * @param {number} scale - halfSize parameter (s)
+   * @param {Object} options - Optional parameters (e.g., {sides: 3} for polygon)
    * @returns {number} Edge quadrance Q = a² (NOT edge length!)
    */
-  function getPolyhedronEdgeQuadrance(type, scale) {
+  function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
     const s2 = scale * scale; // Pre-compute s² for RT calculations
 
     switch (type) {
+      case "point":
+        // Points have no edges - packed sizing not applicable
+        return null;
+
+      case "line":
+        // Line edge quadrance is the line's quadrance parameter
+        // Stored in group.userData.parameters.quadrance
+        // For close-packing: r = √Q / 2, so Q_vertex = Q_edge / 4
+        return scale; // scale IS the quadrance for line primitive
+
+      case "polygon": {
+        // RT-PURE: Polygon edge quadrance from circumradius quadrance
+        // Q_edge = 4·Q_R·spread(π/n) where spread = sin²(θ)
+        // Math.sin justified: arbitrary n-gon spread requires classical trig
+        // scale = circumradius quadrance (Q_R), sides from options parameter
+        const sides = options.sides || 3;
+        const centralAngle = Math.PI / sides;
+        const spread = Math.pow(Math.sin(centralAngle), 2);
+        return 4 * scale * spread; // RT-pure quadrance result
+      }
+
       case "tetrahedron":
         // Edge quadrance Q = 8s² (edge = 2s√2)
         return 8 * s2;
@@ -927,11 +978,18 @@ export function initScene(THREE, OrbitControls, RT) {
    *
    * @param {string} type - Polyhedron type
    * @param {number} scale - halfSize parameter
+   * @param {Object} options - Optional parameters (e.g., {sides: 3} for polygon)
    * @returns {number} Vertex sphere radius for close-packing
    */
-  function getClosePackedRadius(type, scale) {
+  function getClosePackedRadius(type, scale, options = {}) {
     // RT-PURE: Work in quadrance space (no sqrt until final step!)
-    const Q_edge = getPolyhedronEdgeQuadrance(type, scale);
+    const Q_edge = getPolyhedronEdgeQuadrance(type, scale, options);
+
+    // Handle forms without edges (e.g., Point)
+    if (Q_edge === null || Q_edge === 0) {
+      console.log(`⚠️ Close-pack not available for ${type} (no edges)`);
+      return null; // Signal packed sizing not available
+    }
 
     // UNIVERSAL CLOSE-PACKING LAW (Rational Trigonometry form):
     // Q_vertex = Q_edge / 4
@@ -959,10 +1017,13 @@ export function initScene(THREE, OrbitControls, RT) {
    * @param {string} nodeSize - Size ('sm', 'md', 'lg', 'packed', 'off')
    * @param {string} polyhedronType - Type for close-pack calculations
    * @param {number} scale - halfSize for close-pack calculations
+   * @param {Object} options - Optional parameters (e.g., {sides: 3} for polygon)
    * @returns {Object} {geometry: THREE.BufferGeometry, triangles: number}
    */
-  function getCachedNodeGeometry(useRT, nodeSize, polyhedronType, scale) {
-    const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}`;
+  function getCachedNodeGeometry(useRT, nodeSize, polyhedronType, scale, options = {}) {
+    // Include options.sides in cache key for polygon (different n-gons have different edge quadrance)
+    const sidesKey = options.sides ? `-n${options.sides}` : "";
+    const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}${sidesKey}`;
 
     if (nodeGeometryCache.has(cacheKey)) {
       return nodeGeometryCache.get(cacheKey);
@@ -980,7 +1041,11 @@ export function initScene(THREE, OrbitControls, RT) {
         );
         radius = 0.04; // Fallback to medium size
       } else {
-        radius = getClosePackedRadius(polyhedronType, scale);
+        radius = getClosePackedRadius(polyhedronType, scale, options);
+        // Fallback if packed not available (e.g., Point has no edges)
+        if (radius === null) {
+          radius = 0.04; // "md" size fallback
+        }
       }
     } else {
       // FIXED SIZE MODE: Use predefined sizes
@@ -1411,8 +1476,14 @@ export function initScene(THREE, OrbitControls, RT) {
   /**
    * Render a polyhedron from vertices, edges, faces
    * Uses proper geometry with indexed faces for clean rendering
+   * @param {THREE.Group} group - Group to render into
+   * @param {Object} geometry - {vertices, edges, faces}
+   * @param {number} color - Hex color
+   * @param {number} opacity - Face opacity
+   * @param {Object} options - Optional rendering options
+   * @param {number} options.lineWidth - Edge line width (default 1)
    */
-  function renderPolyhedron(group, geometry, color, opacity) {
+  function renderPolyhedron(group, geometry, color, opacity, options = {}) {
     // Clear existing geometry
     while (group.children.length > 0) {
       group.remove(group.children[0]);
@@ -1468,30 +1539,70 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Render edges using LineSegments for efficiency
-    const edgePositions = [];
-    edges.forEach(([i, j]) => {
-      const v1 = vertices[i];
-      const v2 = vertices[j];
-      edgePositions.push(v1.x, v1.y, v1.z);
-      edgePositions.push(v2.x, v2.y, v2.z);
-    });
+    // For Line/Polygon primitives with lineWidth option, use Line2/LineMaterial for cross-platform support
+    const polyType = group.userData.type;
+    const useThickLine =
+      (polyType === "line" || polyType === "polygon") &&
+      options.lineWidth &&
+      options.lineWidth > 1;
 
-    const edgeGeometry = new THREE.BufferGeometry();
-    edgeGeometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(edgePositions, 3)
-    );
+    if (useThickLine && edges.length > 0) {
+      // Use Line2/LineMaterial for variable lineweight (works on all platforms)
+      edges.forEach(([i, j]) => {
+        const v1 = vertices[i];
+        const v2 = vertices[j];
+        const positions = [v1.x, v1.y, v1.z, v2.x, v2.y, v2.z];
 
-    const edgeMaterial = new THREE.LineBasicMaterial({
-      color: color,
-      linewidth: 1, // WebGL limitation
-      depthTest: true,
-      depthWrite: true,
-    });
+        const lineGeometry = new LineGeometry();
+        lineGeometry.setPositions(positions);
 
-    const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-    edgeLines.renderOrder = 2; // Render edges after faces
-    group.add(edgeLines);
+        const lineMaterial = new LineMaterial({
+          color: color,
+          linewidth: options.lineWidth * 0.002, // Convert to world units (scaled for visibility)
+          worldUnits: true,
+          depthTest: true,
+          depthWrite: true,
+        });
+
+        // Set resolution for proper line rendering
+        if (renderer) {
+          const size = new THREE.Vector2();
+          renderer.getSize(size);
+          lineMaterial.resolution.set(size.x, size.y);
+        }
+
+        const line = new Line2(lineGeometry, lineMaterial);
+        line.computeLineDistances(); // Required for LineMaterial
+        line.renderOrder = 2;
+        group.add(line);
+      });
+    } else {
+      // Standard LineSegments for other polyhedra (faster for many edges)
+      const edgePositions = [];
+      edges.forEach(([i, j]) => {
+        const v1 = vertices[i];
+        const v2 = vertices[j];
+        edgePositions.push(v1.x, v1.y, v1.z);
+        edgePositions.push(v2.x, v2.y, v2.z);
+      });
+
+      const edgeGeometry = new THREE.BufferGeometry();
+      edgeGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(edgePositions, 3)
+      );
+
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: color,
+        linewidth: 1, // WebGL limitation - always 1px on most platforms
+        depthTest: true,
+        depthWrite: true,
+      });
+
+      const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+      edgeLines.renderOrder = 2; // Render edges after faces
+      group.add(edgeLines);
+    }
 
     // Render vertex nodes using cached geometry for efficiency
     if (showNodes) {
@@ -1500,20 +1611,38 @@ export function initScene(THREE, OrbitControls, RT) {
 
       // Get polyhedron type and scale from group for close-pack calculations
       const polyType = group.userData.type;
-      const tetEdge = parseFloat(
-        document.getElementById("tetScaleSlider").value
-      );
-      const scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
+
+      // For Line/Polygon primitives, scale IS the quadrance (stored in parameters)
+      // For all other polyhedra, scale derives from tetScaleSlider
+      let scale;
+      let nodeOptions = {}; // Options for polygon (sides) etc.
+
+      if (polyType === "line" && group.userData.parameters?.quadrance) {
+        scale = group.userData.parameters.quadrance;
+      } else if (polyType === "polygon" && group.userData.parameters?.quadrance) {
+        scale = group.userData.parameters.quadrance;
+        nodeOptions = { sides: group.userData.parameters.sides || 3 };
+      } else {
+        const tetEdge = parseFloat(
+          document.getElementById("tetScaleSlider").value
+        );
+        scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
+      }
 
       // Get cached geometry (prevents repeated generation)
-      // Pass polyhedronType and scale for 'packed' mode calculations
+      // Pass polyhedronType, scale, and options for 'packed' mode calculations
       const { geometry: nodeGeometry, triangles: trianglesPerNode } =
-        getCachedNodeGeometry(useRTNodeGeometry, nodeSize, polyType, scale);
+        getCachedNodeGeometry(useRTNodeGeometry, nodeSize, polyType, scale, nodeOptions);
 
       // Calculate node radius for userData (same logic as getCachedNodeGeometry)
       let nodeRadius;
       if (nodeSize === "packed") {
-        nodeRadius = getClosePackedRadius(polyType, scale);
+        nodeRadius = getClosePackedRadius(polyType, scale, nodeOptions);
+        // Fallback to "md" if packed not available (e.g., Point has no edges)
+        if (nodeRadius === null) {
+          nodeRadius = 0.04; // "md" size fallback
+          console.log(`[Node] Packed fallback to md for ${polyType}`);
+        }
       } else {
         const nodeSizes = { sm: 0.02, md: 0.04, lg: 0.08 };
         nodeRadius = nodeSizes[nodeSize] || 0.04;
@@ -1617,6 +1746,82 @@ export function initScene(THREE, OrbitControls, RT) {
     const tetEdge = parseFloat(document.getElementById("tetScaleSlider").value);
     const scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
     const opacity = parseFloat(document.getElementById("opacitySlider").value);
+
+    // Point (single vertex - coordinate exploration tool)
+    if (document.getElementById("showPoint")?.checked) {
+      const pointData = Polyhedra.point(scale);
+      renderPolyhedron(pointGroup, pointData, colorPalette.point, opacity);
+      pointGroup.userData.type = "point";
+      pointGroup.userData.allowedTools = ["move"]; // Only Move allowed
+      pointGroup.visible = true;
+    } else {
+      pointGroup.visible = false;
+    }
+
+    // Line (1D primitive - two vertices, one edge)
+    if (document.getElementById("showLine")?.checked) {
+      // Get quadrance from input field (default 1)
+      const lineQuadrance = parseFloat(
+        document.getElementById("lineQuadrance")?.value || "1"
+      );
+      // Get lineweight from input field (default 2)
+      const lineWeight = parseFloat(
+        document.getElementById("lineWeight")?.value || "2"
+      );
+      const lineData = Polyhedra.line(lineQuadrance);
+      renderPolyhedron(lineGroup, lineData, colorPalette.line, opacity, {
+        lineWidth: lineWeight,
+      });
+      lineGroup.userData.type = "line";
+      lineGroup.userData.parameters = {
+        quadrance: lineQuadrance,
+        length: Math.sqrt(lineQuadrance),
+        lineWeight: lineWeight,
+      };
+      lineGroup.visible = true;
+    } else {
+      lineGroup.visible = false;
+    }
+
+    // Polygon (2D primitive - n vertices, n edges, 1 face)
+    if (document.getElementById("showPolygon")?.checked) {
+      // Get circumradius quadrance from input field (default 1)
+      const polygonQuadrance = parseFloat(
+        document.getElementById("polygonQuadrance")?.value || "1"
+      );
+      // Get number of sides (default 3 = triangle)
+      const polygonSides = parseInt(
+        document.getElementById("polygonSides")?.value || "3"
+      );
+      // Get edge weight from input field (default 2)
+      const polygonEdgeWeight = parseFloat(
+        document.getElementById("polygonEdgeWeight")?.value || "2"
+      );
+      // Get face visibility
+      const polygonShowFace =
+        document.getElementById("polygonShowFace")?.checked !== false;
+
+      const polygonData = Polyhedra.polygon(polygonQuadrance, {
+        sides: polygonSides,
+        showFace: polygonShowFace,
+      });
+      renderPolyhedron(polygonGroup, polygonData, colorPalette.polygon, opacity, {
+        lineWidth: polygonEdgeWeight,
+      });
+      polygonGroup.userData.type = "polygon";
+      polygonGroup.userData.parameters = {
+        quadrance: polygonQuadrance,
+        circumradius: Math.sqrt(polygonQuadrance),
+        sides: polygonSides,
+        edgeQuadrance: polygonData.metadata.edgeQuadrance,
+        edgeLength: polygonData.metadata.edgeLength,
+        edgeWeight: polygonEdgeWeight,
+        showFace: polygonShowFace,
+      };
+      polygonGroup.visible = true;
+    } else {
+      polygonGroup.visible = false;
+    }
 
     // Cube (Blue)
     if (document.getElementById("showCube").checked) {
@@ -2484,6 +2689,44 @@ export function initScene(THREE, OrbitControls, RT) {
     const stats = document.getElementById("geometryStats");
     let html = "";
 
+    if (document.getElementById("showPoint")?.checked) {
+      html += `<div><strong>Point:</strong></div>`;
+      html += `<div>V: 1, E: 0, F: 0</div>`;
+      html += `<div>Euler: N/A (degenerate)</div>`;
+    }
+
+    if (document.getElementById("showLine")?.checked) {
+      const lineQ = parseFloat(
+        document.getElementById("lineQuadrance")?.value || "1"
+      );
+      const lineL = Math.sqrt(lineQ);
+      html += `<div style="margin-top: 10px;"><strong>Line:</strong></div>`;
+      html += `<div>V: 2, E: 1, F: 0</div>`;
+      html += `<div>Euler: N/A (open form, χ=1)</div>`;
+      html += `<div>Q: ${lineQ.toFixed(4)}, L: ${lineL.toFixed(4)}</div>`;
+    }
+
+    if (document.getElementById("showPolygon")?.checked) {
+      const polyQ = parseFloat(
+        document.getElementById("polygonQuadrance")?.value || "1"
+      );
+      const polySides = parseInt(
+        document.getElementById("polygonSides")?.value || "3"
+      );
+      const polyR = Math.sqrt(polyQ);
+      // Math.sin justified: arbitrary n-gon spread calculation (see CODE-QUALITY-AUDIT.md)
+      const spread = Math.pow(Math.sin(Math.PI / polySides), 2);
+      const polyEdgeQ = 4 * polyQ * spread; // RT-pure formula
+      const polyEdgeL = Math.sqrt(polyEdgeQ);
+      const showFace = document.getElementById("polygonShowFace")?.checked;
+      const faceCount = showFace ? 1 : 0;
+      html += `<div style="margin-top: 10px;"><strong>Polygon (${polySides}-gon):</strong></div>`;
+      html += `<div>V: ${polySides}, E: ${polySides}, F: ${faceCount}</div>`;
+      html += `<div>Euler: N/A (open form, χ=1)</div>`;
+      html += `<div>Q_R: ${polyQ.toFixed(4)}, R: ${polyR.toFixed(4)}</div>`;
+      html += `<div>Q_edge: ${polyEdgeQ.toFixed(4)}, edge: ${polyEdgeL.toFixed(4)}</div>`;
+    }
+
     if (document.getElementById("showCube").checked) {
       const cube = Polyhedra.cube(1);
       const eulerOK = RT.verifyEuler(
@@ -3046,6 +3289,9 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function getAllFormGroups() {
     return {
+      pointGroup,
+      lineGroup,
+      polygonGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -3342,6 +3588,58 @@ export function initScene(THREE, OrbitControls, RT) {
     let geometry;
 
     switch (type) {
+      // Primitives
+      case "point":
+        geometry = Polyhedra.point(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        group.userData.allowedTools = ["move"]; // Point only supports Move
+        break;
+
+      case "line": {
+        // Line uses quadrance from options.quadrance or scale as quadrance
+        const lineQuadrance = options.quadrance ?? scale;
+        const lineWeight = options.lineWeight ?? 2;
+        geometry = Polyhedra.line(lineQuadrance);
+        // Set type and parameters BEFORE renderPolyhedron so Line2 path is triggered
+        group.userData.type = "line";
+        group.userData.parameters = {
+          quadrance: lineQuadrance,
+          length: Math.sqrt(lineQuadrance),
+          lineWeight: lineWeight,
+        };
+        renderPolyhedron(group, geometry, color, opacity, {
+          lineWidth: lineWeight,
+        });
+        break;
+      }
+
+      case "polygon": {
+        // Polygon uses circumradius quadrance from options.quadrance or scale
+        const polyQuadrance = options.quadrance ?? scale;
+        const polySides = options.sides ?? 3;
+        const polyEdgeWeight = options.edgeWeight ?? 2;
+        const polyShowFace = options.showFace !== false;
+        geometry = Polyhedra.polygon(polyQuadrance, {
+          sides: polySides,
+          showFace: polyShowFace,
+        });
+        // Set type and parameters BEFORE renderPolyhedron
+        group.userData.type = "polygon";
+        group.userData.parameters = {
+          quadrance: polyQuadrance,
+          circumradius: Math.sqrt(polyQuadrance),
+          sides: polySides,
+          edgeQuadrance: geometry.metadata.edgeQuadrance,
+          edgeLength: geometry.metadata.edgeLength,
+          edgeWeight: polyEdgeWeight,
+          showFace: polyShowFace,
+        };
+        renderPolyhedron(group, geometry, color, opacity, {
+          lineWidth: polyEdgeWeight,
+        });
+        break;
+      }
+
       // Regular polyhedra
       case "cube":
         geometry = Polyhedra.cube(scale);
