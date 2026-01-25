@@ -2067,7 +2067,10 @@ export function initScene(THREE, OrbitControls, RT) {
     if (document.getElementById("showQuadrayCuboctahedron")?.checked) {
       const normalize =
         document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
-      const quadrayCubocta = Polyhedra.quadrayCuboctahedron(scale, {
+      // Scale by 1/2 to match XYZ cuboctahedron size
+      // Quadray {2,1,1,0} normalized produces vertices at distance 2√2 from origin
+      // XYZ cuboctahedron (at same slider scale) has vertices at distance √2 from origin
+      const quadrayCubocta = Polyhedra.quadrayCuboctahedron(scale / 2, {
         normalize: normalize,
       });
       renderPolyhedron(
