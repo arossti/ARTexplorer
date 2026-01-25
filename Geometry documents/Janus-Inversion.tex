@@ -25,7 +25,7 @@
 \newtheorem{definition}{Definition}
 \newtheorem{observation}{Observation}
 
-\title{Geometric Janus Inversion -- v3 (Jan 2026)\\
+\title{Geometric Janus Inversion -- v4 (Jan 2026)\\
 \large Extending the Janus Point from Temporal to Spatial Geometry\\
 via Tetrahedral (Quadray) Coordinates}
 
@@ -161,7 +161,9 @@ Quadray coordinates are conventionally described as providing 3 degrees of freed
 However, the tetrahedron---the minimum structural system capable of enclosing space---requires \textbf{four vertices} to define. You cannot specify a tetrahedron with three coordinates; the fourth is not redundant information but essential geometric content.
 
 \begin{observation}[The Deformed Tetrahedron]
-Consider two points: $(1, 1, 1, 1)$ and $(1, 1, 1, 6)$. With the zero-sum constraint, these would be normalized to equivalent positions. But they describe fundamentally different geometric relationships: the first is symmetric (equidistant from all basis directions), the second represents a \textbf{deformed tetrahedron} stretched along the Z-axis. The fourth coordinate carries real information that the constraint destroys.
+Consider two sets of basis vector coefficients: $(1, 1, 1, 1)$ and $(1, 1, 1, 6)$. These are \emph{scalar weights} on the four basis vectors, specifying how much of each direction contributes to a position. With the zero-sum constraint, these would be normalized to equivalent positions. But they describe fundamentally different geometric relationships: the first weights all basis directions equally (symmetric), the second represents a \textbf{deformed tetrahedron} stretched along the Z-axis. The fourth scalar weight carries real information that the constraint destroys.
+
+This is implemented and demonstrable in ARTexplorer's ``Quadray Tetrahedron (Deformed)'' polyhedron, which renders with \texttt{normalize: false} to preserve the stretched geometry. The visual difference between regular and deformed tetrahedra provides direct evidence that the fourth coordinate carries independent geometric content.\endnote{See the deformed tetrahedron demonstration at \url{https://arossti.github.io/ARTexplorer/}---select ``Quadray Tetrahedron (Deformed)'' from the polyhedron menu.}
 \end{observation}
 
 \begin{table}[h]
@@ -282,7 +284,7 @@ In Quadray coordinates, the vectorial neutrality property ($\mathbf{W} + \mathbf
 \centering
 \begin{tabular}{ccc}
 \toprule
-\textbf{Vertex} & \textbf{Raw Negative Form} & \textbf{Re-normalized (adding $(1,1,1,1)$)}\\
+\textbf{Vertex} & \textbf{Raw Negative Form} & \textbf{Re-normalized (via translation vector $(1,1,1,1)$)}\\
 \midrule
 $V'_0$ & $(-1, 0, 0, 0)$ & $(0, 1, 1, 1)$\\
 $V'_1$ & $(0, -1, 0, 0)$ & $(1, 0, 1, 1)$\\
@@ -290,7 +292,7 @@ $V'_2$ & $(0, 0, -1, 0)$ & $(1, 1, 0, 1)$\\
 $V'_3$ & $(0, 0, 0, -1)$ & $(1, 1, 1, 0)$\\
 \bottomrule
 \end{tabular}
-\caption{Dual tetrahedron vertices: raw negative and re-normalized forms}
+\caption{Dual tetrahedron vertices: raw negative positions and re-normalized forms (via translation vector)}
 \end{table}
 
 \subsection{The Topological Question}
@@ -386,7 +388,7 @@ The answer cannot be ``the other direction''---the four basis vectors already co
 
 In our visualization software (ARTexplorer), when XYZ basis vectors invert through the origin, they merely flip from right-hand to left-hand orientation---remaining recognizably within the same spatial framework. But when Quadray-defined forms invert through the geometric Janus Point, something categorically different occurs: they pass into a space that positive Quadray coordinates cannot describe.
 
-The $\pm(1,1,1,1)$ normalization bridge between tetrahedron and dual tetrahedron hints at this hidden realm, but Cartesian thinking---with its symmetrical positive/negative axes---provided no reason to look for it.
+The $\pm(1,1,1,1)$ translation vector that bridges between tetrahedron and dual tetrahedron hints at this hidden realm, but Cartesian thinking---with its symmetrical positive/negative axes---provided no reason to look for it.
 
 \subsection{The Role of the Origin}
 
@@ -434,25 +436,50 @@ The spread (RT's measure of perpendicularity, $s = \sin^2\theta$) between each b
 
 \subsection{The Normalization Bridge}
 
-The dual tetrahedron can be re-expressed in positive coordinates by adding $(1,1,1,1)$:
+The inverted form can be re-expressed in positive coordinates. Three equivalent framings clarify the operation.
 
+\textbf{Terminological note:} The notation $(1,1,1,1)$ appears in two distinct roles throughout this document:
+\begin{itemize}
+\item As a \emph{translation vector}---applied uniformly to shift all coordinates (as below)
+\item As \emph{scalar weights} on basis vectors---specifying how much of each basis direction contributes to a position (as in Section 2.4)
+\end{itemize}
+These are categorically different uses. A translation vector acts on a point to produce a new point; scalar weights combine with basis vectors to define a point. The notation is identical, but the mathematical role differs.
+
+\textbf{1. Unit case (additive):} For the unit tetrahedron with vertices at $(1,0,0,0)$, $(0,1,0,0)$, etc., the dual vertices can be mapped to positive coordinates by applying the translation vector $(1,1,1,1)$:
 \begin{equation}
 V'_i(\text{positive}) = V'_i(\text{negative}) + (1, 1, 1, 1)
 \end{equation}
+For example: $(-1, 0, 0, 0) + (1,1,1,1) = (0, 1, 1, 1)$.
+
+\textbf{2. General case (scale-dependent):} For a tetrahedron scaled by factor $k$, the inverted form $-kP$ requires the translation vector $k \cdot (1,1,1,1)$:
+\begin{equation}
+P'(\text{positive}) = -kP + k \cdot (1, 1, 1, 1)
+\end{equation}
+The translation magnitude scales with the form.
+
+\textbf{3. Multiplicative framing:} Both cases can be unified by recognizing that Janus inversion followed by representational embedding is equivalent to:
+\begin{equation}
+P \mapsto k \cdot \mathbf{1} - P \quad \text{where } \mathbf{1} = (1,1,1,1) \text{ (translation vector)}
+\end{equation}
+This is a \textbf{central inversion} about the centroid $\frac{k}{2} \cdot \mathbf{1}$, not a simple sign flip. The operation $P \mapsto -P$ (pure inversion through origin) and the translation $+k \cdot \mathbf{1}$ (representational embedding) combine into a single affine transformation.
+
+\begin{observation}[The Centroid as Pivot]
+The normalization bridge maps each vertex through the tetrahedron's centroid to its antipodal position. For the unit tetrahedron, this centroid---a \emph{point} in Quadray space---lies at the position $(\frac{1}{4}, \frac{1}{4}, \frac{1}{4}, \frac{1}{4})$. The ``dual'' is therefore not merely the negation but the \emph{centroidal inversion}---which, for a centroid-at-origin tetrahedron, happens to coincide with negation.
+\end{observation}
 
 This operation:
 \begin{itemize}
-\item is an affine translation in coordinate space,
+\item is an affine transformation (central inversion through centroid) in coordinate space,
 \item preserves distances and angles (the dual form has identical edge lengths and face angles),
-\item does not constitute a rigid motion in the sense of continuous path through 3D---it is a discrete coordinate shift,
+\item does not constitute a rigid motion in the sense of continuous path through 3D---it is a discrete coordinate transformation,
 \item maps the dual form into representable coordinates without altering its geometric relationships.
 \end{itemize}
 
-Its sole purpose is \textbf{representational embedding}: allowing the inverted geometry to be visualized within positive coordinate frameworks.
+In standard Quadray implementations, this normalization bridge serves as \textbf{representational embedding}: allowing the inverted geometry to be expressed within positive coordinate frameworks.
 
-\textbf{Clarification on causality:} The $\pm(1,1,1,1)$ translation does not \emph{cause} the inversion---the topological inside-outing through origin does that. However, the translation \emph{reveals} the inverted form by mapping it into representable coordinates. Without the translation, the inverted form exists but cannot be drawn in our positive-coordinate visualization. The inversion is the geometric event; the translation is the act of looking at it.
+\textbf{Clarification on ARTexplorer's approach:} ARTexplorer does \emph{not} require the normalization bridge for visualization. We render the inverted form directly with negative coordinates, passing them through to the GPU via THREE.js. The topological inversion is signaled visually through the Janus transition system: background color inverts (black $\leftrightarrow$ white), a golden flash marks the origin crossing, and non-selected forms ghost to emphasize the dimensional boundary. The normalization bridge remains mathematically significant---it explains how standard Quadray implementations would represent the dual---but our visualization operates natively in signed coordinate space.
 
-The RT-Pure philosophy of ``deferred expansion'' applies here: just as we avoid $\sqrt{}$ until the GPU boundary, we distinguish the pure geometric inversion from its coordinate representation. The inversion is the algebraic/topological operation; the $\pm(1,1,1,1)$ translation is the visualization step. The former is exact; the latter is representational convenience.
+The RT-Pure philosophy of ``deferred expansion'' applies here: just as we avoid $\sqrt{}$ until the GPU boundary, we distinguish the pure geometric inversion from its coordinate representation. The inversion is the algebraic/topological operation; the normalization bridge is the visualization step. The former is exact; the latter is representational convenience.
 
 %==============================================================================
 \section{Speculative Extensions}
@@ -475,7 +502,7 @@ Every manifestation of energy in positive space may have a paired ``twin'' in ne
 
 \subsection{The Dual as Shadow}
 
-The dual tetrahedron, rendered in positive space via $+(1,1,1,1)$ normalization, is already a \emph{projection} of negative space into our realm. Global inversion doesn't create something new---it reveals what was always there.
+The dual tetrahedron, rendered in positive space via the $+(1,1,1,1)$ translation vector, is already a \emph{projection} of negative space into our realm. Global inversion doesn't create something new---it reveals what was always there.
 
 \subsection{Cyclic Cosmology}
 
@@ -584,10 +611,6 @@ Our geometric extension---applying the Janus Point concept to spatial rather tha
 
 We are grateful for Dr.\ Barbour's engagement and particularly for his observation that ``science should be about shapes rather than dynamics''---a view that aligns naturally with our tetrahedral geometric approach and with Fuller's emphasis on structure over motion.
 
-%==============================================================================
-\section*{Notes}
-%==============================================================================
-
 \theendnotes
 
 %==============================================================================
@@ -603,6 +626,7 @@ We are grateful for Dr.\ Barbour's engagement and particularly for his observati
 \item Mandelbrot, B. ``Negative Fractal Dimensions and Multifractals.'' Yale University. \url{https://users.math.yale.edu/users/mandelbrot/web_pdfs/123negativeFractalDimensions.pdf}
 \item Urner, K. ``Quadray Coordinates: A Logical Alternative.'' \url{http://www.grunch.net/synergetics/quadintro.html}
 \item Ace, T. ``Quadray Coordinates.'' \url{http://minortriad.com/quadray.html} (C++ implementation)
+\item Thomson, A. (2026). \emph{ARTexplorer: Interactive Tetrahedral Geometry Visualization}. Open Building Project. \url{https://arossti.github.io/ARTexplorer/} (JavaScript/THREE.js implementation demonstrating Janus Inversion, deformed tetrahedra, and RT-Pure calculations)
 \item DOI: 10.13140/RG.2.2.10492.19848 | CC BY-NC-ND 4.0
 \end{enumerate}
 
