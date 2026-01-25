@@ -2062,6 +2062,8 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Quadray Cuboctahedron (Vector Equilibrium - 4D Native)
+    // NOTE: The central vectors visible when this is shown are from quadrayBasis (WXYZ arrows),
+    // not from the cuboctahedron edges. Toggle "Show Quadray Basis" to hide them if desired.
     if (document.getElementById("showQuadrayCuboctahedron")?.checked) {
       const normalize =
         document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
