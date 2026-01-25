@@ -3389,6 +3389,13 @@ export function initScene(THREE, OrbitControls, RT) {
     let geometry;
 
     switch (type) {
+      // Primitives
+      case "point":
+        geometry = Polyhedra.point(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        group.userData.allowedTools = ["move"]; // Point only supports Move
+        break;
+
       // Regular polyhedra
       case "cube":
         geometry = Polyhedra.cube(scale);
