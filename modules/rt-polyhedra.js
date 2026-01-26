@@ -173,17 +173,68 @@ export const Polyhedra = {
     };
 
     const generator = generators[n];
-    if (!generator) {
-      // Gauss-Wantzel theorem: n=7,11 are not constructible with √ radicals
-      // Skip silently with console warning (UI will jump from 6→8, 10→12)
-      console.warn(
-        `[RT] Skipping ${n}-gon: not RT-constructible (Gauss-Wantzel). ` +
-          `Supported: 3, 4, 5, 6, 8, 9, 10, 12`
-      );
-      return null;
+    if (generator) {
+      // RT-pure path: use algebraic radicals
+      return generator(quadrance, { showFace });
     }
 
-    return generator(quadrance, { showFace });
+    // Classical trig fallback for non-constructible n (7, 11, 13, etc.)
+    // Gauss-Wantzel: these require transcendental functions
+    console.log(
+      `[RT] ${n}-gon using classical trig (not RT-constructible). ` +
+        `RT-pure: 3, 4, 5, 6, 8, 9, 10, 12`
+    );
+    return Polyhedra._polygonClassical(quadrance, { sides: n, showFace });
+  },
+
+  /**
+   * Classical trig fallback for arbitrary n-gons
+   * Used when n is not RT-constructible (Gauss-Wantzel theorem)
+   * @private
+   */
+  _polygonClassical: (quadrance, options) => {
+    const n = options.sides;
+    const showFace = options.showFace;
+    const R = Math.sqrt(quadrance);
+
+    // Classical trig for spread and edge quadrance
+    const centralAngle = Math.PI / n;
+    const spread = Math.pow(Math.sin(centralAngle), 2);
+    const Q_edge = 4 * quadrance * spread;
+
+    // Generate vertices using transcendental sin/cos
+    const vertices = [];
+    for (let i = 0; i < n; i++) {
+      const angle = (2 * Math.PI * i) / n;
+      vertices.push(
+        new THREE.Vector3(R * Math.cos(angle), R * Math.sin(angle), 0)
+      );
+    }
+
+    const edges = [];
+    for (let i = 0; i < n; i++) edges.push([i, (i + 1) % n]);
+    const faces = showFace ? [Array.from({ length: n }, (_, i) => i)] : [];
+
+    console.log(
+      `[RT] ${n}-gon (classical): Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
+        `spread=${spread.toFixed(6)}, Q_edge=${Q_edge.toFixed(6)}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        sides: n,
+        quadrance,
+        circumradius: R,
+        edgeQuadrance: Q_edge,
+        edgeLength: Math.sqrt(Q_edge),
+        spread,
+        showFace,
+        rtPure: false, // Classical trig - not RT-pure
+      },
+    };
   },
 
   /**

@@ -1805,27 +1805,21 @@ export function initScene(THREE, OrbitControls, RT) {
         sides: polygonSides,
         showFace: polygonShowFace,
       });
-
-      // Skip non-constructible n-gons (7, 11, etc.) - polygon() returns null
-      if (polygonData) {
-        renderPolyhedron(polygonGroup, polygonData, colorPalette.polygon, opacity, {
-          lineWidth: polygonEdgeWeight,
-        });
-        polygonGroup.userData.type = "polygon";
-        polygonGroup.userData.parameters = {
-          quadrance: polygonQuadrance,
-          circumradius: Math.sqrt(polygonQuadrance),
-          sides: polygonSides,
-          edgeQuadrance: polygonData.metadata.edgeQuadrance,
-          edgeLength: polygonData.metadata.edgeLength,
-          edgeWeight: polygonEdgeWeight,
-          showFace: polygonShowFace,
-        };
-        polygonGroup.visible = true;
-      } else {
-        // Non-constructible: keep previous geometry visible, don't crash
-        polygonGroup.visible = polygonGroup.children.length > 0;
-      }
+      renderPolyhedron(polygonGroup, polygonData, colorPalette.polygon, opacity, {
+        lineWidth: polygonEdgeWeight,
+      });
+      polygonGroup.userData.type = "polygon";
+      polygonGroup.userData.parameters = {
+        quadrance: polygonQuadrance,
+        circumradius: Math.sqrt(polygonQuadrance),
+        sides: polygonSides,
+        edgeQuadrance: polygonData.metadata.edgeQuadrance,
+        edgeLength: polygonData.metadata.edgeLength,
+        edgeWeight: polygonEdgeWeight,
+        showFace: polygonShowFace,
+        rtPure: polygonData.metadata.rtPure, // Track which engine was used
+      };
+      polygonGroup.visible = true;
     } else {
       polygonGroup.visible = false;
     }
@@ -3630,8 +3624,6 @@ export function initScene(THREE, OrbitControls, RT) {
           sides: polySides,
           showFace: polyShowFace,
         });
-        // Skip non-constructible n-gons (7, 11, etc.) - polygon() returns null
-        if (!geometry) break;
         // Set type and parameters BEFORE renderPolyhedron
         group.userData.type = "polygon";
         group.userData.parameters = {
@@ -3642,6 +3634,7 @@ export function initScene(THREE, OrbitControls, RT) {
           edgeLength: geometry.metadata.edgeLength,
           edgeWeight: polyEdgeWeight,
           showFace: polyShowFace,
+          rtPure: geometry.metadata.rtPure,
         };
         renderPolyhedron(group, geometry, color, opacity, {
           lineWidth: polyEdgeWeight,
