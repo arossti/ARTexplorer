@@ -2,18 +2,22 @@
  * rt-rendering.js
  * THREE.js Rendering Module for ARTexplorer
  *
- * Manages scene setup, camera, lighting, grids, and basis vectors.
+ * Manages scene setup, camera, lighting, and polyhedra rendering.
  * Handles all THREE.js rendering logic separate from geometry generation.
+ *
+ * Grid and basis vector creation extracted to rt-grids.js (Jan 2026)
  *
  * @requires THREE.js
  * @requires rt-math.js
  * @requires rt-polyhedra.js
+ * @requires rt-grids.js
  */
 
-import { Quadray } from "./rt-math.js";
+import { RT, Quadray } from "./rt-math.js";
 import { Polyhedra } from "./rt-polyhedra.js";
 import { PerformanceClock } from "./performance-clock.js";
 import { RTPapercut } from "./rt-papercut.js";
+import { Grids } from "./rt-grids.js";
 
 // Line2 addons for variable lineweight (cross-platform support)
 import { Line2 } from "three/addons/lines/Line2.js";
@@ -329,501 +333,55 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   /**
-   * Create Cartesian grid (XYZ) - grey hairlines
+   * Create Cartesian grid (XYZ) - delegated to rt-grids.js
    * Z-up coordinate system: Z is vertical, XY is horizontal ground plane
    */
   function createCartesianGrid() {
-    cartesianGrid = new THREE.Group();
-
     // Read tessellation from slider (dynamic control)
     const sliderElement = document.getElementById("cartesianTessSlider");
     const divisions = sliderElement ? parseInt(sliderElement.value) : 10;
 
-    // Grid size scales with divisions to maintain 1.0×1.0 unit squares
-    // This makes grid EXTEND (like Quadray grids) rather than subdivide
-    // divisions=10 → 10-unit extent (-5 to +5) with 1.0 unit squares (cube edge=2 occupies 2×2 squares)
-    const gridSize = divisions;
+    // Delegate to Grids module
+    const result = Grids.createCartesianGrid(scene, divisions);
 
-    // Simple grey grid color - subtle and non-distracting
-    const gridColor = 0x444444;
-
-    // Z-UP CONVENTION: Notation swap from Y-up
-    // In Y-up: XZ was horizontal (default), XY was rotated, YZ was rotated
-    // In Z-up: XY is horizontal, XZ is vertical, YZ is vertical
-    // Just swap which planes get rotations - same rotation values as before
-
-    // XY plane (Z = 0) - HORIZONTAL ground plane in Z-up
-    window.gridXY = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
-    window.gridXY.rotation.x = Math.PI / 2; // Same rotation as Y-up XY had
-    window.gridXY.visible = false; // Hidden by default
-    cartesianGrid.add(window.gridXY);
-
-    // XZ plane (Y = 0) - VERTICAL wall in Z-up (front/back)
-    window.gridXZ = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
-    // GridHelper default - was horizontal in Y-up, now vertical in Z-up (notation swap)
-    window.gridXZ.visible = false; // Hidden by default
-    cartesianGrid.add(window.gridXZ);
-
-    // YZ plane (X = 0) - VERTICAL wall in Z-up (left/right)
-    window.gridYZ = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
-    window.gridYZ.rotation.z = Math.PI / 2; // Same rotation as Y-up YZ had
-    window.gridYZ.visible = false; // Hidden by default
-    cartesianGrid.add(window.gridYZ);
-
-    scene.add(cartesianGrid);
-
-    /**
-     * SYSTEM 2 OF 4: SYMBOLIC Cartesian basis vectors (XYZ)
-     *
-     * - Location: rt-rendering.js (this file)
-     * - Purpose: Non-interactive coordinate reference (user-toggleable visibility)
-     * - Scaling: Dynamic - scales with cube slider via updateGeometry()
-     * - Visual: Conical arrowheads (THREE.ArrowHelper) distinguish XYZ from WXYZ
-     * - Labels: X, Y, Z (orthogonal basis)
-     *
-     * See also: Editing Cartesian basis in rt-init.js (interactive gumball handles)
-     *
-     * RT-PURE ALIGNMENT: Base length calculated to align with cube grid
-     * - Grid spacing: cube edge length (default 2.0)
-     * - Scaling factor (applied in updateGeometry): cubeEdge
-     * - Base length: 1.0 (unit length, scaled to match cube edge)
-     */
-    // Add Cartesian axes as separate object (can be toggled independently)
-    // Using ArrowHelper to match Quadray vector style (with arrowheads)
-    cartesianBasis = new THREE.Group();
-
-    // RT-PURE: Base length for unit scaling (will be scaled to cubeEdge in updateGeometry)
-    const totalBasisLength = 1.0; // Base length (unit), scaled by cubeEdge
-    const headLength = 0.2; // Proportionally scaled head
-    const arrowLength = totalBasisLength;
-
-    // X-axis (Red)
-    const xAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(1, 0, 0), // Direction
-      new THREE.Vector3(0, 0, 0), // Origin
-      arrowLength, // Total arrow length ≈ 1.414 (matches default cube edge)
-      0xff0000, // Red
-      headLength, // Head length = 0.2
-      0.15 // Head width (proportionally scaled)
-    );
-    cartesianBasis.add(xAxis);
-
-    // Y-axis (Green)
-    const yAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 1, 0), // Direction
-      new THREE.Vector3(0, 0, 0), // Origin
-      arrowLength, // Total arrow length ≈ 1.414 (matches default cube edge)
-      0x00ff00, // Green
-      headLength, // Head length = 0.2
-      0.15 // Head width (proportionally scaled)
-    );
-    cartesianBasis.add(yAxis);
-
-    // Z-axis (Blue) - vertical in Z-up convention
-    const zAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 0, 1), // Direction (up in Z-up)
-      new THREE.Vector3(0, 0, 0), // Origin
-      arrowLength, // Total arrow length ≈ 1.414 (matches default cube edge)
-      0x0000ff, // Blue
-      headLength, // Head length = 0.2
-      0.15 // Head width (proportionally scaled)
-    );
-    cartesianBasis.add(zAxis);
-
-    cartesianBasis.visible = false; // Hidden by default
-    scene.add(cartesianBasis);
+    // Store references for later use
+    cartesianGrid = result.cartesianGrid;
+    cartesianBasis = result.cartesianBasis;
+    window.gridXY = result.gridXY;
+    window.gridXZ = result.gridXZ;
+    window.gridYZ = result.gridYZ;
   }
 
-  /**
-   * Create tetrahedral arrowhead for WXYZ basis vectors
-   * Uses dual tetrahedron geometry with one vertex pointing along the axis
-   * Distinguishes WXYZ (tetrahedral heads) from XYZ (cone heads)
-   *
-   * @param {THREE.Vector3} direction - Normalized direction vector
-   * @param {number} shaftLength - Length of arrow shaft
-   * @param {number} headSize - Scale of tetrahedral head
-   * @param {number} color - Hex color for the arrow
-   * @returns {THREE.Group} Arrow with shaft and tetrahedral head
-   */
-  function createTetrahedralArrow(direction, shaftLength, headSize, color) {
-    const arrowGroup = new THREE.Group();
-
-    // 1. Create cylindrical shaft (match XYZ ArrowHelper visual weight)
-    const shaftRadius = 0.005; // Match THREE.ArrowHelper default shaft radius
-    const shaftGeometry = new THREE.CylinderGeometry(
-      shaftRadius,
-      shaftRadius,
-      shaftLength,
-      8
-    );
-    const shaftMaterial = new THREE.MeshBasicMaterial({ color });
-    const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
-
-    // Position shaft: cylinder default is Y-up, translate to point in direction
-    shaft.position.copy(direction.clone().multiplyScalar(shaftLength / 2));
-
-    // Orient shaft along direction vector
-    shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-    arrowGroup.add(shaft);
-
-    // 2. Create tetrahedral arrowhead using dualTetrahedron
-    // The dual tetrahedron has vertices at (±1,±1,±1) normalized
-    // We want ONE vertex to point exactly along the direction vector
-    const tetraGeom = Polyhedra.dualTetrahedron(headSize);
-
-    // Find which vertex is closest to pointing in our direction
-    let bestVertex = 0;
-    let maxDot = -Infinity;
-    tetraGeom.vertices.forEach((v, idx) => {
-      const dot = v.clone().normalize().dot(direction);
-      if (dot > maxDot) {
-        maxDot = dot;
-        bestVertex = idx;
-      }
-    });
-
-    // Create mesh for tetrahedral head
-    const headGeometry = new THREE.BufferGeometry();
-    const positions = [];
-    const indices = [];
-
-    tetraGeom.vertices.forEach(v => {
-      positions.push(v.x, v.y, v.z);
-    });
-    tetraGeom.faces.forEach(face => {
-      indices.push(face[0], face[1], face[2]);
-    });
-
-    headGeometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(positions, 3)
-    );
-    headGeometry.setIndex(indices);
-    headGeometry.computeVertexNormals();
-
-    const headMaterial = new THREE.MeshBasicMaterial({
-      color,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.8,
-    });
-    const head = new THREE.Mesh(headGeometry, headMaterial);
-
-    // Position head at end of shaft
-    head.position.copy(direction.clone().multiplyScalar(shaftLength));
-
-    // Orient head so the identified vertex points along direction
-    const currentDir = tetraGeom.vertices[bestVertex].clone().normalize();
-    head.quaternion.setFromUnitVectors(currentDir, direction);
-
-    arrowGroup.add(head);
-
-    return arrowGroup;
-  }
+  // createTetrahedralArrow - delegated to rt-grids.js (Grids.createTetrahedralArrow)
 
   /**
-   * Create SYMBOLIC Quadray basis vectors (WXYZ) with tetrahedral arrowheads
-   *
-   * SYSTEM 1 OF 4: Non-interactive coordinate reference (user-toggleable visibility)
-   * - Location: rt-rendering.js (this file)
-   * - Purpose: Always-on coordinate system reference
-   * - Scaling: Dynamic - scales with tetrahedron slider via updateGeometry()
-   * - Visual: Tetrahedral arrowheads distinguish WXYZ from XYZ
-   * - Labels: W, X, Y, Z (tetrahedral basis)
-   *
-   * See also: Editing Quadray basis in rt-init.js (interactive gumball handles)
-   *
-   * RT-PURE ALIGNMENT: Base length calculated to reach 3x grid intervals AFTER scaling
-   * - Grid interval: √6/4 ≈ 0.612 (centroid-to-vertex for unit tetrahedron)
-   * - Target after scaling: 3 × √6/4 ≈ 1.837 (reaches 3rd grid intersection)
-   * - Scaling factor (applied in updateGeometry): tetEdge / (2√2)
-   * - Base length (before scaling): targetLength / scaleFactor
+   * Create SYMBOLIC Quadray basis vectors (WXYZ) - delegated to rt-grids.js
    */
   function createQuadrayBasis() {
-    quadrayBasis = new THREE.Group();
-
-    // RT-PURE: Basis vectors reach (tetEdge + 1) grid intervals
-    // tetEdge=2 → basis at 3 grid intervals, tetEdge=3 → basis at 4 grid intervals
-    //
-    // Scaling in updateGeometry(): arrow scaled by tetEdge / (2√2)
-    // Grid intervals are FIXED (not scaled), so:
-    //
-    // We want: finalLength = (tetEdge / gridInterval + 1) × gridInterval
-    // Example: tetEdge=2.0, gridInterval=0.612
-    //   tetEdge / gridInterval = 2.0 / 0.612 ≈ 3.27 grid intervals for tet
-    //   basis should reach: (3.27 + 1) × 0.612 ≈ 2.61
-    //
-    // Actually simpler: tetEdge is already in same units as grid, so:
-    // finalLength = tetEdge + gridInterval
-    // baseLength × (tetEdge / 2√2) = tetEdge + gridInterval
-    // baseLength = (tetEdge + gridInterval) × (2√2 / tetEdge)
-    //
-    // For DEFAULT tetEdge=2.0:
-    const gridInterval = RT.PureRadicals.QUADRAY_GRID_INTERVAL; // √6/4 ≈ 0.612
-    const defaultTetEdge = 2.0;
-    const scaleDenominator = 2 * Math.sqrt(2); // 2√2 ≈ 2.828
-
-    const totalBasisLength =
-      (defaultTetEdge + gridInterval) * (scaleDenominator / defaultTetEdge);
-    // = 2.612 × 1.414 ≈ 3.69
-
-    const headSize = 0.15; // Scale of tetrahedral arrowhead
-
-    // RT-PURE: Tetrahedral head tip extends headSize * √3 beyond its center
-    // Dual tetrahedron vertices at (±s,±s,±s) → distance s√3 from origin
-    const headTipExtension = headSize * Math.sqrt(3); // ≈ 0.260
-    const shaftLength = totalBasisLength - headTipExtension; // ≈ 1.577
-
-    const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00]; // R, G, B, Y
-    // TODO: Add text labels to quadray basis arrows
-    const _labels = ["W", "X", "Y", "Z"];
-
-    Quadray.basisVectors.forEach((vec, i) => {
-      const arrow = createTetrahedralArrow(
-        vec,
-        shaftLength,
-        headSize,
-        colors[i]
-      );
-      quadrayBasis.add(arrow);
-    });
-
-    quadrayBasis.visible = true; // Visible by default
-    scene.add(quadrayBasis);
+    quadrayBasis = Grids.createQuadrayBasis(scene);
   }
 
-  /**
-   * Create triangular grid for a Quadray plane defined by two basis vectors
-   * RT-PURE: Uses SAME tessellation method as tetrahedron frequency subdivisions
-   *
-   * TRIANGULAR LATTICE: Three line families form equilateral triangles
-   * - Direction 1: basis1
-   * - Direction 2: basis2
-   * - Direction 3: basis1 + basis2 (creates proper 60° triangular grid)
-   *
-   * CRITICAL: This uses pure barycentric subdivision principles!
-   * When Project='Flat', tetrahedron geodesic vertices lie EXACTLY on these grids.
-   * Functionally equivalent to tetrahedron frequency divisions.
-   *
-   * @param {THREE.Vector3} basis1 - First basis vector (e.g., W)
-   * @param {THREE.Vector3} basis2 - Second basis vector (e.g., X)
-   * @param {number} minExtent - Inner radius (near-zero, avoid origin singularity)
-   * @param {number} maxExtent - Outer radius (tetrahedral boundary)
-   * @param {number} divisions - Grid subdivisions (frequency parameter)
-   * @param {number} color - Grid line color
-   * @returns {THREE.LineSegments} Triangular grid geometry
-   */
-  /**
-   * Create Central Angle Grid (Corrected Tessellation Method)
-   * This is the CORRECT implementation of the "Tetrahedral Central Angle Exploration Grid"
-   * Tessellates triangular faces vertex-to-vertex - NO extraneous lines!
-   * RT-PURE: Uses tetrahedron edge length as unit increment
-   *
-   * NOTE: Originally intended as IVM grid, but this is actually the corrected
-   * implementation of Option 1 (Central Angle Grid). TRUE IVM still to be done.
-   *
-   * @param {THREE.Vector3} basis1 - First basis vector (e.g., W)
-   * @param {THREE.Vector3} basis2 - Second basis vector (e.g., X)
-   * @param {number} halfSize - Tetrahedron halfSize (s)
-   * @param {number} tessellations - Number of triangle copies in each direction (e.g., 5)
-   * @param {number} color - Grid line color
-   * @returns {THREE.LineSegments} Central Angle grid geometry
-   */
-  function createIVMGrid(basis1, basis2, halfSize, tessellations, color) {
-    const geometry = new THREE.BufferGeometry();
-    const vertices = [];
-
-    // RT-PURE + PureRadicals: Unit tetrahedron grid interval
-    // For a unit tetrahedron (edge length = 1):
-    // Centroid-to-vertex distance (OutSphere radius) = √6/4 ≈ 0.612
-    // This provides meaningful intervals at edge lengths 1, 2, 3, 4...
-    const edgeLength = RT.PureRadicals.QUADRAY_GRID_INTERVAL;
-
-    // DIAGNOSTIC: Log grid interval with full precision (first plane only)
-    if (!window.gridIntervalLogged) {
-      console.log("=== QUADRAY GRID INTERVAL (FIXED) ===");
-      console.log(`Grid interval (√6/4): ${edgeLength.toFixed(16)}`);
-      console.log(`Exact value: ${edgeLength}`);
-      window.gridIntervalLogged = true;
-    }
-
-    // Base triangle edge vectors:
-    // v1 = basis1 * edgeLength (from origin along basis1)
-    // v2 = basis2 * edgeLength (from origin along basis2)
-    // Origin (0,0,0) is implicit in tessellation calculation
-    const v1 = basis1.clone().multiplyScalar(edgeLength);
-    const v2 = basis2.clone().multiplyScalar(edgeLength);
-
-    // Tessellate triangle outward in three directions:
-    // Direction A: along basis1 (v0 -> v1 edge)
-    // Direction B: along basis2 (v0 -> v2 edge)
-    // Direction C: along (v1 -> v2 edge), which is (v2 - v1) direction
-
-    // For each tessellation position (i, j, k) where i+j+k <= tessellations:
-    // - i: steps along basis1 direction
-    // - j: steps along basis2 direction
-    // - k: steps along (basis2 - basis1) direction
-    //
-    // Triangle vertex calculation using vector addition:
-    // TriangleOrigin = i*v1 + j*v2
-    // Each triangle has three vertices: origin, origin+v1, origin+v2
-
-    for (let i = 0; i <= tessellations; i++) {
-      for (let j = 0; j <= tessellations - i; j++) {
-        // Calculate the "origin" of this triangle copy
-        const triOrigin = v1
-          .clone()
-          .multiplyScalar(i)
-          .add(v2.clone().multiplyScalar(j));
-
-        // Three vertices of this triangle:
-        const p0 = triOrigin.clone();
-        const p1 = triOrigin.clone().add(v1);
-        const p2 = triOrigin.clone().add(v2);
-
-        // Draw three edges (triangle outline):
-        // Edge 1: p0 -> p1
-        vertices.push(p0.x, p0.y, p0.z);
-        vertices.push(p1.x, p1.y, p1.z);
-
-        // Edge 2: p1 -> p2
-        vertices.push(p1.x, p1.y, p1.z);
-        vertices.push(p2.x, p2.y, p2.z);
-
-        // Edge 3: p2 -> p0
-        vertices.push(p2.x, p2.y, p2.z);
-        vertices.push(p0.x, p0.y, p0.z);
-      }
-    }
-
-    geometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(vertices, 3)
-    );
-    return new THREE.LineSegments(
-      geometry,
-      new THREE.LineBasicMaterial({
-        color,
-        transparent: true,
-        opacity: 0.4, // Slightly more visible than Central Angle Grid
-      })
-    );
-  }
+  // createIVMGrid - delegated to rt-grids.js (Grids.createIVMGrid)
 
   /**
-   * Create Central Angle Grids (Corrected Implementation)
-   * This is the CORRECTED "Tetrahedral Central Angle Exploration Grid" (Option 1)
-   * Uses vertex-to-vertex triangular tessellation (no extraneous lines!)
-   *
-   * NOTE: This accidentally became the correct implementation when we thought
-   * we were building IVM grids. The TRUE IVM (Option 2) is still to be implemented.
+   * Create Central Angle Grids (IVM Planes) - delegated to rt-grids.js
    */
   function createIVMPlanes() {
-    ivmPlanes = new THREE.Group();
-
-    const halfSize = 1.0; // Tetrahedron halfSize (s) - matches dual tetrahedron
-
     // Read tessellation from slider (dynamic control)
     const sliderElement = document.getElementById("quadrayTessSlider");
     const tessellations = sliderElement ? parseInt(sliderElement.value) : 12;
 
-    // Using nomenclature: W, X, Y, Z for Quadray basis (mapping to indices 0,1,2,3)
-    // 6 planes from 6 combinations of 4 basis vectors (all Quadray planes)
-    // Color scheme: W=Yellow, X=Red, Y=Blue, Z=Green → RGB two-color mixes
+    // Delegate to Grids module
+    const result = Grids.createIVMPlanes(scene, tessellations);
 
-    // WX plane (basis 0, 1) - Yellow+Red = Orange-Yellow
-    window.ivmWX = createIVMGrid(
-      Quadray.basisVectors[0],
-      Quadray.basisVectors[1],
-      halfSize,
-      tessellations,
-      0xffaa00
-    );
-    window.ivmWX.visible = true;
-    window.ivmWX.name = "CentralAngle_WX";
-    ivmPlanes.add(window.ivmWX);
-
-    // WY plane (basis 0, 2) - Yellow+Blue = Light Purple/Lavender
-    window.ivmWY = createIVMGrid(
-      Quadray.basisVectors[0],
-      Quadray.basisVectors[2],
-      halfSize,
-      tessellations,
-      0xaaaaff
-    );
-    window.ivmWY.visible = true;
-    window.ivmWY.name = "CentralAngle_WY";
-    ivmPlanes.add(window.ivmWY);
-
-    // WZ plane (basis 0, 3) - Yellow+Green = Yellow-Green/Lime
-    window.ivmWZ = createIVMGrid(
-      Quadray.basisVectors[0],
-      Quadray.basisVectors[3],
-      halfSize,
-      tessellations,
-      0xaaff00
-    );
-    window.ivmWZ.visible = true;
-    window.ivmWZ.name = "CentralAngle_WZ";
-    ivmPlanes.add(window.ivmWZ);
-
-    // XY plane (basis 1, 2) - Red+Blue = Magenta
-    window.ivmXY = createIVMGrid(
-      Quadray.basisVectors[1],
-      Quadray.basisVectors[2],
-      halfSize,
-      tessellations,
-      0xff00ff
-    );
-    window.ivmXY.visible = true;
-    window.ivmXY.name = "CentralAngle_XY";
-    ivmPlanes.add(window.ivmXY);
-
-    // XZ plane (basis 1, 3) - Red+Green = Yellow
-    window.ivmXZ = createIVMGrid(
-      Quadray.basisVectors[1],
-      Quadray.basisVectors[3],
-      halfSize,
-      tessellations,
-      0xffff00
-    );
-    window.ivmXZ.visible = true;
-    window.ivmXZ.name = "CentralAngle_XZ";
-    ivmPlanes.add(window.ivmXZ);
-
-    // YZ plane (basis 2, 3) - Blue+Green = Cyan
-    window.ivmYZ = createIVMGrid(
-      Quadray.basisVectors[2],
-      Quadray.basisVectors[3],
-      halfSize,
-      tessellations,
-      0x00ffff
-    );
-    window.ivmYZ.visible = true;
-    window.ivmYZ.name = "CentralAngle_YZ";
-    ivmPlanes.add(window.ivmYZ);
-
-    console.log(
-      "✅ Central Angle grids created (corrected tessellation, 6 planes) with edge length:",
-      (2 * halfSize * Math.sqrt(2)).toFixed(4)
-    );
-
-    scene.add(ivmPlanes);
+    // Store references for later use
+    ivmPlanes = result.ivmPlanes;
+    window.ivmWX = result.ivmWX;
+    window.ivmWY = result.ivmWY;
+    window.ivmWZ = result.ivmWZ;
+    window.ivmXY = result.ivmXY;
+    window.ivmXZ = result.ivmXZ;
+    window.ivmYZ = result.ivmYZ;
   }
 
   /**
@@ -2666,7 +2224,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00];
 
       Quadray.basisVectors.forEach((vec, i) => {
-        const arrow = createTetrahedralArrow(
+        const arrow = Grids.createTetrahedralArrow(
           vec,
           shaftLength,
           headSize,
@@ -3331,194 +2889,33 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   /**
-   * Rebuild Quadray grids with new tessellation value
-   * @param {number} tessellations - Number of triangle copies in each direction
-   * @param {Object} visibilityState - Object mapping plane names to visibility state
+   * Rebuild Quadray grids with new tessellation value - delegated to rt-grids.js
    */
   function rebuildQuadrayGrids(tessellations, visibilityState = {}) {
-    // Remove existing grids
-    if (ivmPlanes) {
-      scene.remove(ivmPlanes);
-    }
+    const result = Grids.rebuildQuadrayGrids(scene, ivmPlanes, tessellations, visibilityState);
 
-    // Recreate with new tessellation (updateIVMPlanes uses stored tessellation value)
-    ivmPlanes = new THREE.Group();
-
-    const halfSize = 1.0;
-
-    // WX plane
-    window.ivmWX = createIVMGrid(
-      Quadray.basisVectors[0],
-      Quadray.basisVectors[1],
-      halfSize,
-      tessellations,
-      0xffaa00
-    );
-    window.ivmWX.visible = visibilityState.ivmWX ?? true;
-    window.ivmWX.name = "CentralAngle_WX";
-    ivmPlanes.add(window.ivmWX);
-
-    // WY plane
-    window.ivmWY = createIVMGrid(
-      Quadray.basisVectors[0],
-      Quadray.basisVectors[2],
-      halfSize,
-      tessellations,
-      0xaaaaff
-    );
-    window.ivmWY.visible = visibilityState.ivmWY ?? true;
-    window.ivmWY.name = "CentralAngle_WY";
-    ivmPlanes.add(window.ivmWY);
-
-    // WZ plane
-    window.ivmWZ = createIVMGrid(
-      Quadray.basisVectors[0],
-      Quadray.basisVectors[3],
-      halfSize,
-      tessellations,
-      0xaaff00
-    );
-    window.ivmWZ.visible = visibilityState.ivmWZ ?? true;
-    window.ivmWZ.name = "CentralAngle_WZ";
-    ivmPlanes.add(window.ivmWZ);
-
-    // XY plane
-    window.ivmXY = createIVMGrid(
-      Quadray.basisVectors[1],
-      Quadray.basisVectors[2],
-      halfSize,
-      tessellations,
-      0xff00ff
-    );
-    window.ivmXY.visible = visibilityState.ivmXY ?? true;
-    window.ivmXY.name = "CentralAngle_XY";
-    ivmPlanes.add(window.ivmXY);
-
-    // XZ plane
-    window.ivmXZ = createIVMGrid(
-      Quadray.basisVectors[1],
-      Quadray.basisVectors[3],
-      halfSize,
-      tessellations,
-      0xffff00
-    );
-    window.ivmXZ.visible = visibilityState.ivmXZ ?? true;
-    window.ivmXZ.name = "CentralAngle_XZ";
-    ivmPlanes.add(window.ivmXZ);
-
-    // YZ plane
-    window.ivmYZ = createIVMGrid(
-      Quadray.basisVectors[2],
-      Quadray.basisVectors[3],
-      halfSize,
-      tessellations,
-      0x00ffff
-    );
-    window.ivmYZ.visible = visibilityState.ivmYZ ?? true;
-    window.ivmYZ.name = "CentralAngle_YZ";
-    ivmPlanes.add(window.ivmYZ);
-
-    scene.add(ivmPlanes);
-
-    console.log(
-      `✅ Rebuilt Central Angle grids with tessellation=${tessellations}`
-    );
+    // Store references for later use
+    ivmPlanes = result.ivmPlanes;
+    window.ivmWX = result.ivmWX;
+    window.ivmWY = result.ivmWY;
+    window.ivmWZ = result.ivmWZ;
+    window.ivmXY = result.ivmXY;
+    window.ivmXZ = result.ivmXZ;
+    window.ivmYZ = result.ivmYZ;
   }
 
   /**
-   * Rebuild Cartesian grids with new tessellation value
-   * @param {number} divisions - Number of grid divisions
-   * @param {Object} visibilityState - Object with grid and basis visibility states
+   * Rebuild Cartesian grids with new tessellation value - delegated to rt-grids.js
    */
   function rebuildCartesianGrids(divisions, visibilityState = {}) {
-    // Remove existing grids and basis
-    if (cartesianGrid) {
-      scene.remove(cartesianGrid);
-    }
-    if (cartesianBasis) {
-      scene.remove(cartesianBasis);
-    }
+    const result = Grids.rebuildCartesianGrids(scene, cartesianGrid, cartesianBasis, divisions, visibilityState);
 
-    // Recreate grid
-    cartesianGrid = new THREE.Group();
-    const gridSize = divisions;
-    const gridColor = 0x444444;
-
-    // XY plane (Z = 0) - HORIZONTAL ground plane in Z-up
-    window.gridXY = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
-    window.gridXY.rotation.x = Math.PI / 2;
-    window.gridXY.visible = visibilityState.gridXY ?? false;
-    cartesianGrid.add(window.gridXY);
-
-    // XZ plane (Y = 0) - VERTICAL wall in Z-up (front/back)
-    window.gridXZ = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
-    window.gridXZ.visible = visibilityState.gridXZ ?? false;
-    cartesianGrid.add(window.gridXZ);
-
-    // YZ plane (X = 0) - VERTICAL wall in Z-up (left/right)
-    window.gridYZ = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
-    window.gridYZ.rotation.z = Math.PI / 2;
-    window.gridYZ.visible = visibilityState.gridYZ ?? false;
-    cartesianGrid.add(window.gridYZ);
-
-    scene.add(cartesianGrid);
-
-    // Recreate basis vectors
-    cartesianBasis = new THREE.Group();
-    const totalBasisLength = 2.0;
-    const headLength = 0.3;
-    const arrowLength = totalBasisLength;
-
-    // X-axis (Red)
-    const xAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(0, 0, 0),
-      arrowLength,
-      0xff0000,
-      headLength,
-      0.2
-    );
-    cartesianBasis.add(xAxis);
-
-    // Y-axis (Green)
-    const yAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 1, 0),
-      new THREE.Vector3(0, 0, 0),
-      arrowLength,
-      0x00ff00,
-      headLength,
-      0.2
-    );
-    cartesianBasis.add(yAxis);
-
-    // Z-axis (Blue)
-    const zAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 0, 1),
-      new THREE.Vector3(0, 0, 0),
-      arrowLength,
-      0x0000ff,
-      headLength,
-      0.2
-    );
-    cartesianBasis.add(zAxis);
-
-    cartesianBasis.visible = visibilityState.cartesianBasis ?? false;
-    scene.add(cartesianBasis);
+    // Store references for later use
+    cartesianGrid = result.cartesianGrid;
+    cartesianBasis = result.cartesianBasis;
+    window.gridXY = result.gridXY;
+    window.gridXZ = result.gridXZ;
+    window.gridYZ = result.gridYZ;
   }
 
   /**
