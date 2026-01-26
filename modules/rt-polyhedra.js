@@ -175,10 +175,9 @@ export const Polyhedra = {
     const generator = generators[n];
     if (!generator) {
       // Gauss-Wantzel theorem: n=7,11 are not constructible with √ radicals
-      // We do NOT fall back to classical trig - return error instead
-      console.error(
-        `[RT] Polygon n=${n} not supported. Gauss-Wantzel theorem: ` +
-          `only n = 2^k × (distinct Fermat primes) are constructible. ` +
+      // Skip silently with console warning (UI will jump from 6→8, 10→12)
+      console.warn(
+        `[RT] Skipping ${n}-gon: not RT-constructible (Gauss-Wantzel). ` +
           `Supported: 3, 4, 5, 6, 8, 9, 10, 12`
       );
       return null;
