@@ -27,8 +27,8 @@ export const RTPapercut = {
     intervalSnapXYZEnabled: true, // XYZ: Snap to Cartesian grid intervals (step=1.0) vs fine control (step=0.1)
     intervalSnapWXYZEnabled: false, // WXYZ: Snap to Quadray grid intervals (step=√6/4≈0.612) vs fine control (step=0.1)
     lineWeightEnabled: true,
-    lineWeightMin: 0.5,
-    lineWeightMax: 3.0,
+    lineWeightMin: 1.0,
+    lineWeightMax: 3.0, // Default matches slider value of 3
     currentView: "top",
     sectionNodesEnabled: false, // Section Nodes checkbox state
     adaptiveNodeResolution: false, // High resolution mode: 64 segments (unchecked: 32)
@@ -69,22 +69,26 @@ export const RTPapercut = {
       });
     }
 
-    // 2. Line Weight slider
-    const lineWeightSlider = document.getElementById("lineWeight");
-    const lineWeightValue = document.getElementById("lineWeightValue");
-    if (lineWeightSlider) {
-      lineWeightSlider.addEventListener("input", e => {
+    // 2. Cutplane Line Weight slider
+    const cutplaneLineWeightSlider =
+      document.getElementById("cutplaneLineWeight");
+    const cutplaneLineWeightValue = document.getElementById(
+      "cutplaneLineWeightValue"
+    );
+    if (cutplaneLineWeightSlider) {
+      cutplaneLineWeightSlider.addEventListener("input", e => {
         const value = parseFloat(e.target.value);
         RTPapercut.state.lineWeightMax = value;
-        if (lineWeightValue) {
-          lineWeightValue.textContent = value;
+        if (cutplaneLineWeightValue) {
+          cutplaneLineWeightValue.textContent = value;
         }
         // Update intersection line material if it exists
         if (RTPapercut._intersectionLines) {
           RTPapercut._intersectionLines.traverse(child => {
             if (child.material && child.material.isLineMaterial) {
               // LineMaterial uses linewidth property (scaled to world units)
-              child.material.linewidth = value * 0.001;
+              // Scale factor 0.002 gives visible range from 0.002 (thin) to 0.02 (thick)
+              child.material.linewidth = value * 0.002;
               child.material.needsUpdate = true;
             }
           });
@@ -693,7 +697,7 @@ export const RTPapercut = {
     const lineColor = RTPapercut.state.printModeEnabled ? 0x000000 : 0xff0000;
     const intersectionMaterial = new LineMaterial({
       color: lineColor, // Black in print mode, red otherwise
-      linewidth: RTPapercut.state.lineWeightMax * 0.001, // Convert to world units (scaled down)
+      linewidth: RTPapercut.state.lineWeightMax * 0.002, // Convert to world units (0.002-0.02 range)
       worldUnits: true, // Use world units for consistent thickness
       opacity: 1.0,
       transparent: false,

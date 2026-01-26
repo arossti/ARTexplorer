@@ -19,7 +19,9 @@ import { create2DScene, initializeModalHandlers } from "./rt-demo-utils.js";
 import { RT } from "../modules/rt-math.js";
 
 let scene, camera, renderer, animate, cleanup;
-let circle, radiusLine, crossBar, spreadBar;
+let circle, radiusLine;
+// Visual elements for cross/spread bars (educational - available for future visualization)
+// let crossBar, spreadBar;
 let draggablePoint;
 let isDragging = false;
 let angle = Math.PI / 4; // Start at 45 degrees (s = c = 0.5)
@@ -757,7 +759,7 @@ function updateVisualization() {
 /**
  * Set up mouse/touch interaction
  */
-function setupInteraction(container) {
+function setupInteraction(_container) {
   const canvas = renderer.domElement;
 
   const getMousePos = event => {

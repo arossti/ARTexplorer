@@ -4,7 +4,7 @@
 
 Extract components from oversized modules to improve maintainability and code organization.
 
-### Current State (Jan 25, 2026)
+### Initial State (Jan 25, 2026)
 
 | File | Lines | Content |
 |------|-------|---------|
@@ -12,176 +12,173 @@ Extract components from oversized modules to improve maintainability and code or
 | rt-rendering.js | 3,866 | Scene setup, grids, nodes, rendering, camera |
 | rt-polyhedra.js | 2,760 | 2D primitives + 3D polyhedra |
 
+### Final State (Jan 26, 2026)
+
+| File | Lines | Change |
+|------|-------|--------|
+| rt-init.js | 4,120 | (unchanged) |
+| rt-rendering.js | 2,656 | -1,210 (-31%) |
+| rt-polyhedra.js | 2,060 | -700 (-25%) |
+| **rt-primitives.js** | 744 | NEW |
+| **rt-grids.js** | 480 | NEW |
+| **rt-nodes.js** | 772 | NEW |
+
 ---
 
-## Phase 1: rt-primitives.js (~700 lines)
+## Phase 1: rt-primitives.js ✅ COMPLETED
 
 **Extract from**: rt-polyhedra.js
-**Priority**: High — cleanest extraction, clear conceptual boundary
+**Status**: Completed Jan 26, 2026
+**Commit**: `4cf65cd` - "Refactor: Extract rt-primitives.js from rt-polyhedra.js (Phase 1)"
 
-### Functions to Extract
+### Functions Extracted
 
-| Function | Lines | Description |
-|----------|-------|-------------|
-| `point()` | ~20 | 0D primitive |
-| `line()` | ~60 | 1D primitive |
-| `polygon()` | ~40 | Dispatcher with dual-engine logic |
-| `_polygonClassical()` | ~50 | Classical trig fallback |
-| `_polygonTriangle()` | ~50 | RT-pure using √3 |
-| `_polygonSquare()` | ~50 | RT-pure using integers |
-| `_polygonPentagon()` | ~60 | RT-pure using φ |
-| `_polygonHexagon()` | ~55 | RT-pure using √3 |
-| `_polygonOctagon()` | ~65 | RT-pure using √2 |
-| `_polygonNonagon()` | ~105 | Triangle subdivision |
-| `_polygonDecagon()` | ~65 | RT-pure using φ |
-| `_polygonDodecagon()` | ~65 | RT-pure using √3 |
-| Commented reference block | ~55 | Classical implementation for researchers |
+| Function | Description |
+|----------|-------------|
+| `point()` | 0D primitive |
+| `line()` | 1D primitive |
+| `polygon()` | Dispatcher with dual-engine logic |
+| `_polygonClassical()` | Classical trig fallback |
+| `_polygonTriangle()` | RT-pure using √3 |
+| `_polygonSquare()` | RT-pure using integers |
+| `_polygonPentagon()` | RT-pure using φ |
+| `_polygonHexagon()` | RT-pure using √3 |
+| `_polygonOctagon()` | RT-pure using √2 |
+| `_polygonNonagon()` | Triangle subdivision |
+| `_polygonDecagon()` | RT-pure using φ |
+| `_polygonDodecagon()` | RT-pure using √3 |
 
-### Dependencies
+### Validation ✅
 
-```javascript
-// rt-primitives.js will need:
-import { RT } from "./rt-math.js";
-// Uses: RT.PureRadicals, RT.PurePhi, RT.StarSpreads
-
-// THREE.js for Vector3
-// (passed in or imported)
-```
-
-### Export Pattern
-
-```javascript
-// rt-primitives.js
-export const Primitives = {
-  point,
-  line,
-  polygon,
-  // Private generators accessible for testing
-  _polygonTriangle,
-  _polygonSquare,
-  // ... etc
-};
-
-// rt-polyhedra.js - re-export for backwards compatibility
-export { Primitives } from "./rt-primitives.js";
-// OR merge into Polyhedra object
-```
-
-### Validation
-
-- [ ] All primitive tests pass
-- [ ] Console logs show correct RT-pure/classical engine
-- [ ] Polygon slider works for n=3..24
-- [ ] No breaking changes to existing callers
+- [x] All primitive tests pass
+- [x] Console logs show correct RT-pure/classical engine
+- [x] Polygon slider works for n=3..24
+- [x] No breaking changes to existing callers
 
 ---
 
-## Phase 2: rt-grids.js (~400 lines)
+## Phase 2: rt-grids.js ✅ COMPLETED
 
 **Extract from**: rt-rendering.js
-**Priority**: Medium — self-contained, rarely changes
+**Status**: Completed Jan 26, 2026
+**Commit**: `e9aadaa` - "Refactor: Extract rt-grids.js from rt-rendering.js (Phase 2)"
 
-### Functions to Extract
+### Functions Extracted
 
-| Function | Lines | Description |
-|----------|-------|-------------|
-| `createCartesianGrid()` | ~115 | XY/XZ/YZ plane grids |
-| `createTetrahedralArrow()` | ~75 | WXYZ basis arrowheads |
-| `createQuadrayBasis()` | ~75 | WXYZ tetrahedral basis |
-| `createIVMGrid()` | ~90 | Triangular lattice generation |
-| `createIVMPlanes()` | ~90 | 6 central angle planes |
-| `rebuildQuadrayGrids()` | ~95 | Dynamic tessellation update |
-| `rebuildCartesianGrids()` | ~95 | Dynamic divisions update |
+| Function | Description |
+|----------|-------------|
+| `createCartesianGrid()` | XY/XZ/YZ plane grids |
+| `createTetrahedralArrow()` | WXYZ basis arrowheads |
+| `createQuadrayBasis()` | WXYZ tetrahedral basis |
+| `createIVMGrid()` | Triangular lattice generation |
+| `createIVMPlanes()` | 6 central angle planes |
+| `rebuildQuadrayGrids()` | Dynamic tessellation update |
+| `rebuildCartesianGrids()` | Dynamic divisions update |
 
-### Dependencies
+### Validation ✅
 
-```javascript
-// rt-grids.js will need:
-import { RT } from "./rt-math.js";
-import { Quadray } from "./rt-math.js";
-import { Polyhedra } from "./rt-polyhedra.js"; // for dualTetrahedron arrowhead
-// THREE.js for geometry/materials
-```
+- [x] Grid tessellation slider works (1-24)
+- [x] Central Angle grids display correctly
+- [x] Quadray basis vectors render properly
+- [x] Cartesian basis vectors render properly
 
 ---
 
-## Phase 3: rt-nodes.js (~450 lines)
+## Phase 3: rt-nodes.js ✅ COMPLETED
 
 **Extract from**: rt-rendering.js
-**Priority**: Medium — complex, could grow with new node types
+**Status**: Completed Jan 26, 2026
+**Commit**: `b435e52` - "Refactor: Extract rt-nodes.js from rt-rendering.js (Phase 3)"
 
-### Functions to Extract
+### Functions Extracted
 
-| Function | Lines | Description |
-|----------|-------|-------------|
-| `getPolyhedronEdgeQuadrance()` | ~130 | RT-pure edge Q for each type |
-| `getClosePackedRadius()` | ~30 | Universal r = √(Q/4) |
-| `getCachedNodeGeometry()` | ~80 | Geometry cache management |
-| `addMatrixNodes()` | ~195 | Planar matrix node generation |
-| `addRadialMatrixNodes()` | ~145 | Radial matrix node generation |
+| Function | Description |
+|----------|-------------|
+| `getPolyhedronEdgeQuadrance()` | RT-pure edge Q for each type |
+| `getClosePackedRadius()` | Universal r = √(Q/4) |
+| `getCachedNodeGeometry()` | Geometry cache management |
+| `addMatrixNodes()` | Planar matrix node generation |
+| `addRadialMatrixNodes()` | Radial matrix node generation |
+| `setNodeGeometryType()` | Toggle RT/classical geometry |
+| `setGeodesicFrequency()` | Set geodesic subdivision level |
+| `setNodeOpacity()` | Set node transparency |
+| `clearNodeCache()` | Clear geometry cache |
+| `getNodeConfig()` | Get current node state |
 
-### Dependencies
+### Module-Level State
 
-```javascript
-// rt-nodes.js will need:
-import { RT } from "./rt-math.js";
-import { Polyhedra } from "./rt-polyhedra.js";
-import { PerformanceClock } from "./performance-clock.js";
-// THREE.js, module-level state (nodeOpacity, useRTNodeGeometry, geodesicFrequency)
-```
+State variables moved to rt-nodes.js with accessor functions:
+- `nodeGeometryCache` - Map for caching node geometries
+- `useRTNodeGeometry` - Boolean for RT vs classical mode
+- `geodesicFrequency` - Integer 1-4 for geodesic level
+- `nodeOpacity` - Float 0-1 for transparency
 
-### Notes
+### Validation ✅
 
-- Module-level state (`nodeOpacity`, `useRTNodeGeometry`, `geodesicFrequency`) needs careful handling
-- Could expose setters or accept config object
+- [x] Node rendering works (RT and classical modes)
+- [x] Geodesic frequency slider works
+- [x] Node opacity slider works
+- [x] Packed node sizing calculates correctly
+- [x] Performance clock shows correct triangle counts
 
 ---
 
-## Phase 4: rt-camera.js (~250 lines)
+## Phase 4: rt-camera.js — DEFERRED
 
 **Extract from**: rt-rendering.js
-**Priority**: Low — independent but not urgent
+**Status**: Deferred (low priority, high coupling)
+**Priority**: Low
 
-### Functions to Extract
+### Functions Identified
 
 | Function | Lines | Description |
 |----------|-------|-------------|
-| `setCameraPreset()` | ~170 | Named view presets (iso, top, front, etc.) |
+| `setCameraPreset()` | ~170 | Named view presets (iso, top, front, WXYZ, etc.) |
 | `switchCameraType()` | ~60 | Perspective ↔ Orthographic |
 
+### Complexity Analysis
+
+Camera extraction is more complex than other phases due to **tight coupling** with rt-rendering.js state:
+
+1. **Multiple shared references**:
+   - `camera` - The active THREE.Camera instance
+   - `controls` - OrbitControls instance
+   - `scene` - For RTPapercut integration
+   - `isOrthographic` - Boolean flag
+   - `orthographicCamera` - Stored ortho camera
+   - `originalPerspectiveCamera` - Stored perspective camera
+
+2. **Cross-module dependencies**:
+   - `Quadray.basisVectors` - For WXYZ view presets
+   - `RTPapercut.setCutplaneAxis()` - View-to-cutplane axis mapping
+   - DOM elements for checkbox state
+
+3. **Extraction options** (for future consideration):
+   - **Option A**: Pass all references as parameters (verbose)
+   - **Option B**: Create Camera module with init() that receives references
+   - **Option C**: Use dependency injection pattern
+
+### Recommendation
+
+Keep camera functions in rt-rendering.js for now. The extraction effort outweighs the benefits given the tight coupling and the fact that camera code rarely changes. Revisit if rt-rendering.js grows significantly or if camera functionality needs to be shared with other modules.
+
 ---
 
-## Execution Order
+## Summary
 
-1. **rt-primitives.js** — Start here (cleanest, highest value)
-2. **rt-grids.js** — If time permits
-3. **rt-nodes.js** — Consider for future
-4. **rt-camera.js** — Low priority
+| Phase | Module | Status | Lines |
+|-------|--------|--------|-------|
+| 1 | rt-primitives.js | ✅ Complete | 744 |
+| 2 | rt-grids.js | ✅ Complete | 480 |
+| 3 | rt-nodes.js | ✅ Complete | 772 |
+| 4 | rt-camera.js | ⏸ Deferred | — |
 
-## Post-Extraction Target
-
-| File | Target Lines | Reduction |
-|------|--------------|-----------|
-| rt-polyhedra.js | ~2,060 | -700 (-25%) |
-| rt-rendering.js | ~2,800 | -1,100 (-28%) |
-
----
-
-## Backwards Compatibility
-
-Ensure existing imports continue to work:
-
-```javascript
-// Current usage (must still work):
-import { Polyhedra } from "./rt-polyhedra.js";
-Polyhedra.polygon(1, { sides: 5 });
-Polyhedra.cube(1);
-
-// Option A: Re-export primitives from polyhedra
-// Option B: Merge Primitives into Polyhedra at export
-```
+**Total lines extracted**: ~1,996 lines
+**rt-rendering.js reduction**: 3,866 → 2,656 (-31%)
+**rt-polyhedra.js reduction**: 2,760 → 2,060 (-25%)
 
 ---
 
 *Created: 2026-01-25*
-*Status: WORKPLAN - Ready for Jan 26 execution*
+*Completed: 2026-01-26*
+*Status: COMPLETED (Phases 1-3), DEFERRED (Phase 4)*

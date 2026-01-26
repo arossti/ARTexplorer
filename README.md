@@ -327,15 +327,18 @@ The interface consists of several control panels:
 ├── index.html              ← Main entry point
 ├── art.css                 ← All application styles
 ├── modules/                ← Core JavaScript modules
-│   ├── rt-rendering.js         ← WebGL rendering engine
-│   ├── rt-polyhedra.js         ← Geometry generation (RT-pure)
-│   ├── rt-math.js              ← Quadray & RT functions
-│   ├── rt-init.js              ← Application initialization
+│   ├── rt-rendering.js         ← WebGL rendering engine, camera, scene
+│   ├── rt-init.js              ← Application initialization, UI wiring
+│   ├── rt-polyhedra.js         ← 3D polyhedra generation (RT-pure)
+│   ├── rt-primitives.js        ← 2D primitives (point, line, polygon)
+│   ├── rt-math.js              ← Quadray coords & RT functions
+│   ├── rt-grids.js             ← Cartesian/Quadray grid generation
+│   ├── rt-nodes.js             ← Vertex node geometry & caching
 │   ├── rt-matrix-planar.js     ← IVM spatial arrays (planar N×N)
 │   ├── rt-controls.js          ← Gumball interaction
-│   ├── rt-papercut.js          ← Cutplane/slicing
+│   ├── rt-papercut.js          ← Cutplane/slicing, print mode
 │   ├── rt-state-manager.js     ← State persistence
-│   ├── rt-filehandler.js       ← Import/export
+│   ├── rt-filehandler.js       ← Import/export (JSON, glTF)
 │   ├── performance-clock.js    ← Performance monitoring
 │   └── color-theory-modal.js   ← Color palettes
 ├── demos/                  ← Educational demonstrations
@@ -347,20 +350,26 @@ The interface consists of several control panels:
 
 **Core Rendering:**
 
-- `rt-rendering.js`: THREE.js scene management, camera, lighting, all polyhedra rendering
+- `rt-rendering.js`: THREE.js scene management, camera, lighting, polyhedra rendering
 - `rt-init.js`: Application orchestration, password protection, module imports, event wiring
 - `rt-state-manager.js`: Forms/instances state management, undo/redo system
 
 **Geometry & Mathematics:**
 
-- `rt-polyhedra.js`: All polyhedra definitions using RT-pure methods
+- `rt-polyhedra.js`: 3D polyhedra definitions using RT-pure methods (Platonic, Archimedean, Geodesic)
+- `rt-primitives.js`: 2D primitives (point, line, polygon) with RT-pure and classical engines
 - `rt-math.js`: Core RT library (quadrance, spread, golden ratio, circle parametrization)
 - `rt-matrix-planar.js`: IVM spatial array generation for polyhedra matrices (planar N×N)
+
+**Scene Infrastructure:**
+
+- `rt-grids.js`: Cartesian XYZ and Quadray WXYZ grid generation, basis vectors
+- `rt-nodes.js`: Vertex node geometry (RT geodesic/classical sphere), caching, close-packing
 
 **UI & Controls:**
 
 - `rt-controls.js`: ART Gumball interactive transform controls
-- `rt-papercut.js`: Print mode, dynamic cutplane, node opacity, geodesic frequency
+- `rt-papercut.js`: Print mode, dynamic cutplane, section nodes, line weights
 - `color-theory-modal.js`: Color palette management
 
 **Utilities:**
@@ -662,7 +671,7 @@ See the [LICENSE](LICENSE) file for complete terms and conditions.
 
 ---
 
-**Last Updated:** 2026-01-13
+**Last Updated:** 2026-01-26
 
 **Live Application:** [https://arossti.github.io/ARTexplorer/](https://arossti.github.io/ARTexplorer/)
 

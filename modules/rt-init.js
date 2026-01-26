@@ -113,7 +113,9 @@ function startARTexplorer(
   let cuboctaMatrixGroup, rhombicDodecMatrixGroup;
   let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup;
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup;
-  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup, quadrayCuboctahedronGroup;
+  let quadrayTetrahedronGroup,
+    quadrayTetraDeformedGroup,
+    quadrayCuboctahedronGroup;
   let cartesianGrid, ivmPlanes;
 
   // ========================================================================
@@ -252,13 +254,17 @@ function startARTexplorer(
   const polygonRadiusInput = document.getElementById("polygonRadius");
   const polygonShowFaceCheckbox = document.getElementById("polygonShowFace");
   const polygonEdgeWeightSlider = document.getElementById("polygonEdgeWeight");
-  const polygonEdgeWeightValue = document.getElementById("polygonEdgeWeightValue");
+  const polygonEdgeWeightValue = document.getElementById(
+    "polygonEdgeWeightValue"
+  );
 
   if (polygonCheckbox) {
     polygonCheckbox.addEventListener("change", () => {
       // Show/hide polygon controls when checkbox toggled
       if (polygonControls) {
-        polygonControls.style.display = polygonCheckbox.checked ? "block" : "none";
+        polygonControls.style.display = polygonCheckbox.checked
+          ? "block"
+          : "none";
       }
       updateGeometry();
     });
@@ -529,7 +535,9 @@ function startARTexplorer(
   );
   if (quadrayCuboctaCheckbox) {
     quadrayCuboctaCheckbox.addEventListener("change", () => {
-      const controls = document.getElementById("quadray-cuboctahedron-controls");
+      const controls = document.getElementById(
+        "quadray-cuboctahedron-controls"
+      );
       if (controls) {
         controls.style.display = quadrayCuboctaCheckbox.checked
           ? "block"
@@ -2232,7 +2240,8 @@ function startARTexplorer(
           // LineMaterial stores color as a Color object
           obj.userData.originalColor = obj.material.color.getHex();
           obj.material.color.setHex(0x00ffff); // Cyan highlight
-          obj.material.linewidth = (obj.userData.originalLineWidth || 0.002) * 1.5;
+          obj.material.linewidth =
+            (obj.userData.originalLineWidth || 0.002) * 1.5;
         } else if (obj.material.color) {
           // LineBasicMaterial
           obj.userData.originalColor = obj.material.color.getHex();

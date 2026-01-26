@@ -16,7 +16,7 @@ import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 import { create2DScene, initializeModalHandlers } from "./rt-demo-utils.js";
 import { RT } from "../modules/rt-math.js";
 
-let scene, camera, renderer, animate, cleanup;
+let scene, _camera, renderer, animate, cleanup;
 let circle, radiusLine, xVector, yVector, draggablePoint;
 let isDragging = false;
 let angle = Math.PI / 4; // Start at 45 degrees
@@ -73,7 +73,7 @@ export function initWeierstrassDemo() {
     cameraSize: 2.5,
   });
 
-  ({ scene, camera, renderer, animate, cleanup } = sceneData);
+  ({ scene, camera: _camera, renderer, animate, cleanup } = sceneData);
 
   // Create visual elements
   createAxes();
@@ -740,7 +740,7 @@ function updateVisualization() {
 /**
  * Set up mouse/touch interaction
  */
-function setupInteraction(container) {
+function setupInteraction(_container) {
   const canvas = renderer.domElement;
 
   const getMousePos = event => {
