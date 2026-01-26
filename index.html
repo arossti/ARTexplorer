@@ -719,7 +719,7 @@
                     title="Number of sides (n-gon prism)"
                   />
                 </div>
-                <div class="prism-quadrance-container" style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
+                <div class="prism-quadrance-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
                   <label style="font-size: 0.85em;">Q<sub>R</sub>:</label>
                   <input
                     type="number"
@@ -727,9 +727,21 @@
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 60px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em;"
                     title="Base circumradius quadrance (Q_R = R²)"
                   />
+                  <label style="font-size: 0.85em;">R:</label>
+                  <input
+                    type="number"
+                    id="prismBaseRadius"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Base circumradius (R = √Q_R)"
+                  />
+                </div>
+                <div class="prism-height-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
                   <label style="font-size: 0.85em;">Q<sub>H</sub>:</label>
                   <input
                     type="number"
@@ -737,8 +749,18 @@
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 60px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em;"
                     title="Height quadrance (Q_H = H²)"
+                  />
+                  <label style="font-size: 0.85em;">H:</label>
+                  <input
+                    type="number"
+                    id="prismHeight"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Height (H = √Q_H)"
                   />
                 </div>
                 <div class="prism-face-container" style="display: flex; gap: 10px; align-items: center;">
@@ -773,7 +795,7 @@
                     title="Number of sides (n-gon cone)"
                   />
                 </div>
-                <div class="cone-quadrance-container" style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
+                <div class="cone-quadrance-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
                   <label style="font-size: 0.85em;">Q<sub>R</sub>:</label>
                   <input
                     type="number"
@@ -781,9 +803,21 @@
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 60px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em;"
                     title="Base circumradius quadrance (Q_R = R²)"
                   />
+                  <label style="font-size: 0.85em;">R:</label>
+                  <input
+                    type="number"
+                    id="coneBaseRadius"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Base circumradius (R = √Q_R)"
+                  />
+                </div>
+                <div class="cone-height-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
                   <label style="font-size: 0.85em;">Q<sub>H</sub>:</label>
                   <input
                     type="number"
@@ -791,8 +825,18 @@
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 60px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em;"
                     title="Height quadrance (Q_H = H²)"
+                  />
+                  <label style="font-size: 0.85em;">H:</label>
+                  <input
+                    type="number"
+                    id="coneHeight"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Height (H = √Q_H)"
                   />
                 </div>
                 <div class="cone-face-container" style="display: flex; gap: 10px; align-items: center;">
