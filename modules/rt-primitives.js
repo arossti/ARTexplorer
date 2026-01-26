@@ -26,7 +26,7 @@ export const Primitives = {
    * No edges, no faces - purely a coordinate exploration tool
    * Responds to Sm/Md/Lg node sizes, NOT Packed (no edge quadrance)
    */
-  point: (halfSize = 1) => {
+  point: (_halfSize = 1) => {
     // A point has a single vertex at origin (positioned via gumball)
     const vertices = [new THREE.Vector3(0, 0, 0)];
     const edges = []; // No edges
@@ -46,7 +46,7 @@ export const Primitives = {
    * @param {Object} options - Optional configuration
    * @returns {Object} {vertices, edges, faces, metadata}
    */
-  line: (quadrance = 1, options = {}) => {
+  line: (quadrance = 1, _options = {}) => {
     // Length = √Q (only compute sqrt when needed for geometry)
     const length = Math.sqrt(quadrance);
     const halfLength = length / 2;
@@ -547,11 +547,11 @@ export const Primitives = {
     // Actually, let's use the RATIONAL CIRCLE approach with cached values
     // computed from the algebraic relationships
 
-    // For practical RT-purity: compute once, cache
-    const cos40 = Math.cos((40 * Math.PI) / 180); // Computed once
-    const sin40 = Math.sin((40 * Math.PI) / 180);
-    const cos80 = Math.cos((80 * Math.PI) / 180);
-    const sin80 = Math.sin((80 * Math.PI) / 180);
+    // Cached trig values for 40°/80° (educational - for future RT-pure alternatives)
+    // const cos40 = Math.cos((40 * Math.PI) / 180);
+    // const sin40 = Math.sin((40 * Math.PI) / 180);
+    // const cos80 = Math.cos((80 * Math.PI) / 180);
+    // const sin80 = Math.sin((80 * Math.PI) / 180);
 
     // Note: While cos(40°) isn't expressible in √ radicals alone,
     // the 9 vertices ARE equidistant on the circle. We cache these

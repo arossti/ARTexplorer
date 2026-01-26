@@ -1790,8 +1790,10 @@ export const Polyhedra = {
         }
         if (matches === 2) {
           // Additional check: exclude opposite vertices where 2 and 0 both swap
-          const pos2_i = vi.indexOf(2), pos2_j = vj.indexOf(2);
-          const pos0_i = vi.indexOf(0), pos0_j = vj.indexOf(0);
+          const pos2_i = vi.indexOf(2),
+            pos2_j = vj.indexOf(2);
+          const pos0_i = vi.indexOf(0),
+            pos0_j = vj.indexOf(0);
           const bothSwap = pos2_i !== pos2_j && pos0_i !== pos0_j;
           if (!bothSwap) {
             adjList.get(i).push(j);
@@ -1882,7 +1884,9 @@ export const Polyhedra = {
           const sorted = [...sq].sort((a, b) => a - b);
           const key = sorted.join(",");
           if (
-            !squareFaces.some(f => [...f].sort((a, b) => a - b).join(",") === key)
+            !squareFaces.some(
+              f => [...f].sort((a, b) => a - b).join(",") === key
+            )
           ) {
             squareFaces.push(sq);
           }

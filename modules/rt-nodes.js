@@ -223,9 +223,7 @@ function getClosePackedRadius(type, scale, options = {}) {
   // DIAGNOSTIC: RT validation logging (matches rt-polyhedra.js pattern)
   console.log(`🔵 Close-pack RT for ${type} (halfSize=${scale.toFixed(4)}):`);
   console.log(`  Edge quadrance Q_edge: ${Q_edge.toFixed(6)}`);
-  console.log(
-    `  Vertex quadrance Q_vertex = Q_edge/4: ${Q_vertex.toFixed(6)}`
-  );
+  console.log(`  Vertex quadrance Q_vertex = Q_edge/4: ${Q_vertex.toFixed(6)}`);
   console.log(`  Vertex radius r = √Q_vertex: ${radius.toFixed(6)}`);
   console.log(`  ✓ RT-PURE: Stayed in quadrance space until final sqrt`);
 
@@ -245,7 +243,13 @@ function getClosePackedRadius(type, scale, options = {}) {
  * @param {Object} options - Optional parameters (e.g., {sides: 3} for polygon)
  * @returns {Object} {geometry: THREE.BufferGeometry, triangles: number}
  */
-function getCachedNodeGeometry(useRT, nodeSize, polyhedronType, scale, options = {}) {
+function getCachedNodeGeometry(
+  useRT,
+  nodeSize,
+  polyhedronType,
+  scale,
+  options = {}
+) {
   // Include options.sides in cache key for polygon (different n-gons have different edge quadrance)
   const sidesKey = options.sides ? `-n${options.sides}` : "";
   const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}${sidesKey}`;
@@ -362,7 +366,8 @@ function addMatrixNodes(
 
   // Update PerformanceClock with node triangle count (for matrix nodes)
   if (window.PerformanceClock) {
-    window.PerformanceClock.timings.lastNodeTriangles = Math.round(trianglesPerNode);
+    window.PerformanceClock.timings.lastNodeTriangles =
+      Math.round(trianglesPerNode);
   }
 
   // Calculate node radius for userData (same logic as getCachedNodeGeometry)
@@ -567,7 +572,8 @@ function addRadialMatrixNodes(
 
   // Update PerformanceClock with node triangle count
   if (window.PerformanceClock) {
-    window.PerformanceClock.timings.lastNodeTriangles = Math.round(trianglesPerNode);
+    window.PerformanceClock.timings.lastNodeTriangles =
+      Math.round(trianglesPerNode);
   }
 
   // Calculate node radius for userData

@@ -222,7 +222,7 @@ export const Grids = {
    * @param {THREE.Scene} scene - Scene to add basis to
    * @returns {THREE.Group} quadrayBasis group
    */
-  createQuadrayBasis: (scene) => {
+  createQuadrayBasis: scene => {
     const quadrayBasis = new THREE.Group();
 
     // RT-PURE: Basis vectors reach (tetEdge + 1) grid intervals
@@ -433,7 +433,12 @@ export const Grids = {
    * @param {Object} visibilityState - Object mapping plane names to visibility state
    * @returns {Object} { ivmPlanes, ivmWX, ivmWY, ivmWZ, ivmXY, ivmXZ, ivmYZ }
    */
-  rebuildQuadrayGrids: (scene, existingIvmPlanes, tessellations, visibilityState = {}) => {
+  rebuildQuadrayGrids: (
+    scene,
+    existingIvmPlanes,
+    tessellations,
+    visibilityState = {}
+  ) => {
     // Remove existing grids
     if (existingIvmPlanes) {
       scene.remove(existingIvmPlanes);
@@ -533,7 +538,13 @@ export const Grids = {
    * @param {Object} visibilityState - Object with grid and basis visibility states
    * @returns {Object} { cartesianGrid, cartesianBasis, gridXY, gridXZ, gridYZ }
    */
-  rebuildCartesianGrids: (scene, existingCartesianGrid, existingCartesianBasis, divisions, visibilityState = {}) => {
+  rebuildCartesianGrids: (
+    scene,
+    existingCartesianGrid,
+    existingCartesianBasis,
+    divisions,
+    visibilityState = {}
+  ) => {
     // Remove existing grids and basis
     if (existingCartesianGrid) {
       scene.remove(existingCartesianGrid);

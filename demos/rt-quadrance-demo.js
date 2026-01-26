@@ -14,7 +14,8 @@ import { Line2 } from "three/addons/lines/Line2.js";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 import { create2DScene, initializeModalHandlers } from "./rt-demo-utils.js";
-import { RT } from "../modules/rt-math.js";
+// RT module available if needed for future RT calculations
+// import { RT } from "../modules/rt-math.js";
 
 let scene, camera, renderer, animate, cleanup;
 let circle, radiusLine, xVector, yVector, draggablePoint;
@@ -927,9 +928,11 @@ function updateVisualization() {
 
   // Calculate RT values
   const spread = (y / radius) * (y / radius); // s = y²/r² (for unit circle, just y²)
-  const qX = x * x; // Quadrance of X component
-  const qY = y * y; // Quadrance of Y component
-  const qRadius = x * x + y * y; // Should equal radius² (≈ 2.25 for r=1.5)
+
+  // RT Quadrance values (educational - available for future visualization)
+  // const qX = x * x;           // Quadrance of X component
+  // const qY = y * y;           // Quadrance of Y component
+  // const qRadius = x * x + y * y; // Should equal radius² (≈ 2.25 for r=1.5)
 
   // Normalize to unit circle for display
   const normX = x / radius;
@@ -1028,7 +1031,7 @@ function updateVisualization() {
 /**
  * Set up mouse/touch interaction
  */
-function setupInteraction(container) {
+function setupInteraction(_container) {
   const canvas = renderer.domElement;
 
   const getMousePos = event => {

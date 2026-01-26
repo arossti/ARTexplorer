@@ -208,9 +208,7 @@ export const RTFileHandler = {
       lineLength: parseFloat(
         document.getElementById("lineLength")?.value || "1"
       ),
-      lineWeight: parseInt(
-        document.getElementById("lineWeight")?.value || "2"
-      ),
+      lineWeight: parseInt(document.getElementById("lineWeight")?.value || "2"),
       // Polygon primitive parameters
       polygonSides: parseInt(
         document.getElementById("polygonSides")?.value || "3"

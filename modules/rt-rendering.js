@@ -15,7 +15,7 @@
  * @requires rt-nodes.js
  */
 
-import { RT, Quadray } from "./rt-math.js";
+import { Quadray } from "./rt-math.js";
 import { Polyhedra } from "./rt-polyhedra.js";
 import { PerformanceClock } from "./performance-clock.js";
 import { RTPapercut } from "./rt-papercut.js";
@@ -84,7 +84,9 @@ export function initScene(THREE, OrbitControls, RT) {
   let rhombicDodecMatrixGroup; // Rhombic dodecahedron matrix (space-filling array)
   let radialCubeMatrixGroup, radialRhombicDodecMatrixGroup; // Radial matrix forms (Phase 2)
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup; // Radial matrix forms (Phase 3)
-  let quadrayTetrahedronGroup, quadrayTetraDeformedGroup, quadrayCuboctahedronGroup; // Quadray demonstrators
+  let quadrayTetrahedronGroup,
+    quadrayTetraDeformedGroup,
+    quadrayCuboctahedronGroup; // Quadray demonstrators
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
@@ -380,24 +382,66 @@ export function initScene(THREE, OrbitControls, RT) {
   // ========================================================================
 
   // Delegation wrappers for node functions (maintains local API compatibility)
-  function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
-    return Nodes.getPolyhedronEdgeQuadrance(type, scale, options);
-  }
-
   function getClosePackedRadius(type, scale, options = {}) {
     return Nodes.getClosePackedRadius(type, scale, options);
   }
 
-  function getCachedNodeGeometry(useRT, nodeSize, polyhedronType, scale, options = {}) {
-    return Nodes.getCachedNodeGeometry(useRT, nodeSize, polyhedronType, scale, options);
+  function getCachedNodeGeometry(
+    useRT,
+    nodeSize,
+    polyhedronType,
+    scale,
+    options = {}
+  ) {
+    return Nodes.getCachedNodeGeometry(
+      useRT,
+      nodeSize,
+      polyhedronType,
+      scale,
+      options
+    );
   }
 
-  function addMatrixNodes(matrixGroup, matrixSize, scale, rotate45, color, nodeSize, polyhedronType = "cube", faceCoplanar = false) {
-    return Nodes.addMatrixNodes(matrixGroup, matrixSize, scale, rotate45, color, nodeSize, polyhedronType, faceCoplanar);
+  function addMatrixNodes(
+    matrixGroup,
+    matrixSize,
+    scale,
+    rotate45,
+    color,
+    nodeSize,
+    polyhedronType = "cube",
+    faceCoplanar = false
+  ) {
+    return Nodes.addMatrixNodes(
+      matrixGroup,
+      matrixSize,
+      scale,
+      rotate45,
+      color,
+      nodeSize,
+      polyhedronType,
+      faceCoplanar
+    );
   }
 
-  function addRadialMatrixNodes(matrixGroup, centerPositions, scale, color, nodeSize, polyhedronType = "cube", ivmRotation = false) {
-    return Nodes.addRadialMatrixNodes(matrixGroup, centerPositions, scale, color, nodeSize, polyhedronType, ivmRotation);
+  function addRadialMatrixNodes(
+    matrixGroup,
+    centerPositions,
+    scale,
+    color,
+    nodeSize,
+    polyhedronType = "cube",
+    ivmRotation = false
+  ) {
+    return Nodes.addRadialMatrixNodes(
+      matrixGroup,
+      centerPositions,
+      scale,
+      color,
+      nodeSize,
+      polyhedronType,
+      ivmRotation
+    );
   }
 
   // Accessors for node state (from rt-nodes.js)
@@ -579,7 +623,10 @@ export function initScene(THREE, OrbitControls, RT) {
 
       if (polyType === "line" && group.userData.parameters?.quadrance) {
         scale = group.userData.parameters.quadrance;
-      } else if (polyType === "polygon" && group.userData.parameters?.quadrance) {
+      } else if (
+        polyType === "polygon" &&
+        group.userData.parameters?.quadrance
+      ) {
         scale = group.userData.parameters.quadrance;
         nodeOptions = { sides: group.userData.parameters.sides || 3 };
       } else {
@@ -592,7 +639,13 @@ export function initScene(THREE, OrbitControls, RT) {
       // Get cached geometry (prevents repeated generation)
       // Pass polyhedronType, scale, and options for 'packed' mode calculations
       const { geometry: nodeGeometry, triangles: trianglesPerNode } =
-        getCachedNodeGeometry(getUseRTNodeGeometry(), nodeSize, polyType, scale, nodeOptions);
+        getCachedNodeGeometry(
+          getUseRTNodeGeometry(),
+          nodeSize,
+          polyType,
+          scale,
+          nodeOptions
+        );
 
       // Calculate node radius for userData (same logic as getCachedNodeGeometry)
       let nodeRadius;
@@ -633,7 +686,9 @@ export function initScene(THREE, OrbitControls, RT) {
         node.userData.isVertexNode = true;
         node.userData.nodeType = "sphere"; // "sphere" (current) vs "polyhedron" (future)
         node.userData.nodeRadius = nodeRadius;
-        node.userData.nodeGeometry = getUseRTNodeGeometry() ? "rt" : "classical";
+        node.userData.nodeGeometry = getUseRTNodeGeometry()
+          ? "rt"
+          : "classical";
 
         group.add(node);
       });
@@ -766,9 +821,15 @@ export function initScene(THREE, OrbitControls, RT) {
         sides: polygonSides,
         showFace: polygonShowFace,
       });
-      renderPolyhedron(polygonGroup, polygonData, colorPalette.polygon, opacity, {
-        lineWidth: polygonEdgeWeight,
-      });
+      renderPolyhedron(
+        polygonGroup,
+        polygonData,
+        colorPalette.polygon,
+        opacity,
+        {
+          lineWidth: polygonEdgeWeight,
+        }
+      );
       polygonGroup.userData.type = "polygon";
       polygonGroup.userData.parameters = {
         quadrance: polygonQuadrance,
@@ -1898,7 +1959,8 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Tetrahedron (4D Native)
     if (document.getElementById("showQuadrayTetrahedron")?.checked) {
-      const normalize = document.getElementById("quadrayTetraNormalize")?.checked ?? true;
+      const normalize =
+        document.getElementById("quadrayTetraNormalize")?.checked ?? true;
       const quadrayTet = Polyhedra.quadrayTetrahedron(1, { normalize });
       const eulerOK = RT.verifyEuler(
         quadrayTet.vertices.length,
@@ -1914,7 +1976,8 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Cuboctahedron (Vector Equilibrium)
     if (document.getElementById("showQuadrayCuboctahedron")?.checked) {
-      const normalize = document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
+      const normalize =
+        document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
       const quadrayCubocta = Polyhedra.quadrayCuboctahedron(1, { normalize });
       const eulerOK = RT.verifyEuler(
         quadrayCubocta.vertices.length,
@@ -2278,7 +2341,12 @@ export function initScene(THREE, OrbitControls, RT) {
    * Rebuild Quadray grids with new tessellation value - delegated to rt-grids.js
    */
   function rebuildQuadrayGrids(tessellations, visibilityState = {}) {
-    const result = Grids.rebuildQuadrayGrids(scene, ivmPlanes, tessellations, visibilityState);
+    const result = Grids.rebuildQuadrayGrids(
+      scene,
+      ivmPlanes,
+      tessellations,
+      visibilityState
+    );
 
     // Store references for later use
     ivmPlanes = result.ivmPlanes;
@@ -2294,7 +2362,13 @@ export function initScene(THREE, OrbitControls, RT) {
    * Rebuild Cartesian grids with new tessellation value - delegated to rt-grids.js
    */
   function rebuildCartesianGrids(divisions, visibilityState = {}) {
-    const result = Grids.rebuildCartesianGrids(scene, cartesianGrid, cartesianBasis, divisions, visibilityState);
+    const result = Grids.rebuildCartesianGrids(
+      scene,
+      cartesianGrid,
+      cartesianBasis,
+      divisions,
+      visibilityState
+    );
 
     // Store references for later use
     cartesianGrid = result.cartesianGrid;

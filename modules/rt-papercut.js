@@ -70,8 +70,11 @@ export const RTPapercut = {
     }
 
     // 2. Cutplane Line Weight slider
-    const cutplaneLineWeightSlider = document.getElementById("cutplaneLineWeight");
-    const cutplaneLineWeightValue = document.getElementById("cutplaneLineWeightValue");
+    const cutplaneLineWeightSlider =
+      document.getElementById("cutplaneLineWeight");
+    const cutplaneLineWeightValue = document.getElementById(
+      "cutplaneLineWeightValue"
+    );
     if (cutplaneLineWeightSlider) {
       cutplaneLineWeightSlider.addEventListener("input", e => {
         const value = parseFloat(e.target.value);
