@@ -1266,6 +1266,140 @@ export const RT = {
       return spreads[n] ? spreads[n]() : null;
     },
   },
+
+  /**
+   * Face Spreads for Platonic Solids
+   * From "Divine Proportions" Chapter 26 (N.J. Wildberger)
+   *
+   * The face spread S is the spread between adjacent faces meeting at an edge.
+   * Remarkably, all five Platonic solid face spreads are RATIONAL NUMBERS.
+   *
+   * Key insight: Tetrahedron and octahedron share the same face spread (8/9)
+   * because the six midpoints of a tetrahedron's edges form an octahedron.
+   * This has significant implications for IVM/octet truss construction.
+   *
+   * @namespace FaceSpreads
+   * @see Wildberger "Divine Proportions" Chapter 26, pp. 259-264
+   */
+  FaceSpreads: {
+    /**
+     * Tetrahedron face spread: S = 8/9
+     * Derivation: Isosceles triangle CMD with quadrances 3Q/4, 3Q/4, Q
+     * Using Isosceles Triangle Theorem: s = (Q/3Q/4)(1 - Q/3Q) = 8/9
+     *
+     * The face spread equals s(PA, PB) where P is the tetrahedron center.
+     * This is the "acute" case (faces lean inward).
+     *
+     * @returns {number} 8/9 ≈ 0.888888... (exact rational)
+     */
+    tetrahedron: () => 8 / 9,
+
+    /**
+     * Cube face spread: S = 1
+     * Adjacent faces are perpendicular (trivial case).
+     * @returns {number} 1 (exact)
+     */
+    cube: () => 1,
+
+    /**
+     * Octahedron face spread: S = 8/9
+     * Same as tetrahedron! This is because:
+     * - The six midpoints of a tetrahedron's edges form an octahedron
+     * - Slicing corner tetrahedra from a larger tet leaves a central octahedron
+     * - The shared faces have identical face spread
+     *
+     * This is the "obtuse" case (faces lean outward), but spread is the same.
+     *
+     * IVM Implication: Tetrahedra and octahedra have consistent dihedral
+     * angles at all tet-oct interfaces in the octet truss.
+     *
+     * @returns {number} 8/9 ≈ 0.888888... (exact rational)
+     */
+    octahedron: () => 8 / 9,
+
+    /**
+     * Icosahedron face spread: S = 4/9
+     * Derivation uses pentagon constants α = (5-√5)/8, β = (5+√5)/8
+     * From Isosceles Triangle Theorem: S = (4β/3α)(1 - β/3α) = 4/9
+     *
+     * @returns {number} 4/9 ≈ 0.444444... (exact rational)
+     */
+    icosahedron: () => 4 / 9,
+
+    /**
+     * Dodecahedron face spread: S = 4/5
+     * Derivation: S = (4α - 1)/(4α²) where α = (5-√5)/8
+     * Simplifies to the elegant rational 4/5.
+     *
+     * @returns {number} 4/5 = 0.8 (exact rational)
+     */
+    dodecahedron: () => 4 / 5,
+
+    /**
+     * Get face spread for a Platonic solid by name
+     * @param {string} name - Solid name: "tetrahedron", "cube", "octahedron", "icosahedron", "dodecahedron"
+     * @returns {number|null} Face spread or null if not a Platonic solid
+     *
+     * @example
+     * RT.FaceSpreads.forSolid("tetrahedron"); // 0.888...
+     * RT.FaceSpreads.forSolid("icosahedron"); // 0.444...
+     */
+    forSolid: name => {
+      const spreads = {
+        tetrahedron: RT.FaceSpreads.tetrahedron,
+        cube: RT.FaceSpreads.cube,
+        octahedron: RT.FaceSpreads.octahedron,
+        icosahedron: RT.FaceSpreads.icosahedron,
+        dodecahedron: RT.FaceSpreads.dodecahedron,
+      };
+      return spreads[name] ? spreads[name]() : null;
+    },
+  },
+
+  /**
+   * Tetrahedron Quadrance Relationships
+   * From "Divine Proportions" Chapter 26, Exercises 26.1-26.2
+   *
+   * For a tetrahedron with edge quadrance Q, these exact relationships hold.
+   * Useful for IVM/cuboctahedron derivations and vertex-center calculations.
+   *
+   * @namespace TetrahedronQuadrances
+   */
+  TetrahedronQuadrances: {
+    /**
+     * Quadrance from vertex to opposite face centroid
+     * Q(vertex → centroid) = 2Q/3 where Q is edge quadrance
+     *
+     * @param {number} edgeQ - Edge quadrance
+     * @returns {number} Quadrance to opposite face centroid
+     */
+    vertexToFaceCentroid: edgeQ => (2 * edgeQ) / 3,
+
+    /**
+     * Quadrance from vertex to tetrahedron center
+     * Q(vertex → center) = 3Q/8 where Q is edge quadrance
+     *
+     * Note: This equals the quadrance where face spread S = 8/9
+     * can be measured as s(PA, PB) from the center P.
+     *
+     * @param {number} edgeQ - Edge quadrance
+     * @returns {number} Quadrance to tetrahedron center
+     */
+    vertexToCenter: edgeQ => (3 * edgeQ) / 8,
+
+    /**
+     * Quadrance from edge midpoint to opposite edge midpoint
+     * These six midpoints form an octahedron!
+     * Q(midpoint → opposite midpoint) = Q/2 where Q is edge quadrance
+     *
+     * IVM Implication: This relationship enables deriving octahedra
+     * directly from tetrahedron edge midpoints.
+     *
+     * @param {number} edgeQ - Edge quadrance
+     * @returns {number} Quadrance between opposite edge midpoints
+     */
+    midpointToOppositeMidpoint: edgeQ => edgeQ / 2,
+  },
 };
 
 /**

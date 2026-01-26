@@ -798,11 +798,12 @@ export const Polyhedra = {
     const expectedQ = 4 * halfSize * halfSize; // Q = (2s)² = 4s²
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+    const faceSpread = RT.FaceSpreads.cube(); // S = 1 (perpendicular faces)
     console.log(
-      `Cube: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}`
+      `Cube: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread} (perpendicular)`
     );
 
-    return { vertices, edges, faces };
+    return { vertices, edges, faces, faceSpread };
   },
 
   /**
@@ -843,11 +844,12 @@ export const Polyhedra = {
     const expectedQ = 8 * halfSize * halfSize; // Q = (2√2·s)² = 8s²
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+    const faceSpread = RT.FaceSpreads.tetrahedron(); // S = 8/9 (Wildberger Ch.26)
     console.log(
-      `Tetrahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}`
+      `Tetrahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread.toFixed(6)} (8/9)`
     );
 
-    return { vertices, edges, faces };
+    return { vertices, edges, faces, faceSpread };
   },
 
   /**
@@ -979,11 +981,12 @@ export const Polyhedra = {
     const expectedQ = 2 * halfSize * halfSize; // Q = (√2·s)² = 2s²
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+    const faceSpread = RT.FaceSpreads.octahedron(); // S = 8/9 (same as tetrahedron!)
     console.log(
-      `Octahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}`
+      `Octahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread.toFixed(6)} (8/9, same as tet)`
     );
 
-    return { vertices, edges, faces };
+    return { vertices, edges, faces, faceSpread };
   },
 
   /**
@@ -1148,11 +1151,12 @@ export const Polyhedra = {
     const expectedQ = 4 * a * a;
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+    const faceSpread = RT.FaceSpreads.icosahedron(); // S = 4/9 (Wildberger Ch.26)
     console.log(
-      `Icosahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}`
+      `Icosahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread.toFixed(6)} (4/9)`
     );
 
-    return { vertices, edges, faces };
+    return { vertices, edges, faces, faceSpread };
   },
 
   /**
@@ -1961,11 +1965,12 @@ export const Polyhedra = {
     const sampleQ = RT.quadrance(vertices[edges[0][0]], vertices[edges[0][1]]);
     const validation = RT.validateEdges(vertices, edges, sampleQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+    const faceSpread = RT.FaceSpreads.dodecahedron(); // S = 4/5 (Wildberger Ch.26)
     console.log(
-      `Dodecahedron: Edge Q=${sampleQ.toFixed(6)}, Max error=${maxError.toExponential(2)}`
+      `Dodecahedron: Edge Q=${sampleQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread} (4/5)`
     );
 
-    return { vertices, edges, faces };
+    return { vertices, edges, faces, faceSpread };
   },
 
   /**
