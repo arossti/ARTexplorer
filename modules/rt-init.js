@@ -1377,6 +1377,10 @@ function startARTexplorer(
   let justFinishedDrag = false; // Track if we just completed a drag (prevent deselect on click-after-drag)
   let editingBasis = null; // Localized gumball that follows selected Forms
 
+  // Basis vector visibility state (stored when gumball activates, restored on deactivation)
+  let savedCartesianBasisVisible = null;
+  let savedQuadrayBasisVisible = null;
+
   // Object snap state (toggleable, can combine with grid snapping)
   let objectSnapVertex = false; // Snap to nearest vertex
   let objectSnapEdge = false; // Snap to nearest edge midpoint
@@ -1475,6 +1479,16 @@ function startARTexplorer(
         currentGumballTool = null;
         controls.enabled = true;
         destroyEditingBasis();
+
+        // Restore basis vectors to their previous visibility state
+        if (savedCartesianBasisVisible !== null) {
+          renderingAPI.setCartesianBasisVisible(savedCartesianBasisVisible);
+          savedCartesianBasisVisible = null;
+        }
+        if (savedQuadrayBasisVisible !== null) {
+          renderingAPI.setQuadrayBasisVisible(savedQuadrayBasisVisible);
+          savedQuadrayBasisVisible = null;
+        }
       } else {
         // Remove active from all gumball tool buttons
         document
@@ -1484,6 +1498,14 @@ function startARTexplorer(
         this.classList.add("active");
         currentGumballTool = tool;
         controls.enabled = false; // Disable orbit controls when gumball tool active
+
+        // Save and hide basis vectors to reduce visual clutter during gumball edits
+        const cartesianCheckbox = document.getElementById("showCartesianBasis");
+        const quadrayCheckbox = document.getElementById("showQuadray");
+        savedCartesianBasisVisible = cartesianCheckbox?.checked ?? false;
+        savedQuadrayBasisVisible = quadrayCheckbox?.checked ?? false;
+        renderingAPI.setCartesianBasisVisible(false);
+        renderingAPI.setQuadrayBasisVisible(false);
 
         // Create editing basis at selected Forms' center
         const selected = getSelectedPolyhedra();
@@ -1604,6 +1626,16 @@ function startARTexplorer(
       if (editingBasis) {
         scene.remove(editingBasis);
         editingBasis = null;
+      }
+
+      // Restore basis vectors to their previous visibility state
+      if (savedCartesianBasisVisible !== null) {
+        renderingAPI.setCartesianBasisVisible(savedCartesianBasisVisible);
+        savedCartesianBasisVisible = null;
+      }
+      if (savedQuadrayBasisVisible !== null) {
+        renderingAPI.setQuadrayBasisVisible(savedQuadrayBasisVisible);
+        savedQuadrayBasisVisible = null;
       }
 
       console.log("✅ Tool mode exited - orbit enabled, selection preserved");

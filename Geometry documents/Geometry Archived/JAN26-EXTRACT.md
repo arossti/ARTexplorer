@@ -123,11 +123,11 @@ State variables moved to rt-nodes.js with accessor functions:
 
 ---
 
-## Phase 4: rt-camera.js — DEFERRED
+## Phase 4: rt-camera.js — NOT PURSUED
 
 **Extract from**: rt-rendering.js
-**Status**: Deferred (low priority, high coupling)
-**Priority**: Low
+**Status**: Evaluated and declined (Jan 26, 2026)
+**Decision**: Keep in rt-rendering.js permanently
 
 ### Functions Identified
 
@@ -158,9 +158,9 @@ Camera extraction is more complex than other phases due to **tight coupling** wi
    - **Option B**: Create Camera module with init() that receives references
    - **Option C**: Use dependency injection pattern
 
-### Recommendation
+### Decision
 
-Keep camera functions in rt-rendering.js for now. The extraction effort outweighs the benefits given the tight coupling and the fact that camera code rarely changes. Revisit if rt-rendering.js grows significantly or if camera functionality needs to be shared with other modules.
+Camera functions remain in rt-rendering.js. The ~224 lines of camera code mutate shared `camera` and `controls` references, requiring awkward patterns (callbacks or wrapper objects) to extract. Given the code is stable, rarely changes, and not needed by other modules, extraction provides no benefit. This is a permanent decision—not on the roadmap for future work.
 
 ---
 
@@ -171,7 +171,7 @@ Keep camera functions in rt-rendering.js for now. The extraction effort outweigh
 | 1 | rt-primitives.js | ✅ Complete | 744 |
 | 2 | rt-grids.js | ✅ Complete | 480 |
 | 3 | rt-nodes.js | ✅ Complete | 772 |
-| 4 | rt-camera.js | ⏸ Deferred | — |
+| 4 | rt-camera.js | ❌ Not pursued | — |
 
 **Total lines extracted**: ~1,996 lines
 **rt-rendering.js reduction**: 3,866 → 2,656 (-31%)
@@ -181,4 +181,5 @@ Keep camera functions in rt-rendering.js for now. The extraction effort outweigh
 
 *Created: 2026-01-25*
 *Completed: 2026-01-26*
-*Status: COMPLETED (Phases 1-3), DEFERRED (Phase 4)*
+*Archived: 2026-01-26*
+*Status: COMPLETED — Phases 1-3 extracted; Phase 4 evaluated and declined*
