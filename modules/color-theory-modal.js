@@ -63,33 +63,6 @@ export class ColorTheoryModal {
         ],
       },
       {
-        section: "Dual Polyhedra (Reciprocal Complementary Colors)",
-        groups: [
-          {
-            name: "Dual Tetrahedron (Magenta) ↔ Geodesic Dual Tetra (Yellow)",
-            pairs: [
-              { id: "dual-tetra", label: "Dual Solid", color: "0xFF40FF" },
-              {
-                id: "dual-tetra-geodesic",
-                label: "Geodesic Dual",
-                color: "0xFFFB00",
-              },
-            ],
-          },
-          {
-            name: "Dual Icosahedron (Orange) ↔ Geodesic Dual Icosa (Cyan)",
-            pairs: [
-              { id: "dual-icosa", label: "Dual Solid", color: "0xFF9300" },
-              {
-                id: "dual-icosa-geodesic",
-                label: "Geodesic Dual",
-                color: "0x00FDFF",
-              },
-            ],
-          },
-        ],
-      },
-      {
         section: "Space-Filling & Radial Matrices",
         groups: [
           {
@@ -130,6 +103,50 @@ export class ColorTheoryModal {
                 label: "Radial Matrix",
                 color: "0x00F900",
               },
+            ],
+          },
+        ],
+      },
+      {
+        section: "Dual Polyhedra (Reciprocal Complementary Colors)",
+        groups: [
+          {
+            name: "Dual Tetrahedron (Magenta) ↔ Geodesic Dual Tetra (Yellow)",
+            pairs: [
+              { id: "dual-tetra", label: "Dual Solid", color: "0xFF40FF" },
+              {
+                id: "dual-tetra-geodesic",
+                label: "Geodesic Dual",
+                color: "0xFFFB00",
+              },
+            ],
+          },
+          {
+            name: "Dual Icosahedron (Orange) ↔ Geodesic Dual Icosa (Cyan)",
+            pairs: [
+              { id: "dual-icosa", label: "Dual Solid", color: "0xFF9300" },
+              {
+                id: "dual-icosa-geodesic",
+                label: "Geodesic Dual",
+                color: "0x00FDFF",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        section: "Environment",
+        groups: [
+          {
+            name: "Canvas Background",
+            pairs: [
+              { id: "canvas-bg", label: "3D Scene", color: "0x1A1A1A" },
+            ],
+          },
+          {
+            name: "UI Background",
+            pairs: [
+              { id: "ui-bg", label: "Panels", color: "0x2A2A2A" },
             ],
           },
         ],
@@ -176,6 +193,7 @@ export class ColorTheoryModal {
    */
   initializeAfterSceneReady() {
     this.restoreColorsFromLocalStorage();
+    this.restoreEnvironmentFromLocalStorage();
   }
 
   /**
@@ -450,14 +468,115 @@ export class ColorTheoryModal {
     // Update picker input value
     pickerEl.value = this.hexToColor(colorValue);
 
-    // Apply color to scene in real-time via rendering API
+    // Apply color to scene in real-time
+    const colorHex = parseInt(colorValue.replace("0x", ""), 16);
+
+    // Handle environment colors separately
+    if (id === "canvas-bg") {
+      if (this.renderingAPI && this.renderingAPI.setCanvasBackground) {
+        this.renderingAPI.setCanvasBackground(colorHex);
+      }
+      this.saveEnvironmentToLocalStorage();
+      return;
+    }
+
+    if (id === "ui-bg") {
+      this.setUIBackground(colorValue);
+      this.saveEnvironmentToLocalStorage();
+      return;
+    }
+
+    // Apply color to polyhedron via rendering API
     if (this.renderingAPI && this.colorIdToPolyType[id]) {
       const polyType = this.colorIdToPolyType[id];
-      const colorHex = parseInt(colorValue.replace("0x", ""), 16);
       this.renderingAPI.updatePolyhedronColor(polyType, colorHex);
 
       // Save updated color palette to StateManager
       this.saveColorPaletteToStateManager();
+    }
+  }
+
+  /**
+   * Set UI background color for panels
+   * @param {string} colorValue - Hex color (0xRRGGBB format)
+   */
+  setUIBackground(colorValue) {
+    const rgb = this.hexToRgb(colorValue);
+    const cssColor = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+    const cssColorAlpha = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.95)`;
+
+    // Update CSS custom property for UI panels
+    document.documentElement.style.setProperty("--ui-bg-color", cssColor);
+    document.documentElement.style.setProperty("--ui-bg-color-alpha", cssColorAlpha);
+
+    // Update key UI elements directly
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar) sidebar.style.background = cssColor;
+
+    const coordinatesPanel = document.getElementById("coordinates-panel");
+    if (coordinatesPanel) coordinatesPanel.style.background = cssColorAlpha;
+  }
+
+  /**
+   * Save environment settings to localStorage
+   */
+  saveEnvironmentToLocalStorage() {
+    try {
+      const canvasInput = document.getElementById("canvas-bg-input");
+      const uiInput = document.getElementById("ui-bg-input");
+
+      const envSettings = {
+        canvasBackground: canvasInput ? canvasInput.value : "0x1A1A1A",
+        uiBackground: uiInput ? uiInput.value : "0x2A2A2A",
+      };
+
+      localStorage.setItem("artexplorer-environment", JSON.stringify(envSettings));
+
+      // Also save to StateManager for file export
+      if (window.RTStateManager) {
+        window.RTStateManager.setEnvironmentBackgrounds(
+          envSettings.canvasBackground,
+          envSettings.uiBackground
+        );
+      }
+    } catch (e) {
+      console.warn("Could not save environment settings:", e);
+    }
+  }
+
+  /**
+   * Load and apply environment settings from localStorage
+   */
+  restoreEnvironmentFromLocalStorage() {
+    try {
+      const saved = localStorage.getItem("artexplorer-environment");
+      if (!saved) return;
+
+      const envSettings = JSON.parse(saved);
+
+      // Apply canvas background
+      if (envSettings.canvasBackground && this.renderingAPI && this.renderingAPI.setCanvasBackground) {
+        const colorHex = parseInt(envSettings.canvasBackground.replace("0x", ""), 16);
+        this.renderingAPI.setCanvasBackground(colorHex);
+      }
+
+      // Apply UI background
+      if (envSettings.uiBackground) {
+        this.setUIBackground(envSettings.uiBackground);
+      }
+
+      // Update modal inputs if they exist
+      const canvasInput = document.getElementById("canvas-bg-input");
+      if (canvasInput && envSettings.canvasBackground) {
+        canvasInput.value = envSettings.canvasBackground;
+      }
+
+      const uiInput = document.getElementById("ui-bg-input");
+      if (uiInput && envSettings.uiBackground) {
+        uiInput.value = envSettings.uiBackground;
+      }
+    } catch (e) {
+      console.warn("Could not restore environment settings:", e);
     }
   }
 
@@ -518,6 +637,56 @@ export class ColorTheoryModal {
     } catch (e) {
       console.warn("Could not clear color palette from localStorage:", e);
     }
+  }
+
+  /**
+   * Export environment settings for file save
+   * @returns {Object} Environment settings object
+   */
+  exportEnvironment() {
+    const canvasInput = document.getElementById("canvas-bg-input");
+    const uiInput = document.getElementById("ui-bg-input");
+
+    return {
+      canvasBackground: canvasInput ? canvasInput.value : "0x1A1A1A",
+      uiBackground: uiInput ? uiInput.value : "0x2A2A2A",
+    };
+  }
+
+  /**
+   * Import environment settings from file load
+   * @param {Object} envSettings - Environment settings object
+   */
+  importEnvironment(envSettings) {
+    if (!envSettings) return;
+
+    // Apply canvas background
+    if (envSettings.canvasBackground && this.renderingAPI && this.renderingAPI.setCanvasBackground) {
+      const colorHex = parseInt(envSettings.canvasBackground.replace("0x", ""), 16);
+      this.renderingAPI.setCanvasBackground(colorHex);
+
+      // Update modal input if it exists
+      const canvasInput = document.getElementById("canvas-bg-input");
+      if (canvasInput) {
+        canvasInput.value = envSettings.canvasBackground;
+        this.updateColor("canvas-bg");
+      }
+    }
+
+    // Apply UI background
+    if (envSettings.uiBackground) {
+      this.setUIBackground(envSettings.uiBackground);
+
+      // Update modal input if it exists
+      const uiInput = document.getElementById("ui-bg-input");
+      if (uiInput) {
+        uiInput.value = envSettings.uiBackground;
+        this.updateColor("ui-bg");
+      }
+    }
+
+    // Save to localStorage for persistence
+    this.saveEnvironmentToLocalStorage();
   }
 
   /**

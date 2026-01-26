@@ -183,3 +183,195 @@ Camera functions remain in rt-rendering.js. The ~224 lines of camera code mutate
 *Completed: 2026-01-26*
 *Archived: 2026-01-26*
 *Status: COMPLETED — Phases 1-3 extracted; Phase 4 evaluated and declined*
+
+---
+
+# COORDINATES: Bottom Panel UI Relocation
+
+## Overview
+
+Relocate coordinate and rotation input fields from the Controls section in the right panel to a new fixed panel along the bottom of the canvas. This improves workflow by keeping coordinate data visible while manipulating objects.
+
+### Current Location (index.html lines 1522-1754)
+
+The Controls section contains these coordinate/rotation groups:
+- **XYZ Coordinates** (lines 1522-1554): X, Y, Z position inputs
+- **WXYZ Coordinates** (lines 1556-1597): W, X, Y, Z quadray position inputs
+- **XYZ Rotation (°)** (lines 1599-1631): X, Y, Z rotation in degrees
+- **XYZ Rotation (s)** (lines 1633-1665): X, Y, Z rotation in spread
+- **WXYZ Rotation (°)** (lines 1667-1708): W, X, Y, Z rotation in degrees
+- **WXYZ Rotation (s)** (lines 1710-1754): W, X, Y, Z rotation in spread
+
+### Target Location
+
+New `#coordinates-panel` fixed to bottom of `#canvas-container`, horizontally arranged.
+
+---
+
+## Stage 1: CREATE — Build Bottom Panel Structure
+
+### 1.1 HTML Structure (index.html)
+
+Add new panel inside `#canvas-container` after the canvas element:
+
+```html
+<div id="coordinates-panel">
+  <div class="coords-group">
+    <label class="coords-group-label">XYZ Position</label>
+    <div class="coords-row">
+      <!-- X, Y, Z inputs -->
+    </div>
+  </div>
+  <div class="coords-group">
+    <label class="coords-group-label">WXYZ Position</label>
+    <div class="coords-row">
+      <!-- W, X, Y, Z inputs -->
+    </div>
+  </div>
+  <div class="coords-divider"></div>
+  <div class="coords-group">
+    <label class="coords-group-label">XYZ Rotation</label>
+    <div class="coords-row">
+      <!-- Degrees row -->
+    </div>
+    <div class="coords-row">
+      <!-- Spread row -->
+    </div>
+  </div>
+  <div class="coords-group">
+    <label class="coords-group-label">WXYZ Rotation</label>
+    <div class="coords-row">
+      <!-- Degrees row -->
+    </div>
+    <div class="coords-row">
+      <!-- Spread row -->
+    </div>
+  </div>
+</div>
+```
+
+### 1.2 CSS Styles (art.css)
+
+```css
+#coordinates-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(42, 42, 42, 0.95);
+  border-top: 1px solid #444;
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  backdrop-filter: blur(4px);
+  z-index: 100;
+}
+
+.coords-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.coords-group-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.coords-row {
+  display: flex;
+  gap: 8px;
+}
+
+.coords-divider {
+  width: 1px;
+  height: 40px;
+  background: #444;
+}
+```
+
+### 1.3 Validation Checklist
+
+- [ ] Panel renders at bottom of canvas
+- [ ] Panel does not overlap with 3D scene
+- [ ] Existing styles (`.coord-input`, `.label-axis-*`, etc.) apply correctly
+- [ ] Panel is responsive (doesn't break on narrow windows)
+
+---
+
+## Stage 2: REFINE — Wire Up Functionality
+
+### 2.1 Preserve Element IDs
+
+All input IDs must remain identical for existing JavaScript bindings:
+- `coordX`, `coordY`, `coordZ`
+- `coordW`, `coordX2`, `coordY2`, `coordZ2`
+- `rotXDegrees`, `rotYDegrees`, `rotZDegrees`
+- `rotXSpread`, `rotYSpread`, `rotZSpread`
+- `rotWDegrees`, `rotXQDegrees`, `rotYQDegrees`, `rotZQDegrees`
+- `rotWSpread`, `rotXQSpread`, `rotYQSpread`, `rotZQSpread`
+
+### 2.2 Test Event Bindings
+
+Verify in rt-init.js that all coordinate input event handlers still work:
+- Manual coordinate entry updates object position
+- Object selection populates coordinate fields
+- Rotation inputs update object orientation
+- Spread ↔ Degrees conversion works bidirectionally
+
+### 2.3 Layout Refinements
+
+- Add unit labels (°/s) inline with rotation inputs
+- Consider collapsible/expandable state for smaller screens
+- Ensure tab order flows naturally left-to-right
+
+### 2.4 Validation Checklist
+
+- [ ] All coordinate inputs respond to manual entry
+- [ ] Selection updates populate all fields
+- [ ] Rotation in degrees updates spread (and vice versa)
+- [ ] Gumball transformations update coordinate display
+
+---
+
+## Stage 3: REMOVE — Clean Up Controls Section
+
+### 3.1 Remove from Controls Section
+
+Delete these elements from `#controls-section` in index.html:
+- Lines 1522-1554: XYZ Coordinates block
+- Lines 1556-1597: WXYZ Coordinates block
+- Lines 1599-1631: XYZ Rotation (°) block
+- Lines 1633-1665: XYZ Rotation (s) block
+- Lines 1667-1708: WXYZ Rotation (°) block
+- Lines 1710-1754: WXYZ Rotation (s) block
+
+### 3.2 Adjust Controls Section Layout
+
+- Remove extra spacing that was between coordinate blocks
+- Verify remaining Controls content (Tool Mode, Grid Snapping, Object Snaps, NOW button) still displays correctly
+
+### 3.3 Final Validation
+
+- [ ] No duplicate element IDs in DOM
+- [ ] Controls section renders cleanly without orphan styles
+- [ ] All coordinate functionality works from new location
+- [ ] No console errors related to missing elements
+
+---
+
+## File Changes Summary
+
+| File | Changes |
+|------|---------|
+| index.html | Add `#coordinates-panel` in `#canvas-container`; remove coordinate blocks from `#controls-section` |
+| art.css | Add bottom panel styles (~40 lines) |
+| rt-init.js | No changes expected (IDs preserved) |
+
+---
+
+*Created: 2026-01-26*
+*Status: PLANNING*

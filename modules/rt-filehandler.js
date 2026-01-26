@@ -341,6 +341,10 @@ export const RTFileHandler = {
         // Legacy form states (kept for backwards compatibility)
         forms: formStates,
         activeForm: activeForm,
+        // Color palette and environment backgrounds
+        colorPalette: this.stateManager.getColorPalette(),
+        canvasBackground: this.stateManager.state.environment.canvasBackground,
+        uiBackground: this.stateManager.state.environment.uiBackground,
       },
 
       instances: this.stateManager.state.instances.map(instance => ({
@@ -679,6 +683,33 @@ export const RTFileHandler = {
         } catch (e) {
           console.warn("Could not save color palette to localStorage:", e);
         }
+      }
+
+      // Restore environment backgrounds
+      if (stateData.environment?.canvasBackground || stateData.environment?.uiBackground) {
+        const envSettings = {
+          canvasBackground: stateData.environment.canvasBackground,
+          uiBackground: stateData.environment.uiBackground,
+        };
+
+        // Save to StateManager
+        this.stateManager.setEnvironmentBackgrounds(
+          envSettings.canvasBackground,
+          envSettings.uiBackground
+        );
+
+        // Apply via colorTheoryModal if available
+        if (window.colorTheoryModal) {
+          window.colorTheoryModal.importEnvironment(envSettings);
+        } else {
+          // Apply directly if modal not available
+          if (envSettings.canvasBackground && window.renderingAPI?.setCanvasBackground) {
+            const colorHex = parseInt(envSettings.canvasBackground.replace("0x", ""), 16);
+            window.renderingAPI.setCanvasBackground(colorHex);
+          }
+        }
+
+        console.log("✅ Environment backgrounds restored");
       }
 
       // Restore instances

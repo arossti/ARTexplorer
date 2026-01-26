@@ -88,6 +88,9 @@ export const RTStateManager = {
     environment: {
       // Color palette (user customizations override defaults)
       colorPalette: null, // null means use defaults from rt-rendering.js
+      // Background colors
+      canvasBackground: "0x1A1A1A", // Canvas/scene background
+      uiBackground: "0x2A2A2A", // UI panel background
     },
   },
 
@@ -667,6 +670,32 @@ export const RTStateManager = {
     console.log("✅ Color palette cleared (reverted to defaults)");
   },
 
+  /**
+   * Set environment backgrounds
+   * @param {string} canvasBackground - Canvas background color (0xRRGGBB format)
+   * @param {string} uiBackground - UI background color (0xRRGGBB format)
+   */
+  setEnvironmentBackgrounds(canvasBackground, uiBackground) {
+    if (canvasBackground) {
+      this.state.environment.canvasBackground = canvasBackground;
+    }
+    if (uiBackground) {
+      this.state.environment.uiBackground = uiBackground;
+    }
+    this.trackModification("updateEnvironment");
+  },
+
+  /**
+   * Get environment backgrounds
+   * @returns {Object} {canvasBackground, uiBackground}
+   */
+  getEnvironmentBackgrounds() {
+    return {
+      canvasBackground: this.state.environment.canvasBackground,
+      uiBackground: this.state.environment.uiBackground,
+    };
+  },
+
   // ========================================================================
   // EXPORT/IMPORT (Future)
   // ========================================================================
@@ -682,6 +711,8 @@ export const RTStateManager = {
       count: this.state.instances.length,
       environment: {
         colorPalette: this.state.environment.colorPalette, // Include custom colors
+        canvasBackground: this.state.environment.canvasBackground,
+        uiBackground: this.state.environment.uiBackground,
       },
       instances: this.state.instances.map(instance => ({
         id: instance.id,

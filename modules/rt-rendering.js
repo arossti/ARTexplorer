@@ -2489,6 +2489,27 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   /**
+   * Set canvas background color
+   * @param {number} color - Hex color (0xRRGGBB format)
+   */
+  function setCanvasBackground(color) {
+    if (scene) {
+      scene.background = new THREE.Color(color);
+    }
+  }
+
+  /**
+   * Get current canvas background color
+   * @returns {number} Hex color value
+   */
+  function getCanvasBackground() {
+    if (scene && scene.background) {
+      return scene.background.getHex();
+    }
+    return 0x1a1a1a; // Default
+  }
+
+  /**
    * Create a polyhedron group by type name (Factory for instance restoration)
    * @param {string} type - Polyhedron type (e.g., 'cube', 'tetrahedron', 'geodesicIcosahedron')
    * @param {Object} options - Creation options
@@ -3051,6 +3072,8 @@ export function initScene(THREE, OrbitControls, RT) {
     getPolyhedronColor,
     updatePolyhedronColor,
     exportColorPalette,
+    setCanvasBackground,
+    getCanvasBackground,
 
     // Instance restoration factory (for rt-filehandler.js)
     createPolyhedronByType,
