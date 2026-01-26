@@ -3080,7 +3080,8 @@ export function initScene(THREE, OrbitControls, RT) {
         color = colorPalette.tetrahedron || 0xffffff;
         break;
       case "octaMatrix":
-        color = colorPalette.octahedronMatrix || colorPalette.octahedron || 0xffffff;
+        color =
+          colorPalette.octahedronMatrix || colorPalette.octahedron || 0xffffff;
         break;
       case "cuboctaMatrix":
         color = colorPalette.cuboctahedron || 0xffffff;
@@ -3095,13 +3096,20 @@ export function initScene(THREE, OrbitControls, RT) {
         color = colorPalette.rhombicDodecahedron || 0xffffff;
         break;
       case "radialTetMatrix":
-        color = colorPalette.radialTetrahedron || colorPalette.tetrahedron || 0xffffff;
+        color =
+          colorPalette.radialTetrahedron ||
+          colorPalette.tetrahedron ||
+          0xffffff;
         break;
       case "radialOctMatrix":
-        color = colorPalette.radialOctahedron || colorPalette.octahedron || 0xffffff;
+        color =
+          colorPalette.radialOctahedron || colorPalette.octahedron || 0xffffff;
         break;
       case "radialVEMatrix":
-        color = colorPalette.radialCuboctahedron || colorPalette.cuboctahedron || 0xffffff;
+        color =
+          colorPalette.radialCuboctahedron ||
+          colorPalette.cuboctahedron ||
+          0xffffff;
         break;
       default:
         color = 0xffffff;
