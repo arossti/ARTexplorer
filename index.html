@@ -160,7 +160,132 @@
     </div>
 
     <div id="container">
-      <div id="canvas-container"></div>
+      <div id="canvas-container">
+        <!-- Bottom Coordinates Panel -->
+        <div id="coordinates-panel">
+          <!-- XYZ Position -->
+          <div class="coords-group">
+            <label class="coords-group-label">XYZ Position</label>
+            <div class="coords-row">
+              <div class="coord-container">
+                <label class="label-axis label-axis-x">X:</label>
+                <input type="text" id="coordX" class="coord-input axis-x" value="0.0000" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-y">Y:</label>
+                <input type="text" id="coordY" class="coord-input axis-y" value="0.0000" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-z">Z:</label>
+                <input type="text" id="coordZ" class="coord-input axis-z" value="0.0000" />
+              </div>
+            </div>
+          </div>
+
+          <!-- WXYZ Position -->
+          <div class="coords-group">
+            <label class="coords-group-label">WXYZ Position</label>
+            <div class="coords-row">
+              <div class="coord-container">
+                <label class="label-axis label-axis-qw">W:</label>
+                <input type="text" id="coordW" class="coord-input axis-qw" value="0.0000" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qx">X:</label>
+                <input type="text" id="coordX2" class="coord-input axis-qx" value="0.0000" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qy">Y:</label>
+                <input type="text" id="coordY2" class="coord-input axis-qy" value="0.0000" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qz">Z:</label>
+                <input type="text" id="coordZ2" class="coord-input axis-qz" value="0.0000" />
+              </div>
+            </div>
+          </div>
+
+          <div class="coords-divider"></div>
+
+          <!-- XYZ Rotation -->
+          <div class="coords-group">
+            <label class="coords-group-label">XYZ Rotation</label>
+            <div class="coords-row">
+              <span class="coords-unit-label">°</span>
+              <div class="coord-container">
+                <label class="label-axis label-axis-x">X:</label>
+                <input type="text" id="rotXDegrees" class="coord-input axis-x" value="0.00" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-y">Y:</label>
+                <input type="text" id="rotYDegrees" class="coord-input axis-y" value="0.00" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-z">Z:</label>
+                <input type="text" id="rotZDegrees" class="coord-input axis-z" value="0.00" />
+              </div>
+            </div>
+            <div class="coords-row">
+              <span class="coords-unit-label">s</span>
+              <div class="coord-container">
+                <label class="label-axis label-axis-x">X:</label>
+                <input type="text" id="rotXSpread" class="coord-input axis-x" value="0.00" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-y">Y:</label>
+                <input type="text" id="rotYSpread" class="coord-input axis-y" value="0.00" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-z">Z:</label>
+                <input type="text" id="rotZSpread" class="coord-input axis-z" value="0.00" />
+              </div>
+            </div>
+          </div>
+
+          <!-- WXYZ Rotation -->
+          <div class="coords-group">
+            <label class="coords-group-label">WXYZ Rotation</label>
+            <div class="coords-row">
+              <span class="coords-unit-label">°</span>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qw">W:</label>
+                <input type="text" id="rotWDegrees" class="coord-input axis-qw" value="0.00" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qx">X:</label>
+                <input type="text" id="rotXQDegrees" class="coord-input axis-qx" value="0.00" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qy">Y:</label>
+                <input type="text" id="rotYQDegrees" class="coord-input axis-qy" value="0.00" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qz">Z:</label>
+                <input type="text" id="rotZQDegrees" class="coord-input axis-qz" value="0.00" />
+              </div>
+            </div>
+            <div class="coords-row">
+              <span class="coords-unit-label">s</span>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qw">W:</label>
+                <input type="text" id="rotWSpread" class="coord-input axis-qw" value="0.00" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qx">X:</label>
+                <input type="text" id="rotXQSpread" class="coord-input axis-qx" value="0.00" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qy">Y:</label>
+                <input type="text" id="rotYQSpread" class="coord-input axis-qy" value="0.00" />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qz">Z:</label>
+                <input type="text" id="rotZQSpread" class="coord-input axis-qz" value="0.00" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="controls-panel">
         <div class="panel-header">
           <div>
@@ -1517,240 +1642,6 @@
               <div class="now-counter">
                 Deposited: <span id="nowCount">0</span>
               </div>
-            </div>
-
-            <!-- Cartesian Coordinates (XYZ) -->
-            <div class="control-item spacing-top-large">
-              <label class="label-section">XYZ Coordinates</label>
-              <div class="coordinate-inputs">
-                <div class="coord-container">
-                  <label class="label-axis label-axis-x">X:</label>
-                  <input
-                    type="text"
-                    id="coordX"
-                    class="coord-input axis-x"
-                    value="0.0000"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-y">Y:</label>
-                  <input
-                    type="text"
-                    id="coordY"
-                    class="coord-input axis-y"
-                    value="0.0000"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-z">Z:</label>
-                  <input
-                    type="text"
-                    id="coordZ"
-                    class="coord-input axis-z"
-                    value="0.0000"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Quadray Coordinates (WXYZ) -->
-            <div class="control-item spacing-top-large">
-              <label class="label-section">WXYZ Coordinates</label>
-              <div class="coordinate-inputs">
-                <div class="coord-container">
-                  <label class="label-axis label-axis-w">W:</label>
-                  <input
-                    type="text"
-                    id="coordW"
-                    class="coord-input axis-w"
-                    value="0.0000"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-x">X:</label>
-                  <input
-                    type="text"
-                    id="coordX2"
-                    class="coord-input axis-x"
-                    value="0.0000"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-y">Y:</label>
-                  <input
-                    type="text"
-                    id="coordY2"
-                    class="coord-input axis-y"
-                    value="0.0000"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-z">Z:</label>
-                  <input
-                    type="text"
-                    id="coordZ2"
-                    class="coord-input axis-z"
-                    value="0.0000"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- XYZ Rotation (Degrees °) -->
-            <div class="control-item spacing-top-large">
-              <label class="label-section">XYZ Rotation (°)</label>
-              <div class="coordinate-inputs">
-                <div class="coord-container">
-                  <label class="label-axis label-axis-x">X:</label>
-                  <input
-                    type="text"
-                    id="rotXDegrees"
-                    class="coord-input axis-x"
-                    value="0.00"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-y">Y:</label>
-                  <input
-                    type="text"
-                    id="rotYDegrees"
-                    class="coord-input axis-y"
-                    value="0.00"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-z">Z:</label>
-                  <input
-                    type="text"
-                    id="rotZDegrees"
-                    class="coord-input axis-z"
-                    value="0.00"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- XYZ Rotation (Spread s) -->
-            <div class="control-item spacing-top-small">
-              <label class="label-section">XYZ Rotation (s)</label>
-              <div class="coordinate-inputs">
-                <div class="coord-container">
-                  <label class="label-axis label-axis-x">X:</label>
-                  <input
-                    type="text"
-                    id="rotXSpread"
-                    class="coord-input axis-x"
-                    value="0.00"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-y">Y:</label>
-                  <input
-                    type="text"
-                    id="rotYSpread"
-                    class="coord-input axis-y"
-                    value="0.00"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-z">Z:</label>
-                  <input
-                    type="text"
-                    id="rotZSpread"
-                    class="coord-input axis-z"
-                    value="0.00"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- WXYZ Rotation (Degrees °) -->
-            <div class="control-item spacing-top-small">
-              <label class="label-section">WXYZ Rotation (°)</label>
-              <div class="coordinate-inputs">
-                <div class="coord-container">
-                  <label class="label-axis label-axis-w">W:</label>
-                  <input
-                    type="text"
-                    id="rotWDegrees"
-                    class="coord-input axis-w"
-                    value="0.00"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-x">X:</label>
-                  <input
-                    type="text"
-                    id="rotXQDegrees"
-                    class="coord-input axis-x"
-                    value="0.00"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-y">Y:</label>
-                  <input
-                    type="text"
-                    id="rotYQDegrees"
-                    class="coord-input axis-y"
-                    value="0.00"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-z">Z:</label>
-                  <input
-                    type="text"
-                    id="rotZQDegrees"
-                    class="coord-input axis-z"
-                    value="0.00"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- WXYZ Rotation (Spread s) -->
-            <div class="control-item spacing-top-small">
-              <label class="label-section">WXYZ Rotation (s)</label>
-              <div class="coordinate-inputs">
-                <div class="coord-container">
-                  <label class="label-axis label-axis-w">W:</label>
-                  <input
-                    type="text"
-                    id="rotWSpread"
-                    class="coord-input axis-w"
-                    value="0.00"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-x">X:</label>
-                  <input
-                    type="text"
-                    id="rotXQSpread"
-                    class="coord-input axis-x"
-                    value="0.00"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-y">Y:</label>
-                  <input
-                    type="text"
-                    id="rotYQSpread"
-                    class="coord-input axis-y"
-                    value="0.00"
-                  />
-                </div>
-                <div class="coord-container">
-                  <label class="label-axis label-axis-z">Z:</label>
-                  <input
-                    type="text"
-                    id="rotZQSpread"
-                    class="coord-input axis-z"
-                    value="0.00"
-                  />
-                </div>
-              </div>
-              <p class="info-text spacing-top-small">
-                s = sin²(θ), bounded 0.00-1.00
-              </p>
             </div>
           </div>
         </div>

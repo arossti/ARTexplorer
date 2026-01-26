@@ -606,32 +606,54 @@ button:disabled {
   text-align: center;
 }
 
-/* Axis-specific label colors */
+/* Axis-specific label colors - Cartesian XYZ */
 .label-axis-x {
-  color: #ff6666;
+  color: #ff6666; /* Red */
 }
 .label-axis-y {
-  color: #66ff66;
+  color: #66ff66; /* Green */
 }
 .label-axis-z {
-  color: #6666ff;
-}
-.label-axis-w {
-  color: #ffff66;
+  color: #6666ff; /* Blue */
 }
 
-/* Coordinate Input Axis Borders */
+/* Axis-specific label colors - Quadray WXYZ */
+.label-axis-qw {
+  color: #ffff66; /* Yellow */
+}
+.label-axis-qx {
+  color: #ff6666; /* Red */
+}
+.label-axis-qy {
+  color: #6666ff; /* Blue */
+}
+.label-axis-qz {
+  color: #66ff66; /* Green */
+}
+
+/* Coordinate Input Axis Borders - Cartesian XYZ */
 .coord-input.axis-x {
-  border-left: 2px solid #ff6666;
+  border-left: 2px solid #ff6666; /* Red */
 }
 .coord-input.axis-y {
-  border-left: 2px solid #66ff66;
+  border-left: 2px solid #66ff66; /* Green */
 }
 .coord-input.axis-z {
-  border-left: 2px solid #6666ff;
+  border-left: 2px solid #6666ff; /* Blue */
 }
-.coord-input.axis-w {
-  border-left: 2px solid #ffff66;
+
+/* Coordinate Input Axis Borders - Quadray WXYZ */
+.coord-input.axis-qw {
+  border-left: 2px solid #ffff66; /* Yellow */
+}
+.coord-input.axis-qx {
+  border-left: 2px solid #ff6666; /* Red */
+}
+.coord-input.axis-qy {
+  border-left: 2px solid #6666ff; /* Blue */
+}
+.coord-input.axis-qz {
+  border-left: 2px solid #66ff66; /* Green */
 }
 
 /* Nested Content Spacing */
@@ -1835,4 +1857,77 @@ button:disabled {
 
 .btn-icon {
   margin-right: 4px;
+}
+
+/* ========================================================================
+   BOTTOM COORDINATES PANEL
+   ======================================================================== */
+
+#coordinates-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(42, 42, 42, 0.95);
+  border-top: 1px solid #444;
+  padding: 8px 15px;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  backdrop-filter: blur(4px);
+  z-index: 100;
+}
+
+.coords-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.coords-group-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.coords-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Compact coordinate inputs for bottom panel */
+#coordinates-panel .coord-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+
+#coordinates-panel .coord-input {
+  width: 70px;
+  padding: 4px 6px 4px 22px !important;
+  font-size: 11px;
+}
+
+#coordinates-panel .label-axis {
+  position: absolute;
+  left: 6px;
+  font-size: 10px;
+}
+
+.coords-divider {
+  width: 1px;
+  height: 50px;
+  background: #444;
+  align-self: center;
+}
+
+.coords-unit-label {
+  font-size: 11px;
+  color: #666;
+  min-width: 12px;
+  text-align: center;
 }
