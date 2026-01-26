@@ -303,7 +303,13 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
+      // Primitives (0D, 1D, 2D, 3D)
       pointGroup,
+      lineGroup,
+      polygonGroup,
+      prismGroup,
+      coneGroup,
+      // Regular polyhedra
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -313,21 +319,25 @@ export function initScene(THREE, OrbitControls, RT) {
       dualIcosahedronGroup,
       cuboctahedronGroup,
       rhombicDodecahedronGroup,
+      // Geodesic polyhedra
       geodesicIcosahedronGroup,
       geodesicTetrahedronGroup,
       geodesicOctahedronGroup,
       geodesicDualTetrahedronGroup,
       geodesicDualIcosahedronGroup,
+      // Planar matrices
       cubeMatrixGroup,
       tetMatrixGroup,
       octaMatrixGroup,
       cuboctaMatrixGroup,
       rhombicDodecMatrixGroup,
+      // Radial matrices
       radialCubeMatrixGroup,
       radialRhombicDodecMatrixGroup,
       radialTetMatrixGroup,
       radialOctMatrixGroup,
       radialVEMatrixGroup,
+      // Quadray demonstrators
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
       quadrayCuboctahedronGroup,
