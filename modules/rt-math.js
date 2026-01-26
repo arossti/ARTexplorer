@@ -501,6 +501,83 @@ export const RT = {
         zero: new this.Symbolic(0, 0, 1), // 0 = (0 + 0√5)/1
       };
     },
+
+    /**
+     * Pentagon-specific constants from Exercise 14.3 (p.166)
+     * Cached values for RT-pure pentagon/decagon vertex generation
+     *
+     * Key relationships (Wildberger "Divine Proportions"):
+     *   α + β = 5/4
+     *   α · β = 5/16
+     *   β/α = φ² (golden ratio squared!)
+     *
+     * All values computed once and cached for IEEE 754 precision consistency.
+     *
+     * @namespace pentagon
+     * @memberof RT.PurePhi
+     */
+    pentagon: {
+      /**
+       * α = (5-√5)/8 ≈ 0.345491502812526
+       * Spread at base vertices of corner triangle
+       */
+      alpha: (() => {
+        const cached = (5 - Math.sqrt(5)) / 8;
+        return () => cached;
+      })(),
+
+      /**
+       * β = (5+√5)/8 ≈ 0.904508497187474
+       * Star spread (spread at apex of corner triangle)
+       */
+      beta: (() => {
+        const cached = (5 + Math.sqrt(5)) / 8;
+        return () => cached;
+      })(),
+
+      /**
+       * cos(72°) = (√5-1)/4 = 1/(2φ)
+       * Algebraic identity - no trig function needed
+       */
+      cos72: (() => {
+        const cached = (Math.sqrt(5) - 1) / 4;
+        return () => cached;
+      })(),
+
+      /**
+       * cos(144°) = -(1+√5)/4 = -φ/2
+       * Algebraic identity - no trig function needed
+       */
+      cos144: (() => {
+        const cached = -(1 + Math.sqrt(5)) / 4;
+        return () => cached;
+      })(),
+
+      /**
+       * sin(72°) = √(10 + 2√5)/4
+       * Nested radical, computed once and cached
+       */
+      sin72: (() => {
+        const cached = Math.sqrt(10 + 2 * Math.sqrt(5)) / 4;
+        return () => cached;
+      })(),
+
+      /**
+       * sin(144°) = √(10 - 2√5)/4
+       * Nested radical, computed once and cached
+       */
+      sin144: (() => {
+        const cached = Math.sqrt(10 - 2 * Math.sqrt(5)) / 4;
+        return () => cached;
+      })(),
+
+      /**
+       * Edge-to-diagonal ratio = φ (golden ratio)
+       * In a regular pentagon: diagonal/edge = φ
+       * @returns {number} φ ≈ 1.618033988749895
+       */
+      edgeToDiagonalRatio: () => RT.PurePhi.value(),
+    },
   },
 
   /**
@@ -1012,6 +1089,316 @@ export const RT = {
       const tolerance = 1 / Math.pow(60, precision + 3); // Tolerance based on precision
       return Math.abs(decimalDegrees - reconstructed) < tolerance;
     },
+  },
+
+  /**
+   * Spread Polynomials - Wildberger's Sₖ(s) for polygon diagonal quadrances
+   * From "Divine Proportions" Chapter 14, Exercise 14.2 (p. 166)
+   *
+   * For regular n-gon with circumradius quadrance Q and star spread s:
+   *   Q(A₀, A₂ₖ) = 4·Sₖ(s)·Q
+   *
+   * The spread polynomials satisfy a Chebyshev-like recurrence:
+   *   Sₙ₊₁(s) = (1-2s)·Sₙ(s) - Sₙ₋₁(s) + s
+   *
+   * @namespace SpreadPolynomials
+   * @see Wildberger "Divine Proportions" Chapter 14
+   */
+  SpreadPolynomials: {
+    /**
+     * S₁(s) = s (identity - edge quadrance coefficient)
+     * @param {number} s - Spread value
+     * @returns {number} S₁(s) = s
+     */
+    S1: s => s,
+
+    /**
+     * S₂(s) = 4s(1-s)
+     * Skip-one diagonal (Polygon Triangle Theorem, p.165)
+     * @param {number} s - Spread value
+     * @returns {number} S₂(s)
+     */
+    S2: s => 4 * s * (1 - s),
+
+    /**
+     * S₃(s) = s(3-4s)²
+     * Used for triangular stars (Theorem 95, p.160)
+     * Note: S₃(3/4) = 0, confirming triangle star spread
+     * @param {number} s - Spread value
+     * @returns {number} S₃(s)
+     */
+    S3: s => s * (3 - 4 * s) * (3 - 4 * s),
+
+    /**
+     * S₄(s) = 16s(1-s)(1-2s)²
+     * @param {number} s - Spread value
+     * @returns {number} S₄(s)
+     */
+    S4: s => 16 * s * (1 - s) * (1 - 2 * s) * (1 - 2 * s),
+
+    /**
+     * S₅(s) = s(5 - 20s + 16s²)²
+     * Used for pentagonal stars (Theorem 96, Eq. 14.1, p.161)
+     * @param {number} s - Spread value
+     * @returns {number} S₅(s)
+     */
+    S5: s => s * Math.pow(5 - 20 * s + 16 * s * s, 2),
+
+    /**
+     * S₇(s) = s(7 - 56s + 112s² - 64s³)²
+     * Used for heptagonal stars (Theorem 97, Eq. 14.2, p.162)
+     * @param {number} s - Spread value
+     * @returns {number} S₇(s)
+     */
+    S7: s => s * Math.pow(7 - 56 * s + 112 * s * s - 64 * s * s * s, 2),
+
+    /**
+     * General Sₙ via Chebyshev-like recurrence
+     * Sₙ₊₁(s) = (1-2s)·Sₙ(s) - Sₙ₋₁(s) + s
+     *
+     * @param {number} n - Polynomial index (n ≥ 0)
+     * @param {number} s - Spread value
+     * @returns {number} Sₙ(s)
+     *
+     * @example
+     * RT.SpreadPolynomials.Sn(3, 0.75); // ≈ 0 (triangle star spread)
+     * RT.SpreadPolynomials.Sn(5, 0.9045); // ≈ 0 (pentagon star spread)
+     */
+    Sn: (n, s) => {
+      if (n === 0) return 0;
+      if (n === 1) return s;
+
+      let prev = 0; // S₀
+      let curr = s; // S₁
+
+      for (let k = 2; k <= n; k++) {
+        const next = (1 - 2 * s) * curr - prev + s;
+        prev = curr;
+        curr = next;
+      }
+
+      return curr;
+    },
+  },
+
+  /**
+   * Exact Star Spreads for Regular n-gons
+   * From "Divine Proportions" Chapter 14
+   *
+   * A regular star of order n has spread s between consecutive lines.
+   * The star spread determines all polygon geometry via:
+   *   - Edge quadrance: Q_edge = 4sQ (Theorem 98)
+   *   - Diagonal quadrance: Q(A₀,A₂ₖ) = 4·Sₖ(s)·Q (Exercise 14.2)
+   *
+   * Uses existing RT.PurePhi and RT.PureRadicals for cached radicals.
+   *
+   * @namespace StarSpreads
+   * @see Wildberger "Divine Proportions" Theorems 95-98
+   */
+  StarSpreads: {
+    /**
+     * Triangle (n=3): s = 3/4
+     * Theorem 95 (p.160): requires 3 = (√3)² to be a square
+     * @returns {number} 0.75 (exact rational)
+     */
+    triangle: () => 3 / 4,
+
+    /**
+     * Square (n=4): s = 1/2
+     * @returns {number} 0.5 (exact rational)
+     */
+    square: () => 1 / 2,
+
+    /**
+     * Pentagon (n=5): s = (5+√5)/8 = β
+     * Theorem 96 (p.161) and Exercise 14.3 (p.166)
+     * @returns {number} ≈ 0.904508497187474
+     */
+    pentagon: () => (5 + RT.PurePhi.sqrt5()) / 8,
+
+    /**
+     * Hexagon (n=6): s = 1/4
+     * Note: Edge quadrance = circumradius quadrance (Q_edge = Q)
+     * @returns {number} 0.25 (exact rational)
+     */
+    hexagon: () => 1 / 4,
+
+    /**
+     * Octagon (n=8): s = (2-√2)/4
+     * @returns {number} ≈ 0.146446609406726
+     */
+    octagon: () => (2 - RT.PureRadicals.sqrt2()) / 4,
+
+    /**
+     * Decagon (n=10): s = (3-√5)/8 = α
+     * Complement of pentagon β: α + β = 5/4
+     * @returns {number} ≈ 0.095491502812526
+     */
+    decagon: () => (3 - RT.PurePhi.sqrt5()) / 8,
+
+    /**
+     * Dodecagon (n=12): s = (2-√3)/4
+     * @returns {number} ≈ 0.066987298107781
+     */
+    dodecagon: () => (2 - RT.PureRadicals.sqrt3()) / 4,
+
+    /**
+     * Get star spread for any supported n
+     * Returns null for n values without algebraically exact spreads
+     *
+     * @param {number} n - Number of sides
+     * @returns {number|null} Star spread or null if not algebraically exact
+     *
+     * @example
+     * RT.StarSpreads.forN(5);  // ≈ 0.9045 (pentagon)
+     * RT.StarSpreads.forN(7);  // null (heptagon requires cubic solution)
+     */
+    forN: n => {
+      const spreads = {
+        3: RT.StarSpreads.triangle,
+        4: RT.StarSpreads.square,
+        5: RT.StarSpreads.pentagon,
+        6: RT.StarSpreads.hexagon,
+        8: RT.StarSpreads.octagon,
+        10: RT.StarSpreads.decagon,
+        12: RT.StarSpreads.dodecagon,
+      };
+      return spreads[n] ? spreads[n]() : null;
+    },
+  },
+
+  /**
+   * Face Spreads for Platonic Solids
+   * From "Divine Proportions" Chapter 26 (N.J. Wildberger)
+   *
+   * The face spread S is the spread between adjacent faces meeting at an edge.
+   * Remarkably, all five Platonic solid face spreads are RATIONAL NUMBERS.
+   *
+   * Key insight: Tetrahedron and octahedron share the same face spread (8/9)
+   * because the six midpoints of a tetrahedron's edges form an octahedron.
+   * This has significant implications for IVM/octet truss construction.
+   *
+   * @namespace FaceSpreads
+   * @see Wildberger "Divine Proportions" Chapter 26, pp. 259-264
+   */
+  FaceSpreads: {
+    /**
+     * Tetrahedron face spread: S = 8/9
+     * Derivation: Isosceles triangle CMD with quadrances 3Q/4, 3Q/4, Q
+     * Using Isosceles Triangle Theorem: s = (Q/3Q/4)(1 - Q/3Q) = 8/9
+     *
+     * The face spread equals s(PA, PB) where P is the tetrahedron center.
+     * This is the "acute" case (faces lean inward).
+     *
+     * @returns {number} 8/9 ≈ 0.888888... (exact rational)
+     */
+    tetrahedron: () => 8 / 9,
+
+    /**
+     * Cube face spread: S = 1
+     * Adjacent faces are perpendicular (trivial case).
+     * @returns {number} 1 (exact)
+     */
+    cube: () => 1,
+
+    /**
+     * Octahedron face spread: S = 8/9
+     * Same as tetrahedron! This is because:
+     * - The six midpoints of a tetrahedron's edges form an octahedron
+     * - Slicing corner tetrahedra from a larger tet leaves a central octahedron
+     * - The shared faces have identical face spread
+     *
+     * This is the "obtuse" case (faces lean outward), but spread is the same.
+     *
+     * IVM Implication: Tetrahedra and octahedra have consistent dihedral
+     * angles at all tet-oct interfaces in the octet truss.
+     *
+     * @returns {number} 8/9 ≈ 0.888888... (exact rational)
+     */
+    octahedron: () => 8 / 9,
+
+    /**
+     * Icosahedron face spread: S = 4/9
+     * Derivation uses pentagon constants α = (5-√5)/8, β = (5+√5)/8
+     * From Isosceles Triangle Theorem: S = (4β/3α)(1 - β/3α) = 4/9
+     *
+     * @returns {number} 4/9 ≈ 0.444444... (exact rational)
+     */
+    icosahedron: () => 4 / 9,
+
+    /**
+     * Dodecahedron face spread: S = 4/5
+     * Derivation: S = (4α - 1)/(4α²) where α = (5-√5)/8
+     * Simplifies to the elegant rational 4/5.
+     *
+     * @returns {number} 4/5 = 0.8 (exact rational)
+     */
+    dodecahedron: () => 4 / 5,
+
+    /**
+     * Get face spread for a Platonic solid by name
+     * @param {string} name - Solid name: "tetrahedron", "cube", "octahedron", "icosahedron", "dodecahedron"
+     * @returns {number|null} Face spread or null if not a Platonic solid
+     *
+     * @example
+     * RT.FaceSpreads.forSolid("tetrahedron"); // 0.888...
+     * RT.FaceSpreads.forSolid("icosahedron"); // 0.444...
+     */
+    forSolid: name => {
+      const spreads = {
+        tetrahedron: RT.FaceSpreads.tetrahedron,
+        cube: RT.FaceSpreads.cube,
+        octahedron: RT.FaceSpreads.octahedron,
+        icosahedron: RT.FaceSpreads.icosahedron,
+        dodecahedron: RT.FaceSpreads.dodecahedron,
+      };
+      return spreads[name] ? spreads[name]() : null;
+    },
+  },
+
+  /**
+   * Tetrahedron Quadrance Relationships
+   * From "Divine Proportions" Chapter 26, Exercises 26.1-26.2
+   *
+   * For a tetrahedron with edge quadrance Q, these exact relationships hold.
+   * Useful for IVM/cuboctahedron derivations and vertex-center calculations.
+   *
+   * @namespace TetrahedronQuadrances
+   */
+  TetrahedronQuadrances: {
+    /**
+     * Quadrance from vertex to opposite face centroid
+     * Q(vertex → centroid) = 2Q/3 where Q is edge quadrance
+     *
+     * @param {number} edgeQ - Edge quadrance
+     * @returns {number} Quadrance to opposite face centroid
+     */
+    vertexToFaceCentroid: edgeQ => (2 * edgeQ) / 3,
+
+    /**
+     * Quadrance from vertex to tetrahedron center
+     * Q(vertex → center) = 3Q/8 where Q is edge quadrance
+     *
+     * Note: This equals the quadrance where face spread S = 8/9
+     * can be measured as s(PA, PB) from the center P.
+     *
+     * @param {number} edgeQ - Edge quadrance
+     * @returns {number} Quadrance to tetrahedron center
+     */
+    vertexToCenter: edgeQ => (3 * edgeQ) / 8,
+
+    /**
+     * Quadrance from edge midpoint to opposite edge midpoint
+     * These six midpoints form an octahedron!
+     * Q(midpoint → opposite midpoint) = Q/2 where Q is edge quadrance
+     *
+     * IVM Implication: This relationship enables deriving octahedra
+     * directly from tetrahedron edge midpoints.
+     *
+     * @param {number} edgeQ - Edge quadrance
+     * @returns {number} Quadrance between opposite edge midpoints
+     */
+    midpointToOppositeMidpoint: edgeQ => edgeQ / 2,
   },
 };
 

@@ -1817,6 +1817,7 @@ export function initScene(THREE, OrbitControls, RT) {
         edgeLength: polygonData.metadata.edgeLength,
         edgeWeight: polygonEdgeWeight,
         showFace: polygonShowFace,
+        rtPure: polygonData.metadata.rtPure, // Track which engine was used
       };
       polygonGroup.visible = true;
     } else {
@@ -2738,6 +2739,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Schläfli: {4,3}</div>`;
       html += `<div>V: ${cube.vertices.length}, E: ${cube.edges.length}, F: ${cube.faces.length}</div>`;
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+      html += `<div>Face Spread: 1 (90° dihedral)</div>`;
     }
 
     if (document.getElementById("showTetrahedron").checked) {
@@ -2751,6 +2753,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Schläfli: {3,3}</div>`;
       html += `<div>V: ${tetra.vertices.length}, E: ${tetra.edges.length}, F: ${tetra.faces.length}</div>`;
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+      html += `<div>Face Spread: 8/9 (≈70.53° dihedral)</div>`;
     }
 
     if (document.getElementById("showDualTetrahedron").checked) {
@@ -2764,6 +2767,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Schläfli: {3,3} (self-dual)</div>`;
       html += `<div>V: ${tetra.vertices.length}, E: ${tetra.edges.length}, F: ${tetra.faces.length}</div>`;
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+      html += `<div>Face Spread: 8/9 (≈70.53° dihedral)</div>`;
     }
 
     if (document.getElementById("showOctahedron").checked) {
@@ -2777,6 +2781,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Schläfli: {3,4}</div>`;
       html += `<div>V: ${octa.vertices.length}, E: ${octa.edges.length}, F: ${octa.faces.length}</div>`;
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+      html += `<div>Face Spread: 8/9 (≈109.47° dihedral)</div>`;
     }
 
     if (document.getElementById("showIcosahedron").checked) {
@@ -2790,6 +2795,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Schläfli: {3,5}</div>`;
       html += `<div>V: ${icosa.vertices.length}, E: ${icosa.edges.length}, F: ${icosa.faces.length}</div>`;
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+      html += `<div>Face Spread: 4/9 (≈138.19° dihedral)</div>`;
     }
 
     if (document.getElementById("showDualIcosahedron").checked) {
@@ -2803,6 +2809,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Schläfli: {3,5} (inverted)</div>`;
       html += `<div>V: ${icosa.vertices.length}, E: ${icosa.edges.length}, F: ${icosa.faces.length}</div>`;
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+      html += `<div>Face Spread: 4/9 (≈138.19° dihedral)</div>`;
     }
 
     if (document.getElementById("showDodecahedron").checked) {
@@ -2816,6 +2823,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Schläfli: {5,3}</div>`;
       html += `<div>V: ${dodec.vertices.length}, E: ${dodec.edges.length}, F: ${dodec.faces.length}</div>`;
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+      html += `<div>Face Spread: 4/5 (≈116.57° dihedral)</div>`;
     }
 
     if (document.getElementById("showRhombicDodecahedron").checked) {
@@ -3633,6 +3641,7 @@ export function initScene(THREE, OrbitControls, RT) {
           edgeLength: geometry.metadata.edgeLength,
           edgeWeight: polyEdgeWeight,
           showFace: polyShowFace,
+          rtPure: geometry.metadata.rtPure,
         };
         renderPolyhedron(group, geometry, color, opacity, {
           lineWidth: polyEdgeWeight,

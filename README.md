@@ -47,6 +47,8 @@
 - [6.1 On Dimensions and Coordinate Systems](#61-on-dimensions-and-coordinate-systems)
 - [6.2 Rational Trigonometry Principles](#62-rational-trigonometry-principles)
 - [6.3 Tetrahedral Geometry](#63-tetrahedral-geometry)
+- [6.4 Platonic Solid Face Spreads](#64-platonic-solid-face-spreads-wildberger-chapter-26)
+- [6.5 RT Implementation Summary](#65-rt-implementation-summary-wildberger-compliance)
 
 ### 7. [Contributing](#7-contributing)
 
@@ -396,6 +398,144 @@ Rational Trigonometry eliminates transcendental functions by working directly wi
 | Pythagorean      | a² + b² = c²     | Q₁ + Q₂ = Q₃   | Same!        |
 
 **Key Insight:** Most geometric relationships work naturally with squared quantities. Taking square roots is often an unnecessary step that introduces computational error.
+
+### 6.4 Platonic Solid Face Spreads (Wildberger Chapter 26)
+
+N.J. Wildberger's "Divine Proportions" (Chapter 26) derives the **face spread** S for each Platonic solid - the spread between adjacent faces meeting at an edge. Remarkably, all five face spreads are **rational numbers**:
+
+| Solid | Face Spread S | Derivation |
+| ----- | ------------- | ---------- |
+| **Tetrahedron** | S = 8/9 | Isosceles triangle CMD with quadrances 3Q/4, 3Q/4, Q |
+| **Cube** | S = 1 | Adjacent faces perpendicular (trivial case) |
+| **Octahedron** | S = 8/9 | Same as tetrahedron (see relationship below) |
+| **Icosahedron** | S = 4/9 | Uses pentagon α = (5-√5)/8, β = (5+√5)/8 |
+| **Dodecahedron** | S = 4/5 | Derived from (4α - 1)/(4α²) where α = (5-√5)/8 |
+
+**The Tetrahedron-Octahedron Relationship:**
+
+Wildberger establishes a profound geometric fact: the six midpoints of a tetrahedron's edges form a regular octahedron. This can also be seen by slicing off the four corner tetrahedra from a larger tetrahedron - the remaining central solid is an octahedron that shares faces with those corner tetrahedra. Since adjacent faces of the corner tetrahedra become adjacent faces of the central octahedron, **both solids must have the same face spread: S = 8/9**.
+
+This relationship has significant implications for IVM (Isotropic Vector Matrix) and Cuboctahedron/Vector Equilibrium implementations:
+
+- **Space-filling property**: Tetrahedra and octahedra together fill space completely (the octet truss)
+- **Shared face spread**: The 8/9 face spread creates consistent dihedral angles at all tet-oct interfaces
+- **Midpoint construction**: An octahedron can be generated directly from tetrahedron edge midpoints
+- **Dual construction**: The cuboctahedron (Vector Equilibrium) vertices lie at tetrahedron edge midpoints
+
+**Implementation Note:** While ARTexplorer constructs tetrahedra and octahedra independently (for clarity and flexibility), the shared face spread S = 8/9 could enable more efficient IVM matrix generation by deriving octahedra from tetrahedron midpoints, ensuring perfect geometric alignment at all interfaces.
+
+**Additional Quadrance Relationships (Wildberger Exercises 26.1-26.2):**
+
+For a tetrahedron with edge quadrance Q:
+- Q(vertex → opposite face centroid) = 2Q/3
+- Q(vertex → tetrahedron center) = 3Q/8
+- The face spread S = 8/9 equals s(PA, PB) where P is the tetrahedron center
+
+**Pentagon Constants (Exercise 14.3, p.166):**
+
+The icosahedron and dodecahedron calculations use two key constants:
+- α = (5 - √5)/8 ≈ 0.345 (base spread at pentagon vertices)
+- β = (5 + √5)/8 ≈ 0.905 (star spread / apex angle)
+
+These satisfy the elegant relationships:
+- α + β = 5/4
+- α · β = 5/16
+- β/α = φ² (golden ratio squared!)
+
+ARTexplorer implements these as `RT.PurePhi.pentagon.alpha()` and `RT.PurePhi.pentagon.beta()` with cached √5 expansion for maximum precision.
+
+### 6.5 RT Implementation Summary: Wildberger Compliance
+
+This section documents how ARTexplorer implements Wildberger's Rational Trigonometry principles from "Divine Proportions: Rational Trigonometry to Universal Geometry."
+
+#### Core RT Functions (`rt-math.js`)
+
+| Wildberger Concept | ARTexplorer Implementation | Location |
+| ------------------ | -------------------------- | -------- |
+| **Quadrance** Q = Δx² + Δy² + Δz² | `RT.quadrance(p1, p2)` | rt-math.js:36-41 |
+| **Spread** s = 1 - (v₁·v₂)²/(Q₁·Q₂) | `RT.spread(v1, v2)` | rt-math.js:62-67 |
+| **Spread ↔ Degrees** | `RT.spreadToDegrees(s)`, `RT.degreesToSpread(θ)` | rt-math.js:728-744 |
+| **Euler Formula** V - E + F = 2 | `RT.verifyEuler(V, E, F)` | rt-math.js:215-217 |
+| **Edge Validation** | `RT.validateEdges(vertices, edges, expectedQ)` | rt-math.js:709-720 |
+
+#### Golden Ratio Symbolic Algebra (`RT.PurePhi`)
+
+Wildberger emphasizes working with algebraic identities to avoid premature √ expansion. ARTexplorer implements this via symbolic algebra:
+
+| Identity | Implementation | Benefit |
+| -------- | -------------- | ------- |
+| φ = (1 + √5)/2 | `RT.PurePhi.Symbolic(1, 1, 2)` | Single √5 expansion |
+| φ² = φ + 1 | `RT.PurePhi.constants.phiSq` | Exact (not φ × φ!) |
+| 1/φ = φ - 1 | `RT.PurePhi.constants.invPhi` | No division needed |
+| φ³ = 2φ + 1 | `RT.PurePhi.cubed()` | Derived from identity |
+| φ⁴ = 3φ + 2 | `RT.PurePhi.fourthPower()` | Derived from identity |
+
+The `Symbolic` class maintains exact `(a + b√5)/c` form with operations:
+- `multiply(other)` - Preserves algebraic form
+- `add(other)`, `subtract(other)` - Common denominator arithmetic
+- `scale(n)`, `divide(n)` - Scalar operations
+- `toDecimal()` - GPU boundary expansion (called once, at end)
+
+#### Spread Polynomials (Chapter 14)
+
+For regular n-gon diagonal quadrances, Wildberger defines Sₖ(s) polynomials:
+
+| Polynomial | Formula | ARTexplorer |
+| ---------- | ------- | ----------- |
+| S₁(s) | s | `RT.SpreadPolynomials.S1(s)` |
+| S₂(s) | 4s(1-s) | `RT.SpreadPolynomials.S2(s)` |
+| S₃(s) | s(3-4s)² | `RT.SpreadPolynomials.S3(s)` |
+| S₅(s) | s(5-20s+16s²)² | `RT.SpreadPolynomials.S5(s)` |
+| Sₙ(s) | Chebyshev recurrence | `RT.SpreadPolynomials.Sn(n, s)` |
+
+#### Star Spreads for Regular Polygons (Theorem 98)
+
+Edge quadrance formula: **Q_edge = 4 · s · Q_circumradius**
+
+| n-gon | Star Spread s | ARTexplorer | RT-Pure? |
+| ----- | ------------- | ----------- | -------- |
+| Triangle (3) | 3/4 | `RT.StarSpreads.triangle()` | Yes (exact rational) |
+| Square (4) | 1/2 | `RT.StarSpreads.square()` | Yes (exact rational) |
+| Pentagon (5) | (5+√5)/8 = β | `RT.StarSpreads.pentagon()` | Yes (cached √5) |
+| Hexagon (6) | 1/4 | `RT.StarSpreads.hexagon()` | Yes (exact rational) |
+| Octagon (8) | (2-√2)/4 | `RT.StarSpreads.octagon()` | Yes (cached √2) |
+| Decagon (10) | (3-√5)/8 = α | `RT.StarSpreads.decagon()` | Yes (cached √5) |
+| Dodecagon (12) | (2-√3)/4 | `RT.StarSpreads.dodecagon()` | Yes (cached √3) |
+
+#### Polyhedra Construction (`rt-polyhedra.js`)
+
+| Solid | Construction Method | RT Validation |
+| ----- | ------------------- | ------------- |
+| **Tetrahedron** | Alternating cube vertices | Q = 8s² verified |
+| **Cube** | (±s, ±s, ±s) | Q = 4s² verified |
+| **Octahedron** | Face centers of cube | Q = 2s² verified |
+| **Icosahedron** | 3 orthogonal golden rectangles | PurePhi symbolic algebra |
+| **Dodecahedron** | 8 cube + 12 φ-permutation vertices | 1/φ = φ-1 identity |
+
+#### Deferred √ Expansion Pattern
+
+ARTexplorer follows Wildberger's principle of deferring irrational expansion:
+
+```
+1. ALGEBRAIC SPACE: Work with quadrance Q, spread s, symbolic (a+b√n)/c
+2. RELATIONSHIPS: Use RT identities (Pythagorean, spread law, cross law)
+3. GPU BOUNDARY: Only call Math.sqrt() when creating THREE.Vector3
+```
+
+This pattern is consistently applied in:
+- `RT.spherePlaneCircleRadius()` - Computes circleRadiusQ, single √ at end
+- `RT.PurePhi.Symbolic.toDecimal()` - Expands √5 once
+- `RT.PureRadicals.QUADRAY_GRID_INTERVAL` - √6/4 computed once, cached
+- All polygon generators - Cached radical values from `RT.PureRadicals`
+
+#### Gauss-Wantzel Constructibility
+
+ARTexplorer respects the Gauss-Wantzel theorem for polygon constructibility:
+
+**RT-Pure (algebraic radicals only):** n = 3, 4, 5, 6, 8, 10, 12
+**Classical fallback (transcendental):** n = 7, 9, 11, 13, ...
+
+The heptagon (n=7) requires solving an irreducible cubic - no √-expression exists. ARTexplorer correctly falls back to `Math.sin/cos` for these cases while logging a warning.
 
 ### 6.3 Tetrahedral Geometry
 
