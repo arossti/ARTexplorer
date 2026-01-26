@@ -120,6 +120,8 @@ export const RTFileHandler = {
       showPoint: document.getElementById("showPoint")?.checked || false,
       showLine: document.getElementById("showLine")?.checked || false,
       showPolygon: document.getElementById("showPolygon")?.checked || false,
+      showPrism: document.getElementById("showPrism")?.checked || false,
+      showCone: document.getElementById("showCone")?.checked || false,
       // Regular polyhedra
       showCube: document.getElementById("showCube")?.checked || false,
       showTetrahedron:
@@ -224,6 +226,40 @@ export const RTFileHandler = {
       ),
       polygonShowFace:
         document.getElementById("polygonShowFace")?.checked !== false,
+      // Prism primitive parameters
+      prismSides: parseInt(
+        document.getElementById("prismSides")?.value || "6"
+      ),
+      prismBaseQuadrance: parseFloat(
+        document.getElementById("prismBaseQuadrance")?.value || "1"
+      ),
+      prismBaseRadius: parseFloat(
+        document.getElementById("prismBaseRadius")?.value || "1"
+      ),
+      prismHeightQuadrance: parseFloat(
+        document.getElementById("prismHeightQuadrance")?.value || "1"
+      ),
+      prismHeight: parseFloat(
+        document.getElementById("prismHeight")?.value || "1"
+      ),
+      prismShowFaces:
+        document.getElementById("prismShowFaces")?.checked !== false,
+      // Cone primitive parameters
+      coneSides: parseInt(document.getElementById("coneSides")?.value || "6"),
+      coneBaseQuadrance: parseFloat(
+        document.getElementById("coneBaseQuadrance")?.value || "1"
+      ),
+      coneBaseRadius: parseFloat(
+        document.getElementById("coneBaseRadius")?.value || "1"
+      ),
+      coneHeightQuadrance: parseFloat(
+        document.getElementById("coneHeightQuadrance")?.value || "1"
+      ),
+      coneHeight: parseFloat(
+        document.getElementById("coneHeight")?.value || "1"
+      ),
+      coneShowFaces:
+        document.getElementById("coneShowFaces")?.checked !== false,
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -520,6 +556,56 @@ export const RTFileHandler = {
           const el = document.getElementById("polygonShowFace");
           if (el) el.checked = sliders.polygonShowFace;
         }
+        // Prism primitive parameters
+        if (sliders.prismSides !== undefined) {
+          const el = document.getElementById("prismSides");
+          if (el) el.value = sliders.prismSides;
+        }
+        if (sliders.prismBaseQuadrance !== undefined) {
+          const el = document.getElementById("prismBaseQuadrance");
+          if (el) el.value = sliders.prismBaseQuadrance;
+        }
+        if (sliders.prismBaseRadius !== undefined) {
+          const el = document.getElementById("prismBaseRadius");
+          if (el) el.value = sliders.prismBaseRadius;
+        }
+        if (sliders.prismHeightQuadrance !== undefined) {
+          const el = document.getElementById("prismHeightQuadrance");
+          if (el) el.value = sliders.prismHeightQuadrance;
+        }
+        if (sliders.prismHeight !== undefined) {
+          const el = document.getElementById("prismHeight");
+          if (el) el.value = sliders.prismHeight;
+        }
+        if (sliders.prismShowFaces !== undefined) {
+          const el = document.getElementById("prismShowFaces");
+          if (el) el.checked = sliders.prismShowFaces;
+        }
+        // Cone primitive parameters
+        if (sliders.coneSides !== undefined) {
+          const el = document.getElementById("coneSides");
+          if (el) el.value = sliders.coneSides;
+        }
+        if (sliders.coneBaseQuadrance !== undefined) {
+          const el = document.getElementById("coneBaseQuadrance");
+          if (el) el.value = sliders.coneBaseQuadrance;
+        }
+        if (sliders.coneBaseRadius !== undefined) {
+          const el = document.getElementById("coneBaseRadius");
+          if (el) el.value = sliders.coneBaseRadius;
+        }
+        if (sliders.coneHeightQuadrance !== undefined) {
+          const el = document.getElementById("coneHeightQuadrance");
+          if (el) el.value = sliders.coneHeightQuadrance;
+        }
+        if (sliders.coneHeight !== undefined) {
+          const el = document.getElementById("coneHeight");
+          if (el) el.value = sliders.coneHeight;
+        }
+        if (sliders.coneShowFaces !== undefined) {
+          const el = document.getElementById("coneShowFaces");
+          if (el) el.checked = sliders.coneShowFaces;
+        }
         // Planar matrix size sliders
         if (sliders.cubeMatrixSizeSlider !== undefined) {
           const el = document.getElementById("cubeMatrixSizeSlider");
@@ -651,6 +737,18 @@ export const RTFileHandler = {
           polygonControls.style.display = "block";
         }
 
+        // Show/hide Prism controls based on checkbox state
+        const prismControls = document.getElementById("prism-controls");
+        if (prismControls && checkboxes.showPrism) {
+          prismControls.style.display = "block";
+        }
+
+        // Show/hide Cone controls based on checkbox state
+        const coneControls = document.getElementById("cone-controls");
+        if (coneControls && checkboxes.showCone) {
+          coneControls.style.display = "block";
+        }
+
         // Trigger updateGeometry to render the restored forms
         if (window.renderingAPI?.updateGeometry) {
           window.renderingAPI.updateGeometry();
@@ -769,6 +867,29 @@ export const RTFileHandler = {
               }
               if (instanceData.parameters.wxyz !== undefined) {
                 options.wxyz = instanceData.parameters.wxyz;
+              }
+              // Primitive parameters (polygon, prism, cone)
+              if (instanceData.parameters.sides !== undefined) {
+                options.sides = instanceData.parameters.sides;
+              }
+              if (instanceData.parameters.baseQuadrance !== undefined) {
+                options.baseQuadrance = instanceData.parameters.baseQuadrance;
+              }
+              if (instanceData.parameters.heightQuadrance !== undefined) {
+                options.heightQuadrance = instanceData.parameters.heightQuadrance;
+              }
+              if (instanceData.parameters.showFaces !== undefined) {
+                options.showFaces = instanceData.parameters.showFaces;
+              }
+              // Polygon-specific parameters
+              if (instanceData.parameters.quadrance !== undefined) {
+                options.quadrance = instanceData.parameters.quadrance;
+              }
+              if (instanceData.parameters.showFace !== undefined) {
+                options.showFace = instanceData.parameters.showFace;
+              }
+              if (instanceData.parameters.edgeWeight !== undefined) {
+                options.edgeWeight = instanceData.parameters.edgeWeight;
               }
             }
 

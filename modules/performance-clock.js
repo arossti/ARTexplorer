@@ -94,7 +94,9 @@ export const PerformanceClock = {
   },
 
   /**
-   * Count total triangles in scene
+   * Count total triangles, vertices, edges, and faces in scene
+   * Excludes grids (Line/LineSegments materials without vertex nodes)
+   * @returns {Object} {totalTriangles, totalVertices, totalEdges, totalFaces}
    */
   countSceneTriangles() {
     let totalTriangles = 0;
@@ -107,10 +109,68 @@ export const PerformanceClock = {
       return { totalTriangles, totalVertices, totalEdges, totalFaces };
     }
 
+    // Known V/E/F for standard polyhedra (Euler: V - E + F = 2)
+    const polyhedraVEF = {
+      // Platonic solids
+      tetrahedron: { V: 4, E: 6, F: 4 },
+      dualTetrahedron: { V: 4, E: 6, F: 4 },
+      cube: { V: 8, E: 12, F: 6 },
+      octahedron: { V: 6, E: 12, F: 8 },
+      icosahedron: { V: 12, E: 30, F: 20 },
+      dodecahedron: { V: 20, E: 30, F: 12 },
+      dualIcosahedron: { V: 12, E: 30, F: 20 },
+      // Archimedean solids
+      cuboctahedron: { V: 12, E: 24, F: 14 },
+      rhombicDodecahedron: { V: 14, E: 24, F: 12 },
+      // Quadray demonstrators (same as XYZ equivalents)
+      quadrayTetrahedron: { V: 4, E: 6, F: 4 },
+      quadrayTetraDeformed: { V: 4, E: 6, F: 4 },
+      quadrayCuboctahedron: { V: 12, E: 24, F: 14 },
+    };
+
     this.polyhedraGroups.forEach(group => {
       if (group && group.visible) {
+        const type = group.userData?.type;
+        const params = group.userData?.parameters;
+
+        // Check for known polyhedra V/E/F
+        if (type && polyhedraVEF[type]) {
+          totalVertices += polyhedraVEF[type].V;
+          totalEdges += polyhedraVEF[type].E;
+          totalFaces += polyhedraVEF[type].F;
+        } else if (params) {
+          // For primitives with variable V/E/F based on parameters
+          if (type === "point") {
+            totalVertices += 1;
+          } else if (type === "line") {
+            totalVertices += 2;
+            totalEdges += 1;
+          } else if (type === "polygon") {
+            const sides = params.sides || 3;
+            totalVertices += sides;
+            totalEdges += sides;
+            if (params.showFace) totalFaces += 1;
+          } else if (type === "prism") {
+            const sides = params.sides || 6;
+            totalVertices += 2 * sides;
+            totalEdges += 3 * sides;
+            if (params.showFaces !== false) totalFaces += sides + 2;
+          } else if (type === "cone") {
+            const sides = params.sides || 6;
+            totalVertices += sides + 1;
+            totalEdges += 2 * sides;
+            if (params.showFaces !== false) totalFaces += sides + 1;
+          }
+        }
+
+        // Count triangles from actual geometry buffers
         group.traverse(child => {
-          if (child.geometry) {
+          // Skip vertex nodes (counted separately) and grid lines
+          if (child.userData?.isVertexNode) return;
+          if (child.type === "Line" || child.type === "LineSegments") return;
+          if (child.type === "Line2") return;
+
+          if (child.isMesh && child.geometry) {
             if (child.geometry.index) {
               // Indexed geometry
               totalTriangles += child.geometry.index.count / 3;
@@ -134,20 +194,21 @@ export const PerformanceClock = {
     const avgFPS = this.getAverageFPS();
     const sceneStats = this.countSceneTriangles();
 
-    // Update scene totals
+    // Update scene totals (with thousands separators for readability)
+    const formatNumber = n => (n > 0 ? n.toLocaleString() : "--");
     const totalVerticesEl = document.getElementById("totalVertices");
     const totalEdgesEl = document.getElementById("totalEdges");
     const totalFacesEl = document.getElementById("totalFaces");
     const totalTrianglesEl = document.getElementById("totalTriangles");
 
     if (totalVerticesEl)
-      totalVerticesEl.textContent = `Vertices: ${sceneStats.totalVertices || "--"}`;
+      totalVerticesEl.textContent = `Vertices: ${formatNumber(sceneStats.totalVertices)}`;
     if (totalEdgesEl)
-      totalEdgesEl.textContent = `Edges: ${sceneStats.totalEdges || "--"}`;
+      totalEdgesEl.textContent = `Edges: ${formatNumber(sceneStats.totalEdges)}`;
     if (totalFacesEl)
-      totalFacesEl.textContent = `Faces: ${sceneStats.totalFaces || "--"}`;
+      totalFacesEl.textContent = `Faces: ${formatNumber(sceneStats.totalFaces)}`;
     if (totalTrianglesEl)
-      totalTrianglesEl.textContent = `Triangles: ${Math.round(sceneStats.totalTriangles) || "--"}`;
+      totalTrianglesEl.textContent = `Triangles: ${formatNumber(Math.round(sceneStats.totalTriangles))}`;
 
     // Update performance stats
     const perfCalcTimeEl = document.getElementById("perfCalcTime");

@@ -103,6 +103,8 @@ function startARTexplorer(
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
+  let prismGroup; // Prism primitive (3D solid with N-gon caps)
+  let coneGroup; // Cone primitive (3D solid with N-gon base and apex)
   let cubeGroup, tetrahedronGroup, dualTetrahedronGroup, octahedronGroup;
   let icosahedronGroup, dodecahedronGroup, dualIcosahedronGroup;
   let cuboctahedronGroup, rhombicDodecahedronGroup;
@@ -301,6 +303,124 @@ function startARTexplorer(
       polygonEdgeWeightValue.textContent = polygonEdgeWeightSlider.value;
       updateGeometry();
     });
+  }
+
+  // Prism (3D primitive - N-gon caps with rectangular sides)
+  const prismCheckbox = document.getElementById("showPrism");
+  const prismControls = document.getElementById("prism-controls");
+  const prismSidesInput = document.getElementById("prismSides");
+  const prismBaseQuadranceInput = document.getElementById("prismBaseQuadrance");
+  const prismBaseRadiusInput = document.getElementById("prismBaseRadius");
+  const prismHeightQuadranceInput = document.getElementById(
+    "prismHeightQuadrance"
+  );
+  const prismHeightInput = document.getElementById("prismHeight");
+  const prismShowFacesCheckbox = document.getElementById("prismShowFaces");
+
+  if (prismCheckbox) {
+    prismCheckbox.addEventListener("change", () => {
+      if (prismControls) {
+        prismControls.style.display = prismCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  if (prismSidesInput) {
+    prismSidesInput.addEventListener("input", updateGeometry);
+  }
+
+  // Bidirectional Base Quadrance/Radius conversion (Q_R = R², R = √Q_R)
+  if (prismBaseQuadranceInput && prismBaseRadiusInput) {
+    prismBaseQuadranceInput.addEventListener("input", () => {
+      const Q = parseFloat(prismBaseQuadranceInput.value) || 1;
+      prismBaseRadiusInput.value = Math.sqrt(Q).toFixed(4);
+      updateGeometry();
+    });
+
+    prismBaseRadiusInput.addEventListener("input", () => {
+      const R = parseFloat(prismBaseRadiusInput.value) || 1;
+      prismBaseQuadranceInput.value = (R * R).toFixed(4);
+      updateGeometry();
+    });
+  }
+
+  // Bidirectional Height Quadrance/Height conversion (Q_H = H², H = √Q_H)
+  if (prismHeightQuadranceInput && prismHeightInput) {
+    prismHeightQuadranceInput.addEventListener("input", () => {
+      const Q = parseFloat(prismHeightQuadranceInput.value) || 1;
+      prismHeightInput.value = Math.sqrt(Q).toFixed(4);
+      updateGeometry();
+    });
+
+    prismHeightInput.addEventListener("input", () => {
+      const H = parseFloat(prismHeightInput.value) || 1;
+      prismHeightQuadranceInput.value = (H * H).toFixed(4);
+      updateGeometry();
+    });
+  }
+
+  if (prismShowFacesCheckbox) {
+    prismShowFacesCheckbox.addEventListener("change", updateGeometry);
+  }
+
+  // Cone (3D primitive - N-gon base with point apex)
+  const coneCheckbox = document.getElementById("showCone");
+  const coneControls = document.getElementById("cone-controls");
+  const coneSidesInput = document.getElementById("coneSides");
+  const coneBaseQuadranceInput = document.getElementById("coneBaseQuadrance");
+  const coneBaseRadiusInput = document.getElementById("coneBaseRadius");
+  const coneHeightQuadranceInput = document.getElementById(
+    "coneHeightQuadrance"
+  );
+  const coneHeightInput = document.getElementById("coneHeight");
+  const coneShowFacesCheckbox = document.getElementById("coneShowFaces");
+
+  if (coneCheckbox) {
+    coneCheckbox.addEventListener("change", () => {
+      if (coneControls) {
+        coneControls.style.display = coneCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  if (coneSidesInput) {
+    coneSidesInput.addEventListener("input", updateGeometry);
+  }
+
+  // Bidirectional Base Quadrance/Radius conversion (Q_R = R², R = √Q_R)
+  if (coneBaseQuadranceInput && coneBaseRadiusInput) {
+    coneBaseQuadranceInput.addEventListener("input", () => {
+      const Q = parseFloat(coneBaseQuadranceInput.value) || 1;
+      coneBaseRadiusInput.value = Math.sqrt(Q).toFixed(4);
+      updateGeometry();
+    });
+
+    coneBaseRadiusInput.addEventListener("input", () => {
+      const R = parseFloat(coneBaseRadiusInput.value) || 1;
+      coneBaseQuadranceInput.value = (R * R).toFixed(4);
+      updateGeometry();
+    });
+  }
+
+  // Bidirectional Height Quadrance/Height conversion (Q_H = H², H = √Q_H)
+  if (coneHeightQuadranceInput && coneHeightInput) {
+    coneHeightQuadranceInput.addEventListener("input", () => {
+      const Q = parseFloat(coneHeightQuadranceInput.value) || 1;
+      coneHeightInput.value = Math.sqrt(Q).toFixed(4);
+      updateGeometry();
+    });
+
+    coneHeightInput.addEventListener("input", () => {
+      const H = parseFloat(coneHeightInput.value) || 1;
+      coneHeightQuadranceInput.value = (H * H).toFixed(4);
+      updateGeometry();
+    });
+  }
+
+  if (coneShowFacesCheckbox) {
+    coneShowFacesCheckbox.addEventListener("change", updateGeometry);
   }
 
   document
@@ -2456,6 +2576,8 @@ function startARTexplorer(
       pointGroup,
       lineGroup,
       polygonGroup,
+      prismGroup,
+      coneGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -2727,6 +2849,8 @@ function startARTexplorer(
       pointGroup,
       lineGroup,
       polygonGroup,
+      prismGroup,
+      coneGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -4004,6 +4128,8 @@ function startARTexplorer(
     pointGroup,
     lineGroup,
     polygonGroup,
+    prismGroup,
+    coneGroup,
     cubeGroup,
     tetrahedronGroup,
     dualTetrahedronGroup,

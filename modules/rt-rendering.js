@@ -17,6 +17,7 @@
 
 import { Quadray } from "./rt-math.js";
 import { Polyhedra } from "./rt-polyhedra.js";
+import { Primitives } from "./rt-primitives.js";
 import { PerformanceClock } from "./performance-clock.js";
 import { RTPapercut } from "./rt-papercut.js";
 import { Grids } from "./rt-grids.js";
@@ -60,6 +61,8 @@ const colorPalette = {
   point: 0xff00ff, // Fuchsia/bright pink - highly visible coordinate exploration point
   line: 0xff0000, // Red - 1D primitive
   polygon: 0x00ff00, // Green - 2D primitive (distinct from Line red, Point fuchsia)
+  prism: 0x00aaff, // Sky blue - 3D primitive (distinct from polygon green)
+  cone: 0xffaa00, // Orange - 3D primitive (distinct from prism blue)
 };
 
 /**
@@ -90,6 +93,8 @@ export function initScene(THREE, OrbitControls, RT) {
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
+  let prismGroup; // Prism primitive (3D solid with N-gon caps)
+  let coneGroup; // Cone primitive (3D solid with N-gon base and apex)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -159,6 +164,14 @@ export function initScene(THREE, OrbitControls, RT) {
     polygonGroup = new THREE.Group();
     polygonGroup.userData.type = "polygon";
     // Polygon allows all tools (Move, Scale, Rotate)
+
+    prismGroup = new THREE.Group();
+    prismGroup.userData.type = "prism";
+    // Prism allows all tools (Move, Scale, Rotate)
+
+    coneGroup = new THREE.Group();
+    coneGroup.userData.type = "cone";
+    // Cone allows all tools (Move, Scale, Rotate)
 
     cubeGroup = new THREE.Group();
     cubeGroup.userData.type = "cube";
@@ -258,6 +271,8 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(pointGroup);
     scene.add(lineGroup);
     scene.add(polygonGroup);
+    scene.add(prismGroup);
+    scene.add(coneGroup);
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -288,7 +303,13 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
+      // Primitives (0D, 1D, 2D, 3D)
       pointGroup,
+      lineGroup,
+      polygonGroup,
+      prismGroup,
+      coneGroup,
+      // Regular polyhedra
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -298,21 +319,25 @@ export function initScene(THREE, OrbitControls, RT) {
       dualIcosahedronGroup,
       cuboctahedronGroup,
       rhombicDodecahedronGroup,
+      // Geodesic polyhedra
       geodesicIcosahedronGroup,
       geodesicTetrahedronGroup,
       geodesicOctahedronGroup,
       geodesicDualTetrahedronGroup,
       geodesicDualIcosahedronGroup,
+      // Planar matrices
       cubeMatrixGroup,
       tetMatrixGroup,
       octaMatrixGroup,
       cuboctaMatrixGroup,
       rhombicDodecMatrixGroup,
+      // Radial matrices
       radialCubeMatrixGroup,
       radialRhombicDodecMatrixGroup,
       radialTetMatrixGroup,
       radialOctMatrixGroup,
       radialVEMatrixGroup,
+      // Quadray demonstrators
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
       quadrayCuboctahedronGroup,
@@ -629,6 +654,20 @@ export function initScene(THREE, OrbitControls, RT) {
       ) {
         scale = group.userData.parameters.quadrance;
         nodeOptions = { sides: group.userData.parameters.sides || 3 };
+      } else if (
+        polyType === "prism" &&
+        group.userData.parameters?.baseQuadrance
+      ) {
+        // Prism: scale is baseQuadrance, pass sides for edge quadrance calculation
+        scale = group.userData.parameters.baseQuadrance;
+        nodeOptions = { sides: group.userData.parameters.sides || 6 };
+      } else if (
+        polyType === "cone" &&
+        group.userData.parameters?.baseQuadrance
+      ) {
+        // Cone: scale is baseQuadrance, pass sides for edge quadrance calculation
+        scale = group.userData.parameters.baseQuadrance;
+        nodeOptions = { sides: group.userData.parameters.sides || 6 };
       } else {
         const tetEdge = parseFloat(
           document.getElementById("tetScaleSlider").value
@@ -844,6 +883,84 @@ export function initScene(THREE, OrbitControls, RT) {
       polygonGroup.visible = true;
     } else {
       polygonGroup.visible = false;
+    }
+
+    // Prism (3D primitive - 2 N-gon caps + rectangular sides)
+    if (document.getElementById("showPrism")?.checked) {
+      // Get base circumradius quadrance from input field (default 1)
+      const prismBaseQ = parseFloat(
+        document.getElementById("prismBaseQuadrance")?.value || "1"
+      );
+      // Get height quadrance from input field (default 1)
+      const prismHeightQ = parseFloat(
+        document.getElementById("prismHeightQuadrance")?.value || "1"
+      );
+      // Get number of sides (default 6 = hexagonal prism)
+      const prismSides = parseInt(
+        document.getElementById("prismSides")?.value || "6"
+      );
+      // Get face visibility
+      const prismShowFaces =
+        document.getElementById("prismShowFaces")?.checked !== false;
+
+      const prismData = Primitives.prism(prismBaseQ, prismHeightQ, {
+        sides: prismSides,
+        showFaces: prismShowFaces,
+      });
+      renderPolyhedron(prismGroup, prismData, colorPalette.prism, opacity);
+      prismGroup.userData.type = "prism";
+      prismGroup.userData.parameters = {
+        baseQuadrance: prismBaseQ,
+        heightQuadrance: prismHeightQ,
+        sides: prismSides,
+        height: prismData.metadata.height,
+        baseCircumradius: prismData.metadata.baseCircumradius,
+        baseEdgeQuadrance: prismData.metadata.baseEdgeQuadrance,
+        showFaces: prismShowFaces,
+        rtPure: prismData.metadata.rtPure,
+      };
+      prismGroup.visible = true;
+    } else {
+      prismGroup.visible = false;
+    }
+
+    // Cone (3D primitive - N-gon base + point apex)
+    if (document.getElementById("showCone")?.checked) {
+      // Get base circumradius quadrance from input field (default 1)
+      const coneBaseQ = parseFloat(
+        document.getElementById("coneBaseQuadrance")?.value || "1"
+      );
+      // Get height quadrance from input field (default 1)
+      const coneHeightQ = parseFloat(
+        document.getElementById("coneHeightQuadrance")?.value || "1"
+      );
+      // Get number of sides (default 6 = hexagonal cone)
+      const coneSides = parseInt(
+        document.getElementById("coneSides")?.value || "6"
+      );
+      // Get face visibility
+      const coneShowFaces =
+        document.getElementById("coneShowFaces")?.checked !== false;
+
+      const coneData = Primitives.cone(coneBaseQ, coneHeightQ, {
+        sides: coneSides,
+        showFaces: coneShowFaces,
+      });
+      renderPolyhedron(coneGroup, coneData, colorPalette.cone, opacity);
+      coneGroup.userData.type = "cone";
+      coneGroup.userData.parameters = {
+        baseQuadrance: coneBaseQ,
+        heightQuadrance: coneHeightQ,
+        sides: coneSides,
+        height: coneData.metadata.height,
+        slantQuadrance: coneData.metadata.slantQuadrance,
+        baseCircumradius: coneData.metadata.baseCircumradius,
+        showFaces: coneShowFaces,
+        rtPure: coneData.metadata.rtPure,
+      };
+      coneGroup.visible = true;
+    } else {
+      coneGroup.visible = false;
     }
 
     // Cube (Blue)
@@ -1790,7 +1907,7 @@ export function initScene(THREE, OrbitControls, RT) {
    * Update geometry statistics display
    */
   function updateGeometryStats() {
-    const stats = document.getElementById("geometryStats");
+    const stats = document.getElementById("polyhedraStats");
     let html = "";
 
     if (document.getElementById("showPoint")?.checked) {
@@ -1829,6 +1946,62 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Euler: N/A (open form, χ=1)</div>`;
       html += `<div>Q_R: ${polyQ.toFixed(4)}, R: ${polyR.toFixed(4)}</div>`;
       html += `<div>Q_edge: ${polyEdgeQ.toFixed(4)}, edge: ${polyEdgeL.toFixed(4)}</div>`;
+    }
+
+    if (document.getElementById("showPrism")?.checked) {
+      const prismBaseQ = parseFloat(
+        document.getElementById("prismBaseQuadrance")?.value || "1"
+      );
+      const prismHeightQ = parseFloat(
+        document.getElementById("prismHeightQuadrance")?.value || "1"
+      );
+      const prismSides = parseInt(
+        document.getElementById("prismSides")?.value || "6"
+      );
+      const prismShowFaces =
+        document.getElementById("prismShowFaces")?.checked !== false;
+      const prismR = Math.sqrt(prismBaseQ);
+      const prismH = Math.sqrt(prismHeightQ);
+      // Math.sin justified: arbitrary n-gon spread calculation
+      const prismSpread = Math.pow(Math.sin(Math.PI / prismSides), 2);
+      const prismEdgeQ = 4 * prismBaseQ * prismSpread;
+      const V = 2 * prismSides;
+      const E = 3 * prismSides;
+      const F = prismShowFaces ? prismSides + 2 : 0;
+      const eulerOK = RT.verifyEuler(V, E, F);
+      html += `<div style="margin-top: 10px;"><strong>Prism (${prismSides}-gon):</strong></div>`;
+      html += `<div>V: ${V}, E: ${E}, F: ${F}</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+      html += `<div>Q_R: ${prismBaseQ.toFixed(4)}, R: ${prismR.toFixed(4)}</div>`;
+      html += `<div>Q_H: ${prismHeightQ.toFixed(4)}, H: ${prismH.toFixed(4)}</div>`;
+      html += `<div>Q_baseEdge: ${prismEdgeQ.toFixed(4)}</div>`;
+    }
+
+    if (document.getElementById("showCone")?.checked) {
+      const coneBaseQ = parseFloat(
+        document.getElementById("coneBaseQuadrance")?.value || "1"
+      );
+      const coneHeightQ = parseFloat(
+        document.getElementById("coneHeightQuadrance")?.value || "1"
+      );
+      const coneSides = parseInt(
+        document.getElementById("coneSides")?.value || "6"
+      );
+      const coneShowFaces =
+        document.getElementById("coneShowFaces")?.checked !== false;
+      const coneR = Math.sqrt(coneBaseQ);
+      const coneH = Math.sqrt(coneHeightQ);
+      const coneSlantQ = coneBaseQ + coneHeightQ;
+      const V = coneSides + 1;
+      const E = 2 * coneSides;
+      const F = coneShowFaces ? coneSides + 1 : 0;
+      const eulerOK = RT.verifyEuler(V, E, F);
+      html += `<div style="margin-top: 10px;"><strong>Cone (${coneSides}-gon):</strong></div>`;
+      html += `<div>V: ${V}, E: ${E}, F: ${F}</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+      html += `<div>Q_R: ${coneBaseQ.toFixed(4)}, R: ${coneR.toFixed(4)}</div>`;
+      html += `<div>Q_H: ${coneHeightQ.toFixed(4)}, H: ${coneH.toFixed(4)}</div>`;
+      html += `<div>Q_slant: ${coneSlantQ.toFixed(4)}</div>`;
     }
 
     if (document.getElementById("showCube").checked) {
@@ -2388,6 +2561,8 @@ export function initScene(THREE, OrbitControls, RT) {
       pointGroup,
       lineGroup,
       polygonGroup,
+      prismGroup,
+      coneGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -2603,6 +2778,56 @@ export function initScene(THREE, OrbitControls, RT) {
         renderPolyhedron(group, geometry, color, opacity, {
           lineWidth: polyEdgeWeight,
         });
+        break;
+      }
+
+      case "prism": {
+        // Prism uses base circumradius quadrance and height quadrance
+        const prismBaseQ = options.baseQuadrance ?? scale;
+        const prismHeightQ = options.heightQuadrance ?? 1;
+        const prismSides = options.sides ?? 6;
+        const prismShowFaces = options.showFaces !== false;
+        geometry = Primitives.prism(prismBaseQ, prismHeightQ, {
+          sides: prismSides,
+          showFaces: prismShowFaces,
+        });
+        group.userData.type = "prism";
+        group.userData.parameters = {
+          baseQuadrance: prismBaseQ,
+          heightQuadrance: prismHeightQ,
+          sides: prismSides,
+          height: geometry.metadata.height,
+          baseCircumradius: geometry.metadata.baseCircumradius,
+          baseEdgeQuadrance: geometry.metadata.baseEdgeQuadrance,
+          showFaces: prismShowFaces,
+          rtPure: geometry.metadata.rtPure,
+        };
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+      }
+
+      case "cone": {
+        // Cone uses base circumradius quadrance and height quadrance
+        const coneBaseQ = options.baseQuadrance ?? scale;
+        const coneHeightQ = options.heightQuadrance ?? 1;
+        const coneSides = options.sides ?? 6;
+        const coneShowFaces = options.showFaces !== false;
+        geometry = Primitives.cone(coneBaseQ, coneHeightQ, {
+          sides: coneSides,
+          showFaces: coneShowFaces,
+        });
+        group.userData.type = "cone";
+        group.userData.parameters = {
+          baseQuadrance: coneBaseQ,
+          heightQuadrance: coneHeightQ,
+          sides: coneSides,
+          height: geometry.metadata.height,
+          slantQuadrance: geometry.metadata.slantQuadrance,
+          baseCircumradius: geometry.metadata.baseCircumradius,
+          showFaces: coneShowFaces,
+          rtPure: geometry.metadata.rtPure,
+        };
+        renderPolyhedron(group, geometry, color, opacity);
         break;
       }
 

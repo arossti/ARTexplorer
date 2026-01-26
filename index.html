@@ -698,6 +698,158 @@
 
             <div class="control-item">
               <label class="checkbox-label">
+                <input type="checkbox" id="showPrism" />
+                Prism (3D Primitive)
+              </label>
+              <div
+                id="prism-controls"
+                class="prism-options"
+                style="display: none; margin-left: 20px; margin-top: 5px"
+              >
+                <div class="prism-sides-container" style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
+                  <label style="font-size: 0.85em;">Sides:</label>
+                  <input
+                    type="number"
+                    id="prismSides"
+                    min="3"
+                    max="24"
+                    step="1"
+                    value="6"
+                    style="width: 50px; font-size: 0.85em;"
+                    title="Number of sides (n-gon prism)"
+                  />
+                </div>
+                <div class="prism-quadrance-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
+                  <label style="font-size: 0.85em;">Q<sub>R</sub>:</label>
+                  <input
+                    type="number"
+                    id="prismBaseQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Base circumradius quadrance (Q_R = R²)"
+                  />
+                  <label style="font-size: 0.85em;">R:</label>
+                  <input
+                    type="number"
+                    id="prismBaseRadius"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Base circumradius (R = √Q_R)"
+                  />
+                </div>
+                <div class="prism-height-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
+                  <label style="font-size: 0.85em;">Q<sub>H</sub>:</label>
+                  <input
+                    type="number"
+                    id="prismHeightQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Height quadrance (Q_H = H²)"
+                  />
+                  <label style="font-size: 0.85em;">H:</label>
+                  <input
+                    type="number"
+                    id="prismHeight"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Height (H = √Q_H)"
+                  />
+                </div>
+                <div class="prism-face-container" style="display: flex; gap: 10px; align-items: center;">
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="prismShowFaces" checked />
+                    Show Faces
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showCone" />
+                Cone (3D Primitive)
+              </label>
+              <div
+                id="cone-controls"
+                class="cone-options"
+                style="display: none; margin-left: 20px; margin-top: 5px"
+              >
+                <div class="cone-sides-container" style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
+                  <label style="font-size: 0.85em;">Sides:</label>
+                  <input
+                    type="number"
+                    id="coneSides"
+                    min="3"
+                    max="24"
+                    step="1"
+                    value="6"
+                    style="width: 50px; font-size: 0.85em;"
+                    title="Number of sides (n-gon cone)"
+                  />
+                </div>
+                <div class="cone-quadrance-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
+                  <label style="font-size: 0.85em;">Q<sub>R</sub>:</label>
+                  <input
+                    type="number"
+                    id="coneBaseQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Base circumradius quadrance (Q_R = R²)"
+                  />
+                  <label style="font-size: 0.85em;">R:</label>
+                  <input
+                    type="number"
+                    id="coneBaseRadius"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Base circumradius (R = √Q_R)"
+                  />
+                </div>
+                <div class="cone-height-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
+                  <label style="font-size: 0.85em;">Q<sub>H</sub>:</label>
+                  <input
+                    type="number"
+                    id="coneHeightQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Height quadrance (Q_H = H²)"
+                  />
+                  <label style="font-size: 0.85em;">H:</label>
+                  <input
+                    type="number"
+                    id="coneHeight"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em;"
+                    title="Height (H = √Q_H)"
+                  />
+                </div>
+                <div class="cone-face-container" style="display: flex; gap: 10px; align-items: center;">
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="coneShowFaces" checked />
+                    Show Faces
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
                 <input type="checkbox" id="showCube" checked />
                 Hexahedron (Cube)
               </label>
@@ -2041,7 +2193,13 @@
             Geometry Info
           </h3>
           <div id="geometry-info-section" class="section-content">
-            <div class="stats" id="geometryStats">
+            <!-- Individual polyhedra stats (populated by rt-rendering.js) -->
+            <div class="stats" id="polyhedraStats">
+              <div style="color: #888;">Select a polyhedron to see stats</div>
+            </div>
+
+            <!-- Scene totals (updated by PerformanceClock) -->
+            <div class="stats" id="geometryStats" style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #444;">
               <div><strong>Scene Totals:</strong></div>
               <div id="totalVertices">Vertices: --</div>
               <div id="totalEdges">Edges: --</div>
