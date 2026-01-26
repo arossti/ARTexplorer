@@ -868,6 +868,14 @@ export function initScene(THREE, OrbitControls, RT) {
         cubeMatrixGroup.remove(cubeMatrixGroup.children[0]);
       }
 
+      // Store parameters for instance creation/export
+      cubeMatrixGroup.userData.parameters = {
+        matrixSize: matrixSize,
+        rotate45: rotate45,
+        opacity: opacity,
+        scale: scale,
+      };
+
       // Generate cube matrix
       import("./rt-matrix-planar.js").then(MatrixModule => {
         const { RTMatrix } = MatrixModule;
@@ -988,6 +996,14 @@ export function initScene(THREE, OrbitControls, RT) {
         tetMatrixGroup.remove(tetMatrixGroup.children[0]);
       }
 
+      // Store parameters for instance creation/export
+      tetMatrixGroup.userData.parameters = {
+        matrixSize: matrixSize,
+        rotate45: rotate45,
+        opacity: opacity,
+        scale: scale,
+      };
+
       // Generate tet matrix
       import("./rt-matrix-planar.js").then(MatrixModule => {
         const { RTMatrix } = MatrixModule;
@@ -1058,6 +1074,15 @@ export function initScene(THREE, OrbitControls, RT) {
       while (octaMatrixGroup.children.length > 0) {
         octaMatrixGroup.remove(octaMatrixGroup.children[0]);
       }
+
+      // Store parameters for instance creation/export
+      octaMatrixGroup.userData.parameters = {
+        matrixSize: matrixSize,
+        rotate45: rotate45,
+        colinearEdges: colinearEdges,
+        opacity: opacity,
+        scale: scale,
+      };
 
       // Generate octa matrix
       import("./rt-matrix-planar.js").then(MatrixModule => {
@@ -1189,6 +1214,14 @@ export function initScene(THREE, OrbitControls, RT) {
       while (cuboctaMatrixGroup.children.length > 0) {
         cuboctaMatrixGroup.remove(cuboctaMatrixGroup.children[0]);
       }
+
+      // Store parameters for instance creation/export
+      cuboctaMatrixGroup.userData.parameters = {
+        matrixSize: matrixSize,
+        rotate45: rotate45,
+        opacity: opacity,
+        scale: scale,
+      };
 
       // Generate cuboctahedron matrix
       import("./rt-matrix-planar.js").then(MatrixModule => {
@@ -1334,6 +1367,15 @@ export function initScene(THREE, OrbitControls, RT) {
         rhombicDodecMatrixGroup.remove(rhombicDodecMatrixGroup.children[0]);
       }
 
+      // Store parameters for instance creation/export
+      rhombicDodecMatrixGroup.userData.parameters = {
+        matrixSize: matrixSize,
+        rotate45: rotate45,
+        faceCoplanar: faceCoplanar,
+        opacity: opacity,
+        scale: scale,
+      };
+
       // Generate rhombic dodecahedron matrix
       import("./rt-matrix-planar.js").then(MatrixModule => {
         const { RTMatrix } = MatrixModule;
@@ -1385,6 +1427,14 @@ export function initScene(THREE, OrbitControls, RT) {
       while (radialCubeMatrixGroup.children.length > 0) {
         radialCubeMatrixGroup.remove(radialCubeMatrixGroup.children[0]);
       }
+
+      // Store parameters for instance creation/export
+      radialCubeMatrixGroup.userData.parameters = {
+        frequency: frequency,
+        spaceFilling: spaceFilling,
+        opacity: opacity,
+        scale: scale,
+      };
 
       // Generate radial cube matrix
       import("./rt-matrix-radial.js").then(RadialModule => {
@@ -1441,6 +1491,14 @@ export function initScene(THREE, OrbitControls, RT) {
         );
       }
 
+      // Store parameters for instance creation/export
+      radialRhombicDodecMatrixGroup.userData.parameters = {
+        frequency: frequency,
+        spaceFilling: spaceFilling,
+        opacity: opacity,
+        scale: scale,
+      };
+
       // Generate radial rhombic dodecahedron matrix
       import("./rt-matrix-radial.js").then(RadialModule => {
         const { RTRadialMatrix } = RadialModule;
@@ -1496,6 +1554,14 @@ export function initScene(THREE, OrbitControls, RT) {
       // Get IVM Mode checkbox value
       const ivmMode =
         document.getElementById("radialTetIVMMode")?.checked || false;
+
+      // Store parameters for instance creation/export
+      radialTetMatrixGroup.userData.parameters = {
+        frequency: frequency,
+        ivmMode: ivmMode,
+        opacity: opacity,
+        scale: scale,
+      };
 
       // Generate radial tetrahedron matrix
       import("./rt-matrix-radial.js").then(RadialModule => {
@@ -1554,6 +1620,14 @@ export function initScene(THREE, OrbitControls, RT) {
       // ivmScale = false: keeps taxicab positioning (not FCC lattice)
       const ivmScaleOnly =
         document.getElementById("radialOctIVMScale")?.checked || false;
+
+      // Store parameters for instance creation/export
+      radialOctMatrixGroup.userData.parameters = {
+        frequency: frequency,
+        ivmScaleOnly: ivmScaleOnly,
+        opacity: opacity,
+        scale: scale,
+      };
 
       // Generate radial octahedron matrix
       import("./rt-matrix-radial.js").then(RadialModule => {
@@ -1619,6 +1693,13 @@ export function initScene(THREE, OrbitControls, RT) {
       while (radialVEMatrixGroup.children.length > 0) {
         radialVEMatrixGroup.remove(radialVEMatrixGroup.children[0]);
       }
+
+      // Store parameters for instance creation/export
+      radialVEMatrixGroup.userData.parameters = {
+        frequency: frequency,
+        opacity: opacity,
+        scale: scale,
+      };
 
       // Generate radial cuboctahedron matrix
       import("./rt-matrix-radial.js").then(RadialModule => {
@@ -2434,9 +2515,7 @@ export function initScene(THREE, OrbitControls, RT) {
       parseFloat(document.getElementById("opacitySlider")?.value || "0.25");
     const frequency = options.frequency ?? 1;
     const projection = options.projection ?? "out";
-    // TODO: Implement matrix type instance restoration (requires async creation)
-    const _matrixSize = options.matrixSize ?? 1;
-    const _rotate45 = options.rotate45 ?? false;
+    // Note: Matrix types are handled by createPolyhedronByTypeAsync()
 
     // Quadray-specific options
     const normalize = options.normalize ?? true;
@@ -2707,7 +2786,7 @@ export function initScene(THREE, OrbitControls, RT) {
       return createPolyhedronByType(type, options);
     }
 
-    // Matrix-specific options
+    // Matrix-specific options - use stored parameters from options if available
     const tetEdge = parseFloat(
       document.getElementById("tetScaleSlider")?.value || "1"
     );
@@ -2716,9 +2795,18 @@ export function initScene(THREE, OrbitControls, RT) {
     const opacity =
       options.opacity ??
       parseFloat(document.getElementById("opacitySlider")?.value || "0.25");
+
+    // Planar matrix parameters
     const matrixSize = options.matrixSize ?? 1;
-    const frequency = options.frequency ?? 1; // For radial matrices
     const rotate45 = options.rotate45 ?? false;
+    const colinearEdges = options.colinearEdges ?? false; // octaMatrix
+    const faceCoplanar = options.faceCoplanar ?? false; // rhombicDodecMatrix
+
+    // Radial matrix parameters
+    const frequency = options.frequency ?? 1;
+    const spaceFilling = options.spaceFilling ?? true; // radialCube, radialRhombicDodec
+    const ivmMode = options.ivmMode ?? false; // radialTetMatrix
+    const ivmScaleOnly = options.ivmScaleOnly ?? false; // radialOctMatrix
 
     // Create group with metadata
     const group = new THREE.Group();
@@ -2727,10 +2815,51 @@ export function initScene(THREE, OrbitControls, RT) {
       matrixSize: matrixSize,
       frequency: frequency,
       rotate45: rotate45,
+      colinearEdges: colinearEdges,
+      faceCoplanar: faceCoplanar,
+      spaceFilling: spaceFilling,
+      ivmMode: ivmMode,
+      ivmScaleOnly: ivmScaleOnly,
+      opacity: opacity,
+      scale: scale,
     };
 
-    // Get color for this type
-    const color = colorPalette[type] || 0xffffff;
+    // Get color for this type - use type-specific colors
+    let color;
+    switch (type) {
+      case "cubeMatrix":
+        color = colorPalette.cubeMatrix || colorPalette.cube || 0xffffff;
+        break;
+      case "tetMatrix":
+        color = colorPalette.tetrahedron || 0xffffff;
+        break;
+      case "octaMatrix":
+        color = colorPalette.octahedronMatrix || colorPalette.octahedron || 0xffffff;
+        break;
+      case "cuboctaMatrix":
+        color = colorPalette.cuboctahedron || 0xffffff;
+        break;
+      case "rhombicDodecMatrix":
+        color = colorPalette.rhombicDodecahedron || 0xffffff;
+        break;
+      case "radialCubeMatrix":
+        color = colorPalette.cube || 0xffffff;
+        break;
+      case "radialRhombicDodecMatrix":
+        color = colorPalette.rhombicDodecahedron || 0xffffff;
+        break;
+      case "radialTetMatrix":
+        color = colorPalette.radialTetrahedron || colorPalette.tetrahedron || 0xffffff;
+        break;
+      case "radialOctMatrix":
+        color = colorPalette.radialOctahedron || colorPalette.octahedron || 0xffffff;
+        break;
+      case "radialVEMatrix":
+        color = colorPalette.radialCuboctahedron || colorPalette.cuboctahedron || 0xffffff;
+        break;
+      default:
+        color = 0xffffff;
+    }
 
     try {
       // Planar matrix types
@@ -2772,6 +2901,7 @@ export function initScene(THREE, OrbitControls, RT) {
               matrixSize,
               scale,
               rotate45,
+              colinearEdges,
               opacity,
               color,
               THREE
@@ -2792,6 +2922,7 @@ export function initScene(THREE, OrbitControls, RT) {
               matrixSize,
               scale,
               rotate45,
+              faceCoplanar,
               opacity,
               color,
               THREE
@@ -2821,6 +2952,7 @@ export function initScene(THREE, OrbitControls, RT) {
             matrix = RTRadialMatrix.createRadialCubeMatrix(
               frequency,
               scale,
+              spaceFilling,
               opacity,
               color,
               THREE
@@ -2830,6 +2962,7 @@ export function initScene(THREE, OrbitControls, RT) {
             matrix = RTRadialMatrix.createRadialRhombicDodecMatrix(
               frequency,
               scale,
+              spaceFilling,
               opacity,
               color,
               THREE
@@ -2841,17 +2974,19 @@ export function initScene(THREE, OrbitControls, RT) {
               scale,
               opacity,
               color,
-              THREE
+              THREE,
+              ivmMode
             );
             break;
           case "radialOctMatrix":
             matrix = RTRadialMatrix.createRadialOctahedronMatrix(
               frequency,
               scale,
-              false, // useIVMPositions - default false for instances
               opacity,
               color,
-              THREE
+              THREE,
+              false, // ivmScale - not used in import (always false)
+              ivmScaleOnly
             );
             break;
           case "radialVEMatrix":

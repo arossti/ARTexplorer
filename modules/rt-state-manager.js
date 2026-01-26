@@ -157,88 +157,102 @@ export const RTStateManager = {
    * Create Instance from polyhedron group's current transform state
    * @param {THREE.Group} polyhedronGroup - The Form to snapshot
    * @param {THREE.Scene} scene - THREE.js scene to add instance to
+   * @param {Object} options - Creation options
+   * @param {boolean} options.skipClone - If true, use polyhedronGroup directly without cloning
+   *                                      (for freshly generated geometry during import)
    * @returns {Object} Instance metadata
    */
-  createInstance(polyhedronGroup, scene) {
+  createInstance(polyhedronGroup, scene, options = {}) {
+    const { skipClone = false } = options;
+
     // Generate unique ID
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 15);
     const instanceId = `instance_${timestamp}_${randomId}`;
 
-    // Create lightweight clone that SHARES geometry/materials (memory efficient)
-    const clonedGroup = new THREE.Group();
+    // Determine the THREE.js object to use
+    let instanceGroup;
 
-    // Recursive function to clone entire group hierarchy
-    // Needed for matrix forms which have nested group structure
-    const cloneGroupHierarchy = (source, target) => {
-      source.children.forEach(child => {
-        if (child.isMesh) {
-          // Clone geometry to prevent transform corruption
-          const clonedGeometry = child.geometry.clone();
+    if (skipClone) {
+      // Use the group directly (for imported/recreated geometry)
+      // This avoids cloning complex nested structures that can fail
+      instanceGroup = polyhedronGroup;
+    } else {
+      // Create lightweight clone that SHARES geometry/materials (memory efficient)
+      instanceGroup = new THREE.Group();
 
-          // Clone material to prevent shared highlight state
-          const clonedMaterial = child.material.clone();
+      // Recursive function to clone entire group hierarchy
+      // Needed for matrix forms which have nested group structure
+      const cloneGroupHierarchy = (source, target) => {
+        source.children.forEach(child => {
+          if (child.isMesh) {
+            // Clone geometry to prevent transform corruption
+            const clonedGeometry = child.geometry.clone();
 
-          // Reset any highlight state from material
-          // (instance should start unhighlighted even if form was selected)
-          if (child.userData.originalEmissive) {
-            // Form was highlighted - restore original emissive to cloned material
-            clonedMaterial.emissive.copy(child.userData.originalEmissive);
-            clonedMaterial.emissiveIntensity =
-              child.userData.originalEmissiveIntensity;
+            // Clone material to prevent shared highlight state
+            const clonedMaterial = child.material.clone();
+
+            // Reset any highlight state from material
+            // (instance should start unhighlighted even if form was selected)
+            if (child.userData.originalEmissive) {
+              // Form was highlighted - restore original emissive to cloned material
+              clonedMaterial.emissive.copy(child.userData.originalEmissive);
+              clonedMaterial.emissiveIntensity =
+                child.userData.originalEmissiveIntensity;
+            }
+
+            const instanceMesh = new THREE.Mesh(clonedGeometry, clonedMaterial);
+            instanceMesh.position.copy(child.position);
+            instanceMesh.rotation.copy(child.rotation);
+            instanceMesh.scale.copy(child.scale);
+            instanceMesh.renderOrder = child.renderOrder;
+            // Copy userData to preserve isVertexNode and other markers
+            Object.assign(instanceMesh.userData, child.userData);
+            target.add(instanceMesh);
+          } else if (child.isLine || child.isLineSegments) {
+            // Clone line geometry too
+            const clonedGeometry = child.geometry.clone();
+
+            // Clone material to prevent shared line width state
+            const clonedMaterial = child.material.clone();
+
+            // Reset any highlight line width
+            if (child.userData.originalLineWidth !== undefined) {
+              clonedMaterial.linewidth = child.userData.originalLineWidth;
+            }
+
+            const instanceLine = child.isLineSegments
+              ? new THREE.LineSegments(clonedGeometry, clonedMaterial)
+              : new THREE.Line(clonedGeometry, clonedMaterial);
+            instanceLine.position.copy(child.position);
+            instanceLine.rotation.copy(child.rotation);
+            instanceLine.scale.copy(child.scale);
+            instanceLine.renderOrder = child.renderOrder;
+            // Copy userData to preserve any markers
+            Object.assign(instanceLine.userData, child.userData);
+            target.add(instanceLine);
+          } else if (child.isGroup) {
+            // Recursively clone nested groups (for matrix forms)
+            const nestedGroup = new THREE.Group();
+            nestedGroup.position.copy(child.position);
+            nestedGroup.rotation.copy(child.rotation);
+            nestedGroup.scale.copy(child.scale);
+            // Copy userData to preserve any markers
+            Object.assign(nestedGroup.userData, child.userData);
+            cloneGroupHierarchy(child, nestedGroup);
+            target.add(nestedGroup);
           }
+        });
+      };
 
-          const instanceMesh = new THREE.Mesh(clonedGeometry, clonedMaterial);
-          instanceMesh.position.copy(child.position);
-          instanceMesh.rotation.copy(child.rotation);
-          instanceMesh.scale.copy(child.scale);
-          instanceMesh.renderOrder = child.renderOrder;
-          // Copy userData to preserve isVertexNode and other markers
-          Object.assign(instanceMesh.userData, child.userData);
-          target.add(instanceMesh);
-        } else if (child.isLine || child.isLineSegments) {
-          // Clone line geometry too
-          const clonedGeometry = child.geometry.clone();
+      // Clone entire hierarchy
+      cloneGroupHierarchy(polyhedronGroup, instanceGroup);
 
-          // Clone material to prevent shared line width state
-          const clonedMaterial = child.material.clone();
-
-          // Reset any highlight line width
-          if (child.userData.originalLineWidth !== undefined) {
-            clonedMaterial.linewidth = child.userData.originalLineWidth;
-          }
-
-          const instanceLine = child.isLineSegments
-            ? new THREE.LineSegments(clonedGeometry, clonedMaterial)
-            : new THREE.Line(clonedGeometry, clonedMaterial);
-          instanceLine.position.copy(child.position);
-          instanceLine.rotation.copy(child.rotation);
-          instanceLine.scale.copy(child.scale);
-          instanceLine.renderOrder = child.renderOrder;
-          // Copy userData to preserve any markers
-          Object.assign(instanceLine.userData, child.userData);
-          target.add(instanceLine);
-        } else if (child.isGroup) {
-          // Recursively clone nested groups (for matrix forms)
-          const nestedGroup = new THREE.Group();
-          nestedGroup.position.copy(child.position);
-          nestedGroup.rotation.copy(child.rotation);
-          nestedGroup.scale.copy(child.scale);
-          // Copy userData to preserve any markers
-          Object.assign(nestedGroup.userData, child.userData);
-          cloneGroupHierarchy(child, nestedGroup);
-          target.add(nestedGroup);
-        }
-      });
-    };
-
-    // Clone entire hierarchy
-    cloneGroupHierarchy(polyhedronGroup, clonedGroup);
-
-    // Copy current transform from Form
-    clonedGroup.position.copy(polyhedronGroup.position);
-    clonedGroup.rotation.copy(polyhedronGroup.rotation);
-    clonedGroup.scale.copy(polyhedronGroup.scale);
+      // Copy current transform from Form
+      instanceGroup.position.copy(polyhedronGroup.position);
+      instanceGroup.rotation.copy(polyhedronGroup.rotation);
+      instanceGroup.scale.copy(polyhedronGroup.scale);
+    }
 
     // Create instance metadata
     const instance = {
@@ -283,16 +297,16 @@ export const RTStateManager = {
       },
 
       // THREE.js object reference (independent visual object)
-      threeObject: clonedGroup,
+      threeObject: instanceGroup,
     };
 
-    // Tag the clone with instance metadata
-    clonedGroup.userData.isInstance = true;
-    clonedGroup.userData.instanceId = instance.id;
-    clonedGroup.userData.type = instance.type;
+    // Tag the instance group with metadata
+    instanceGroup.userData.isInstance = true;
+    instanceGroup.userData.instanceId = instance.id;
+    instanceGroup.userData.type = instance.type;
 
-    // Add cloned instance to scene
-    scene.add(clonedGroup);
+    // Add instance to scene
+    scene.add(instanceGroup);
 
     // Track instance in state
     this.state.instances.push(instance);
@@ -305,7 +319,7 @@ export const RTStateManager = {
     this.trackModification("create");
 
     console.log(
-      `✅ Instance created: ${instance.id} (${instance.type}) at position (${instance.transform.position.x.toFixed(2)}, ${instance.transform.position.y.toFixed(2)}, ${instance.transform.position.z.toFixed(2)})`
+      `✅ Instance created: ${instance.id} (${instance.type}) at position (${instance.transform.position.x.toFixed(2)}, ${instance.transform.position.y.toFixed(2)}, ${instance.transform.position.z.toFixed(2)})${skipClone ? " [no clone]" : ""}`
     );
 
     return instance;

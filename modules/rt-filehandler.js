@@ -806,9 +806,12 @@ export const RTFileHandler = {
             }
 
             // Register as instance via StateManager
+            // Use skipClone: true since geometry was freshly created for import
+            // This avoids the deep clone that can fail on complex matrix structures
             const restoredInstance = this.stateManager.createInstance(
               polyhedronGroup,
-              this.scene
+              this.scene,
+              { skipClone: true }
             );
 
             if (restoredInstance) {
