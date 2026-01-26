@@ -1,560 +1,461 @@
-# RT File Handler - Instance Restoration Workplan
+# RT File Handler - Technical Documentation
 
 **Created:** 2026-01-05
-**Status:** Planning Phase
-**Branch:** rt-filehandler
-**Goal:** Implement full instance geometry restoration on JSON import
+**Updated:** 2026-01-26
+**Status:** COMPLETE
+**Modules:** `rt-filehandler.js`, `rt-state-manager.js`
 
 ---
 
-## Current Status
+## Overview
 
-### ✅ What Works
-
-- JSON state export with complete instance data
-- File import/export UI (Import/Export/Save buttons)
-- State validation and parsing
-- Camera restoration
-- Grid state restoration
-- Auto-save system
-- Preset library
-- Keyboard shortcuts
-
-### ❌ What Needs Fixing
-
-- Instance geometry recreation on import
-- Instances are logged but not visually restored in 3D scene
-
-### 🐛 Issue Details
-
-**Log Output:**
-
-```
-rt-state-manager.js:551 🗑️  All instances cleared
-rt-filehandler.js:232 📦 Would restore 2 instances
-rt-filehandler.js:239 ✅ State imported successfully
-```
-
-**Problem Location:** [rt-filehandler.js:229-236](../../src/geometry/modules/rt-filehandler.js#L229-L236)
+The File Handler system provides complete state persistence for ARTexplorer, enabling:
+- JSON export/import of scene state (environment + instances)
+- glTF/glB geometry export for external applications
+- CSV data export for analysis
+- Auto-save to localStorage
+- Preset library system
 
 ---
 
-## Architecture Analysis
+## Module Architecture
 
-### Key Files & Touchpoints
+### RTFileHandler (`modules/rt-filehandler.js`)
 
-#### 1. **rt-filehandler.js** (Primary Work Area)
+Primary file I/O module handling all export/import operations.
 
-**Location:** `src/geometry/modules/rt-filehandler.js`
-
-**Current Import Method:**
-
+**Initialization:**
 ```javascript
-// Line ~220-240
-importState(stateData) {
-  // ✅ Validates state data
-  // ✅ Clears existing instances via RTStateManager.clearAll()
-  // ✅ Restores camera
-  // ✅ Restores grid states
-  // ❌ INCOMPLETE: Instance restoration
-
-  if (stateData.instances && Array.isArray(stateData.instances)) {
-    console.log(`📦 Would restore ${stateData.instances.length} instances`);
-    // TODO: Implement instance restoration
-  }
-}
+RTFileHandler.init(stateManager, scene, camera);
 ```
 
-**What We Need:**
-
-- Access to polyhedron creation functions
-- Ability to create geometry by type name (string → function)
-- Apply saved transforms after creation
-
----
-
-#### 2. **rt-init.js** (Polyhedron Creation Pipeline)
-
-**Location:** `src/geometry/modules/rt-init.js`
-
-**Polyhedron Creation Functions to Identify:**
-
-- `renderPolyhedron(group, geometry, color, opacity)` - Core rendering function
-- Individual polyhedron builders (need to find these)
-- Scale/transform application logic
-- Where `Polyhedra.cube()`, `Polyhedra.tetrahedron()`, etc. are called
-
-**Search Patterns:**
-
-```javascript
-// Find where polyhedra are created:
--"Polyhedra.cube" -
-  "Polyhedra.tetrahedron" -
-  "Polyhedra.octahedron" -
-  "Polyhedra.icosahedron" -
-  "Polyhedra.dodecahedron" -
-  "Polyhedra.dualTetrahedron" -
-  "Polyhedra.dualIcosahedron" -
-  "Polyhedra.cuboctahedron" -
-  "Polyhedra.rhombicDodecahedron" -
-  "Polyhedra.geodesic" -
-  // Find where groups are created:
-  "cubeGroup" -
-  "tetrahedronGroup" -
-  "octahedronGroup";
-// etc.
-```
+**Dependencies:**
+- `RTStateManager` - Instance management
+- `THREE.Scene` - Scene reference for geometry operations
+- `THREE.Camera` - Camera state persistence
+- `window.renderingAPI` - Polyhedron creation via `createPolyhedronByType()`
 
 ---
 
-#### 3. **rt-polyhedra.js** (Geometry Generation)
+### RTStateManager (`modules/rt-state-manager.js`)
 
-**Location:** `src/geometry/modules/rt-polyhedra.js`
+State management module following TEUI/OBJECTIVE pattern.
 
-**What It Provides:**
+**Key Concepts:**
+- **Forms** - Templates at origin (not persisted)
+- **Instances** - Deposited snapshots with transforms (persisted)
 
-- `Polyhedra.cube(scale)` - Returns `{ vertices, edges, faces }`
-- `Polyhedra.tetrahedron(scale)` - Returns geometry data
-- Similar methods for all polyhedron types
-
-**What We Need to Know:**
-
-- Input parameters (scale, frequency for geodesics)
-- Output format
-- How to convert output to THREE.js geometry
-
----
-
-#### 4. **rt-state-manager.js** (Instance Management)
-
-**Location:** `src/geometry/modules/rt-state-manager.js`
-
-**Relevant Methods:**
-
-```javascript
-// Line 94-194
-createInstance(polyhedronGroup, scene) {
-  // Creates instance from existing polyhedron group
-  // Clones geometry
-  // Stores transform data
-  // Adds to scene
-  // Returns instance metadata
-}
-
-// Line 272-294
-deleteInstance(instanceId, scene) {
-  // Removes instance from scene and state
-}
-
-// Line 534-552
-clearAll(scene) {
-  // Removes all instances
-}
-```
-
-**What's Important:**
-
-- `createInstance()` expects an existing THREE.Group with geometry
-- We need to build the group FIRST, then pass it to createInstance()
-- Instance metadata structure is already correct in JSON export
+**Instance Lifecycle:**
+1. User transforms a Form at origin
+2. "NOW" button creates Instance via `createInstance()`
+3. Instance stored in `state.instances[]` with full transform data
+4. Instance can be selected, transformed, deleted
+5. Undo/redo stack tracks all modifications
 
 ---
 
-## JSON State Structure
+## JSON State Format (v1.0)
 
-### Instance Data Format
+### Complete State Structure
 
 ```json
 {
+  "version": "1.0",
+  "timestamp": "2026-01-26T10:30:00.000Z",
+  "timestampMs": 1737886200000,
+
+  "environment": {
+    "camera": {
+      "position": { "x": 5, "y": -5, "z": 5 },
+      "rotation": { "x": 0.6, "y": 0.7, "z": 0 },
+      "zoom": 1
+    },
+    "grids": {
+      "quadray": { "visible": true, "tessellation": 12 },
+      "cartesian": { "visible": false, "tessellation": 10 }
+    },
+    "polyhedraCheckboxes": {
+      "showCube": true,
+      "showTetrahedron": false,
+      "showGeodesicIcosahedron": true
+      // ... all form visibility states
+    },
+    "sliderValues": {
+      "scaleSlider": 1.0,
+      "tetScaleSlider": 1.0,
+      "opacitySlider": 0.25,
+      "nodeOpacitySlider": 0.35,
+      "geodesicIcosaFrequency": 3
+      // ... all slider values
+    },
+    "geodesicProjections": {
+      "geodesicIcosaProjection": "out"
+      // ... all projection radio states
+    },
+    "colorPalette": null
+  },
+
   "instances": [
     {
-      "id": "instance_1736093847123_abc123",
-      "timestamp": 1736093847123,
-      "type": "cube", // ← Key for recreation
+      "id": "instance_1737886200000_abc123",
+      "timestamp": 1737886200000,
+      "type": "cube",
+      "parameters": null,
       "transform": {
         "position": { "x": 2.5, "y": 0, "z": 0 },
-        "rotation": { "x": 0, "y": 0, "z": 0, "order": "XYZ" },
+        "rotation": { "x": 0, "y": 0.785, "z": 0, "order": "XYZ" },
         "scale": { "x": 1.5, "y": 1.5, "z": 1.5 }
       },
       "appearance": {
-        "visible": true
+        "visible": true,
+        "opacity": 0.25
       },
       "metadata": {
-        "label": "cube_1736093847123",
+        "label": "cube_1737886200000",
         "tags": [],
         "notes": ""
       }
     }
-  ]
-}
-```
+  ],
 
-**Critical Fields:**
-
-- `type` - Determines which Polyhedra method to call
-- `transform` - Applied after geometry creation
-- `appearance.visible` - Controls visibility
-
----
-
-## Implementation Strategy
-
-### Phase 1: Research & Map Functions
-
-**Goal:** Understand the existing polyhedron creation pipeline
-
-**Tasks:**
-
-1. ✅ Identify where polyhedra are initially created in rt-init.js
-2. ✅ Map `type` string → creation function
-3. ✅ Understand rendering pipeline (geometry → THREE.js → scene)
-4. ✅ Document scale/transform application process
-
-**Search Locations:**
-
-- `rt-init.js` lines containing "Polyhedra."
-- `rt-init.js` functions that create "Group" objects
-- `renderPolyhedron()` function implementation
-
----
-
-### Phase 2: Extract Creation Logic
-
-**Goal:** Make polyhedron creation callable from file handler
-
-**Option A: Create Factory Function in rt-init.js**
-
-```javascript
-// Add to rt-init.js after polyhedron creation
-function createPolyhedronByType(type, scale = 1.0) {
-  const group = new THREE.Group();
-  let geometry;
-
-  switch (type) {
-    case "cube":
-      geometry = Polyhedra.cube(scale);
-      break;
-    case "tetrahedron":
-      geometry = Polyhedra.tetrahedron(scale);
-      break;
-    // ... all types
+  "metadata": {
+    "depositedCount": 5,
+    "instanceCount": 5
   }
-
-  renderPolyhedron(group, geometry, color, opacity);
-  group.userData.type = type;
-  return group;
 }
-
-// Expose globally
-window.createPolyhedronByType = createPolyhedronByType;
 ```
 
-**Option B: Pass Creation Functions to File Handler**
+### Supported Instance Types
+
+| Type | Parameters | Notes |
+|------|------------|-------|
+| `cube` | — | Basic hexahedron |
+| `tetrahedron` | — | Basic tetrahedron |
+| `dualTetrahedron` | — | Inverted tetrahedron |
+| `octahedron` | — | Dual of cube |
+| `icosahedron` | — | 20 triangular faces |
+| `dodecahedron` | — | 12 pentagonal faces |
+| `dualIcosahedron` | — | Rotated icosahedron at φ scale |
+| `cuboctahedron` | — | Vector Equilibrium |
+| `rhombicDodecahedron` | — | Dual of cuboctahedron |
+| `geodesicIcosahedron` | `frequency`, `projection` | Geodesic sphere |
+| `geodesicTetrahedron` | `frequency`, `projection` | Geodesic tetrahedron |
+| `geodesicOctahedron` | `frequency`, `projection` | Geodesic octahedron |
+| `geodesicDualTetrahedron` | `frequency`, `projection` | Geodesic dual tetrahedron |
+| `geodesicDualIcosahedron` | `frequency`, `projection` | Geodesic dual icosahedron |
+| `quadrayTetrahedron` | `wxyz`, `normalize` | Native Quadray coords |
+| `quadrayTetraDeformed` | `wxyz`, `zStretch` | Deformed Quadray |
+| `cubeMatrix` | `matrixSize`, `rotate45` | Planar cube array |
+| `tetMatrix` | `matrixSize`, `rotate45` | Planar tetrahedron array |
+| `octaMatrix` | `matrixSize`, `rotate45` | Planar octahedron array |
+| `cuboctaMatrix` | `matrixSize`, `rotate45` | Planar VE array |
+| `rhombicDodecMatrix` | `matrixSize`, `rotate45` | Planar RD array |
+| `point` | — | 0D primitive |
+| `line` | `quadrance`, `length`, `weight` | 1D primitive |
+| `polygon` | `sides`, `quadrance`, `radius`, `edgeWeight`, `showFace` | 2D primitive |
+
+### Parameter Details
+
+**Geodesic Parameters:**
+- `frequency`: Integer 1-7 (Fuller notation)
+- `projection`: `"off"`, `"in"`, `"mid"`, `"out"`
+
+**Matrix Parameters:**
+- `matrixSize`: Integer (N×N grid)
+- `rotate45`: Boolean (45° rotation for IVM alignment)
+
+**Quadray Parameters:**
+- `wxyz`: Array `[w, x, y, z]` coordinates
+- `normalize`: Boolean (zero-sum normalization)
+- `zStretch`: Float (Z-axis deformation factor)
+
+---
+
+## API Reference
+
+### RTFileHandler Methods
+
+#### Export Methods
 
 ```javascript
-// In rt-init.js after RTFileHandler.init()
-RTFileHandler.setPolyhedronFactory({
-  cube: scale => createCube(scale),
-  tetrahedron: scale => createTetrahedron(scale),
-  // ... etc
+// Export complete state to JSON object
+const stateData = RTFileHandler.exportState();
+
+// Export to downloadable JSON file
+RTFileHandler.exportStateToFile(filename?);
+
+// Export to glTF/glB format
+await RTFileHandler.exportGLTF({
+  binary: true,        // .glb (true) or .gltf (false)
+  includeGrids: false, // Include grid geometry
+  filename: null       // Custom filename
 });
+
+// Export instances to CSV
+RTFileHandler.exportCSVToFile(filename?);
 ```
 
-**Option C: Minimal Coupling - Factory Registry**
+#### Import Methods
 
 ```javascript
-// Create a new lightweight module: rt-polyhedron-factory.js
-export const PolyhedronFactory = {
-  create(type, scale, THREE, Polyhedra) {
-    // Self-contained creation logic
-    // No dependencies on rt-init.js internals
-  },
+// Import from state object
+const success = RTFileHandler.importState(stateData);
+
+// Import from File object
+const success = await RTFileHandler.importStateFromFile(file);
+
+// Show file picker dialog
+RTFileHandler.showImportDialog();
+
+// Show export format selection dialog
+await RTFileHandler.showExportDialog();
+```
+
+#### Auto-Save Methods
+
+```javascript
+// Manual auto-save trigger
+RTFileHandler.autoSave();
+
+// Load from auto-save
+const success = RTFileHandler.loadAutoSave();
+
+// Clear auto-save
+RTFileHandler.clearAutoSave();
+```
+
+#### Preset Methods
+
+```javascript
+// Save current state as preset
+RTFileHandler.savePreset('my-preset');
+
+// Load preset
+RTFileHandler.loadPreset('my-preset');
+
+// Delete preset
+RTFileHandler.deletePreset('my-preset');
+
+// List all presets
+const presets = RTFileHandler.listPresets();
+```
+
+### RTStateManager Methods
+
+#### Instance Management
+
+```javascript
+// Create instance from polyhedron group
+const instance = RTStateManager.createInstance(polyhedronGroup, scene);
+
+// Select instance
+const instance = RTStateManager.selectInstance(instanceId);
+
+// Update instance transform
+RTStateManager.updateInstance(instanceId, newTransform);
+
+// Delete instance
+RTStateManager.deleteInstance(instanceId, scene);
+
+// Get instance by ID
+const instance = RTStateManager.getInstance(instanceId);
+
+// Get all instances
+const instances = RTStateManager.getAllInstances();
+
+// Get deposited count
+const count = RTStateManager.getDepositedCount();
+```
+
+#### Undo/Redo
+
+```javascript
+// Undo last action
+RTStateManager.undo(scene);
+
+// Redo last undone action
+RTStateManager.redo(scene);
+```
+
+#### Modification Tracking
+
+```javascript
+// Register callback for modifications (used by auto-save)
+RTStateManager.onModification((modCount, changesSinceSave, action) => {
+  // Triggered on create/update/delete
+});
+
+// Mark current state as saved
+RTStateManager.markAsSaved();
+
+// Get unsaved changes count
+const changes = RTStateManager.getUnsavedChanges();
+```
+
+#### Environment Settings
+
+```javascript
+// Set custom color palette
+RTStateManager.setColorPalette(colorPalette);
+
+// Get color palette
+const palette = RTStateManager.getColorPalette();
+
+// Clear color palette (revert to defaults)
+RTStateManager.clearColorPalette();
+```
+
+---
+
+## Instance Restoration Process
+
+When importing a JSON state file, instances are restored through this pipeline:
+
+1. **Validate State Data**
+   - Check version compatibility
+   - Verify required fields present
+
+2. **Clear Existing State**
+   - `RTStateManager.clearAll(scene)` removes all instances
+
+3. **Restore Environment**
+   - Camera position/rotation/zoom
+   - Grid visibility and tessellation
+   - All slider values (sliders restored BEFORE checkboxes)
+   - Geodesic projection radio states
+   - Polyhedra checkbox states
+   - Color palette (if custom)
+
+4. **Restore Instances**
+   - For each instance in JSON:
+     - Build options from `parameters` (frequency, projection, matrixSize, etc.)
+     - Call `window.renderingAPI.createPolyhedronByType(type, options)`
+     - Apply saved transform (position, rotation, scale)
+     - Set visibility
+     - Register via `RTStateManager.createInstance()`
+
+5. **Trigger Geometry Update**
+   - `window.renderingAPI.updateGeometry()` rebuilds visible forms
+
+---
+
+## Auto-Save System
+
+### Configuration
+
+```javascript
+RTFileHandler.config = {
+  autoSaveEnabled: true,
+  autoSaveThreshold: 10,  // Save every N modifications
+  autoSaveKey: 'art-explorer-autosave',
+  presetKeyPrefix: 'art-explorer-preset-',
+  maxAutoSaveHistory: 5
 };
 ```
 
-**Recommendation:** Start with Option A (simplest, least refactoring)
+### Behavior
+
+- Auto-save triggers after `autoSaveThreshold` modifications
+- Saves to `localStorage` with key `art-explorer-autosave`
+- Maintains history of last 5 saves (metadata only)
+- Modification counter tracks: create, update, delete, updateEnvironment
 
 ---
 
-### Phase 3: Implement Instance Restoration
+## Keyboard Shortcuts
 
-**Goal:** Complete the TODO in rt-filehandler.js
-
-**Implementation:**
-
-```javascript
-// rt-filehandler.js - importState() method
-// Replace lines 229-236
-
-if (stateData.instances && Array.isArray(stateData.instances)) {
-  console.log(`📦 Restoring ${stateData.instances.length} instances...`);
-
-  stateData.instances.forEach(instanceData => {
-    // 1. Create polyhedron group from type
-    const polyhedronGroup = window.createPolyhedronByType(
-      instanceData.type,
-      1.0 // Base scale
-    );
-
-    // 2. Apply saved transform
-    polyhedronGroup.position.set(
-      instanceData.transform.position.x,
-      instanceData.transform.position.y,
-      instanceData.transform.position.z
-    );
-
-    polyhedronGroup.rotation.set(
-      instanceData.transform.rotation.x,
-      instanceData.transform.rotation.y,
-      instanceData.transform.rotation.z
-    );
-
-    polyhedronGroup.scale.set(
-      instanceData.transform.scale.x,
-      instanceData.transform.scale.y,
-      instanceData.transform.scale.z
-    );
-
-    // 3. Set visibility
-    polyhedronGroup.visible = instanceData.appearance.visible;
-
-    // 4. Register as instance via StateManager
-    const restoredInstance = this.stateManager.createInstance(
-      polyhedronGroup,
-      this.scene
-    );
-
-    console.log(
-      `✅ Restored instance: ${instanceData.type} at (${instanceData.transform.position.x}, ${instanceData.transform.position.y}, ${instanceData.transform.position.z})`
-    );
-  });
-
-  console.log(`✅ All instances restored successfully`);
-}
-```
+| Key | Action |
+|-----|--------|
+| `Ctrl+S` | Export state to JSON file |
+| `Ctrl+O` | Import state from JSON file |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Shift+Z` | Redo |
 
 ---
 
-### Phase 4: Handle Edge Cases
+## Error Handling
 
-**Edge Cases to Consider:**
+### Import Validation
 
-1. **Geodesic Polyhedra**
-   - Have additional parameters: `frequency`, `projection`
-   - Need to save/restore these parameters
-   - JSON schema extension needed
+- Version mismatch: Warning logged, import continues
+- Missing required fields: Error thrown, import aborted
+- Unknown polyhedron type: Warning logged, instance skipped
+- Invalid transform data: Defaults applied (position 0,0,0; scale 1,1,1)
 
-2. **Color/Opacity**
-   - Currently not saved in instance data
-   - Should we preserve per-instance colors?
-   - May need appearance.color, appearance.opacity fields
+### Export Safety
 
-3. **Node Rendering**
-   - Are nodes part of the instance?
-   - Node size preference (sm/md/lg/packed)
-   - Node geometry type (classical vs RT)
-
-4. **Unknown Types**
-   - What if JSON contains a type we don't recognize?
-   - Graceful degradation with warning
-
-5. **Version Compatibility**
-   - Future schema changes
-   - Migration strategies
-
-**Proposed JSON Extensions:**
-
-```json
-{
-  "instances": [
-    {
-      "type": "geodesicIcosahedron",
-      "parameters": {
-        "frequency": 2,
-        "projection": "out" // "off", "in", "mid", "out"
-      },
-      "appearance": {
-        "visible": true,
-        "color": "#4a9eff",
-        "opacity": 0.25,
-        "nodeSize": "md"
-      }
-    }
-  ]
-}
-```
+- Instances without `threeObject`: Skipped in glTF export
+- localStorage quota exceeded: Error logged, auto-save disabled
 
 ---
 
-### Phase 5: Testing Plan
+## File Formats
 
-**Test Cases:**
+### JSON (.json)
+- Complete state persistence
+- Human-readable
+- Version-controlled
+- Recommended for project saves
 
-1. **Basic Polyhedra**
-   - ✅ Export scene with 2 cubes (1 moved, 1 scaled)
-   - ✅ Import and verify both appear correctly
-   - ✅ Check transforms match original
+### glTF (.gltf)
+- JSON-based 3D format
+- Geometry only (no state)
+- External texture references
+- Good for editing in other tools
 
-2. **All Polyhedron Types**
-   - Test each: cube, tetrahedron, octahedron, icosahedron, dodecahedron
-   - Test duals: dualTetrahedron, dualIcosahedron
-   - Test Archimedean: cuboctahedron, rhombicDodecahedron
+### glB (.glb)
+- Binary glTF format
+- Single file with embedded data
+- Smaller file size
+- Good for sharing/archiving
 
-3. **Geodesic Polyhedra**
-   - Test with different frequencies (0-6)
-   - Test different projections (off/in/mid/out)
-
-4. **Complex Scenes**
-   - 10+ instances
-   - Mixed types
-   - Extreme transforms (large scale, rotation)
-
-5. **Round-Trip Fidelity**
-   - Export → Import → Export again
-   - Compare JSON files (should be identical)
-
-6. **Error Handling**
-   - Invalid JSON
-   - Missing required fields
-   - Unknown polyhedron types
-   - Corrupted transform data
+### CSV (.csv)
+- Instance data table
+- Position/rotation/scale columns
+- Good for data analysis
+- Import not supported
 
 ---
 
-## Code Locations Reference
+## Testing Checklist
 
-### Files to Modify
+### Basic Operations
+- [ ] Export empty scene
+- [ ] Export scene with single instance
+- [ ] Export scene with multiple instances
+- [ ] Import exported JSON
+- [ ] Verify camera restored
+- [ ] Verify grid states restored
+- [ ] Verify instances restored with correct transforms
 
-1. **rt-init.js** - Add polyhedron factory function
-2. **rt-filehandler.js** - Implement instance restoration
-3. **(Optional) rt-polyhedron-factory.js** - If we go with Option C
+### All Polyhedron Types
+- [ ] Basic polyhedra (cube, tetrahedron, octahedron, etc.)
+- [ ] Dual polyhedra
+- [ ] Archimedean solids
+- [ ] Geodesic polyhedra (all frequencies, all projections)
+- [ ] Quadray demonstrators
+- [ ] Matrix forms (all types, various sizes)
+- [ ] Primitives (point, line, polygon)
 
-### Files to Read (No Changes)
+### Edge Cases
+- [ ] 50+ instances
+- [ ] Extreme transforms (large scale, rotation)
+- [ ] Mixed polyhedron types
+- [ ] Custom color palette
 
-1. **rt-polyhedra.js** - Understand geometry API
-2. **rt-state-manager.js** - Understand instance API
-
-### Search Commands
-
-```bash
-# Find polyhedron creation
-grep -n "Polyhedra\." src/geometry/modules/rt-init.js
-
-# Find group creation
-grep -n "Group()" src/geometry/modules/rt-init.js
-
-# Find renderPolyhedron function
-grep -n "function renderPolyhedron" src/geometry/modules/rt-init.js
-
-# Find where scale is applied
-grep -n "scale" src/geometry/modules/rt-init.js | grep -i "slider\|value"
-```
-
----
-
-## Dependencies & Requirements
-
-### Modules Required
-
-- THREE.js (already loaded)
-- Polyhedra (from rt-polyhedra.js)
-- RTStateManager (already available)
-- Scene reference (passed to init)
-- Camera reference (passed to init)
-
-### Global Variables Needed
-
-- Access to polyhedron creation functions
-- Access to rendering configuration (colors, opacity, node size)
-
-### Potential Issues
-
-1. **Scoping** - Creation functions may be in closure
-2. **State** - UI state (opacity, node size) may not be accessible
-3. **Async** - Geometry creation might be async
-4. **Performance** - Restoring 100+ instances could be slow
-
----
-
-## Next Steps
-
-### Immediate Actions
-
-1. ✅ Create this workplan document
-2. ⏳ Search rt-init.js for polyhedron creation patterns
-3. ⏳ Document the creation pipeline
-4. ⏳ Identify best factory approach (A/B/C)
-5. ⏳ Implement factory function
-6. ⏳ Update importState() method
-7. ⏳ Test with saved 2-cube scene
-8. ⏳ Expand to all polyhedron types
-9. ⏳ Handle geodesic edge cases
-10. ⏳ Update documentation
-
-### Success Criteria
-
-- ✅ Import JSON with 2 hexahedra
-- ✅ Both instances appear in scene
-- ✅ Transforms match original (position/rotation/scale)
-- ✅ Works for all polyhedron types
-- ✅ No errors in console
-- ✅ Round-trip fidelity maintained
-
----
-
-## Notes & Observations
-
-### From Logs.md Testing
-
-```
-rt-state-manager.js:551 🗑️  All instances cleared
-rt-filehandler.js:232 📦 Would restore 2 instances
-rt-filehandler.js:239 ✅ State imported successfully
-```
-
-**Observations:**
-
-- Clear is working correctly
-- State validation passes
-- Instance count detected (2)
-- No errors during import
-- Just missing visual restoration
-
-### Key Insight
-
-The hardest part is **accessing the polyhedron creation pipeline** which lives in rt-init.js's closure. We need to either:
-
-1. Expose it globally (simple, less elegant)
-2. Pass it as dependency (cleaner, more refactoring)
-3. Recreate minimal version (most work, most isolated)
-
-**Recommendation:** Start with #1 (expose globally) for rapid prototyping, then optionally refactor to #2 if needed.
-
----
-
-## Timeline Estimate
-
-**Phase 1 (Research):** 15 minutes
-**Phase 2 (Factory):** 30 minutes
-**Phase 3 (Implementation):** 30 minutes
-**Phase 4 (Edge Cases):** 45 minutes
-**Phase 5 (Testing):** 30 minutes
-
-**Total:** ~2.5 hours
-
-**Actual:** TBD
+### Round-Trip Fidelity
+- [ ] Export → Import → Export produces identical JSON
 
 ---
 
 ## References
 
-- [rt-filehandler.js](../../src/geometry/modules/rt-filehandler.js) - Main implementation
-- [rt-init.js](../../src/geometry/modules/rt-init.js) - Polyhedron creation
-- [rt-state-manager.js](../../src/geometry/modules/rt-state-manager.js) - Instance API
-- [rt-polyhedra.js](../../src/geometry/modules/rt-polyhedra.js) - Geometry generation
-- [ARTexplorer.md](ARTexplorer.md) - Project documentation
+- [rt-filehandler.js](../modules/rt-filehandler.js) - File handler implementation
+- [rt-state-manager.js](../modules/rt-state-manager.js) - State management
+- [rt-rendering.js](../modules/rt-rendering.js) - `createPolyhedronByType()` factory
+- [rt-polyhedra.js](../modules/rt-polyhedra.js) - Geometry generation
 
 ---
 
-**Last Updated:** 2026-01-05
-**Author:** Claude (with Andy Ross Thomson)
+*Last Updated: 2026-01-26*
+*Status: COMPLETE - All functionality implemented and working*

@@ -1377,6 +1377,10 @@ function startARTexplorer(
   let justFinishedDrag = false; // Track if we just completed a drag (prevent deselect on click-after-drag)
   let editingBasis = null; // Localized gumball that follows selected Forms
 
+  // Basis vector visibility state (stored when gumball activates, restored on deactivation)
+  let savedCartesianBasisVisible = null;
+  let savedQuadrayBasisVisible = null;
+
   // Object snap state (toggleable, can combine with grid snapping)
   let objectSnapVertex = false; // Snap to nearest vertex
   let objectSnapEdge = false; // Snap to nearest edge midpoint
@@ -1475,6 +1479,16 @@ function startARTexplorer(
         currentGumballTool = null;
         controls.enabled = true;
         destroyEditingBasis();
+
+        // Restore basis vectors to their previous visibility state
+        if (savedCartesianBasisVisible !== null) {
+          renderingAPI.setCartesianBasisVisible(savedCartesianBasisVisible);
+          savedCartesianBasisVisible = null;
+        }
+        if (savedQuadrayBasisVisible !== null) {
+          renderingAPI.setQuadrayBasisVisible(savedQuadrayBasisVisible);
+          savedQuadrayBasisVisible = null;
+        }
       } else {
         // Remove active from all gumball tool buttons
         document
@@ -1484,6 +1498,14 @@ function startARTexplorer(
         this.classList.add("active");
         currentGumballTool = tool;
         controls.enabled = false; // Disable orbit controls when gumball tool active
+
+        // Save and hide basis vectors to reduce visual clutter during gumball edits
+        const cartesianCheckbox = document.getElementById("showCartesianBasis");
+        const quadrayCheckbox = document.getElementById("showQuadray");
+        savedCartesianBasisVisible = cartesianCheckbox?.checked ?? false;
+        savedQuadrayBasisVisible = quadrayCheckbox?.checked ?? false;
+        renderingAPI.setCartesianBasisVisible(false);
+        renderingAPI.setQuadrayBasisVisible(false);
 
         // Create editing basis at selected Forms' center
         const selected = getSelectedPolyhedra();
@@ -1604,6 +1626,16 @@ function startARTexplorer(
       if (editingBasis) {
         scene.remove(editingBasis);
         editingBasis = null;
+      }
+
+      // Restore basis vectors to their previous visibility state
+      if (savedCartesianBasisVisible !== null) {
+        renderingAPI.setCartesianBasisVisible(savedCartesianBasisVisible);
+        savedCartesianBasisVisible = null;
+      }
+      if (savedQuadrayBasisVisible !== null) {
+        renderingAPI.setQuadrayBasisVisible(savedQuadrayBasisVisible);
+        savedQuadrayBasisVisible = null;
       }
 
       console.log("✅ Tool mode exited - orbit enabled, selection preserved");
@@ -1823,11 +1855,103 @@ function startARTexplorer(
     });
   }
 
+  /**
+   * Setup rotation input handler for ROTATE mode (Spread fields - XYZ)
+   */
+  function setupRotateSpreadInputs() {
+    const rotInputs = [
+      { id: "rotXSpread", axis: new THREE.Vector3(1, 0, 0), name: "X" },
+      { id: "rotYSpread", axis: new THREE.Vector3(0, 1, 0), name: "Y" },
+      { id: "rotZSpread", axis: new THREE.Vector3(0, 0, 1), name: "Z" },
+    ];
+
+    rotInputs.forEach(({ id, axis, name }) => {
+      const input = document.getElementById(id);
+      if (!input) return;
+
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && currentGumballTool === "rotate") {
+          const spread = parseFloat(e.target.value);
+          if (isNaN(spread)) return;
+
+          const selected = getSelectedPolyhedra();
+          if (selected.length === 0) {
+            console.warn("⚠️ No polyhedra selected");
+            return;
+          }
+
+          // Convert spread to radians: spread = sin²(θ), so θ = asin(√spread)
+          const degrees = RT.spreadToDegrees(spread);
+          const radians = (degrees * Math.PI) / 180;
+
+          // Apply rotation
+          selected.forEach(poly => {
+            poly.rotateOnWorldAxis(axis, radians);
+            console.log(
+              `🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`
+            );
+          });
+
+          // Exit tool mode but keep selection
+          exitToolMode();
+        }
+      });
+    });
+  }
+
+  /**
+   * Setup rotation input handler for ROTATE mode (Spread fields - WXYZ)
+   */
+  function setupRotateQuadraySpreadInputs() {
+    const rotInputs = [
+      { id: "rotWSpread", basisIndex: 0, name: "W" },
+      { id: "rotXQSpread", basisIndex: 1, name: "X (Quadray)" },
+      { id: "rotYQSpread", basisIndex: 2, name: "Y (Quadray)" },
+      { id: "rotZQSpread", basisIndex: 3, name: "Z (Quadray)" },
+    ];
+
+    rotInputs.forEach(({ id, basisIndex, name }) => {
+      const input = document.getElementById(id);
+      if (!input) return;
+
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && currentGumballTool === "rotate") {
+          const spread = parseFloat(e.target.value);
+          if (isNaN(spread)) return;
+
+          const selected = getSelectedPolyhedra();
+          if (selected.length === 0) {
+            console.warn("⚠️ No polyhedra selected");
+            return;
+          }
+
+          // Convert spread to radians: spread = sin²(θ), so θ = asin(√spread)
+          const degrees = RT.spreadToDegrees(spread);
+          const radians = (degrees * Math.PI) / 180;
+          const axis = Quadray.basisVectors[basisIndex];
+
+          // Apply rotation
+          selected.forEach(poly => {
+            poly.rotateOnWorldAxis(axis, radians);
+            console.log(
+              `🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`
+            );
+          });
+
+          // Exit tool mode but keep selection
+          exitToolMode();
+        }
+      });
+    });
+  }
+
   // Initialize all coordinate/rotation input handlers
   setupMoveCoordinateInputs();
   setupMoveQuadrayInputs();
   setupRotateDegreesInputs();
   setupRotateQuadrayDegreesInputs();
+  setupRotateSpreadInputs();
+  setupRotateQuadraySpreadInputs();
 
   // ========================================================================
   // EDITING BASIS MANAGEMENT (Localized Gumball)

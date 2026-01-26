@@ -1711,19 +1711,23 @@ Reduce the length/size of XYZ Cartesian basis vector arrows to match the proport
 
 #### 11.4.4 Temporary Basis Vector Hiding During Gumball Edits
 
-**Status:** ⚠️ Active
+**Status:** ✅ COMPLETE (2026-01-26)
 **Priority:** High
 
 Temporarily hide general Basis Vectors DURING active Gumball edits to reduce workspace clutter.
+
+**Implementation:** Basis vectors (Cartesian XYZ and Quadray WXYZ) are automatically hidden when any gumball tool is activated, and restored to their previous visibility state when the tool is deactivated.
 
 ---
 
 #### 11.4.5 Complete rt-filehandler.md Documentation
 
-**Status:** ⚠️ Active
+**Status:** ✅ COMPLETE (2026-01-26)
 **Priority:** High
 
 Complete the partially-finished rt-filehandler.md documentation to prevent undeclared/unused variable issues.
+
+**Implementation:** Documentation fully rewritten to reflect completed implementation. Includes JSON state format v1.0, all supported instance types with parameters, complete API reference for RTFileHandler and RTStateManager, instance restoration pipeline, auto-save system, and testing checklist.
 
 ---
 
@@ -1756,10 +1760,10 @@ Implement intelligent snapping options for Gumball Move mode: vertex-to-vertex, 
 
 #### 11.4.9 Rotation Snapping + Numeric Input Fix
 
-**Status:** ⚠️ Active (Part 1), 🔮 Future (Part 2)
+**Status:** ✅ COMPLETE (Part 1, 2026-01-26), 🔮 Future (Part 2)
 **Priority:** High (Bug Fix), Medium (Feature)
 
-**Part 1:** Fix numeric rotation input fields that currently do not work.
+**Part 1:** ✅ Fixed - All rotation input fields (XYZ degrees, XYZ spread, WXYZ degrees, WXYZ spread) now apply rotation on Enter key and exit tool mode.
 **Part 2:** Add snap-to-increment functionality for rotation handles.
 
 ---

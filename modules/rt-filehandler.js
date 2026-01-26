@@ -390,9 +390,9 @@ export const RTFileHandler = {
   /**
    * Import state from JSON object
    * @param {Object} stateData - State object to import
-   * @returns {boolean} Success status
+   * @returns {Promise<boolean>} Success status
    */
-  importState(stateData) {
+  async importState(stateData) {
     try {
       // Validate state data
       if (!stateData || !stateData.version) {
@@ -689,104 +689,148 @@ export const RTFileHandler = {
             "⚠️ renderingAPI.createPolyhedronByType not available - instances not restored"
           );
         } else {
+          // Matrix types that require async creation
+          const matrixTypes = [
+            "cubeMatrix",
+            "tetMatrix",
+            "octaMatrix",
+            "cuboctaMatrix",
+            "rhombicDodecMatrix",
+            "radialCubeMatrix",
+            "radialRhombicDodecMatrix",
+            "radialTetMatrix",
+            "radialOctMatrix",
+            "radialVEMatrix",
+          ];
+
           let restoredCount = 0;
           let failedCount = 0;
 
-          stateData.instances.forEach(instanceData => {
-            try {
-              // Build options for polyhedron creation
-              const options = {
-                opacity: instanceData.appearance?.opacity ?? 0.25,
-              };
+          // Helper function to restore a single instance
+          const restoreInstance = async instanceData => {
+            // Build options for polyhedron creation
+            const options = {
+              opacity: instanceData.appearance?.opacity ?? 0.25,
+            };
 
-              // Add type-specific parameters if present
-              if (instanceData.parameters) {
-                // Geodesic parameters
-                if (instanceData.parameters.frequency !== undefined) {
-                  options.frequency = instanceData.parameters.frequency;
-                }
-                if (instanceData.parameters.projection !== undefined) {
-                  options.projection = instanceData.parameters.projection;
-                }
-                // Matrix parameters
-                if (instanceData.parameters.matrixSize !== undefined) {
-                  options.matrixSize = instanceData.parameters.matrixSize;
-                }
-                if (instanceData.parameters.rotate45 !== undefined) {
-                  options.rotate45 = instanceData.parameters.rotate45;
-                }
-                // Quadray parameters (preserves native WXYZ coordinates)
-                if (instanceData.parameters.normalize !== undefined) {
-                  options.normalize = instanceData.parameters.normalize;
-                }
-                if (instanceData.parameters.zStretch !== undefined) {
-                  options.zStretch = instanceData.parameters.zStretch;
-                }
-                if (instanceData.parameters.wxyz !== undefined) {
-                  options.wxyz = instanceData.parameters.wxyz;
-                }
+            // Add type-specific parameters if present
+            if (instanceData.parameters) {
+              // Geodesic parameters
+              if (instanceData.parameters.frequency !== undefined) {
+                options.frequency = instanceData.parameters.frequency;
               }
+              if (instanceData.parameters.projection !== undefined) {
+                options.projection = instanceData.parameters.projection;
+              }
+              // Matrix parameters
+              if (instanceData.parameters.matrixSize !== undefined) {
+                options.matrixSize = instanceData.parameters.matrixSize;
+              }
+              if (instanceData.parameters.rotate45 !== undefined) {
+                options.rotate45 = instanceData.parameters.rotate45;
+              }
+              // Quadray parameters (preserves native WXYZ coordinates)
+              if (instanceData.parameters.normalize !== undefined) {
+                options.normalize = instanceData.parameters.normalize;
+              }
+              if (instanceData.parameters.zStretch !== undefined) {
+                options.zStretch = instanceData.parameters.zStretch;
+              }
+              if (instanceData.parameters.wxyz !== undefined) {
+                options.wxyz = instanceData.parameters.wxyz;
+              }
+            }
 
-              // Create polyhedron group from type
-              const polyhedronGroup =
-                window.renderingAPI.createPolyhedronByType(
-                  instanceData.type,
-                  options
-                );
-
-              if (!polyhedronGroup) {
+            // Create polyhedron group from type (async for matrices, sync for others)
+            let polyhedronGroup;
+            if (matrixTypes.includes(instanceData.type)) {
+              // Use async version for matrix types
+              if (window.renderingAPI?.createPolyhedronByTypeAsync) {
+                polyhedronGroup =
+                  await window.renderingAPI.createPolyhedronByTypeAsync(
+                    instanceData.type,
+                    options
+                  );
+              } else {
                 console.warn(
-                  `⚠️ Failed to create polyhedron of type: ${instanceData.type}`
+                  `⚠️ createPolyhedronByTypeAsync not available for matrix type: ${instanceData.type}`
                 );
-                failedCount++;
-                return;
+                return false;
               }
-
-              // Apply saved transform
-              if (instanceData.transform) {
-                const { position, rotation, scale } = instanceData.transform;
-
-                if (position) {
-                  polyhedronGroup.position.set(
-                    position.x ?? 0,
-                    position.y ?? 0,
-                    position.z ?? 0
-                  );
-                }
-
-                if (rotation) {
-                  polyhedronGroup.rotation.set(
-                    rotation.x ?? 0,
-                    rotation.y ?? 0,
-                    rotation.z ?? 0
-                  );
-                }
-
-                if (scale) {
-                  polyhedronGroup.scale.set(
-                    scale.x ?? 1,
-                    scale.y ?? 1,
-                    scale.z ?? 1
-                  );
-                }
-              }
-
-              // Set visibility
-              if (instanceData.appearance?.visible !== undefined) {
-                polyhedronGroup.visible = instanceData.appearance.visible;
-              }
-
-              // Register as instance via StateManager
-              const restoredInstance = this.stateManager.createInstance(
-                polyhedronGroup,
-                this.scene
+            } else {
+              polyhedronGroup = window.renderingAPI.createPolyhedronByType(
+                instanceData.type,
+                options
               );
+            }
 
-              if (restoredInstance) {
-                restoredCount++;
-                console.log(
-                  `  ✅ Restored: ${instanceData.type} at (${instanceData.transform?.position?.x?.toFixed(2) ?? 0}, ${instanceData.transform?.position?.y?.toFixed(2) ?? 0}, ${instanceData.transform?.position?.z?.toFixed(2) ?? 0})`
+            if (!polyhedronGroup) {
+              console.warn(
+                `⚠️ Failed to create polyhedron of type: ${instanceData.type}`
+              );
+              return false;
+            }
+
+            // Apply saved transform
+            if (instanceData.transform) {
+              const { position, rotation, scale } = instanceData.transform;
+
+              if (position) {
+                polyhedronGroup.position.set(
+                  position.x ?? 0,
+                  position.y ?? 0,
+                  position.z ?? 0
                 );
+              }
+
+              if (rotation) {
+                polyhedronGroup.rotation.set(
+                  rotation.x ?? 0,
+                  rotation.y ?? 0,
+                  rotation.z ?? 0
+                );
+              }
+
+              if (scale) {
+                polyhedronGroup.scale.set(
+                  scale.x ?? 1,
+                  scale.y ?? 1,
+                  scale.z ?? 1
+                );
+              }
+            }
+
+            // Set visibility
+            if (instanceData.appearance?.visible !== undefined) {
+              polyhedronGroup.visible = instanceData.appearance.visible;
+            }
+
+            // Register as instance via StateManager
+            // Use skipClone: true since geometry was freshly created for import
+            // This avoids the deep clone that can fail on complex matrix structures
+            const restoredInstance = this.stateManager.createInstance(
+              polyhedronGroup,
+              this.scene,
+              { skipClone: true }
+            );
+
+            if (restoredInstance) {
+              console.log(
+                `  ✅ Restored: ${instanceData.type} at (${instanceData.transform?.position?.x?.toFixed(2) ?? 0}, ${instanceData.transform?.position?.y?.toFixed(2) ?? 0}, ${instanceData.transform?.position?.z?.toFixed(2) ?? 0})`
+              );
+              return true;
+            }
+            return false;
+          };
+
+          // Restore all instances (handles both sync and async types)
+          for (const instanceData of stateData.instances) {
+            try {
+              const success = await restoreInstance(instanceData);
+              if (success) {
+                restoredCount++;
+              } else {
+                failedCount++;
               }
             } catch (error) {
               console.error(
@@ -795,7 +839,7 @@ export const RTFileHandler = {
               );
               failedCount++;
             }
-          });
+          }
 
           console.log(
             `📦 Instance restoration complete: ${restoredCount} restored, ${failedCount} failed`
@@ -981,7 +1025,7 @@ export const RTFileHandler = {
    * Load auto-saved state from localStorage
    * @returns {boolean} Success status
    */
-  loadAutoSave() {
+  async loadAutoSave() {
     try {
       const jsonString = localStorage.getItem(this.config.autoSaveKey);
       if (!jsonString) {
@@ -990,7 +1034,7 @@ export const RTFileHandler = {
       }
 
       const stateData = JSON.parse(jsonString);
-      return this.importState(stateData);
+      return await this.importState(stateData);
     } catch (error) {
       console.error("❌ Failed to load auto-save:", error);
       return false;
@@ -1062,7 +1106,7 @@ export const RTFileHandler = {
    * @param {string} presetName - Name of the preset to load
    * @returns {boolean} Success status
    */
-  loadPreset(presetName) {
+  async loadPreset(presetName) {
     try {
       const presetKey = `${this.config.presetKeyPrefix}${presetName}`;
       const jsonString = localStorage.getItem(presetKey);
@@ -1073,7 +1117,7 @@ export const RTFileHandler = {
       }
 
       const stateData = JSON.parse(jsonString);
-      const success = this.importState(stateData);
+      const success = await this.importState(stateData);
 
       if (success) {
         console.log(`✅ Preset loaded: ${presetName}`);
