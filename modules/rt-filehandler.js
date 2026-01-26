@@ -120,6 +120,8 @@ export const RTFileHandler = {
       showPoint: document.getElementById("showPoint")?.checked || false,
       showLine: document.getElementById("showLine")?.checked || false,
       showPolygon: document.getElementById("showPolygon")?.checked || false,
+      showPrism: document.getElementById("showPrism")?.checked || false,
+      showCone: document.getElementById("showCone")?.checked || false,
       // Regular polyhedra
       showCube: document.getElementById("showCube")?.checked || false,
       showTetrahedron:
@@ -224,6 +226,28 @@ export const RTFileHandler = {
       ),
       polygonShowFace:
         document.getElementById("polygonShowFace")?.checked !== false,
+      // Prism primitive parameters
+      prismSides: parseInt(
+        document.getElementById("prismSides")?.value || "6"
+      ),
+      prismBaseQuadrance: parseFloat(
+        document.getElementById("prismBaseQuadrance")?.value || "1"
+      ),
+      prismHeightQuadrance: parseFloat(
+        document.getElementById("prismHeightQuadrance")?.value || "1"
+      ),
+      prismShowFaces:
+        document.getElementById("prismShowFaces")?.checked !== false,
+      // Cone primitive parameters
+      coneSides: parseInt(document.getElementById("coneSides")?.value || "6"),
+      coneBaseQuadrance: parseFloat(
+        document.getElementById("coneBaseQuadrance")?.value || "1"
+      ),
+      coneHeightQuadrance: parseFloat(
+        document.getElementById("coneHeightQuadrance")?.value || "1"
+      ),
+      coneShowFaces:
+        document.getElementById("coneShowFaces")?.checked !== false,
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -649,6 +673,18 @@ export const RTFileHandler = {
         const polygonControls = document.getElementById("polygon-controls");
         if (polygonControls && checkboxes.showPolygon) {
           polygonControls.style.display = "block";
+        }
+
+        // Show/hide Prism controls based on checkbox state
+        const prismControls = document.getElementById("prism-controls");
+        if (prismControls && checkboxes.showPrism) {
+          prismControls.style.display = "block";
+        }
+
+        // Show/hide Cone controls based on checkbox state
+        const coneControls = document.getElementById("cone-controls");
+        if (coneControls && checkboxes.showCone) {
+          coneControls.style.display = "block";
         }
 
         // Trigger updateGeometry to render the restored forms

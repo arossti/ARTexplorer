@@ -103,6 +103,8 @@ function startARTexplorer(
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
+  let prismGroup; // Prism primitive (3D solid with N-gon caps)
+  let coneGroup; // Cone primitive (3D solid with N-gon base and apex)
   let cubeGroup, tetrahedronGroup, dualTetrahedronGroup, octahedronGroup;
   let icosahedronGroup, dodecahedronGroup, dualIcosahedronGroup;
   let cuboctahedronGroup, rhombicDodecahedronGroup;
@@ -301,6 +303,76 @@ function startARTexplorer(
       polygonEdgeWeightValue.textContent = polygonEdgeWeightSlider.value;
       updateGeometry();
     });
+  }
+
+  // Prism (3D primitive - N-gon caps with rectangular sides)
+  const prismCheckbox = document.getElementById("showPrism");
+  const prismControls = document.getElementById("prism-controls");
+  const prismSidesInput = document.getElementById("prismSides");
+  const prismBaseQuadranceInput = document.getElementById("prismBaseQuadrance");
+  const prismHeightQuadranceInput = document.getElementById(
+    "prismHeightQuadrance"
+  );
+  const prismShowFacesCheckbox = document.getElementById("prismShowFaces");
+
+  if (prismCheckbox) {
+    prismCheckbox.addEventListener("change", () => {
+      if (prismControls) {
+        prismControls.style.display = prismCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  if (prismSidesInput) {
+    prismSidesInput.addEventListener("input", updateGeometry);
+  }
+
+  if (prismBaseQuadranceInput) {
+    prismBaseQuadranceInput.addEventListener("input", updateGeometry);
+  }
+
+  if (prismHeightQuadranceInput) {
+    prismHeightQuadranceInput.addEventListener("input", updateGeometry);
+  }
+
+  if (prismShowFacesCheckbox) {
+    prismShowFacesCheckbox.addEventListener("change", updateGeometry);
+  }
+
+  // Cone (3D primitive - N-gon base with point apex)
+  const coneCheckbox = document.getElementById("showCone");
+  const coneControls = document.getElementById("cone-controls");
+  const coneSidesInput = document.getElementById("coneSides");
+  const coneBaseQuadranceInput = document.getElementById("coneBaseQuadrance");
+  const coneHeightQuadranceInput = document.getElementById(
+    "coneHeightQuadrance"
+  );
+  const coneShowFacesCheckbox = document.getElementById("coneShowFaces");
+
+  if (coneCheckbox) {
+    coneCheckbox.addEventListener("change", () => {
+      if (coneControls) {
+        coneControls.style.display = coneCheckbox.checked ? "block" : "none";
+      }
+      updateGeometry();
+    });
+  }
+
+  if (coneSidesInput) {
+    coneSidesInput.addEventListener("input", updateGeometry);
+  }
+
+  if (coneBaseQuadranceInput) {
+    coneBaseQuadranceInput.addEventListener("input", updateGeometry);
+  }
+
+  if (coneHeightQuadranceInput) {
+    coneHeightQuadranceInput.addEventListener("input", updateGeometry);
+  }
+
+  if (coneShowFacesCheckbox) {
+    coneShowFacesCheckbox.addEventListener("change", updateGeometry);
   }
 
   document
@@ -2456,6 +2528,8 @@ function startARTexplorer(
       pointGroup,
       lineGroup,
       polygonGroup,
+      prismGroup,
+      coneGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -2727,6 +2801,8 @@ function startARTexplorer(
       pointGroup,
       lineGroup,
       polygonGroup,
+      prismGroup,
+      coneGroup,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -4004,6 +4080,8 @@ function startARTexplorer(
     pointGroup,
     lineGroup,
     polygonGroup,
+    prismGroup,
+    coneGroup,
     cubeGroup,
     tetrahedronGroup,
     dualTetrahedronGroup,

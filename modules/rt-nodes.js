@@ -76,6 +76,26 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
       return 4 * scale * spread; // RT-pure quadrance result
     }
 
+    case "prism": {
+      // RT-PURE: Prism uses polygon base edges for close-packing
+      // The "shortest" edges determine packing - use base edge quadrance
+      // scale = base circumradius quadrance (Q_R), sides from options
+      const prismSides = options.sides || 6;
+      const prismAngle = Math.PI / prismSides;
+      const prismSpread = Math.pow(Math.sin(prismAngle), 2);
+      return 4 * scale * prismSpread; // Base edge quadrance
+    }
+
+    case "cone": {
+      // RT-PURE: Cone uses polygon base edges for close-packing
+      // Base edges are the "closest" vertices - use base edge quadrance
+      // scale = base circumradius quadrance (Q_R), sides from options
+      const coneSides = options.sides || 6;
+      const coneAngle = Math.PI / coneSides;
+      const coneSpread = Math.pow(Math.sin(coneAngle), 2);
+      return 4 * scale * coneSpread; // Base edge quadrance
+    }
+
     case "tetrahedron":
       // Edge quadrance Q = 8s² (edge = 2s√2)
       return 8 * s2;

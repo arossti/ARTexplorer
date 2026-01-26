@@ -455,15 +455,18 @@ The following N-gon prisms/cones are fully RT-pure:
 
 ## File Changes Summary
 
-| File | Changes |
-|------|---------|
-| rt-primitives.js | Add `prism()`, `cone()`, `cylinder()` functions |
-| rt-rendering.js | Add `countSceneTriangles()` function |
-| index.html | Add Prism/Cone UI controls; add triangle count display |
-| rt-init.js | Wire up Prism/Cone events; wire up triangle count updates |
+| File | Changes | Status |
+|------|---------|--------|
+| rt-primitives.js | Add `prism()`, `cone()`, `cylinder()` functions | ✅ Complete |
+| rt-rendering.js | Add colors, groups, rendering blocks, geometry stats | ✅ Complete |
+| rt-nodes.js | Add edge quadrance cases for prism/cone | ✅ Complete |
+| index.html | Add Prism/Cone UI controls | ✅ Complete |
+| rt-init.js | Wire up Prism/Cone events, selection support | ✅ Complete |
+| rt-filehandler.js | Add state save/restore for prism/cone | ✅ Complete |
 
 ---
 
 *Created: 2026-01-26*
-*Status: PLANNING*
+*Updated: 2026-01-26*
+*Status: PRISMS COMPLETE, TRIANGLES PENDING*
 *Prerequisites: JAN26-EXTRACT completed*

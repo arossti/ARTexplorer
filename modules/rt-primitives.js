@@ -735,4 +735,261 @@ export const Primitives = {
       },
     };
   },
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * 3D PRIMITIVES: PRISM & CONE
+   * ═══════════════════════════════════════════════════════════════════════════
+   * RT-pure 3D solids using the polygon generators as base.
+   * These are proper 3D forms that do NOT rotate to camera (unlike Line lineweight).
+   *
+   * Prism: Two parallel N-gon caps connected by rectangular side faces
+   * Cone: N-gon base with point apex
+   *
+   * RT-pure for n = 3, 4, 5, 6, 8, 10, 12 (Gauss-Wantzel constructible polygons)
+   * ═══════════════════════════════════════════════════════════════════════════ */
+
+  /**
+   * Prism - 3D solid with two parallel N-gon caps
+   * RT-pure for n = 3, 4, 5, 6, 8, 10, 12
+   *
+   * Euler: V - E + F = 2n - 3n + (n+2) = 2 ✓
+   *
+   * @param {number} baseQuadrance - Circumradius Q of the N-gon caps (R²)
+   * @param {number} heightQuadrance - Height Q (h²)
+   * @param {Object} options - {sides: n, showFaces: boolean}
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  prism: (baseQuadrance = 1, heightQuadrance = 1, options = {}) => {
+    const n = options.sides || 6;
+    const showFaces = options.showFaces !== false;
+
+    // Generate base polygon using RT-pure generator
+    const basePolygon = Primitives.polygon(baseQuadrance, {
+      sides: n,
+      showFace: false,
+    });
+    const baseVertices = basePolygon.vertices;
+
+    // Height calculation (deferred √)
+    const height = Math.sqrt(heightQuadrance);
+    const halfHeight = height / 2;
+
+    // Create prism vertices (bottom cap at -h/2, top cap at +h/2)
+    const vertices = [];
+
+    // Bottom cap vertices (indices 0 to n-1)
+    for (let i = 0; i < n; i++) {
+      const v = baseVertices[i];
+      vertices.push(new THREE.Vector3(v.x, v.y, -halfHeight));
+    }
+
+    // Top cap vertices (indices n to 2n-1)
+    for (let i = 0; i < n; i++) {
+      const v = baseVertices[i];
+      vertices.push(new THREE.Vector3(v.x, v.y, halfHeight));
+    }
+
+    // Edges: 3n total
+    const edges = [];
+
+    // Bottom cap edges (n edges)
+    for (let i = 0; i < n; i++) {
+      edges.push([i, (i + 1) % n]);
+    }
+
+    // Top cap edges (n edges)
+    for (let i = 0; i < n; i++) {
+      edges.push([n + i, n + ((i + 1) % n)]);
+    }
+
+    // Vertical edges (n edges)
+    for (let i = 0; i < n; i++) {
+      edges.push([i, n + i]);
+    }
+
+    // Faces: n+2 total (but side faces split into triangles = 2n triangles)
+    const faces = [];
+
+    if (showFaces) {
+      // Bottom cap (CW winding for -Z normal when viewed from outside)
+      const bottomFace = [];
+      for (let i = n - 1; i >= 0; i--) {
+        bottomFace.push(i);
+      }
+      faces.push(bottomFace);
+
+      // Top cap (CCW winding for +Z normal)
+      const topFace = [];
+      for (let i = 0; i < n; i++) {
+        topFace.push(n + i);
+      }
+      faces.push(topFace);
+
+      // Side faces (rectangles split into 2 triangles each)
+      // CCW winding for outward-facing normals
+      for (let i = 0; i < n; i++) {
+        const next = (i + 1) % n;
+        // Two triangles per rectangular side face
+        // Triangle 1: bottom[i] → bottom[next] → top[next]
+        faces.push([i, next, n + next]);
+        // Triangle 2: bottom[i] → top[next] → top[i]
+        faces.push([i, n + next, n + i]);
+      }
+    }
+
+    // Vertical edge quadrance = heightQuadrance
+    // Base edge quadrance from polygon metadata
+    const baseEdgeQ = basePolygon.metadata.edgeQuadrance;
+
+    console.log(
+      `[RT] Prism (${n}-gon): Q_R=${baseQuadrance.toFixed(6)}, Q_H=${heightQuadrance.toFixed(6)}, ` +
+        `V=${vertices.length}, E=${edges.length}, F=${showFaces ? n + 2 : 0}, rtPure=${basePolygon.metadata.rtPure}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        type: "prism",
+        sides: n,
+        baseQuadrance,
+        heightQuadrance,
+        height,
+        baseCircumradius: basePolygon.metadata.circumradius,
+        baseEdgeQuadrance: baseEdgeQ,
+        verticalEdgeQuadrance: heightQuadrance,
+        showFaces,
+        rtPure: basePolygon.metadata.rtPure,
+      },
+    };
+  },
+
+  /**
+   * Cone - 3D solid with N-gon base and point apex
+   * RT-pure for n = 3, 4, 5, 6, 8, 10, 12
+   *
+   * Euler: V - E + F = (n+1) - 2n + (n+1) = 2 ✓
+   *
+   * @param {number} baseQuadrance - Circumradius Q of the base N-gon (R²)
+   * @param {number} heightQuadrance - Height Q (h²)
+   * @param {Object} options - {sides: n, showFaces: boolean}
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  cone: (baseQuadrance = 1, heightQuadrance = 1, options = {}) => {
+    const n = options.sides || 6;
+    const showFaces = options.showFaces !== false;
+
+    // Generate base polygon using RT-pure generator
+    const basePolygon = Primitives.polygon(baseQuadrance, {
+      sides: n,
+      showFace: false,
+    });
+    const baseVertices = basePolygon.vertices;
+
+    // Height calculation (deferred √)
+    const height = Math.sqrt(heightQuadrance);
+
+    // Create cone vertices
+    const vertices = [];
+
+    // Base vertices at z = 0 (indices 0 to n-1)
+    for (let i = 0; i < n; i++) {
+      const v = baseVertices[i];
+      vertices.push(new THREE.Vector3(v.x, v.y, 0));
+    }
+
+    // Apex at z = height (index n)
+    vertices.push(new THREE.Vector3(0, 0, height));
+    const apexIndex = n;
+
+    // Edges: 2n total
+    const edges = [];
+
+    // Base perimeter edges (n edges)
+    for (let i = 0; i < n; i++) {
+      edges.push([i, (i + 1) % n]);
+    }
+
+    // Edges from base to apex (n edges)
+    for (let i = 0; i < n; i++) {
+      edges.push([i, apexIndex]);
+    }
+
+    // Faces: n+1 total (1 base + n triangular sides)
+    const faces = [];
+
+    if (showFaces) {
+      // Base face (CW winding for -Z normal when viewed from outside)
+      const baseFace = [];
+      for (let i = n - 1; i >= 0; i--) {
+        baseFace.push(i);
+      }
+      faces.push(baseFace);
+
+      // Triangular side faces (CCW winding for outward normals)
+      for (let i = 0; i < n; i++) {
+        const next = (i + 1) % n;
+        // Triangle: base[i] → base[next] → apex
+        faces.push([i, next, apexIndex]);
+      }
+    }
+
+    // Slant quadrance: Q_slant = Q_R + Q_H (Pythagorean for apex-to-circumradius)
+    const slantQuadrance = baseQuadrance + heightQuadrance;
+    const baseEdgeQ = basePolygon.metadata.edgeQuadrance;
+
+    console.log(
+      `[RT] Cone (${n}-gon): Q_R=${baseQuadrance.toFixed(6)}, Q_H=${heightQuadrance.toFixed(6)}, ` +
+        `Q_slant=${slantQuadrance.toFixed(6)}, V=${vertices.length}, E=${edges.length}, F=${showFaces ? n + 1 : 0}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        type: "cone",
+        sides: n,
+        baseQuadrance,
+        heightQuadrance,
+        height,
+        slantQuadrance,
+        baseCircumradius: basePolygon.metadata.circumradius,
+        baseEdgeQuadrance: baseEdgeQ,
+        showFaces,
+        rtPure: basePolygon.metadata.rtPure,
+      },
+    };
+  },
+
+  /**
+   * Cylinder - Prism approximation with high N
+   * Convenience wrapper around prism() with n=24 or n=36
+   *
+   * @param {number} radiusQuadrance - Radius Q (R²)
+   * @param {number} heightQuadrance - Height Q (h²)
+   * @param {Object} options - {resolution: 'standard'|'high', showFaces: boolean}
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  cylinder: (radiusQuadrance = 1, heightQuadrance = 1, options = {}) => {
+    const resolution = options.resolution || "standard";
+    const sides = resolution === "high" ? 36 : 24;
+
+    const result = Primitives.prism(radiusQuadrance, heightQuadrance, {
+      sides,
+      showFaces: options.showFaces,
+    });
+
+    result.metadata.type = "cylinder";
+    result.metadata.resolution = resolution;
+    // Note: n=24 and n=36 are NOT RT-pure (not Gauss-Wantzel constructible)
+    result.metadata.rtPure = false;
+
+    console.log(
+      `[RT] Cylinder (${sides}-gon prism): resolution=${resolution}, rtPure=false`
+    );
+
+    return result;
+  },
 };
