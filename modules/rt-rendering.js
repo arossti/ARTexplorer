@@ -1907,7 +1907,7 @@ export function initScene(THREE, OrbitControls, RT) {
    * Update geometry statistics display
    */
   function updateGeometryStats() {
-    const stats = document.getElementById("geometryStats");
+    const stats = document.getElementById("polyhedraStats");
     let html = "";
 
     if (document.getElementById("showPoint")?.checked) {

@@ -2193,7 +2193,13 @@
             Geometry Info
           </h3>
           <div id="geometry-info-section" class="section-content">
-            <div class="stats" id="geometryStats">
+            <!-- Individual polyhedra stats (populated by rt-rendering.js) -->
+            <div class="stats" id="polyhedraStats">
+              <div style="color: #888;">Select a polyhedron to see stats</div>
+            </div>
+
+            <!-- Scene totals (updated by PerformanceClock) -->
+            <div class="stats" id="geometryStats" style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #444;">
               <div><strong>Scene Totals:</strong></div>
               <div id="totalVertices">Vertices: --</div>
               <div id="totalEdges">Edges: --</div>
