@@ -76,6 +76,64 @@ export const Polyhedra = {
     };
   },
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * CLASSICAL TRIG REFERENCE (preserved for researchers)
+   * ═══════════════════════════════════════════════════════════════════════════
+   * The following was the original arbitrary n-gon implementation using
+   * classical trigonometry. Replaced Jan 2026 with RT-pure generators.
+   *
+   * polygon_CLASSICAL: (quadrance = 1, options = {}) => {
+   *   const n = options.sides || 3;
+   *   const showFace = options.showFace !== false;
+   *   const R = Math.sqrt(quadrance);
+   *
+   *   // Classical trig for spread and edge quadrance
+   *   // spread(π/n) = sin²(π/n) - transcendental for arbitrary n
+   *   const centralAngle = Math.PI / n;
+   *   const spread = Math.pow(Math.sin(centralAngle), 2);
+   *   const Q_edge = 4 * quadrance * spread;
+   *   const edgeLength = Math.sqrt(Q_edge);
+   *
+   *   // Generate vertices using transcendental sin/cos
+   *   const vertices = [];
+   *   for (let i = 0; i < n; i++) {
+   *     const angle = (2 * Math.PI * i) / n;
+   *     vertices.push(
+   *       new THREE.Vector3(R * Math.cos(angle), R * Math.sin(angle), 0)
+   *     );
+   *   }
+   *
+   *   // Edges connect consecutive vertices (closed loop)
+   *   const edges = [];
+   *   for (let i = 0; i < n; i++) edges.push([i, (i + 1) % n]);
+   *
+   *   // Face: single n-gon with CCW winding for +Z normal
+   *   const faces = showFace ? [Array.from({ length: n }, (_, i) => i)] : [];
+   *
+   *   return {
+   *     vertices,
+   *     edges,
+   *     faces,
+   *     metadata: {
+   *       sides: n,
+   *       quadrance,
+   *       circumradius: R,
+   *       edgeQuadrance: Q_edge,
+   *       edgeLength,
+   *       spread,
+   *       showFace,
+   *       rtPure: false,  // Uses transcendental Math.sin/cos
+   *     },
+   *   };
+   * },
+   *
+   * RATIONALE FOR REPLACEMENT:
+   * - Math.sin/cos are transcendental (irrational by definition)
+   * - Gauss-Wantzel theorem: only n = 2^k × (distinct Fermat primes) constructible
+   * - RT-pure approach uses cached algebraic radicals (√2, √3, φ)
+   * - See: Wildberger "Divine Proportions" Chapter 14, pp. 159-166
+   * ═══════════════════════════════════════════════════════════════════════════ */
+
   /**
    * Polygon (n-gon) - Regular polygon in XY plane
    * RT-PURE implementation using Wildberger's Regular Stars theory
