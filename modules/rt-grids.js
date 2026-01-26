@@ -158,7 +158,8 @@ export const Grids = {
     arrowGroup.add(shaft);
 
     // 2. Create tetrahedral arrowhead using dualTetrahedron
-    const tetraGeom = Polyhedra.dualTetrahedron(headSize);
+    // Use silent option to skip RT validation logging for utility geometry
+    const tetraGeom = Polyhedra.dualTetrahedron(headSize, { silent: true });
 
     // Find which vertex is closest to pointing in our direction
     let bestVertex = 0;
