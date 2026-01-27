@@ -704,6 +704,99 @@ export const RTViewManager = {
   },
 
   /**
+   * Extract grid lines (Cartesian and Quadray/IVM) from the scene
+   * Finds GridHelper and LineSegments in grid groups
+   * @returns {Array} Array of line objects with SVG data
+   */
+  extractGridLines() {
+    const lines = [];
+    const canvas = this._renderer.domElement;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Grid styling
+    const isPrintMode = this._papercut?.state?.printModeEnabled;
+    const defaultStrokeColor = isPrintMode ? "#cccccc" : "#444444";
+    const defaultStrokeWidth = 0.25; // Very thin for grids
+    const defaultOpacity = 0.5;
+
+    // Find grid groups in scene
+    this._scene.traverse(object => {
+      // Look for GridHelper (Cartesian grids) or LineSegments with "CentralAngle" name (Quadray)
+      const isCartesianGrid = object.isGridHelper;
+      const isQuadrayGrid = object.isLineSegments && object.name?.includes("CentralAngle");
+
+      if (!isCartesianGrid && !isQuadrayGrid) return;
+
+      // Skip invisible grids
+      if (!object.visible) return;
+      let ancestor = object.parent;
+      while (ancestor) {
+        if (!ancestor.visible) return;
+        ancestor = ancestor.parent;
+      }
+
+      // Get material color if available
+      let strokeColor = defaultStrokeColor;
+      if (object.material?.color) {
+        strokeColor = `#${object.material.color.getHexString()}`;
+      }
+
+      // Get geometry - GridHelper has internal line geometry
+      let geometry = object.geometry;
+      if (!geometry) return;
+
+      const positionAttr = geometry.attributes.position;
+      if (!positionAttr) return;
+
+      const positions = positionAttr.array;
+
+      // Get world matrix for transforming vertices
+      object.updateMatrixWorld();
+      const worldMatrix = object.matrixWorld;
+
+      // LineSegments: each pair of consecutive vertices forms a line segment
+      for (let i = 0; i < positionAttr.count; i += 2) {
+        const v0 = new THREE.Vector3(
+          positions[i * 3],
+          positions[i * 3 + 1],
+          positions[i * 3 + 2]
+        ).applyMatrix4(worldMatrix);
+
+        const v1 = new THREE.Vector3(
+          positions[(i + 1) * 3],
+          positions[(i + 1) * 3 + 1],
+          positions[(i + 1) * 3 + 2]
+        ).applyMatrix4(worldMatrix);
+
+        // Project vertices to screen coordinates
+        const p0 = this._projectToScreen(v0, width, height);
+        const p1 = this._projectToScreen(v1, width, height);
+
+        // Skip very short segments
+        const segLength = Math.sqrt(
+          Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2)
+        );
+        if (segLength < 0.5) continue;
+
+        // Generate SVG line path
+        const d = `M ${p0.x.toFixed(2)} ${p0.y.toFixed(2)} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}`;
+
+        lines.push({
+          d: d,
+          stroke: strokeColor,
+          strokeWidth: defaultStrokeWidth,
+          strokeOpacity: defaultOpacity,
+          fill: "none",
+        });
+      }
+    });
+
+    console.log(`Extracted ${lines.length} grid lines from scene`);
+    return lines;
+  },
+
+  /**
    * Extract visible mesh faces (triangles) from the scene
    * Projects 3D triangular faces to 2D polygons for SVG export
    * Only includes faces on the camera side of the cutplane
@@ -955,6 +1048,7 @@ export const RTViewManager = {
    * @param {Object} options - Export options
    * @param {boolean} options.vectorMode - Use vector paths instead of raster (default: true)
    * @param {boolean} options.includeRaster - Include raster background (default: false)
+   * @param {boolean} options.includeGrids - Include grid lines (default: true)
    * @param {boolean} options.includeFaces - Include mesh faces (default: true)
    * @param {boolean} options.includeEdges - Include polyhedron edge lines (default: true)
    * @param {boolean} options.includeNodes - Include vertex nodes (default: true)
@@ -964,6 +1058,7 @@ export const RTViewManager = {
     const {
       vectorMode = true,
       includeRaster = false,
+      includeGrids = true,
       includeFaces = true,
       includeEdges = true,
       includeNodes = true,
@@ -988,6 +1083,25 @@ export const RTViewManager = {
         const scaledY = (parseFloat(y) * scaleY).toFixed(2);
         return `${cmd} ${scaledX} ${scaledY}`;
       });
+
+    // Extract grid lines if enabled (rendered first, behind everything)
+    let gridsContent = "";
+    if (includeGrids && vectorMode) {
+      const grids = this.extractGridLines();
+
+      if (grids.length > 0) {
+        const scaledGrids = grids.map(g => ({
+          ...g,
+          d: scalePath(g.d),
+        }));
+
+        gridsContent = `
+  <!-- Grid Lines -->
+  <g id="grid-lines" fill="none">
+${scaledGrids.map(g => `    <path d="${g.d}" stroke="${g.stroke}" stroke-width="${g.strokeWidth}" stroke-opacity="${g.strokeOpacity}"/>`).join("\n")}
+  </g>`;
+      }
+    }
 
     // Extract mesh faces if enabled
     let facesContent = "";
@@ -1100,7 +1214,7 @@ ${JSON.stringify(view, null, 2)}
 
   <!-- Background -->
   <rect width="100%" height="100%" fill="${view.colors.background}"/>
-${rasterContent}${facesContent}${edgesContent}${vectorContent}${nodesContent}
+${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${nodesContent}
 
   <!-- Title Block -->
   <g id="title-block" transform="translate(${dims.width - 120}, ${dims.height - 40})">
