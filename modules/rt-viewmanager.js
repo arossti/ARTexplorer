@@ -542,7 +542,9 @@ export const RTViewManager = {
       }
     });
 
-    console.log(`Extracted ${segments.length} line segments from intersection group`);
+    console.log(
+      `Extracted ${segments.length} line segments from intersection group`
+    );
 
     // Generate individual path for each segment
     // (Later we could optimize by joining connected segments into polylines)
@@ -561,6 +563,111 @@ export const RTViewManager = {
     return paths;
   },
 
+  // ========================================================================
+  // SUTHERLAND-HODGMAN POLYGON CLIPPING
+  // ========================================================================
+
+  /**
+   * Clip a polygon (array of 3D vertices) against a plane using Sutherland-Hodgman algorithm.
+   * Returns the portion of the polygon on the positive side of the plane (in front).
+   *
+   * @param {Array<THREE.Vector3>} vertices - Array of polygon vertices in order
+   * @param {THREE.Plane} plane - The clipping plane
+   * @returns {Array<THREE.Vector3>} Clipped polygon vertices (may be empty if fully clipped)
+   * @private
+   */
+  _clipPolygonAgainstPlane(vertices, plane) {
+    if (!vertices || vertices.length < 3) return [];
+
+    const output = [];
+    const numVertices = vertices.length;
+
+    for (let i = 0; i < numVertices; i++) {
+      const current = vertices[i];
+      const next = vertices[(i + 1) % numVertices];
+
+      const currentDist = plane.distanceToPoint(current);
+      const nextDist = plane.distanceToPoint(next);
+
+      const currentInside = currentDist >= 0;
+      const nextInside = nextDist >= 0;
+
+      if (currentInside) {
+        // Current vertex is inside (in front of plane)
+        output.push(current.clone());
+      }
+
+      // Check if edge crosses the plane
+      if ((currentInside && !nextInside) || (!currentInside && nextInside)) {
+        // Calculate intersection point
+        const t = currentDist / (currentDist - nextDist);
+        const intersection = new THREE.Vector3().lerpVectors(current, next, t);
+        output.push(intersection);
+      }
+    }
+
+    return output;
+  },
+
+  /**
+   * Clip a line segment against a plane.
+   * Returns the portion of the line on the positive side of the plane (in front).
+   *
+   * @param {THREE.Vector3} v0 - Line start point
+   * @param {THREE.Vector3} v1 - Line end point
+   * @param {THREE.Plane} plane - The clipping plane
+   * @returns {{start: THREE.Vector3, end: THREE.Vector3}|null} Clipped line segment or null if fully clipped
+   * @private
+   */
+  _clipLineAgainstPlane(v0, v1, plane) {
+    const d0 = plane.distanceToPoint(v0);
+    const d1 = plane.distanceToPoint(v1);
+
+    const v0Inside = d0 >= 0;
+    const v1Inside = d1 >= 0;
+
+    // Both behind plane - fully clipped
+    if (!v0Inside && !v1Inside) {
+      return null;
+    }
+
+    // Both in front of plane - no clipping needed
+    if (v0Inside && v1Inside) {
+      return { start: v0.clone(), end: v1.clone() };
+    }
+
+    // Line crosses plane - calculate intersection
+    const t = d0 / (d0 - d1);
+    const intersection = new THREE.Vector3().lerpVectors(v0, v1, t);
+
+    if (v0Inside) {
+      // v0 is inside, v1 is outside - clip at intersection
+      return { start: v0.clone(), end: intersection };
+    } else {
+      // v1 is inside, v0 is outside - clip at intersection
+      return { start: intersection, end: v1.clone() };
+    }
+  },
+
+  /**
+   * Convert a clipped polygon (3+ vertices) to SVG path data.
+   * Handles both triangles and polygons with more vertices (from clipping).
+   *
+   * @param {Array<{x: number, y: number}>} points2D - Array of 2D screen coordinates
+   * @returns {string} SVG path data string
+   * @private
+   */
+  _polygonToSVGPath(points2D) {
+    if (points2D.length < 3) return "";
+
+    let d = `M ${points2D[0].x.toFixed(2)} ${points2D[0].y.toFixed(2)}`;
+    for (let i = 1; i < points2D.length; i++) {
+      d += ` L ${points2D[i].x.toFixed(2)} ${points2D[i].y.toFixed(2)}`;
+    }
+    d += " Z";
+    return d;
+  },
+
   /**
    * Extract polyhedron edge lines (wireframe) from the scene
    * Finds LineSegments objects with renderOrder = 2 (edges rendered after faces)
@@ -572,9 +679,9 @@ export const RTViewManager = {
     const width = canvas.width;
     const height = canvas.height;
 
-    // Get cutplane for filtering
+    // Get cutplane for filtering - note: cutplane is stored in state.cutplaneNormal (a THREE.Plane)
     const cutplaneEnabled = this._papercut?.state?.cutplaneEnabled;
-    const cutplane = this._papercut?._cutplane;
+    const cutplane = this._papercut?.state?.cutplaneNormal;
 
     // Skip names for non-geometry objects
     const skipNames = [
@@ -645,25 +752,26 @@ export const RTViewManager = {
       // Line segments: (0,1), (2,3), (4,5), ...
       for (let i = 0; i < positionAttr.count; i += 2) {
         // Get vertices in world space
-        const v0 = new THREE.Vector3(
+        let v0 = new THREE.Vector3(
           positions[i * 3],
           positions[i * 3 + 1],
           positions[i * 3 + 2]
         ).applyMatrix4(worldMatrix);
 
-        const v1 = new THREE.Vector3(
+        let v1 = new THREE.Vector3(
           positions[(i + 1) * 3],
           positions[(i + 1) * 3 + 1],
           positions[(i + 1) * 3 + 2]
         ).applyMatrix4(worldMatrix);
 
-        // If cutplane is enabled, skip edges fully behind the cutplane
+        // If cutplane is enabled, clip the edge against the plane
         if (cutplaneEnabled && cutplane) {
-          const d0 = cutplane.distanceToPoint(v0);
-          const d1 = cutplane.distanceToPoint(v1);
+          const clipped = this._clipLineAgainstPlane(v0, v1, cutplane);
+          if (!clipped) continue; // Fully clipped - skip this edge
 
-          // Skip if both vertices are behind the cutplane (negative distance)
-          if (d0 < 0 && d1 < 0) continue;
+          // Use clipped endpoints
+          v0 = clipped.start;
+          v1 = clipped.end;
         }
 
         // Project vertices to screen coordinates
@@ -677,9 +785,7 @@ export const RTViewManager = {
         if (segLength < 0.5) continue;
 
         // Calculate midpoint depth for sorting
-        const midpoint = new THREE.Vector3()
-          .addVectors(v0, v1)
-          .divideScalar(2);
+        const midpoint = new THREE.Vector3().addVectors(v0, v1).divideScalar(2);
         midpoint.project(this._camera);
         const depth = midpoint.z;
 
@@ -724,7 +830,8 @@ export const RTViewManager = {
     this._scene.traverse(object => {
       // Look for GridHelper (Cartesian grids) or LineSegments with "CentralAngle" name (Quadray)
       const isCartesianGrid = object.isGridHelper;
-      const isQuadrayGrid = object.isLineSegments && object.name?.includes("CentralAngle");
+      const isQuadrayGrid =
+        object.isLineSegments && object.name?.includes("CentralAngle");
 
       if (!isCartesianGrid && !isQuadrayGrid) return;
 
@@ -799,7 +906,7 @@ export const RTViewManager = {
   /**
    * Extract visible mesh faces (triangles) from the scene
    * Projects 3D triangular faces to 2D polygons for SVG export
-   * Only includes faces on the camera side of the cutplane
+   * Uses Sutherland-Hodgman algorithm to clip faces against cutplane
    * @returns {Array} Array of polygon objects with SVG data and fill colors
    */
   extractMeshFaces() {
@@ -808,9 +915,9 @@ export const RTViewManager = {
     const width = canvas.width;
     const height = canvas.height;
 
-    // Get cutplane for filtering faces
+    // Get cutplane for filtering faces - note: cutplane is stored in state.cutplaneNormal (a THREE.Plane)
     const cutplaneEnabled = this._papercut?.state?.cutplaneEnabled;
-    const cutplane = this._papercut?._cutplane;
+    const cutplane = this._papercut?.state?.cutplaneNormal;
 
     // Skip names for non-geometry objects
     const skipNames = [
@@ -908,31 +1015,31 @@ export const RTViewManager = {
           positions[i2 * 3 + 2]
         ).applyMatrix4(worldMatrix);
 
-        // If cutplane is enabled, skip faces behind the cutplane
-        if (cutplaneEnabled && cutplane) {
-          const d0 = cutplane.distanceToPoint(v0);
-          const d1 = cutplane.distanceToPoint(v1);
-          const d2 = cutplane.distanceToPoint(v2);
+        // Start with the triangle vertices
+        let faceVertices = [v0, v1, v2];
 
-          // Skip if all vertices are behind the cutplane (negative distance)
-          if (d0 < 0 && d1 < 0 && d2 < 0) continue;
+        // If cutplane is enabled, clip the face against the plane
+        if (cutplaneEnabled && cutplane) {
+          faceVertices = this._clipPolygonAgainstPlane(faceVertices, cutplane);
+
+          // Skip if fully clipped (all vertices behind cutplane)
+          if (faceVertices.length < 3) continue;
         }
 
-        // Project vertices to screen coordinates
-        const p0 = this._projectToScreen(v0, width, height);
-        const p1 = this._projectToScreen(v1, width, height);
-        const p2 = this._projectToScreen(v2, width, height);
+        // Project all vertices to screen coordinates
+        const projectedVertices = faceVertices.map(v =>
+          this._projectToScreen(v, width, height)
+        );
 
-        // Calculate face centroid depth for sorting
-        const centroid = new THREE.Vector3()
-          .addVectors(v0, v1)
-          .add(v2)
-          .divideScalar(3);
+        // Calculate face centroid depth for sorting (use clipped vertices)
+        const centroid = new THREE.Vector3();
+        faceVertices.forEach(v => centroid.add(v));
+        centroid.divideScalar(faceVertices.length);
         centroid.project(this._camera);
         const depth = centroid.z;
 
-        // Generate SVG polygon path
-        const d = `M ${p0.x.toFixed(2)} ${p0.y.toFixed(2)} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} L ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} Z`;
+        // Generate SVG polygon path using helper (handles 3+ vertices)
+        const d = this._polygonToSVGPath(projectedVertices);
 
         polygons.push({
           d: d,
@@ -961,9 +1068,9 @@ export const RTViewManager = {
     const width = canvas.width;
     const height = canvas.height;
 
-    // Get cutplane for filtering
+    // Get cutplane for filtering - note: cutplane is stored in state.cutplaneNormal (a THREE.Plane)
     const cutplaneEnabled = this._papercut?.state?.cutplaneEnabled;
-    const cutplane = this._papercut?._cutplane;
+    const cutplane = this._papercut?.state?.cutplaneNormal;
 
     this._scene.traverse(object => {
       // Only process vertex nodes
@@ -1009,7 +1116,11 @@ export const RTViewManager = {
       // Calculate projected radius (approximate)
       // Create a point offset by radius in camera space and project it
       const cameraRight = new THREE.Vector3();
-      this._camera.matrixWorld.extractBasis(cameraRight, new THREE.Vector3(), new THREE.Vector3());
+      this._camera.matrixWorld.extractBasis(
+        cameraRight,
+        new THREE.Vector3(),
+        new THREE.Vector3()
+      );
       const edgePoint = center.clone().add(cameraRight.multiplyScalar(radius));
       const screenEdge = this._projectToScreen(edgePoint, width, height);
       const screenRadius = Math.sqrt(
@@ -1529,7 +1640,8 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
             : `Cart-${view.cutplane?.axis?.toUpperCase() || "Z"}`;
 
         // Truncate long names and adjust font size
-        const displayName = view.name.length > 12 ? view.name.substring(0, 11) + "…" : view.name;
+        const displayName =
+          view.name.length > 12 ? view.name.substring(0, 11) + "…" : view.name;
         const fontSize = view.name.length > 8 ? "10px" : "12px";
 
         return `

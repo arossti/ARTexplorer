@@ -680,7 +680,7 @@ if (d0 < 0 && d1 < 0 && d2 < 0) continue;
 **Implementation Priority**:
 1. ✅ **High**: Polyhedron edge export - **COMPLETE** (commit `fb3266b`)
 2. ✅ **Medium**: Grid line export - **COMPLETE** (commit `3c1e444`)
-3. 🟢 **Lower**: Proper cutplane clipping (complex, current behavior acceptable for many use cases)
+3. ✅ **Complete**: Proper cutplane clipping - **COMPLETE** (2026-01-27)
 
 ### Implementation Status (2026-01-27)
 
@@ -688,20 +688,34 @@ if (d0 < 0 && d1 < 0 && d2 < 0) continue;
 - `1d651d4` - Docs: Add visual analysis and implementation plan
 - `fb3266b` - Feat: Add polyhedron edge line export to SVG
 - `3c1e444` - Feat: Add grid line export to SVG (Cartesian and Quadray)
+- *(pending)* - Feat: Add Sutherland-Hodgman cutplane clipping for SVG export
 
 **New Functions Added to `rt-viewmanager.js`:**
 
-1. **`extractEdgeLines()`** (lines 569-704)
+1. **`extractEdgeLines()`** (lines ~670-800)
    - Traverses scene for `LineSegments` with `renderOrder = 2`
-   - Applies cutplane filtering
+   - Applies cutplane clipping using `_clipLineAgainstPlane()`
    - Preserves material colors (black in print mode)
    - Stroke width: 0.5px
 
-2. **`extractGridLines()`** (lines 711-797)
+2. **`extractGridLines()`** (lines ~810-900)
    - Finds `GridHelper` (Cartesian) and `LineSegments` with "CentralAngle" name (Quadray)
    - Checks visibility before including
    - Preserves Quadray grid colors
    - Stroke width: 0.25px, opacity: 50%
+
+3. **`_clipPolygonAgainstPlane()`** - Sutherland-Hodgman polygon clipping algorithm
+   - Clips a polygon (array of 3D vertices) against a plane
+   - Returns vertices on the positive (visible) side of the plane
+   - Handles triangles becoming quads/pentagons when cut
+
+4. **`_clipLineAgainstPlane()`** - Line segment clipping
+   - Clips a line segment against a plane
+   - Returns the portion on the visible side, or null if fully clipped
+
+5. **`_polygonToSVGPath()`** - SVG path generation for clipped polygons
+   - Converts 3+ vertex polygons to SVG path data
+   - Handles non-triangular shapes from clipping
 
 **Updated `generateSVG()` options:**
 - `includeGrids` (default: true)
@@ -710,16 +724,25 @@ if (d0 < 0 && d1 < 0 && d2 < 0) continue;
 **SVG Layer Order:**
 1. Background rect
 2. Raster (optional)
-3. Grid lines ← NEW
-4. Mesh faces
-5. Edge lines (wireframe) ← NEW
+3. Grid lines
+4. Mesh faces (with cutplane clipping)
+5. Edge lines (wireframe, with cutplane clipping)
 6. Section lines (cut lines)
 7. Vertex nodes
 8. Title block
 
-**Remaining Work (Phase 3 - Lower Priority):**
-- Proper cutplane clipping using Sutherland-Hodgman algorithm
-- Would clip faces/edges that straddle the cutplane instead of including them fully
+**Cutplane Clipping Implementation:**
+
+The SVG export now properly clips geometry at the cutplane boundary using the Sutherland-Hodgman algorithm:
+
+- **Mesh faces**: Triangles crossing the cutplane are clipped to show only the visible portion. The resulting polygon may have 3-5 vertices depending on how the plane intersects the triangle.
+
+- **Edge lines**: Line segments crossing the cutplane are clipped to show only the visible portion. The intersection point with the plane becomes the new endpoint.
+
+- **Vertex nodes**: Nodes behind the cutplane (by more than their radius) are excluded.
+
+**Technical Note - Cutplane Reference:**
+The cutplane is stored in `RTPapercut.state.cutplaneNormal` (which is actually a `THREE.Plane` object, not just the normal vector). Previous code incorrectly referenced `._cutplane` which didn't exist.
 
 ---
 
