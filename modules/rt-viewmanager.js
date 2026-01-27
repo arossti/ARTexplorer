@@ -449,19 +449,158 @@ export const RTViewManager = {
   // ========================================================================
 
   /**
-   * Generate SVG from current view (raster capture with metadata)
+   * Project 3D point to 2D screen coordinates
+   * @param {THREE.Vector3} point3D - 3D world position
+   * @param {number} width - Canvas width
+   * @param {number} height - Canvas height
+   * @returns {{x: number, y: number}} 2D screen position
+   * @private
+   */
+  _projectToScreen(point3D, width, height) {
+    const vector = point3D.clone();
+    vector.project(this._camera);
+
+    return {
+      x: (vector.x * 0.5 + 0.5) * width,
+      y: (-vector.y * 0.5 + 0.5) * height, // Flip Y for SVG coordinates
+    };
+  },
+
+  /**
+   * Extract vector paths from RTPapercut intersection lines
+   * @returns {Array} Array of path objects with SVG data
+   */
+  extractVectorPaths() {
+    const paths = [];
+    const intersectionGroup = this._papercut?._intersectionLines;
+
+    if (!intersectionGroup) {
+      console.warn("No intersection lines to extract");
+      return paths;
+    }
+
+    const canvas = this._renderer.domElement;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Get line color and weight from papercut state
+    const isPrintMode = this._papercut.state.printModeEnabled;
+    const strokeColor = isPrintMode ? "#000000" : "#ff0000";
+    const strokeWidth = this._papercut.state.lineWeightMax || 3;
+
+    // Traverse all Line2 objects in the intersection group
+    intersectionGroup.traverse(child => {
+      if (!child.isLine2 || !child.geometry) return;
+
+      const positionAttr = child.geometry.attributes.position;
+      if (!positionAttr) return;
+
+      const positions = positionAttr.array;
+      const pointCount = positions.length / 3;
+
+      if (pointCount < 2) return;
+
+      // Build SVG path from projected points
+      const projectedPoints = [];
+      for (let i = 0; i < pointCount; i++) {
+        const point3D = new THREE.Vector3(
+          positions[i * 3],
+          positions[i * 3 + 1],
+          positions[i * 3 + 2]
+        );
+        projectedPoints.push(this._projectToScreen(point3D, width, height));
+      }
+
+      // Check if this is a closed path (circle) - first and last points are close
+      const first = projectedPoints[0];
+      const last = projectedPoints[projectedPoints.length - 1];
+      const isClosed =
+        pointCount > 3 &&
+        Math.abs(first.x - last.x) < 1 &&
+        Math.abs(first.y - last.y) < 1;
+
+      // Generate SVG path data
+      let d = `M ${projectedPoints[0].x.toFixed(2)} ${projectedPoints[0].y.toFixed(2)}`;
+      for (let i = 1; i < projectedPoints.length; i++) {
+        d += ` L ${projectedPoints[i].x.toFixed(2)} ${projectedPoints[i].y.toFixed(2)}`;
+      }
+      if (isClosed) {
+        d += " Z";
+      }
+
+      paths.push({
+        d: d,
+        stroke: strokeColor,
+        strokeWidth: strokeWidth,
+        fill: "none",
+        isClosed: isClosed,
+      });
+    });
+
+    return paths;
+  },
+
+  /**
+   * Generate SVG from current view with true vector paths
    * @param {Object} options - Export options
+   * @param {boolean} options.vectorMode - Use vector paths instead of raster (default: true)
+   * @param {boolean} options.includeRaster - Include raster background (default: false)
    * @returns {string} SVG string
    */
   generateSVG(options = {}) {
+    const { vectorMode = true, includeRaster = false } = options;
     const dims = this.getExportDimensions();
     const view = options.view || this.captureView();
 
-    // Capture canvas as data URL
+    // Get canvas dimensions for projection
     const canvas = this._renderer.domElement;
-    const dataURL = canvas.toDataURL("image/png");
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
 
-    // Build SVG with embedded image and metadata
+    // Calculate scale factors to map canvas coords to SVG dims
+    const scaleX = dims.width / canvasWidth;
+    const scaleY = dims.height / canvasHeight;
+
+    // Extract vector paths if in vector mode
+    let vectorContent = "";
+    if (vectorMode && this._papercut?._intersectionLines) {
+      const paths = this.extractVectorPaths();
+
+      if (paths.length > 0) {
+        // Scale paths to SVG dimensions
+        const scaledPaths = paths.map(p => {
+          // Parse and scale the path data
+          const scaledD = p.d.replace(
+            /([ML])\s*([\d.-]+)\s+([\d.-]+)/g,
+            (match, cmd, x, y) => {
+              const scaledX = (parseFloat(x) * scaleX).toFixed(2);
+              const scaledY = (parseFloat(y) * scaleY).toFixed(2);
+              return `${cmd} ${scaledX} ${scaledY}`;
+            }
+          );
+          return { ...p, d: scaledD };
+        });
+
+        vectorContent = `
+  <!-- Section Lines (Vector) -->
+  <g id="section-lines" fill="none">
+${scaledPaths.map(p => `    <path d="${p.d}" stroke="${p.stroke}" stroke-width="${p.strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>`).join("\n")}
+  </g>`;
+      }
+    }
+
+    // Optional raster background
+    let rasterContent = "";
+    if (includeRaster || !vectorMode) {
+      const dataURL = canvas.toDataURL("image/png");
+      rasterContent = `
+  <!-- Canvas Raster (Background) -->
+  <image x="0" y="0" width="${dims.width}" height="${dims.height}"
+         xlink:href="${dataURL}"
+         preserveAspectRatio="xMidYMid meet"/>`;
+    }
+
+    // Build complete SVG
     const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -482,13 +621,9 @@ ${JSON.stringify(view, null, 2)}
 
   <!-- Background -->
   <rect width="100%" height="100%" fill="${view.colors.background}"/>
+${rasterContent}${vectorContent}
 
-  <!-- Canvas capture -->
-  <image x="0" y="0" width="${dims.width}" height="${dims.height}"
-         xlink:href="${dataURL}"
-         preserveAspectRatio="xMidYMid meet"/>
-
-  <!-- Title block -->
+  <!-- Title Block -->
   <g id="title-block" transform="translate(${dims.width - 120}, ${dims.height - 40})">
     <text x="0" y="0" font-family="Arial, sans-serif" font-size="14" fill="${view.render.printMode ? "#000000" : "#ffffff"}">
       ${view.name}
@@ -789,12 +924,16 @@ ${JSON.stringify(view, null, 2)}
             ? `Tet-${view.cutplane.axis.toUpperCase()}`
             : `Cart-${view.cutplane?.axis?.toUpperCase() || "Z"}`;
 
+        // Truncate long names and adjust font size
+        const displayName = view.name.length > 12 ? view.name.substring(0, 11) + "…" : view.name;
+        const fontSize = view.name.length > 8 ? "10px" : "12px";
+
         return `
         <div class="view-row${isActive ? " active" : ""}" data-view-id="${view.id}"
              style="display: flex; gap: 4px; padding: 4px 8px; border-bottom: 1px solid #333; align-items: center;">
-          <span class="view-name" style="flex: 0 0 50px; font-weight: 500; color: #00B4FF;">${view.name}</span>
-          <span class="view-axis" style="flex: 0 0 50px; color: #888; font-size: 10px;">${axisLabel}</span>
-          <span class="view-date" style="flex: 1; color: #666; font-size: 10px;">${dateStr}</span>
+          <span class="view-name" style="flex: 1 1 auto; min-width: 40px; max-width: 100px; font-weight: 500; color: #00B4FF; font-size: ${fontSize}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${view.name}">${displayName}</span>
+          <span class="view-axis" style="flex: 0 0 45px; color: #888; font-size: 10px;">${axisLabel}</span>
+          <span class="view-date" style="flex: 0 0 45px; color: #666; font-size: 10px;">${dateStr}</span>
           <span class="view-actions" style="flex: 0 0 60px; display: flex; gap: 4px;">
             <button class="view-load-btn" data-view-id="${view.id}" title="Load view">▶</button>
             <button class="view-export-btn" data-view-id="${view.id}" title="Export SVG">↓</button>
