@@ -3,43 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ART Explorer - Neumorphic Component Test</title>
+  <title>ART Explorer - HiFi Component Test</title>
   <style>
     /* ========================================================================
-       NEUMORPHIC DESIGN SYSTEM FOR ART EXPLORER
+       HiFi DESIGN SYSTEM FOR ART EXPLORER
        Background: #2A2A2A (matches #controls-panel)
        ======================================================================== */
 
     :root {
       /* Base colors */
-      --neu-bg: #2A2A2A;
-      --neu-bg-dark: #1a1a1a;
-      --neu-bg-light: #353535;
+      --hifi-bg: #2A2A2A;
+      --hifi-bg-dark: #1a1a1a;
+      --hifi-bg-light: #353535;
 
-      /* Shadow colors for neumorphic effect */
-      --neu-shadow-dark: rgba(0, 0, 0, 0.5);
-      --neu-shadow-light: rgba(255, 255, 255, 0.07);
+      /* Shadow colors for HiFi effect */
+      --hifi-shadow-dark: rgba(0, 0, 0, 0.5);
+      --hifi-shadow-light: rgba(255, 255, 255, 0.07);
 
       /* Accent colors (from existing app) */
-      --neu-accent: #4a9eff;
-      --neu-accent-hover: #357abd;
-      --neu-success: #00ff88;
-      --neu-success-hover: #00dd77;
-      --neu-danger: #ff6666;
+      --hifi-accent: #00B4FF;
+      --hifi-accent-hover: #357abd;
+      --hifi-success: #00ff88;
+      --hifi-success-hover: #00dd77;
+      --hifi-danger: #ff6666;
 
       /* Text colors */
-      --neu-text: #e0e0e0;
-      --neu-text-muted: #b0b0b0;
-      --neu-text-dim: #888;
+      --hifi-text: #e0e0e0;
+      --hifi-text-muted: #b0b0b0;
+      --hifi-text-dim: #888;
 
       /* Border radii */
-      --neu-radius-sm: 3px;
-      --neu-radius-md: 4px;
-      --neu-radius-lg: 6px;
-      --neu-radius-pill: 10px;
+      --hifi-radius-sm: 3px;
+      --hifi-radius-md: 4px;
+      --hifi-radius-lg: 6px;
+      --hifi-radius-pill: 10px;
 
       /* Transitions */
-      --neu-transition: 0.15s ease-out;
+      --hifi-transition: 0.15s ease-out;
     }
 
     * {
@@ -50,8 +50,8 @@
 
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: var(--neu-bg);
-      color: var(--neu-text);
+      background: var(--hifi-bg);
+      color: var(--hifi-text);
       padding: 20px;
       min-height: 100vh;
     }
@@ -60,7 +60,7 @@
       max-width: 330px; /* Matches #controls-panel width */
       margin: 0 auto;
       padding: 15px;
-      background: var(--neu-bg);
+      background: var(--hifi-bg);
     }
 
     .section {
@@ -71,14 +71,14 @@
 
     .section h2 {
       font-size: 14px;
-      color: #7ab8ff;
+      color: #00B4FF;
       margin-bottom: 15px;
       font-weight: 600;
     }
 
     .section h3 {
       font-size: 12px;
-      color: var(--neu-text-muted);
+      color: var(--hifi-text-muted);
       margin: 15px 0 10px;
     }
 
@@ -91,36 +91,36 @@
 
     .label {
       font-size: 11px;
-      color: var(--neu-text-muted);
+      color: var(--hifi-text-muted);
       min-width: 80px;
     }
 
     /* ========================================================================
-       A) SLIDERS - Neumorphic Range Inputs
+       A) SLIDERS - HiFi Range Inputs
        ======================================================================== */
 
-    .neu-slider-container {
+    .hifi-slider-container {
       display: flex;
       align-items: center;
       gap: 10px;
       flex: 1;
     }
 
-    .neu-slider {
+    .hifi-slider {
       -webkit-appearance: none;
       appearance: none;
       flex: 1;
       height: 6px;
       border-radius: 3px;
-      background: var(--neu-bg-dark);
+      background: var(--hifi-bg-dark);
       box-shadow:
-        inset 2px 2px 4px var(--neu-shadow-dark),
-        inset -1px -1px 3px var(--neu-shadow-light);
+        inset 2px 2px 4px var(--hifi-shadow-dark),
+        inset -1px -1px 3px var(--hifi-shadow-light);
       cursor: pointer;
       outline: none;
     }
 
-    .neu-slider::-webkit-slider-thumb {
+    .hifi-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
       width: 16px;
@@ -128,112 +128,213 @@
       border-radius: 50%;
       background: linear-gradient(145deg, #303030, #262626);
       box-shadow:
-        2px 2px 5px var(--neu-shadow-dark),
+        2px 2px 5px var(--hifi-shadow-dark),
         -1px -1px 2px rgba(255, 255, 255, 0.03);
       cursor: pointer;
-      transition: all var(--neu-transition);
+      transition: all var(--hifi-transition);
       border: none;
     }
 
-    .neu-slider::-webkit-slider-thumb:hover {
+    .hifi-slider::-webkit-slider-thumb:hover {
       background: linear-gradient(145deg, #383838, #2a2a2a);
       box-shadow:
-        2px 2px 4px var(--neu-shadow-dark),
+        2px 2px 4px var(--hifi-shadow-dark),
         -1px -1px 2px rgba(255, 255, 255, 0.04);
     }
 
-    .neu-slider::-webkit-slider-thumb:active {
-      background: var(--neu-bg-dark);
+    .hifi-slider::-webkit-slider-thumb:active {
+      background: var(--hifi-bg-dark);
       box-shadow:
-        inset 1px 1px 3px var(--neu-shadow-dark),
+        inset 1px 1px 3px var(--hifi-shadow-dark),
         inset -1px -1px 2px rgba(255, 255, 255, 0.02);
     }
 
-    .neu-slider::-moz-range-thumb {
+    .hifi-slider::-moz-range-thumb {
       width: 16px;
       height: 16px;
       border-radius: 50%;
       background: linear-gradient(145deg, #303030, #262626);
       box-shadow:
-        2px 2px 5px var(--neu-shadow-dark),
+        2px 2px 5px var(--hifi-shadow-dark),
         -1px -1px 2px rgba(255, 255, 255, 0.03);
       cursor: pointer;
       border: none;
     }
 
-    .neu-slider-value {
+    .hifi-slider-value {
       min-width: 40px;
       text-align: right;
       font-size: 11px;
-      color: #7ab8ff;
+      color: #00B4FF;
     }
 
     /* ========================================================================
        SLIDER VARIANT: Blue LED dot in thumb center
        ======================================================================== */
 
-    .neu-slider--led {
+    .hifi-slider--led {
       position: relative;
     }
 
-    .neu-slider--led::-webkit-slider-thumb {
+    .hifi-slider--led::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
       width: 16px;
       height: 16px;
       border-radius: 50%;
       background:
-        radial-gradient(circle at center, var(--neu-accent) 0%, var(--neu-accent) 3px, transparent 3px),
+        radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
         linear-gradient(145deg, #383838, #2a2a2a);
       box-shadow:
-        2px 2px 5px var(--neu-shadow-dark),
+        2px 2px 5px var(--hifi-shadow-dark),
         -1px -1px 2px rgba(255, 255, 255, 0.03),
-        inset 0 0 6px rgba(74, 158, 255, 0.3);
+        inset 0 0 6px rgba(0, 180, 255, 0.3);
       cursor: pointer;
-      transition: all var(--neu-transition);
+      transition: all var(--hifi-transition);
       border: none;
     }
 
-    .neu-slider--led::-webkit-slider-thumb:hover {
+    .hifi-slider--led::-webkit-slider-thumb:hover {
       background:
         radial-gradient(circle at center, #5cb8ff 0%, #5cb8ff 3px, transparent 3px),
         linear-gradient(145deg, #404040, #303030);
       box-shadow:
-        2px 2px 4px var(--neu-shadow-dark),
+        2px 2px 4px var(--hifi-shadow-dark),
         -1px -1px 2px rgba(255, 255, 255, 0.04),
         inset 0 0 8px rgba(74, 158, 255, 0.4);
     }
 
-    .neu-slider--led::-webkit-slider-thumb:active {
+    .hifi-slider--led::-webkit-slider-thumb:active {
       background:
         radial-gradient(circle at center, #7ac8ff 0%, #7ac8ff 3px, transparent 3px),
-        var(--neu-bg-dark);
+        var(--hifi-bg-dark);
       box-shadow:
-        inset 1px 1px 3px var(--neu-shadow-dark),
+        inset 1px 1px 3px var(--hifi-shadow-dark),
         inset -1px -1px 2px rgba(255, 255, 255, 0.02),
         0 0 8px rgba(74, 158, 255, 0.5);
     }
 
-    .neu-slider--led::-moz-range-thumb {
+    .hifi-slider--led::-moz-range-thumb {
       width: 16px;
       height: 16px;
       border-radius: 50%;
       background:
-        radial-gradient(circle at center, var(--neu-accent) 0%, var(--neu-accent) 3px, transparent 3px),
+        radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
         linear-gradient(145deg, #383838, #2a2a2a);
       box-shadow:
-        2px 2px 5px var(--neu-shadow-dark),
+        2px 2px 5px var(--hifi-shadow-dark),
         -1px -1px 2px rgba(255, 255, 255, 0.03),
-        inset 0 0 6px rgba(74, 158, 255, 0.3);
+        inset 0 0 6px rgba(0, 180, 255, 0.3);
       cursor: pointer;
       border: none;
     }
 
     /* ========================================================================
-       B) PUSH BUTTONS - Neumorphic Buttons
+       LED COLOR VARIANTS - 1970s Blue LED Options
        ======================================================================== */
 
-    .neu-btn {
+    /* LED Option 1: Classic Early LED #00B4FF */
+    .hifi-slider--led-1::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
+        linear-gradient(145deg, #383838, #2a2a2a);
+      box-shadow:
+        2px 2px 5px var(--hifi-shadow-dark),
+        -1px -1px 2px rgba(255, 255, 255, 0.03),
+        inset 0 0 6px rgba(0, 180, 255, 0.3),
+        0 0 4px rgba(0, 180, 255, 0.6);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* LED Option 2: Warm Indicator #5CACEE */
+    .hifi-slider--led-2::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, #5CACEE 0%, #5CACEE 3px, transparent 3px),
+        linear-gradient(145deg, #383838, #2a2a2a);
+      box-shadow:
+        2px 2px 5px var(--hifi-shadow-dark),
+        -1px -1px 2px rgba(255, 255, 255, 0.03),
+        inset 0 0 6px rgba(92, 172, 238, 0.3),
+        0 0 3px rgba(92, 172, 238, 0.5);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* LED Option 3: Ice Blue #7DF9FF (High Glow) */
+    .hifi-slider--led-3::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, #7DF9FF 0%, #7DF9FF 3px, transparent 3px),
+        linear-gradient(145deg, #383838, #2a2a2a);
+      box-shadow:
+        2px 2px 5px var(--hifi-shadow-dark),
+        -1px -1px 2px rgba(255, 255, 255, 0.03),
+        inset 0 0 8px rgba(125, 249, 255, 0.4),
+        0 0 6px rgba(125, 249, 255, 0.7),
+        0 0 12px rgba(125, 249, 255, 0.3);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* LED Option 4: Deep Equipment Blue #4169E1 */
+    .hifi-slider--led-4::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, #4169E1 0%, #4169E1 3px, transparent 3px),
+        linear-gradient(145deg, #383838, #2a2a2a);
+      box-shadow:
+        2px 2px 5px var(--hifi-shadow-dark),
+        -1px -1px 2px rgba(255, 255, 255, 0.03),
+        inset 0 0 6px rgba(65, 105, 225, 0.3),
+        0 0 4px rgba(65, 105, 225, 0.6);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* LED Option 5: Electric Cyan #00FFFF (Bright Glow) */
+    .hifi-slider--led-5::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, #00FFFF 0%, #00FFFF 3px, transparent 3px),
+        linear-gradient(145deg, #383838, #2a2a2a);
+      box-shadow:
+        2px 2px 5px var(--hifi-shadow-dark),
+        -1px -1px 2px rgba(255, 255, 255, 0.03),
+        inset 0 0 8px rgba(0, 255, 255, 0.4),
+        0 0 6px rgba(0, 255, 255, 0.6),
+        0 0 14px rgba(0, 255, 255, 0.25);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* ========================================================================
+       B) PUSH BUTTONS - HiFi Buttons
+       ======================================================================== */
+
+    .hifi-btn {
       position: relative;
       display: inline-flex;
       align-items: center;
@@ -241,106 +342,104 @@
       padding: 8px 12px;
       font-size: 11px;
       font-weight: 500;
-      color: var(--neu-text-muted);
+      color: var(--hifi-text-muted);
       background: linear-gradient(145deg, #2f2f2f, #262626);
       border: none;
-      border-radius: var(--neu-radius-md);
+      border-radius: var(--hifi-radius-md);
       cursor: pointer;
       outline: none;
-      transition: all var(--neu-transition);
+      transition: all var(--hifi-transition);
       box-shadow:
-        3px 3px 6px var(--neu-shadow-dark),
-        -2px -2px 4px var(--neu-shadow-light);
+        3px 3px 6px var(--hifi-shadow-dark),
+        -2px -2px 4px var(--hifi-shadow-light);
     }
 
-    .neu-btn:hover {
-      color: var(--neu-text);
+    .hifi-btn:hover {
+      color: var(--hifi-text);
       background: linear-gradient(145deg, #333333, #292929);
     }
 
-    .neu-btn:active,
-    .neu-btn.active {
-      background: var(--neu-bg-dark);
+    .hifi-btn:active,
+    .hifi-btn.active {
+      background: var(--hifi-bg-dark);
       box-shadow:
-        inset 2px 2px 4px var(--neu-shadow-dark),
-        inset -1px -1px 3px var(--neu-shadow-light);
-      color: var(--neu-accent);
+        inset 2px 2px 4px var(--hifi-shadow-dark),
+        inset -1px -1px 3px var(--hifi-shadow-light);
+      color: var(--hifi-accent);
     }
 
     /* Small button variant */
-    .neu-btn--sm {
+    .hifi-btn--sm {
       padding: 5px 8px;
       font-size: 10px;
-      border-radius: var(--neu-radius-sm);
+      border-radius: var(--hifi-radius-sm);
     }
 
-    /* Action button (green) */
-    .neu-btn--action {
-      color: var(--neu-bg);
-      background: linear-gradient(145deg, #00ff99, #00dd77);
-      font-weight: 600;
+    /* Action button - Classic Blue LED style */
+    .hifi-btn--action {
+      color: #00B4FF;
     }
 
-    .neu-btn--action:hover {
-      color: var(--neu-bg);
-      background: linear-gradient(145deg, #00ffaa, #00ee88);
+    .hifi-btn--action:hover {
+      color: #5cb8ff;
     }
 
-    .neu-btn--action:active {
-      background: var(--neu-success);
-      box-shadow:
-        inset 2px 2px 4px rgba(0, 100, 50, 0.4),
-        inset -1px -1px 3px rgba(255, 255, 255, 0.1);
+    .hifi-btn--action:active,
+    .hifi-btn--action.active {
+      color: #7DF9FF;
+      text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
     }
 
-    /* Danger button (red outline) */
-    .neu-btn--danger {
-      color: var(--neu-danger);
-      background: transparent;
-      border: 1px solid #663333;
-      box-shadow: none;
+    /* Danger button - Classic Blue LED style (same as action) */
+    .hifi-btn--danger {
+      color: #00B4FF;
     }
 
-    .neu-btn--danger:hover {
-      background: #331a1a;
-      border-color: var(--neu-danger);
+    .hifi-btn--danger:hover {
+      color: #5cb8ff;
+    }
+
+    .hifi-btn--danger:active,
+    .hifi-btn--danger.active {
+      color: #7DF9FF;
+      text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
     }
 
     /* Accent modifier - just adds accent color to text on active (no fill) */
-    .neu-btn--accent.active {
-      color: var(--neu-accent);
+    .hifi-btn--accent.active {
+      color: var(--hifi-accent);
     }
 
     /* Button group */
-    .neu-btn-group {
+    .hifi-btn-group {
       display: flex;
       gap: 5px;
     }
 
-    .neu-btn-group .neu-btn {
+    .hifi-btn-group .hifi-btn {
       flex: 1;
     }
 
     /* ========================================================================
-       C) TOGGLES - Neumorphic On/Off Switches
+       C) TOGGLES - HiFi On/Off Switches
        Minimalist: inset track, raised thumb, subtle accent glow when active
        ======================================================================== */
 
-    .neu-toggle {
+    .hifi-toggle {
       position: relative;
       width: 36px;
       height: 18px;
-      background: var(--neu-bg-dark);
+      background: var(--hifi-bg-dark);
       border-radius: 9px;
       cursor: pointer;
-      transition: all var(--neu-transition);
+      transition: all var(--hifi-transition);
       box-shadow:
-        inset 2px 2px 4px var(--neu-shadow-dark),
-        inset -1px -1px 3px var(--neu-shadow-light);
+        inset 2px 2px 4px var(--hifi-shadow-dark),
+        inset -1px -1px 3px var(--hifi-shadow-light);
       flex-shrink: 0;
     }
 
-    .neu-toggle-thumb {
+    .hifi-toggle-thumb {
       position: absolute;
       top: 2px;
       left: 2px;
@@ -350,118 +449,137 @@
       border-radius: 50%;
       transition: all 0.2s ease-out;
       box-shadow:
-        2px 2px 4px var(--neu-shadow-dark),
+        2px 2px 4px var(--hifi-shadow-dark),
         -1px -1px 2px rgba(255, 255, 255, 0.03);
     }
 
     /* Active state: subtle accent border on track */
-    .neu-toggle.active {
+    .hifi-toggle.active {
       box-shadow:
-        inset 2px 2px 4px var(--neu-shadow-dark),
-        inset -1px -1px 3px var(--neu-shadow-light),
+        inset 2px 2px 4px var(--hifi-shadow-dark),
+        inset -1px -1px 3px var(--hifi-shadow-light),
         0 0 0 1px rgba(74, 158, 255, 0.3);
     }
 
-    .neu-toggle.active .neu-toggle-thumb {
+    .hifi-toggle.active .hifi-toggle-thumb {
       left: 20px;
       background: linear-gradient(145deg, #555555, #454545);
       box-shadow:
-        2px 2px 4px var(--neu-shadow-dark),
+        2px 2px 4px var(--hifi-shadow-dark),
         -1px -1px 2px rgba(255, 255, 255, 0.03),
         0 0 6px rgba(74, 158, 255, 0.5);
     }
 
     /* Toggle with label */
-    .neu-toggle-label {
+    .hifi-toggle-label {
       display: flex;
       align-items: center;
       gap: 10px;
       cursor: pointer;
       font-size: 12px;
-      color: var(--neu-text);
+      color: var(--hifi-text);
     }
 
-    .neu-toggle-label:hover .neu-toggle-thumb {
+    .hifi-toggle-label:hover .hifi-toggle-thumb {
       background: linear-gradient(145deg, #585858, #484848);
     }
 
     /* Small toggle (for nested options) */
-    .neu-toggle--sm {
+    .hifi-toggle--sm {
       width: 28px;
       height: 14px;
       border-radius: 7px;
     }
 
-    .neu-toggle--sm .neu-toggle-thumb {
+    .hifi-toggle--sm .hifi-toggle-thumb {
       width: 10px;
       height: 10px;
       top: 2px;
       left: 2px;
     }
 
-    .neu-toggle--sm.active .neu-toggle-thumb {
+    .hifi-toggle--sm.active .hifi-toggle-thumb {
       left: 16px;
     }
 
     /* ========================================================================
-       D) DROPDOWN ARROWS - Neumorphic Collapsible Section Toggles
+       D) DROPDOWN TOGGLES - Vertical HiFi Toggle for Expand/Collapse
+       Same style as plane toggles, oriented vertically
        ======================================================================== */
 
-    .neu-dropdown-arrow {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 20px;
-      height: 20px;
-      background: linear-gradient(145deg, #2f2f2f, #262626);
-      border-radius: 50%;
+    .hifi-dropdown-toggle {
+      position: relative;
+      width: 14px;
+      height: 28px;
+      background: var(--hifi-bg-dark);
+      border-radius: 7px;
       cursor: pointer;
-      transition: all var(--neu-transition);
+      transition: all var(--hifi-transition);
       box-shadow:
-        2px 2px 4px var(--neu-shadow-dark),
-        -1px -1px 2px var(--neu-shadow-light);
+        inset 2px 2px 4px var(--hifi-shadow-dark),
+        inset -1px -1px 3px var(--hifi-shadow-light);
+      flex-shrink: 0;
     }
 
-    .neu-dropdown-arrow:hover {
-      background: linear-gradient(145deg, #333333, #292929);
-    }
-
-    .neu-dropdown-arrow:active,
-    .neu-dropdown-arrow.collapsed {
-      background: var(--neu-bg-dark);
-      box-shadow:
-        inset 1px 1px 3px var(--neu-shadow-dark),
-        inset -1px -1px 2px var(--neu-shadow-light);
-    }
-
-    .neu-dropdown-arrow svg {
+    .hifi-dropdown-toggle-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
       width: 10px;
       height: 10px;
-      fill: none;
-      stroke: #7ab8ff;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      transition: transform 0.2s ease-out;
+      background: linear-gradient(145deg, #505050, #404040);
+      border-radius: 50%;
+      transition: all 0.2s ease-out;
+      box-shadow:
+        2px 2px 4px var(--hifi-shadow-dark),
+        -1px -1px 2px rgba(255, 255, 255, 0.03);
     }
 
-    .neu-dropdown-arrow.collapsed svg {
-      transform: rotate(-90deg);
+    /* Collapsed state (default): thumb at top, no glow */
+    /* (Section is closed, toggle is "up") */
+
+    /* Expanded state: thumb at bottom, accent glow */
+    /* (Section is open/active, toggle is "pulled down") */
+    .hifi-dropdown-toggle.expanded {
+      box-shadow:
+        inset 2px 2px 4px var(--hifi-shadow-dark),
+        inset -1px -1px 3px var(--hifi-shadow-light),
+        0 0 0 1px rgba(0, 180, 255, 0.3);
     }
 
-    /* Small dropdown arrow */
-    .neu-dropdown-arrow--sm {
-      width: 16px;
-      height: 16px;
+    .hifi-dropdown-toggle.expanded .hifi-dropdown-toggle-thumb {
+      top: 16px;
+      background: linear-gradient(145deg, #555555, #454545);
+      box-shadow:
+        2px 2px 4px var(--hifi-shadow-dark),
+        -1px -1px 2px rgba(255, 255, 255, 0.03),
+        0 0 6px rgba(0, 180, 255, 0.5);
     }
 
-    .neu-dropdown-arrow--sm svg {
-      width: 8px;
-      height: 8px;
+    .hifi-dropdown-toggle:hover .hifi-dropdown-toggle-thumb {
+      background: linear-gradient(145deg, #585858, #484848);
+    }
+
+    /* Small dropdown toggle (for nested options) */
+    .hifi-dropdown-toggle--sm {
+      width: 10px;
+      height: 20px;
+      border-radius: 5px;
+    }
+
+    .hifi-dropdown-toggle--sm .hifi-dropdown-toggle-thumb {
+      width: 6px;
+      height: 6px;
+      top: 2px;
+      left: 2px;
+    }
+
+    .hifi-dropdown-toggle--sm.expanded .hifi-dropdown-toggle-thumb {
+      top: 12px;
     }
 
     /* ========================================================================
-       COMPARISON: Current vs Neumorphic
+       COMPARISON: Current vs HiFi
        ======================================================================== */
 
     .comparison {
@@ -478,7 +596,7 @@
 
     .comparison-col h4 {
       font-size: 10px;
-      color: var(--neu-text-dim);
+      color: var(--hifi-text-dim);
       margin-bottom: 10px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -507,13 +625,13 @@
     }
 
     .current-btn:hover {
-      border-color: #7ab8ff;
+      border-color: #00B4FF;
       color: #e0e0e0;
     }
 
     .current-btn.active {
-      background: #4a9eff;
-      border-color: #4a9eff;
+      background: #00B4FF;
+      border-color: #00B4FF;
       color: white;
     }
 
@@ -538,7 +656,7 @@
     }
 
     .current-toggle.active {
-      background-color: #4a9eff;
+      background-color: #00B4FF;
     }
 
     .current-toggle.active .current-toggle-slider {
@@ -548,25 +666,25 @@
 </head>
 <body>
   <div class="test-container">
-    <h1 style="font-size: 18px; color: #4a9eff; margin-bottom: 20px; text-align: center;">
-      Neumorphic Component Test
+    <h1 style="font-size: 18px; color: #00B4FF; margin-bottom: 20px; text-align: center;">
+      HiFi Component Test
     </h1>
 
     <!-- SECTION A: SLIDERS -->
     <div class="section">
       <h2>A) Sliders</h2>
 
-      <h3>Current vs Neumorphic</h3>
+      <h3>Current vs HiFi</h3>
       <div class="comparison">
         <div class="comparison-col current">
           <h4>Current</h4>
           <input type="range" min="0" max="100" value="50" style="width: 100%;">
         </div>
         <div class="comparison-col new">
-          <h4>Neumorphic</h4>
-          <div class="neu-slider-container">
-            <input type="range" class="neu-slider" min="0" max="100" value="50">
-            <span class="neu-slider-value">50</span>
+          <h4>HiFi</h4>
+          <div class="hifi-slider-container">
+            <input type="range" class="hifi-slider" min="0" max="100" value="50">
+            <span class="hifi-slider-value">50</span>
           </div>
         </div>
       </div>
@@ -574,25 +692,62 @@
       <h3>Scale Slider Example</h3>
       <div class="row">
         <span class="label">Cube Edge:</span>
-        <div class="neu-slider-container">
-          <input type="range" class="neu-slider" min="-3.6" max="3.6" step="0.1" value="1.4">
-          <span class="neu-slider-value">1.4142</span>
+        <div class="hifi-slider-container">
+          <input type="range" class="hifi-slider" min="-3.6" max="3.6" step="0.1" value="1.4">
+          <span class="hifi-slider-value">1.4142</span>
         </div>
       </div>
 
       <h3>Blue LED Variant (70s Hi-Fi Style)</h3>
       <div class="row">
         <span class="label">Opacity:</span>
-        <div class="neu-slider-container">
-          <input type="range" class="neu-slider neu-slider--led" min="0" max="1" step="0.05" value="0.35">
-          <span class="neu-slider-value">0.35</span>
+        <div class="hifi-slider-container">
+          <input type="range" class="hifi-slider hifi-slider--led" min="0" max="1" step="0.05" value="0.35">
+          <span class="hifi-slider-value">0.35</span>
         </div>
       </div>
       <div class="row">
         <span class="label">Frequency:</span>
-        <div class="neu-slider-container">
-          <input type="range" class="neu-slider neu-slider--led" min="1" max="7" step="1" value="3">
-          <span class="neu-slider-value">3</span>
+        <div class="hifi-slider-container">
+          <input type="range" class="hifi-slider hifi-slider--led" min="1" max="7" step="1" value="3">
+          <span class="hifi-slider-value">3</span>
+        </div>
+      </div>
+
+      <h3>LED Color Options Comparison</h3>
+      <div class="row">
+        <span class="label" style="color: #00B4FF;">1. Classic</span>
+        <div class="hifi-slider-container">
+          <input type="range" class="hifi-slider hifi-slider--led-1" min="0" max="100" value="60">
+          <span class="hifi-slider-value" style="color: #00B4FF;">#00B4FF</span>
+        </div>
+      </div>
+      <div class="row">
+        <span class="label" style="color: #5CACEE;">2. Warm</span>
+        <div class="hifi-slider-container">
+          <input type="range" class="hifi-slider hifi-slider--led-2" min="0" max="100" value="60">
+          <span class="hifi-slider-value" style="color: #5CACEE;">#5CACEE</span>
+        </div>
+      </div>
+      <div class="row">
+        <span class="label" style="color: #7DF9FF;">3. Ice Blue</span>
+        <div class="hifi-slider-container">
+          <input type="range" class="hifi-slider hifi-slider--led-3" min="0" max="100" value="60">
+          <span class="hifi-slider-value" style="color: #7DF9FF;">#7DF9FF</span>
+        </div>
+      </div>
+      <div class="row">
+        <span class="label" style="color: #4169E1;">4. Deep</span>
+        <div class="hifi-slider-container">
+          <input type="range" class="hifi-slider hifi-slider--led-4" min="0" max="100" value="60">
+          <span class="hifi-slider-value" style="color: #4169E1;">#4169E1</span>
+        </div>
+      </div>
+      <div class="row">
+        <span class="label" style="color: #00FFFF;">5. Cyan</span>
+        <div class="hifi-slider-container">
+          <input type="range" class="hifi-slider hifi-slider--led-5" min="0" max="100" value="60">
+          <span class="hifi-slider-value" style="color: #00FFFF;">#00FFFF</span>
         </div>
       </div>
     </div>
@@ -612,11 +767,11 @@
           </div>
         </div>
         <div class="comparison-col new">
-          <h4>Neumorphic</h4>
-          <div class="neu-btn-group">
-            <button class="neu-btn active">Move</button>
-            <button class="neu-btn">Scale</button>
-            <button class="neu-btn">Rotate</button>
+          <h4>HiFi</h4>
+          <div class="hifi-btn-group">
+            <button class="hifi-btn active">Move</button>
+            <button class="hifi-btn">Scale</button>
+            <button class="hifi-btn">Rotate</button>
           </div>
         </div>
       </div>
@@ -633,20 +788,20 @@
           </div>
         </div>
         <div class="comparison-col new">
-          <h4>Neumorphic</h4>
-          <div class="neu-btn-group">
-            <button class="neu-btn neu-btn--sm">Off</button>
-            <button class="neu-btn neu-btn--sm">Sm</button>
-            <button class="neu-btn neu-btn--sm active">Md</button>
-            <button class="neu-btn neu-btn--sm">Lg</button>
+          <h4>HiFi</h4>
+          <div class="hifi-btn-group">
+            <button class="hifi-btn hifi-btn--sm">Off</button>
+            <button class="hifi-btn hifi-btn--sm">Sm</button>
+            <button class="hifi-btn hifi-btn--sm active">Md</button>
+            <button class="hifi-btn hifi-btn--sm">Lg</button>
           </div>
         </div>
       </div>
 
       <h3>Action & Danger Buttons</h3>
       <div class="row" style="gap: 10px;">
-        <button class="neu-btn neu-btn--action" style="flex: 1;">NOW</button>
-        <button class="neu-btn neu-btn--danger" style="flex: 1;">Delete</button>
+        <button class="hifi-btn hifi-btn--action" style="flex: 1;">NOW</button>
+        <button class="hifi-btn hifi-btn--danger" style="flex: 1;">Delete</button>
       </div>
     </div>
 
@@ -674,17 +829,17 @@
           </div>
         </div>
         <div class="comparison-col new">
-          <h4>Neumorphic</h4>
+          <h4>HiFi</h4>
           <div style="display: flex; gap: 15px;">
             <div style="text-align: center;">
-              <div class="neu-toggle" onclick="this.classList.toggle('active')">
-                <div class="neu-toggle-thumb"></div>
+              <div class="hifi-toggle" onclick="this.classList.toggle('active')">
+                <div class="hifi-toggle-thumb"></div>
               </div>
               <div style="font-size: 10px; color: #b0b0b0; margin-top: 4px;">XY</div>
             </div>
             <div style="text-align: center;">
-              <div class="neu-toggle active" onclick="this.classList.toggle('active')">
-                <div class="neu-toggle-thumb"></div>
+              <div class="hifi-toggle active" onclick="this.classList.toggle('active')">
+                <div class="hifi-toggle-thumb"></div>
               </div>
               <div style="font-size: 10px; color: #b0b0b0; margin-top: 4px;">XZ</div>
             </div>
@@ -706,16 +861,16 @@
           </label>
         </div>
         <div class="comparison-col new">
-          <h4>Neumorphic Toggle</h4>
-          <label class="neu-toggle-label" onclick="this.querySelector('.neu-toggle').classList.toggle('active')">
-            <div class="neu-toggle active">
-              <div class="neu-toggle-thumb"></div>
+          <h4>HiFi Toggle</h4>
+          <label class="hifi-toggle-label" onclick="this.querySelector('.hifi-toggle').classList.toggle('active')">
+            <div class="hifi-toggle active">
+              <div class="hifi-toggle-thumb"></div>
             </div>
             Show Quadray Basis
           </label>
-          <label class="neu-toggle-label" style="margin-top: 8px;" onclick="this.querySelector('.neu-toggle').classList.toggle('active')">
-            <div class="neu-toggle">
-              <div class="neu-toggle-thumb"></div>
+          <label class="hifi-toggle-label" style="margin-top: 8px;" onclick="this.querySelector('.hifi-toggle').classList.toggle('active')">
+            <div class="hifi-toggle">
+              <div class="hifi-toggle-thumb"></div>
             </div>
             Backface Culling
           </label>
@@ -723,9 +878,9 @@
       </div>
     </div>
 
-    <!-- SECTION D: DROPDOWN ARROWS -->
+    <!-- SECTION D: DROPDOWN TOGGLES -->
     <div class="section">
-      <h2>D) Dropdown Arrows</h2>
+      <h2>D) Dropdown Toggles</h2>
 
       <h3>Section Toggle</h3>
       <div class="comparison">
@@ -738,9 +893,9 @@
               height: 0;
               border-left: 6px solid transparent;
               border-right: 6px solid transparent;
-              border-top: 8px solid #7ab8ff;
+              border-top: 8px solid #00B4FF;
             "></span>
-            <span style="font-size: 14px; color: #7ab8ff;">Forms</span>
+            <span style="font-size: 14px; color: #00B4FF;">Forms</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
             <span style="
@@ -749,105 +904,94 @@
               height: 0;
               border-left: 6px solid transparent;
               border-right: 6px solid transparent;
-              border-top: 8px solid #7ab8ff;
+              border-top: 8px solid #00B4FF;
               transform: rotate(-90deg);
             "></span>
-            <span style="font-size: 14px; color: #7ab8ff;">Camera (collapsed)</span>
+            <span style="font-size: 14px; color: #00B4FF;">Camera (collapsed)</span>
           </div>
         </div>
         <div class="comparison-col new">
-          <h4>Neumorphic</h4>
+          <h4>HiFi</h4>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="neu-dropdown-arrow" onclick="this.classList.toggle('collapsed')">
-              <svg viewBox="0 0 12 12">
-                <polyline points="3,4 6,8 9,4"></polyline>
-              </svg>
+            <div class="hifi-dropdown-toggle" onclick="this.classList.toggle('expanded')">
+              <div class="hifi-dropdown-toggle-thumb"></div>
             </div>
-            <span style="font-size: 14px; color: #7ab8ff;">Forms</span>
+            <span style="font-size: 14px; color: #00B4FF;">Camera (collapsed)</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
-            <div class="neu-dropdown-arrow collapsed" onclick="this.classList.toggle('collapsed')">
-              <svg viewBox="0 0 12 12">
-                <polyline points="3,4 6,8 9,4"></polyline>
-              </svg>
+            <div class="hifi-dropdown-toggle expanded" onclick="this.classList.toggle('expanded')">
+              <div class="hifi-dropdown-toggle-thumb"></div>
             </div>
-            <span style="font-size: 14px; color: #7ab8ff;">Camera (collapsed)</span>
+            <span style="font-size: 14px; color: #00B4FF;">Forms (expanded)</span>
           </div>
         </div>
       </div>
 
       <h3>Small (Geodesic Options)</h3>
       <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
-        <div class="neu-dropdown-arrow neu-dropdown-arrow--sm" onclick="this.classList.toggle('collapsed')">
-          <svg viewBox="0 0 12 12">
-            <polyline points="3,4 6,8 9,4"></polyline>
-          </svg>
+        <div class="hifi-dropdown-toggle hifi-dropdown-toggle--sm" onclick="this.classList.toggle('expanded')">
+          <div class="hifi-dropdown-toggle-thumb"></div>
         </div>
-        <span style="font-size: 11px; color: #b0b0b0;">Geodesic (Fuller)</span>
+        <span style="font-size: 11px; color: #b0b0b0;">Geodesic (Fuller) - collapsed</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+        <div class="hifi-dropdown-toggle hifi-dropdown-toggle--sm expanded" onclick="this.classList.toggle('expanded')">
+          <div class="hifi-dropdown-toggle-thumb"></div>
+        </div>
+        <span style="font-size: 11px; color: #b0b0b0;">Geodesic (Fuller) - expanded</span>
       </div>
     </div>
 
     <!-- COMBINED EXAMPLE -->
     <div class="section" style="border-bottom: none;">
       <h2>Combined Example: Forms Section</h2>
-      <div style="background: var(--neu-bg); padding: 12px; border-radius: 4px; border: 1px solid #444;">
+      <div style="background: var(--hifi-bg); padding: 12px; border-radius: 4px; border: 1px solid #444;">
 
         <!-- Section header -->
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-          <div class="neu-dropdown-arrow">
-            <svg viewBox="0 0 12 12">
-              <polyline points="3,4 6,8 9,4"></polyline>
-            </svg>
+          <div class="hifi-dropdown-toggle expanded" onclick="this.classList.toggle('expanded')">
+            <div class="hifi-dropdown-toggle-thumb"></div>
           </div>
-          <span style="font-size: 14px; font-weight: 600; color: #7ab8ff;">Forms</span>
+          <span style="font-size: 14px; font-weight: 600; color: #00B4FF;">Forms</span>
         </div>
 
         <!-- Toggle items -->
-        <label class="neu-toggle-label" style="margin-bottom: 8px;" onclick="this.querySelector('.neu-toggle').classList.toggle('active')">
-          <div class="neu-toggle active">
-            <div class="neu-toggle-thumb"></div>
+        <label class="hifi-toggle-label" style="margin-bottom: 8px;" onclick="this.querySelector('.hifi-toggle').classList.toggle('active')">
+          <div class="hifi-toggle hifi-toggle--sm active">
+            <div class="hifi-toggle-thumb"></div>
           </div>
           Hexahedron (Cube)
         </label>
 
-        <label class="neu-toggle-label" style="margin-bottom: 8px;" onclick="this.querySelector('.neu-toggle').classList.toggle('active')">
-          <div class="neu-toggle active">
-            <div class="neu-toggle-thumb"></div>
+        <label class="hifi-toggle-label" style="margin-bottom: 8px;" onclick="this.querySelector('.hifi-toggle').classList.toggle('active')">
+          <div class="hifi-toggle hifi-toggle--sm active">
+            <div class="hifi-toggle-thumb"></div>
           </div>
           Tetrahedron Dual
         </label>
 
-        <label class="neu-toggle-label" onclick="this.querySelector('.neu-toggle').classList.toggle('active')">
-          <div class="neu-toggle">
-            <div class="neu-toggle-thumb"></div>
+        <label class="hifi-toggle-label" style="margin-bottom: 8px;" onclick="this.querySelector('.hifi-toggle').classList.toggle('active')">
+          <div class="hifi-toggle hifi-toggle--sm">
+            <div class="hifi-toggle-thumb"></div>
           </div>
           Icosahedron (20 faces)
         </label>
 
         <!-- Nested geodesic controls -->
-        <div style="margin-left: 20px; margin-top: 10px; padding-left: 10px; border-left: 2px solid #333;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <div class="neu-dropdown-arrow neu-dropdown-arrow--sm collapsed" onclick="this.classList.toggle('collapsed')">
-              <svg viewBox="0 0 12 12">
-                <polyline points="3,4 6,8 9,4"></polyline>
-              </svg>
+        <div style="margin-left: 20px; padding-left: 10px; border-left: 2px solid #333;">
+          <label class="hifi-toggle-label" style="margin-bottom: 8px;" onclick="this.querySelector('.hifi-toggle').classList.toggle('active')">
+            <div class="hifi-toggle hifi-toggle--sm">
+              <div class="hifi-toggle-thumb"></div>
             </div>
-            <label class="neu-toggle-label" style="font-size: 11px;" onclick="event.stopPropagation(); this.querySelector('.neu-toggle').classList.toggle('active')">
-              <div class="neu-toggle neu-toggle--sm">
-                <div class="neu-toggle-thumb"></div>
-              </div>
-              Geodesic (Fuller)
-            </label>
-          </div>
+            Geodesic (Fuller)
+          </label>
 
-          <!-- Frequency slider (collapsed by default) -->
-          <div style="margin-top: 8px;">
-            <div class="row">
-              <span class="label" style="font-size: 10px;">Freq:</span>
-              <div class="neu-slider-container">
-                <input type="range" class="neu-slider" min="1" max="7" step="1" value="1" style="height: 4px;">
-                <span class="neu-slider-value" style="font-size: 10px;">1</span>
-              </div>
+          <!-- Frequency slider -->
+          <div class="row">
+            <span class="label" style="font-size: 10px;">Freq:</span>
+            <div class="hifi-slider-container">
+              <input type="range" class="hifi-slider hifi-slider--led" min="1" max="7" step="1" value="1">
+              <span class="hifi-slider-value" style="font-size: 10px;">1</span>
             </div>
           </div>
         </div>
@@ -858,20 +1002,20 @@
 
   <script>
     // Simple interactivity for testing
-    document.querySelectorAll('.neu-btn').forEach(btn => {
+    document.querySelectorAll('.hifi-btn').forEach(btn => {
       btn.addEventListener('click', function() {
         // For button groups, handle active state
-        const group = this.closest('.neu-btn-group');
-        if (group && !this.classList.contains('neu-btn--action') && !this.classList.contains('neu-btn--danger')) {
-          group.querySelectorAll('.neu-btn').forEach(b => b.classList.remove('active'));
+        const group = this.closest('.hifi-btn-group');
+        if (group && !this.classList.contains('hifi-btn--action') && !this.classList.contains('hifi-btn--danger')) {
+          group.querySelectorAll('.hifi-btn').forEach(b => b.classList.remove('active'));
           this.classList.add('active');
         }
       });
     });
 
     // Slider value display
-    document.querySelectorAll('.neu-slider').forEach(slider => {
-      const valueDisplay = slider.parentElement.querySelector('.neu-slider-value');
+    document.querySelectorAll('.hifi-slider').forEach(slider => {
+      const valueDisplay = slider.parentElement.querySelector('.hifi-slider-value');
       if (valueDisplay) {
         slider.addEventListener('input', function() {
           valueDisplay.textContent = this.value;

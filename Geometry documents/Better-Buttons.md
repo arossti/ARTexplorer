@@ -1,332 +1,248 @@
-# ART Explorer - Neumorphic UI Component Workplan
+# ART Explorer - HiFi UI Component Workplan
 
 ## Overview
-This workplan outlines the implementation of neumorphic (soft UI) components for ART Explorer, matching the dark theme background (#2A2A2A) and existing control panel dimensions.
+This workplan outlines the implementation of HiFi (1970s High Fidelity Stereo inspired) UI components for ART Explorer, matching the dark theme background (#2A2A2A) and existing control panel dimensions.
+
+**Style Name:** HiFi - inspired by vintage 1970s High Fidelity stereo equipment aesthetics.
+
+**Test File:** `button-test.html` - Contains all finalized component variants with working demos.
+
+**Status:** ✅ DESIGN COMPLETE - Ready for implementation
 
 ---
 
-## Design System Variables
+## Finalized Design Decisions
 
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `--neu-bg` | `#2A2A2A` | Base background (matches `#controls-panel`) |
-| `--neu-light` | `rgba(255, 255, 255, 0.07)` | Highlight for raised edges |
-| `--neu-shadow` | `rgba(0, 0, 0, 0.5)` | Shadow for depth |
-| `--neu-accent` | `#4a9eff` | Active/selected state (existing app blue) |
-| `--neu-success` | `#00ff88` | Action buttons (existing green) |
-| `--neu-radius-sm` | `3px` | Small components (toggles, small buttons) |
-| `--neu-radius-md` | `4px` | Medium components (standard buttons) |
+### Color Palette
+| Color | Hex | Usage |
+|-------|-----|-------|
+| Classic Blue | `#00B4FF` | Primary accent, LED dots, section titles, slider values |
+| Ice Blue | `#7DF9FF` | Active/pressed state glow |
+| Background | `#2A2A2A` | Base background (matches `#controls-panel`) |
+| Dark | `#1a1a1a` | Inset track backgrounds |
+| Light | `#353535` | Raised element highlights |
 
----
+### Design System Variables
+```css
+:root {
+  /* Base colors */
+  --hifi-bg: #2A2A2A;
+  --hifi-bg-dark: #1a1a1a;
+  --hifi-bg-light: #353535;
 
-## Component Inventory
+  /* Shadow colors for HiFi effect */
+  --hifi-shadow-dark: rgba(0, 0, 0, 0.5);
+  --hifi-shadow-light: rgba(255, 255, 255, 0.07);
 
-### A) Sliders (Range Inputs)
-**Current state:** Basic browser-styled range inputs
-**Target:** Neumorphic track with raised thumb
+  /* Accent colors */
+  --hifi-accent: #00B4FF;          /* Classic Blue - primary */
+  --hifi-accent-glow: #7DF9FF;     /* Ice Blue - active glow */
 
-| Element | Current Class | New Class | Priority |
-|---------|--------------|-----------|----------|
-| Scale sliders | `.slider-container input[type="range"]` | `.neu-slider` | HIGH |
-| Opacity sliders | `#opacitySlider`, `#nodeOpacitySlider` | `.neu-slider` | HIGH |
-| Frequency sliders | `#geodesicTetraFrequency` etc. | `.neu-slider` | MEDIUM |
-| Grid interval sliders | `#cartesianTessSlider`, `#quadrayTessSlider` | `.neu-slider` | MEDIUM |
+  /* Text colors */
+  --hifi-text: #e0e0e0;
+  --hifi-text-muted: #b0b0b0;
+  --hifi-text-dim: #888;
 
-### B) Push Buttons
-**Current state:** Flat buttons with hover states
-**Target:** Raised neumorphic with press animation
+  /* Border radii */
+  --hifi-radius-sm: 3px;
+  --hifi-radius-md: 4px;
 
-| Element | Current Class | New Class | Priority |
-|---------|--------------|-----------|----------|
-| Tool mode buttons | `.toggle-btn.variant-tool` | `.neu-btn` | HIGH |
-| View buttons | `.toggle-btn.variant-standard` | `.neu-btn` | HIGH |
-| Node size buttons | `.node-size-btn` | `.neu-btn.neu-btn--sm` | MEDIUM |
-| Action buttons | `.gumball-action-btn` | `.neu-btn.neu-btn--action` | HIGH |
-| File operation buttons | `#importBtn`, `#exportBtn`, `#saveBtn` | `.neu-btn` | MEDIUM |
-
-### C) Toggles (On/Off Switches)
-**Current state:** Checkboxes with labels, plane toggle switches
-**Target:** Neumorphic pill switches with sliding thumb
-
-| Element | Current Class | New Class | Priority |
-|---------|--------------|-----------|----------|
-| Plane toggles | `.plane-toggle-switch` | `.neu-toggle` | ALREADY EXISTS - enhance |
-| Show/hide checkboxes | `input[type="checkbox"]` in `.checkbox-label` | `.neu-toggle` | HIGH |
-| Geodesic options | `#showGeodesicTetrahedron` etc. | `.neu-toggle` | MEDIUM |
-| Visual options | `#nodeFlatShading`, `#backfaceCulling` | `.neu-toggle` | MEDIUM |
-
-**Checkbox → Toggle Candidates (index.html lines):**
-- Line 389: `#showCartesianBasis`
-- Line 395: `#showQuadray`
-- Line 581: `#showPoint`
-- Line 588: `#showLine`
-- Line 635: `#showPolygon`
-- Line 701: `#showPrism`
-- Line 777: `#showCone`
-- Line 853: `#showCube`
-- Line 860: `#showTetrahedron`
-- Line 928: `#showDualTetrahedron`
-- Line 997: `#showOctahedron`
-- Line 1066: `#showIcosahedron`
-- Line 1134: `#showDodecahedron`
-- Line 1140: `#showDualIcosahedron`
-- Line 1208: `#showCuboctahedron`
-- Line 1214: `#showRhombicDodecahedron`
-- Line 1917: `#nodeFlatShading`
-- Line 2027: `#orthoPerspective`
-- Line 2064: `#backfaceCulling`
-- Line 2068: `#enablePrintMode`
-- Line 2074: `#enableCutPlane`
-- Line 2080: `#invertCutPlane`
-
-### D) Dropdown Arrows (Collapsible Sections)
-**Current state:** CSS triangles (`.section-toggle`, `.geodesic-toggle`)
-**Target:** Neumorphic circular button with animated chevron
-
-| Element | Current Class | New Class | Priority |
-|---------|--------------|-----------|----------|
-| Section toggles | `.section-toggle` | `.neu-dropdown-arrow` | MEDIUM |
-| Geodesic toggles | `.geodesic-toggle` | `.neu-dropdown-arrow.neu-dropdown-arrow--sm` | LOW |
+  /* Transitions */
+  --hifi-transition: 0.15s ease-out;
+}
+```
 
 ---
 
-## Implementation Phases
+## Component Specifications
 
-### Phase 1: CSS Variables & Base Styles
-1. Add CSS custom properties to `:root` in art.css
-2. Create base `.neu-*` classes
-3. Test with isolated HTML file
+### A) Sliders `.hifi-slider`
 
-### Phase 2: Sliders
-1. Style track (inset shadow = "down" state)
-2. Style thumb (raised = "up" state)
-3. Add active/focus states
-4. Test cross-browser compatibility
+**Style:** Inset track with raised circular thumb containing blue LED dot center.
 
-### Phase 3: Push Buttons
-1. Create `.neu-btn` base class
-2. Add size variants (`--sm`, `--lg`)
-3. Add color variants (`--action`, `--danger`)
-4. Implement press animation (up → down transition)
+| Property | Value |
+|----------|-------|
+| Track height | 6px |
+| Track background | `--hifi-bg-dark` with inset shadow |
+| Thumb size | 16px diameter |
+| Thumb style | Raised gradient with LED dot center |
+| LED color | `#00B4FF` (Classic Blue) |
 
-### Phase 4: Toggles
-1. Enhance existing `.plane-toggle-switch` with neumorphic styling
-2. Create JavaScript helper for checkbox → toggle conversion
-3. Update event handlers to maintain functionality
+**Variant:** `.hifi-slider--led` - Blue LED dot in thumb center (USE FOR ALL SLIDERS)
 
-### Phase 5: Dropdown Arrows
-1. Replace CSS triangles with circular buttons
-2. Add SVG chevron icon
-3. Animate rotation on expand/collapse
+**States:**
+- Default: Classic Blue `#00B4FF` LED dot
+- Hover: Brightened LED with increased inner glow
+- Active/Pressed: Thumb becomes inset, LED brightens to `#7DF9FF`
 
 ---
 
-## Size Specifications (Matching Existing UI)
+### B) Push Buttons `.hifi-btn`
 
-Based on analysis of index.html and art.css:
+**Style:** Raised gradient surface, pressed state becomes inset.
 
-| Component | Width | Height | Font Size |
-|-----------|-------|--------|-----------|
-| Standard button | flex: 1 (fills container) | 28-32px | 11px |
-| Small button | 28px min | 24px | 10px |
-| Toggle switch | 40px | 20px | - |
-| Slider track | 100% | 4px | - |
-| Slider thumb | 14px | 14px | - |
-| Dropdown arrow | 16px | 16px | - |
+| Property | Value |
+|----------|-------|
+| Padding | 8px 12px (standard), 5px 8px (small) |
+| Font size | 11px (standard), 10px (small) |
+| Border radius | 4px (standard), 3px (small) |
+| Text color | `#b0b0b0` default, `#00B4FF` active |
+
+**Variants:**
+- `.hifi-btn--sm` - Small button for node sizes
+- `.hifi-btn--action` - Action button (NOW) - Classic Blue text
+- `.hifi-btn--danger` - Danger button (Delete) - Classic Blue text (same as action)
+
+**States:**
+- Default (Up): Raised with outer shadow
+- Hover: Slightly brighter
+- Active/Pressed (Down): Inset shadow, text becomes `#00B4FF`
+- Action/Danger Active: Text becomes Ice Blue `#7DF9FF` with glow
+
+---
+
+### C) Toggles `.hifi-toggle`
+
+**Style:** Horizontal pill switch with sliding circular thumb.
+
+| Size | Width | Height | Thumb |
+|------|-------|--------|-------|
+| Standard | 36px | 18px | 14px |
+| Small (`.hifi-toggle--sm`) | 28px | 14px | 10px |
+
+**USE SMALL SIZE (`.hifi-toggle--sm`) for all form toggles** to match vertical dropdown toggle proportions.
+
+**States:**
+- Off: Thumb left, no glow
+- On (`.active`): Thumb right, blue border glow on track, blue glow on thumb
+
+---
+
+### D) Dropdown Toggles `.hifi-dropdown-toggle`
+
+**Style:** Vertical pill switch for section expand/collapse.
+
+| Size | Width | Height | Thumb |
+|------|-------|--------|-------|
+| Standard | 14px | 28px | 10px |
+| Small (`.hifi-dropdown-toggle--sm`) | 10px | 20px | 6px |
+
+**States:**
+- Collapsed (default): Thumb at TOP, no glow
+- Expanded (`.expanded`): Thumb at BOTTOM, blue border glow on track, blue glow on thumb
+
+---
+
+## Implementation Strategy
+
+### Phase 1: Add CSS to art.css
+Copy the finalized CSS from `button-test.html` into `art.css`:
+1. CSS custom properties (`:root` variables)
+2. `.hifi-slider` and `.hifi-slider--led` styles
+3. `.hifi-btn` and variants
+4. `.hifi-toggle` and `.hifi-toggle--sm`
+5. `.hifi-dropdown-toggle` and `.hifi-dropdown-toggle--sm`
+
+### Phase 2: Update Sliders
+Replace all `input[type="range"]` styling:
+
+| Element | Current | New |
+|---------|---------|-----|
+| All sliders | Browser default | `.hifi-slider .hifi-slider--led` |
+
+**Files:** `index.html`, `art.css`
+
+### Phase 3: Update Push Buttons
+Replace button styling:
+
+| Element | Current Class | New Class |
+|---------|---------------|-----------|
+| Tool mode buttons | `.toggle-btn.variant-tool` | `.hifi-btn` |
+| View buttons | `.toggle-btn.variant-standard` | `.hifi-btn` |
+| Node size buttons | `.node-size-btn` | `.hifi-btn .hifi-btn--sm` |
+| Action buttons | `.gumball-action-btn` | `.hifi-btn .hifi-btn--action` |
+
+**Files:** `index.html`, `art.css`, `modules/rt-ui.js`
+
+### Phase 4: Convert Checkboxes to Toggles
+Replace checkbox inputs with toggle switches:
+
+**HTML Pattern (Before):**
+```html
+<label class="checkbox-label">
+  <input type="checkbox" id="showCube" checked>
+  Hexahedron (Cube)
+</label>
+```
+
+**HTML Pattern (After):**
+```html
+<label class="hifi-toggle-label" onclick="this.querySelector('.hifi-toggle').classList.toggle('active')">
+  <div class="hifi-toggle hifi-toggle--sm active">
+    <div class="hifi-toggle-thumb"></div>
+  </div>
+  Hexahedron (Cube)
+</label>
+```
+
+**Checkbox → Toggle Candidates:**
+- `#showCartesianBasis`, `#showQuadray`
+- `#showPoint`, `#showLine`, `#showPolygon`, `#showPrism`, `#showCone`
+- `#showCube`, `#showTetrahedron`, `#showDualTetrahedron`
+- `#showOctahedron`, `#showIcosahedron`, `#showDodecahedron`
+- `#showDualIcosahedron`, `#showCuboctahedron`, `#showRhombicDodecahedron`
+- `#nodeFlatShading`, `#orthoPerspective`, `#backfaceCulling`
+- `#enablePrintMode`, `#enableCutPlane`, `#invertCutPlane`
+
+**JavaScript Update Required:** Update event handlers to check for `.active` class instead of checkbox `checked` property.
+
+### Phase 5: Update Section Toggles
+Replace CSS triangle arrows with vertical dropdown toggles:
+
+| Element | Current Class | New Class |
+|---------|---------------|-----------|
+| Section toggles | `.section-toggle` | `.hifi-dropdown-toggle` |
+| Geodesic toggles | `.geodesic-toggle` | `.hifi-dropdown-toggle .hifi-dropdown-toggle--sm` |
+
+**JavaScript Update Required:** Toggle `.expanded` class on click, update section visibility logic.
+
+---
+
+## Size Reference
+
+| Component | Width | Height | Notes |
+|-----------|-------|--------|-------|
+| Standard button | flex: 1 | 28-32px | Fills container |
+| Small button | auto | 24px | Compact |
+| Toggle (small) | 28px | 14px | Use for all forms |
+| Dropdown toggle | 14px | 28px | Vertical orientation |
+| Slider track | 100% | 6px | Flexible width |
+| Slider thumb | 16px | 16px | Circular with LED |
 
 ---
 
 ## Files to Modify
 
-1. **art.css** - Add new neumorphic styles (append to end)
-2. **index.html** - Update class names on components
-3. **modules/rt-ui.js** - Update any JavaScript references to changed classes
+1. **art.css** - Add HiFi styles (append to end)
+2. **index.html** - Update class names, convert checkboxes to toggles
+3. **modules/rt-ui.js** - Update event handlers for toggle/checkbox logic
 
 ---
 
-## Test File Structure
+## Test File
 
-Create `button-test.html` with:
-- All component variants in isolation
-- Dark background matching app
-- Side-by-side comparison with current styles
+`button-test.html` contains:
+- ✅ All finalized component styles
+- ✅ Interactive demos (click to toggle states)
+- ✅ Combined example showing real-world usage
+- ✅ Side-by-side comparison with current styles
 
 ---
 
-# Reference: Original Button Samples (SCSS)
+## Notes
 
-# HTML COMPONENTS
-
-
-<div class="tile up">Up</div>
-<div class="tile down">Down</div>
-<div class="tile padded up">
-  <div class="tile down">Up &<br />Down</div>
-</div>
-<div class="tile button">
-  <div class="tile"><span>Button</span></div>
-</div>
-<div class="tile tile--circle round">Up</div>
-<div class="tile tile--circle round-down">Down</div>
-<div class="tile tile--circle round-button"><span>Button</span></div>
-
-# JS COMPONENTS
-@import url("https://fonts.googleapis.com/css2?family=Alumni+Sans+Pinstripe&display=swap");
-
-html {
-  @media screen and (max-width: 600px) {
-    font-size: 12px;
-  }
-}
-
-:root {
-  --height: 1;
-}
-
-$light: rgba(#fff, 0.5);
-$shadow: rgba(#000, 0.5);
-
-body {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  align-content: center;
-  gap: 1rem;
-  height: 100vh;
-  background-color: #ddd;
-  overflow: hidden;
-  padding: 0 calc(50vw - 16rem);
-  font-size: 1.5rem;
-  color: #333;
-  line-height: 0.9;
-  font-family: "Alumni Sans Pinstripe", sans-serif;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.tile {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 6rem;
-  height: 6rem;
-  border-radius: 1rem;
-  &:before,
-  &:after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 1rem;
-  }
-  &--circle {
-    border-radius: 50%;
-    &:before {
-      border-radius: 50%;
-    }
-  }
-}
-
-.padded {
-  padding: 0.1rem;
-}
-
-.up {
-  box-shadow: $shadow calc(0.33rem * var(--height))
-    calc(0.33rem * var(--height)) 0.6rem;
-  &:before {
-    box-shadow: $light calc(-0.33rem * var(--height))
-      calc(-0.33rem * var(--height)) 0.6rem;
-  }
-}
-
-.down {
-  box-shadow: inset $shadow calc(0.25rem * var(--height))
-    calc(0.25rem * var(--height)) 0.6rem;
-  &:before {
-    box-shadow: inset $light calc(-0.25rem * var(--height))
-      calc(-0.25rem * var(--height)) 0.6rem;
-  }
-}
-
-.button {
-  cursor: pointer;
-  box-shadow: $shadow calc(0.33rem * var(--height))
-    calc(0.33rem * var(--height)) 0.6rem;
-  transition: box-shadow 0.15s 0.15s ease-in;
-  &:before {
-    box-shadow: $light calc(-0.33rem * var(--height))
-      calc(-0.33rem * var(--height)) 0.6rem;
-    transition: box-shadow 0.15s 0.15s ease-in;
-  }
-  span {
-    transition: transform 0.3s ease-in-out;
-  }
-  & > div {
-    box-shadow: inset $shadow 0 0 0;
-    transition: box-shadow 0.15s ease-in;
-    &:before {
-      box-shadow: inset $light 0 0 0;
-      transition: box-shadow 0.15s ease-in;
-    }
-  }
-  &:hover {
-    box-shadow: $shadow 0 0 0;
-    transition: box-shadow 0.15s ease-out;
-    &:before {
-      box-shadow: $light 0 0 0;
-      transition: box-shadow 0.15s ease-out;
-    }
-    & > div {
-      box-shadow: inset rgba(#000, 50%) calc(0.25rem * var(--height))
-        calc(0.25rem * var(--height)) 0.6rem;
-      transition: box-shadow 0.15s 0.15s ease-out;
-      &:before {
-        box-shadow: inset $light calc(-0.25rem * var(--height))
-          calc(-0.25rem * var(--height)) 0.6rem;
-        transition: box-shadow 0.15s 0.15s ease-out;
-      }
-    }
-    span {
-      transform: translateY(0.1516rem);
-    }
-  }
-}
-
-.round {
-  background: radial-gradient(circle at 40% 40%, $light, transparent, $shadow);
-  box-shadow: $shadow 0.33rem 0.33rem 0.6rem;
-}
-
-.round-down {
-  background: radial-gradient(circle at 75% 75%, $light, transparent, $shadow);
-}
-
-.round-button {
-  cursor: pointer;
-  background: radial-gradient(
-    circle at 50% 50%,
-    $light 15%,
-    transparent 30%,
-    $shadow
-  );
-  background-position: -4rem -4rem;
-  background-size: 200% 200%;
-  box-shadow: $shadow 0.33rem 0.33rem 0.6rem;
-  transition: background 0.3s ease-in-out, box-shadow 0.15s 0.15s ease-in-out;
-  span {
-    transition: transform 0.3s ease-in-out;
-  }
-  &:hover {
-    background-position: -2rem -2rem;
-    box-shadow: $shadow 0 0 0;
-    transition: background 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-    span {
-      transform: translateY(0.1516rem);
-    }
-  }
-}
+- All blue accents use Classic Blue `#00B4FF` for consistency
+- Ice Blue `#7DF9FF` reserved for active/pressed state glow effects
+- Small toggle size (28x14px) matches vertical dropdown toggle proportions (14x28px)
+- LED slider variant (`.hifi-slider--led`) should be used for ALL sliders
+- No green/red colors for action/danger buttons - uses blue LED style throughout
