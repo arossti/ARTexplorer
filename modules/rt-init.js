@@ -3313,15 +3313,9 @@ function startARTexplorer(
           const cameraDirection = new THREE.Vector3();
           currentCamera.getWorldDirection(cameraDirection);
 
-          // DEBUG: Log camera direction once per click
-          console.log(
-            `🎯 Camera direction: (${cameraDirection.x.toFixed(3)}, ${cameraDirection.y.toFixed(3)}, ${cameraDirection.z.toFixed(3)})`
-          );
-
           // Collect all gumball handle hit spheres from editing basis
           // Filter out rotation rings that are edge-on to the camera (unreliable in orthographic)
           const hitTargets = [];
-          const filteredHandles = []; // DEBUG: track what we filter
           editingBasis.traverse(obj => {
             if (obj.userData.isGumballHandle) {
               // For rotation handles, filter out rings that are edge-on to the camera
@@ -3332,31 +3326,15 @@ function startARTexplorer(
                 const dotProduct = Math.abs(
                   cameraDirection.dot(obj.userData.basisAxis)
                 );
-                const axisName =
-                  obj.userData.basisType === "cartesian"
-                    ? ["X", "Y", "Z"][obj.userData.basisIndex]
-                    : ["W", "X", "Y", "Z"][obj.userData.basisIndex];
-
-                // DEBUG: Log every rotation handle evaluation
-                console.log(
-                  `  🔄 ${axisName}-axis (${obj.userData.basisType}): dot=${dotProduct.toFixed(3)} ${dotProduct < 0.15 ? "❌ FILTERED (edge-on)" : "✓ kept"}`
-                );
-
                 // If dot product < 0.15, the ring is nearly edge-on (axis perpendicular to view)
                 // Skip these as they're unreliable to click in orthographic views
                 if (dotProduct < 0.15) {
-                  filteredHandles.push(axisName);
                   return; // Skip this edge-on rotation ring
                 }
               }
               hitTargets.push(obj);
             }
           });
-
-          // DEBUG: Summary
-          console.log(
-            `  📊 Filtered: [${filteredHandles.join(", ")}], Available targets: ${hitTargets.length}`
-          );
 
           const intersects = raycaster.intersectObjects(hitTargets, false);
 
