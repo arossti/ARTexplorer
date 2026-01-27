@@ -562,6 +562,148 @@ export const RTViewManager = {
   },
 
   /**
+   * Extract polyhedron edge lines (wireframe) from the scene
+   * Finds LineSegments objects with renderOrder = 2 (edges rendered after faces)
+   * @returns {Array} Array of line objects with SVG data
+   */
+  extractEdgeLines() {
+    const lines = [];
+    const canvas = this._renderer.domElement;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Get cutplane for filtering
+    const cutplaneEnabled = this._papercut?.state?.cutplaneEnabled;
+    const cutplane = this._papercut?._cutplane;
+
+    // Skip names for non-geometry objects
+    const skipNames = [
+      "Helper",
+      "Handle",
+      "Gumball",
+      "Basis",
+      "Arrow",
+      "Cone",
+      "basis",
+      "Grid",
+      "grid",
+      "Cartesian",
+      "Quadray",
+      "CutplaneIntersection",
+    ];
+
+    this._scene.traverse(object => {
+      // Only process LineSegments objects with renderOrder = 2 (polyhedron edges)
+      if (!object.isLineSegments) return;
+      if (object.renderOrder !== 2) return;
+      if (!object.geometry) return;
+
+      // Skip invisible objects
+      if (!object.visible) return;
+      let ancestor = object.parent;
+      while (ancestor) {
+        if (!ancestor.visible) return;
+        ancestor = ancestor.parent;
+      }
+
+      // Skip helper/grid/basis objects
+      if (object.name && skipNames.some(name => object.name.includes(name))) {
+        return;
+      }
+      if (
+        object.parent?.name &&
+        skipNames.some(name => object.parent.name.includes(name))
+      ) {
+        return;
+      }
+
+      // Get material color
+      let strokeColor = "#000000";
+      if (object.material?.color) {
+        strokeColor = `#${object.material.color.getHexString()}`;
+      }
+
+      // In print mode, use black for all edges
+      const isPrintMode = this._papercut?.state?.printModeEnabled;
+      if (isPrintMode) {
+        strokeColor = "#000000";
+      }
+
+      // Get geometry data
+      const geometry = object.geometry;
+      const positionAttr = geometry.attributes.position;
+      if (!positionAttr) return;
+
+      const positions = positionAttr.array;
+
+      // Get world matrix for transforming vertices
+      object.updateMatrixWorld();
+      const worldMatrix = object.matrixWorld;
+
+      // LineSegments: each pair of consecutive vertices forms a line segment
+      // positions array: [x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3, ...]
+      // Line segments: (0,1), (2,3), (4,5), ...
+      for (let i = 0; i < positionAttr.count; i += 2) {
+        // Get vertices in world space
+        const v0 = new THREE.Vector3(
+          positions[i * 3],
+          positions[i * 3 + 1],
+          positions[i * 3 + 2]
+        ).applyMatrix4(worldMatrix);
+
+        const v1 = new THREE.Vector3(
+          positions[(i + 1) * 3],
+          positions[(i + 1) * 3 + 1],
+          positions[(i + 1) * 3 + 2]
+        ).applyMatrix4(worldMatrix);
+
+        // If cutplane is enabled, skip edges fully behind the cutplane
+        if (cutplaneEnabled && cutplane) {
+          const d0 = cutplane.distanceToPoint(v0);
+          const d1 = cutplane.distanceToPoint(v1);
+
+          // Skip if both vertices are behind the cutplane (negative distance)
+          if (d0 < 0 && d1 < 0) continue;
+        }
+
+        // Project vertices to screen coordinates
+        const p0 = this._projectToScreen(v0, width, height);
+        const p1 = this._projectToScreen(v1, width, height);
+
+        // Skip very short segments (likely artifacts or edge-on lines)
+        const segLength = Math.sqrt(
+          Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2)
+        );
+        if (segLength < 0.5) continue;
+
+        // Calculate midpoint depth for sorting
+        const midpoint = new THREE.Vector3()
+          .addVectors(v0, v1)
+          .divideScalar(2);
+        midpoint.project(this._camera);
+        const depth = midpoint.z;
+
+        // Generate SVG line path
+        const d = `M ${p0.x.toFixed(2)} ${p0.y.toFixed(2)} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}`;
+
+        lines.push({
+          d: d,
+          stroke: strokeColor,
+          strokeWidth: 0.5, // Thin hairline for wireframe edges
+          fill: "none",
+          depth: depth,
+        });
+      }
+    });
+
+    // Sort by depth (back to front)
+    lines.sort((a, b) => b.depth - a.depth);
+
+    console.log(`Extracted ${lines.length} edge lines from scene`);
+    return lines;
+  },
+
+  /**
    * Extract visible mesh faces (triangles) from the scene
    * Projects 3D triangular faces to 2D polygons for SVG export
    * Only includes faces on the camera side of the cutplane
@@ -814,6 +956,7 @@ export const RTViewManager = {
    * @param {boolean} options.vectorMode - Use vector paths instead of raster (default: true)
    * @param {boolean} options.includeRaster - Include raster background (default: false)
    * @param {boolean} options.includeFaces - Include mesh faces (default: true)
+   * @param {boolean} options.includeEdges - Include polyhedron edge lines (default: true)
    * @param {boolean} options.includeNodes - Include vertex nodes (default: true)
    * @returns {string} SVG string
    */
@@ -822,6 +965,7 @@ export const RTViewManager = {
       vectorMode = true,
       includeRaster = false,
       includeFaces = true,
+      includeEdges = true,
       includeNodes = true,
     } = options;
     const dims = this.getExportDimensions();
@@ -860,6 +1004,25 @@ export const RTViewManager = {
   <!-- Mesh Faces -->
   <g id="faces">
 ${scaledFaces.map(f => `    <path d="${f.d}" fill="${f.fill}" fill-opacity="${f.fillOpacity.toFixed(2)}" stroke="none"/>`).join("\n")}
+  </g>`;
+      }
+    }
+
+    // Extract edge lines (polyhedron wireframe) if enabled
+    let edgesContent = "";
+    if (includeEdges && vectorMode) {
+      const edges = this.extractEdgeLines();
+
+      if (edges.length > 0) {
+        const scaledEdges = edges.map(e => ({
+          ...e,
+          d: scalePath(e.d),
+        }));
+
+        edgesContent = `
+  <!-- Edge Lines (Wireframe) -->
+  <g id="edge-lines" fill="none">
+${scaledEdges.map(e => `    <path d="${e.d}" stroke="${e.stroke}" stroke-width="${e.strokeWidth}" stroke-linecap="round"/>`).join("\n")}
   </g>`;
       }
     }
@@ -937,7 +1100,7 @@ ${JSON.stringify(view, null, 2)}
 
   <!-- Background -->
   <rect width="100%" height="100%" fill="${view.colors.background}"/>
-${rasterContent}${facesContent}${vectorContent}${nodesContent}
+${rasterContent}${facesContent}${edgesContent}${vectorContent}${nodesContent}
 
   <!-- Title Block -->
   <g id="title-block" transform="translate(${dims.width - 120}, ${dims.height - 40})">
