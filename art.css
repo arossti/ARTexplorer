@@ -2245,8 +2245,22 @@ button:disabled {
 .coords-unit-label {
   font-size: 11px;
   color: #666;
-  min-width: 12px;
+  width: 58px;
+  min-width: 58px;
+  text-align: left;
+}
+
+/* Coordinate panel icons */
+.coords-icon {
+  font-size: 16px;
+  color: var(--hifi-accent, #00B4FF);
+  min-width: 20px;
   text-align: center;
+}
+
+/* Placeholder icon for alignment (invisible but takes space) */
+.coords-icon-placeholder {
+  visibility: hidden;
 }
 
 /* ==========================================================================

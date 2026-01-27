@@ -10,6 +10,7 @@
       content="An interactive explorer for Algebraic Rational Trigonometry geometry by Andy Ross Thomson, M.Arch, OAA. with guidance by Metatron"
     />
     <link rel="stylesheet" href="art.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   </head>
   <body>
     <!-- Info Modal - Shows on initialization -->
@@ -165,8 +166,8 @@
         <div id="coordinates-panel">
           <!-- XYZ Position -->
           <div class="coords-group">
-            <label class="coords-group-label">XYZ Position</label>
             <div class="coords-row">
+              <i class="bi bi-arrows-move coords-icon" title="XYZ Position"></i>
               <div class="coord-container">
                 <label class="label-axis label-axis-x">X:</label>
                 <input type="text" id="coordX" class="coord-input axis-x" value="0.0000" />
@@ -184,8 +185,8 @@
 
           <!-- WXYZ Position -->
           <div class="coords-group">
-            <label class="coords-group-label">WXYZ Position</label>
             <div class="coords-row">
+              <i class="bi bi-arrows-move coords-icon" title="WXYZ Position"></i>
               <div class="coord-container">
                 <label class="label-axis label-axis-qw">W:</label>
                 <input type="text" id="coordW" class="coord-input axis-qw" value="0.0000" />
@@ -209,9 +210,9 @@
 
           <!-- XYZ Rotation -->
           <div class="coords-group">
-            <label class="coords-group-label">XYZ Rotation</label>
             <div class="coords-row">
-              <span class="coords-unit-label">°</span>
+              <i class="bi bi-arrow-clockwise coords-icon" title="XYZ Rotation"></i>
+              <span class="coords-unit-label">degrees°</span>
               <div class="coord-container">
                 <label class="label-axis label-axis-x">X:</label>
                 <input type="text" id="rotXDegrees" class="coord-input axis-x" value="0.00" />
@@ -226,7 +227,8 @@
               </div>
             </div>
             <div class="coords-row">
-              <span class="coords-unit-label">s</span>
+              <i class="bi bi-arrow-clockwise coords-icon coords-icon-placeholder"></i>
+              <span class="coords-unit-label">spread (s)</span>
               <div class="coord-container">
                 <label class="label-axis label-axis-x">X:</label>
                 <input type="text" id="rotXSpread" class="coord-input axis-x" value="0.00" />
@@ -244,9 +246,9 @@
 
           <!-- WXYZ Rotation -->
           <div class="coords-group">
-            <label class="coords-group-label">WXYZ Rotation</label>
             <div class="coords-row">
-              <span class="coords-unit-label">°</span>
+              <i class="bi bi-arrow-clockwise coords-icon" title="WXYZ Rotation"></i>
+              <span class="coords-unit-label">degrees°</span>
               <div class="coord-container">
                 <label class="label-axis label-axis-qw">W:</label>
                 <input type="text" id="rotWDegrees" class="coord-input axis-qw" value="0.00" />
@@ -265,7 +267,8 @@
               </div>
             </div>
             <div class="coords-row">
-              <span class="coords-unit-label">s</span>
+              <i class="bi bi-arrow-clockwise coords-icon coords-icon-placeholder"></i>
+              <span class="coords-unit-label">spread (s)</span>
               <div class="coord-container">
                 <label class="label-axis label-axis-qw">W:</label>
                 <input type="text" id="rotWSpread" class="coord-input axis-qw" value="0.00" />

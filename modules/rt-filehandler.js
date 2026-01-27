@@ -227,9 +227,7 @@ export const RTFileHandler = {
       polygonShowFace:
         document.getElementById("polygonShowFace")?.checked !== false,
       // Prism primitive parameters
-      prismSides: parseInt(
-        document.getElementById("prismSides")?.value || "6"
-      ),
+      prismSides: parseInt(document.getElementById("prismSides")?.value || "6"),
       prismBaseQuadrance: parseFloat(
         document.getElementById("prismBaseQuadrance")?.value || "1"
       ),
@@ -784,7 +782,10 @@ export const RTFileHandler = {
       }
 
       // Restore environment backgrounds
-      if (stateData.environment?.canvasBackground || stateData.environment?.uiBackground) {
+      if (
+        stateData.environment?.canvasBackground ||
+        stateData.environment?.uiBackground
+      ) {
         const envSettings = {
           canvasBackground: stateData.environment.canvasBackground,
           uiBackground: stateData.environment.uiBackground,
@@ -801,8 +802,14 @@ export const RTFileHandler = {
           window.colorTheoryModal.importEnvironment(envSettings);
         } else {
           // Apply directly if modal not available
-          if (envSettings.canvasBackground && window.renderingAPI?.setCanvasBackground) {
-            const colorHex = parseInt(envSettings.canvasBackground.replace("0x", ""), 16);
+          if (
+            envSettings.canvasBackground &&
+            window.renderingAPI?.setCanvasBackground
+          ) {
+            const colorHex = parseInt(
+              envSettings.canvasBackground.replace("0x", ""),
+              16
+            );
             window.renderingAPI.setCanvasBackground(colorHex);
           }
         }
@@ -876,7 +883,8 @@ export const RTFileHandler = {
                 options.baseQuadrance = instanceData.parameters.baseQuadrance;
               }
               if (instanceData.parameters.heightQuadrance !== undefined) {
-                options.heightQuadrance = instanceData.parameters.heightQuadrance;
+                options.heightQuadrance =
+                  instanceData.parameters.heightQuadrance;
               }
               if (instanceData.parameters.showFaces !== undefined) {
                 options.showFaces = instanceData.parameters.showFaces;
