@@ -2168,65 +2168,36 @@ function startARTexplorer(
 
       Quadray.basisVectors.forEach((vec, i) => {
         if (isRotateMode) {
-          // ROTATE MODE: Hexagonal circle (arc handle) perpendicular to axis
+          // ROTATE MODE: Torus handle perpendicular to axis
           const circleRadius = arrowLength * 0.9; // Slightly smaller than arrow length
-          const segments = 6; // Hexagon for WXYZ differentiation
 
-          // Create hexagonal circle using EllipseCurve with 6 segments
-          const curve = new THREE.EllipseCurve(
-            0,
-            0, // center x, y
-            circleRadius,
-            circleRadius, // xRadius, yRadius
-            0,
-            2 * Math.PI, // start angle, end angle
-            false, // clockwise
-            0 // rotation
-          );
-
-          const points = curve.getPoints(segments);
-          const geometry = new THREE.BufferGeometry().setFromPoints(points);
-          const material = new THREE.LineBasicMaterial({
-            color: quadrayColors[i],
-            linewidth: 2,
-            transparent: true,
-            opacity: 0.8,
-          });
-
-          const rotationHandle = new THREE.LineLoop(geometry, material);
-
-          // Orient circle perpendicular to the axis vector
-          // Default circle is in XY plane (normal = Z-axis)
+          // Orient perpendicular to the axis vector
           const defaultNormal = new THREE.Vector3(0, 0, 1);
           const quaternion = new THREE.Quaternion().setFromUnitVectors(
             defaultNormal,
             vec
           );
-          rotationHandle.setRotationFromQuaternion(quaternion);
 
-          editingBasis.add(rotationHandle);
-
-          // Torus hit zone for clicking (visible for debugging)
-          // Scale hit thickness proportionally (~2/3 of previous, thinner torus)
+          // Torus rotation handle (clean, no extra line loop)
           const hitThickness = Math.max(0.07, arrowLength * 0.033);
-          const hitZone = new THREE.Mesh(
+          const handle = new THREE.Mesh(
             new THREE.TorusGeometry(circleRadius, hitThickness, 16, 64),
             new THREE.MeshBasicMaterial({
               color: quadrayColors[i],
               transparent: true,
-              opacity: 0.2, // Visible for debugging
+              opacity: 0.5,
               depthTest: false,
             })
           );
 
-          hitZone.setRotationFromQuaternion(quaternion);
-          hitZone.userData.basisType = "quadray";
-          hitZone.userData.basisIndex = i;
-          hitZone.userData.basisAxis = vec.clone();
-          hitZone.userData.isGumballHandle = true;
-          hitZone.userData.isRotationHandle = true;
+          handle.setRotationFromQuaternion(quaternion);
+          handle.userData.basisType = "quadray";
+          handle.userData.basisIndex = i;
+          handle.userData.basisAxis = vec.clone();
+          handle.userData.isGumballHandle = true;
+          handle.userData.isRotationHandle = true;
 
-          editingBasis.add(hitZone);
+          editingBasis.add(handle);
         } else {
           // MOVE/SCALE MODE: Arrow shaft with handle at tip
           const tipPosition = vec.clone().multiplyScalar(arrowLength);
@@ -2329,65 +2300,36 @@ function startARTexplorer(
 
       cartesianVectors.forEach((vec, i) => {
         if (isRotateMode) {
-          // ROTATE MODE: Smooth circle (arc handle) perpendicular to axis
+          // ROTATE MODE: Torus handle perpendicular to axis
           const circleRadius = arrowLength * 0.9; // Slightly smaller than arrow length
-          const segments = 64; // Smooth circle for XYZ
 
-          // Create smooth circle using EllipseCurve with many segments
-          const curve = new THREE.EllipseCurve(
-            0,
-            0, // center x, y
-            circleRadius,
-            circleRadius, // xRadius, yRadius
-            0,
-            2 * Math.PI, // start angle, end angle
-            false, // clockwise
-            0 // rotation
-          );
-
-          const points = curve.getPoints(segments);
-          const geometry = new THREE.BufferGeometry().setFromPoints(points);
-          const material = new THREE.LineBasicMaterial({
-            color: cartesianColors[i],
-            linewidth: 2,
-            transparent: true,
-            opacity: 0.8,
-          });
-
-          const rotationHandle = new THREE.LineLoop(geometry, material);
-
-          // Orient circle perpendicular to the axis vector
-          // Default circle is in XY plane (normal = Z-axis)
+          // Orient perpendicular to the axis vector
           const defaultNormal = new THREE.Vector3(0, 0, 1);
           const quaternion = new THREE.Quaternion().setFromUnitVectors(
             defaultNormal,
             vec
           );
-          rotationHandle.setRotationFromQuaternion(quaternion);
 
-          editingBasis.add(rotationHandle);
-
-          // Torus hit zone for clicking (visible for debugging)
-          // Scale hit thickness proportionally (~2/3 of previous, thinner torus)
+          // Torus rotation handle (clean, no extra line loop)
           const hitThickness = Math.max(0.07, arrowLength * 0.033);
-          const hitZone = new THREE.Mesh(
+          const handle = new THREE.Mesh(
             new THREE.TorusGeometry(circleRadius, hitThickness, 16, 64),
             new THREE.MeshBasicMaterial({
               color: cartesianColors[i],
               transparent: true,
-              opacity: 0.2, // Visible for debugging
+              opacity: 0.5,
               depthTest: false,
             })
           );
 
-          hitZone.setRotationFromQuaternion(quaternion);
-          hitZone.userData.basisType = "cartesian";
-          hitZone.userData.basisIndex = i;
-          hitZone.userData.basisAxis = vec.clone();
-          hitZone.userData.isGumballHandle = true;
-          hitZone.userData.isRotationHandle = true;
+          handle.setRotationFromQuaternion(quaternion);
+          handle.userData.basisType = "cartesian";
+          handle.userData.basisIndex = i;
+          handle.userData.basisAxis = vec.clone();
+          handle.userData.isGumballHandle = true;
+          handle.userData.isRotationHandle = true;
 
-          editingBasis.add(hitZone);
+          editingBasis.add(handle);
         } else {
           // MOVE/SCALE MODE: Arrow shaft with handle at tip
           const tipPosition = vec.clone().multiplyScalar(arrowLength);
