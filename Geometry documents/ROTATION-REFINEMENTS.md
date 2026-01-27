@@ -21,29 +21,46 @@ When using orthographic camera views (e.g., Y-axis view in Quadray mode), rotati
 
 ## Implemented Solution: Option C - Edge-On Filter
 
-**Location:** `modules/rt-controls.js` lines 591-605
+**Location:** `modules/rt-init.js` lines ~3291-3340 (in mousedown handler)
 
-**Logic:** Before raycasting, calculate the dot product between the camera's view direction and each rotation ring's axis (normal). If a ring is nearly edge-on (dot product > 0.85, meaning within ~32° of parallel to the view direction), exclude it from hit testing.
+**Critical Discovery:** The original implementation in `rt-controls.js` was never active - the actual gumball code lives in `rt-init.js`. Additionally, using a cached `camera` reference failed when switching between perspective and orthographic modes.
+
+### Key Fixes Applied (2025-01-27)
+
+1. **Correct file location**: Filter implemented in `rt-init.js`, not `rt-controls.js`
+2. **Dynamic camera reference**: Use `renderingAPI.getCamera()` instead of cached `camera` variable
+3. **Inverted dot product logic**: Filter when dot < 0.15 (edge-on), not > 0.85
+
+### Understanding the Geometry
+
+A rotation ring's **axis** is the vector perpendicular to the ring plane:
+- When axis is **parallel** to camera direction (dot ≈ 1.0) → ring appears as **full circle** (KEEP)
+- When axis is **perpendicular** to camera direction (dot ≈ 0.0) → ring appears **edge-on** (FILTER)
+
+### Correct Implementation
 
 ```javascript
-// Get camera view direction for filtering edge-on rotation rings
-const cameraDirection = new this.THREE.Vector3();
-this.camera.getWorldDirection(cameraDirection);
+// IMPORTANT: Get CURRENT camera from renderingAPI (may have switched to orthographic)
+const currentCamera = renderingAPI.getCamera();
+const cameraDirection = new THREE.Vector3();
+currentCamera.getWorldDirection(cameraDirection);
 
 // For rotation handles, filter out rings that are edge-on to the camera
-if (obj.userData.isRotationHandle && obj.userData.axis) {
-  const dotProduct = Math.abs(cameraDirection.dot(obj.userData.axis));
-  // If dot product > 0.85, the ring is nearly edge-on
-  if (dotProduct > 0.85) {
+if (obj.userData.isRotationHandle && obj.userData.basisAxis) {
+  const dotProduct = Math.abs(cameraDirection.dot(obj.userData.basisAxis));
+
+  // If dot product < 0.15, the ring is nearly edge-on (axis perpendicular to view)
+  // Skip these as they're unreliable to click in orthographic views
+  if (dotProduct < 0.15) {
     return; // Skip this edge-on rotation ring
   }
 }
 ```
 
-**Why 0.85 threshold:**
-- `dot = 1.0` = perfectly edge-on (ring appears as a line)
-- `dot = 0.0` = perfectly face-on (ring appears as a full circle)
-- `0.85` corresponds to ~32° from edge-on, giving a comfortable buffer
+**Why 0.15 threshold:**
+- `dot = 0.0` = perfectly edge-on (ring appears as a line) - FILTER
+- `dot = 1.0` = perfectly face-on (ring appears as a full circle) - KEEP
+- `0.15` corresponds to ~81° from face-on, filtering rings that are nearly invisible
 
 ## Testing Checklist
 
@@ -51,29 +68,38 @@ if (obj.userData.isRotationHandle && obj.userData.axis) {
 
 | View | Expected Selectable Axes | Edge-On (Filtered) | Status |
 |------|--------------------------|-------------------|--------|
-| X | Y, Z (green, blue) | X (red) | [ ] |
-| Y | X, Z (red, blue) | Y (green) | [ ] |
-| Z-Down | X, Y (red, green) | Z (blue) | [ ] |
-| Z-Up | X, Y (red, green) | Z (blue) | [ ] |
+| X | Y, Z (green, blue) | X (red) | [✓] |
+| Y | X, Z (red, blue) | Y (green) | [✓] |
+| Z-Down | X, Y (red, green) | Z (blue) | [✓] |
+| Z-Up | X, Y (red, green) | Z (blue) | [✓] |
 
 ### WXYZ Tetrahedral Views (with WXYZ coordinate system enabled)
 
 | View | Expected Selectable Axes | Edge-On (Filtered) | Status |
 |------|--------------------------|-------------------|--------|
-| W | X, Y, Z (quadray) | W | [ ] |
-| X | W, Y, Z (quadray) | X | [ ] |
-| Y | W, X, Z (quadray) | Y | [ ] |
-| Z | W, X, Y (quadray) | Z | [ ] |
+| W | X, Y, Z (quadray) | W | [✓] |
+| X | W, Y, Z (quadray) | X | [✓] |
+| Y | W, X, Z (quadray) | Y | [✓] |
+| Z | W, X, Y (quadray) | Z | [✓] |
+
+## Debug Logging
+
+The implementation includes debug logging (can be removed for production):
+
+```
+🎯 Camera direction: (0.000, -1.000, 0.000)
+  🔄 X-axis (cartesian): dot=0.000 ❌ FILTERED (edge-on)
+  🔄 Y-axis (cartesian): dot=1.000 ✓ kept
+  🔄 Z-axis (cartesian): dot=0.000 ❌ FILTERED (edge-on)
+  📊 Filtered: [X, Z], Available targets: 1
+```
 
 ## Potential Refinements
 
-### If 0.85 threshold is too aggressive:
-- Lower to 0.9 (filters only rings within ~26° of edge-on)
-- Or make it camera-type dependent (stricter for orthographic)
-
-### If some edge cases still fail:
-- Consider testing each axis independently rather than all together
-- Add a secondary check based on which axis the cursor is nearest to visually
+### If 0.15 threshold needs adjustment:
+- Increase to 0.2 for more aggressive filtering
+- Decrease to 0.1 for less aggressive filtering
+- Could make threshold camera-type dependent (stricter for orthographic only)
 
 ### Alternative approaches not implemented:
 - **Option A:** Increase hit zone thickness dynamically for orthographic
@@ -82,6 +108,7 @@ if (obj.userData.isRotationHandle && obj.userData.axis) {
 
 ## Notes
 
-- The current implementation affects both XYZ and WXYZ rotation handles
-- Move and Scale handles (arrows/cubes) are unaffected by this filter
-- The filter runs on every mousedown event, so camera direction is always current
+- The implementation affects both XYZ and WXYZ rotation handles automatically
+- Move and Scale handles (tetrahedra/cubes) are unaffected by this filter
+- The filter runs on every mousedown event, using current camera state
+- WXYZ quadray axes work correctly because they store `basisAxis` the same way as Cartesian

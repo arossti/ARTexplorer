@@ -2542,12 +2542,29 @@ function startARTexplorer(
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    raycaster.setFromCamera(mouse, camera);
+    // IMPORTANT: Get CURRENT camera from renderingAPI (may have switched to orthographic)
+    const currentCamera = renderingAPI.getCamera();
+    raycaster.setFromCamera(mouse, currentCamera);
+
+    // Get camera view direction for filtering edge-on rotation rings
+    const cameraDirection = new THREE.Vector3();
+    currentCamera.getWorldDirection(cameraDirection);
 
     // Collect all gumball handle hit targets
+    // Filter out rotation rings that are edge-on to the camera (unreliable in orthographic)
     const hitTargets = [];
     editingBasis.traverse(obj => {
       if (obj.userData.isGumballHandle) {
+        // For rotation handles, filter out rings that are edge-on to the camera
+        if (obj.userData.isRotationHandle && obj.userData.basisAxis) {
+          const dotProduct = Math.abs(
+            cameraDirection.dot(obj.userData.basisAxis)
+          );
+          // If dot product < 0.15, the ring is nearly edge-on - skip it
+          if (dotProduct < 0.15) {
+            return;
+          }
+        }
         hitTargets.push(obj);
       }
     });
