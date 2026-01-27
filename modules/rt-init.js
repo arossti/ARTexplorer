@@ -1496,6 +1496,7 @@ function startARTexplorer(
   let selectedPolyhedra = []; // Will store currently selected polyhedra
   let justFinishedDrag = false; // Track if we just completed a drag (prevent deselect on click-after-drag)
   let editingBasis = null; // Localized gumball that follows selected Forms
+  let hoveredHandle = null; // Currently hovered gumball handle (for hover glow effect)
 
   // Basis vector visibility state (stored when gumball activates, restored on deactivation)
   let savedCartesianBasisVisible = null;
@@ -2078,6 +2079,41 @@ function startARTexplorer(
   // ========================================================================
 
   /**
+   * Calculate optimal handle length based on object's bounding sphere
+   *
+   * For adaptive gumball sizing - handles extend just beyond the object's
+   * circumsphere so they remain visible and grabbable for any size polyhedron.
+   *
+   * @param {THREE.Object3D} selectedObject - The selected polyhedron
+   * @returns {number} Optimal handle length with padding
+   */
+  function calculateHandleLength(selectedObject) {
+    if (!selectedObject) {
+      // Fallback to tetEdge if no object
+      return parseFloat(document.getElementById("tetScaleSlider").value);
+    }
+
+    // 1. Compute bounding box of the object
+    const boundingBox = new THREE.Box3().setFromObject(selectedObject);
+    const size = new THREE.Vector3();
+    boundingBox.getSize(size);
+
+    // 2. Calculate circumsphere radius (half of bounding box diagonal)
+    // This ensures handles extend beyond the farthest vertex
+    const circumRadius = size.length() / 2;
+
+    // 3. Add padding (15% beyond bounding sphere) for comfortable grab zone
+    const paddingFactor = 1.15;
+    const handleLength = circumRadius * paddingFactor;
+
+    // 4. Apply min/max constraints to keep handles usable
+    const minHandleLength = 1.0; // Never smaller than 1 unit
+    const maxHandleLength = 20.0; // Cap at 20 to prevent unwieldy handles
+
+    return Math.min(Math.max(handleLength, minHandleLength), maxHandleLength);
+  }
+
+  /**
    * Create EDITING BASIS (localized gumball) at specified position
    *
    * SYSTEMS 3 & 4 OF 4: Interactive transformation handles for selected Forms
@@ -2085,24 +2121,23 @@ function startARTexplorer(
    * SYSTEM 3: Editing Quadray Basis (WXYZ)
    * - Location: rt-init.js (this file)
    * - Purpose: Interactive Move/Scale/Rotate handles for tetrahedral coordinates
-   * - Scaling: Dynamic - scales with tetEdge slider for optimal interaction
+   * - Scaling: Adaptive - scales based on selected object's bounding sphere
    * - Visual: Conical arrows (Move/Scale) or hexagonal rotation handles (Rotate)
    * - Interaction: Click/drag to transform selected Form in WXYZ coordinates
    *
    * SYSTEM 4: Editing Cartesian Basis (XYZ)
    * - Location: rt-init.js (this file)
    * - Purpose: Interactive Move/Scale/Rotate handles for orthogonal coordinates
-   * - Scaling: Dynamic - scales with tetEdge slider for optimal interaction
+   * - Scaling: Adaptive - scales based on selected object's bounding sphere
    * - Visual: Conical arrows (Move/Scale) or circular rotation handles (Rotate)
    * - Interaction: Click/drag to transform selected Form in XYZ coordinates
    *
    * See also: Symbolic basis vectors in rt-rendering.js (non-interactive reference)
    *
    * @param {THREE.Vector3} position - Position to create the basis at
-   * @param {THREE.Group} selectedObject - The selected form/instance for sizing
-   * @todo TODO: Use selectedObject bounding box to scale handles for large matrices
+   * @param {THREE.Group} selectedObject - The selected form/instance for sizing (used for adaptive handle length)
    */
-  function createEditingBasis(position, _selectedObject) {
+  function createEditingBasis(position, selectedObject) {
     // Remove existing editing basis if any
     if (editingBasis) {
       scene.remove(editingBasis);
@@ -2116,23 +2151,10 @@ function startARTexplorer(
     const showCartesian = document.getElementById("showCartesianBasis").checked;
     const showQuadray = document.getElementById("showQuadray").checked;
 
-    // Use tetEdge from slider for arrow length (performant, works for all forms)
-    // For platonic solids: tetEdge ≈ OutSphere radius (good fit)
-    // For geodesics: tetEdge < OutSphere (handles outside - easier to grab)
-    const tetEdge = parseFloat(document.getElementById("tetScaleSlider").value);
-    const arrowLength = tetEdge;
-    const headLength = 0.3;
-
-    // ALTERNATIVE: Bounding box calculation (more accurate but slower)
-    // Useful for large subdivided geodesics if tetEdge becomes too small
-    // Uncomment if needed for specific form types:
-    /*
-          const boundingBox = new THREE.Box3().setFromObject(selectedObject);
-          const size = new THREE.Vector3();
-          boundingBox.getSize(size);
-          const outSphereRadius = Math.max(size.x, size.y, size.z) * Math.sqrt(3) / 2;
-          const arrowLength = outSphereRadius;
-          */
+    // Calculate adaptive handle length based on object's bounding sphere
+    // Handles will extend just beyond the object for visibility/grabability
+    const arrowLength = calculateHandleLength(selectedObject);
+    const headLength = Math.max(0.2, arrowLength * 0.1); // Scale head proportionally
 
     // Determine handle type based on active tool
     const isScaleMode = currentGumballTool === "scale";
@@ -2146,84 +2168,58 @@ function startARTexplorer(
 
       Quadray.basisVectors.forEach((vec, i) => {
         if (isRotateMode) {
-          // ROTATE MODE: Hexagonal circle (arc handle) perpendicular to axis
+          // ROTATE MODE: Torus handle perpendicular to axis
           const circleRadius = arrowLength * 0.9; // Slightly smaller than arrow length
-          const segments = 6; // Hexagon for WXYZ differentiation
 
-          // Create hexagonal circle using EllipseCurve with 6 segments
-          const curve = new THREE.EllipseCurve(
-            0,
-            0, // center x, y
-            circleRadius,
-            circleRadius, // xRadius, yRadius
-            0,
-            2 * Math.PI, // start angle, end angle
-            false, // clockwise
-            0 // rotation
-          );
-
-          const points = curve.getPoints(segments);
-          const geometry = new THREE.BufferGeometry().setFromPoints(points);
-          const material = new THREE.LineBasicMaterial({
-            color: quadrayColors[i],
-            linewidth: 2,
-            transparent: true,
-            opacity: 0.8,
-          });
-
-          const rotationHandle = new THREE.LineLoop(geometry, material);
-
-          // Orient circle perpendicular to the axis vector
-          // Default circle is in XY plane (normal = Z-axis)
+          // Orient perpendicular to the axis vector
           const defaultNormal = new THREE.Vector3(0, 0, 1);
           const quaternion = new THREE.Quaternion().setFromUnitVectors(
             defaultNormal,
             vec
           );
-          rotationHandle.setRotationFromQuaternion(quaternion);
 
-          editingBasis.add(rotationHandle);
-
-          // Torus hit zone for clicking (visible for debugging)
-          const hitThickness = 0.15; // Clickable area thickness
-          const hitZone = new THREE.Mesh(
+          // Torus rotation handle (clean, no extra line loop)
+          const hitThickness = Math.max(0.07, arrowLength * 0.033);
+          const handle = new THREE.Mesh(
             new THREE.TorusGeometry(circleRadius, hitThickness, 16, 64),
             new THREE.MeshBasicMaterial({
               color: quadrayColors[i],
               transparent: true,
-              opacity: 0.2, // Visible for debugging
+              opacity: 0.5,
               depthTest: false,
             })
           );
 
-          hitZone.setRotationFromQuaternion(quaternion);
-          hitZone.userData.basisType = "quadray";
-          hitZone.userData.basisIndex = i;
-          hitZone.userData.basisAxis = vec.clone();
-          hitZone.userData.isGumballHandle = true;
-          hitZone.userData.isRotationHandle = true;
+          handle.setRotationFromQuaternion(quaternion);
+          handle.userData.basisType = "quadray";
+          handle.userData.basisIndex = i;
+          handle.userData.basisAxis = vec.clone();
+          handle.userData.isGumballHandle = true;
+          handle.userData.isRotationHandle = true;
 
-          editingBasis.add(hitZone);
+          editingBasis.add(handle);
         } else {
-          // MOVE/SCALE MODE: Arrow with handle at tip
-          const arrow = new THREE.ArrowHelper(
-            vec,
-            new THREE.Vector3(0, 0, 0),
-            arrowLength,
-            quadrayColors[i],
-            isScaleMode ? 0 : headLength, // No arrowhead in Scale mode
-            0.2
-          );
-
-          editingBasis.add(arrow);
-
-          // Add handle at arrow tip - CUBE for Scale, SPHERE for Move
+          // MOVE/SCALE MODE: Arrow shaft with handle at tip
           const tipPosition = vec.clone().multiplyScalar(arrowLength);
+
+          // Scale handle sizes proportionally (min sizes for small objects)
+          const cubeSize = Math.max(0.3, arrowLength * 0.12);
+          const tetraSize = Math.max(0.35, arrowLength * 0.14);
 
           let handle;
           if (isScaleMode) {
-            // SCALE MODE: Cube handle
-            const cubeSize = 0.4;
+            // SCALE MODE: Arrow with no head, cube handle at tip
+            const arrow = new THREE.ArrowHelper(
+              vec,
+              new THREE.Vector3(0, 0, 0),
+              arrowLength,
+              quadrayColors[i],
+              0, // No arrowhead in Scale mode
+              0
+            );
+            editingBasis.add(arrow);
+
+            // Cube handle (visible, same style as working scale cubes)
             handle = new THREE.Mesh(
               new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize),
               new THREE.MeshBasicMaterial({
@@ -2234,16 +2230,50 @@ function startARTexplorer(
               })
             );
           } else {
-            // MOVE MODE: Sphere handle
+            // MOVE MODE: Arrow with no head, tetrahedron handle at tip
+            const arrow = new THREE.ArrowHelper(
+              vec,
+              new THREE.Vector3(0, 0, 0),
+              arrowLength,
+              quadrayColors[i],
+              0, // No arrowhead - using tetrahedron instead
+              0
+            );
+            editingBasis.add(arrow);
+
+            // Tetrahedron handle (visible, same opacity style as scale cubes)
+            const tetraGeom = new THREE.TetrahedronGeometry(tetraSize);
             handle = new THREE.Mesh(
-              new THREE.SphereGeometry(0.5, 16, 16),
+              tetraGeom,
               new THREE.MeshBasicMaterial({
                 color: quadrayColors[i],
                 transparent: true,
-                opacity: 0.3, // Semi-visible for debugging
+                opacity: 0.5,
                 depthTest: true,
               })
             );
+
+            // Orient tetrahedron so one VERTEX points along the axis direction
+            // (matching quadray basis vector tetrahedra orientation from rt-grids.js)
+            // Find the vertex closest to pointing in our axis direction
+            const posAttr = tetraGeom.getAttribute("position");
+            let bestVertex = new THREE.Vector3();
+            let maxDot = -Infinity;
+            for (let vi = 0; vi < posAttr.count; vi++) {
+              const v = new THREE.Vector3().fromBufferAttribute(posAttr, vi);
+              const dot = v.clone().normalize().dot(vec);
+              if (dot > maxDot) {
+                maxDot = dot;
+                bestVertex.copy(v);
+              }
+            }
+            // Orient so that vertex points along our axis
+            const currentDir = bestVertex.clone().normalize();
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(
+              currentDir,
+              vec
+            );
+            handle.setRotationFromQuaternion(quaternion);
           }
 
           handle.position.copy(tipPosition);
@@ -2270,84 +2300,58 @@ function startARTexplorer(
 
       cartesianVectors.forEach((vec, i) => {
         if (isRotateMode) {
-          // ROTATE MODE: Smooth circle (arc handle) perpendicular to axis
+          // ROTATE MODE: Torus handle perpendicular to axis
           const circleRadius = arrowLength * 0.9; // Slightly smaller than arrow length
-          const segments = 64; // Smooth circle for XYZ
 
-          // Create smooth circle using EllipseCurve with many segments
-          const curve = new THREE.EllipseCurve(
-            0,
-            0, // center x, y
-            circleRadius,
-            circleRadius, // xRadius, yRadius
-            0,
-            2 * Math.PI, // start angle, end angle
-            false, // clockwise
-            0 // rotation
-          );
-
-          const points = curve.getPoints(segments);
-          const geometry = new THREE.BufferGeometry().setFromPoints(points);
-          const material = new THREE.LineBasicMaterial({
-            color: cartesianColors[i],
-            linewidth: 2,
-            transparent: true,
-            opacity: 0.8,
-          });
-
-          const rotationHandle = new THREE.LineLoop(geometry, material);
-
-          // Orient circle perpendicular to the axis vector
-          // Default circle is in XY plane (normal = Z-axis)
+          // Orient perpendicular to the axis vector
           const defaultNormal = new THREE.Vector3(0, 0, 1);
           const quaternion = new THREE.Quaternion().setFromUnitVectors(
             defaultNormal,
             vec
           );
-          rotationHandle.setRotationFromQuaternion(quaternion);
 
-          editingBasis.add(rotationHandle);
-
-          // Torus hit zone for clicking (visible for debugging)
-          const hitThickness = 0.15; // Clickable area thickness
-          const hitZone = new THREE.Mesh(
+          // Torus rotation handle (clean, no extra line loop)
+          const hitThickness = Math.max(0.07, arrowLength * 0.033);
+          const handle = new THREE.Mesh(
             new THREE.TorusGeometry(circleRadius, hitThickness, 16, 64),
             new THREE.MeshBasicMaterial({
               color: cartesianColors[i],
               transparent: true,
-              opacity: 0.2, // Visible for debugging
+              opacity: 0.5,
               depthTest: false,
             })
           );
 
-          hitZone.setRotationFromQuaternion(quaternion);
-          hitZone.userData.basisType = "cartesian";
-          hitZone.userData.basisIndex = i;
-          hitZone.userData.basisAxis = vec.clone();
-          hitZone.userData.isGumballHandle = true;
-          hitZone.userData.isRotationHandle = true;
+          handle.setRotationFromQuaternion(quaternion);
+          handle.userData.basisType = "cartesian";
+          handle.userData.basisIndex = i;
+          handle.userData.basisAxis = vec.clone();
+          handle.userData.isGumballHandle = true;
+          handle.userData.isRotationHandle = true;
 
-          editingBasis.add(hitZone);
+          editingBasis.add(handle);
         } else {
-          // MOVE/SCALE MODE: Arrow with handle at tip
-          const arrow = new THREE.ArrowHelper(
-            vec,
-            new THREE.Vector3(0, 0, 0),
-            arrowLength,
-            cartesianColors[i],
-            isScaleMode ? 0 : headLength, // No arrowhead in Scale mode
-            0.2
-          );
-
-          editingBasis.add(arrow);
-
-          // Add handle at arrow tip - CUBE for Scale, SPHERE for Move
+          // MOVE/SCALE MODE: Arrow shaft with handle at tip
           const tipPosition = vec.clone().multiplyScalar(arrowLength);
+
+          // Scale handle sizes proportionally (min sizes for small objects)
+          const cubeSize = Math.max(0.3, arrowLength * 0.12);
+          const tetraSize = Math.max(0.35, arrowLength * 0.14);
 
           let handle;
           if (isScaleMode) {
-            // SCALE MODE: Cube handle
-            const cubeSize = 0.4;
+            // SCALE MODE: Arrow with no head, cube handle at tip
+            const arrow = new THREE.ArrowHelper(
+              vec,
+              new THREE.Vector3(0, 0, 0),
+              arrowLength,
+              cartesianColors[i],
+              0, // No arrowhead in Scale mode
+              0
+            );
+            editingBasis.add(arrow);
+
+            // Cube handle (visible, same style as working scale cubes)
             handle = new THREE.Mesh(
               new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize),
               new THREE.MeshBasicMaterial({
@@ -2358,16 +2362,50 @@ function startARTexplorer(
               })
             );
           } else {
-            // MOVE MODE: Sphere handle
+            // MOVE MODE: Arrow with no head, tetrahedron handle at tip
+            const arrow = new THREE.ArrowHelper(
+              vec,
+              new THREE.Vector3(0, 0, 0),
+              arrowLength,
+              cartesianColors[i],
+              0, // No arrowhead - using tetrahedron instead
+              0
+            );
+            editingBasis.add(arrow);
+
+            // Tetrahedron handle (visible, same opacity style as scale cubes)
+            const tetraGeom = new THREE.TetrahedronGeometry(tetraSize);
             handle = new THREE.Mesh(
-              new THREE.SphereGeometry(0.5, 16, 16),
+              tetraGeom,
               new THREE.MeshBasicMaterial({
                 color: cartesianColors[i],
                 transparent: true,
-                opacity: 0.3, // Semi-visible for debugging
+                opacity: 0.5,
                 depthTest: true,
               })
             );
+
+            // Orient tetrahedron so one VERTEX points along the axis direction
+            // (matching quadray basis vector tetrahedra orientation from rt-grids.js)
+            // Find the vertex closest to pointing in our axis direction
+            const posAttr = tetraGeom.getAttribute("position");
+            let bestVertex = new THREE.Vector3();
+            let maxDot = -Infinity;
+            for (let vi = 0; vi < posAttr.count; vi++) {
+              const v = new THREE.Vector3().fromBufferAttribute(posAttr, vi);
+              const dot = v.clone().normalize().dot(vec);
+              if (dot > maxDot) {
+                maxDot = dot;
+                bestVertex.copy(v);
+              }
+            }
+            // Orient so that vertex points along our axis
+            const currentDir = bestVertex.clone().normalize();
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(
+              currentDir,
+              vec
+            );
+            handle.setRotationFromQuaternion(quaternion);
           }
 
           handle.position.copy(tipPosition);
@@ -2385,8 +2423,10 @@ function startARTexplorer(
     // CENTRAL SPHERE for UNIFORM SCALING (Scale mode only)
     // ========================================================================
     if (isScaleMode) {
+      // Scale central sphere proportionally (min 0.4, ~18% of arrow length)
+      const centralRadius = Math.max(0.4, arrowLength * 0.18);
       const centralSphere = new THREE.Mesh(
-        new THREE.SphereGeometry(0.6, 32, 32),
+        new THREE.SphereGeometry(centralRadius, 32, 32),
         new THREE.MeshBasicMaterial({
           color: 0xffffff,
           transparent: true,
@@ -2406,12 +2446,12 @@ function startARTexplorer(
 
     scene.add(editingBasis);
 
-    // Log basis sizing for tuning (tetEdge drives handle scale)
+    // Log basis sizing for debugging adaptive scaling
     const systems = [];
     if (showCartesian) systems.push("XYZ");
     if (showQuadray) systems.push("WXYZ");
     console.log(
-      `✅ Editing basis created: ${systems.join("+")} | tetEdge=${tetEdge.toFixed(2)} arrowLength=${arrowLength.toFixed(2)} headLength=${headLength}`
+      `✅ Editing basis created: ${systems.join("+")} | arrowLength=${arrowLength.toFixed(2)} (adaptive) headLength=${headLength.toFixed(2)}`
     );
   }
 
@@ -2431,6 +2471,99 @@ function startARTexplorer(
     if (editingBasis) {
       scene.remove(editingBasis);
       editingBasis = null;
+    }
+    hoveredHandle = null;
+  }
+
+  /**
+   * Apply hover highlight to a gumball handle's arrowhead
+   * Increases opacity to make the handle appear more solid/vivid
+   * @param {THREE.Mesh} handle - The hit zone mesh (contains reference to arrowCone)
+   */
+  function applyHandleHover(handle) {
+    if (!handle) return;
+
+    // Get the actual visual element to highlight (arrowhead cone or the handle itself)
+    const visualTarget = handle.userData.arrowCone || handle;
+    if (!visualTarget || !visualTarget.material) return;
+
+    // Store original opacity if not already stored
+    if (visualTarget.userData.originalOpacity === undefined) {
+      visualTarget.userData.originalOpacity = visualTarget.material.opacity;
+    }
+
+    // Make material transparent if not already (required for opacity changes)
+    visualTarget.material.transparent = true;
+
+    // Increase opacity to make arrowhead more solid/vivid (preserves color)
+    visualTarget.material.opacity = 1.0;
+
+    // Change cursor to indicate interactivity
+    renderer.domElement.style.cursor = "pointer";
+  }
+
+  /**
+   * Remove hover highlight from a gumball handle's arrowhead
+   * @param {THREE.Mesh} handle - The hit zone mesh (contains reference to arrowCone)
+   */
+  function clearHandleHover(handle) {
+    if (!handle) return;
+
+    // Get the actual visual element that was highlighted
+    const visualTarget = handle.userData.arrowCone || handle;
+    if (!visualTarget || !visualTarget.material) return;
+
+    // Restore original opacity
+    if (visualTarget.userData.originalOpacity !== undefined) {
+      visualTarget.material.opacity = visualTarget.userData.originalOpacity;
+    }
+
+    // Reset cursor
+    renderer.domElement.style.cursor = "default";
+  }
+
+  /**
+   * Handle mousemove for gumball handle hover detection
+   * @param {MouseEvent} event - The mousemove event
+   */
+  function onGumballHover(event) {
+    if (!editingBasis || !raycaster || !mouse || isDragging) return;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    // Collect all gumball handle hit targets
+    const hitTargets = [];
+    editingBasis.traverse(obj => {
+      if (obj.userData.isGumballHandle) {
+        hitTargets.push(obj);
+      }
+    });
+
+    const intersects = raycaster.intersectObjects(hitTargets, false);
+
+    if (intersects.length > 0) {
+      const newHoveredHandle = intersects[0].object;
+
+      // Only update if hover target changed
+      if (newHoveredHandle !== hoveredHandle) {
+        // Clear previous hover
+        if (hoveredHandle) {
+          clearHandleHover(hoveredHandle);
+        }
+        // Apply new hover
+        hoveredHandle = newHoveredHandle;
+        applyHandleHover(hoveredHandle);
+      }
+    } else {
+      // Not hovering over any handle
+      if (hoveredHandle) {
+        clearHandleHover(hoveredHandle);
+        hoveredHandle = null;
+      }
     }
   }
 
@@ -4231,6 +4364,7 @@ function startARTexplorer(
   });
 
   renderer.domElement.addEventListener("mousemove", e => {
+    // Track drag distance for click vs drag detection
     if (mouseDownPos) {
       const dx = e.clientX - mouseDownPos.x;
       const dy = e.clientY - mouseDownPos.y;
@@ -4241,6 +4375,9 @@ function startARTexplorer(
         mouseMoved = true;
       }
     }
+
+    // Gumball handle hover detection (for visual feedback)
+    onGumballHover(e);
   });
 
   renderer.domElement.addEventListener("mouseup", () => {

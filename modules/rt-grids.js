@@ -78,44 +78,37 @@ export const Grids = {
 
     scene.add(cartesianGrid);
 
-    // Create Cartesian basis vectors
+    // Create Cartesian basis vectors with tetrahedral heads (matches move handles)
     const cartesianBasis = new THREE.Group();
 
     // RT-PURE: Base length for unit scaling (will be scaled to cubeEdge in updateGeometry)
-    const totalBasisLength = 1.0;
-    const headLength = 0.2;
-    const arrowLength = totalBasisLength;
+    const shaftLength = 1.0;
+    const headSize = 0.15;
 
     // X-axis (Red)
-    const xAxis = new THREE.ArrowHelper(
+    const xAxis = Grids.createCartesianTetraArrow(
       new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(0, 0, 0),
-      arrowLength,
-      0xff0000,
-      headLength,
-      0.15
+      shaftLength,
+      headSize,
+      0xff0000
     );
     cartesianBasis.add(xAxis);
 
     // Y-axis (Green)
-    const yAxis = new THREE.ArrowHelper(
+    const yAxis = Grids.createCartesianTetraArrow(
       new THREE.Vector3(0, 1, 0),
-      new THREE.Vector3(0, 0, 0),
-      arrowLength,
-      0x00ff00,
-      headLength,
-      0.15
+      shaftLength,
+      headSize,
+      0x00ff00
     );
     cartesianBasis.add(yAxis);
 
     // Z-axis (Blue) - vertical in Z-up convention
-    const zAxis = new THREE.ArrowHelper(
+    const zAxis = Grids.createCartesianTetraArrow(
       new THREE.Vector3(0, 0, 1),
-      new THREE.Vector3(0, 0, 0),
-      arrowLength,
-      0x0000ff,
-      headLength,
-      0.15
+      shaftLength,
+      headSize,
+      0x0000ff
     );
     cartesianBasis.add(zAxis);
 
@@ -139,26 +132,19 @@ export const Grids = {
   createTetrahedralArrow: (direction, shaftLength, headSize, color) => {
     const arrowGroup = new THREE.Group();
 
-    // 1. Create cylindrical shaft (match XYZ ArrowHelper visual weight)
-    const shaftRadius = 0.005;
-    const shaftGeometry = new THREE.CylinderGeometry(
-      shaftRadius,
-      shaftRadius,
-      shaftLength,
-      8
-    );
-    const shaftMaterial = new THREE.MeshBasicMaterial({ color });
-    const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
-
-    // Position shaft: cylinder default is Y-up, translate to point in direction
-    shaft.position.copy(direction.clone().multiplyScalar(shaftLength / 2));
-
-    // Orient shaft along direction vector
-    shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    // 1. Create hairline shaft (matches XYZ basis and edit handle lines)
+    const shaftPoints = [
+      new THREE.Vector3(0, 0, 0),
+      direction.clone().multiplyScalar(shaftLength),
+    ];
+    const shaftGeometry = new THREE.BufferGeometry().setFromPoints(shaftPoints);
+    const shaftMaterial = new THREE.LineBasicMaterial({ color });
+    const shaft = new THREE.Line(shaftGeometry, shaftMaterial);
     arrowGroup.add(shaft);
 
     // 2. Create tetrahedral arrowhead using dualTetrahedron
-    const tetraGeom = Polyhedra.dualTetrahedron(headSize);
+    // Use silent option to skip RT validation logging for utility geometry
+    const tetraGeom = Polyhedra.dualTetrahedron(headSize, { silent: true });
 
     // Find which vertex is closest to pointing in our direction
     let bestVertex = 0;
@@ -203,6 +189,63 @@ export const Grids = {
 
     // Orient head so the identified vertex points along direction
     const currentDir = tetraGeom.vertices[bestVertex].clone().normalize();
+    head.quaternion.setFromUnitVectors(currentDir, direction);
+
+    arrowGroup.add(head);
+
+    return arrowGroup;
+  },
+
+  /**
+   * Create Cartesian basis arrow with THREE.js tetrahedron head
+   * (matches the move handle tetrahedra for visual consistency)
+   *
+   * @param {THREE.Vector3} direction - Normalized direction vector
+   * @param {number} shaftLength - Length of arrow shaft
+   * @param {number} headSize - Size of tetrahedral head
+   * @param {number} color - Hex color for the arrow
+   * @returns {THREE.Group} Arrow with shaft and tetrahedral head
+   */
+  createCartesianTetraArrow: (direction, shaftLength, headSize, color) => {
+    const arrowGroup = new THREE.Group();
+
+    // 1. Create hairline shaft (matches ArrowHelper line style from edit handles)
+    const shaftPoints = [
+      new THREE.Vector3(0, 0, 0),
+      direction.clone().multiplyScalar(shaftLength),
+    ];
+    const shaftGeometry = new THREE.BufferGeometry().setFromPoints(shaftPoints);
+    const shaftMaterial = new THREE.LineBasicMaterial({ color });
+    const shaft = new THREE.Line(shaftGeometry, shaftMaterial);
+    arrowGroup.add(shaft);
+
+    // 2. Create tetrahedral arrowhead using THREE.js TetrahedronGeometry
+    const tetraGeom = new THREE.TetrahedronGeometry(headSize);
+    const headMaterial = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.8,
+    });
+    const head = new THREE.Mesh(tetraGeom, headMaterial);
+
+    // Position head at end of shaft
+    head.position.copy(direction.clone().multiplyScalar(shaftLength));
+
+    // Orient tetrahedron so one VERTEX points along the axis direction
+    // Find the vertex closest to pointing in our axis direction
+    const posAttr = tetraGeom.getAttribute("position");
+    let bestVertex = new THREE.Vector3();
+    let maxDot = -Infinity;
+    for (let vi = 0; vi < posAttr.count; vi++) {
+      const v = new THREE.Vector3().fromBufferAttribute(posAttr, vi);
+      const dot = v.clone().normalize().dot(direction);
+      if (dot > maxDot) {
+        maxDot = dot;
+        bestVertex.copy(v);
+      }
+    }
+    // Orient so that vertex points along our axis
+    const currentDir = bestVertex.clone().normalize();
     head.quaternion.setFromUnitVectors(currentDir, direction);
 
     arrowGroup.add(head);
@@ -592,42 +635,35 @@ export const Grids = {
 
     scene.add(cartesianGrid);
 
-    // Recreate basis vectors
+    // Recreate basis vectors with tetrahedral heads (matches move handles)
     const cartesianBasis = new THREE.Group();
-    const totalBasisLength = 2.0;
-    const headLength = 0.3;
-    const arrowLength = totalBasisLength;
+    const shaftLength = 2.0;
+    const headSize = 0.25;
 
     // X-axis (Red)
-    const xAxis = new THREE.ArrowHelper(
+    const xAxis = Grids.createCartesianTetraArrow(
       new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(0, 0, 0),
-      arrowLength,
-      0xff0000,
-      headLength,
-      0.2
+      shaftLength,
+      headSize,
+      0xff0000
     );
     cartesianBasis.add(xAxis);
 
     // Y-axis (Green)
-    const yAxis = new THREE.ArrowHelper(
+    const yAxis = Grids.createCartesianTetraArrow(
       new THREE.Vector3(0, 1, 0),
-      new THREE.Vector3(0, 0, 0),
-      arrowLength,
-      0x00ff00,
-      headLength,
-      0.2
+      shaftLength,
+      headSize,
+      0x00ff00
     );
     cartesianBasis.add(yAxis);
 
     // Z-axis (Blue)
-    const zAxis = new THREE.ArrowHelper(
+    const zAxis = Grids.createCartesianTetraArrow(
       new THREE.Vector3(0, 0, 1),
-      new THREE.Vector3(0, 0, 0),
-      arrowLength,
-      0x0000ff,
-      headLength,
-      0.2
+      shaftLength,
+      headSize,
+      0x0000ff
     );
     cartesianBasis.add(zAxis);
 

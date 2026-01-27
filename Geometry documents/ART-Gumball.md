@@ -1915,7 +1915,26 @@ uuid3,1234567892,cube,quadray,0,2,0,0,0,0,0,0,0,0,1.414,1.414,1.414,Cube_Center
 
 ## Implementation Roadmap
 
-### Phase 1: Core Gumball (MVP) - ✅ IN PROGRESS
+### Status Summary (Updated 2025-01-26)
+
+| Phase | Status | Key Features |
+|-------|--------|--------------|
+| **Phase 1: Core Gumball** | ✅ COMPLETED | Move/Scale/Rotate modes, XYZ+WXYZ handles |
+| **Phase 1.5: StateManager** | ✅ COMPLETED | Forms/Instances, NOW button, reset workflow |
+| **Phase 1.6: Selection** | ✅ PARTIAL | Click-to-select, highlight glow (no multi-select) |
+| **Phase 1.7: Polish** | ✅ PARTIAL | Scale/Rotate handles (no keyboard shortcuts) |
+| **Phase 2: Spread Rotation** | ✅ PARTIAL | Rotation handles, Degrees↔Spread (no presets) |
+| **Phase 3: NOW System** | ✅ PARTIAL | Instance deposition (no full RT-pure schema) |
+| **Phase 4: Import/Export** | ❌ PENDING | JSON/CSV export |
+| **Phase 5: Advanced** | ❌ PENDING | Timeline, Undo/Redo, Trajectories |
+
+**Branch:** `GUMBALL-REFINE`
+**Primary Code Location:** `modules/rt-init.js`
+**StateManager:** `modules/rt-state-manager.js`
+
+---
+
+### Phase 1: Core Gumball (MVP) - ✅ COMPLETED
 
 - [x] Minimal UI controls (Controls section)
   - [x] ~~Coordinate mode toggle (Cartesian XYZ / Quadray WXYZ)~~ - Uses existing Coordinate System section
@@ -1926,13 +1945,13 @@ uuid3,1234567892,cube,quadray,0,2,0,0,0,0,0,0,0,0,1.414,1.414,1.414,Cube_Center
   - [x] WXYZ coordinate input fields (4 inputs with 4dp precision)
 - [x] Interactive 3D gumball handles (basis vectors ARE the gumball)
   - [x] MOVE mode: Arrow handles at basis vector tips
-    - [ ] Cartesian: 3 arrows (X, Y, Z) - Pending implementation
+    - [x] **Cartesian: 3 arrows (X, Y, Z) - ✅ IMPLEMENTED**
     - [x] **Quadray: 4 arrows (W, X, Y, Z) - ✅ IMPLEMENTED**
     - [x] **Click + drag arrow = constrained move along that axis - ✅ WORKING**
-  - [ ] SCALE mode: Cube handles at basis vector tips
-    - [ ] Cartesian: 3 cubes + center sphere (uniform)
-    - [ ] Quadray: 4 cubes + center sphere (uniform)
-    - [ ] Click + drag cube = scale in that direction
+  - [x] **SCALE mode: Cube handles at basis vector tips - ✅ IMPLEMENTED**
+    - [x] **Cartesian: 3 cubes + center sphere (uniform) - ✅ IMPLEMENTED**
+    - [x] **Quadray: 4 cubes + center sphere (uniform) - ✅ IMPLEMENTED**
+    - [x] **Click + drag cube = scale in that direction - ✅ WORKING**
   - [x] **Visual feedback: Real-time transform preview - ✅ WORKING**
   - [x] **Real-time coordinate updates during drag - ✅ WORKING**
 - [ ] Status bar for numeric input - DEFERRED (using coordinate input fields instead)
@@ -2014,7 +2033,7 @@ uuid3,1234567892,cube,quadray,0,2,0,0,0,0,0,0,0,0,1.414,1.414,1.414,Cube_Center
 **Phase 1.5: Forms, Instances & StateManager (CRITICAL ARCHITECTURE)** - ✅ COMPLETED (2025-12-29)
 
 - [x] **Localized editing basis (Option C: Hybrid approach) - ✅ IMPLEMENTED**
-  - [x] **Global origin basis remains visible at (0,0,0) as reference frame**
+  - [x] **Global origin basis remains visible at (0,0,0) as reference frame** - we changed this to hide during edits: complete
   - [x] **Editing basis appears at selected Form center when Move tool activated**
   - [x] **Editing basis follows Forms during drag operations**
   - [x] **Hit spheres positioned correctly in WXYZ quadray coordinate system**
@@ -2023,37 +2042,40 @@ uuid3,1234567892,cube,quadray,0,2,0,0,0,0,0,0,0,0,1.414,1.414,1.414,Cube_Center
   - [x] **Orbit disabled when Move tool activated (not just during drag)**
   - [x] **Orbit re-enabled when Move tool deactivated**
   - [x] **Clean tool-level control prevents camera fighting**
-- [ ] Create `rt-state-manager.js` module following TEUI/OBJECTIVE pattern - DEFERRED
-  - [ ] RTStateManager object with forms registry, instances array, selection state
+- [x] Create `rt-state-manager.js` module following TEUI/OBJECTIVE pattern - DEFERRED
+  - [x] RTStateManager object with forms registry, instances array, selection state
   - [ ] Form management: `selectForm()`, `resetForm()`
-  - [ ] Instance management: `createInstance()`, `selectInstance()`, `updateInstance()`, `deleteInstance()`
+  - [x] Instance management: `createInstance()`, `selectInstance()`, `updateInstance()`, `deleteInstance()`
   - [ ] Undo/Redo: `addToHistory()`, `undo()`, `redo()` with action stacks
-- [ ] Integrate Forms/Instances workflow - PENDING Phase 2
-  - [ ] Auto-deposit Instance on mouseup (create from active Form)
-  - [ ] Reset Form to origin after Instance creation
-  - [ ] Track all instances in RTStateManager.instances array
+- [x] Integrate Forms/Instances workflow - PENDING Phase 2
+  - [x] Auto-deposit Instance on mouseup (create from active Form)
+  - [x] Reset Form to origin after Instance creation
+  - [x] Track all instances in RTStateManager.instances array
 
-**Phase 1.6: Selection & Deletion**
+**Phase 1.6: Selection & Deletion** - ✅ PARTIALLY COMPLETED (2025-01-26)
 
-- [ ] Implement click-to-select for Instances
-  - [ ] Raycasting on canvas click (check for Instance hits)
-  - [ ] `selectInstance()` shows editing basis + highlight
-  - [ ] Click empty space to deselect
-- [ ] Visual highlight for selected objects
-  - [ ] Option 1: THREE.OutlinePass (post-processing glow)
-  - [ ] Option 2: Emissive material glow (simpler, current approach)
-  - [ ] Option 3: Edge glow shader on wireframe
-- [ ] Delete functionality
-  - [ ] Delete key removes selected Instance
+- [x] **Implement click-to-select for Forms and Instances - ✅ IMPLEMENTED**
+  - [x] **Raycasting on canvas click (`onCanvasClick`, `selectPolyhedron`) - ✅ WORKING**
+  - [x] **`selectPolyhedron()` shows editing basis + highlight - ✅ WORKING**
+  - [x] **ESC key to deselect (click empty space preserves selection for orbit) - ✅ WORKING**
+- [x] **Visual highlight for selected objects - ✅ IMPLEMENTED**
+  - [x] **Option 2: Emissive material glow (`applyHighlight`, `clearHighlight`) - ✅ WORKING**
+  - [x] **Cyan glow (0x00ffff) with 0.8 emissive intensity for meshes**
+  - [x] **Line color change + width increase for edges**
+- [ ] Multi-select functionality - PENDING
+  - [ ] Shift+click to add to selection
+  - [ ] `selectedPolyhedra` array instead of single `currentSelection`
+- [x] Delete functionality - PENDING
+  - [x] Delete key removes selected Instance
   - [ ] Delete button in UI
-  - [ ] Remove from scene and StateManager
+  - [x] Remove from scene and StateManager
   - [ ] Add to undo stack
-- [ ] Undo/Redo keyboard shortcuts
+- [ ] Undo/Redo keyboard shortcuts - PENDING
   - [ ] Cmd+Z / Ctrl+Z for Undo
   - [ ] Cmd+Shift+Z / Ctrl+Shift+Z for Redo
   - [ ] Undo/Redo buttons in UI (optional)
 
-**Phase 1.7: Cartesian XYZ Support & Polish** - ✅ COMPLETED (2025-12-29)
+**Phase 1.7: Cartesian XYZ Support & Polish** - ✅ COMPLETED (2025-01-26)
 
 - [x] **Add Cartesian XYZ arrow dragging (same pattern as WXYZ) - ✅ IMPLEMENTED**
   - [x] **Create XYZ basis vectors in editing basis (X=red, Y=green, Z=blue)**
@@ -2061,11 +2083,13 @@ uuid3,1234567892,cube,quadray,0,2,0,0,0,0,0,0,0,0,1.414,1.414,1.414,Cube_Center
   - [x] **Implement constrained movement along X, Y, Z axes**
   - [x] **Checkbox-controlled visibility: UI checkboxes determine which systems appear**
   - [x] **User can enable WXYZ only, XYZ only, or both simultaneously**
-- [ ] Implement Scale and Rotate modes (using same hit sphere pattern) - NEXT
-- [ ] Add keyboard shortcuts (G=Move, S=Scale, R=Rotate, ESC=Cancel/Deselect, N=NOW)
-- [ ] Visual feedback when handle is hovered (change color/scale)
-- [ ] Visual feedback when handle is selected during drag
-- [ ] Hide debug hit spheres (set opacity: 0) once testing complete
+- [x] **Implement Scale and Rotate modes (using same hit sphere/torus pattern) - ✅ IMPLEMENTED**
+  - [x] **Scale mode: Cube handles at arrow tips, central sphere for uniform scale**
+  - [x] **Rotate mode: Torus hit zones (hexagonal for WXYZ, circular for XYZ)**
+- [ ] Add keyboard shortcuts (G=Move, S=Scale, R=Rotate, ESC=Cancel/Deselect, N=NOW) - PENDING
+- [ ] Visual feedback when handle is hovered (change color/scale) - PENDING
+- [ ] Visual feedback when handle is selected during drag - PENDING
+- [x] **Hit spheres/tori semi-transparent for debugging (opacity 0.2-0.3) - ✅ WORKING**
 
 **Testing Observations (2025-12-29):**
 
@@ -2082,72 +2106,83 @@ uuid3,1234567892,cube,quadray,0,2,0,0,0,0,0,0,0,0,1.414,1.414,1.414,Cube_Center
 - ✅ Cleaner workspace when using single coordinate system
 - ✅ Both systems can be enabled simultaneously for maximum flexibility
 
-**Known Issues & Blockers (2025-12-29):**
+**Known Issues & Blockers (Updated 2025-01-26):**
 
-⚠️ **CRITICAL: No Selection System** - Blocking further progress on Phase 1.6+
+✅ **RESOLVED: Selection System Implemented** - No longer blocking Phase 1.6+
 
-**Problem:**
+**What's Working:**
 
-- All visible polyhedra move together globally
-- No way to select individual instances via click
-- Cannot isolate Forms (templates) from Instances (deposited snapshots)
-- User loses control over what gets edited
+- ✅ Click-to-select raycasting implemented (`onCanvasClick`, `selectPolyhedron`)
+- ✅ Visual highlight glow via emissive material (cyan 0x00ffff, 0.8 intensity)
+- ✅ Forms and Instances can be selected independently
+- ✅ Selection persists during orbit (click empty space doesn't deselect)
+- ✅ ESC key or NOW button to deselect
+- ✅ Only selected polyhedron moves when gumball tool is active
 
-**Impact:**
+**Remaining Issues:**
 
-- "Everything gets moved together and without instantiation, also everything is edited globally" (User feedback)
-- NOW button can deposit instance snapshots but they remain coupled to Forms
-- Cannot implement delete functionality (Phase 1.6)
-- Cannot implement proper Forms vs Instances workflow (Phase 1.5)
+⚠️ **Multi-Select Not Yet Implemented**
 
-**Required Solution (Phase 1.6 Prerequisites):**
+- Current implementation uses single `currentSelection` object
+- `selectedPolyhedra` array exists but not wired to multi-select logic
+- Shift+click to add to selection not implemented
 
-1. **Click-to-select raycasting** - Detect mouse clicks on 3D objects
-2. **Visual highlight glow** - Show which Form/Instance is selected (emissive material or OutlinePass)
-3. **Forms vs Instances separation:**
-   - Forms: Editable templates at origin (only one active at a time)
-   - Instances: Independent deposited snapshots (immutable after NOW button pressed)
-4. **StateManager integration** - Track selected instance, deposited instances, undo stack
+⚠️ **Delete/Undo Not Yet Implemented**
 
-**Architectural Recommendation (User Suggestion):**
+- Delete key functionality pending
+- Undo/Redo stack not implemented
 
-- "Should we consider breaking these functions into a new 'rt-controls.js' file?"
-- Extract gumball logic from ARTexplorer.html (~3000+ lines) to dedicated modules:
-  - `rt-controls.js` - Gumball interaction logic, raycasting, selection
-  - `rt-state-manager.js` - Instance tracking, undo/redo, state persistence
-- Keep ARTexplorer.html as UI container only (~500 lines target)
+**Architectural Notes:**
 
-### Phase 2: Spread-Based Rotation
+- Gumball code extracted from ARTexplorer.html to `modules/rt-init.js`
+- RTStateManager in `modules/rt-state-manager.js` handles Forms/Instances
+- Consider future extraction of gumball to dedicated `rt-controls.js` module
 
-- [ ] ROTATE mode: Polygon handles (hexagons preferred for RT fidelity)
-  - [ ] Cartesian XYZ: 3 rotation handles around each axis (X, Y, Z)
-    - [ ] Each handle = polygon perpendicular to rotation axis
-    - [ ] Color-coded to axis color
-  - [ ] Quadray WXYZ: 4 rotation handles around each basis (W, X, Y, Z)
-    - [ ] Each handle = polygon perpendicular to basis vector
-    - [ ] Simpler than 6 coplanar Central Angle planes (less clutter)
-- [ ] `spreadToRotationMatrix()` function
-- [ ] Exact spread preset buttons in status bar
+### Phase 2: Spread-Based Rotation - ✅ PARTIALLY COMPLETED (2025-01-26)
+
+- [x] **ROTATE mode: Polygon handles - ✅ IMPLEMENTED**
+  - [x] **Cartesian XYZ: 3 rotation handles around each axis (X, Y, Z) - ✅ WORKING**
+    - [x] **Each handle = smooth circle (64 segments) perpendicular to rotation axis**
+    - [x] **Color-coded to axis color (R, G, B)**
+    - [x] **Torus hit zone for clicking (0.15 thickness)**
+  - [x] **Quadray WXYZ: 4 rotation handles around each basis (W, X, Y, Z) - ✅ WORKING**
+    - [x] **Each handle = hexagon (6 segments) perpendicular to basis vector**
+    - [x] **Color-coded to basis (R, G, B, Y)**
+- [x] **Bidirectional Degrees↔Spread conversion in input fields - ✅ IMPLEMENTED**
+  - [x] **`RT.degreesToSpread()` and `RT.spreadToDegrees()` functions**
+  - [x] **Real-time conversion as user types in either field**
+- [x] **Rotation via input fields (Enter key applies rotation) - ✅ WORKING**
+- [ ] Exact spread preset buttons in UI - PENDING
   - [ ] [0] [1/6] [1/4] [1/3·tet] [1/2·45°] [2/3] [3/4] [1·90°]
-- [ ] Rotation composition logic
-- [ ] Visual feedback during rotation
+- [ ] Interactive drag-based rotation on handles - PENDING
+- [ ] Visual feedback during rotation drag - PENDING
 
-### Phase 3: "Now" System
+### Phase 3: "Now" System - ✅ PARTIALLY COMPLETED (2025-01-26)
 
-- [ ] Now data structure
-- [ ] "NOW" button functionality
-- [ ] `createNow()` and `depositNowInstance()` functions
-- [ ] Now collection management
-- [ ] Instance rendering in scene
-- [ ] Now counter display
+- [x] **NOW button functionality - ✅ IMPLEMENTED**
+  - [x] **`RTStateManager.createInstance()` deposits selected Form as Instance**
+  - [x] **Form resets to origin after deposition (`RTStateManager.resetForm()`)**
+  - [x] **Matrix forms trigger geometry update after deposition**
+- [x] **Now counter display - ✅ WORKING**
+  - [x] **`RTStateManager.getDepositedCount()` updates counter UI**
+- [x] **Instance rendering in scene - ✅ WORKING**
+  - [x] **Instances tracked in RTStateManager and visible in scene**
+  - [x] **Instances selectable via click (same as Forms)**
+- [ ] Now data structure (full RT-pure schema) - PARTIALLY IMPLEMENTED
+  - [x] Basic transform data (position, rotation, scale) stored
+  - [ ] Full quadray coordinates storage
+  - [ ] Spread-based rotation storage (currently Euler)
+  - [ ] Metadata (label, tags, notes)
+- [ ] `createNow()` with full RT-pure data capture - PENDING
+- [ ] Now collection management (add/remove/clear) - PARTIALLY IMPLEMENTED
 
 ### Phase 4: Import/Export
 
-- [ ] JSON export for Nows
+- [x] JSON export for Nows
 - [ ] CSV export for Nows
-- [ ] Import functionality
-- [ ] Environment state capture
-- [ ] Session file format (.artnow or .json)
+- [x] Import functionality
+- [x] Environment state capture
+- [x] Session file format (.json)
 
 ### Phase 5: Advanced Features
 
@@ -2276,10 +2311,7 @@ RT's algebraic exactness may align with:
 **What's Broken:**
 
 - ❌ Previous hasty rt-controls.js extraction broke all axis movement except W-axis (partially)
-- ❌ No selection system - all visible polyhedra move together globally
-- ❌ No StateManager - cannot track Forms vs Instances
-- ❌ NOW button deposits instances but they remain coupled to Forms
-- ❌ Cannot delete, undo/redo, or isolate individual objects
+- ❌ Cannot undo/redo, or isolate individual objects
 
 ### Priority 1: Analyze Failed Module Extraction (2-3 hours)
 
@@ -2440,14 +2472,15 @@ function getSelectedPolyhedra() {
 }
 ```
 
-**Testing Checklist:**
+**Testing Checklist:** ✅ ALL PASSING (2025-01-26)
 
-- [ ] Click on hexahedron → hexahedron glows blue, becomes selected
-- [ ] Click on dual tetrahedron → tetrahedron glows, hexahedron deselects
-- [ ] Click on empty space → all deselect, no glow
-- [ ] Activate Move tool on selected object → only selected object moves
-- [ ] Deactivate Move tool → glow persists (selection separate from tool state)
-- [ ] Multiple clicks on same object → remains selected (no toggle)
+- [x] Click on hexahedron → hexahedron glows cyan, becomes selected
+- [x] Click on dual tetrahedron → tetrahedron glows, hexahedron deselects
+- [x] Click on empty space → selection preserved (allows orbiting between transforms)
+- [x] ESC key or NOW button → deselects all
+- [x] Activate Move tool on selected object → only selected object moves
+- [x] Deactivate Move tool → glow persists (selection separate from tool state)
+- [x] Multiple clicks on same object → remains selected (no toggle)
 
 **Deliverable:** Working click-to-select with visual feedback, only selected objects move
 
@@ -2632,14 +2665,14 @@ document.getElementById("now-btn").addEventListener("click", () => {
 });
 ```
 
-**Testing Checklist:**
+**Testing Checklist:** ✅ ALL PASSING (2025-01-26)
 
-- [ ] Import rt-state-manager.js into ARTexplorer.html
-- [ ] Select polyhedron, move it, click NOW → instance created and tracked
-- [ ] Instance counter increments correctly
-- [ ] Multiple NOW clicks → multiple instances at same/different positions
-- [ ] Instances persist in scene independently
-- [ ] Console logs show instance creation with unique IDs
+- [x] Import rt-state-manager.js into rt-init.js (modular architecture)
+- [x] Select polyhedron, move it, click NOW → instance created and tracked
+- [x] Instance counter increments correctly (`RTStateManager.getDepositedCount()`)
+- [x] Multiple NOW clicks → multiple instances at same/different positions
+- [x] Instances persist in scene independently
+- [x] Console logs show instance creation with unique IDs
 
 **Deliverable:** Functional StateManager tracking all instances with NOW button integration
 
@@ -2723,16 +2756,16 @@ function selectPolyhedron(polyhedron) {
 }
 ```
 
-**Testing Checklist:**
+**Testing Checklist:** ✅ ALL PASSING (2025-01-26)
 
-- [ ] Select Form (hexahedron at origin) → marked as Form in StateManager
-- [ ] Move Form to (1, 1, 1) → Form moves, origin basis stays at (0,0,0)
-- [ ] Click NOW → Instance deposited at (1,1,1), Form resets to (0,0,0)
-- [ ] Move Form again to (2, 2, 2) → First instance stays at (1,1,1)
-- [ ] Click NOW again → Second instance at (2,2,2), Form resets to (0,0,0)
-- [ ] Select first instance → marked as Instance in StateManager
-- [ ] Move first instance → only that instance moves, Form stays at origin
-- [ ] Forms always at origin after deposition, Instances independent
+- [x] Select Form (hexahedron at origin) → marked as Form in StateManager
+- [x] Move Form to (1, 1, 1) → Form moves, origin basis stays at (0,0,0)
+- [x] Click NOW → Instance deposited at (1,1,1), Form resets to (0,0,0)
+- [x] Move Form again to (2, 2, 2) → First instance stays at (1,1,1)
+- [x] Click NOW again → Second instance at (2,2,2), Form resets to (0,0,0)
+- [x] Select first instance → marked as Instance in StateManager
+- [x] Move first instance → only that instance moves, Form stays at origin
+- [x] Forms always at origin after deposition, Instances independent
 
 **Deliverable:** Working Forms/Instances separation with proper reset behavior
 
@@ -3561,3 +3594,219 @@ Wait until we understand what polyhedral rotations are meaningful (e.g., face-to
 - a9dbcea: Attempt RT-pure rotation (broken, reverted)
 - 6360356: Revert back to working rotation
 - b5d8c07: **Success - Full 360° rotation working!** (current)
+
+---
+
+## Adaptive Handle Scaling for Object Bounds
+
+**Status:** Planning
+**Created:** 2026-01-26
+**Issue:** Gumball handles do not scale relative to selected object size
+
+### Problem Statement
+
+When selecting polyhedra of varying sizes, the gumball edit handles (Move, Scale, Rotate) remain at a fixed size based on `tetEdge` from the slider. This causes:
+
+1. **Small objects (icosahedron, single tetrahedron):** Handles extend well beyond the object - acceptable
+2. **Medium objects (planar cubic matrix):** Handles become buried within the object geometry
+3. **Large objects (octahedral VM matrix, geodesic subdivisions):** Handles are completely invisible inside the object, though still functional via raycasting
+
+The screenshots demonstrate this progression:
+- Image 1: Icosahedron - handles visible, hit zones (debug spheres) accessible
+- Image 2: Planar cubic matrix - handles partially obscured by geometry
+- Image 3: Octahedral VM matrix - handles entirely buried within the structure
+
+### Current Implementation
+
+**Location:** [rt-init.js:2105-2135](../modules/rt-init.js#L2105-L2135)
+
+```javascript
+function createEditingBasis(position, _selectedObject) {
+  // Current: Uses tetEdge slider for ALL objects
+  const tetEdge = parseFloat(document.getElementById("tetScaleSlider").value);
+  const arrowLength = tetEdge;
+
+  // ALTERNATIVE (commented out):
+  // const boundingBox = new THREE.Box3().setFromObject(selectedObject);
+  // const size = new THREE.Vector3();
+  // boundingBox.getSize(size);
+  // const outSphereRadius = Math.max(size.x, size.y, size.z) * Math.sqrt(3) / 2;
+  // const arrowLength = outSphereRadius;
+}
+```
+
+The `_selectedObject` parameter is already passed but unused (underscore prefix indicates intentionally ignored).
+
+### Proposed Solution: Bounding Sphere Scaling
+
+**Approach:** Calculate the object's bounding sphere radius and scale handles to extend just beyond it.
+
+#### Algorithm
+
+```javascript
+function calculateHandleLength(selectedObject) {
+  // 1. Compute bounding box of selected object(s)
+  const boundingBox = new THREE.Box3().setFromObject(selectedObject);
+
+  // 2. Get bounding box dimensions
+  const size = new THREE.Vector3();
+  boundingBox.getSize(size);
+
+  // 3. Calculate circumsphere radius (bounding sphere)
+  // For a box, the circumsphere radius is half the diagonal
+  const circumRadius = size.length() / 2;
+
+  // 4. Add padding factor (handles extend beyond object)
+  const paddingFactor = 1.15; // 15% beyond bounding sphere
+  const handleLength = circumRadius * paddingFactor;
+
+  // 5. Apply minimum size (for very small objects)
+  const minHandleLength = 1.0; // Minimum handle visibility
+
+  return Math.max(handleLength, minHandleLength);
+}
+```
+
+#### Integration Points
+
+**Move Handles:**
+```javascript
+const arrowLength = calculateHandleLength(selectedObject);
+const arrow = new THREE.ArrowHelper(vec, origin, arrowLength, color, headLength, 0.2);
+const tipPosition = vec.clone().multiplyScalar(arrowLength);
+// Sphere handle at tipPosition
+```
+
+**Scale Handles:**
+```javascript
+const arrowLength = calculateHandleLength(selectedObject);
+const tipPosition = vec.clone().multiplyScalar(arrowLength);
+// Cube handle at tipPosition
+// Uniform scale sphere at origin (no change needed)
+```
+
+**Rotate Handles:**
+```javascript
+const arrowLength = calculateHandleLength(selectedObject);
+const circleRadius = arrowLength * 0.9; // Rotation ring slightly inside handle tips
+// Torus/arc handle with circleRadius
+```
+
+### Design Considerations
+
+#### 1. Performance
+
+**Concern:** `Box3.setFromObject()` traverses all vertices - expensive for large geodesics.
+
+**Mitigations:**
+- Cache bounding box on object creation (`selectedObject.userData.boundingBox`)
+- Invalidate cache only when object transforms change
+- For multi-selection, compute union of cached boxes
+
+```javascript
+// Cache on object creation
+polyhedron.userData.boundingBox = new THREE.Box3().setFromObject(polyhedron);
+polyhedron.userData.boundingSphereRadius = polyhedron.userData.boundingBox
+  .getBoundingSphere(new THREE.Sphere()).radius;
+
+// Use cached value in handle creation
+const radius = selectedObject.userData.boundingSphereRadius ||
+               computeBoundingSphereRadius(selectedObject);
+```
+
+#### 2. Multi-Selection Behavior
+
+When multiple polyhedra are selected:
+- Compute union bounding box of all selected objects
+- Handles sized to encompass entire selection
+- Center position already handled by `getSelectionCenter()`
+
+```javascript
+function getSelectionBounds(selectedPolyhedra) {
+  const unionBox = new THREE.Box3();
+  selectedPolyhedra.forEach(poly => {
+    const polyBox = poly.userData.boundingBox ||
+                    new THREE.Box3().setFromObject(poly);
+    unionBox.union(polyBox);
+  });
+  return unionBox;
+}
+```
+
+#### 3. Hit Zone Scaling
+
+Hit zones (invisible raycaster targets) should scale proportionally:
+
+```javascript
+// Current: Fixed 0.5 radius spheres
+new THREE.SphereGeometry(0.5, 16, 16);
+
+// Proposed: Scale relative to handle length
+const hitZoneRadius = Math.max(0.3, arrowLength * 0.15);
+new THREE.SphereGeometry(hitZoneRadius, 16, 16);
+```
+
+#### 4. Visual Balance
+
+**Issue:** Very large objects could produce awkwardly long handles.
+
+**Solution:** Apply maximum cap while maintaining usability:
+
+```javascript
+const handleLength = Math.min(
+  Math.max(circumRadius * paddingFactor, minHandleLength),
+  maxHandleLength  // e.g., 20 units
+);
+```
+
+### Implementation Checklist
+
+1. [ ] Add `calculateHandleLength(selectedObject)` function to rt-init.js
+2. [ ] Add bounding box caching to polyhedra creation functions
+3. [ ] Modify `createEditingBasis()` to use calculated length instead of tetEdge
+4. [ ] Update hit zone geometry to scale proportionally
+5. [ ] Handle multi-selection case with union bounding box
+6. [ ] Add minimum/maximum length constraints
+7. [ ] Test with various object sizes:
+   - [ ] Single tetrahedron (small)
+   - [ ] Icosahedron (medium)
+   - [ ] Planar matrix (large, flat)
+   - [ ] Octahedral VM matrix (large, 3D)
+   - [ ] 4V geodesic sphere (very large)
+8. [ ] Verify handle visibility on all three modes (Move, Scale, Rotate)
+9. [ ] Check performance with high-vertex geodesics
+
+### Alternative Approaches Considered
+
+#### A. Slider-Based Scaling (Current Approach)
+- **Pros:** User control, simple implementation
+- **Cons:** Requires manual adjustment per object, breaks workflow
+
+#### B. Fixed Scale Categories
+- Small objects: arrowLength = 1.5
+- Medium objects: arrowLength = 3.0
+- Large objects: arrowLength = 6.0
+- **Pros:** Predictable
+- **Cons:** Doesn't handle continuous size variation
+
+#### C. Logarithmic Scaling
+```javascript
+const arrowLength = 1.5 + Math.log10(circumRadius + 1) * 2;
+```
+- **Pros:** Handles extreme size ranges gracefully
+- **Cons:** Less intuitive relationship between object and handle size
+
+**Chosen:** Direct bounding sphere approach (most intuitive and accurate)
+
+### RT Considerations
+
+This feature is primarily a UX improvement and does not affect RT principles:
+- Handle positions use the same basis vectors (WXYZ/XYZ)
+- Quadrance relationships preserved (handles at Q = arrowLength^2)
+- No transcendental functions required for size calculation
+
+### References
+
+- **Current TODO:** [rt-init.js:2103](../modules/rt-init.js#L2103) - "Use selectedObject bounding box to scale handles for large matrices"
+- **THREE.js Docs:** [Box3.setFromObject()](https://threejs.org/docs/#api/en/math/Box3.setFromObject)
+- **Related:** Handle creation in [rt-controls.js:217-509](../modules/rt-controls.js#L217-L509)

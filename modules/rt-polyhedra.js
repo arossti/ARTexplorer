@@ -111,8 +111,10 @@ export const Polyhedra = {
    * Tetrahedron inscribed in cube
    * Uses alternating vertices (every other corner)
    * Edge quadrance Q = 8 (edge length = 2√2)
+   * @param {number} halfSize - Half the edge length of bounding cube
+   * @param {Object} options - {silent: boolean} - Skip logging for utility uses
    */
-  tetrahedron: (halfSize = 1) => {
+  tetrahedron: (halfSize = 1, options = {}) => {
     const s = halfSize;
     // Select 4 vertices of cube such that no two share an edge
     // These form a regular tetrahedron
@@ -146,9 +148,11 @@ export const Polyhedra = {
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron(); // S = 8/9 (Wildberger Ch.26)
-    console.log(
-      `Tetrahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread.toFixed(6)} (8/9)`
-    );
+    if (!options.silent) {
+      console.log(
+        `Tetrahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread.toFixed(6)} (8/9)`
+      );
+    }
 
     return { vertices, edges, faces, faceSpread };
   },
@@ -165,10 +169,13 @@ export const Polyhedra = {
    *   - Dual solid uses base's geodesic color
    *   - Dual geodesic uses base's solid color
    *   - Creates perfect visual symmetry in stella octangula display
+   *
+   * @param {number} halfSize - Half the edge length of bounding cube
+   * @param {Object} options - {silent: boolean} - Skip logging for utility uses (e.g., WXYZ basis arrows)
    */
-  dualTetrahedron: (halfSize = 1) => {
-    // Get base tetrahedron geometry
-    const base = Polyhedra.tetrahedron(halfSize);
+  dualTetrahedron: (halfSize = 1, options = {}) => {
+    // Get base tetrahedron geometry (pass silent option to skip its logging too)
+    const base = Polyhedra.tetrahedron(halfSize, { silent: options.silent });
 
     // Invert all vertices (multiply by -1)
     const vertices = base.vertices.map(v => v.clone().multiplyScalar(-1));
@@ -183,9 +190,11 @@ export const Polyhedra = {
     const expectedQ = 8 * halfSize * halfSize; // Q = (2√2·s)² = 8s²
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
-    console.log(
-      `Dual Tetrahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}`
-    );
+    if (!options.silent) {
+      console.log(
+        `Dual Tetrahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}`
+      );
+    }
 
     return { vertices, edges, faces };
   },
