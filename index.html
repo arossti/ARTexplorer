@@ -2173,32 +2173,76 @@
                 </button>
               </div>
             </div>
+            <!-- Sheet Size / Print Extents -->
             <div class="control-item">
-              <label class="label-section">Print Extents</label>
+              <label class="label-section">Sheet Size</label>
               <div class="button-grid-2col">
-                <button class="toggle-btn variant-standard" id="fitA4" disabled>
+                <button class="toggle-btn variant-standard" id="fitA4">
                   A4
                 </button>
-                <button
-                  class="toggle-btn variant-standard"
-                  id="fitLetter"
-                  disabled
-                >
+                <button class="toggle-btn variant-standard" id="fitLetter">
                   Letter
                 </button>
-                <button class="toggle-btn variant-standard" id="fitA3" disabled>
+                <button class="toggle-btn variant-standard" id="fitA3">
                   A3
                 </button>
-                <button
-                  class="toggle-btn variant-standard"
-                  id="fitCustom"
-                  disabled
-                >
+                <button class="toggle-btn variant-standard" id="fitCustom">
                   Custom
                 </button>
               </div>
             </div>
-            <p class="info-text">Print optimization tools - Coming soon</p>
+
+            <!-- View Capture Section -->
+            <div class="control-item" style="margin-top: 12px; border-top: 1px solid #444; padding-top: 12px;">
+              <label class="label-section">View Capture</label>
+
+              <!-- View Name Input + Save Button -->
+              <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 8px;">
+                <input type="text" id="viewNameInput"
+                       style="flex: 1; background: #333; border: 1px solid #555; color: #fff; padding: 6px 8px; font-size: 12px; border-radius: 4px;"
+                       placeholder="Auto: Z1" />
+                <button class="toggle-btn variant-standard" id="saveViewBtn" title="Save current view">
+                  Save
+                </button>
+              </div>
+            </div>
+
+            <!-- Saved Views Table -->
+            <div class="control-item">
+              <label class="label-section">Saved Views</label>
+
+              <!-- Table Header with Sort Controls -->
+              <div class="views-table-header" style="display: flex; gap: 4px; margin-bottom: 4px; font-size: 10px; color: #888;">
+                <span style="flex: 0 0 50px; cursor: pointer;" id="sortByName" title="Sort by name">Name ▼</span>
+                <span style="flex: 0 0 50px; cursor: pointer;" id="sortByAxis" title="Sort by axis">Axis</span>
+                <span style="flex: 1; cursor: pointer;" id="sortByDate" title="Sort by date">Date</span>
+                <span style="flex: 0 0 60px;">Actions</span>
+              </div>
+
+              <!-- Views Table Body (scrollable) -->
+              <div id="viewsTableBody" style="max-height: 150px; overflow-y: auto; border: 1px solid #444; border-radius: 4px;">
+                <!-- Empty state (replaced by JS) -->
+                <div class="views-empty-state" style="padding: 12px; text-align: center; color: #666; font-size: 11px;">
+                  No saved views yet.
+                </div>
+              </div>
+
+              <!-- Bulk Actions -->
+              <div style="display: flex; gap: 4px; margin-top: 8px;">
+                <button class="toggle-btn variant-small" id="downloadSelectedBtn" title="Download selected view as SVG" style="flex: 1;">
+                  SVG
+                </button>
+                <button class="toggle-btn variant-small" id="exportAllViewsBtn" title="Export all views to .artview file" style="flex: 1;">
+                  Export
+                </button>
+                <button class="toggle-btn variant-small" id="importViewsBtn" title="Import views from file" style="flex: 1;">
+                  Import
+                </button>
+                <button class="toggle-btn variant-small" id="clearAllViewsBtn" title="Delete all views" style="width: 28px; min-width: 28px; padding: 4px; color: #ff6b6b;">
+                  ✕
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         <!-- END SECTION 8: PAPERCUT -->

@@ -395,6 +395,9 @@ export const RTFileHandler = {
         depositedCount: this.stateManager.state.depositedCount,
         instanceCount: this.stateManager.state.instances.length,
       },
+
+      // Include saved views from RTViewManager (if available)
+      views: window.RTViewManager?.state?.views || [],
     };
 
     return stateData;
@@ -1005,6 +1008,28 @@ export const RTFileHandler = {
             `📦 Instance restoration complete: ${restoredCount} restored, ${failedCount} failed`
           );
         }
+      }
+
+      // Restore saved views (if RTViewManager is available)
+      if (stateData.views && Array.isArray(stateData.views) && window.RTViewManager) {
+        window.RTViewManager.state.views = stateData.views;
+        // Restore view counters from imported views
+        if (stateData.views.length > 0) {
+          // Reset counters
+          const counters = window.RTViewManager.state.counters;
+          Object.keys(counters).forEach(key => counters[key] = 0);
+
+          // Update counters based on imported view names
+          stateData.views.forEach(view => {
+            const axisCode = view.axisCode || view.name.replace(/\d+$/, "");
+            const number = parseInt(view.name.match(/\d+$/)?.[0] || "0", 10);
+            if (counters[axisCode] !== undefined && number > counters[axisCode]) {
+              counters[axisCode] = number;
+            }
+          });
+        }
+        window.RTViewManager.renderViewsTable();
+        console.log(`📐 Views restored: ${stateData.views.length} views`);
       }
 
       console.log("✅ State imported successfully");
