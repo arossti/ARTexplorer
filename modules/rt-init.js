@@ -1279,19 +1279,18 @@ function startARTexplorer(
 
   // Enable view preset buttons and wire up event listeners
   const viewButtons = [
-    { id: "viewTop", view: "top" },
-    { id: "viewBottom", view: "bottom" },
-    { id: "viewLeft", view: "left" },
-    { id: "viewRight", view: "right" },
-    { id: "viewFront", view: "front" },
-    { id: "viewBack", view: "back" },
-    { id: "viewAxo", view: "axo" },
-    { id: "viewPerspective", view: "perspective" },
-    // WXYZ Tetrahedral Basis Views
-    { id: "viewW", view: "w" },
+    // XYZ Cartesian Views (looking down each axis)
     { id: "viewX", view: "x" },
     { id: "viewY", view: "y" },
-    { id: "viewZ", view: "z" },
+    { id: "viewZDown", view: "zdown" },
+    { id: "viewZUp", view: "zup" },
+    { id: "viewAxo", view: "axo" },
+    { id: "viewPerspective", view: "perspective" },
+    // WXYZ Tetrahedral Basis Views (looking down each quadray axis)
+    { id: "viewQuadW", view: "quadw" },
+    { id: "viewQuadX", view: "quadx" },
+    { id: "viewQuadY", view: "quady" },
+    { id: "viewQuadZ", view: "quadz" },
   ];
 
   // Track active view button for persistent highlighting

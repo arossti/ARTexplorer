@@ -590,10 +590,24 @@ export const RTControls = {
 
     raycaster.setFromCamera(mouse, this.camera);
 
+    // Get camera view direction for filtering edge-on rotation rings
+    const cameraDirection = new this.THREE.Vector3();
+    this.camera.getWorldDirection(cameraDirection);
+
     // Check for gumball handle hits
     const hitTargets = [];
     this.state.editingBasis.traverse(obj => {
       if (obj.userData.isGumballHandle) {
+        // For rotation handles, filter out rings that are edge-on to the camera
+        // (their axis is parallel to the view direction, making them nearly invisible)
+        if (obj.userData.isRotationHandle && obj.userData.axis) {
+          const dotProduct = Math.abs(cameraDirection.dot(obj.userData.axis));
+          // If dot product > 0.85, the ring is nearly edge-on (within ~32° of parallel)
+          // Skip these as they're unreliable to click in orthographic views
+          if (dotProduct > 0.85) {
+            return; // Skip this edge-on rotation ring
+          }
+        }
         hitTargets.push(obj);
       }
     });

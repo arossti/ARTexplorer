@@ -2332,46 +2332,28 @@ export function initScene(THREE, OrbitControls, RT) {
     // Z = vertical, X-Y = horizontal ground plane
     // Viewing convention: Standing on ground (X-Y plane), Z is up
     switch (view) {
-      case "top":
-        // Top view: Looking DOWN from above (camera on +Z looking toward -Z)
+      case "zdown":
+        // Z-Down view: Looking DOWN from above (camera on +Z looking toward -Z)
         camera.position.set(0, 0, distance);
         camera.up.set(0, 1, 0); // Y axis points "north" in top view
         break;
 
-      case "bottom":
-        // Bottom view: Looking UP from below (camera on -Z looking toward +Z)
+      case "zup":
+        // Z-Up view: Looking UP from below (camera on -Z looking toward +Z)
         camera.position.set(0, 0, -distance);
         camera.up.set(0, -1, 0); // Flip Y to keep orientation consistent
         break;
 
-      case "left": {
-        // Left view: Looking from LEFT side at 45° angle (camera on -X,-Y looking toward +X,+Y)
-        // At 45° from X-axis to see tetrahedral triangular profile
-        const leftDist = distance / Math.sqrt(2);
-        camera.position.set(-leftDist, -leftDist, 0);
-        camera.up.set(0, 0, 1); // Z points up
-        break;
-      }
-
-      case "right": {
-        // Right view: Looking from RIGHT side at 45° angle (camera on +X,+Y looking toward -X,-Y)
-        // At 45° from X-axis to see tetrahedral triangular profile
-        const rightDist = distance / Math.sqrt(2);
-        camera.position.set(rightDist, rightDist, 0);
-        camera.up.set(0, 0, 1); // Z points up
-        break;
-      }
-
-      case "front":
-        // Front view: Looking from FRONT (camera on -Y looking toward +Y)
-        // Standing on ground, looking forward (north) - see XZ plane (front elevation)
-        camera.position.set(0, -distance, 0);
+      case "x":
+        // X view: Looking down the X axis (camera on +X looking toward -X)
+        // See the YZ plane
+        camera.position.set(distance, 0, 0);
         camera.up.set(0, 0, 1); // Z points up
         break;
 
-      case "back":
-        // Back view: Looking from BACK (camera on +Y looking toward -Y)
-        // Standing on ground, looking back (south) - see XZ plane (back elevation)
+      case "y":
+        // Y view: Looking down the Y axis (camera on +Y looking toward -Y)
+        // See the XZ plane
         camera.position.set(0, distance, 0);
         camera.up.set(0, 0, 1); // Z points up
         break;
@@ -2390,10 +2372,11 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // WXYZ Tetrahedral Basis Views
-      case "w":
-      case "x":
-      case "y":
-      case "z": {
+      // WXYZ Tetrahedral Basis Views (Quadray coordinate system)
+      case "quadw":
+      case "quadx":
+      case "quady":
+      case "quadz": {
         // Initialize Quadray basis vectors if not already done
         if (!Quadray.basisVectors) {
           Quadray.init(THREE);
@@ -2401,7 +2384,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
         // Map view name to basis vector index
         // W=0, X=1, Y=2, Z=3 (matches Quadray.basisVectors order)
-        const axisMap = { w: 0, x: 1, y: 2, z: 3 };
+        const axisMap = { quadw: 0, quadx: 1, quady: 2, quadz: 3 };
         const axisIndex = axisMap[view];
         const basisVector = Quadray.basisVectors[axisIndex];
 
@@ -2421,13 +2404,11 @@ export function initScene(THREE, OrbitControls, RT) {
 
         camera.up.copy(upVector);
 
-        // TODO: Activate cutplane perpendicular to the viewing axis
-        // This requires integration with RT-Papercut module
-        // For now, log the basis vector for the cutplane normal
+        // Extract axis letter for logging (remove 'quad' prefix)
+        const axisLetter = view.slice(4).toUpperCase();
         console.log(
-          `WXYZ View ${view.toUpperCase()}: Camera at basis vector`,
-          basisVector,
-          "\n(Cutplane activation: TODO)"
+          `WXYZ View ${axisLetter}: Camera at tetrahedral basis vector`,
+          basisVector
         );
 
         break;
