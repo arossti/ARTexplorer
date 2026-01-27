@@ -87,67 +87,28 @@ The ART Gumball is a transform control system for manipulating polyhedra using R
 
 ### Phase 0: Adaptive Handle Scaling (GUMBALL-REFINE Branch Goal)
 
-**Status:** Planning
-**Priority:** HIGH - This is the primary goal of the GUMBALL-REFINE branch
-**Issue:** Gumball handles do not scale relative to selected object size
+**Status:** COMPLETED
+**Priority:** HIGH - This was the primary goal of the GUMBALL-REFINE branch
 
-#### Problem Statement
+#### Completed Features
 
-When selecting polyhedra of varying sizes, the gumball edit handles (Move, Scale, Rotate) remain at a fixed size based on `tetEdge` from the slider. This causes:
+- [x] Add `calculateHandleLength(selectedObject)` function to rt-init.js
+- [x] Modify `createEditingBasis()` to use calculated length instead of tetEdge
+- [x] Update hit zone geometry to scale proportionally
+- [x] Handles now adapt to object bounding sphere + 15% padding
+- [x] Min/max constraints (1.0 - 20.0) keep handles usable at extremes
+- [x] All handle components scale proportionally (arrows, tetrahedra, cubes, torus)
 
-1. **Small objects (icosahedron, single tetrahedron):** Handles extend well beyond object - acceptable
-2. **Medium objects (planar cubic matrix):** Handles become buried within object geometry
-3. **Large objects (octahedral VM matrix, geodesic subdivisions):** Handles completely invisible inside object
+#### Additional Refinements Completed
 
-**Current implementation:** `rt-init.js:2105-2135` uses `tetEdge` slider value for ALL objects. The `_selectedObject` parameter is passed but unused (underscore indicates intentionally ignored).
-
-#### Proposed Solution: Bounding Sphere Scaling
-
-Calculate the object's bounding sphere radius and scale handles to extend just beyond it.
-
-```javascript
-function calculateHandleLength(selectedObject) {
-  // 1. Compute bounding box
-  const boundingBox = new THREE.Box3().setFromObject(selectedObject);
-  const size = new THREE.Vector3();
-  boundingBox.getSize(size);
-
-  // 2. Calculate circumsphere radius (half diagonal)
-  const circumRadius = size.length() / 2;
-
-  // 3. Add padding (15% beyond bounding sphere)
-  const paddingFactor = 1.15;
-  const handleLength = circumRadius * paddingFactor;
-
-  // 4. Apply min/max constraints
-  const minHandleLength = 1.0;
-  const maxHandleLength = 20.0;
-
-  return Math.min(Math.max(handleLength, minHandleLength), maxHandleLength);
-}
-```
-
-#### Implementation Checklist
-
-- [ ] Add `calculateHandleLength(selectedObject)` function to rt-init.js
-- [ ] Add bounding box caching to polyhedra creation (`userData.boundingBox`)
-- [ ] Modify `createEditingBasis()` to use calculated length instead of tetEdge
-- [ ] Update hit zone geometry to scale proportionally
-- [ ] Handle multi-selection with union bounding box
-- [ ] Test with various object sizes:
-  - [ ] Single tetrahedron (small)
-  - [ ] Icosahedron (medium)
-  - [ ] Planar matrix (large, flat)
-  - [ ] Octahedral VM matrix (large, 3D)
-  - [ ] 4V geodesic sphere (very large)
-- [ ] Verify handle visibility on all three modes (Move, Scale, Rotate)
-- [ ] Check performance with high-vertex geodesics
-
-#### Design Notes
-
-- **Performance:** Cache bounding box on object creation, invalidate on transform
-- **Hit zones:** Scale proportionally: `hitZoneRadius = Math.max(0.3, arrowLength * 0.15)`
-- **RT purity:** No impact - purely UX improvement, no transcendental functions needed
+- [x] Move handles: Replaced ArrowHelper cones with tetrahedra (matches basis vectors)
+- [x] Tetrahedra orientation: Vertex points along axis direction
+- [x] XYZ static basis: Now uses tetrahedral arrowheads (visual consistency)
+- [x] Basis vector shafts: Hairlines instead of cylinders (XYZ and WXYZ)
+- [x] Rotation handles: Removed hexagon/circle line loops, just torus remains
+- [x] Rotation torus: Reduced thickness to 2/3 of previous
+- [x] Hover feedback: Opacity increase on mouseover for all handles
+- [x] Cursor change: Pointer cursor when hovering over handles
 
 ---
 
