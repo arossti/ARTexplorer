@@ -45,7 +45,7 @@ body {
 .info-icon-btn {
   background: transparent;
   border: none;
-  color: #7ab8ff;
+  color: #00B4FF;
   cursor: pointer;
   padding: 0;
   width: 28px;
@@ -60,7 +60,7 @@ body {
 
 .info-icon-btn:hover {
   background: rgba(74, 158, 255, 0.1);
-  color: #4a9eff;
+  color: #00B4FF;
   transform: scale(1.1);
 }
 
@@ -75,7 +75,7 @@ body {
 h1 {
   font-size: 18px;
   margin-bottom: 10px;
-  color: #4a9eff;
+  color: #00B4FF;
   text-align: center;
 }
 
@@ -92,7 +92,7 @@ h1 {
 .control-group h3 {
   font-size: 14px;
   margin-bottom: 8px;
-  color: #7ab8ff;
+  color: #00B4FF;
   font-weight: 600;
 }
 
@@ -125,9 +125,12 @@ h1 {
 
 .control-item select:focus {
   outline: none;
-  border-color: #4a9eff;
+  border-color: #00B4FF;
 }
 
+/* --------------------------------------------------------------------------
+   SLIDERS - HiFi LED Style
+   -------------------------------------------------------------------------- */
 .slider-container {
   display: flex;
   align-items: center;
@@ -135,15 +138,77 @@ h1 {
 }
 
 .slider-container input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
   flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
   cursor: pointer;
+  outline: none;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
+    linear-gradient(145deg, #383838, #2a2a2a);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    inset 0 0 6px rgba(0, 180, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  border: none;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb:hover {
+  background:
+    radial-gradient(circle at center, #5cb8ff 0%, #5cb8ff 3px, transparent 3px),
+    linear-gradient(145deg, #404040, #303030);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.04),
+    inset 0 0 8px rgba(74, 158, 255, 0.4);
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb:active {
+  background:
+    radial-gradient(circle at center, #7DF9FF 0%, #7DF9FF 3px, transparent 3px),
+    #1a1a1a;
+  box-shadow:
+    inset 1px 1px 3px rgba(0, 0, 0, 0.5),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.02),
+    0 0 8px rgba(125, 249, 255, 0.5);
+}
+
+.slider-container input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
+    linear-gradient(145deg, #383838, #2a2a2a);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    inset 0 0 6px rgba(0, 180, 255, 0.3);
+  cursor: pointer;
+  border: none;
 }
 
 .slider-value {
   min-width: 40px;
   text-align: right;
   font-size: 11px;
-  color: #7ab8ff;
+  color: #00B4FF;
 }
 
 .info-text {
@@ -156,7 +221,7 @@ h1 {
 button {
   width: 100%;
   padding: 10px;
-  background: #4a9eff;
+  background: #00B4FF;
   border: none;
   color: white;
   border-radius: 4px;
@@ -174,29 +239,130 @@ button:active {
   background: #2a5f94;
 }
 
+/* ==========================================================================
+   CHECKBOX AS HiFi TOGGLE
+   Style native checkboxes to look like HiFi toggles
+   ========================================================================== */
 .checkbox-label {
   display: flex;
   align-items: center;
   cursor: pointer;
   font-size: 12px;
-  color: #e0e0e0;
+  color: var(--hifi-text, #e0e0e0);
+  gap: 10px;
+}
+
+/* Hide native checkbox */
+.checkbox-label input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  width: 28px;
+  height: 14px;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  flex-shrink: 0;
+  margin: 0;
+}
+
+/* Toggle thumb (using ::before pseudo-element) */
+.checkbox-label input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(145deg, #505050, #404040);
+  border-radius: 50%;
+  transition: all 0.2s ease-out;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+}
+
+/* Checked state */
+.checkbox-label input[type="checkbox"]:checked {
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+}
+
+.checkbox-label input[type="checkbox"]:checked::before {
+  left: 16px;
+  background: linear-gradient(145deg, #555555, #454545);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    0 0 6px rgba(0, 180, 255, 0.5);
+}
+
+/* Hover state */
+.checkbox-label:hover input[type="checkbox"]::before {
+  background: linear-gradient(145deg, #585858, #484848);
 }
 
 /* Collapsible geodesic controls */
+/* ==========================================================================
+   GEODESIC TOGGLE - HiFi Vertical Toggle (Small)
+   ========================================================================== */
 .geodesic-toggle {
+  position: relative;
   display: inline-block;
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 7px solid #7ab8ff;
+  width: 10px;
+  height: 20px;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  border-radius: 5px;
   margin-right: 8px;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.15s ease-out;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+  vertical-align: middle;
 }
 
+/* Thumb using ::before */
+.geodesic-toggle::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(145deg, #555555, #454545);
+  border-radius: 50%;
+  transition: all 0.2s ease-out;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    0 0 6px rgba(0, 180, 255, 0.5);
+}
+
+/* Collapsed state: thumb at top, no glow */
 .geodesic-toggle.collapsed {
-  transform: rotate(-90deg);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.geodesic-toggle.collapsed::before {
+  top: 2px;
+  background: linear-gradient(145deg, #505050, #404040);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+}
+
+.geodesic-toggle:hover::before {
+  background: linear-gradient(145deg, #585858, #484848);
 }
 
 .geodesic-options {
@@ -218,27 +384,34 @@ button:active {
   margin-top: 5px;
 }
 
+/* Node Size Buttons - HiFi Style */
 .node-size-btn {
   flex: 1;
-  padding: 5px;
-  background: #1a1a1a;
-  border: 1px solid #555;
-  color: #b0b0b0;
-  border-radius: 3px;
-  font-size: 11px;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--hifi-radius-sm, 3px);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s ease-out;
+  color: var(--hifi-text-muted, #b0b0b0);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 .node-size-btn:hover {
-  border-color: #7ab8ff;
-  color: #e0e0e0;
+  color: var(--hifi-text, #e0e0e0);
+  background: linear-gradient(145deg, #333333, #292929);
 }
 
 .node-size-btn.active {
-  background: #4a9eff;
-  border-color: #4a9eff;
-  color: white;
+  color: var(--hifi-accent, #00B4FF);
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 /* Plane toggle switches (iOS-style pill switches) */
@@ -274,7 +447,7 @@ button:active {
 }
 
 .plane-toggle-switch.active {
-  background-color: #4a9eff;
+  background-color: #00B4FF;
 }
 
 .plane-toggle-slider {
@@ -300,26 +473,64 @@ button:active {
 }
 
 .coord-label {
-  color: #7ab8ff;
+  color: #00B4FF;
   font-weight: 600;
 }
 
-/* Section Toggle (for h3 main sections) */
+/* ==========================================================================
+   SECTION TOGGLE - HiFi Vertical Toggle (Standard)
+   ========================================================================== */
 .section-toggle {
+  position: relative;
   display: inline-block;
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 8px solid #7ab8ff;
+  width: 14px;
+  height: 28px;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  border-radius: 7px;
   margin-right: 8px;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.15s ease-out;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
   vertical-align: middle;
 }
 
+/* Thumb using ::before */
+.section-toggle::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(145deg, #555555, #454545);
+  border-radius: 50%;
+  transition: all 0.2s ease-out;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    0 0 6px rgba(0, 180, 255, 0.5);
+}
+
+/* Collapsed state: thumb at top, no glow */
 .section-toggle.collapsed {
-  transform: rotate(-90deg);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.section-toggle.collapsed::before {
+  top: 2px;
+  background: linear-gradient(145deg, #505050, #404040);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+}
+
+.section-toggle:hover::before {
+  background: linear-gradient(145deg, #585858, #484848);
 }
 
 .section-content {
@@ -374,9 +585,9 @@ button:disabled {
 }
 
 .gumball-tool-btn.active {
-  background: #4a9eff;
+  background: #00B4FF;
   color: white;
-  border-color: #4a9eff;
+  border-color: #00B4FF;
 }
 
 /* Coordinate Input Fields */
@@ -407,7 +618,7 @@ button:disabled {
 
 .coord-input:focus {
   outline: none;
-  border-color: #4a9eff;
+  border-color: #00B4FF;
   background: #353535;
 }
 
@@ -433,7 +644,9 @@ button:disabled {
    CONSOLIDATED CSS CLASSES
    ============================================ */
 
-/* Unified Toggle Button System */
+/* ==========================================================================
+   UNIFIED TOGGLE BUTTON SYSTEM - HiFi Style
+   ========================================================================== */
 .toggle-btn-group {
   display: flex;
   gap: 5px;
@@ -442,90 +655,96 @@ button:disabled {
 
 .toggle-btn {
   flex: 1;
-  padding: 6px;
+  padding: 8px 12px;
   font-size: 11px;
-  border-radius: 3px;
+  font-weight: 500;
+  border-radius: var(--hifi-radius-md, 4px);
   cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid;
+  transition: all 0.15s ease-out;
+  border: none;
+  color: var(--hifi-text-muted, #b0b0b0);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.toggle-btn:hover {
+  color: var(--hifi-text, #e0e0e0);
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+.toggle-btn.active {
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  color: var(--hifi-accent, #00B4FF);
 }
 
 /* Variant: Standard (node-size, camera, file ops, print) */
 .toggle-btn.variant-standard {
-  background: #1a1a1a;
-  border-color: #555;
-  color: #b0b0b0;
-  padding: 5px;
+  padding: 5px 8px;
+  font-size: 10px;
+  border-radius: var(--hifi-radius-sm, 3px);
 }
 
 .toggle-btn.variant-standard:hover {
-  border-color: #7ab8ff;
-  color: #e0e0e0;
+  color: var(--hifi-text, #e0e0e0);
 }
 
 .toggle-btn.variant-standard.active {
-  background: #4a9eff;
-  border-color: #4a9eff;
-  color: white;
+  color: var(--hifi-accent, #00B4FF);
 }
 
 /* Variant: Tool mode (move/scale/rotate) */
 .toggle-btn.variant-tool {
   padding: 8px;
-  background: #2a2a2a;
-  border-color: #444;
-  color: #b0b0b0;
 }
 
 .toggle-btn.variant-tool:hover {
-  background: #353535;
-  border-color: #555;
+  color: var(--hifi-text, #e0e0e0);
 }
 
 .toggle-btn.variant-tool.active {
-  background: #4a9eff;
-  border-color: #4a9eff;
-  color: white;
+  color: var(--hifi-accent, #00B4FF);
 }
 
-/* Variant: Snap mode (free/xyz/wxyz) */
+/* Variant: Snap mode (free/xyz/wxyz) - green accent */
 .toggle-btn.variant-snap {
   font-size: 12px;
-  background: #222;
-  border-color: #444;
-  color: #888;
+  color: var(--hifi-text-dim, #888);
 }
 
 .toggle-btn.variant-snap:hover {
-  background: #2a2a2a;
-  border-color: #555;
+  color: var(--hifi-text-muted, #b0b0b0);
 }
 
 .toggle-btn.variant-snap.active {
-  background: #333;
-  border-color: #00ff88;
   color: #00ff88;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(0, 255, 136, 0.3);
 }
 
-/* Variant: Object snap (vertex/edge/face) - toggleable */
+/* Variant: Object snap (vertex/edge/face) - orange accent */
 .toggle-btn.variant-objsnap {
   font-size: 11px;
-  background: #1a1a1a;
-  border-color: #444;
-  color: #666;
   padding: 4px 8px;
+  color: var(--hifi-text-dim, #888);
 }
 
 .toggle-btn.variant-objsnap:hover {
-  background: #252525;
-  border-color: #555;
-  color: #888;
+  color: var(--hifi-text-muted, #b0b0b0);
 }
 
 .toggle-btn.variant-objsnap.active {
-  background: #2a2a3a;
-  border-color: #ff9944;
   color: #ff9944;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(255, 153, 68, 0.3);
 }
 
 /* Smaller snap description for object snaps */
@@ -537,41 +756,30 @@ button:disabled {
 
 /* Toggle variant (for generic toggles like Node Geometry) */
 .toggle-btn.variant-toggle {
-  background: #1a1a1a;
-  border-color: #555;
-  color: #b0b0b0;
+  /* Inherits base HiFi style */
 }
 
 .toggle-btn.variant-toggle:hover {
-  border-color: #7ab8ff;
-  color: #e0e0e0;
+  color: var(--hifi-text, #e0e0e0);
 }
 
 .toggle-btn.variant-toggle.active {
-  background: #4a9eff;
-  border-color: #4a9eff;
-  color: white;
+  color: var(--hifi-accent, #00B4FF);
 }
 
 /* Variant: Small (compact cutplane axis selectors) */
 .toggle-btn.variant-small {
-  background: #1a1a1a;
-  border-color: #555;
-  color: #b0b0b0;
   padding: 3px 6px;
   font-size: 10px;
   min-width: 28px;
 }
 
 .toggle-btn.variant-small:hover {
-  border-color: #7ab8ff;
-  color: #e0e0e0;
+  color: var(--hifi-text, #e0e0e0);
 }
 
 .toggle-btn.variant-small.active {
-  background: #4a9eff;
-  border-color: #4a9eff;
-  color: white;
+  color: var(--hifi-accent, #00B4FF);
 }
 
 /* Geodesic dropdown styling */
@@ -734,26 +942,35 @@ button:disabled {
   line-height: 1.4;
 }
 
-/* Gumball Action Button */
+/* Gumball Action Button - HiFi Style */
 .gumball-action-btn {
   width: 100%;
-  background: #00ff88;
-  color: #1a1a1a;
-  font-weight: bold;
   padding: 8px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
   font-size: 14px;
-  transition: background 0.2s;
+  font-weight: bold;
+  border: none;
+  border-radius: var(--hifi-radius-md, 4px);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  color: #00B4FF;
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 .gumball-action-btn:hover {
-  background: #00dd77;
+  color: #5cb8ff;
+  background: linear-gradient(145deg, #333333, #292929);
 }
 
 .gumball-action-btn:active {
-  background: #00bb66;
+  color: #7DF9FF;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 /* ========================================================================
    GEODESIC CONTROLS (CONSOLIDATED)
@@ -1043,7 +1260,7 @@ button:disabled {
 }
 
 .shortcut-key {
-  color: #4a9eff; /* Match app blue accent */
+  color: #00B4FF; /* Match app blue accent */
   font-family: "Courier New", monospace;
   font-size: 11px;
   font-weight: bold;
@@ -1086,7 +1303,7 @@ button:disabled {
   content: "▸";
   position: absolute;
   left: 0;
-  color: #4a9eff; /* App blue accent */
+  color: #00B4FF; /* App blue accent */
   font-weight: bold;
 }
 
@@ -1117,7 +1334,7 @@ button:disabled {
   content: "•";
   position: absolute;
   left: 0;
-  color: #4a9eff;
+  color: #00B4FF;
   font-weight: bold;
 }
 
@@ -1127,7 +1344,7 @@ button:disabled {
   padding: 12px;
   font-size: 16px;
   font-weight: bold;
-  background: linear-gradient(135deg, #4a9eff 0%, #357abd 100%);
+  background: linear-gradient(135deg, #00B4FF 0%, #357abd 100%);
   color: white;
   border: none;
   border-radius: 5px;
@@ -1277,7 +1494,7 @@ button:disabled {
 }
 
 .cross-color-cross {
-  color: #4a9eff;
+  color: #00B4FF;
   font-weight: bold;
 }
 
@@ -1423,7 +1640,7 @@ button:disabled {
 }
 
 .color-theory-modal-header h2 {
-  color: #4a9eff;
+  color: #00B4FF;
   font-size: 20px;
   margin: 0;
 }
@@ -1452,7 +1669,7 @@ button:disabled {
 }
 
 .color-info-box strong {
-  color: #4a9eff;
+  color: #00B4FF;
 }
 
 /* Global controls section */
@@ -1465,7 +1682,7 @@ button:disabled {
 }
 
 .color-global-controls h3 {
-  color: #7ab8ff;
+  color: #00B4FF;
   font-size: 16px;
   margin-bottom: 15px;
 }
@@ -1480,7 +1697,7 @@ button:disabled {
 }
 
 .color-section h3 {
-  color: #7ab8ff;
+  color: #00B4FF;
   font-size: 16px;
   margin-bottom: 12px;
   border-bottom: 1px solid #444;
@@ -1553,7 +1770,7 @@ button:disabled {
 }
 
 .color-picker-btn:hover {
-  border-color: #4a9eff;
+  border-color: #00B4FF;
   transform: scale(1.05);
 }
 
@@ -1590,7 +1807,7 @@ button:disabled {
   width: 100%;
   background: #1a1a1a;
   border: 1px solid #444;
-  color: #4a9eff;
+  color: #00B4FF;
   padding: 4px 6px;
   font-size: 11px;
   font-family: "Monaco", "Courier New", monospace;
@@ -1599,7 +1816,7 @@ button:disabled {
 
 .color-hex-input:focus {
   outline: none;
-  border-color: #4a9eff;
+  border-color: #00B4FF;
 }
 
 /* LEGACY STYLES (kept for backward compatibility if needed) */
@@ -1634,7 +1851,7 @@ button:disabled {
 }
 
 .color-swatch:hover {
-  border-color: #7ab8ff;
+  border-color: #00B4FF;
   transform: scale(1.02);
 }
 
@@ -1649,7 +1866,7 @@ button:disabled {
 
 .color-label .type {
   font-weight: 600;
-  color: #7ab8ff;
+  color: #00B4FF;
 }
 
 .color-label .value {
@@ -1678,7 +1895,7 @@ button:disabled {
 
 .color-input:focus {
   outline: none;
-  border-color: #4a9eff;
+  border-color: #00B4FF;
 }
 
 /* Color picker button (macOS native picker) */
@@ -1696,7 +1913,7 @@ button:disabled {
 }
 
 .color-picker-btn:hover {
-  border-color: #7ab8ff;
+  border-color: #00B4FF;
 }
 
 .color-picker-btn input[type="color"] {
@@ -1745,7 +1962,7 @@ button:disabled {
 }
 
 .color-export-section h3 {
-  color: #7ab8ff;
+  color: #00B4FF;
   margin-bottom: 15px;
   font-size: 16px;
 }
@@ -1794,7 +2011,7 @@ button:disabled {
 #context-menu-title {
   font-size: 12px;
   font-weight: 600;
-  color: #7ab8ff;
+  color: #00B4FF;
 }
 
 .context-menu-section {
@@ -1834,8 +2051,8 @@ button:disabled {
 }
 
 .context-btn.active {
-  background: #4a9eff;
-  border-color: #4a9eff;
+  background: #00B4FF;
+  border-color: #00B4FF;
   color: white;
 }
 
@@ -1956,4 +2173,407 @@ button:disabled {
   color: #666;
   min-width: 12px;
   text-align: center;
+}
+
+/* ==========================================================================
+   HiFi DESIGN SYSTEM
+   1970s High Fidelity Stereo inspired UI components
+   ========================================================================== */
+
+:root {
+  /* Base colors */
+  --hifi-bg: #2A2A2A;
+  --hifi-bg-dark: #1a1a1a;
+  --hifi-bg-light: #353535;
+
+  /* Shadow colors for HiFi effect */
+  --hifi-shadow-dark: rgba(0, 0, 0, 0.5);
+  --hifi-shadow-light: rgba(255, 255, 255, 0.07);
+
+  /* Accent colors */
+  --hifi-accent: #00B4FF;
+  --hifi-accent-glow: #7DF9FF;
+
+  /* Text colors */
+  --hifi-text: #e0e0e0;
+  --hifi-text-muted: #b0b0b0;
+  --hifi-text-dim: #888;
+
+  /* Border radii */
+  --hifi-radius-sm: 3px;
+  --hifi-radius-md: 4px;
+
+  /* Transitions */
+  --hifi-transition: 0.15s ease-out;
+}
+
+/* ==========================================================================
+   A) SLIDERS - HiFi Range Inputs
+   ========================================================================== */
+
+.hifi-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.hifi-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--hifi-bg-dark);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light);
+  cursor: pointer;
+  outline: none;
+}
+
+.hifi-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #303030, #262626);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all var(--hifi-transition);
+  border: none;
+}
+
+.hifi-slider::-webkit-slider-thumb:hover {
+  background: linear-gradient(145deg, #383838, #2a2a2a);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.04);
+}
+
+.hifi-slider::-webkit-slider-thumb:active {
+  background: var(--hifi-bg-dark);
+  box-shadow:
+    inset 1px 1px 3px var(--hifi-shadow-dark),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.02);
+}
+
+.hifi-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #303030, #262626);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  border: none;
+}
+
+.hifi-slider-value {
+  min-width: 40px;
+  text-align: right;
+  font-size: 11px;
+  color: #00B4FF;
+}
+
+/* --------------------------------------------------------------------------
+   SLIDER VARIANT: Blue LED dot in thumb center (USE FOR ALL SLIDERS)
+   -------------------------------------------------------------------------- */
+
+.hifi-slider--led {
+  position: relative;
+}
+
+.hifi-slider--led::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
+    linear-gradient(145deg, #383838, #2a2a2a);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    inset 0 0 6px rgba(0, 180, 255, 0.3);
+  cursor: pointer;
+  transition: all var(--hifi-transition);
+  border: none;
+}
+
+.hifi-slider--led::-webkit-slider-thumb:hover {
+  background:
+    radial-gradient(circle at center, #5cb8ff 0%, #5cb8ff 3px, transparent 3px),
+    linear-gradient(145deg, #404040, #303030);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.04),
+    inset 0 0 8px rgba(74, 158, 255, 0.4);
+}
+
+.hifi-slider--led::-webkit-slider-thumb:active {
+  background:
+    radial-gradient(circle at center, #7DF9FF 0%, #7DF9FF 3px, transparent 3px),
+    var(--hifi-bg-dark);
+  box-shadow:
+    inset 1px 1px 3px var(--hifi-shadow-dark),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.02),
+    0 0 8px rgba(125, 249, 255, 0.5);
+}
+
+.hifi-slider--led::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
+    linear-gradient(145deg, #383838, #2a2a2a);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    inset 0 0 6px rgba(0, 180, 255, 0.3);
+  cursor: pointer;
+  border: none;
+}
+
+/* ==========================================================================
+   B) PUSH BUTTONS - HiFi Buttons
+   ========================================================================== */
+
+.hifi-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--hifi-text-muted);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  border: none;
+  border-radius: var(--hifi-radius-md);
+  cursor: pointer;
+  outline: none;
+  transition: all var(--hifi-transition);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark),
+    -2px -2px 4px var(--hifi-shadow-light);
+}
+
+.hifi-btn:hover {
+  color: var(--hifi-text);
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+.hifi-btn:active,
+.hifi-btn.active {
+  background: var(--hifi-bg-dark);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light);
+  color: var(--hifi-accent);
+}
+
+/* Small button variant */
+.hifi-btn--sm {
+  padding: 5px 8px;
+  font-size: 10px;
+  border-radius: var(--hifi-radius-sm);
+}
+
+/* Action button - Classic Blue LED style */
+.hifi-btn--action {
+  color: #00B4FF;
+}
+
+.hifi-btn--action:hover {
+  color: #5cb8ff;
+}
+
+.hifi-btn--action:active,
+.hifi-btn--action.active {
+  color: #7DF9FF;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+}
+
+/* Danger button - Classic Blue LED style (same as action) */
+.hifi-btn--danger {
+  color: #00B4FF;
+}
+
+.hifi-btn--danger:hover {
+  color: #5cb8ff;
+}
+
+.hifi-btn--danger:active,
+.hifi-btn--danger.active {
+  color: #7DF9FF;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+}
+
+/* Button group */
+.hifi-btn-group {
+  display: flex;
+  gap: 5px;
+}
+
+.hifi-btn-group .hifi-btn {
+  flex: 1;
+}
+
+/* ==========================================================================
+   C) TOGGLES - HiFi On/Off Switches
+   ========================================================================== */
+
+.hifi-toggle {
+  position: relative;
+  width: 36px;
+  height: 18px;
+  background: var(--hifi-bg-dark);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all var(--hifi-transition);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light);
+  flex-shrink: 0;
+}
+
+.hifi-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(145deg, #505050, #404040);
+  border-radius: 50%;
+  transition: all 0.2s ease-out;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+}
+
+/* Active state: subtle accent border on track */
+.hifi-toggle.active {
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+}
+
+.hifi-toggle.active .hifi-toggle-thumb {
+  left: 20px;
+  background: linear-gradient(145deg, #555555, #454545);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    0 0 6px rgba(0, 180, 255, 0.5);
+}
+
+/* Toggle with label */
+.hifi-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--hifi-text);
+}
+
+.hifi-toggle-label:hover .hifi-toggle-thumb {
+  background: linear-gradient(145deg, #585858, #484848);
+}
+
+/* Small toggle (USE FOR ALL FORM TOGGLES) */
+.hifi-toggle--sm {
+  width: 28px;
+  height: 14px;
+  border-radius: 7px;
+}
+
+.hifi-toggle--sm .hifi-toggle-thumb {
+  width: 10px;
+  height: 10px;
+  top: 2px;
+  left: 2px;
+}
+
+.hifi-toggle--sm.active .hifi-toggle-thumb {
+  left: 16px;
+}
+
+/* ==========================================================================
+   D) DROPDOWN TOGGLES - Vertical HiFi Toggle for Section Expand/Collapse
+   ========================================================================== */
+
+.hifi-dropdown-toggle {
+  position: relative;
+  width: 14px;
+  height: 28px;
+  background: var(--hifi-bg-dark);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all var(--hifi-transition);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light);
+  flex-shrink: 0;
+}
+
+.hifi-dropdown-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(145deg, #505050, #404040);
+  border-radius: 50%;
+  transition: all 0.2s ease-out;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+}
+
+/* Expanded state: thumb at bottom, accent glow */
+.hifi-dropdown-toggle.expanded {
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+}
+
+.hifi-dropdown-toggle.expanded .hifi-dropdown-toggle-thumb {
+  top: 16px;
+  background: linear-gradient(145deg, #555555, #454545);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    0 0 6px rgba(0, 180, 255, 0.5);
+}
+
+.hifi-dropdown-toggle:hover .hifi-dropdown-toggle-thumb {
+  background: linear-gradient(145deg, #585858, #484848);
+}
+
+/* Small dropdown toggle (for nested options) */
+.hifi-dropdown-toggle--sm {
+  width: 10px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.hifi-dropdown-toggle--sm .hifi-dropdown-toggle-thumb {
+  width: 6px;
+  height: 6px;
+  top: 2px;
+  left: 2px;
+}
+
+.hifi-dropdown-toggle--sm.expanded .hifi-dropdown-toggle-thumb {
+  top: 12px;
 }
