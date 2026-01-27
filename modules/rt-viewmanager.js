@@ -1000,6 +1000,16 @@ ${rasterContent}${facesContent}${vectorContent}${nodesContent}
     }
     this._updateViewNamePlaceholder();
 
+    // Release focus from save button to restore orbit controls
+    const saveBtn = document.getElementById("saveViewBtn");
+    if (saveBtn) {
+      saveBtn.blur();
+    }
+    // Also release any active element focus to ensure controls work
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
+
     console.log(`✅ View saved: ${view.name}`);
   },
 
@@ -1213,6 +1223,7 @@ ${rasterContent}${facesContent}${vectorContent}${nodesContent}
 
   /**
    * Render views table to DOM
+   * Uses event delegation to avoid listener accumulation
    */
   renderViewsTable() {
     const tbody = document.getElementById("viewsTableBody");
@@ -1260,33 +1271,52 @@ ${rasterContent}${facesContent}${vectorContent}${nodesContent}
       })
       .join("");
 
-    // Wire up row action buttons
-    tbody.querySelectorAll(".view-load-btn").forEach(btn => {
-      btn.addEventListener("click", e => {
-        e.stopPropagation();
-        this.loadView(btn.dataset.viewId);
-      });
-    });
-
-    tbody.querySelectorAll(".view-export-btn").forEach(btn => {
-      btn.addEventListener("click", e => {
-        e.stopPropagation();
-        const view = this.state.views.find(v => v.id === btn.dataset.viewId);
-        if (view) {
-          this.exportSVG({ view });
-        }
-      });
-    });
-
-    tbody.querySelectorAll(".view-delete-btn").forEach(btn => {
-      btn.addEventListener("click", e => {
-        e.stopPropagation();
-        this.deleteView(btn.dataset.viewId);
-      });
-    });
+    // Use event delegation - single listener on tbody handles all button clicks
+    // This avoids listener accumulation when renderViewsTable() is called multiple times
+    this._setupTableEventDelegation(tbody);
 
     // Update sort indicators
     this._updateSortIndicators();
+  },
+
+  /**
+   * Setup event delegation for table row buttons
+   * Only attaches listener once per tbody element
+   * @param {HTMLElement} tbody
+   * @private
+   */
+  _setupTableEventDelegation(tbody) {
+    // Check if we've already attached the delegation listener
+    if (tbody._viewsDelegationAttached) return;
+
+    tbody.addEventListener("click", e => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+
+      // Prevent event bubbling and default button behavior
+      e.preventDefault();
+      e.stopPropagation();
+
+      const viewId = btn.dataset.viewId;
+      if (!viewId) return;
+
+      // Release button focus immediately to prevent stuck state
+      btn.blur();
+
+      if (btn.classList.contains("view-load-btn")) {
+        this.loadView(viewId);
+      } else if (btn.classList.contains("view-export-btn")) {
+        const view = this.state.views.find(v => v.id === viewId);
+        if (view) {
+          this.exportSVG({ view });
+        }
+      } else if (btn.classList.contains("view-delete-btn")) {
+        this.deleteView(viewId);
+      }
+    });
+
+    // Mark as having delegation attached
+    tbody._viewsDelegationAttached = true;
   },
 
   /**
