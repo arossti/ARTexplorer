@@ -1496,6 +1496,7 @@ function startARTexplorer(
   let selectedPolyhedra = []; // Will store currently selected polyhedra
   let justFinishedDrag = false; // Track if we just completed a drag (prevent deselect on click-after-drag)
   let editingBasis = null; // Localized gumball that follows selected Forms
+  let hoveredHandle = null; // Currently hovered gumball handle (for hover glow effect)
 
   // Basis vector visibility state (stored when gumball activates, restored on deactivation)
   let savedCartesianBasisVisible = null;
@@ -2259,13 +2260,13 @@ function startARTexplorer(
               })
             );
           } else {
-            // MOVE MODE: Sphere handle
+            // MOVE MODE: Sphere handle (invisible hit zone - hover glow reveals it)
             handle = new THREE.Mesh(
               new THREE.SphereGeometry(sphereRadius, 16, 16),
               new THREE.MeshBasicMaterial({
                 color: quadrayColors[i],
                 transparent: true,
-                opacity: 0.3, // Semi-visible for debugging
+                opacity: 0, // Invisible until hover (was 0.3 for debugging)
                 depthTest: true,
               })
             );
@@ -2387,13 +2388,13 @@ function startARTexplorer(
               })
             );
           } else {
-            // MOVE MODE: Sphere handle
+            // MOVE MODE: Sphere handle (invisible hit zone - hover glow reveals it)
             handle = new THREE.Mesh(
               new THREE.SphereGeometry(sphereRadius, 16, 16),
               new THREE.MeshBasicMaterial({
                 color: cartesianColors[i],
                 transparent: true,
-                opacity: 0.3, // Semi-visible for debugging
+                opacity: 0, // Invisible until hover (was 0.3 for debugging)
                 depthTest: true,
               })
             );
@@ -2462,6 +2463,92 @@ function startARTexplorer(
     if (editingBasis) {
       scene.remove(editingBasis);
       editingBasis = null;
+    }
+    hoveredHandle = null;
+  }
+
+  /**
+   * Apply hover glow effect to a gumball handle
+   * @param {THREE.Mesh} handle - The handle mesh to highlight
+   */
+  function applyHandleHover(handle) {
+    if (!handle || !handle.material) return;
+
+    // Store original color if not already stored
+    if (handle.userData.originalColor === undefined) {
+      handle.userData.originalColor = handle.material.color.getHex();
+      handle.userData.originalOpacity = handle.material.opacity;
+    }
+
+    // Apply bright emissive-like glow by lightening the color and increasing opacity
+    const originalColor = new THREE.Color(handle.userData.originalColor);
+    const glowColor = originalColor.clone().lerp(new THREE.Color(0xffffff), 0.5);
+    handle.material.color.copy(glowColor);
+    handle.material.opacity = Math.min(1.0, handle.userData.originalOpacity + 0.4);
+
+    // Change cursor to indicate interactivity
+    renderer.domElement.style.cursor = "pointer";
+  }
+
+  /**
+   * Remove hover glow effect from a gumball handle
+   * @param {THREE.Mesh} handle - The handle mesh to unhighlight
+   */
+  function clearHandleHover(handle) {
+    if (!handle || !handle.material) return;
+
+    // Restore original color and opacity
+    if (handle.userData.originalColor !== undefined) {
+      handle.material.color.setHex(handle.userData.originalColor);
+      handle.material.opacity = handle.userData.originalOpacity;
+    }
+
+    // Reset cursor
+    renderer.domElement.style.cursor = "default";
+  }
+
+  /**
+   * Handle mousemove for gumball handle hover detection
+   * @param {MouseEvent} event - The mousemove event
+   */
+  function onGumballHover(event) {
+    if (!editingBasis || !raycaster || !mouse || isDragging) return;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    // Collect all gumball handle hit targets
+    const hitTargets = [];
+    editingBasis.traverse(obj => {
+      if (obj.userData.isGumballHandle) {
+        hitTargets.push(obj);
+      }
+    });
+
+    const intersects = raycaster.intersectObjects(hitTargets, false);
+
+    if (intersects.length > 0) {
+      const newHoveredHandle = intersects[0].object;
+
+      // Only update if hover target changed
+      if (newHoveredHandle !== hoveredHandle) {
+        // Clear previous hover
+        if (hoveredHandle) {
+          clearHandleHover(hoveredHandle);
+        }
+        // Apply new hover
+        hoveredHandle = newHoveredHandle;
+        applyHandleHover(hoveredHandle);
+      }
+    } else {
+      // Not hovering over any handle
+      if (hoveredHandle) {
+        clearHandleHover(hoveredHandle);
+        hoveredHandle = null;
+      }
     }
   }
 
@@ -4262,6 +4349,7 @@ function startARTexplorer(
   });
 
   renderer.domElement.addEventListener("mousemove", e => {
+    // Track drag distance for click vs drag detection
     if (mouseDownPos) {
       const dx = e.clientX - mouseDownPos.x;
       const dy = e.clientY - mouseDownPos.y;
@@ -4272,6 +4360,9 @@ function startARTexplorer(
         mouseMoved = true;
       }
     }
+
+    // Gumball handle hover detection (for visual feedback)
+    onGumballHover(e);
   });
 
   renderer.domElement.addEventListener("mouseup", () => {
