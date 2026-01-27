@@ -2078,6 +2078,41 @@ function startARTexplorer(
   // ========================================================================
 
   /**
+   * Calculate optimal handle length based on object's bounding sphere
+   *
+   * For adaptive gumball sizing - handles extend just beyond the object's
+   * circumsphere so they remain visible and grabbable for any size polyhedron.
+   *
+   * @param {THREE.Object3D} selectedObject - The selected polyhedron
+   * @returns {number} Optimal handle length with padding
+   */
+  function calculateHandleLength(selectedObject) {
+    if (!selectedObject) {
+      // Fallback to tetEdge if no object
+      return parseFloat(document.getElementById("tetScaleSlider").value);
+    }
+
+    // 1. Compute bounding box of the object
+    const boundingBox = new THREE.Box3().setFromObject(selectedObject);
+    const size = new THREE.Vector3();
+    boundingBox.getSize(size);
+
+    // 2. Calculate circumsphere radius (half of bounding box diagonal)
+    // This ensures handles extend beyond the farthest vertex
+    const circumRadius = size.length() / 2;
+
+    // 3. Add padding (15% beyond bounding sphere) for comfortable grab zone
+    const paddingFactor = 1.15;
+    const handleLength = circumRadius * paddingFactor;
+
+    // 4. Apply min/max constraints to keep handles usable
+    const minHandleLength = 1.0; // Never smaller than 1 unit
+    const maxHandleLength = 20.0; // Cap at 20 to prevent unwieldy handles
+
+    return Math.min(Math.max(handleLength, minHandleLength), maxHandleLength);
+  }
+
+  /**
    * Create EDITING BASIS (localized gumball) at specified position
    *
    * SYSTEMS 3 & 4 OF 4: Interactive transformation handles for selected Forms
@@ -2085,24 +2120,23 @@ function startARTexplorer(
    * SYSTEM 3: Editing Quadray Basis (WXYZ)
    * - Location: rt-init.js (this file)
    * - Purpose: Interactive Move/Scale/Rotate handles for tetrahedral coordinates
-   * - Scaling: Dynamic - scales with tetEdge slider for optimal interaction
+   * - Scaling: Adaptive - scales based on selected object's bounding sphere
    * - Visual: Conical arrows (Move/Scale) or hexagonal rotation handles (Rotate)
    * - Interaction: Click/drag to transform selected Form in WXYZ coordinates
    *
    * SYSTEM 4: Editing Cartesian Basis (XYZ)
    * - Location: rt-init.js (this file)
    * - Purpose: Interactive Move/Scale/Rotate handles for orthogonal coordinates
-   * - Scaling: Dynamic - scales with tetEdge slider for optimal interaction
+   * - Scaling: Adaptive - scales based on selected object's bounding sphere
    * - Visual: Conical arrows (Move/Scale) or circular rotation handles (Rotate)
    * - Interaction: Click/drag to transform selected Form in XYZ coordinates
    *
    * See also: Symbolic basis vectors in rt-rendering.js (non-interactive reference)
    *
    * @param {THREE.Vector3} position - Position to create the basis at
-   * @param {THREE.Group} selectedObject - The selected form/instance for sizing
-   * @todo TODO: Use selectedObject bounding box to scale handles for large matrices
+   * @param {THREE.Group} selectedObject - The selected form/instance for sizing (used for adaptive handle length)
    */
-  function createEditingBasis(position, _selectedObject) {
+  function createEditingBasis(position, selectedObject) {
     // Remove existing editing basis if any
     if (editingBasis) {
       scene.remove(editingBasis);
@@ -2116,23 +2150,10 @@ function startARTexplorer(
     const showCartesian = document.getElementById("showCartesianBasis").checked;
     const showQuadray = document.getElementById("showQuadray").checked;
 
-    // Use tetEdge from slider for arrow length (performant, works for all forms)
-    // For platonic solids: tetEdge ≈ OutSphere radius (good fit)
-    // For geodesics: tetEdge < OutSphere (handles outside - easier to grab)
-    const tetEdge = parseFloat(document.getElementById("tetScaleSlider").value);
-    const arrowLength = tetEdge;
-    const headLength = 0.3;
-
-    // ALTERNATIVE: Bounding box calculation (more accurate but slower)
-    // Useful for large subdivided geodesics if tetEdge becomes too small
-    // Uncomment if needed for specific form types:
-    /*
-          const boundingBox = new THREE.Box3().setFromObject(selectedObject);
-          const size = new THREE.Vector3();
-          boundingBox.getSize(size);
-          const outSphereRadius = Math.max(size.x, size.y, size.z) * Math.sqrt(3) / 2;
-          const arrowLength = outSphereRadius;
-          */
+    // Calculate adaptive handle length based on object's bounding sphere
+    // Handles will extend just beyond the object for visibility/grabability
+    const arrowLength = calculateHandleLength(selectedObject);
+    const headLength = Math.max(0.2, arrowLength * 0.1); // Scale head proportionally
 
     // Determine handle type based on active tool
     const isScaleMode = currentGumballTool === "scale";
@@ -2185,7 +2206,8 @@ function startARTexplorer(
           editingBasis.add(rotationHandle);
 
           // Torus hit zone for clicking (visible for debugging)
-          const hitThickness = 0.15; // Clickable area thickness
+          // Scale hit thickness proportionally (min 0.1, ~5% of arrow length)
+          const hitThickness = Math.max(0.1, arrowLength * 0.05);
           const hitZone = new THREE.Mesh(
             new THREE.TorusGeometry(circleRadius, hitThickness, 16, 64),
             new THREE.MeshBasicMaterial({
@@ -2212,7 +2234,7 @@ function startARTexplorer(
             arrowLength,
             quadrayColors[i],
             isScaleMode ? 0 : headLength, // No arrowhead in Scale mode
-            0.2
+            Math.max(0.15, arrowLength * 0.06) // Scale head width proportionally
           );
 
           editingBasis.add(arrow);
@@ -2220,10 +2242,13 @@ function startARTexplorer(
           // Add handle at arrow tip - CUBE for Scale, SPHERE for Move
           const tipPosition = vec.clone().multiplyScalar(arrowLength);
 
+          // Scale handle sizes proportionally (min sizes for small objects)
+          const cubeSize = Math.max(0.3, arrowLength * 0.12);
+          const sphereRadius = Math.max(0.3, arrowLength * 0.15);
+
           let handle;
           if (isScaleMode) {
             // SCALE MODE: Cube handle
-            const cubeSize = 0.4;
             handle = new THREE.Mesh(
               new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize),
               new THREE.MeshBasicMaterial({
@@ -2236,7 +2261,7 @@ function startARTexplorer(
           } else {
             // MOVE MODE: Sphere handle
             handle = new THREE.Mesh(
-              new THREE.SphereGeometry(0.5, 16, 16),
+              new THREE.SphereGeometry(sphereRadius, 16, 16),
               new THREE.MeshBasicMaterial({
                 color: quadrayColors[i],
                 transparent: true,
@@ -2309,7 +2334,8 @@ function startARTexplorer(
           editingBasis.add(rotationHandle);
 
           // Torus hit zone for clicking (visible for debugging)
-          const hitThickness = 0.15; // Clickable area thickness
+          // Scale hit thickness proportionally (min 0.1, ~5% of arrow length)
+          const hitThickness = Math.max(0.1, arrowLength * 0.05);
           const hitZone = new THREE.Mesh(
             new THREE.TorusGeometry(circleRadius, hitThickness, 16, 64),
             new THREE.MeshBasicMaterial({
@@ -2336,7 +2362,7 @@ function startARTexplorer(
             arrowLength,
             cartesianColors[i],
             isScaleMode ? 0 : headLength, // No arrowhead in Scale mode
-            0.2
+            Math.max(0.15, arrowLength * 0.06) // Scale head width proportionally
           );
 
           editingBasis.add(arrow);
@@ -2344,10 +2370,13 @@ function startARTexplorer(
           // Add handle at arrow tip - CUBE for Scale, SPHERE for Move
           const tipPosition = vec.clone().multiplyScalar(arrowLength);
 
+          // Scale handle sizes proportionally (min sizes for small objects)
+          const cubeSize = Math.max(0.3, arrowLength * 0.12);
+          const sphereRadius = Math.max(0.3, arrowLength * 0.15);
+
           let handle;
           if (isScaleMode) {
             // SCALE MODE: Cube handle
-            const cubeSize = 0.4;
             handle = new THREE.Mesh(
               new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize),
               new THREE.MeshBasicMaterial({
@@ -2360,7 +2389,7 @@ function startARTexplorer(
           } else {
             // MOVE MODE: Sphere handle
             handle = new THREE.Mesh(
-              new THREE.SphereGeometry(0.5, 16, 16),
+              new THREE.SphereGeometry(sphereRadius, 16, 16),
               new THREE.MeshBasicMaterial({
                 color: cartesianColors[i],
                 transparent: true,
@@ -2385,8 +2414,10 @@ function startARTexplorer(
     // CENTRAL SPHERE for UNIFORM SCALING (Scale mode only)
     // ========================================================================
     if (isScaleMode) {
+      // Scale central sphere proportionally (min 0.4, ~18% of arrow length)
+      const centralRadius = Math.max(0.4, arrowLength * 0.18);
       const centralSphere = new THREE.Mesh(
-        new THREE.SphereGeometry(0.6, 32, 32),
+        new THREE.SphereGeometry(centralRadius, 32, 32),
         new THREE.MeshBasicMaterial({
           color: 0xffffff,
           transparent: true,
@@ -2406,12 +2437,12 @@ function startARTexplorer(
 
     scene.add(editingBasis);
 
-    // Log basis sizing for tuning (tetEdge drives handle scale)
+    // Log basis sizing for debugging adaptive scaling
     const systems = [];
     if (showCartesian) systems.push("XYZ");
     if (showQuadray) systems.push("WXYZ");
     console.log(
-      `✅ Editing basis created: ${systems.join("+")} | tetEdge=${tetEdge.toFixed(2)} arrowLength=${arrowLength.toFixed(2)} headLength=${headLength}`
+      `✅ Editing basis created: ${systems.join("+")} | arrowLength=${arrowLength.toFixed(2)} (adaptive) headLength=${headLength.toFixed(2)}`
     );
   }
 
