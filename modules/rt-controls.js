@@ -588,6 +588,8 @@ export const RTControls = {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
+    // NOTE: When extracting to this module, ensure renderingAPI.getCamera() is used
+    // to get the CURRENT camera (may have switched to orthographic)
     raycaster.setFromCamera(mouse, this.camera);
 
     // Get camera view direction for filtering edge-on rotation rings
@@ -595,16 +597,19 @@ export const RTControls = {
     this.camera.getWorldDirection(cameraDirection);
 
     // Check for gumball handle hits
+    // Filter out rotation rings that are edge-on to the camera (unreliable in orthographic)
     const hitTargets = [];
     this.state.editingBasis.traverse(obj => {
       if (obj.userData.isGumballHandle) {
         // For rotation handles, filter out rings that are edge-on to the camera
-        // (their axis is parallel to the view direction, making them nearly invisible)
+        // A ring's axis is PERPENDICULAR to the ring plane, so:
+        // - dot ≈ 1.0 means axis parallel to view = ring appears as full circle (KEEP)
+        // - dot ≈ 0.0 means axis perpendicular to view = ring appears edge-on (FILTER)
         if (obj.userData.isRotationHandle && obj.userData.axis) {
           const dotProduct = Math.abs(cameraDirection.dot(obj.userData.axis));
-          // If dot product > 0.85, the ring is nearly edge-on (within ~32° of parallel)
+          // If dot product < 0.15, the ring is nearly edge-on (axis perpendicular to view)
           // Skip these as they're unreliable to click in orthographic views
-          if (dotProduct > 0.85) {
+          if (dotProduct < 0.15) {
             return; // Skip this edge-on rotation ring
           }
         }
