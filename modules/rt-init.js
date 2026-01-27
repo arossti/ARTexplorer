@@ -2479,7 +2479,8 @@ function startARTexplorer(
   }
 
   /**
-   * Apply hover glow effect to a gumball handle's arrowhead
+   * Apply hover highlight to a gumball handle's arrowhead
+   * Increases opacity to make the handle appear more solid/vivid
    * @param {THREE.Mesh} handle - The hit zone mesh (contains reference to arrowCone)
    */
   function applyHandleHover(handle) {
@@ -2489,22 +2490,23 @@ function startARTexplorer(
     const visualTarget = handle.userData.arrowCone || handle;
     if (!visualTarget || !visualTarget.material) return;
 
-    // Store original color if not already stored
-    if (visualTarget.userData.originalColor === undefined) {
-      visualTarget.userData.originalColor = visualTarget.material.color.getHex();
+    // Store original opacity if not already stored
+    if (visualTarget.userData.originalOpacity === undefined) {
+      visualTarget.userData.originalOpacity = visualTarget.material.opacity;
     }
 
-    // Apply bright glow by lightening the color toward white
-    const originalColor = new THREE.Color(visualTarget.userData.originalColor);
-    const glowColor = originalColor.clone().lerp(new THREE.Color(0xffffff), 0.6);
-    visualTarget.material.color.copy(glowColor);
+    // Make material transparent if not already (required for opacity changes)
+    visualTarget.material.transparent = true;
+
+    // Increase opacity to make arrowhead more solid/vivid (preserves color)
+    visualTarget.material.opacity = 1.0;
 
     // Change cursor to indicate interactivity
     renderer.domElement.style.cursor = "pointer";
   }
 
   /**
-   * Remove hover glow effect from a gumball handle's arrowhead
+   * Remove hover highlight from a gumball handle's arrowhead
    * @param {THREE.Mesh} handle - The hit zone mesh (contains reference to arrowCone)
    */
   function clearHandleHover(handle) {
@@ -2514,9 +2516,9 @@ function startARTexplorer(
     const visualTarget = handle.userData.arrowCone || handle;
     if (!visualTarget || !visualTarget.material) return;
 
-    // Restore original color
-    if (visualTarget.userData.originalColor !== undefined) {
-      visualTarget.material.color.setHex(visualTarget.userData.originalColor);
+    // Restore original opacity
+    if (visualTarget.userData.originalOpacity !== undefined) {
+      visualTarget.material.opacity = visualTarget.userData.originalOpacity;
     }
 
     // Reset cursor
