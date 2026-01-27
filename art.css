@@ -2044,65 +2044,102 @@ button:disabled {
   gap: 4px;
 }
 
+/* HiFi Style Context Buttons */
 .context-btn {
   flex: 1;
-  padding: 5px 8px;
+  padding: 6px 10px;
   font-size: 11px;
-  background: #1a1a1a;
-  border: 1px solid #444;
-  color: #b0b0b0;
-  border-radius: 3px;
+  font-weight: 500;
+  color: var(--hifi-text-muted, #b0b0b0);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  border: none;
+  border-radius: var(--hifi-radius-sm, 3px);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15s ease-out;
   text-align: center;
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 .context-btn:hover {
-  background: #2a2a2a;
-  border-color: #666;
-  color: #e0e0e0;
+  color: var(--hifi-text, #e0e0e0);
+  background: linear-gradient(145deg, #333333, #292929);
 }
 
+/* Active state: pressed/inset with blue accent */
 .context-btn.active {
-  background: #00B4FF;
-  border-color: #00B4FF;
-  color: white;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  color: var(--hifi-accent, #00B4FF);
 }
 
+/* Object snap toggles: orange accent when active */
 .context-btn.toggle.active {
-  background: #2a2a3a;
-  border-color: #ff9944;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(255, 153, 68, 0.3);
   color: #ff9944;
 }
 
+/* Action button (NOW/Deposit) - HiFi with blue accent */
 .context-btn.action-btn {
   width: 100%;
-  background: #00cc6a;
-  border-color: #00cc6a;
-  color: #1a1a1a;
   font-weight: 600;
+  color: var(--hifi-accent, #00B4FF);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 .context-btn.action-btn:hover {
-  background: #00ff88;
-  border-color: #00ff88;
+  color: #5cb8ff;
+  background: linear-gradient(145deg, #333333, #292929);
 }
 
+.context-btn.action-btn:active {
+  color: #7DF9FF;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+/* Danger button (Delete) - HiFi with blue accent (same as action per design system) */
 .context-btn.danger-btn {
   width: 100%;
-  background: transparent;
-  border-color: #663333;
-  color: #ff6666;
+  font-weight: 500;
+  color: var(--hifi-accent, #00B4FF);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 .context-btn.danger-btn:hover {
-  background: #331a1a;
-  border-color: #ff6666;
+  color: #5cb8ff;
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+.context-btn.danger-btn:active {
+  color: #7DF9FF;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 .context-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .context-menu-divider {
