@@ -562,14 +562,268 @@ export const RTViewManager = {
   },
 
   /**
+   * Extract visible mesh faces (triangles) from the scene
+   * Projects 3D triangular faces to 2D polygons for SVG export
+   * Only includes faces on the camera side of the cutplane
+   * @returns {Array} Array of polygon objects with SVG data and fill colors
+   */
+  extractMeshFaces() {
+    const polygons = [];
+    const canvas = this._renderer.domElement;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Get cutplane for filtering faces
+    const cutplaneEnabled = this._papercut?.state?.cutplaneEnabled;
+    const cutplane = this._papercut?._cutplane;
+
+    // Skip names for non-geometry objects
+    const skipNames = [
+      "Helper",
+      "Handle",
+      "Gumball",
+      "Basis",
+      "Arrow",
+      "Cone",
+      "basis",
+      "Grid",
+      "grid",
+      "Cartesian",
+      "Quadray",
+      "CutplaneIntersection",
+    ];
+
+    this._scene.traverse(object => {
+      // Only process Mesh objects
+      if (object.type !== "Mesh" || !object.geometry) return;
+
+      // Skip invisible objects
+      if (!object.visible) return;
+      let ancestor = object.parent;
+      while (ancestor) {
+        if (!ancestor.visible) return;
+        ancestor = ancestor.parent;
+      }
+
+      // Skip helper/grid/basis objects
+      if (object.name && skipNames.some(name => object.name.includes(name))) {
+        return;
+      }
+      if (
+        object.parent?.name &&
+        skipNames.some(name => object.parent.name.includes(name))
+      ) {
+        return;
+      }
+
+      // Skip vertex nodes (handled separately)
+      if (object.userData.isVertexNode) return;
+
+      // Get material color
+      let fillColor = "#888888";
+      let fillOpacity = 0.5;
+      if (object.material) {
+        const mat = Array.isArray(object.material)
+          ? object.material[0]
+          : object.material;
+        if (mat.color) {
+          fillColor = `#${mat.color.getHexString()}`;
+        }
+        if (mat.opacity !== undefined) {
+          fillOpacity = mat.opacity;
+        }
+      }
+
+      // Get geometry data
+      const geometry = object.geometry;
+      const positionAttr = geometry.attributes.position;
+      if (!positionAttr) return;
+
+      const positions = positionAttr.array;
+      const indices = geometry.index
+        ? geometry.index.array
+        : Array.from({ length: positionAttr.count }, (_, i) => i);
+
+      // Get world matrix for transforming vertices
+      object.updateMatrixWorld();
+      const worldMatrix = object.matrixWorld;
+
+      // Process triangular faces
+      for (let i = 0; i < indices.length; i += 3) {
+        const i0 = indices[i];
+        const i1 = indices[i + 1];
+        const i2 = indices[i + 2];
+
+        // Get vertices in world space
+        const v0 = new THREE.Vector3(
+          positions[i0 * 3],
+          positions[i0 * 3 + 1],
+          positions[i0 * 3 + 2]
+        ).applyMatrix4(worldMatrix);
+
+        const v1 = new THREE.Vector3(
+          positions[i1 * 3],
+          positions[i1 * 3 + 1],
+          positions[i1 * 3 + 2]
+        ).applyMatrix4(worldMatrix);
+
+        const v2 = new THREE.Vector3(
+          positions[i2 * 3],
+          positions[i2 * 3 + 1],
+          positions[i2 * 3 + 2]
+        ).applyMatrix4(worldMatrix);
+
+        // If cutplane is enabled, skip faces behind the cutplane
+        if (cutplaneEnabled && cutplane) {
+          const d0 = cutplane.distanceToPoint(v0);
+          const d1 = cutplane.distanceToPoint(v1);
+          const d2 = cutplane.distanceToPoint(v2);
+
+          // Skip if all vertices are behind the cutplane (negative distance)
+          if (d0 < 0 && d1 < 0 && d2 < 0) continue;
+        }
+
+        // Project vertices to screen coordinates
+        const p0 = this._projectToScreen(v0, width, height);
+        const p1 = this._projectToScreen(v1, width, height);
+        const p2 = this._projectToScreen(v2, width, height);
+
+        // Calculate face centroid depth for sorting
+        const centroid = new THREE.Vector3()
+          .addVectors(v0, v1)
+          .add(v2)
+          .divideScalar(3);
+        centroid.project(this._camera);
+        const depth = centroid.z;
+
+        // Generate SVG polygon path
+        const d = `M ${p0.x.toFixed(2)} ${p0.y.toFixed(2)} L ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} L ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} Z`;
+
+        polygons.push({
+          d: d,
+          fill: fillColor,
+          fillOpacity: fillOpacity,
+          stroke: "none",
+          depth: depth,
+        });
+      }
+    });
+
+    // Sort by depth (back to front for proper layering)
+    polygons.sort((a, b) => b.depth - a.depth);
+
+    console.log(`Extracted ${polygons.length} mesh faces from scene`);
+    return polygons;
+  },
+
+  /**
+   * Extract vertex nodes (spheres) as projected circles
+   * @returns {Array} Array of circle objects with SVG data
+   */
+  extractNodes() {
+    const circles = [];
+    const canvas = this._renderer.domElement;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Get cutplane for filtering
+    const cutplaneEnabled = this._papercut?.state?.cutplaneEnabled;
+    const cutplane = this._papercut?._cutplane;
+
+    this._scene.traverse(object => {
+      // Only process vertex nodes
+      if (!object.userData.isVertexNode) return;
+      if (object.type !== "Mesh") return;
+
+      // Skip invisible objects
+      if (!object.visible) return;
+      let ancestor = object.parent;
+      while (ancestor) {
+        if (!ancestor.visible) return;
+        ancestor = ancestor.parent;
+      }
+
+      // Get node center and radius
+      const center = object.getWorldPosition(new THREE.Vector3());
+      const radius = object.userData.nodeRadius || 0.1;
+
+      // If cutplane is enabled, skip nodes behind the cutplane
+      if (cutplaneEnabled && cutplane) {
+        const dist = cutplane.distanceToPoint(center);
+        if (dist < -radius) return; // Fully behind cutplane
+      }
+
+      // Get material color
+      let fillColor = "#ff8800";
+      let fillOpacity = 0.8;
+      if (object.material) {
+        const mat = Array.isArray(object.material)
+          ? object.material[0]
+          : object.material;
+        if (mat.color) {
+          fillColor = `#${mat.color.getHexString()}`;
+        }
+        if (mat.opacity !== undefined) {
+          fillOpacity = mat.opacity;
+        }
+      }
+
+      // Project center to screen
+      const screenCenter = this._projectToScreen(center, width, height);
+
+      // Calculate projected radius (approximate)
+      // Create a point offset by radius in camera space and project it
+      const cameraRight = new THREE.Vector3();
+      this._camera.matrixWorld.extractBasis(cameraRight, new THREE.Vector3(), new THREE.Vector3());
+      const edgePoint = center.clone().add(cameraRight.multiplyScalar(radius));
+      const screenEdge = this._projectToScreen(edgePoint, width, height);
+      const screenRadius = Math.sqrt(
+        Math.pow(screenEdge.x - screenCenter.x, 2) +
+          Math.pow(screenEdge.y - screenCenter.y, 2)
+      );
+
+      // Skip very small circles (less than 2px radius)
+      if (screenRadius < 2) return;
+
+      // Calculate depth for sorting
+      center.project(this._camera);
+      const depth = center.z;
+
+      circles.push({
+        cx: screenCenter.x,
+        cy: screenCenter.y,
+        r: screenRadius,
+        fill: fillColor,
+        fillOpacity: fillOpacity,
+        stroke: "#000000",
+        strokeWidth: 0.5,
+        depth: depth,
+      });
+    });
+
+    // Sort by depth (back to front)
+    circles.sort((a, b) => b.depth - a.depth);
+
+    console.log(`Extracted ${circles.length} nodes from scene`);
+    return circles;
+  },
+
+  /**
    * Generate SVG from current view with true vector paths
    * @param {Object} options - Export options
    * @param {boolean} options.vectorMode - Use vector paths instead of raster (default: true)
    * @param {boolean} options.includeRaster - Include raster background (default: false)
+   * @param {boolean} options.includeFaces - Include mesh faces (default: true)
+   * @param {boolean} options.includeNodes - Include vertex nodes (default: true)
    * @returns {string} SVG string
    */
   generateSVG(options = {}) {
-    const { vectorMode = true, includeRaster = false } = options;
+    const {
+      vectorMode = true,
+      includeRaster = false,
+      includeFaces = true,
+      includeNodes = true,
+    } = options;
     const dims = this.getExportDimensions();
     const view = options.view || this.captureView();
 
@@ -582,30 +836,71 @@ export const RTViewManager = {
     const scaleX = dims.width / canvasWidth;
     const scaleY = dims.height / canvasHeight;
 
-    // Extract vector paths if in vector mode
+    // Helper function to scale path data
+    const scalePath = d =>
+      d.replace(/([MLZ])\s*([\d.-]+)?\s*([\d.-]+)?/g, (match, cmd, x, y) => {
+        if (cmd === "Z") return "Z";
+        const scaledX = (parseFloat(x) * scaleX).toFixed(2);
+        const scaledY = (parseFloat(y) * scaleY).toFixed(2);
+        return `${cmd} ${scaledX} ${scaledY}`;
+      });
+
+    // Extract mesh faces if enabled
+    let facesContent = "";
+    if (includeFaces && vectorMode) {
+      const faces = this.extractMeshFaces();
+
+      if (faces.length > 0) {
+        const scaledFaces = faces.map(f => ({
+          ...f,
+          d: scalePath(f.d),
+        }));
+
+        facesContent = `
+  <!-- Mesh Faces -->
+  <g id="faces">
+${scaledFaces.map(f => `    <path d="${f.d}" fill="${f.fill}" fill-opacity="${f.fillOpacity.toFixed(2)}" stroke="none"/>`).join("\n")}
+  </g>`;
+      }
+    }
+
+    // Extract vector paths (section lines) if in vector mode
     let vectorContent = "";
     if (vectorMode && this._papercut?._intersectionLines) {
       const paths = this.extractVectorPaths();
 
       if (paths.length > 0) {
         // Scale paths to SVG dimensions
-        const scaledPaths = paths.map(p => {
-          // Parse and scale the path data
-          const scaledD = p.d.replace(
-            /([ML])\s*([\d.-]+)\s+([\d.-]+)/g,
-            (match, cmd, x, y) => {
-              const scaledX = (parseFloat(x) * scaleX).toFixed(2);
-              const scaledY = (parseFloat(y) * scaleY).toFixed(2);
-              return `${cmd} ${scaledX} ${scaledY}`;
-            }
-          );
-          return { ...p, d: scaledD };
-        });
+        const scaledPaths = paths.map(p => ({
+          ...p,
+          d: scalePath(p.d),
+        }));
 
         vectorContent = `
   <!-- Section Lines (Vector) -->
   <g id="section-lines" fill="none">
 ${scaledPaths.map(p => `    <path d="${p.d}" stroke="${p.stroke}" stroke-width="${p.strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>`).join("\n")}
+  </g>`;
+      }
+    }
+
+    // Extract nodes if enabled
+    let nodesContent = "";
+    if (includeNodes && vectorMode) {
+      const nodes = this.extractNodes();
+
+      if (nodes.length > 0) {
+        const scaledNodes = nodes.map(n => ({
+          ...n,
+          cx: (n.cx * scaleX).toFixed(2),
+          cy: (n.cy * scaleY).toFixed(2),
+          r: (n.r * Math.min(scaleX, scaleY)).toFixed(2),
+        }));
+
+        nodesContent = `
+  <!-- Vertex Nodes -->
+  <g id="nodes">
+${scaledNodes.map(n => `    <circle cx="${n.cx}" cy="${n.cy}" r="${n.r}" fill="${n.fill}" fill-opacity="${n.fillOpacity.toFixed(2)}" stroke="${n.stroke}" stroke-width="${n.strokeWidth}"/>`).join("\n")}
   </g>`;
       }
     }
@@ -642,7 +937,7 @@ ${JSON.stringify(view, null, 2)}
 
   <!-- Background -->
   <rect width="100%" height="100%" fill="${view.colors.background}"/>
-${rasterContent}${vectorContent}
+${rasterContent}${facesContent}${vectorContent}${nodesContent}
 
   <!-- Title Block -->
   <g id="title-block" transform="translate(${dims.width - 120}, ${dims.height - 40})">
