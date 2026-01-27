@@ -304,7 +304,9 @@ button:active {
 
 .checkbox-label input[type="checkbox"]:checked::before {
   left: 18px;
-  background: linear-gradient(145deg, #555555, #454545);
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #555555, #454545);
   box-shadow:
     2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
     -1px -1px 2px rgba(255, 255, 255, 0.03),
@@ -345,7 +347,9 @@ button:active {
   left: 2px;
   width: 8px;
   height: 8px;
-  background: linear-gradient(145deg, #555555, #454545);
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    linear-gradient(145deg, #555555, #454545);
   border-radius: 50%;
   transition: all 0.2s ease-out;
   box-shadow:
@@ -513,7 +517,9 @@ button:active {
   left: 2px;
   width: 12px;
   height: 12px;
-  background: linear-gradient(145deg, #555555, #454545);
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #555555, #454545);
   border-radius: 50%;
   transition: all 0.2s ease-out;
   box-shadow:
@@ -2518,7 +2524,9 @@ button:disabled {
 
 .hifi-toggle.active .hifi-toggle-thumb {
   left: 20px;
-  background: linear-gradient(145deg, #555555, #454545);
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #555555, #454545);
   box-shadow:
     2px 2px 4px var(--hifi-shadow-dark),
     -1px -1px 2px rgba(255, 255, 255, 0.03),
@@ -2599,7 +2607,9 @@ button:disabled {
 
 .hifi-dropdown-toggle.expanded .hifi-dropdown-toggle-thumb {
   top: 16px;
-  background: linear-gradient(145deg, #555555, #454545);
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    linear-gradient(145deg, #555555, #454545);
   box-shadow:
     2px 2px 4px var(--hifi-shadow-dark),
     -1px -1px 2px rgba(255, 255, 255, 0.03),
