@@ -678,9 +678,48 @@ if (d0 < 0 && d1 < 0 && d2 < 0) continue;
    - Export only the portion on the visible side
 
 **Implementation Priority**:
-1. 🔴 **High**: Polyhedron edge export (biggest visual gap)
-2. 🟡 **Medium**: Grid line export
+1. ✅ **High**: Polyhedron edge export - **COMPLETE** (commit `fb3266b`)
+2. ✅ **Medium**: Grid line export - **COMPLETE** (commit `3c1e444`)
 3. 🟢 **Lower**: Proper cutplane clipping (complex, current behavior acceptable for many use cases)
+
+### Implementation Status (2026-01-27)
+
+**Commits on SVG-VIEWS2 branch:**
+- `1d651d4` - Docs: Add visual analysis and implementation plan
+- `fb3266b` - Feat: Add polyhedron edge line export to SVG
+- `3c1e444` - Feat: Add grid line export to SVG (Cartesian and Quadray)
+
+**New Functions Added to `rt-viewmanager.js`:**
+
+1. **`extractEdgeLines()`** (lines 569-704)
+   - Traverses scene for `LineSegments` with `renderOrder = 2`
+   - Applies cutplane filtering
+   - Preserves material colors (black in print mode)
+   - Stroke width: 0.5px
+
+2. **`extractGridLines()`** (lines 711-797)
+   - Finds `GridHelper` (Cartesian) and `LineSegments` with "CentralAngle" name (Quadray)
+   - Checks visibility before including
+   - Preserves Quadray grid colors
+   - Stroke width: 0.25px, opacity: 50%
+
+**Updated `generateSVG()` options:**
+- `includeGrids` (default: true)
+- `includeEdges` (default: true)
+
+**SVG Layer Order:**
+1. Background rect
+2. Raster (optional)
+3. Grid lines ← NEW
+4. Mesh faces
+5. Edge lines (wireframe) ← NEW
+6. Section lines (cut lines)
+7. Vertex nodes
+8. Title block
+
+**Remaining Work (Phase 3 - Lower Priority):**
+- Proper cutplane clipping using Sutherland-Hodgman algorithm
+- Would clip faces/edges that straddle the cutplane instead of including them fully
 
 ---
 
