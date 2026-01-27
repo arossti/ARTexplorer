@@ -568,14 +568,14 @@
         <!-- END SECTION 2: COORDINATE SYSTEMS -->
 
         <!-- ========================================
-             SECTION 3: FORMS
+             SECTION 3: PRIMITIVES
              ======================================== -->
         <div class="control-group">
           <h3>
-            <span class="section-toggle" data-target="forms-section"></span>
-            Forms
+            <span class="section-toggle collapsed" data-target="primitives-section"></span>
+            Primitives
           </h3>
-          <div id="forms-section" class="section-content">
+          <div id="primitives-section" class="section-content collapsed">
             <div class="control-item">
               <label class="checkbox-label">
                 <input type="checkbox" id="showPoint" />
@@ -847,7 +847,19 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+        <!-- END SECTION 3: PRIMITIVES -->
 
+        <!-- ========================================
+             SECTION 3B: POLYHEDRA
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span class="section-toggle" data-target="polyhedra-section"></span>
+            Polyhedra
+          </h3>
+          <div id="polyhedra-section" class="section-content">
             <div class="control-item">
               <label class="checkbox-label">
                 <input type="checkbox" id="showCube" checked />
@@ -1300,12 +1312,19 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+        <!-- END SECTION 3B: POLYHEDRA -->
 
-            <!-- ========== MATRICES ========== -->
-            <div class="matrix-divider">
-              <label class="matrix-divider-label">Matrices</label>
-            </div>
-
+        <!-- ========================================
+             SECTION 3C: PLANAR MATRICES
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span class="section-toggle collapsed" data-target="planar-matrices-section"></span>
+            Planar Matrices
+          </h3>
+          <div id="planar-matrices-section" class="section-content collapsed">
             <!-- Hexahedral Matrix (IVM) -->
             <div class="control-item">
               <label class="checkbox-label">
@@ -1496,12 +1515,19 @@
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+        <!-- END SECTION 3C: PLANAR MATRICES -->
 
-            <!-- ========== RADIAL MATRICES ========== -->
-            <div class="matrix-divider">
-              <label class="matrix-divider-label">Radial Matrices</label>
-            </div>
-
+        <!-- ========================================
+             SECTION 3D: RADIAL MATRICES
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span class="section-toggle collapsed" data-target="radial-matrices-section"></span>
+            Radial Matrices
+          </h3>
+          <div id="radial-matrices-section" class="section-content collapsed">
             <!-- Hexahedral Radial Matrix (Cube) -->
             <div class="control-item">
               <label class="checkbox-label">
@@ -1682,7 +1708,7 @@
             </div>
           </div>
         </div>
-        <!-- END SECTION 3: FORMS -->
+        <!-- END SECTION 3D: RADIAL MATRICES -->
 
         <!-- ========================================
              SECTION 4: CONTROLS
@@ -1965,37 +1991,41 @@
             Camera
           </h3>
           <div id="view-section" class="section-content collapsed">
+            <!-- Projection Mode -->
             <div class="control-item">
+              <label class="label-section">Projection</label>
+              <div class="toggle-btn-group">
+                <button class="toggle-btn variant-standard active" id="cameraPerspective">
+                  Perspective
+                </button>
+                <button class="toggle-btn variant-standard" id="cameraOrthographic">
+                  Orthographic
+                </button>
+                <button class="toggle-btn variant-standard" id="cameraCentre">
+                  Centre
+                </button>
+              </div>
+            </div>
+
+            <!-- XYZ Cartesian Views -->
+            <div class="control-item spacing-top-large">
               <label class="label-section">XYZ Cartesian Views</label>
               <div class="button-grid-2col">
-                <button class="toggle-btn variant-standard" id="viewTop">
-                  Top
+                <button class="toggle-btn variant-standard" id="viewX">
+                  X
                 </button>
-                <button class="toggle-btn variant-standard" id="viewBottom">
-                  Bottom
+                <button class="toggle-btn variant-standard" id="viewY">
+                  Y
                 </button>
-                <button class="toggle-btn variant-standard" id="viewLeft">
-                  Left
+                <button class="toggle-btn variant-standard" id="viewZDown">
+                  Z-Down
                 </button>
-                <button class="toggle-btn variant-standard" id="viewRight">
-                  Right
-                </button>
-                <button class="toggle-btn variant-standard" id="viewFront">
-                  Front
-                </button>
-                <button class="toggle-btn variant-standard" id="viewBack">
-                  Back
+                <button class="toggle-btn variant-standard" id="viewZUp">
+                  Z-Up
                 </button>
                 <button class="toggle-btn variant-standard" id="viewAxo">
                   Axo
                 </button>
-                <button
-                  class="toggle-btn variant-standard"
-                  id="viewPerspective"
-                >
-                  Perspective
-                </button>
-                <button class="toggle-btn variant-standard" id="resetCamera">Reset</button>
               </div>
             </div>
 
@@ -2006,31 +2036,20 @@
               />
               <label class="label-section">WXYZ Tetrahedral Views</label>
               <div class="button-grid-2col">
-                <button class="toggle-btn variant-standard" id="viewW">
-                  W View
+                <button class="toggle-btn variant-standard" id="viewQuadW">
+                  W
                 </button>
-                <button class="toggle-btn variant-standard" id="viewX">
-                  X View
+                <button class="toggle-btn variant-standard" id="viewQuadX">
+                  X
                 </button>
-                <button class="toggle-btn variant-standard" id="viewY">
-                  Y View
+                <button class="toggle-btn variant-standard" id="viewQuadY">
+                  Y
                 </button>
-                <button class="toggle-btn variant-standard" id="viewZ">
-                  Z View
+                <button class="toggle-btn variant-standard" id="viewQuadZ">
+                  Z
                 </button>
               </div>
             </div>
-
-            <!-- Camera Projection Controls -->
-            <div class="control-item spacing-top-large">
-              <label class="checkbox-label">
-                <input type="checkbox" id="orthoPerspective" />
-                Orthographic (Plan/Elevation)
-              </label>
-            </div>
-            <p class="info-text">
-              Switch between standard views and projection types
-            </p>
           </div>
         </div>
         <!-- END SECTION 7: CAMERA -->
@@ -2220,81 +2239,79 @@
               Performance metrics compare RT algebraic methods vs classical
               trigonometry
             </p>
-
-            <div
-              style="
-                margin-top: 15px;
-                padding-top: 12px;
-                border-top: 1px solid #444;
-              "
-            >
-              <p style="font-size: 10px; color: #888; margin-bottom: 6px">
-                <strong style="color: #7ab8ff">Interactive Math Demos:</strong>
-              </p>
-              <ul
-                style="
-                  font-size: 10px;
-                  color: #7ab8ff;
-                  margin-left: 15px;
-                  line-height: 1.6;
-                "
-              >
-                <li>
-                  <a
-                    href="#"
-                    id="open-quadrance-demo"
-                    style="color: #7ab8ff; text-decoration: none"
-                  >
-                    Quadrance
-                  </a>
-                  <span style="color: #888"> - rational distance</span>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    id="open-cross-demo"
-                    style="color: #7ab8ff; text-decoration: none"
-                  >
-                    Cross Product
-                  </a>
-                  <span style="color: #888">
-                    - vector relationships & spread</span
-                  >
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    id="open-weierstrass-demo"
-                    style="color: #7ab8ff; text-decoration: none"
-                  >
-                    Weierstrass
-                  </a>
-                  <span style="color: #888"> - circle parametrization</span>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    id="open-color-theory-modal"
-                    style="color: #7ab8ff; text-decoration: none"
-                  >
-                    Color Theory
-                  </a>
-                  <span style="color: #888">
-                    - backface culling calibration</span
-                  >
-                </li>
-              </ul>
-              <p
-                class="info-text"
-                style="font-size: 9px; margin-top: 6px; font-style: italic"
-              >
-                Explore the rational trigonometry foundations used for WXYZ and
-                XYZ rotations
-              </p>
-            </div>
           </div>
         </div>
         <!-- END SECTION 9: GEOMETRY INFO -->
+
+        <!-- ========================================
+             SECTION 10: MATH DEMOS
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span class="section-toggle collapsed" data-target="math-demos-section"></span>
+            Math Demos
+          </h3>
+          <div id="math-demos-section" class="section-content collapsed">
+            <p class="info-text" style="font-size: 10px; margin-bottom: 8px">
+              Explore the rational trigonometry foundations used for WXYZ and
+              XYZ rotations
+            </p>
+            <ul
+              style="
+                font-size: 11px;
+                color: #7ab8ff;
+                margin-left: 15px;
+                line-height: 1.8;
+              "
+            >
+              <li>
+                <a
+                  href="#"
+                  id="open-quadrance-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Quadrance
+                </a>
+                <span style="color: #888"> - rational distance</span>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-cross-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Cross Product
+                </a>
+                <span style="color: #888">
+                  - vector relationships & spread</span
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-weierstrass-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Weierstrass
+                </a>
+                <span style="color: #888"> - circle parametrization</span>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-color-theory-modal"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Color Theory
+                </a>
+                <span style="color: #888">
+                  - backface culling calibration</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+        <!-- END SECTION 10: MATH DEMOS -->
       </div>
     </div>
 

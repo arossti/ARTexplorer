@@ -1268,30 +1268,45 @@ function startARTexplorer(
       renderingAPI.rebuildCartesianGrids(tessValue, visibilityState);
     });
 
-  // Reset camera to default axo view
-  document.getElementById("resetCamera").addEventListener("click", () => {
-    renderingAPI.setCameraPreset("axo");
-  });
-
   // ========================================================================
   // VIEW CONTROLS - Camera Presets
   // ========================================================================
 
+  // Projection mode buttons (Perspective / Orthographic / Centre)
+  const perspectiveBtn = document.getElementById("cameraPerspective");
+  const orthographicBtn = document.getElementById("cameraOrthographic");
+  const centreBtn = document.getElementById("cameraCentre");
+
+  perspectiveBtn.addEventListener("click", () => {
+    renderingAPI.switchCameraType(false); // Switch to perspective
+    perspectiveBtn.classList.add("active");
+    orthographicBtn.classList.remove("active");
+  });
+
+  orthographicBtn.addEventListener("click", () => {
+    renderingAPI.switchCameraType(true); // Switch to orthographic
+    orthographicBtn.classList.add("active");
+    perspectiveBtn.classList.remove("active");
+  });
+
+  // Centre: Re-centre camera on origin while preserving current projection mode and direction
+  centreBtn.addEventListener("click", () => {
+    renderingAPI.resetCameraTarget();
+  });
+
   // Enable view preset buttons and wire up event listeners
   const viewButtons = [
-    { id: "viewTop", view: "top" },
-    { id: "viewBottom", view: "bottom" },
-    { id: "viewLeft", view: "left" },
-    { id: "viewRight", view: "right" },
-    { id: "viewFront", view: "front" },
-    { id: "viewBack", view: "back" },
-    { id: "viewAxo", view: "axo" },
-    { id: "viewPerspective", view: "perspective" },
-    // WXYZ Tetrahedral Basis Views
-    { id: "viewW", view: "w" },
+    // XYZ Cartesian Views (looking down each axis)
     { id: "viewX", view: "x" },
     { id: "viewY", view: "y" },
-    { id: "viewZ", view: "z" },
+    { id: "viewZDown", view: "zdown" },
+    { id: "viewZUp", view: "zup" },
+    { id: "viewAxo", view: "axo" },
+    // WXYZ Tetrahedral Basis Views (looking down each quadray axis)
+    { id: "viewQuadW", view: "quadw" },
+    { id: "viewQuadX", view: "quadx" },
+    { id: "viewQuadY", view: "quady" },
+    { id: "viewQuadZ", view: "quadz" },
   ];
 
   // Track active view button for persistent highlighting
@@ -1311,12 +1326,6 @@ function startARTexplorer(
 
       renderingAPI.setCameraPreset(view);
     });
-  });
-
-  // Orthographic/Perspective toggle (works for both XYZ and WXYZ views)
-  const orthoCheckbox = document.getElementById("orthoPerspective");
-  orthoCheckbox.addEventListener("change", e => {
-    renderingAPI.switchCameraType(e.target.checked);
   });
 
   // ========================================================================
@@ -2533,12 +2542,29 @@ function startARTexplorer(
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    raycaster.setFromCamera(mouse, camera);
+    // IMPORTANT: Get CURRENT camera from renderingAPI (may have switched to orthographic)
+    const currentCamera = renderingAPI.getCamera();
+    raycaster.setFromCamera(mouse, currentCamera);
+
+    // Get camera view direction for filtering edge-on rotation rings
+    const cameraDirection = new THREE.Vector3();
+    currentCamera.getWorldDirection(cameraDirection);
 
     // Collect all gumball handle hit targets
+    // Filter out rotation rings that are edge-on to the camera (unreliable in orthographic)
     const hitTargets = [];
     editingBasis.traverse(obj => {
       if (obj.userData.isGumballHandle) {
+        // For rotation handles, filter out rings that are edge-on to the camera
+        if (obj.userData.isRotationHandle && obj.userData.basisAxis) {
+          const dotProduct = Math.abs(
+            cameraDirection.dot(obj.userData.basisAxis)
+          );
+          // If dot product < 0.15, the ring is nearly edge-on - skip it
+          if (dotProduct < 0.15) {
+            return;
+          }
+        }
         hitTargets.push(obj);
       }
     });
@@ -3277,14 +3303,35 @@ function startARTexplorer(
         mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-        raycaster.setFromCamera(mouse, camera);
+        // IMPORTANT: Get CURRENT camera from renderingAPI (may have switched to orthographic)
+        const currentCamera = renderingAPI.getCamera();
+        raycaster.setFromCamera(mouse, currentCamera);
 
         // Check editing basis (localized gumball) if it exists
         if (editingBasis) {
+          // Get camera view direction for filtering edge-on rotation rings
+          const cameraDirection = new THREE.Vector3();
+          currentCamera.getWorldDirection(cameraDirection);
+
           // Collect all gumball handle hit spheres from editing basis
+          // Filter out rotation rings that are edge-on to the camera (unreliable in orthographic)
           const hitTargets = [];
           editingBasis.traverse(obj => {
             if (obj.userData.isGumballHandle) {
+              // For rotation handles, filter out rings that are edge-on to the camera
+              // A ring's axis is PERPENDICULAR to the ring plane, so:
+              // - dot ≈ 1.0 means axis parallel to view = ring appears as full circle (KEEP)
+              // - dot ≈ 0.0 means axis perpendicular to view = ring appears edge-on (FILTER)
+              if (obj.userData.isRotationHandle && obj.userData.basisAxis) {
+                const dotProduct = Math.abs(
+                  cameraDirection.dot(obj.userData.basisAxis)
+                );
+                // If dot product < 0.15, the ring is nearly edge-on (axis perpendicular to view)
+                // Skip these as they're unreliable to click in orthographic views
+                if (dotProduct < 0.15) {
+                  return; // Skip this edge-on rotation ring
+                }
+              }
               hitTargets.push(obj);
             }
           });

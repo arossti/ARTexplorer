@@ -275,7 +275,7 @@ button:active {
     inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
     inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
   flex-shrink: 0;
-  margin: 2px 4px 2px 2px;
+  margin: 3px 4px -4px 2px; /* Align with text, tightens line spacing */
 }
 
 /* Toggle thumb (using ::before pseudo-element) */
@@ -304,7 +304,9 @@ button:active {
 
 .checkbox-label input[type="checkbox"]:checked::before {
   left: 18px;
-  background: linear-gradient(145deg, #555555, #454545);
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #555555, #454545);
   box-shadow:
     2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
     -1px -1px 2px rgba(255, 255, 255, 0.03),
@@ -314,6 +316,13 @@ button:active {
 /* Hover state */
 .checkbox-label:hover input[type="checkbox"]::before {
   background: linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover state when checked - keep the LED dot */
+.checkbox-label:hover input[type="checkbox"]:checked::before {
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #585858, #484848);
 }
 
 /* Collapsible geodesic controls */
@@ -345,7 +354,9 @@ button:active {
   left: 2px;
   width: 8px;
   height: 8px;
-  background: linear-gradient(145deg, #555555, #454545);
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    linear-gradient(145deg, #555555, #454545);
   border-radius: 50%;
   transition: all 0.2s ease-out;
   box-shadow:
@@ -370,6 +381,13 @@ button:active {
 }
 
 .geodesic-toggle:hover::before {
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when collapsed - no LED dot */
+.geodesic-toggle.collapsed:hover::before {
   background: linear-gradient(145deg, #585858, #484848);
 }
 
@@ -513,7 +531,9 @@ button:active {
   left: 2px;
   width: 12px;
   height: 12px;
-  background: linear-gradient(145deg, #555555, #454545);
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #555555, #454545);
   border-radius: 50%;
   transition: all 0.2s ease-out;
   box-shadow:
@@ -538,6 +558,13 @@ button:active {
 }
 
 .section-toggle:hover::before {
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when collapsed - no LED dot */
+.section-toggle.collapsed:hover::before {
   background: linear-gradient(145deg, #585858, #484848);
 }
 
@@ -765,11 +792,8 @@ button:disabled {
   margin-top: 4px;
 }
 
-/* Toggle variant (for generic toggles like Node Geometry) */
-.toggle-btn.variant-toggle {
-  /* Inherits base HiFi style */
-}
-
+/* Toggle variant (for generic toggles like Node Geometry)
+   Inherits base HiFi style - only hover/active states need overrides */
 .toggle-btn.variant-toggle:hover {
   color: var(--hifi-text, #e0e0e0);
 }
@@ -2044,65 +2068,102 @@ button:disabled {
   gap: 4px;
 }
 
+/* HiFi Style Context Buttons */
 .context-btn {
   flex: 1;
-  padding: 5px 8px;
+  padding: 6px 10px;
   font-size: 11px;
-  background: #1a1a1a;
-  border: 1px solid #444;
-  color: #b0b0b0;
-  border-radius: 3px;
+  font-weight: 500;
+  color: var(--hifi-text-muted, #b0b0b0);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  border: none;
+  border-radius: var(--hifi-radius-sm, 3px);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15s ease-out;
   text-align: center;
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 .context-btn:hover {
-  background: #2a2a2a;
-  border-color: #666;
-  color: #e0e0e0;
+  color: var(--hifi-text, #e0e0e0);
+  background: linear-gradient(145deg, #333333, #292929);
 }
 
+/* Active state: pressed/inset with blue accent */
 .context-btn.active {
-  background: #00B4FF;
-  border-color: #00B4FF;
-  color: white;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  color: var(--hifi-accent, #00B4FF);
 }
 
+/* Object snap toggles: orange accent when active */
 .context-btn.toggle.active {
-  background: #2a2a3a;
-  border-color: #ff9944;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(255, 153, 68, 0.3);
   color: #ff9944;
 }
 
+/* Action button (NOW/Deposit) - HiFi with blue accent */
 .context-btn.action-btn {
   width: 100%;
-  background: #00cc6a;
-  border-color: #00cc6a;
-  color: #1a1a1a;
   font-weight: 600;
+  color: var(--hifi-accent, #00B4FF);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 .context-btn.action-btn:hover {
-  background: #00ff88;
-  border-color: #00ff88;
+  color: #5cb8ff;
+  background: linear-gradient(145deg, #333333, #292929);
 }
 
+.context-btn.action-btn:active {
+  color: #7DF9FF;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+/* Danger button (Delete) - HiFi with blue accent (same as action per design system) */
 .context-btn.danger-btn {
   width: 100%;
-  background: transparent;
-  border-color: #663333;
-  color: #ff6666;
+  font-weight: 500;
+  color: var(--hifi-accent, #00B4FF);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 .context-btn.danger-btn:hover {
-  background: #331a1a;
-  border-color: #ff6666;
+  color: #5cb8ff;
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+.context-btn.danger-btn:active {
+  color: #7DF9FF;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
 }
 
 .context-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .context-menu-divider {
@@ -2481,7 +2542,9 @@ button:disabled {
 
 .hifi-toggle.active .hifi-toggle-thumb {
   left: 20px;
-  background: linear-gradient(145deg, #555555, #454545);
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #555555, #454545);
   box-shadow:
     2px 2px 4px var(--hifi-shadow-dark),
     -1px -1px 2px rgba(255, 255, 255, 0.03),
@@ -2500,6 +2563,13 @@ button:disabled {
 
 .hifi-toggle-label:hover .hifi-toggle-thumb {
   background: linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when active - keep the LED dot */
+.hifi-toggle-label:hover .hifi-toggle.active .hifi-toggle-thumb {
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #585858, #484848);
 }
 
 /* Small toggle (USE FOR ALL FORM TOGGLES) */
@@ -2562,7 +2632,9 @@ button:disabled {
 
 .hifi-dropdown-toggle.expanded .hifi-dropdown-toggle-thumb {
   top: 16px;
-  background: linear-gradient(145deg, #555555, #454545);
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    linear-gradient(145deg, #555555, #454545);
   box-shadow:
     2px 2px 4px var(--hifi-shadow-dark),
     -1px -1px 2px rgba(255, 255, 255, 0.03),
@@ -2571,6 +2643,13 @@ button:disabled {
 
 .hifi-dropdown-toggle:hover .hifi-dropdown-toggle-thumb {
   background: linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when expanded - keep the LED dot */
+.hifi-dropdown-toggle.expanded:hover .hifi-dropdown-toggle-thumb {
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    linear-gradient(145deg, #585858, #484848);
 }
 
 /* Small dropdown toggle (for nested options) */
