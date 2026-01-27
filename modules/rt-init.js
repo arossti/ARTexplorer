@@ -2271,8 +2271,9 @@ function startARTexplorer(
             editingBasis.add(arrow);
 
             // Tetrahedron handle (visible, same opacity style as scale cubes)
+            const tetraGeom = new THREE.TetrahedronGeometry(tetraSize);
             handle = new THREE.Mesh(
-              new THREE.TetrahedronGeometry(tetraSize),
+              tetraGeom,
               new THREE.MeshBasicMaterial({
                 color: quadrayColors[i],
                 transparent: true,
@@ -2281,10 +2282,24 @@ function startARTexplorer(
               })
             );
 
-            // Orient tetrahedron to point along the axis direction
-            const defaultUp = new THREE.Vector3(0, 1, 0);
+            // Orient tetrahedron so one VERTEX points along the axis direction
+            // (matching quadray basis vector tetrahedra orientation from rt-grids.js)
+            // Find the vertex closest to pointing in our axis direction
+            const posAttr = tetraGeom.getAttribute("position");
+            let bestVertex = new THREE.Vector3();
+            let maxDot = -Infinity;
+            for (let vi = 0; vi < posAttr.count; vi++) {
+              const v = new THREE.Vector3().fromBufferAttribute(posAttr, vi);
+              const dot = v.clone().normalize().dot(vec);
+              if (dot > maxDot) {
+                maxDot = dot;
+                bestVertex.copy(v);
+              }
+            }
+            // Orient so that vertex points along our axis
+            const currentDir = bestVertex.clone().normalize();
             const quaternion = new THREE.Quaternion().setFromUnitVectors(
-              defaultUp,
+              currentDir,
               vec
             );
             handle.setRotationFromQuaternion(quaternion);
@@ -2417,8 +2432,9 @@ function startARTexplorer(
             editingBasis.add(arrow);
 
             // Tetrahedron handle (visible, same opacity style as scale cubes)
+            const tetraGeom = new THREE.TetrahedronGeometry(tetraSize);
             handle = new THREE.Mesh(
-              new THREE.TetrahedronGeometry(tetraSize),
+              tetraGeom,
               new THREE.MeshBasicMaterial({
                 color: cartesianColors[i],
                 transparent: true,
@@ -2427,10 +2443,24 @@ function startARTexplorer(
               })
             );
 
-            // Orient tetrahedron to point along the axis direction
-            const defaultUp = new THREE.Vector3(0, 1, 0);
+            // Orient tetrahedron so one VERTEX points along the axis direction
+            // (matching quadray basis vector tetrahedra orientation from rt-grids.js)
+            // Find the vertex closest to pointing in our axis direction
+            const posAttr = tetraGeom.getAttribute("position");
+            let bestVertex = new THREE.Vector3();
+            let maxDot = -Infinity;
+            for (let vi = 0; vi < posAttr.count; vi++) {
+              const v = new THREE.Vector3().fromBufferAttribute(posAttr, vi);
+              const dot = v.clone().normalize().dot(vec);
+              if (dot > maxDot) {
+                maxDot = dot;
+                bestVertex.copy(v);
+              }
+            }
+            // Orient so that vertex points along our axis
+            const currentDir = bestVertex.clone().normalize();
             const quaternion = new THREE.Quaternion().setFromUnitVectors(
-              defaultUp,
+              currentDir,
               vec
             );
             handle.setRotationFromQuaternion(quaternion);
