@@ -1965,7 +1965,24 @@
             Camera
           </h3>
           <div id="view-section" class="section-content collapsed">
+            <!-- Projection Mode -->
             <div class="control-item">
+              <label class="label-section">Projection</label>
+              <div class="toggle-btn-group">
+                <button class="toggle-btn variant-standard active" id="cameraPerspective">
+                  Perspective
+                </button>
+                <button class="toggle-btn variant-standard" id="cameraOrthographic">
+                  Orthographic
+                </button>
+                <button class="toggle-btn variant-standard" id="cameraCentre">
+                  Centre
+                </button>
+              </div>
+            </div>
+
+            <!-- XYZ Cartesian Views -->
+            <div class="control-item spacing-top-large">
               <label class="label-section">XYZ Cartesian Views</label>
               <div class="button-grid-2col">
                 <button class="toggle-btn variant-standard" id="viewX">
@@ -1983,13 +2000,6 @@
                 <button class="toggle-btn variant-standard" id="viewAxo">
                   Axo
                 </button>
-                <button
-                  class="toggle-btn variant-standard active"
-                  id="viewPerspective"
-                >
-                  Perspective
-                </button>
-                <button class="toggle-btn variant-standard" id="resetCamera">Reset</button>
               </div>
             </div>
 
@@ -2014,17 +2024,6 @@
                 </button>
               </div>
             </div>
-
-            <!-- Camera Projection Controls -->
-            <div class="control-item spacing-top-large">
-              <label class="checkbox-label">
-                <input type="checkbox" id="orthoPerspective" />
-                Orthographic (Plan/Elevation)
-              </label>
-            </div>
-            <p class="info-text">
-              Switch between standard views and projection types
-            </p>
           </div>
         </div>
         <!-- END SECTION 7: CAMERA -->

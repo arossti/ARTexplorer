@@ -1268,14 +1268,31 @@ function startARTexplorer(
       renderingAPI.rebuildCartesianGrids(tessValue, visibilityState);
     });
 
-  // Reset camera to default axo view
-  document.getElementById("resetCamera").addEventListener("click", () => {
-    renderingAPI.setCameraPreset("axo");
-  });
-
   // ========================================================================
   // VIEW CONTROLS - Camera Presets
   // ========================================================================
+
+  // Projection mode buttons (Perspective / Orthographic / Centre)
+  const perspectiveBtn = document.getElementById("cameraPerspective");
+  const orthographicBtn = document.getElementById("cameraOrthographic");
+  const centreBtn = document.getElementById("cameraCentre");
+
+  perspectiveBtn.addEventListener("click", () => {
+    renderingAPI.switchCameraType(false); // Switch to perspective
+    perspectiveBtn.classList.add("active");
+    orthographicBtn.classList.remove("active");
+  });
+
+  orthographicBtn.addEventListener("click", () => {
+    renderingAPI.switchCameraType(true); // Switch to orthographic
+    orthographicBtn.classList.add("active");
+    perspectiveBtn.classList.remove("active");
+  });
+
+  // Centre: Re-centre camera on origin while preserving current projection mode and direction
+  centreBtn.addEventListener("click", () => {
+    renderingAPI.resetCameraTarget();
+  });
 
   // Enable view preset buttons and wire up event listeners
   const viewButtons = [
@@ -1285,7 +1302,6 @@ function startARTexplorer(
     { id: "viewZDown", view: "zdown" },
     { id: "viewZUp", view: "zup" },
     { id: "viewAxo", view: "axo" },
-    { id: "viewPerspective", view: "perspective" },
     // WXYZ Tetrahedral Basis Views (looking down each quadray axis)
     { id: "viewQuadW", view: "quadw" },
     { id: "viewQuadX", view: "quadx" },
@@ -1310,12 +1326,6 @@ function startARTexplorer(
 
       renderingAPI.setCameraPreset(view);
     });
-  });
-
-  // Orthographic/Perspective toggle (works for both XYZ and WXYZ views)
-  const orthoCheckbox = document.getElementById("orthoPerspective");
-  orthoCheckbox.addEventListener("change", e => {
-    renderingAPI.switchCameraType(e.target.checked);
   });
 
   // ========================================================================

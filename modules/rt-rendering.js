@@ -2534,6 +2534,18 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   /**
+   * Reset camera target to origin
+   * Re-centers view on origin while preserving current camera position and projection mode
+   */
+  function resetCameraTarget() {
+    // Reset target to origin (re-centers the orbit pivot point)
+    controls.target.set(0, 0, 0);
+    camera.lookAt(0, 0, 0);
+    controls.update();
+    console.log("✅ Camera target reset to origin");
+  }
+
+  /**
    * Get all form groups for selection system
    * @returns {Object} Object containing all form group references
    */
@@ -3270,6 +3282,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // Camera controls
     switchCameraType,
     setCameraPreset,
+    resetCameraTarget,
 
     // Getters for THREE.js objects (needed by rt-init.js)
     getScene: () => scene,
