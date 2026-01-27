@@ -2,14 +2,10 @@
  * A.R.T. Explorer - Right-Click Context Menu
  * Provides quick access to transform tools and actions for selected polyhedra
  *
- * Keyboard shortcuts:
- * - Shift+F10 (PC) or Ctrl+Space (Mac/PC): Open context menu for selected form
- * - Escape: Close context menu
- *
  * @author Andy Ross Thomson
  */
 
-export function initContextMenu(THREE, scene, camera, renderer, options = {}) {
+export function initContextMenu(THREE, scene, camera, renderer) {
   // Module state
   const state = {
     menu: null,
@@ -18,9 +14,6 @@ export function initContextMenu(THREE, scene, camera, renderer, options = {}) {
     raycaster: new THREE.Raycaster(),
     mouse: new THREE.Vector2(),
   };
-
-  // Optional callback to get current selection from main app
-  const getSelection = options.getSelection || null;
 
   // Initialize DOM references
   state.menu = document.getElementById("polyhedron-context-menu");
@@ -207,62 +200,10 @@ export function initContextMenu(THREE, scene, camera, renderer, options = {}) {
     }
   });
 
-  // Show context menu for a specific target at a position
-  function showForTarget(target, x, y) {
-    if (!target) return;
-
-    state.target = target;
-
-    // Update title
-    const typeName = target.userData.type || "Polyhedron";
-    const displayName = typeName.charAt(0).toUpperCase() + typeName.slice(1);
-    state.titleEl.textContent = target.userData.isInstance
-      ? `${displayName} (Instance)`
-      : displayName;
-
-    syncState();
-    show(x, y);
-  }
-
-  // Get screen position for a 3D object (for keyboard-invoked menu)
-  function getScreenPosition(object) {
-    const vector = new THREE.Vector3();
-    object.getWorldPosition(vector);
-    vector.project(camera);
-
-    const rect = renderer.domElement.getBoundingClientRect();
-    const x = ((vector.x + 1) / 2) * rect.width + rect.left;
-    const y = ((-vector.y + 1) / 2) * rect.height + rect.top;
-
-    return { x, y };
-  }
-
-  // Event: Keyboard shortcuts
-  // - Escape: Close context menu
-  // - Shift+F10 (PC standard): Open context menu for selection
-  // - Ctrl+Space (cross-platform): Open context menu for selection
+  // Event: Escape to dismiss
   document.addEventListener("keydown", event => {
-    // Escape to dismiss
     if (event.key === "Escape") {
       hide();
-      return;
-    }
-
-    // Shift+F10 (PC context menu key equivalent) or Ctrl+Space (cross-platform)
-    const isShiftF10 = event.shiftKey && event.key === "F10";
-    const isCtrlSpace = event.ctrlKey && event.key === " ";
-
-    if (isShiftF10 || isCtrlSpace) {
-      event.preventDefault();
-
-      // Get current selection from main app if callback provided
-      const selection = getSelection ? getSelection() : null;
-
-      if (selection) {
-        // Show menu near the selected object's screen position
-        const pos = getScreenPosition(selection);
-        showForTarget(selection, pos.x, pos.y);
-      }
     }
   });
 
@@ -279,7 +220,6 @@ export function initContextMenu(THREE, scene, camera, renderer, options = {}) {
     show,
     hide,
     syncState,
-    showForTarget,
     getTarget: () => state.target,
   };
 }

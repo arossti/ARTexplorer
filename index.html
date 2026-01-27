@@ -2404,18 +2404,11 @@
             const scene = window.renderingAPI.getScene();
             const camera = window.renderingAPI.getCamera();
             const renderer = window.renderingAPI.getRenderer();
-
-            // Initialize context menu with selection callback
-            // Keyboard shortcuts: Shift+F10 (PC) or Ctrl+Space (Mac/PC)
             window.contextMenuAPI = initContextMenu(
               window.THREE,
               scene,
               camera,
-              renderer,
-              {
-                getSelection: () =>
-                  window.RTSelection ? window.RTSelection.getCurrent() : null,
-              }
+              renderer
             );
           }
         }, 100);

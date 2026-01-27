@@ -4401,14 +4401,6 @@ function startARTexplorer(
   RTPapercut.init(scene, camera, renderer);
   window.RTPapercut = RTPapercut; // Global access for debugging
 
-  // ========================================================================
-  // SELECTION API - Expose current selection for context menu keyboard access
-  // ========================================================================
-  window.RTSelection = {
-    getCurrent: () => currentSelection,
-    getSelected: getSelectedPolyhedra,
-  };
-
   // Wire up cutplane axis selector buttons
   const cutplaneAxisButtons = [
     // Cartesian basis
