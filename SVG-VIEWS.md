@@ -476,11 +476,18 @@ export const RTViewManager = {
 - ✅ Title block with view name and date
 
 **Known Issues (To Fix):**
-1. **Save Button Stuck in Down State** - After clicking Save, the button remains visually pressed
-2. **Orbit Controls Freeze** - Camera orbit controls stop responding after Save is clicked
-3. **Geodesic Edge Vectors Not Exporting** - Geodesic wireframe edges missing from SVG
-4. **Polyhedral Edge Vectors Not Exporting** - Wireframe edges (likely hairlines) not captured
-5. **Grids Not Exporting** - Cartesian/Quadray grids not included even when visible
+
+🔴 **CRITICAL - Blocking normal app usage:**
+1. **Save Button Breaks App Controls** - After clicking Save, orbit controls freeze, right-click edit commands stop working, and general app interaction is impaired. This is a KILLER BUG that must be fixed before the feature can be used.
+2. **Save Button Stuck in Down State** - After clicking Save, the button remains visually pressed
+
+🟡 **Views Persistence:**
+3. **Views Not Persisting to JSON** - Views saved in StateManager do not appear after JSON export/import. Either views aren't being saved to StateManager, aren't included in JSON export, or aren't being restored on import.
+
+🟢 **SVG Content Missing:**
+4. **Geodesic Edge Vectors Not Exporting** - Geodesic wireframe edges missing from SVG
+5. **Polyhedral Edge Vectors Not Exporting** - Wireframe edges (likely hairlines) not captured
+6. **Grids Not Exporting** - Cartesian/Quadray grids not included even when visible
 
 **SVG Output Quality:**
 The vector SVG output is clean and high quality. Exports include:
