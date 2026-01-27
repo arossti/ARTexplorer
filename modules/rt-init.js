@@ -2228,32 +2228,27 @@ function startARTexplorer(
 
           editingBasis.add(hitZone);
         } else {
-          // MOVE/SCALE MODE: Arrow with handle at tip
-          const arrow = new THREE.ArrowHelper(
-            vec,
-            new THREE.Vector3(0, 0, 0),
-            arrowLength,
-            quadrayColors[i],
-            isScaleMode ? 0 : headLength, // No arrowhead in Scale mode
-            Math.max(0.15, arrowLength * 0.06) // Scale head width proportionally
-          );
-
-          editingBasis.add(arrow);
-
-          // Get reference to arrow's cone (arrowhead) for hover glow
-          // ArrowHelper structure: arrow.cone is the arrowhead mesh
-          const arrowCone = arrow.cone;
-
-          // Add invisible hit zone at arrow tip for raycasting
+          // MOVE/SCALE MODE: Arrow shaft with handle at tip
           const tipPosition = vec.clone().multiplyScalar(arrowLength);
 
           // Scale handle sizes proportionally (min sizes for small objects)
           const cubeSize = Math.max(0.3, arrowLength * 0.12);
-          const sphereRadius = Math.max(0.3, arrowLength * 0.15);
+          const tetraSize = Math.max(0.35, arrowLength * 0.14);
 
           let handle;
           if (isScaleMode) {
-            // SCALE MODE: Cube handle (visible)
+            // SCALE MODE: Arrow with no head, cube handle at tip
+            const arrow = new THREE.ArrowHelper(
+              vec,
+              new THREE.Vector3(0, 0, 0),
+              arrowLength,
+              quadrayColors[i],
+              0, // No arrowhead in Scale mode
+              0
+            );
+            editingBasis.add(arrow);
+
+            // Cube handle (visible, same style as working scale cubes)
             handle = new THREE.Mesh(
               new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize),
               new THREE.MeshBasicMaterial({
@@ -2264,18 +2259,35 @@ function startARTexplorer(
               })
             );
           } else {
-            // MOVE MODE: Invisible sphere hit zone (arrowhead glows on hover)
+            // MOVE MODE: Arrow with no head, tetrahedron handle at tip
+            const arrow = new THREE.ArrowHelper(
+              vec,
+              new THREE.Vector3(0, 0, 0),
+              arrowLength,
+              quadrayColors[i],
+              0, // No arrowhead - using tetrahedron instead
+              0
+            );
+            editingBasis.add(arrow);
+
+            // Tetrahedron handle (visible, same opacity style as scale cubes)
             handle = new THREE.Mesh(
-              new THREE.SphereGeometry(sphereRadius, 16, 16),
+              new THREE.TetrahedronGeometry(tetraSize),
               new THREE.MeshBasicMaterial({
                 color: quadrayColors[i],
                 transparent: true,
-                opacity: 0, // Invisible - just for raycasting
-                depthTest: false,
+                opacity: 0.5,
+                depthTest: true,
               })
             );
-            // Link the arrowhead cone to this hit zone for hover glow
-            handle.userData.arrowCone = arrowCone;
+
+            // Orient tetrahedron to point along the axis direction
+            const defaultUp = new THREE.Vector3(0, 1, 0);
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(
+              defaultUp,
+              vec
+            );
+            handle.setRotationFromQuaternion(quaternion);
           }
 
           handle.position.copy(tipPosition);
@@ -2362,31 +2374,27 @@ function startARTexplorer(
 
           editingBasis.add(hitZone);
         } else {
-          // MOVE/SCALE MODE: Arrow with handle at tip
-          const arrow = new THREE.ArrowHelper(
-            vec,
-            new THREE.Vector3(0, 0, 0),
-            arrowLength,
-            cartesianColors[i],
-            isScaleMode ? 0 : headLength, // No arrowhead in Scale mode
-            Math.max(0.15, arrowLength * 0.06) // Scale head width proportionally
-          );
-
-          editingBasis.add(arrow);
-
-          // Get reference to arrow's cone (arrowhead) for hover glow
-          const arrowCone = arrow.cone;
-
-          // Add invisible hit zone at arrow tip for raycasting
+          // MOVE/SCALE MODE: Arrow shaft with handle at tip
           const tipPosition = vec.clone().multiplyScalar(arrowLength);
 
           // Scale handle sizes proportionally (min sizes for small objects)
           const cubeSize = Math.max(0.3, arrowLength * 0.12);
-          const sphereRadius = Math.max(0.3, arrowLength * 0.15);
+          const tetraSize = Math.max(0.35, arrowLength * 0.14);
 
           let handle;
           if (isScaleMode) {
-            // SCALE MODE: Cube handle (visible)
+            // SCALE MODE: Arrow with no head, cube handle at tip
+            const arrow = new THREE.ArrowHelper(
+              vec,
+              new THREE.Vector3(0, 0, 0),
+              arrowLength,
+              cartesianColors[i],
+              0, // No arrowhead in Scale mode
+              0
+            );
+            editingBasis.add(arrow);
+
+            // Cube handle (visible, same style as working scale cubes)
             handle = new THREE.Mesh(
               new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize),
               new THREE.MeshBasicMaterial({
@@ -2397,18 +2405,35 @@ function startARTexplorer(
               })
             );
           } else {
-            // MOVE MODE: Invisible sphere hit zone (arrowhead glows on hover)
+            // MOVE MODE: Arrow with no head, tetrahedron handle at tip
+            const arrow = new THREE.ArrowHelper(
+              vec,
+              new THREE.Vector3(0, 0, 0),
+              arrowLength,
+              cartesianColors[i],
+              0, // No arrowhead - using tetrahedron instead
+              0
+            );
+            editingBasis.add(arrow);
+
+            // Tetrahedron handle (visible, same opacity style as scale cubes)
             handle = new THREE.Mesh(
-              new THREE.SphereGeometry(sphereRadius, 16, 16),
+              new THREE.TetrahedronGeometry(tetraSize),
               new THREE.MeshBasicMaterial({
                 color: cartesianColors[i],
                 transparent: true,
-                opacity: 0, // Invisible - just for raycasting
-                depthTest: false,
+                opacity: 0.5,
+                depthTest: true,
               })
             );
-            // Link the arrowhead cone to this hit zone for hover glow
-            handle.userData.arrowCone = arrowCone;
+
+            // Orient tetrahedron to point along the axis direction
+            const defaultUp = new THREE.Vector3(0, 1, 0);
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(
+              defaultUp,
+              vec
+            );
+            handle.setRotationFromQuaternion(quaternion);
           }
 
           handle.position.copy(tipPosition);
