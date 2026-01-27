@@ -459,7 +459,7 @@ export const RTViewManager = {
 
 ## Implementation Progress
 
-### Status: Phase 2 Complete (2026-01-27)
+### Status: Phase 3 Complete (2026-01-27)
 
 **What's Working:**
 - ✅ Full `rt-viewmanager.js` module with 1000+ lines of functionality
@@ -474,103 +474,56 @@ export const RTViewManager = {
 - ✅ Views table UI with sort, load, export, delete actions
 - ✅ Bulk actions (Export All, Import, Clear)
 - ✅ Title block with view name and date
+- ✅ **Save button works correctly** - no longer freezes orbit controls
+- ✅ **Views persist through JSON export/import** - fully integrated with RTFileHandler
 
-**Known Issues (To Fix):**
+**Bugs Fixed (2026-01-27):**
 
-🔴 **CRITICAL - Blocking normal app usage:**
-1. **Save Button Breaks App Controls** - After clicking Save, orbit controls freeze, right-click edit commands stop working, and general app interaction is impaired. This is a KILLER BUG that must be fixed before the feature can be used.
-2. **Save Button Stuck in Down State** - After clicking Save, the button remains visually pressed
+✅ ~~**Save Button Breaks App Controls**~~ - **FIXED**: Save button had `variant-tool` class which registered it as a gumball tool, disabling orbit controls. Changed to `variant-standard`.
 
-🟡 **Views Persistence:**
-3. **Views Not Persisting to JSON** - Views saved in StateManager do not appear after JSON export/import. Either views aren't being saved to StateManager, aren't included in JSON export, or aren't being restored on import.
+✅ ~~**Save Button Stuck in Down State**~~ - **FIXED**: Same root cause as above. Button now uses correct class.
 
-🟢 **SVG Content Missing:**
-4. **Geodesic Edge Vectors Not Exporting** - Geodesic wireframe edges missing from SVG
-5. **Polyhedral Edge Vectors Not Exporting** - Wireframe edges (likely hairlines) not captured
-6. **Grids Not Exporting** - Cartesian/Quadray grids not included even when visible
+✅ ~~**Views Not Persisting to JSON**~~ - **FIXED**: Added `views` array to `RTFileHandler.exportState()` and restoration logic to `importState()`.
 
----
+**Remaining Work - SVG Export Refinement:**
 
-### Bug Investigation Notes (2026-01-27)
-
-#### 🔴 Bug #1 & #2: Save Button Breaks App / Stuck Down State
-
-**Investigation Findings:**
-
-The issue is in `renderViewsTable()` (line 1217-1290 of rt-viewmanager.js):
-
-1. **Event Listener Accumulation**: Every time `renderViewsTable()` is called (which happens on every save, delete, sort), new event listeners are added to the row buttons via `querySelectorAll().forEach(addEventListener)`. These listeners ACCUMULATE because the buttons are recreated with `innerHTML` but listeners from previous renders still exist in memory.
-
-2. **No `preventDefault()` on button clicks**: The button click handlers use `e.stopPropagation()` but not `e.preventDefault()`. This may be allowing default button behavior to interfere.
-
-3. **Possible focus trap**: The `viewNameInput` field and `saveViewBtn` button may be capturing focus/keyboard events after the save operation completes.
-
-**Proposed Fix:**
-```javascript
-// In renderViewsTable(), before adding innerHTML:
-// Remove old event listeners by cloning tbody
-const newTbody = tbody.cloneNode(false);
-tbody.parentNode.replaceChild(newTbody, tbody);
-// Then use newTbody for innerHTML and addEventListener
-```
-
-Or use event delegation on the parent instead of individual button listeners:
-```javascript
-tbody.addEventListener('click', (e) => {
-  const btn = e.target.closest('button');
-  if (!btn) return;
-  e.preventDefault();
-  e.stopPropagation();
-
-  if (btn.classList.contains('view-load-btn')) {
-    this.loadView(btn.dataset.viewId);
-  } else if (btn.classList.contains('view-export-btn')) {
-    // ...
-  }
-});
-```
+🟡 **SVG Content Missing:**
+1. **Geodesic Edge Vectors Not Exporting** - Geodesic wireframe edges missing from SVG
+2. **Polyhedral Edge Vectors Not Exporting** - Wireframe edges (likely hairlines) not captured
+3. **Grids Not Exporting** - Cartesian/Quadray grids not included even when visible
 
 ---
 
-#### 🟡 Bug #3: Views Not Persisting to JSON
+### Bug Investigation & Resolution Notes (2026-01-27)
 
-**Root Cause Identified:**
+#### ✅ Bug #1 & #2: Save Button Breaks App / Stuck Down State - FIXED
 
-Views are stored in `RTViewManager.state.views` but `RTFileHandler.exportState()` knows nothing about them!
+**Root Cause:**
+The Save button in index.html had `class="toggle-btn variant-tool"`. The `variant-tool` class is reserved for gumball tools (Move, Scale, Rotate). Code in rt-init.js attaches event listeners to all `.toggle-btn.variant-tool` buttons that:
+1. Add `.active` class (causing stuck down appearance)
+2. Set `controls.enabled = false` (disabling orbit controls)
 
-Looking at `rt-filehandler.js:351-400`, the `stateData` object includes:
-- `environment` (camera, grids, sliders, etc.)
-- `instances` (from `stateManager.state.instances`)
-- `metadata`
+**Fix Applied:**
+Changed Save button class from `variant-tool` to `variant-standard` in index.html. The `variant-standard` class is for action buttons (file ops, print, etc.) that don't affect orbit controls.
 
-**But NO views are included!**
+**Additional Improvements:**
+- Added event delegation in `renderViewsTable()` to prevent listener accumulation
+- Added `e.preventDefault()` and `btn.blur()` to table button handlers
+- Added focus release in `saveCurrentView()` as extra safeguard
 
-`RTStateManager.state` (line 59-79 of rt-state-manager.js) doesn't have a `views` array either.
+---
 
-**Required Fix:**
-1. Add `views` to `RTStateManager.state`:
-   ```javascript
-   state: {
-     // ... existing properties
-     views: [], // Add this
-   }
-   ```
+#### ✅ Bug #3: Views Not Persisting to JSON - FIXED
 
-2. Or add views to `RTFileHandler.exportState()`:
-   ```javascript
-   const stateData = {
-     // ... existing
-     views: window.RTViewManager?.state?.views || [], // Add this
-   };
-   ```
+**Root Cause:**
+Views were stored in `RTViewManager.state.views` but `RTFileHandler.exportState()` didn't include them, and `importState()` didn't restore them.
 
-3. And in `RTFileHandler.importState()`, restore views:
-   ```javascript
-   if (stateData.views && window.RTViewManager) {
-     window.RTViewManager.state.views = stateData.views;
-     window.RTViewManager.renderViewsTable();
-   }
-   ```
+**Fix Applied:**
+1. Added `views` array to `exportState()` return object in rt-filehandler.js
+2. Added views restoration logic to `importState()` including:
+   - Restoring views array to RTViewManager.state
+   - Recalculating view counters from imported view names
+   - Calling `renderViewsTable()` to update UI
 
 **SVG Output Quality:**
 The vector SVG output is clean and high quality. Exports include:
