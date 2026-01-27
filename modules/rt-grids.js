@@ -217,22 +217,14 @@ export const Grids = {
   createCartesianTetraArrow: (direction, shaftLength, headSize, color) => {
     const arrowGroup = new THREE.Group();
 
-    // 1. Create cylindrical shaft (thin line)
-    const shaftRadius = 0.008;
-    const shaftGeometry = new THREE.CylinderGeometry(
-      shaftRadius,
-      shaftRadius,
-      shaftLength,
-      8
-    );
-    const shaftMaterial = new THREE.MeshBasicMaterial({ color });
-    const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
-
-    // Position shaft: cylinder default is Y-up, translate to point in direction
-    shaft.position.copy(direction.clone().multiplyScalar(shaftLength / 2));
-
-    // Orient shaft along direction vector
-    shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    // 1. Create hairline shaft (matches ArrowHelper line style from edit handles)
+    const shaftPoints = [
+      new THREE.Vector3(0, 0, 0),
+      direction.clone().multiplyScalar(shaftLength),
+    ];
+    const shaftGeometry = new THREE.BufferGeometry().setFromPoints(shaftPoints);
+    const shaftMaterial = new THREE.LineBasicMaterial({ color });
+    const shaft = new THREE.Line(shaftGeometry, shaftMaterial);
     arrowGroup.add(shaft);
 
     // 2. Create tetrahedral arrowhead using THREE.js TetrahedronGeometry
