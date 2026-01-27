@@ -2207,8 +2207,8 @@ function startARTexplorer(
           editingBasis.add(rotationHandle);
 
           // Torus hit zone for clicking (visible for debugging)
-          // Scale hit thickness proportionally (min 0.1, ~5% of arrow length)
-          const hitThickness = Math.max(0.1, arrowLength * 0.05);
+          // Scale hit thickness proportionally (~2/3 of previous, thinner torus)
+          const hitThickness = Math.max(0.07, arrowLength * 0.033);
           const hitZone = new THREE.Mesh(
             new THREE.TorusGeometry(circleRadius, hitThickness, 16, 64),
             new THREE.MeshBasicMaterial({
@@ -2368,8 +2368,8 @@ function startARTexplorer(
           editingBasis.add(rotationHandle);
 
           // Torus hit zone for clicking (visible for debugging)
-          // Scale hit thickness proportionally (min 0.1, ~5% of arrow length)
-          const hitThickness = Math.max(0.1, arrowLength * 0.05);
+          // Scale hit thickness proportionally (~2/3 of previous, thinner torus)
+          const hitThickness = Math.max(0.07, arrowLength * 0.033);
           const hitZone = new THREE.Mesh(
             new THREE.TorusGeometry(circleRadius, hitThickness, 16, 64),
             new THREE.MeshBasicMaterial({
