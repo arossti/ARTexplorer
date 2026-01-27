@@ -2240,7 +2240,11 @@ function startARTexplorer(
 
           editingBasis.add(arrow);
 
-          // Add handle at arrow tip - CUBE for Scale, SPHERE for Move
+          // Get reference to arrow's cone (arrowhead) for hover glow
+          // ArrowHelper structure: arrow.cone is the arrowhead mesh
+          const arrowCone = arrow.cone;
+
+          // Add invisible hit zone at arrow tip for raycasting
           const tipPosition = vec.clone().multiplyScalar(arrowLength);
 
           // Scale handle sizes proportionally (min sizes for small objects)
@@ -2249,7 +2253,7 @@ function startARTexplorer(
 
           let handle;
           if (isScaleMode) {
-            // SCALE MODE: Cube handle
+            // SCALE MODE: Cube handle (visible)
             handle = new THREE.Mesh(
               new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize),
               new THREE.MeshBasicMaterial({
@@ -2260,16 +2264,18 @@ function startARTexplorer(
               })
             );
           } else {
-            // MOVE MODE: Sphere handle (invisible hit zone - hover glow reveals it)
+            // MOVE MODE: Invisible sphere hit zone (arrowhead glows on hover)
             handle = new THREE.Mesh(
               new THREE.SphereGeometry(sphereRadius, 16, 16),
               new THREE.MeshBasicMaterial({
                 color: quadrayColors[i],
                 transparent: true,
-                opacity: 0, // Invisible until hover (was 0.3 for debugging)
-                depthTest: true,
+                opacity: 0, // Invisible - just for raycasting
+                depthTest: false,
               })
             );
+            // Link the arrowhead cone to this hit zone for hover glow
+            handle.userData.arrowCone = arrowCone;
           }
 
           handle.position.copy(tipPosition);
@@ -2368,7 +2374,10 @@ function startARTexplorer(
 
           editingBasis.add(arrow);
 
-          // Add handle at arrow tip - CUBE for Scale, SPHERE for Move
+          // Get reference to arrow's cone (arrowhead) for hover glow
+          const arrowCone = arrow.cone;
+
+          // Add invisible hit zone at arrow tip for raycasting
           const tipPosition = vec.clone().multiplyScalar(arrowLength);
 
           // Scale handle sizes proportionally (min sizes for small objects)
@@ -2377,7 +2386,7 @@ function startARTexplorer(
 
           let handle;
           if (isScaleMode) {
-            // SCALE MODE: Cube handle
+            // SCALE MODE: Cube handle (visible)
             handle = new THREE.Mesh(
               new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize),
               new THREE.MeshBasicMaterial({
@@ -2388,16 +2397,18 @@ function startARTexplorer(
               })
             );
           } else {
-            // MOVE MODE: Sphere handle (invisible hit zone - hover glow reveals it)
+            // MOVE MODE: Invisible sphere hit zone (arrowhead glows on hover)
             handle = new THREE.Mesh(
               new THREE.SphereGeometry(sphereRadius, 16, 16),
               new THREE.MeshBasicMaterial({
                 color: cartesianColors[i],
                 transparent: true,
-                opacity: 0, // Invisible until hover (was 0.3 for debugging)
-                depthTest: true,
+                opacity: 0, // Invisible - just for raycasting
+                depthTest: false,
               })
             );
+            // Link the arrowhead cone to this hit zone for hover glow
+            handle.userData.arrowCone = arrowCone;
           }
 
           handle.position.copy(tipPosition);
@@ -2468,39 +2479,44 @@ function startARTexplorer(
   }
 
   /**
-   * Apply hover glow effect to a gumball handle
-   * @param {THREE.Mesh} handle - The handle mesh to highlight
+   * Apply hover glow effect to a gumball handle's arrowhead
+   * @param {THREE.Mesh} handle - The hit zone mesh (contains reference to arrowCone)
    */
   function applyHandleHover(handle) {
-    if (!handle || !handle.material) return;
+    if (!handle) return;
+
+    // Get the actual visual element to highlight (arrowhead cone or the handle itself)
+    const visualTarget = handle.userData.arrowCone || handle;
+    if (!visualTarget || !visualTarget.material) return;
 
     // Store original color if not already stored
-    if (handle.userData.originalColor === undefined) {
-      handle.userData.originalColor = handle.material.color.getHex();
-      handle.userData.originalOpacity = handle.material.opacity;
+    if (visualTarget.userData.originalColor === undefined) {
+      visualTarget.userData.originalColor = visualTarget.material.color.getHex();
     }
 
-    // Apply bright emissive-like glow by lightening the color and increasing opacity
-    const originalColor = new THREE.Color(handle.userData.originalColor);
-    const glowColor = originalColor.clone().lerp(new THREE.Color(0xffffff), 0.5);
-    handle.material.color.copy(glowColor);
-    handle.material.opacity = Math.min(1.0, handle.userData.originalOpacity + 0.4);
+    // Apply bright glow by lightening the color toward white
+    const originalColor = new THREE.Color(visualTarget.userData.originalColor);
+    const glowColor = originalColor.clone().lerp(new THREE.Color(0xffffff), 0.6);
+    visualTarget.material.color.copy(glowColor);
 
     // Change cursor to indicate interactivity
     renderer.domElement.style.cursor = "pointer";
   }
 
   /**
-   * Remove hover glow effect from a gumball handle
-   * @param {THREE.Mesh} handle - The handle mesh to unhighlight
+   * Remove hover glow effect from a gumball handle's arrowhead
+   * @param {THREE.Mesh} handle - The hit zone mesh (contains reference to arrowCone)
    */
   function clearHandleHover(handle) {
-    if (!handle || !handle.material) return;
+    if (!handle) return;
 
-    // Restore original color and opacity
-    if (handle.userData.originalColor !== undefined) {
-      handle.material.color.setHex(handle.userData.originalColor);
-      handle.material.opacity = handle.userData.originalOpacity;
+    // Get the actual visual element that was highlighted
+    const visualTarget = handle.userData.arrowCone || handle;
+    if (!visualTarget || !visualTarget.material) return;
+
+    // Restore original color
+    if (visualTarget.userData.originalColor !== undefined) {
+      visualTarget.material.color.setHex(visualTarget.userData.originalColor);
     }
 
     // Reset cursor
