@@ -489,6 +489,89 @@ export const RTViewManager = {
 5. **Polyhedral Edge Vectors Not Exporting** - Wireframe edges (likely hairlines) not captured
 6. **Grids Not Exporting** - Cartesian/Quadray grids not included even when visible
 
+---
+
+### Bug Investigation Notes (2026-01-27)
+
+#### 🔴 Bug #1 & #2: Save Button Breaks App / Stuck Down State
+
+**Investigation Findings:**
+
+The issue is in `renderViewsTable()` (line 1217-1290 of rt-viewmanager.js):
+
+1. **Event Listener Accumulation**: Every time `renderViewsTable()` is called (which happens on every save, delete, sort), new event listeners are added to the row buttons via `querySelectorAll().forEach(addEventListener)`. These listeners ACCUMULATE because the buttons are recreated with `innerHTML` but listeners from previous renders still exist in memory.
+
+2. **No `preventDefault()` on button clicks**: The button click handlers use `e.stopPropagation()` but not `e.preventDefault()`. This may be allowing default button behavior to interfere.
+
+3. **Possible focus trap**: The `viewNameInput` field and `saveViewBtn` button may be capturing focus/keyboard events after the save operation completes.
+
+**Proposed Fix:**
+```javascript
+// In renderViewsTable(), before adding innerHTML:
+// Remove old event listeners by cloning tbody
+const newTbody = tbody.cloneNode(false);
+tbody.parentNode.replaceChild(newTbody, tbody);
+// Then use newTbody for innerHTML and addEventListener
+```
+
+Or use event delegation on the parent instead of individual button listeners:
+```javascript
+tbody.addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (btn.classList.contains('view-load-btn')) {
+    this.loadView(btn.dataset.viewId);
+  } else if (btn.classList.contains('view-export-btn')) {
+    // ...
+  }
+});
+```
+
+---
+
+#### 🟡 Bug #3: Views Not Persisting to JSON
+
+**Root Cause Identified:**
+
+Views are stored in `RTViewManager.state.views` but `RTFileHandler.exportState()` knows nothing about them!
+
+Looking at `rt-filehandler.js:351-400`, the `stateData` object includes:
+- `environment` (camera, grids, sliders, etc.)
+- `instances` (from `stateManager.state.instances`)
+- `metadata`
+
+**But NO views are included!**
+
+`RTStateManager.state` (line 59-79 of rt-state-manager.js) doesn't have a `views` array either.
+
+**Required Fix:**
+1. Add `views` to `RTStateManager.state`:
+   ```javascript
+   state: {
+     // ... existing properties
+     views: [], // Add this
+   }
+   ```
+
+2. Or add views to `RTFileHandler.exportState()`:
+   ```javascript
+   const stateData = {
+     // ... existing
+     views: window.RTViewManager?.state?.views || [], // Add this
+   };
+   ```
+
+3. And in `RTFileHandler.importState()`, restore views:
+   ```javascript
+   if (stateData.views && window.RTViewManager) {
+     window.RTViewManager.state.views = stateData.views;
+     window.RTViewManager.renderViewsTable();
+   }
+   ```
+
 **SVG Output Quality:**
 The vector SVG output is clean and high quality. Exports include:
 - Translucent colored mesh faces with proper depth layering
