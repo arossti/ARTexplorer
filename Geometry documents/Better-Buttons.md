@@ -1,3 +1,160 @@
+# ART Explorer - Neumorphic UI Component Workplan
+
+## Overview
+This workplan outlines the implementation of neumorphic (soft UI) components for ART Explorer, matching the dark theme background (#2A2A2A) and existing control panel dimensions.
+
+---
+
+## Design System Variables
+
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `--neu-bg` | `#2A2A2A` | Base background (matches `#controls-panel`) |
+| `--neu-light` | `rgba(255, 255, 255, 0.07)` | Highlight for raised edges |
+| `--neu-shadow` | `rgba(0, 0, 0, 0.5)` | Shadow for depth |
+| `--neu-accent` | `#4a9eff` | Active/selected state (existing app blue) |
+| `--neu-success` | `#00ff88` | Action buttons (existing green) |
+| `--neu-radius-sm` | `3px` | Small components (toggles, small buttons) |
+| `--neu-radius-md` | `4px` | Medium components (standard buttons) |
+
+---
+
+## Component Inventory
+
+### A) Sliders (Range Inputs)
+**Current state:** Basic browser-styled range inputs
+**Target:** Neumorphic track with raised thumb
+
+| Element | Current Class | New Class | Priority |
+|---------|--------------|-----------|----------|
+| Scale sliders | `.slider-container input[type="range"]` | `.neu-slider` | HIGH |
+| Opacity sliders | `#opacitySlider`, `#nodeOpacitySlider` | `.neu-slider` | HIGH |
+| Frequency sliders | `#geodesicTetraFrequency` etc. | `.neu-slider` | MEDIUM |
+| Grid interval sliders | `#cartesianTessSlider`, `#quadrayTessSlider` | `.neu-slider` | MEDIUM |
+
+### B) Push Buttons
+**Current state:** Flat buttons with hover states
+**Target:** Raised neumorphic with press animation
+
+| Element | Current Class | New Class | Priority |
+|---------|--------------|-----------|----------|
+| Tool mode buttons | `.toggle-btn.variant-tool` | `.neu-btn` | HIGH |
+| View buttons | `.toggle-btn.variant-standard` | `.neu-btn` | HIGH |
+| Node size buttons | `.node-size-btn` | `.neu-btn.neu-btn--sm` | MEDIUM |
+| Action buttons | `.gumball-action-btn` | `.neu-btn.neu-btn--action` | HIGH |
+| File operation buttons | `#importBtn`, `#exportBtn`, `#saveBtn` | `.neu-btn` | MEDIUM |
+
+### C) Toggles (On/Off Switches)
+**Current state:** Checkboxes with labels, plane toggle switches
+**Target:** Neumorphic pill switches with sliding thumb
+
+| Element | Current Class | New Class | Priority |
+|---------|--------------|-----------|----------|
+| Plane toggles | `.plane-toggle-switch` | `.neu-toggle` | ALREADY EXISTS - enhance |
+| Show/hide checkboxes | `input[type="checkbox"]` in `.checkbox-label` | `.neu-toggle` | HIGH |
+| Geodesic options | `#showGeodesicTetrahedron` etc. | `.neu-toggle` | MEDIUM |
+| Visual options | `#nodeFlatShading`, `#backfaceCulling` | `.neu-toggle` | MEDIUM |
+
+**Checkbox → Toggle Candidates (index.html lines):**
+- Line 389: `#showCartesianBasis`
+- Line 395: `#showQuadray`
+- Line 581: `#showPoint`
+- Line 588: `#showLine`
+- Line 635: `#showPolygon`
+- Line 701: `#showPrism`
+- Line 777: `#showCone`
+- Line 853: `#showCube`
+- Line 860: `#showTetrahedron`
+- Line 928: `#showDualTetrahedron`
+- Line 997: `#showOctahedron`
+- Line 1066: `#showIcosahedron`
+- Line 1134: `#showDodecahedron`
+- Line 1140: `#showDualIcosahedron`
+- Line 1208: `#showCuboctahedron`
+- Line 1214: `#showRhombicDodecahedron`
+- Line 1917: `#nodeFlatShading`
+- Line 2027: `#orthoPerspective`
+- Line 2064: `#backfaceCulling`
+- Line 2068: `#enablePrintMode`
+- Line 2074: `#enableCutPlane`
+- Line 2080: `#invertCutPlane`
+
+### D) Dropdown Arrows (Collapsible Sections)
+**Current state:** CSS triangles (`.section-toggle`, `.geodesic-toggle`)
+**Target:** Neumorphic circular button with animated chevron
+
+| Element | Current Class | New Class | Priority |
+|---------|--------------|-----------|----------|
+| Section toggles | `.section-toggle` | `.neu-dropdown-arrow` | MEDIUM |
+| Geodesic toggles | `.geodesic-toggle` | `.neu-dropdown-arrow.neu-dropdown-arrow--sm` | LOW |
+
+---
+
+## Implementation Phases
+
+### Phase 1: CSS Variables & Base Styles
+1. Add CSS custom properties to `:root` in art.css
+2. Create base `.neu-*` classes
+3. Test with isolated HTML file
+
+### Phase 2: Sliders
+1. Style track (inset shadow = "down" state)
+2. Style thumb (raised = "up" state)
+3. Add active/focus states
+4. Test cross-browser compatibility
+
+### Phase 3: Push Buttons
+1. Create `.neu-btn` base class
+2. Add size variants (`--sm`, `--lg`)
+3. Add color variants (`--action`, `--danger`)
+4. Implement press animation (up → down transition)
+
+### Phase 4: Toggles
+1. Enhance existing `.plane-toggle-switch` with neumorphic styling
+2. Create JavaScript helper for checkbox → toggle conversion
+3. Update event handlers to maintain functionality
+
+### Phase 5: Dropdown Arrows
+1. Replace CSS triangles with circular buttons
+2. Add SVG chevron icon
+3. Animate rotation on expand/collapse
+
+---
+
+## Size Specifications (Matching Existing UI)
+
+Based on analysis of index.html and art.css:
+
+| Component | Width | Height | Font Size |
+|-----------|-------|--------|-----------|
+| Standard button | flex: 1 (fills container) | 28-32px | 11px |
+| Small button | 28px min | 24px | 10px |
+| Toggle switch | 40px | 20px | - |
+| Slider track | 100% | 4px | - |
+| Slider thumb | 14px | 14px | - |
+| Dropdown arrow | 16px | 16px | - |
+
+---
+
+## Files to Modify
+
+1. **art.css** - Add new neumorphic styles (append to end)
+2. **index.html** - Update class names on components
+3. **modules/rt-ui.js** - Update any JavaScript references to changed classes
+
+---
+
+## Test File Structure
+
+Create `button-test.html` with:
+- All component variants in isolation
+- Dark background matching app
+- Side-by-side comparison with current styles
+
+---
+
+# Reference: Original Button Samples (SCSS)
+
 # HTML COMPONENTS
 
 
