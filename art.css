@@ -318,6 +318,13 @@ button:active {
   background: linear-gradient(145deg, #585858, #484848);
 }
 
+/* Hover state when checked - keep the LED dot */
+.checkbox-label:hover input[type="checkbox"]:checked::before {
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #585858, #484848);
+}
+
 /* Collapsible geodesic controls */
 /* ==========================================================================
    GEODESIC TOGGLE - HiFi Vertical Toggle (Small)
@@ -374,6 +381,13 @@ button:active {
 }
 
 .geodesic-toggle:hover::before {
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when collapsed - no LED dot */
+.geodesic-toggle.collapsed:hover::before {
   background: linear-gradient(145deg, #585858, #484848);
 }
 
@@ -544,6 +558,13 @@ button:active {
 }
 
 .section-toggle:hover::before {
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when collapsed - no LED dot */
+.section-toggle.collapsed:hover::before {
   background: linear-gradient(145deg, #585858, #484848);
 }
 
@@ -2547,6 +2568,13 @@ button:disabled {
   background: linear-gradient(145deg, #585858, #484848);
 }
 
+/* Hover when active - keep the LED dot */
+.hifi-toggle-label:hover .hifi-toggle.active .hifi-toggle-thumb {
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    linear-gradient(145deg, #585858, #484848);
+}
+
 /* Small toggle (USE FOR ALL FORM TOGGLES) */
 .hifi-toggle--sm {
   width: 28px;
@@ -2618,6 +2646,13 @@ button:disabled {
 
 .hifi-dropdown-toggle:hover .hifi-dropdown-toggle-thumb {
   background: linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when expanded - keep the LED dot */
+.hifi-dropdown-toggle.expanded:hover .hifi-dropdown-toggle-thumb {
+  background:
+    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    linear-gradient(145deg, #585858, #484848);
 }
 
 /* Small dropdown toggle (for nested options) */
