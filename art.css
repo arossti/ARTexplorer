@@ -32,6 +32,13 @@ body {
   padding: 15px;
   overflow-y: auto;
   border-left: 1px solid #444;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Hide scrollbar - WebKit (Chrome, Safari) */
+#controls-panel::-webkit-scrollbar {
+  display: none;
 }
 
 /* Panel header with info icon */
@@ -536,7 +543,7 @@ button:active {
 
 .section-content {
   max-height: 2000px;
-  overflow: hidden;
+  overflow: visible;
   transition:
     max-height 0.3s ease-out,
     opacity 0.3s ease-out;
@@ -546,6 +553,7 @@ button:active {
 .section-content.collapsed {
   max-height: 0;
   opacity: 0;
+  overflow: hidden;
 }
 
 h3 {
