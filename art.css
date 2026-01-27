@@ -49,6 +49,24 @@ body {
   margin-bottom: 0;
 }
 
+/* Outline title styling */
+.title-outline {
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-weight: 900;
+  font-size: 34px;
+  letter-spacing: 2px;
+  color: transparent;
+  -webkit-text-stroke: 1px #00B4FF;
+  margin: 0;
+}
+
+.panel-header h5 {
+  font-size: 11px;
+  font-weight: 400;
+  color: #888;
+  margin: 2px 0 0 0;
+}
+
 .info-icon-btn {
   background: transparent;
   border: none;
@@ -1237,9 +1255,13 @@ button:disabled {
 }
 
 #info-modal h2 {
-  color: #ffffff;
+  font-family: 'Arial Black', Arial, sans-serif;
+  font-weight: 900;
+  font-size: 36px;
+  letter-spacing: 3px;
+  color: transparent;
+  -webkit-text-stroke: 1px #00B4FF;
   margin-bottom: 10px;
-  font-size: 28px;
   text-align: center;
 }
 
