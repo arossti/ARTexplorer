@@ -139,15 +139,11 @@ export class ColorTheoryModal {
         groups: [
           {
             name: "Canvas Background",
-            pairs: [
-              { id: "canvas-bg", label: "3D Scene", color: "0x1A1A1A" },
-            ],
+            pairs: [{ id: "canvas-bg", label: "3D Scene", color: "0x1A1A1A" }],
           },
           {
             name: "UI Background",
-            pairs: [
-              { id: "ui-bg", label: "Panels", color: "0x2A2A2A" },
-            ],
+            pairs: [{ id: "ui-bg", label: "Panels", color: "0x2A2A2A" }],
           },
         ],
       },
@@ -507,7 +503,10 @@ export class ColorTheoryModal {
 
     // Update CSS custom property for UI panels
     document.documentElement.style.setProperty("--ui-bg-color", cssColor);
-    document.documentElement.style.setProperty("--ui-bg-color-alpha", cssColorAlpha);
+    document.documentElement.style.setProperty(
+      "--ui-bg-color-alpha",
+      cssColorAlpha
+    );
 
     // Update key UI elements directly
     const sidebar = document.getElementById("sidebar");
@@ -530,7 +529,10 @@ export class ColorTheoryModal {
         uiBackground: uiInput ? uiInput.value : "0x2A2A2A",
       };
 
-      localStorage.setItem("artexplorer-environment", JSON.stringify(envSettings));
+      localStorage.setItem(
+        "artexplorer-environment",
+        JSON.stringify(envSettings)
+      );
 
       // Also save to StateManager for file export
       if (window.RTStateManager) {
@@ -555,8 +557,15 @@ export class ColorTheoryModal {
       const envSettings = JSON.parse(saved);
 
       // Apply canvas background
-      if (envSettings.canvasBackground && this.renderingAPI && this.renderingAPI.setCanvasBackground) {
-        const colorHex = parseInt(envSettings.canvasBackground.replace("0x", ""), 16);
+      if (
+        envSettings.canvasBackground &&
+        this.renderingAPI &&
+        this.renderingAPI.setCanvasBackground
+      ) {
+        const colorHex = parseInt(
+          envSettings.canvasBackground.replace("0x", ""),
+          16
+        );
         this.renderingAPI.setCanvasBackground(colorHex);
       }
 
@@ -661,8 +670,15 @@ export class ColorTheoryModal {
     if (!envSettings) return;
 
     // Apply canvas background
-    if (envSettings.canvasBackground && this.renderingAPI && this.renderingAPI.setCanvasBackground) {
-      const colorHex = parseInt(envSettings.canvasBackground.replace("0x", ""), 16);
+    if (
+      envSettings.canvasBackground &&
+      this.renderingAPI &&
+      this.renderingAPI.setCanvasBackground
+    ) {
+      const colorHex = parseInt(
+        envSettings.canvasBackground.replace("0x", ""),
+        16
+      );
       this.renderingAPI.setCanvasBackground(colorHex);
 
       // Update modal input if it exists
