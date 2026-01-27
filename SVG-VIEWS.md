@@ -457,52 +457,88 @@ export const RTViewManager = {
 
 ---
 
+## Implementation Progress
+
+### Status: Phase 2 Complete (2026-01-27)
+
+**What's Working:**
+- ✅ Full `rt-viewmanager.js` module with 1000+ lines of functionality
+- ✅ View capture with auto-naming (X1, Y2, QW1, AXO3, P1, etc.)
+- ✅ Sheet size presets (A4, Letter, A3, Custom)
+- ✅ Vector SVG export with true 3D→2D projection
+- ✅ Section line extraction from RTPapercut intersection lines
+- ✅ Mesh face extraction with depth sorting (back-to-front)
+- ✅ Vertex node extraction as projected circles
+- ✅ Color and opacity preservation from materials
+- ✅ Cutplane visibility filtering (hides geometry behind cutplane)
+- ✅ Views table UI with sort, load, export, delete actions
+- ✅ Bulk actions (Export All, Import, Clear)
+- ✅ Title block with view name and date
+
+**Known Issues (To Fix):**
+1. **Save Button Stuck in Down State** - After clicking Save, the button remains visually pressed
+2. **Orbit Controls Freeze** - Camera orbit controls stop responding after Save is clicked
+3. **Geodesic Edge Vectors Not Exporting** - Geodesic wireframe edges missing from SVG
+4. **Polyhedral Edge Vectors Not Exporting** - Wireframe edges (likely hairlines) not captured
+5. **Grids Not Exporting** - Cartesian/Quadray grids not included even when visible
+
+**SVG Output Quality:**
+The vector SVG output is clean and high quality. Exports include:
+- Translucent colored mesh faces with proper depth layering
+- Section cut lines (black in print mode, red otherwise)
+- Vertex nodes as filled circles with outlines
+- White/dark background based on print mode
+
+---
+
 ## Implementation Phases
 
-### Phase 1: Foundation (MVP)
+### Phase 1: Foundation (MVP) ✅ COMPLETE
 **Goal**: Basic SVG export with raster fallback
 
-- [ ] Create `rt-viewmanager.js` module skeleton
-- [ ] Implement `init()` with dependency injection
-- [ ] Implement `generateViewName()` with axis detection and counters
-- [ ] Implement `captureView()` to capture current state
-- [ ] Implement `exportSVG()` with canvas raster capture
-- [ ] Add "Save SVG View" button to Papercut UI
-- [ ] Wire up button to trigger export
+- [x] Create `rt-viewmanager.js` module skeleton
+- [x] Implement `init()` with dependency injection
+- [x] Implement `generateViewName()` with axis detection and counters
+- [x] Implement `captureView()` to capture current state
+- [x] Implement `exportSVG()` with canvas raster capture
+- [x] Add "Save SVG View" button to Papercut UI
+- [x] Wire up button to trigger export
 
-**Deliverable**: Click button → Downloads PNG-in-SVG with metadata
+**Deliverable**: Click button → Downloads PNG-in-SVG with metadata ✅
 
-### Phase 2: Vector Paths
+### Phase 2: Vector Paths ✅ COMPLETE
 **Goal**: True vector SVG from intersection lines
 
-- [ ] Implement `extractVectorPaths()` to read RTPapercut._intersectionLines
-- [ ] Implement 3D→2D projection using camera matrices
-- [ ] Generate SVG `<path>` elements from projected coordinates
-- [ ] Handle line colors from material/palette
-- [ ] Handle line weights from Papercut settings
-- [ ] Add sphere intersection circles as `<circle>` elements
+- [x] Implement `extractVectorPaths()` to read RTPapercut._intersectionLines
+- [x] Implement 3D→2D projection using camera matrices
+- [x] Generate SVG `<path>` elements from projected coordinates
+- [x] Handle line colors from material/palette
+- [x] Handle line weights from Papercut settings
+- [x] Add sphere intersection circles as `<circle>` elements
+- [x] **BONUS**: Extract mesh faces with depth sorting
+- [x] **BONUS**: Extract vertex nodes as circles
 
-**Deliverable**: Clean vector SVG output
+**Deliverable**: Clean vector SVG output ✅
 
-### Phase 3: View Registry & Table UI
+### Phase 3: View Registry & Table UI ✅ MOSTLY COMPLETE
 **Goal**: Save/load views within session with sortable table
 
-- [ ] Add `views` structure to RTStateManager.state
-- [ ] Implement `saveView()` to add to registry
-- [ ] Implement `loadView()` to restore camera + cutplane
-- [ ] Implement `deleteView()` to remove single view
-- [ ] Implement `clearAllViews()` with confirmation dialog
-- [ ] Implement `listViews()` for table population
-- [ ] Add Views Table HTML to Papercut section
-- [ ] Add Views Table CSS styles to art.css
-- [ ] Implement `renderViewsTable()` to populate table rows
-- [ ] Implement `sortViews()` with column click handlers
-- [ ] Implement row action buttons (Load ▶, Export ↓, Delete ✕)
-- [ ] Implement `setActiveViewRow()` to highlight current view
-- [ ] Add empty state display when no views
-- [ ] Add bulk action buttons (Export All, Import, Clear)
+- [x] Add `views` structure to RTStateManager.state
+- [x] Implement `saveView()` to add to registry
+- [ ] Implement `loadView()` to restore camera + cutplane (partial)
+- [x] Implement `deleteView()` to remove single view
+- [x] Implement `clearAllViews()` with confirmation dialog
+- [x] Implement `listViews()` for table population
+- [x] Add Views Table HTML to Papercut section
+- [x] Add Views Table CSS styles to art.css
+- [x] Implement `renderViewsTable()` to populate table rows
+- [x] Implement `sortViews()` with column click handlers
+- [x] Implement row action buttons (Load ▶, Export ↓, Delete ✕)
+- [x] Implement `setActiveViewRow()` to highlight current view
+- [x] Add empty state display when no views
+- [x] Add bulk action buttons (Export All, Import, Clear)
 
-**Deliverable**: Full views table with sort, load, delete, and bulk actions
+**Deliverable**: Full views table with sort, load, delete, and bulk actions ✅
 
 ### Phase 4: File Persistence
 **Goal**: Import/export views as files
@@ -510,7 +546,7 @@ export const RTViewManager = {
 - [ ] Define `.artview` JSON file format
 - [ ] Implement `exportViewsFile()`
 - [ ] Implement `importViewsFile()`
-- [ ] Add embedded metadata to SVG exports
+- [x] Add embedded metadata to SVG exports
 - [ ] Implement `parseSVGMetadata()` for reimport
 - [ ] Add import button/handler to FileHandler UI
 
@@ -523,8 +559,12 @@ export const RTViewManager = {
 - [ ] Include views in main `.json` state export
 - [ ] Add view recreation on state import
 - [ ] Add orthographic camera mode for true tech drawings
-- [ ] Add title block option for SVG
+- [x] Add title block option for SVG
 - [ ] Add grid export option
+- [ ] Fix Save button down state bug
+- [ ] Fix orbit controls freeze after save
+- [ ] Add geodesic/polyhedral edge export
+- [ ] Add grid line export
 
 **Deliverable**: Complete view management system
 
