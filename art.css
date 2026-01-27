@@ -2705,3 +2705,72 @@ button:disabled {
 .hifi-dropdown-toggle--sm.expanded .hifi-dropdown-toggle-thumb {
   top: 12px;
 }
+
+/* ========================================================================
+   VIEWS TABLE (SVG View Manager)
+   ======================================================================== */
+
+/* Table header sortable columns */
+.views-table-header span {
+  transition: color 0.15s;
+}
+
+.views-table-header span:hover {
+  color: #00B4FF;
+}
+
+/* View row styling */
+.view-row {
+  transition: background 0.15s;
+}
+
+.view-row:hover {
+  background: rgba(0, 180, 255, 0.1);
+}
+
+.view-row.active {
+  background: rgba(0, 180, 255, 0.2);
+  border-left: 2px solid #00B4FF;
+  padding-left: 6px !important;
+}
+
+/* Row action buttons */
+.view-actions button {
+  background: transparent;
+  border: 1px solid #555;
+  color: #888;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all 0.15s;
+}
+
+.view-actions button:hover {
+  background: #444;
+  color: #fff;
+  border-color: #00B4FF;
+}
+
+.view-actions .view-delete-btn:hover {
+  background: #442222;
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+/* Empty state */
+.views-empty-state {
+  color: #666;
+  font-style: italic;
+}
+
+/* View name input styling */
+#viewNameInput::placeholder {
+  color: #666;
+  font-style: italic;
+}
+
+#viewNameInput:focus {
+  outline: none;
+  border-color: #00B4FF;
+}

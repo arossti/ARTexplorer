@@ -2,6 +2,7 @@
 // ========================================================================
 import { Polyhedra } from "./rt-polyhedra.js";
 import { RTPapercut } from "./rt-papercut.js";
+import { RTViewManager } from "./rt-viewmanager.js";
 import { initQuadranceDemo } from "../demos/rt-quadrance-demo.js";
 import { initCrossDemo } from "../demos/rt-cross-demo.js";
 import { initWeierstrassDemo } from "../demos/rt-weierstrass-demo.js";
@@ -4447,6 +4448,19 @@ function startARTexplorer(
   // ========================================================================
   RTPapercut.init(scene, camera, renderer);
   window.RTPapercut = RTPapercut; // Global access for debugging
+
+  // ========================================================================
+  // RT-VIEWMANAGER MODULE INITIALIZATION
+  // ========================================================================
+  RTViewManager.init({
+    stateManager: RTStateManager,
+    fileHandler: RTFileHandler,
+    papercut: RTPapercut,
+    scene: scene,
+    camera: camera,
+    renderer: renderer,
+  });
+  window.RTViewManager = RTViewManager; // Global access for debugging
 
   // Wire up cutplane axis selector buttons
   const cutplaneAxisButtons = [
