@@ -792,11 +792,8 @@ button:disabled {
   margin-top: 4px;
 }
 
-/* Toggle variant (for generic toggles like Node Geometry) */
-.toggle-btn.variant-toggle {
-  /* Inherits base HiFi style */
-}
-
+/* Toggle variant (for generic toggles like Node Geometry)
+   Inherits base HiFi style - only hover/active states need overrides */
 .toggle-btn.variant-toggle:hover {
   color: var(--hifi-text, #e0e0e0);
 }
