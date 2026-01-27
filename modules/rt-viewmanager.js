@@ -1000,24 +1000,6 @@ ${rasterContent}${facesContent}${vectorContent}${nodesContent}
     }
     this._updateViewNamePlaceholder();
 
-    // Release button focus and restore orbit controls
-    // Use setTimeout to ensure this runs after the click event completes
-    setTimeout(() => {
-      // Blur the save button to release it from down state
-      const saveBtn = document.getElementById("saveViewBtn");
-      if (saveBtn) {
-        saveBtn.blur();
-      }
-      // Also blur the input field if it has focus
-      if (input) {
-        input.blur();
-      }
-      // Blur any other focused element in the sidebar to restore canvas focus
-      if (document.activeElement && document.activeElement.closest("#sidebar")) {
-        document.activeElement.blur();
-      }
-    }, 0);
-
     console.log(`✅ View saved: ${view.name}`);
   },
 
