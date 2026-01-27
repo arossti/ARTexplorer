@@ -488,52 +488,73 @@ export const RTViewManager = {
     const strokeColor = isPrintMode ? "#000000" : "#ff0000";
     const strokeWidth = this._papercut.state.lineWeightMax || 3;
 
+    // Collect all line segments as 2D projected points
+    const segments = [];
+
     // Traverse all Line2 objects in the intersection group
     intersectionGroup.traverse(child => {
       if (!child.isLine2 || !child.geometry) return;
 
-      const positionAttr = child.geometry.attributes.position;
-      if (!positionAttr) return;
+      // LineGeometry stores positions in instanceStart and instanceEnd attributes
+      // These are InterleavedBufferAttributes sharing the same underlying buffer
+      const instanceStart = child.geometry.attributes.instanceStart;
+      const instanceEnd = child.geometry.attributes.instanceEnd;
 
-      const positions = positionAttr.array;
-      const pointCount = positions.length / 3;
+      if (instanceStart && instanceEnd) {
+        // Each Line2 represents one line segment
+        // instanceStart and instanceEnd are InterleavedBufferAttributes
+        // sharing the same underlying InterleavedBuffer with different offsets
+        const buffer = instanceStart.data.array;
+        const stride = instanceStart.data.stride; // Usually 6 (x,y,z for start, x,y,z for end)
+        const startOffset = instanceStart.offset; // Usually 0
+        const endOffset = instanceEnd.offset; // Usually 3
 
-      if (pointCount < 2) return;
+        // For a single segment, there's 1 instance
+        const instanceCount = instanceStart.count;
 
-      // Build SVG path from projected points
-      const projectedPoints = [];
-      for (let i = 0; i < pointCount; i++) {
-        const point3D = new THREE.Vector3(
-          positions[i * 3],
-          positions[i * 3 + 1],
-          positions[i * 3 + 2]
-        );
-        projectedPoints.push(this._projectToScreen(point3D, width, height));
+        for (let i = 0; i < instanceCount; i++) {
+          const baseOffset = i * stride;
+
+          // Extract start point using instanceStart's offset
+          const startX = buffer[baseOffset + startOffset];
+          const startY = buffer[baseOffset + startOffset + 1];
+          const startZ = buffer[baseOffset + startOffset + 2];
+
+          // Extract end point using instanceEnd's offset
+          const endX = buffer[baseOffset + endOffset];
+          const endY = buffer[baseOffset + endOffset + 1];
+          const endZ = buffer[baseOffset + endOffset + 2];
+
+          const start3D = new THREE.Vector3(startX, startY, startZ);
+          const end3D = new THREE.Vector3(endX, endY, endZ);
+
+          const start2D = this._projectToScreen(start3D, width, height);
+          const end2D = this._projectToScreen(end3D, width, height);
+
+          // Skip very short segments (likely artifacts)
+          const segLength = Math.sqrt(
+            Math.pow(end2D.x - start2D.x, 2) + Math.pow(end2D.y - start2D.y, 2)
+          );
+          if (segLength < 1) continue;
+
+          segments.push({ start: start2D, end: end2D });
+        }
       }
+    });
 
-      // Check if this is a closed path (circle) - first and last points are close
-      const first = projectedPoints[0];
-      const last = projectedPoints[projectedPoints.length - 1];
-      const isClosed =
-        pointCount > 3 &&
-        Math.abs(first.x - last.x) < 1 &&
-        Math.abs(first.y - last.y) < 1;
+    console.log(`Extracted ${segments.length} line segments from intersection group`);
 
-      // Generate SVG path data
-      let d = `M ${projectedPoints[0].x.toFixed(2)} ${projectedPoints[0].y.toFixed(2)}`;
-      for (let i = 1; i < projectedPoints.length; i++) {
-        d += ` L ${projectedPoints[i].x.toFixed(2)} ${projectedPoints[i].y.toFixed(2)}`;
-      }
-      if (isClosed) {
-        d += " Z";
-      }
+    // Generate individual path for each segment
+    // (Later we could optimize by joining connected segments into polylines)
+    segments.forEach(seg => {
+      const d = `M ${seg.start.x.toFixed(2)} ${seg.start.y.toFixed(2)} L ${seg.end.x.toFixed(2)} ${seg.end.y.toFixed(2)}`;
 
       paths.push({
         d: d,
         stroke: strokeColor,
         strokeWidth: strokeWidth,
         fill: "none",
-        isClosed: isClosed,
+        isClosed: false,
       });
     });
 
