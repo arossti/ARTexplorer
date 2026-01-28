@@ -689,7 +689,6 @@ if (d0 < 0 && d1 < 0 && d2 < 0) continue;
 - `fb3266b` - Feat: Add polyhedron edge line export to SVG
 - `3c1e444` - Feat: Add grid line export to SVG (Cartesian and Quadray)
 - `46ce517` - Feat: Add Sutherland-Hodgman cutplane clipping for SVG export
-- *(pending)* - Fix: Exclude nodes crossing cutplane from SVG export
 
 **New Functions Added to `rt-viewmanager.js`:**
 
@@ -740,16 +739,20 @@ The SVG export now properly clips geometry at the cutplane boundary using the Su
 
 - **Edge lines**: Line segments crossing the cutplane are clipped to show only the visible portion. The intersection point with the plane becomes the new endpoint.
 
-- **Vertex nodes**: Nodes behind the cutplane (by more than their radius) are excluded. Nodes crossing the cutplane are also excluded - the red section circles (from RTPapercut) handle the intersection visualization.
+- **Vertex nodes**: Nodes behind the cutplane (by more than their radius) are excluded. Nodes crossing the cutplane are currently rendered as full circles (not ideal).
 
-**✅ Sphere Node Clipping - COMPLETE (2026-01-27):**
+**⚠️ Sphere Node Clipping - NOT YET SATISFACTORY:**
 
-Nodes that cross the cutplane (`-radius < dist < radius`) are now properly excluded from SVG export. The fix was simple: in `extractNodes()`, skip any node where the center-to-cutplane distance is less than the node's radius. The red section circles (extracted from `RTPapercut._intersectionLines`) correctly handle visualization of sphere-cutplane intersections.
+Current state: Nodes fully behind cutplane (`dist < -radius`) are excluded, but nodes crossing the cutplane (`-radius < dist < radius`) are rendered as full circles. This shows the lower halves of spheres correctly but also shows too many spheres above the cutplane.
+
+Attempted fix (reverted): Adding `if (dist < radius) return;` excluded crossing nodes entirely, but this was worse because it hid the lower halves of spheres that should be partially visible.
+
+**The real solution requires**: Either proper sphere-plane intersection clipping (drawing arcs instead of full circles) or a more nuanced approach that accounts for which side of the sphere is visible to the camera. This is a complex geometric problem that may not be worth solving for the current use case - the red section circles from RTPapercut already show the intersection correctly.
 
 **Code refactoring opportunities identified:**
-1. Extract shared `_shouldSkipObject(object)` helper for duplicated skip logic
-2. Extract `_isClippedByPlane(point, radius, plane)` returning `'hidden' | 'visible' | 'crossing'`
-3. Consider consolidating projection/depth calculation patterns
+1. Extract shared `_shouldSkipObject(object)` helper for duplicated skip logic (the `skipNames` array and visibility checks are duplicated in `extractEdgeLines()`, `extractMeshFaces()`, and `extractGridLines()`)
+2. Extract `_isClippedByPlane(point, radius, plane)` returning `'hidden' | 'visible' | 'crossing'` to unify cutplane logic
+3. Consolidate projection/depth calculation patterns (the pattern of getting canvas dimensions, projecting vertices, and calculating depth is repeated across extraction functions)
 
 **Technical Note - Cutplane Reference:**
 The cutplane is stored in `RTPapercut.state.cutplaneNormal` (which is actually a `THREE.Plane` object, not just the normal vector). Previous code incorrectly referenced `._cutplane` which didn't exist.

@@ -1089,11 +1089,10 @@ export const RTViewManager = {
       const center = object.getWorldPosition(new THREE.Vector3());
       const radius = object.userData.nodeRadius || 0.1;
 
-      // If cutplane is enabled, skip nodes behind or crossing the cutplane
+      // If cutplane is enabled, skip nodes behind the cutplane
       if (cutplaneEnabled && cutplane) {
         const dist = cutplane.distanceToPoint(center);
         if (dist < -radius) return; // Fully behind cutplane
-        if (dist < radius) return;  // Crosses cutplane - section circles handle this
       }
 
       // Get material color
