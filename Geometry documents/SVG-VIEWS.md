@@ -534,6 +534,231 @@ The vector SVG output is clean and high quality. Exports include:
 
 ---
 
+## SVG Export Refinement - Visual Analysis (2026-01-27)
+
+### Branch: SVG-VIEWS2
+
+Created from main after PR #45 merged. Focus: completing SVG export with missing geometry types.
+
+### Visual Comparison: Canvas vs. Exported SVG
+
+A detailed comparison was performed using annotated screenshots of the ARTexplorer canvas and the resulting SVG opened in Inkscape.
+
+#### What's Visible On-Screen (Canvas)
+
+| # | Element | Description |
+|---|---------|-------------|
+| 1 | **Grid lines** | Gray hairline Cartesian grid visible in background |
+| 2 | **Geodesic edges** | Faint orange wireframe edges on geodesic sphere (below cutplane) |
+| 3 | **Cutplane effect** | Nothing visible above the cutplane (Papercut working) |
+| 4 | **Interior faces** | Cube interior faces visible (backface culling off) |
+| 5 | **Section at cutplane** | Tetrahedron cleanly cut at cutplane position |
+| 6 | **Nodes below cutplane** | All vertex nodes showing below cutplane, hidden above |
+| 7 | **Face fill with opacity** | Primary hexahedron face fill on, tetrahedron visible behind |
+| 8 | **Basis vector tetrahedra** | Colored basis tetrahedra visible (user option enabled) |
+
+#### What's in the Exported SVG (Inkscape)
+
+| # | Element | Status |
+|---|---------|--------|
+| 1 | **Everything above cutplane** | ❌ **SHOWS** - cutplane filtering not applied |
+| 2 | **Backface differentiation** | ❌ **MISSING** - no difference between front/back face colors |
+| 3 | **Geodesic edge lines** | ❌ **MISSING** - no wireframe edges exported |
+| 4 | **Grid lines** | ❌ **MISSING** - no grid exported |
+| 5 | **Section cut lines** | ✅ Working - heavy black outline at cutplane |
+| 6 | **Mesh faces** | ✅ Working - icosahedron and geodesic faces export |
+| 7 | **Vertex nodes** | ✅ Working - circles at vertices |
+| 8 | **Basis tetrahedra** | ✅ Working - colored triangles export |
+| 9 | **SVG layers** | ✅ Working - properly separated in Inkscape |
+
+### Root Cause Analysis
+
+#### Issue 1: Geodesic/Polyhedral Edge Lines Not Exporting
+
+**Location**: `rt-viewmanager.js` → `extractVectorPaths()`
+
+**Problem**: Function only traverses `RTPapercut._intersectionLines` looking for `Line2` objects. Polyhedron edges are stored as `LineSegments` objects inside each polyhedron's Group (at `renderOrder = 2`).
+
+**Object Types**:
+```
+Section cut lines:  Line2 + LineGeometry + LineMaterial     → ✅ Exported
+Polyhedron edges:   LineSegments + BufferGeometry + LineBasicMaterial → ❌ Not found
+```
+
+**Code Location** (rt-rendering.js, lines 609-634):
+```javascript
+const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+edgeLines.renderOrder = 2;
+group.add(edgeLines);  // Stored inside polyhedron Group
+```
+
+#### Issue 2: Grid Lines Not Exporting
+
+**Location**: `rt-grids.js` creates grids, `rt-viewmanager.js` explicitly skips them
+
+**Grid Types**:
+- **Cartesian Grid**: `THREE.GridHelper` objects (gridXY, gridXZ, gridYZ) in "cartesianGrid" Group
+- **Quadray Grid**: `LineSegments` objects in "ivmPlanes" Group (6 planes: WX, WY, WZ, XY, XZ, YZ)
+
+**Why Skipped**: `extractMeshFaces()` has explicit skip list (line ~589):
+```javascript
+const skipNames = ["Helper", "Handle", "Gumball", "Basis", "Arrow", "Cone",
+                   "basis", "Grid", "grid", "Cartesian", "Quadray", ...];
+```
+
+#### Issue 3: Cutplane Not Filtering SVG Output
+
+**3D Renderer**: Uses **shader-based clipping** via `material.clippingPlanes`:
+```javascript
+// rt-papercut.js, lines 494-512
+const plane = new THREE.Plane(normal, adjustedValue);
+scene.traverse(object => {
+  if (object.material) {
+    object.material.clippingPlanes = [plane];
+  }
+});
+renderer.localClippingEnabled = true;
+```
+
+**SVG Export**: Only does partial vertex check (rt-viewmanager.js, line ~677):
+```javascript
+// Skip if ALL vertices behind plane - but partial faces still included
+if (d0 < 0 && d1 < 0 && d2 < 0) continue;
+```
+
+**Result**: Faces that straddle the cutplane are fully included instead of being clipped.
+
+### Technical Summary: Object Types & Export Status
+
+| Content | THREE.js Type | Storage Location | Exported? |
+|---------|---------------|------------------|-----------|
+| Section cut lines | Line2 | `RTPapercut._intersectionLines` | ✅ Yes |
+| Mesh faces | Mesh | Scene graph | ✅ Yes |
+| Vertex nodes | Mesh (spheres) | Scene graph | ✅ Yes |
+| **Polyhedron edges** | **LineSegments** | Inside polyhedron Group | ❌ **No** |
+| **Cartesian grid** | GridHelper | "cartesianGrid" Group | ❌ **No** |
+| **Quadray grid** | LineSegments | "ivmPlanes" Group | ❌ **No** |
+
+### Proposed Solutions
+
+#### Solution 1: Export Polyhedron Edge Lines
+
+**New function**: `extractEdgeLines()`
+
+1. Traverse scene for `LineSegments` objects with `renderOrder = 2`
+2. For each edge segment:
+   - Get start/end positions from BufferGeometry
+   - Apply cutplane filtering (skip edges fully behind plane)
+   - Project 3D coordinates to 2D screen space
+   - Add as SVG `<line>` or `<path>` elements
+3. Use material color for stroke
+4. Add to new SVG layer: `<g id="edge-lines">`
+
+#### Solution 2: Export Grid Lines
+
+**New function**: `extractGridLines()`
+
+1. Find "cartesianGrid" and "ivmPlanes" Groups in scene
+2. Check visibility before including (`grid.visible === true`)
+3. Extract LineSegments geometry from each
+4. Project to 2D and add as SVG paths
+5. Style differently: thinner stroke, reduced opacity, possibly dashed
+6. Add to dedicated SVG layer: `<g id="grid-layer">`
+
+#### Solution 3: Proper Cutplane Clipping for SVG
+
+**Enhance**: `extractMeshFaces()` and new `extractEdgeLines()`
+
+1. For faces/edges that cross the cutplane:
+   - Implement **Sutherland-Hodgman polygon clipping** algorithm
+   - Clip triangle against plane to produce clipped polygon
+   - Export clipped shape instead of full face
+2. For edges:
+   - Calculate intersection point with plane
+   - Export only the portion on the visible side
+
+**Implementation Priority**:
+1. ✅ **High**: Polyhedron edge export - **COMPLETE** (commit `fb3266b`)
+2. ✅ **Medium**: Grid line export - **COMPLETE** (commit `3c1e444`)
+3. ✅ **Complete**: Proper cutplane clipping - **COMPLETE** (2026-01-27)
+
+### Implementation Status (2026-01-27)
+
+**Commits on SVG-VIEWS2 branch:**
+- `1d651d4` - Docs: Add visual analysis and implementation plan
+- `fb3266b` - Feat: Add polyhedron edge line export to SVG
+- `3c1e444` - Feat: Add grid line export to SVG (Cartesian and Quadray)
+- `46ce517` - Feat: Add Sutherland-Hodgman cutplane clipping for SVG export
+
+**New Functions Added to `rt-viewmanager.js`:**
+
+1. **`extractEdgeLines()`** (lines ~670-800)
+   - Traverses scene for `LineSegments` with `renderOrder = 2`
+   - Applies cutplane clipping using `_clipLineAgainstPlane()`
+   - Preserves material colors (black in print mode)
+   - Stroke width: 0.5px
+
+2. **`extractGridLines()`** (lines ~810-900)
+   - Finds `GridHelper` (Cartesian) and `LineSegments` with "CentralAngle" name (Quadray)
+   - Checks visibility before including
+   - Preserves Quadray grid colors
+   - Stroke width: 0.25px, opacity: 50%
+
+3. **`_clipPolygonAgainstPlane()`** - Sutherland-Hodgman polygon clipping algorithm
+   - Clips a polygon (array of 3D vertices) against a plane
+   - Returns vertices on the positive (visible) side of the plane
+   - Handles triangles becoming quads/pentagons when cut
+
+4. **`_clipLineAgainstPlane()`** - Line segment clipping
+   - Clips a line segment against a plane
+   - Returns the portion on the visible side, or null if fully clipped
+
+5. **`_polygonToSVGPath()`** - SVG path generation for clipped polygons
+   - Converts 3+ vertex polygons to SVG path data
+   - Handles non-triangular shapes from clipping
+
+**Updated `generateSVG()` options:**
+- `includeGrids` (default: true)
+- `includeEdges` (default: true)
+
+**SVG Layer Order:**
+1. Background rect
+2. Raster (optional)
+3. Grid lines
+4. Mesh faces (with cutplane clipping)
+5. Edge lines (wireframe, with cutplane clipping)
+6. Section lines (cut lines)
+7. Vertex nodes
+8. Title block
+
+**Cutplane Clipping Implementation:**
+
+The SVG export now properly clips geometry at the cutplane boundary using the Sutherland-Hodgman algorithm:
+
+- **Mesh faces**: Triangles crossing the cutplane are clipped to show only the visible portion. The resulting polygon may have 3-5 vertices depending on how the plane intersects the triangle.
+
+- **Edge lines**: Line segments crossing the cutplane are clipped to show only the visible portion. The intersection point with the plane becomes the new endpoint.
+
+- **Vertex nodes**: Nodes behind the cutplane (by more than their radius) are excluded. Nodes crossing the cutplane are currently rendered as full circles (not ideal).
+
+**⚠️ Sphere Node Clipping - NOT YET SATISFACTORY:**
+
+Current state: Nodes fully behind cutplane (`dist < -radius`) are excluded, but nodes crossing the cutplane (`-radius < dist < radius`) are rendered as full circles. This shows the lower halves of spheres correctly but also shows too many spheres above the cutplane.
+
+Attempted fix (reverted): Adding `if (dist < radius) return;` excluded crossing nodes entirely, but this was worse because it hid the lower halves of spheres that should be partially visible.
+
+**The real solution requires**: Either proper sphere-plane intersection clipping (drawing arcs instead of full circles) or a more nuanced approach that accounts for which side of the sphere is visible to the camera. This is a complex geometric problem that may not be worth solving for the current use case - the red section circles from RTPapercut already show the intersection correctly.
+
+**Code refactoring opportunities identified:**
+1. Extract shared `_shouldSkipObject(object)` helper for duplicated skip logic (the `skipNames` array and visibility checks are duplicated in `extractEdgeLines()`, `extractMeshFaces()`, and `extractGridLines()`)
+2. Extract `_isClippedByPlane(point, radius, plane)` returning `'hidden' | 'visible' | 'crossing'` to unify cutplane logic
+3. Consolidate projection/depth calculation patterns (the pattern of getting canvas dimensions, projecting vertices, and calculating depth is repeated across extraction functions)
+
+**Technical Note - Cutplane Reference:**
+The cutplane is stored in `RTPapercut.state.cutplaneNormal` (which is actually a `THREE.Plane` object, not just the normal vector). Previous code incorrectly referenced `._cutplane` which didn't exist.
+
+---
+
 ## Implementation Phases
 
 ### Phase 1: Foundation (MVP) ✅ COMPLETE
