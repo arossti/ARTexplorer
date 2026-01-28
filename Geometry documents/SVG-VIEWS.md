@@ -688,7 +688,8 @@ if (d0 < 0 && d1 < 0 && d2 < 0) continue;
 - `1d651d4` - Docs: Add visual analysis and implementation plan
 - `fb3266b` - Feat: Add polyhedron edge line export to SVG
 - `3c1e444` - Feat: Add grid line export to SVG (Cartesian and Quadray)
-- *(pending)* - Feat: Add Sutherland-Hodgman cutplane clipping for SVG export
+- `46ce517` - Feat: Add Sutherland-Hodgman cutplane clipping for SVG export
+- *(pending)* - Fix: Exclude nodes crossing cutplane from SVG export
 
 **New Functions Added to `rt-viewmanager.js`:**
 
@@ -739,7 +740,16 @@ The SVG export now properly clips geometry at the cutplane boundary using the Su
 
 - **Edge lines**: Line segments crossing the cutplane are clipped to show only the visible portion. The intersection point with the plane becomes the new endpoint.
 
-- **Vertex nodes**: Nodes behind the cutplane (by more than their radius) are excluded.
+- **Vertex nodes**: Nodes behind the cutplane (by more than their radius) are excluded. Nodes crossing the cutplane are also excluded - the red section circles (from RTPapercut) handle the intersection visualization.
+
+**✅ Sphere Node Clipping - COMPLETE (2026-01-27):**
+
+Nodes that cross the cutplane (`-radius < dist < radius`) are now properly excluded from SVG export. The fix was simple: in `extractNodes()`, skip any node where the center-to-cutplane distance is less than the node's radius. The red section circles (extracted from `RTPapercut._intersectionLines`) correctly handle visualization of sphere-cutplane intersections.
+
+**Code refactoring opportunities identified:**
+1. Extract shared `_shouldSkipObject(object)` helper for duplicated skip logic
+2. Extract `_isClippedByPlane(point, radius, plane)` returning `'hidden' | 'visible' | 'crossing'`
+3. Consider consolidating projection/depth calculation patterns
 
 **Technical Note - Cutplane Reference:**
 The cutplane is stored in `RTPapercut.state.cutplaneNormal` (which is actually a `THREE.Plane` object, not just the normal vector). Previous code incorrectly referenced `._cutplane` which didn't exist.
