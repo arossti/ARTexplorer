@@ -1187,6 +1187,19 @@ See [rt-polyhedra.js](../../../src/geometry/modules/rt-polyhedra.js) for complet
   - Circular arc handles around XYZ axes (red/green/blue)
   - Circular arc handles around WXYZ axes (red/green/blue/magenta)
 - ✅ **Rotation math in rt-math.js module**
+
+**Note on RT-Pure vs THREE.js Quaternion Rotations:**
+ARTexplorer maintains a clear separation between rotation calculation methods:
+- **RT-Pure rotations** (`rt-math.js`): Used for predetermined, algebraically exact rotations
+  - `RT.applyRotation45()`: Uses spread s=0.5, cross c=0.5 (exact rationals for 45°)
+  - `RT.applyRotation180()`: Uses spread s=0, cross c=1 (trivial case, no sqrt needed)
+  - These build `THREE.Matrix4` manually from spread/cross values, deferring √ until matrix construction
+- **THREE.js Quaternions** (`rt-init.js` gumball): Used for interactive transforms
+  - `object.quaternion` is THREE.js's internal orientation storage
+  - `Quaternion.setFromAxisAngle()` and `multiplyQuaternions()` for real-time rotation
+  - Unavoidable for GPU interface and smooth interactive manipulation
+
+This hybrid approach is architecturally sound: RT-pure calculations preserve algebraic exactness for geometry generation and predetermined rotations, while THREE.js quaternions provide the necessary interface for real-time user interaction. The quaternions in gumball code are not a deviation from RT principles—they are the required bridge to THREE.js's rendering system.
 - ✅ **HTML refactoring** - Removed 71-line embedded `<style>` block
 - ✅ **UI compaction** - Inline axis prefixes, 4-column WXYZ layout, 330px panel width
 - ✅ **Password simplification** - Changed from URL to 'enzyme2026'

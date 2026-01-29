@@ -201,6 +201,13 @@ High-precision golden ratio calculations using symbolic representation:
 - Scale: Resize with uniform or axis-specific scaling
 - Rotate: Interactive rotation handles
 
+**Note on Rotation Implementation:**
+ARTexplorer uses a hybrid approach for rotations:
+- **Geometry generation**: RT-pure rotations via spread/cross → Matrix4 (e.g., `RT.applyRotation45`, `RT.applyRotation180` in `rt-math.js`)
+- **Interactive transforms**: THREE.js quaternions for real-time gumball operations (unavoidable for GPU interface)
+
+This distinction reflects that while RT mathematics can compute rotation matrices from exact spread/cross values, THREE.js internally stores object orientation as quaternions. The RT-pure functions are optimal for predetermined rotations with algebraic values (90°, 180°, 45°), while interactive gumball rotations must interface with THREE.js's quaternion-based transform system.
+
 **Visual Options:**
 
 - Wireframe/solid face rendering
