@@ -2604,18 +2604,95 @@ function startARTexplorer(
 
   /**
    * Select a polyhedron (Form or Instance) with visual highlight
+   * @param {THREE.Group} polyhedron - Polyhedron to select
+   * @param {boolean} addToSelection - If true (Shift+click), toggle in multi-selection
    */
-  function selectPolyhedron(polyhedron) {
-    // Deselect previous selection
-    if (currentSelection) {
-      clearHighlight(currentSelection);
+  function selectPolyhedron(polyhedron, addToSelection = false) {
+    if (addToSelection) {
+      // Shift+click: Toggle object in multi-selection
+      if (RTStateManager.isSelected(polyhedron)) {
+        // Already selected - remove from selection
+        clearHighlight(polyhedron);
+        RTStateManager.removeFromSelection(polyhedron);
+
+        // Update currentSelection to match state manager's primary
+        currentSelection = RTStateManager.state.selection.object;
+      } else {
+        // Not selected - add to selection
+        applyHighlight(polyhedron);
+        RTStateManager.addToSelection(polyhedron);
+
+        // If this is the first selection, also set as primary/current
+        if (!currentSelection) {
+          currentSelection = polyhedron;
+          RTStateManager.state.selection.object = polyhedron;
+          RTStateManager.state.selection.type = polyhedron.userData.isInstance
+            ? "instance"
+            : "form";
+          RTStateManager.state.selection.id =
+            polyhedron.userData.instanceId || null;
+        }
+      }
+
+      // Update UI selection count
+      updateSelectionCountUI();
+    } else {
+      // Normal click: Clear previous selection(s), select only this one
+      // Clear all existing selections
+      RTStateManager.getSelectedObjects().forEach(obj => {
+        clearHighlight(obj);
+      });
+      RTStateManager.clearSelection();
+
+      // Set new selection
+      currentSelection = polyhedron;
+      RTStateManager.addToSelection(polyhedron);
+      RTStateManager.state.selection.object = polyhedron;
+      RTStateManager.state.selection.type = polyhedron.userData.isInstance
+        ? "instance"
+        : "form";
+      RTStateManager.state.selection.id =
+        polyhedron.userData.instanceId || null;
+
+      // Apply highlight
+      applyHighlight(polyhedron);
+
+      // AUTO-SELECT connected Points when selecting a connectedLine
+      if (polyhedron.userData.type === "connectedLine" && polyhedron.userData.connections) {
+        const { startPoint, endPoint } = polyhedron.userData.connections;
+        const startInst = RTStateManager.getInstance(startPoint);
+        const endInst = RTStateManager.getInstance(endPoint);
+
+        if (startInst?.threeObject) {
+          applyHighlight(startInst.threeObject);
+          RTStateManager.addToSelection(startInst.threeObject);
+        }
+        if (endInst?.threeObject) {
+          applyHighlight(endInst.threeObject);
+          RTStateManager.addToSelection(endInst.threeObject);
+        }
+      }
+
+      // Update UI selection count
+      updateSelectionCountUI();
     }
+  }
 
-    // Set new selection
-    currentSelection = polyhedron;
-
-    // Apply highlight
-    applyHighlight(polyhedron);
+  /**
+   * Update the UI to show selection count
+   */
+  function updateSelectionCountUI() {
+    const count = RTStateManager.getSelectionCount();
+    // Update "Objects Placed" or similar UI element if it exists
+    const selectionCountEl = document.getElementById("selectionCount");
+    if (selectionCountEl) {
+      selectionCountEl.textContent =
+        count > 0 ? `${count} selected` : "None selected";
+    }
+    // Log for debugging
+    if (count > 1) {
+      console.log(`📦 Multi-select: ${count} objects selected`);
+    }
   }
 
   /**
@@ -2693,13 +2770,19 @@ function startARTexplorer(
   }
 
   /**
-   * Deselect all polyhedra
+   * Deselect all polyhedra (clears multi-selection)
    */
   function deselectAll() {
-    if (currentSelection) {
-      clearHighlight(currentSelection);
-      currentSelection = null;
-    }
+    // Clear highlights from all selected objects
+    RTStateManager.getSelectedObjects().forEach(obj => {
+      clearHighlight(obj);
+    });
+    // Clear state manager selection
+    RTStateManager.clearSelection();
+    // Clear local reference
+    currentSelection = null;
+    // Update UI
+    updateSelectionCountUI();
   }
 
   /**
@@ -2804,7 +2887,7 @@ function startARTexplorer(
       );
 
       if (parentEntry) {
-        selectPolyhedron(parentEntry.parent);
+        selectPolyhedron(parentEntry.parent, event.shiftKey);
       }
     }
     // NOTE: Clicking empty space no longer deselects
@@ -2812,9 +2895,13 @@ function startARTexplorer(
     // This allows users to orbit camera between transformations without losing selection
   }
 
-  // Get selected polyhedra - returns only currently selected polyhedron
+  // Get selected polyhedra - returns all selected objects (multi-select aware)
   function getSelectedPolyhedra() {
-    // Return only the currently selected polyhedron (if any)
+    const selected = RTStateManager.getSelectedObjects();
+    if (selected.length > 0) {
+      return selected;
+    }
+    // Fallback to currentSelection for backwards compatibility
     if (currentSelection) {
       return [currentSelection];
     }
@@ -4268,6 +4355,23 @@ function startARTexplorer(
             isDragCopying = false;
           }
 
+          // Update connected geometry for any moved Point instances
+          // BUT skip if the connectedLine was also in the selection (it was transformed together)
+          const hasConnectedLine = selectedPolyhedra.some(
+            p => p.userData.type === "connectedLine"
+          );
+          if (!hasConnectedLine) {
+            selectedPolyhedra.forEach(poly => {
+              if (
+                poly.userData.isInstance &&
+                poly.userData.type === "point" &&
+                poly.userData.instanceId
+              ) {
+                RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+              }
+            });
+          }
+
           // Mark that we just finished a drag to prevent click-after-drag deselection
           justFinishedDrag = true;
 
@@ -4573,5 +4677,109 @@ function startARTexplorer(
       document.getElementById("nowCount").textContent =
         RTStateManager.getDepositedCount();
     }
+
+    // Connect: 'C' key (not Ctrl+C) - connect two selected Points with a Line
+    if (event.key === "c" && !event.ctrlKey && !event.metaKey) {
+      handleConnectAction();
+    }
   });
+
+  // ========================================================================
+  // CONNECT / DISCONNECT BUTTON HANDLERS
+  // ========================================================================
+
+  /**
+   * Handle Connect action - connect two selected Points with a Line
+   */
+  function handleConnectAction() {
+    const selected = RTStateManager.getSelectedObjects();
+
+    if (selected.length !== 2) {
+      console.warn("⚠️ Connect requires exactly 2 selected Points");
+      return;
+    }
+
+    // Get instance IDs
+    const idA = selected[0].userData.instanceId;
+    const idB = selected[1].userData.instanceId;
+
+    if (!idA || !idB) {
+      console.warn("⚠️ Connect requires 2 deposited Point instances");
+      return;
+    }
+
+    // Verify both are Points
+    const instA = RTStateManager.getInstance(idA);
+    const instB = RTStateManager.getInstance(idB);
+
+    if (!instA || instA.type !== "point" || !instB || instB.type !== "point") {
+      console.warn("⚠️ Connect requires 2 Point instances (not other types)");
+      return;
+    }
+
+    // Create connected line
+    const connectedLine = RTStateManager.connectPoints(idA, idB, scene);
+
+    if (connectedLine) {
+      // Update counter UI
+      document.getElementById("nowCount").textContent =
+        RTStateManager.getDepositedCount();
+
+      // Clear selection and select the new line
+      deselectAll();
+      selectPolyhedron(connectedLine.threeObject);
+    }
+  }
+
+  /**
+   * Handle Disconnect action - disconnect a connected Line back to Points
+   */
+  function handleDisconnectAction() {
+    const selected = RTStateManager.getSelectedObjects();
+
+    if (selected.length !== 1) {
+      console.warn("⚠️ Disconnect requires exactly 1 selected connectedLine");
+      return;
+    }
+
+    const lineObj = selected[0];
+    const lineId = lineObj.userData.instanceId;
+
+    if (!lineId) {
+      console.warn("⚠️ Disconnect requires a deposited connectedLine instance");
+      return;
+    }
+
+    const inst = RTStateManager.getInstance(lineId);
+    if (!inst || inst.type !== "connectedLine") {
+      console.warn("⚠️ Disconnect only works on connectedLine instances");
+      return;
+    }
+
+    // Disconnect (deletes the line, Points remain)
+    RTStateManager.disconnectLine(lineId, scene);
+
+    // Update counter UI
+    document.getElementById("nowCount").textContent =
+      RTStateManager.getDepositedCount();
+
+    // Clear selection
+    deselectAll();
+  }
+
+  // Wire up Connect button
+  const connectBtn = document.getElementById("connectBtn");
+  if (connectBtn) {
+    connectBtn.addEventListener("click", handleConnectAction);
+  }
+
+  // Wire up Disconnect button
+  const disconnectBtn = document.getElementById("disconnectBtn");
+  if (disconnectBtn) {
+    disconnectBtn.addEventListener("click", handleDisconnectAction);
+  }
+
+  // Expose handlers globally for context menu
+  window.handleConnectAction = handleConnectAction;
+  window.handleDisconnectAction = handleDisconnectAction;
 } // End startARTexplorer function

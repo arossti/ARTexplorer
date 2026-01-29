@@ -157,6 +157,24 @@ export function initContextMenu(THREE, scene, camera, renderer) {
       return;
     }
 
+    // Connect two Points with a Line
+    if (action === "connect") {
+      if (window.handleConnectAction) {
+        window.handleConnectAction();
+      }
+      hide();
+      return;
+    }
+
+    // Disconnect Line back to two Points
+    if (action === "disconnect") {
+      if (window.handleDisconnectAction) {
+        window.handleDisconnectAction();
+      }
+      hide();
+      return;
+    }
+
     // Undo (stub - not yet implemented)
     if (action === "undo") {
       if (window.RTStateManager?.undo) {
