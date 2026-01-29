@@ -4236,6 +4236,25 @@ function startARTexplorer(
             }
           }
 
+          // Update connected geometry for any moved Point instances
+          // Same logic as gumball drag handler - skip if connectedLine in selection
+          const hasConnectedLine = selectedPolyhedra.some(
+            p => p.userData.type === "connectedLine"
+          );
+          if (!hasConnectedLine) {
+            selectedPolyhedra.forEach(poly => {
+              if (
+                poly.userData.isInstance &&
+                poly.userData.type === "point" &&
+                poly.userData.instanceId
+              ) {
+                RTStateManager.updateConnectedGeometry(
+                  poly.userData.instanceId
+                );
+              }
+            });
+          }
+
           justFinishedDrag = true;
           isFreeMoving = false;
           selectedPolyhedra = [];

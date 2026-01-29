@@ -348,7 +348,9 @@ Benefits:
 
 ---
 
-## Bug 4: Single-Node Movement in Connected Group Broken (Jan 29, 2026)
+## Bug 4: Single-Node Movement in Connected Group Broken ✅ FIXED (Jan 29, 2026)
+
+**Status**: RESOLVED
 
 ### Symptom
 After the rotation fix (commit `9f92935`), moving a **single Point** that is part of a connected group no longer updates the connected line. The line stays frozen at its original position while the Point moves away from it.
