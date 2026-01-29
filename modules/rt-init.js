@@ -4782,4 +4782,8 @@ function startARTexplorer(
   // Expose handlers globally for context menu
   window.handleConnectAction = handleConnectAction;
   window.handleDisconnectAction = handleDisconnectAction;
+
+  // Signal that app initialization is complete
+  window.dispatchEvent(new CustomEvent("artexplorer-ready"));
+  console.log("✅ ARTexplorer initialization complete");
 } // End startARTexplorer function
