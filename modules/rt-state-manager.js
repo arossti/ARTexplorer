@@ -489,7 +489,7 @@ export const RTStateManager = {
       posA.clone(),
       posB.clone(),
     ]);
-    const material = new THREE.LineBasicMaterial({ color: 0x888888 });
+    const material = new THREE.LineBasicMaterial({ color: 0x00B4FF });
     const lineSegments = new THREE.LineSegments(geometry, material);
 
     // Create a Group to hold the line (consistent with other instances)

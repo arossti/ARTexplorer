@@ -340,6 +340,46 @@ Benefits:
 
 ---
 
+## Known Bugs (Jan 29, 2026)
+
+### Bug 1: ConnectedLine selection fails in orthographic view
+**Symptom**: User cannot select connectedLine instances in orthographic camera modes (Z-down, etc.), though selection works in perspective mode. Original Point instances remain selectable in all views.
+
+**Root Cause (suspected)**: `connectPoints()` creates bare `THREE.LineSegments` with `THREE.LineBasicMaterial` - a 1px thin line with no vertex node meshes. Regular polyhedra have vertex node spheres that make them clickable. The raycast threshold (`selectionRaycaster.params.Line.threshold = 0.1`) may not be sufficient for orthographic projection.
+
+**Potential Fix**:
+- Use `Line2` with `LineMaterial` instead of `LineSegments` (provides thicker, more clickable geometry)
+- Or add small invisible hit-test meshes at endpoints
+
+### Bug 2: ConnectedLine transforms independently from its Points
+**Symptom**:
+- Select connectedLine → Rotate → Line rotates correctly ✅
+- BUT the connected Points do NOT move with the line ❌
+- This disconnects the visual line from its constraint endpoints
+
+**Expected Behavior**: When connectedLine is rotated/moved, its connected Points should transform together (or line should be non-transformable, only movable via Points).
+
+**Root Cause**: ConnectedLine is a separate THREE.js object with no bidirectional constraint. Moving Points updates the Line (via `updateConnectedGeometry`), but moving/rotating the Line does NOT update the Points.
+
+**Potential Fix Options**:
+1. **Make connectedLine non-selectable** - User can only edit by moving Points (cleanest)
+2. **Bidirectional sync** - When Line moves, update Point positions to match
+3. **Group-like behavior** - Selecting Line auto-selects connected Points
+
+### Bug 3: Rotate with 2 connected Points rotates only one
+**Symptom**: Multi-select 2 Points that are connected, then Rotate → only one Point rotates, Line updates to match.
+
+**Expected Behavior**: Both Points should rotate about common origin (like multi-selecting 2 cubes).
+
+**Root Cause (suspected)**: The rotate operation may be iterating through selected objects but `updateConnectedGeometry()` is being called mid-rotation, causing the line to "pull" one point back to its pre-rotation position.
+
+**Debug Approach**:
+1. Add console logging in rotate drag handler to confirm both objects are in selection
+2. Check if `updateConnectedGeometry()` is being called during drag vs only on drag-end
+3. Verify the rotation center calculation includes both Points
+
+---
+
 ## Appendix: Why Point-Based Approach is Superior
 
 ### Current Line Implementation Issues
