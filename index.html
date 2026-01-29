@@ -1842,8 +1842,27 @@
                   Group
                 </button>
               </div>
+              <div class="toggle-btn-group spacing-top-small">
+                <button
+                  class="toggle-btn variant-standard"
+                  id="connectBtn"
+                  title="Connect two Points with a Line (C)"
+                  disabled
+                >
+                  Connect
+                </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="disconnectBtn"
+                  title="Disconnect Line back to two Points"
+                  disabled
+                >
+                  Disconnect
+                </button>
+              </div>
               <div class="snap-description snap-description-small">
-                Deform: Select instance vertices. Group: Combine 2+ objects.
+                Deform: Select instance vertices. Group: Combine 2+ objects.<br />
+                Connect: Link 2 Points with a Line. Disconnect: Unlink Line to Points.
               </div>
             </div>
 
@@ -2458,6 +2477,10 @@
         <div class="context-menu-btn-group">
           <button class="context-btn" data-action="deform" title="Enter vertex deformation mode">Deform</button>
           <button class="context-btn" data-action="group" title="Group selected objects (Ctrl/Cmd+G)">Group</button>
+        </div>
+        <div class="context-menu-btn-group">
+          <button class="context-btn" data-action="connect" title="Connect two Points with a Line (C)">Connect</button>
+          <button class="context-btn" data-action="disconnect" title="Disconnect Line back to two Points">Disconnect</button>
         </div>
       </div>
       <div class="context-menu-section">
