@@ -2671,7 +2671,6 @@ function startARTexplorer(
           applyHighlight(endInst.threeObject);
           RTStateManager.addToSelection(endInst.threeObject);
         }
-        console.log("🔗 Auto-selected connected Points with Line");
       }
 
       // Update UI selection count

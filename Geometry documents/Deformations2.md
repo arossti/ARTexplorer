@@ -6,11 +6,11 @@
 **Status**: Phase 0 complete, Phase 1 skipped, ready for Phase 2
 **Goal**: Enable vertex-level editing of Line primitives
 
-### Current State (Jan 28, 2026 - Late Night)
+### Current State (Jan 29, 2026)
 - ✅ **Phase 0: Multi-Select** - COMPLETED (`d5e48a0`)
 - ⏭️ **Phase 1: Grouping** - SKIPPED (multi-select provides sufficient functionality)
-- ⚠️ **Phase 2: Line Deformation** - PARTIAL SUCCESS, reconsidering approach
-- 💡 **Alternative: Point-Based Lines** - Recommended new approach (see below)
+- ⚠️ **Phase 2: Line Deformation** - DEPRECATED (replaced by Point-Based Lines)
+- ✅ **Phase 2A: Point-Based Lines** - COMPLETED (`9f92935`)
 
 **Phase 2 Status**:
 - Edge and nodes move during drag (works!)
@@ -313,13 +313,11 @@ Benefits:
 - [x] No deform mode needed - just use normal Move tool ✅
 
 **Known Issues (Jan 29, 2026)**:
-- Bug 1: ConnectedLine hard to select in orthographic views (1px line)
-- Bug 2: Rotating connectedLine alone disconnects it from Points
-- Bug 3: Rotating 2 connected Points causes visual revert on mouseup
-  - Investigation: Transform persistence code runs, StateManager updated correctly
-  - BUT: Points visually snap back after mouseup completes
-  - Root cause unknown - may be render loop or late event handler resetting positions
-  - Attempted fix reverted to avoid tech debt
+- Bug 1: ConnectedLine hard to select in orthographic views (1px line) - OPEN
+- ~~Bug 2: Rotating connectedLine alone disconnects it from Points~~ - **FIXED** (`9f92935`)
+- ~~Bug 3: Rotating 2 connected Points causes visual revert on mouseup~~ - **FIXED** (`9f92935`)
+
+**Solution for Bug 2 & 3**: Auto-select connected Points when selecting a connectedLine. When all three objects (line + 2 points) are in selection together, skip `updateConnectedGeometry()` on mouseup since they transformed as a unit.
 
 ---
 
@@ -328,6 +326,7 @@ Benefits:
 ### DEFORM Branch (Current)
 | Commit | Description | Status |
 |--------|-------------|--------|
+| `9f92935` | Auto-select connected Points, fix rotation | ✅ Complete |
 | `4905e54` | Line deform with lineWeight=1 default | ⚠️ Partial |
 | `5de61af` | WIP: rt-deform.js module skeleton | ⚠️ Partial |
 | `9e4e548` | Docs: roadmap + extraction analysis | ✅ Complete |
@@ -360,32 +359,23 @@ Benefits:
 - Use `Line2` with `LineMaterial` instead of `LineSegments` (provides thicker, more clickable geometry)
 - Or add small invisible hit-test meshes at endpoints
 
-### Bug 2: ConnectedLine transforms independently from its Points
-**Symptom**:
+### Bug 2: ConnectedLine transforms independently from its Points ✅ FIXED
+**Status**: RESOLVED in commit `9f92935`
+
+**Original Symptom**:
 - Select connectedLine → Rotate → Line rotates correctly ✅
 - BUT the connected Points do NOT move with the line ❌
-- This disconnects the visual line from its constraint endpoints
 
-**Expected Behavior**: When connectedLine is rotated/moved, its connected Points should transform together (or line should be non-transformable, only movable via Points).
+**Solution**: Auto-select connected Points when selecting a connectedLine. In `selectPolyhedron()`, when the selected object is a `connectedLine`, automatically add its connected Points to the selection with highlights. This implements option 3 (group-like behavior) from the potential fixes.
 
-**Root Cause**: ConnectedLine is a separate THREE.js object with no bidirectional constraint. Moving Points updates the Line (via `updateConnectedGeometry`), but moving/rotating the Line does NOT update the Points.
+### Bug 3: Rotate with 2 connected Points causes visual revert ✅ FIXED
+**Status**: RESOLVED in commit `9f92935`
 
-**Potential Fix Options**:
-1. **Make connectedLine non-selectable** - User can only edit by moving Points (cleanest)
-2. **Bidirectional sync** - When Line moves, update Point positions to match
-3. **Group-like behavior** - Selecting Line auto-selects connected Points
+**Original Symptom**: Multi-select 2 Points that are connected, then Rotate → visual revert on mouseup.
 
-### Bug 3: Rotate with 2 connected Points rotates only one
-**Symptom**: Multi-select 2 Points that are connected, then Rotate → only one Point rotates, Line updates to match.
+**Root Cause**: `updateConnectedGeometry()` was being called on mouseup, which recalculates line position from Point positions. When all 3 objects rotate together, this recalculation was resetting the line.
 
-**Expected Behavior**: Both Points should rotate about common origin (like multi-selecting 2 cubes).
-
-**Root Cause (suspected)**: The rotate operation may be iterating through selected objects but `updateConnectedGeometry()` is being called mid-rotation, causing the line to "pull" one point back to its pre-rotation position.
-
-**Debug Approach**:
-1. Add console logging in rotate drag handler to confirm both objects are in selection
-2. Check if `updateConnectedGeometry()` is being called during drag vs only on drag-end
-3. Verify the rotation center calculation includes both Points
+**Solution**: Skip `updateConnectedGeometry()` on mouseup when a `connectedLine` is also in the selection. The check `selectedPolyhedra.some(p => p.userData.type === "connectedLine")` determines if the line was transformed together with its Points, in which case no geometry update is needed.
 
 ---
 
