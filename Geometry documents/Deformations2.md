@@ -3,13 +3,21 @@
 ## Quick Start for New Agent
 
 **Branch**: `DEFORM` (created from `main` at `af25fcd`)
-**Status**: UI buttons in place (stubs), implementation not started
+**Status**: Phase 0 complete, Phase 1 skipped, ready for Phase 2
 **Goal**: Enable vertex-level editing of Line primitives
 
-### Current State
-- Deform/Group/Undo/Redo buttons exist in UI (disabled stubs)
-- Context menu has corresponding action handlers (stubs)
-- No deform logic implemented yet - clean slate
+### Current State (Jan 28, 2026 - Late Night)
+- ✅ **Phase 0: Multi-Select** - COMPLETED (`d5e48a0`)
+- ⏭️ **Phase 1: Grouping** - SKIPPED (multi-select provides sufficient functionality)
+- ⚠️ **Phase 2: Line Deformation** - PARTIAL SUCCESS, reconsidering approach
+- 💡 **Alternative: Point-Based Lines** - Recommended new approach (see below)
+
+**Phase 2 Status**:
+- Edge and nodes move during drag (works!)
+- lineWeight=1 now default for deform compatibility
+- BUT: mouse up doesn't exit (only ESC), subsequent edits delete nodes
+- Orphaned vertex nodes appear in space disconnected from rendered line
+- Complex code (~470 lines in rt-deform.js) for fragile results
 
 ### Key Files to Modify
 | File | Purpose |
@@ -20,28 +28,30 @@
 | `index.html` | Buttons already in place (lines 1820-1867) |
 | `modules/rt-context.js` | Action handlers already in place (lines 144-180) |
 
+### ⚠️ Critical Architecture Note
+**rt-init.js is 4,648 lines** - avoid adding significant code here. Any new feature requiring >50 lines should be extracted to a separate module. See `JAN28-EXTRACT.md` for candidates.
+
 ---
 
 ## Implementation Order (Prerequisites First)
 
-### Phase 0: Multi-Select (PREREQUISITE)
-**Why first**: Deform mode requires selecting individual vertices within an already-selected instance. Multi-select infrastructure enables sub-object selection.
+### Phase 0: Multi-Select ✅ COMPLETED
+**Commit**: `d5e48a0` - "Feat: Add multi-select support (Phase 0 for Deform)"
 
-**Current selection system** (rt-state-manager.js ~line 67):
-```javascript
-selection: {
-  type: null,      // 'form' or 'instance'
-  id: null,        // Instance ID
-  object: null,    // THREE.Object3D reference
-}
-```
+**Implementation**:
+- Extended selection state in rt-state-manager.js with `objects[]` array
+- Added helper methods: `addToSelection()`, `removeFromSelection()`, `isSelected()`, `getSelectedObjects()`, `getSelectionCount()`, `clearSelection()`
+- Modified `selectPolyhedron()` in rt-init.js to accept `addToSelection` parameter
+- Added Shift+click behavior to toggle selection
+- Added selection count UI in Edit Actions section
 
-**Required extension**:
+**Selection state** (rt-state-manager.js):
 ```javascript
 selection: {
   type: null,           // 'form' or 'instance'
   id: null,             // Instance ID
-  object: null,         // THREE.Object3D reference
+  object: null,         // THREE.Object3D reference (primary selection)
+  objects: [],          // Multi-select array
   mode: 'object',       // 'object' | 'vertex' | 'edge' | 'face'
   subSelection: {
     vertices: [],       // Array of selected vertex indices
@@ -51,40 +61,118 @@ selection: {
 }
 ```
 
-**Tasks**:
-- [ ] Extend selection state in rt-state-manager.js
-- [ ] Add Shift+click to add/remove from selection
-- [ ] Visual feedback for multi-selected objects
-- [ ] Update selection count in UI
+**Bonus**: Move and Rotate tools work with multi-select out of the box!
 
-### Phase 1: Grouping
-**Why before deform**: Groups establish parent-child relationships needed for compound objects. Understanding group transforms helps with vertex-to-world coordinate mapping.
+### Phase 1: Grouping ⏭️ SKIPPED
+**Decision**: Skip formal grouping for now. Multi-select already provides group-like behavior for transforms.
 
-**Tasks**:
-- [ ] Define Group data structure in rt-state-manager.js
-- [ ] Wire "Group" button (Ctrl/Cmd+G)
-- [ ] Create compound THREE.Group from selected instances
-- [ ] Handle ungroup operation
-- [ ] Persist groups in export/import
+**Why skipped (Jan 28, 2026)**:
+1. Multi-select + transform tools already provide core "group" behavior
+2. Implementation attempt revealed issues: cursor feedback, selection consistency, editing basis positioning
+3. Adding ~200 lines to rt-init.js (already 4,648 lines) was unacceptable
+4. Grouping adds no value over multi-select until we need hierarchical transforms
 
-### Phase 2: Line Deformation (Thin Lines Only)
-**Why thin lines first**: LineSegments (1px) use standard THREE.js BufferGeometry that's easy to clone and update. Line2 (thick lines) uses internal Mesh geometry that's complex to handle.
+**Future consideration**: If we need persistent groups (parent-child hierarchy), implement as a separate module with proper state management.
+
+### Phase 2: Line Deformation (Thin Lines Only) ⚠️ PARTIAL
+
+**Commits**: `5de61af`, `4905e54`
+
+**What Works**:
+- ✅ lineWeight=1 now default (uses LineSegments, not Line2)
+- ✅ D key and Deform button enter deform mode
+- ✅ Green vertex nodes appear at line endpoints
+- ✅ Click node → turns yellow (selected)
+- ✅ Drag node → edge follows in real-time
+- ✅ ESC exits deform mode
+
+**What Doesn't Work**:
+- ❌ Mouse up doesn't complete the operation (must press ESC)
+- ❌ Subsequent edits delete one of the vertex nodes
+- ❌ Orphaned vertex nodes appear disconnected from rendered line
+- ❌ ~470 lines of complex code for fragile results
+
+**Root Cause Analysis**:
+The current approach fights the existing architecture:
+1. Line instances clone geometry separately from the state-managed Point nodes
+2. The deform code must track and update multiple objects (LineSegments, vertex Meshes)
+3. Proximity matching between nodes is fragile and accumulates errors
+4. No constraint system to keep edge connected to endpoints
+
+---
+
+## 💡 Alternative Approach: Point-Based Lines (RECOMMENDED)
+
+### Key Insight
+**Points already work perfectly** with:
+- StateManager (create, select, move, delete)
+- FileHandler (export, import)
+- All snap modes (vertex, edge, face, object)
+- All edit commands (move, rotate, scale)
+
+**A Line is fundamentally two Points connected by an edge.**
+
+### Proposed Architecture
+
+Instead of complex deform code, leverage existing infrastructure:
+
+```javascript
+// A Line is defined by references to two Point instances
+line.userData.connections = {
+  startPoint: pointInstanceId1,  // Reference to Point instance
+  endPoint: pointInstanceId2     // Reference to Point instance
+};
+
+// When a Point moves, any connected Lines update automatically
+RTStateManager.updateConnectedGeometry(pointInstance);
+```
+
+### Benefits
+
+1. **No Deform Mode Needed** - Just move the Points normally
+2. **Reuses Proven Code** - Points already work with all systems
+3. **Natural Extensibility** - Connect 3+ points → polygon, connect faces → polyhedra
+4. **Constraint-Based** - Line edge always follows its endpoints
+5. **Less Code** - Remove rt-deform.js, add ~50 lines for connection tracking
+
+### Implementation Plan
+
+**Phase 2A: CONNECT Feature**
+1. Select two Point instances (using multi-select)
+2. Press "Connect" button or 'C' key
+3. Creates a Line instance that references both Points
+4. Line edge renders between Point positions
+
+**Phase 2B: Automatic Updates**
+1. When a Point moves, find all Lines that reference it
+2. Update those Line geometries to match new Point positions
+3. No special "deform mode" - just normal move operations
+
+**Phase 2C: Visual Feedback**
+1. When Line is selected, highlight connected Points
+2. Optionally show "connection lines" during hover
+
+### Research Needed
+- THREE.js constraints (may not need - just update on move)
+- How to store Point→Line relationships efficiently
+- Whether to allow "orphan" Lines (not connected to Points)
+
+---
+
+### Phase 2 Original Approach (DEPRECATED)
 
 **Key Discovery from Previous Attempt**:
 > Line2 from three/addons uses **Mesh** internally, not Line objects.
 > When lineWidth > 1, Line2 creates a triangular prism (Mesh) to simulate thick lines.
-> This is why cloning produced 4 Meshes instead of 2 nodes + 1 edge.
 
-**Recommendation**: Force `lineWidth = 1` for deformable Lines initially.
-
-**Tasks**:
-- [ ] Force LineSegments (not Line2) for Line primitives during deform
+**Tasks (mostly done but fragile)**:
+- [x] Force LineSegments (not Line2) for Line primitives during deform
 - [ ] Add `deformation` field to instance schema
-- [ ] Implement `enterDeformMode()` / `exitDeformMode()`
-- [ ] Vertex node click detection (raycast to meshes with `isVertexNode`)
-- [ ] Drag handling with offset calculation
-- [ ] `updateLineGeometry()` to update edge + nodes
-- [ ] Wire Deform button and 'D' keyboard shortcut
+- [x] Implement `enterDeformMode()` / `exitDeformMode()`
+- [x] Vertex node click detection (raycast to meshes with `isVertexNode`)
+- [x] Drag handling with offset calculation
+- [x] `updateLineGeometry()` to update edge + nodes
+- [x] Wire Deform button and 'D' keyboard shortcut
 
 ### Phase 3: Line2 Support (Thick Lines)
 **After thin lines work**, add Line2 handling:
@@ -113,14 +201,16 @@ Full 3D: vertices shared across faces, all incident geometry updates.
 
 ---
 
-## Lessons Learned from UI-TWEAKS-J28 Branch
+## Lessons Learned
 
-### What Went Wrong
+### From UI-TWEAKS-J28 Branch (Earlier Deform Attempt)
+
+**What Went Wrong**:
 1. **Jumped straight to deform** without multi-select infrastructure
 2. **Didn't understand Line2 structure** - spent cycles debugging wrong object types
 3. **Too many code changes at once** - hard to isolate issues
 
-### What the Logs Revealed
+**What the Logs Revealed**:
 ```
 [Deform] updateLineGeometry called. Group children:
   - type=Group, constructor=Group, isLine2=undefined
@@ -130,7 +220,7 @@ Full 3D: vertices shared across faces, all incident geometry updates.
 
 The instance had 4 Meshes (2 vertex nodes + 2 Line2 internal prism meshes) but NO Line2/LineSegments object. The edge we saw was from the **Form**, not the **Instance**.
 
-### Technical Details
+### Line2 Technical Details
 
 **Line2 internal structure**:
 - Line2 object has `isLine2 = true`
@@ -141,6 +231,18 @@ The instance had 4 Meshes (2 vertex nodes + 2 Line2 internal prism meshes) but N
 - Check for Line2 at the **group level** before traversing
 - Clone Line2 as a unit, not its internal meshes
 - Update via `line2.geometry.setPositions()` not position attributes
+
+### From DEFORM Branch Phase 1 (Grouping Attempt - Jan 28, 2026)
+
+**What Went Wrong**:
+1. **Grouping didn't add value over multi-select** - Move/Rotate already worked with multiple selections
+2. **Too much code in rt-init.js** - Adding ~200 lines pushed file past 4,800 lines
+3. **Multiple bugs appeared**: cursor stuck as pointer, individual items could be deselected from group, editing basis appeared at wrong position, Group button didn't toggle to Ungroup
+4. **Scope isolation issues** - Similar problems to previous rt-controls.js extraction failures
+
+**Key Insight**: Multi-select with existing transform tools provides 90% of grouping functionality without any new code. Formal grouping only needed for persistent parent-child hierarchies.
+
+**Code Quality Principle**: "Move slowly and don't break things. Clean, minimal, modular code." Large files like rt-init.js (4,648 lines) need extraction, not expansion.
 
 ---
 
@@ -182,42 +284,101 @@ Benefits:
 
 ## Testing Checklist
 
-### Phase 0: Multi-Select
-- [ ] Click object A → selected
-- [ ] Shift+click object B → both selected
-- [ ] Shift+click object A → deselected, only B remains
-- [ ] Visual feedback shows all selected objects
+### Phase 0: Multi-Select ✅ PASSED
+- [x] Click object A → selected
+- [x] Shift+click object B → both selected
+- [x] Shift+click object A → deselected, only B remains
+- [x] Visual feedback shows all selected objects
+- [x] Move tool works with multi-select
+- [x] Rotate tool works with multi-select
 
-### Phase 1: Grouping
-- [ ] Select 2+ instances
-- [ ] Click Group (or Ctrl+G) → creates compound
-- [ ] Move group → all children move together
-- [ ] Export/Import → group preserved
+### Phase 1: Grouping ⏭️ SKIPPED
+(Multi-select provides equivalent functionality)
 
-### Phase 2: Line Deformation
-- [ ] Create Line primitive (lineWidth = 1)
-- [ ] Deposit instance with NOW
-- [ ] Select instance
-- [ ] Click Deform button → mode enters, nodes become selectable
-- [ ] Click vertex node → node highlights yellow
-- [ ] Drag vertex → edge follows, other vertex stays fixed
-- [ ] Release → position persists
-- [ ] ESC → exit deform mode
-- [ ] Export/Import → deformation preserved
+### Phase 2: Line Deformation (Current Approach - Partial)
+- [x] Create Line primitive (lineWidth = 1) - now default
+- [x] Deposit instance with NOW
+- [x] Select instance
+- [x] Click Deform button → mode enters, nodes become selectable
+- [x] Click vertex node → node highlights yellow
+- [x] Drag vertex → edge follows, other vertex stays fixed
+- [ ] Release → position persists ❌ (requires ESC, subsequent edits break)
+- [x] ESC → exit deform mode
+- [ ] Export/Import → deformation preserved (not tested)
+
+### Phase 2A: Point-Based Lines (Recommended Alternative)
+- [ ] CONNECT feature: select 2 Points → create Line between them
+- [ ] Line stores references to Point instances
+- [ ] Moving Points automatically updates connected Lines
+- [ ] No deform mode needed - just use normal Move tool
 
 ---
 
-## Reference: Previous Branch Commits
+## Reference: Branch Commits
 
+### DEFORM Branch (Current)
+| Commit | Description | Status |
+|--------|-------------|--------|
+| `4905e54` | Line deform with lineWeight=1 default | ⚠️ Partial |
+| `5de61af` | WIP: rt-deform.js module skeleton | ⚠️ Partial |
+| `9e4e548` | Docs: roadmap + extraction analysis | ✅ Complete |
+| `d5e48a0` | Multi-select support (Phase 0) | ✅ Complete |
+| `af25fcd` | Branch base (from main) | Starting point |
+
+### Previous Attempts (UI-TWEAKS-J28)
 | Commit | Description | Status |
 |--------|-------------|--------|
 | `e15d326` | Final state with diagnostic logging | Exploratory (discarded) |
 | `f13df86` | First deform mode (nodes move, edge doesn't) | Bug discovered |
 | `cf033dc` | HiFi UI styling (clean base) | Merged to main |
-| `af25fcd` | PR #47 merged (UI buttons) | Current main |
 
 ---
 
-*Document updated: January 28, 2026*
+*Document updated: January 28, 2026 (late night)*
 *Branch: DEFORM*
 *Author: Andy & Claude*
+
+---
+
+## Appendix: Why Point-Based Approach is Superior
+
+### Current Line Implementation Issues
+
+1. **Lines have their own vertex nodes** - duplicates Point functionality
+2. **Cloning creates disconnected copies** - geometry diverges from visual nodes
+3. **Deform code must track multiple objects** - LineSegments + vertex Meshes
+4. **Proximity matching is fragile** - errors accumulate with each edit
+5. **No constraint system** - edge and nodes can desync
+
+### Point Implementation Already Handles
+
+1. **Creation** - Single node at position, works with all tools
+2. **Selection** - Click to select, Shift+click for multi-select
+3. **Movement** - Gumball, snap to vertex/edge/face/object
+4. **StateManager** - Tracked as instance, undo/redo ready
+5. **FileHandler** - Export/import preserves position
+6. **Rendering** - Node size options (Sm/Md/Lg/Packed)
+
+### A Line = Two Connected Points
+
+Instead of:
+```
+Line Instance
+├── Mesh (vertex node 0)
+├── LineSegments (edge)
+└── Mesh (vertex node 1)
+```
+
+Use:
+```
+Point Instance A (existing, proven)
+Point Instance B (existing, proven)
+Line Instance
+└── LineSegments (edge, positions derived from A & B)
+    └── userData.connections = { start: A.id, end: B.id }
+```
+
+When Point A moves → Line automatically updates edge start position.
+When Point B moves → Line automatically updates edge end position.
+
+**No deform mode needed. No special code. Just move Points.**
