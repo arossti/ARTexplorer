@@ -141,6 +141,44 @@ export function initContextMenu(THREE, scene, camera, renderer) {
       return;
     }
 
+    // Deform mode (vertex editing)
+    if (action === "deform") {
+      if (window.enterDeformMode) {
+        window.enterDeformMode();
+      }
+      hide();
+      return;
+    }
+
+    // Group selected objects (stub - not yet implemented)
+    if (action === "group") {
+      console.log("[Context] Group action - not yet implemented");
+      hide();
+      return;
+    }
+
+    // Undo (stub - not yet implemented)
+    if (action === "undo") {
+      if (window.RTStateManager?.undo) {
+        window.RTStateManager.undo();
+      } else {
+        console.log("[Context] Undo action - not yet implemented");
+      }
+      hide();
+      return;
+    }
+
+    // Redo (stub - not yet implemented)
+    if (action === "redo") {
+      if (window.RTStateManager?.redo) {
+        window.RTStateManager.redo();
+      } else {
+        console.log("[Context] Redo action - not yet implemented");
+      }
+      hide();
+      return;
+    }
+
     // Deposit (NOW)
     if (action === "deposit") {
       document.getElementById("nowButton")?.click();

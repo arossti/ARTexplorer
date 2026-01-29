@@ -1817,6 +1817,55 @@
               </div>
             </div>
 
+            <!-- Edit Actions -->
+            <div class="control-item spacing-top-large">
+              <label class="label-section">Edit Actions</label>
+              <div class="toggle-btn-group">
+                <button
+                  class="toggle-btn variant-standard"
+                  id="deformBtn"
+                  title="Enter vertex deformation mode (D)"
+                  disabled
+                >
+                  Deform
+                </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="groupBtn"
+                  title="Group selected objects (Ctrl/Cmd+G)"
+                  disabled
+                >
+                  Group
+                </button>
+              </div>
+              <div class="snap-description snap-description-small">
+                Deform: Select instance vertices. Group: Combine 2+ objects.
+              </div>
+            </div>
+
+            <!-- History -->
+            <div class="control-item spacing-top">
+              <label class="label-section">History</label>
+              <div class="toggle-btn-group">
+                <button
+                  class="toggle-btn variant-standard"
+                  id="undoBtn"
+                  title="Undo (Ctrl/Cmd+Z)"
+                  disabled
+                >
+                  Undo
+                </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="redoBtn"
+                  title="Redo (Ctrl/Cmd+Shift+Z)"
+                  disabled
+                >
+                  Redo
+                </button>
+              </div>
+            </div>
+
             <!-- NOW Button -->
             <div class="control-item spacing-top-large">
               <button id="nowButton" class="gumball-action-btn">🕐 NOW</button>
@@ -2397,6 +2446,21 @@
           <button class="context-btn toggle" data-action="objsnap-face"
             >Face</button
           >
+        </div>
+      </div>
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-section">
+        <div class="context-menu-label">Edit</div>
+        <div class="context-menu-btn-group">
+          <button class="context-btn" data-action="deform" title="Enter vertex deformation mode">Deform</button>
+          <button class="context-btn" data-action="group" title="Group selected objects (Ctrl/Cmd+G)">Group</button>
+        </div>
+      </div>
+      <div class="context-menu-section">
+        <div class="context-menu-label">History</div>
+        <div class="context-menu-btn-group">
+          <button class="context-btn" data-action="undo" title="Undo (Ctrl/Cmd+Z)">Undo</button>
+          <button class="context-btn" data-action="redo" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
         </div>
       </div>
       <div class="context-menu-divider"></div>

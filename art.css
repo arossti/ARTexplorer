@@ -2774,3 +2774,98 @@ button:disabled {
   outline: none;
   border-color: #00B4FF;
 }
+
+/* ==========================================================================
+   RADIO BUTTONS - HiFi Style
+   ========================================================================== */
+
+input[type="radio"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  margin-right: 6px;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  transition: all 0.15s ease-out;
+}
+
+input[type="radio"]:checked {
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+}
+
+input[type="radio"]::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #505050;
+  transition: all 0.15s ease-out;
+}
+
+input[type="radio"]:checked::before {
+  background: #00B4FF;
+  box-shadow: 0 0 6px rgba(0, 180, 255, 0.6);
+}
+
+input[type="radio"]:hover::before {
+  background: #606060;
+}
+
+input[type="radio"]:checked:hover::before {
+  background: #5cb8ff;
+}
+
+/* ==========================================================================
+   NUMERIC/TEXT INPUTS - HiFi Style
+   ========================================================================== */
+
+input[type="number"],
+input[type="text"] {
+  background: var(--hifi-bg-dark, #1a1a1a);
+  border: 1px solid #444;
+  color: #00B4FF;
+  border-radius: var(--hifi-radius-sm, 3px);
+  padding: 6px 8px;
+  font-size: 12px;
+  box-shadow:
+    inset 1px 1px 3px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.3)),
+    inset -1px -1px 2px var(--hifi-shadow-light, rgba(255, 255, 255, 0.05));
+  transition: border-color 0.15s ease-out;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus {
+  outline: none;
+  border-color: #00B4FF;
+}
+
+input[type="number"]::placeholder,
+input[type="text"]::placeholder {
+  color: #666;
+}
+
+/* Remove spinner arrows from number inputs for cleaner look */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
