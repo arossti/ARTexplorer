@@ -307,10 +307,19 @@ Benefits:
 - [ ] Export/Import → deformation preserved (not tested)
 
 ### Phase 2A: Point-Based Lines (Recommended Alternative)
-- [ ] CONNECT feature: select 2 Points → create Line between them
-- [ ] Line stores references to Point instances
-- [ ] Moving Points automatically updates connected Lines
-- [ ] No deform mode needed - just use normal Move tool
+- [x] CONNECT feature: select 2 Points → create Line between them ✅
+- [x] Line stores references to Point instances ✅
+- [x] Moving Points automatically updates connected Lines ✅
+- [x] No deform mode needed - just use normal Move tool ✅
+
+**Known Issues (Jan 29, 2026)**:
+- Bug 1: ConnectedLine hard to select in orthographic views (1px line)
+- Bug 2: Rotating connectedLine alone disconnects it from Points
+- Bug 3: Rotating 2 connected Points causes visual revert on mouseup
+  - Investigation: Transform persistence code runs, StateManager updated correctly
+  - BUT: Points visually snap back after mouseup completes
+  - Root cause unknown - may be render loop or late event handler resetting positions
+  - Attempted fix reverted to avoid tech debt
 
 ---
 
@@ -334,7 +343,7 @@ Benefits:
 
 ---
 
-*Document updated: January 28, 2026 (late night)*
+*Document updated: January 29, 2026*
 *Branch: DEFORM*
 *Author: Andy & Claude*
 
