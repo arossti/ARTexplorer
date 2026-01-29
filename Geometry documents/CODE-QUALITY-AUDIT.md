@@ -47,26 +47,48 @@ Maintain high code quality, architectural consistency, and RT-purity across the 
 ### Core Module Files (Priority 1)
 
 ```
-src/geometry/modules/
+modules/
 ├── rt-init.js            # Application orchestration
 ├── rt-rendering.js       # THREE.js scene management (Factory pattern)
 ├── rt-math.js            # RT library (quadrance, spread, Phi, Sexagesimal)
 ├── rt-polyhedra.js       # All polyhedra generators (RT-pure)
 ├── rt-matrix-planar.js   # IVM spatial arrays (planar N×N)
+├── rt-matrix-radial.js   # IVM spatial arrays (radial)
 ├── rt-papercut.js        # Print mode, dynamic cutplane
 ├── rt-controls.js        # ART Gumball controls
 ├── rt-state-manager.js   # Forms/Instances state
-└── rt-filehandler.js     # State import/export
+├── rt-filehandler.js     # State import/export
+├── rt-grids.js           # Grid rendering
+├── rt-nodes.js           # Node management
+├── rt-primitives.js      # Primitive geometry
+├── rt-viewmanager.js     # View management
+├── rt-context.js         # Context menu handling
+├── rt-info-modal.js      # Info modal UI
+└── rt-janus.js           # Janus mode handling
 ```
 
 ### Demo Files (Priority 2)
 
 ```
-src/geometry/demos/
+demos/
 ├── rt-quadrance-demo.js    # Plimpton 322 Babylonian math
 ├── rt-cross-demo.js        # Spread/Cross with Sexagesimal
 ├── rt-weierstrass-demo.js  # Rational circle parametrization
 └── rt-demo-utils.js        # Shared demo utilities
+```
+
+### Asteroids Game Module (Priority 3)
+
+```
+modules/asteroids/
+├── rt-asteroids-core.js      # Game core logic
+├── rt-asteroids-player.js    # Player controls
+├── rt-asteroids-enemies.js   # Enemy AI
+├── rt-asteroids-weapons.js   # Weapon systems
+├── rt-asteroids-hud.js       # HUD display
+├── rt-asteroids-audio.js     # Audio management
+├── rt-asteroids-blackhole.js # Black hole effects
+└── rt-asteroids-license.js   # License info
 ```
 
 ### Exclude from Audit
@@ -87,10 +109,10 @@ src/geometry/demos/
 
 ```bash
 # Check formatting (no changes)
-npx prettier --check "src/geometry/modules/**/*.js"
+npx prettier --check "modules/**/*.js" "demos/**/*.js"
 
 # Auto-format all files
-npx prettier --write "src/geometry/modules/**/*.js"
+npx prettier --write "modules/**/*.js" "demos/**/*.js"
 ```
 
 **Standard Configuration:**
@@ -118,10 +140,10 @@ npx prettier --write "src/geometry/modules/**/*.js"
 
 ```bash
 # Run linting
-npx eslint "src/geometry/modules/**/*.js"
+npx eslint "modules/**/*.js" "demos/**/*.js"
 
 # Auto-fix issues
-npx eslint --fix "src/geometry/modules/**/*.js"
+npx eslint --fix "modules/**/*.js" "demos/**/*.js"
 ```
 
 **Key Rules for Geometry Code:**
@@ -299,13 +321,13 @@ console.log(
 
 ```bash
 # Search for Math.PI usage
-grep -rn "Math.PI" src/geometry/modules/
+grep -rn "Math.PI" modules/
 
 # Search for sin/cos/tan
-grep -rn "Math.sin\|Math.cos\|Math.tan" src/geometry/modules/
+grep -rn "Math.sin\|Math.cos\|Math.tan" modules/
 
 # Search for arcsin/arccos/arctan
-grep -rn "Math.asin\|Math.acos\|Math.atan" src/geometry/modules/
+grep -rn "Math.asin\|Math.acos\|Math.atan" modules/
 ```
 
 **Allowed Exceptions:**
@@ -659,7 +681,7 @@ const phiCubed = 2 * phi + 1; // NOT phi * phi * phi
 
 ```bash
 # Search for φ multiplication/division violations
-grep -rn "phi \* phi\|phi \/ phi" src/geometry/modules/rt-polyhedra.js
+grep -rn "phi \* phi\|phi \/ phi" modules/rt-polyhedra.js
 ```
 
 ---
@@ -719,10 +741,10 @@ Run all automated tools and document results:
 
 ```bash
 # Prettier check
-npx prettier --check "src/geometry/modules/**/*.js" > audit-prettier.txt
+npx prettier --check "modules/**/*.js" "demos/**/*.js" > audit-prettier.txt
 
 # ESLint check
-npx eslint "src/geometry/modules/**/*.js" > audit-eslint.txt
+npx eslint "modules/**/*.js" "demos/**/*.js" > audit-eslint.txt
 
 # Performance check (manual, in browser console)
 # Copy results to audit-performance.txt
@@ -742,7 +764,7 @@ For each file in [Audit Scope](#audit-scope--files):
 ```bash
 # Generate RT-purity report
 grep -rn "Math.PI\|Math.sin\|Math.cos\|Math.tan\|Math.asin\|Math.acos\|Math.atan" \
-  src/geometry/modules/ > audit-rt-purity.txt
+  modules/ demos/ > audit-rt-purity.txt
 
 # Review each occurrence:
 # - Justified? (comment explains necessity)
@@ -959,16 +981,16 @@ git push -u origin code-audit-YYYY-MM-DD
 
 ```bash
 # 1. Format check
-npx prettier --check "src/geometry/modules/**/*.js"
+npx prettier --check "modules/**/*.js" "demos/**/*.js"
 
 # 2. Lint check
-npx eslint "src/geometry/modules/**/*.js"
+npx eslint "modules/**/*.js" "demos/**/*.js"
 
 # 3. RT-purity scan
-grep -rn "Math.PI\|Math.sin\|Math.cos" src/geometry/modules/
+grep -rn "Math.PI\|Math.sin\|Math.cos" modules/
 
 # 4. Find duplicates (manual review)
-grep -rn "function geodesic" src/geometry/modules/rt-polyhedra.js
+grep -rn "function geodesic" modules/rt-polyhedra.js
 
 # 5. Find verbose functions (manual review)
 # Look for functions > 50 lines in editor
@@ -978,13 +1000,13 @@ grep -rn "function geodesic" src/geometry/modules/rt-polyhedra.js
 
 ```bash
 # Auto-format
-npx prettier --write "src/geometry/modules/**/*.js"
+npx prettier --write "modules/**/*.js" "demos/**/*.js"
 
 # Auto-fix lint issues
-npx eslint --fix "src/geometry/modules/**/*.js"
+npx eslint --fix "modules/**/*.js" "demos/**/*.js"
 
 # Remove console.logs (carefully!)
-sed -i.bak '/console.log/d' src/geometry/modules/*.js
+sed -i.bak '/console.log/d' modules/*.js
 # Review changes before committing!
 ```
 
@@ -993,7 +1015,7 @@ sed -i.bak '/console.log/d' src/geometry/modules/*.js
 ## Version History
 
 - **v1.0** (2026-01-10) - Initial creation, based on ARTexplorer TODO 8.1.5
-- **Future:** Update as audit processes evolve
+- **v1.1** (2026-01-29) - Updated file paths from `src/geometry/modules/` to `modules/` and `demos/`; added asteroids game module to audit scope; updated all command examples
 
 ---
 
