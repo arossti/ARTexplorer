@@ -2604,18 +2604,79 @@ function startARTexplorer(
 
   /**
    * Select a polyhedron (Form or Instance) with visual highlight
+   * @param {THREE.Group} polyhedron - Polyhedron to select
+   * @param {boolean} addToSelection - If true (Shift+click), toggle in multi-selection
    */
-  function selectPolyhedron(polyhedron) {
-    // Deselect previous selection
-    if (currentSelection) {
-      clearHighlight(currentSelection);
+  function selectPolyhedron(polyhedron, addToSelection = false) {
+    if (addToSelection) {
+      // Shift+click: Toggle object in multi-selection
+      if (RTStateManager.isSelected(polyhedron)) {
+        // Already selected - remove from selection
+        clearHighlight(polyhedron);
+        RTStateManager.removeFromSelection(polyhedron);
+
+        // Update currentSelection to match state manager's primary
+        currentSelection = RTStateManager.state.selection.object;
+      } else {
+        // Not selected - add to selection
+        applyHighlight(polyhedron);
+        RTStateManager.addToSelection(polyhedron);
+
+        // If this is the first selection, also set as primary/current
+        if (!currentSelection) {
+          currentSelection = polyhedron;
+          RTStateManager.state.selection.object = polyhedron;
+          RTStateManager.state.selection.type = polyhedron.userData.isInstance
+            ? "instance"
+            : "form";
+          RTStateManager.state.selection.id =
+            polyhedron.userData.instanceId || null;
+        }
+      }
+
+      // Update UI selection count
+      updateSelectionCountUI();
+    } else {
+      // Normal click: Clear previous selection(s), select only this one
+      // Clear all existing selections
+      RTStateManager.getSelectedObjects().forEach(obj => {
+        clearHighlight(obj);
+      });
+      RTStateManager.clearSelection();
+
+      // Set new selection
+      currentSelection = polyhedron;
+      RTStateManager.addToSelection(polyhedron);
+      RTStateManager.state.selection.object = polyhedron;
+      RTStateManager.state.selection.type = polyhedron.userData.isInstance
+        ? "instance"
+        : "form";
+      RTStateManager.state.selection.id =
+        polyhedron.userData.instanceId || null;
+
+      // Apply highlight
+      applyHighlight(polyhedron);
+
+      // Update UI selection count
+      updateSelectionCountUI();
     }
+  }
 
-    // Set new selection
-    currentSelection = polyhedron;
-
-    // Apply highlight
-    applyHighlight(polyhedron);
+  /**
+   * Update the UI to show selection count
+   */
+  function updateSelectionCountUI() {
+    const count = RTStateManager.getSelectionCount();
+    // Update "Objects Placed" or similar UI element if it exists
+    const selectionCountEl = document.getElementById("selectionCount");
+    if (selectionCountEl) {
+      selectionCountEl.textContent =
+        count > 0 ? `${count} selected` : "None selected";
+    }
+    // Log for debugging
+    if (count > 1) {
+      console.log(`📦 Multi-select: ${count} objects selected`);
+    }
   }
 
   /**
@@ -2693,13 +2754,19 @@ function startARTexplorer(
   }
 
   /**
-   * Deselect all polyhedra
+   * Deselect all polyhedra (clears multi-selection)
    */
   function deselectAll() {
-    if (currentSelection) {
-      clearHighlight(currentSelection);
-      currentSelection = null;
-    }
+    // Clear highlights from all selected objects
+    RTStateManager.getSelectedObjects().forEach(obj => {
+      clearHighlight(obj);
+    });
+    // Clear state manager selection
+    RTStateManager.clearSelection();
+    // Clear local reference
+    currentSelection = null;
+    // Update UI
+    updateSelectionCountUI();
   }
 
   /**
@@ -2804,7 +2871,7 @@ function startARTexplorer(
       );
 
       if (parentEntry) {
-        selectPolyhedron(parentEntry.parent);
+        selectPolyhedron(parentEntry.parent, event.shiftKey);
       }
     }
     // NOTE: Clicking empty space no longer deselects
@@ -2812,9 +2879,13 @@ function startARTexplorer(
     // This allows users to orbit camera between transformations without losing selection
   }
 
-  // Get selected polyhedra - returns only currently selected polyhedron
+  // Get selected polyhedra - returns all selected objects (multi-select aware)
   function getSelectedPolyhedra() {
-    // Return only the currently selected polyhedron (if any)
+    const selected = RTStateManager.getSelectedObjects();
+    if (selected.length > 0) {
+      return selected;
+    }
+    // Fallback to currentSelection for backwards compatibility
     if (currentSelection) {
       return [currentSelection];
     }

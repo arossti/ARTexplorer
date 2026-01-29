@@ -63,11 +63,19 @@ export const RTStateManager = {
     // Deposited Instances (all "Nows" - immutable snapshots)
     instances: [],
 
-    // Selection state
+    // Selection state (supports multi-select)
     selection: {
-      type: null, // 'form' or 'instance'
-      id: null, // Instance ID or null for Form
-      object: null, // THREE.Object3D reference
+      type: null, // 'form' or 'instance' (primary selection type)
+      id: null, // Instance ID or null for Form (primary)
+      object: null, // THREE.Object3D reference (primary)
+      // Multi-select support
+      objects: [], // Array of selected THREE.Object3D references
+      mode: "object", // 'object' | 'vertex' | 'edge' | 'face' (for deform)
+      subSelection: {
+        vertices: [], // Array of selected vertex indices
+        edges: [], // Array of selected edge indices
+        faces: [], // Array of selected face indices
+      },
     },
 
     // Undo/Redo stacks
@@ -340,13 +348,108 @@ export const RTStateManager = {
       return null;
     }
 
-    // Update selection state
-    this.state.selection = {
-      type: "instance",
-      id: instanceId,
-      object: instance.threeObject,
-    };
+    // Update selection state (preserve multi-select structure)
+    this.state.selection.type = "instance";
+    this.state.selection.id = instanceId;
+    this.state.selection.object = instance.threeObject;
     return instance;
+  },
+
+  // ========================================================================
+  // MULTI-SELECT MANAGEMENT
+  // ========================================================================
+
+  /**
+   * Add object to multi-selection
+   * @param {THREE.Object3D} object - Object to add
+   * @returns {boolean} True if added, false if already selected
+   */
+  addToSelection(object) {
+    if (!object) return false;
+    if (this.state.selection.objects.includes(object)) {
+      return false; // Already selected
+    }
+    this.state.selection.objects.push(object);
+    console.log(
+      `✅ Added to selection: ${object.userData.type || "object"} (${this.state.selection.objects.length} selected)`
+    );
+    return true;
+  },
+
+  /**
+   * Remove object from multi-selection
+   * @param {THREE.Object3D} object - Object to remove
+   * @returns {boolean} True if removed, false if not in selection
+   */
+  removeFromSelection(object) {
+    const index = this.state.selection.objects.indexOf(object);
+    if (index === -1) {
+      return false; // Not in selection
+    }
+    this.state.selection.objects.splice(index, 1);
+
+    // Update primary selection if removed object was primary
+    if (this.state.selection.object === object) {
+      if (this.state.selection.objects.length > 0) {
+        // Set primary to first remaining object
+        const newPrimary = this.state.selection.objects[0];
+        this.state.selection.object = newPrimary;
+        this.state.selection.id = newPrimary.userData.instanceId || null;
+        this.state.selection.type = newPrimary.userData.isInstance
+          ? "instance"
+          : "form";
+      } else {
+        // No objects left
+        this.state.selection.object = null;
+        this.state.selection.id = null;
+        this.state.selection.type = null;
+      }
+    }
+    console.log(
+      `✅ Removed from selection (${this.state.selection.objects.length} remaining)`
+    );
+    return true;
+  },
+
+  /**
+   * Check if object is in multi-selection
+   * @param {THREE.Object3D} object - Object to check
+   * @returns {boolean} True if selected
+   */
+  isSelected(object) {
+    return this.state.selection.objects.includes(object);
+  },
+
+  /**
+   * Get all selected objects
+   * @returns {Array<THREE.Object3D>} Array of selected objects
+   */
+  getSelectedObjects() {
+    return this.state.selection.objects;
+  },
+
+  /**
+   * Get selection count
+   * @returns {number} Number of selected objects
+   */
+  getSelectionCount() {
+    return this.state.selection.objects.length;
+  },
+
+  /**
+   * Clear all selections
+   */
+  clearSelection() {
+    this.state.selection.objects = [];
+    this.state.selection.object = null;
+    this.state.selection.id = null;
+    this.state.selection.type = null;
+    this.state.selection.mode = "object";
+    this.state.selection.subSelection = {
+      vertices: [],
+      edges: [],
+      faces: [],
+    };
   },
 
   /**
