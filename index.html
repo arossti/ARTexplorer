@@ -2556,22 +2556,19 @@
     <script type="module">
       import { initContextMenu } from "./modules/rt-context.js";
 
-      // Wait for app initialization
-      window.addEventListener("load", () => {
-        setTimeout(() => {
-          if (window.THREE && window.renderingAPI) {
-            // Use getter functions from renderingAPI
-            const scene = window.renderingAPI.getScene();
-            const camera = window.renderingAPI.getCamera();
-            const renderer = window.renderingAPI.getRenderer();
-            window.contextMenuAPI = initContextMenu(
-              window.THREE,
-              scene,
-              camera,
-              renderer
-            );
-          }
-        }, 100);
+      // Wait for app initialization complete event (dispatched by rt-init.js)
+      window.addEventListener("artexplorer-ready", () => {
+        if (window.THREE && window.renderingAPI) {
+          const scene = window.renderingAPI.getScene();
+          const camera = window.renderingAPI.getCamera();
+          const renderer = window.renderingAPI.getRenderer();
+          window.contextMenuAPI = initContextMenu(
+            window.THREE,
+            scene,
+            camera,
+            renderer
+          );
+        }
       });
     </script>
   </body>

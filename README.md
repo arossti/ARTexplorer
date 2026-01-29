@@ -201,6 +201,13 @@ High-precision golden ratio calculations using symbolic representation:
 - Scale: Resize with uniform or axis-specific scaling
 - Rotate: Interactive rotation handles
 
+**Note on Rotation Implementation:**
+ARTexplorer uses a hybrid approach for rotations:
+- **Geometry generation**: RT-pure rotations via spread/cross → Matrix4 (e.g., `RT.applyRotation45`, `RT.applyRotation180` in `rt-math.js`)
+- **Interactive transforms**: THREE.js quaternions for real-time gumball operations (unavoidable for GPU interface)
+
+This distinction reflects that while RT mathematics can compute rotation matrices from exact spread/cross values, THREE.js internally stores object orientation as quaternions. The RT-pure functions are optimal for predetermined rotations with algebraic values (90°, 180°, 45°), while interactive gumball rotations must interface with THREE.js's quaternion-based transform system.
+
 **Visual Options:**
 
 - Wireframe/solid face rendering
@@ -327,21 +334,39 @@ The interface consists of several control panels:
 ├── index.html              ← Main entry point
 ├── art.css                 ← All application styles
 ├── modules/                ← Core JavaScript modules
-│   ├── rt-rendering.js         ← WebGL rendering engine, camera, scene
 │   ├── rt-init.js              ← Application initialization, UI wiring
+│   ├── rt-rendering.js         ← WebGL rendering engine, camera, scene
+│   ├── rt-math.js              ← Quadray coords & RT functions
 │   ├── rt-polyhedra.js         ← 3D polyhedra generation (RT-pure)
 │   ├── rt-primitives.js        ← 2D primitives (point, line, polygon)
-│   ├── rt-math.js              ← Quadray coords & RT functions
 │   ├── rt-grids.js             ← Cartesian/Quadray grid generation
 │   ├── rt-nodes.js             ← Vertex node geometry & caching
 │   ├── rt-matrix-planar.js     ← IVM spatial arrays (planar N×N)
+│   ├── rt-matrix-radial.js     ← IVM spatial arrays (radial)
 │   ├── rt-controls.js          ← Gumball interaction
 │   ├── rt-papercut.js          ← Cutplane/slicing, print mode
 │   ├── rt-state-manager.js     ← State persistence
 │   ├── rt-filehandler.js       ← Import/export (JSON, glTF)
+│   ├── rt-viewmanager.js       ← View management
+│   ├── rt-context.js           ← Context menu handling
+│   ├── rt-info-modal.js        ← Info modal UI
+│   ├── rt-janus.js             ← Janus mode handling
 │   ├── performance-clock.js    ← Performance monitoring
 │   └── color-theory-modal.js   ← Color palettes
+├── modules/asteroids/      ← Asteroids game module
+│   ├── rt-asteroids-core.js    ← Game core logic
+│   ├── rt-asteroids-player.js  ← Player controls
+│   ├── rt-asteroids-enemies.js ← Enemy AI
+│   ├── rt-asteroids-weapons.js ← Weapon systems
+│   ├── rt-asteroids-hud.js     ← HUD display
+│   ├── rt-asteroids-audio.js   ← Audio management
+│   ├── rt-asteroids-blackhole.js ← Black hole effects
+│   └── rt-asteroids-license.js ← License info
 ├── demos/                  ← Educational demonstrations
+│   ├── rt-quadrance-demo.js    ← Plimpton 322 Babylonian math
+│   ├── rt-cross-demo.js        ← Spread/Cross with Sexagesimal
+│   ├── rt-weierstrass-demo.js  ← Rational circle parametrization
+│   └── rt-demo-utils.js        ← Shared demo utilities
 ├── Geometry documents/     ← Technical documentation
 └── .github/workflows/      ← GitHub Actions deployment
 ```
@@ -353,6 +378,7 @@ The interface consists of several control panels:
 - `rt-rendering.js`: THREE.js scene management, camera, lighting, polyhedra rendering
 - `rt-init.js`: Application orchestration, password protection, module imports, event wiring
 - `rt-state-manager.js`: Forms/instances state management, undo/redo system
+- `rt-viewmanager.js`: View management and camera presets
 
 **Geometry & Mathematics:**
 
@@ -360,6 +386,7 @@ The interface consists of several control panels:
 - `rt-primitives.js`: 2D primitives (point, line, polygon) with RT-pure and classical engines
 - `rt-math.js`: Core RT library (quadrance, spread, golden ratio, circle parametrization)
 - `rt-matrix-planar.js`: IVM spatial array generation for polyhedra matrices (planar N×N)
+- `rt-matrix-radial.js`: IVM spatial array generation for radial arrangements
 
 **Scene Infrastructure:**
 
@@ -370,12 +397,19 @@ The interface consists of several control panels:
 
 - `rt-controls.js`: ART Gumball interactive transform controls
 - `rt-papercut.js`: Print mode, dynamic cutplane, section nodes, line weights
+- `rt-context.js`: Context menu handling for object selection
+- `rt-info-modal.js`: Information modal UI
+- `rt-janus.js`: Janus mode handling (dual-view functionality)
 - `color-theory-modal.js`: Color palette management
 
 **Utilities:**
 
 - `rt-filehandler.js`: State import/export to JSON, glTF geometry export
 - `performance-clock.js`: Performance monitoring (FPS, triangle counts, timing)
+
+**Asteroids Game (Easter Egg):**
+
+- `modules/asteroids/`: Complete RT-based space game with player controls, enemies, weapons, HUD, and audio
 
 ---
 
@@ -671,7 +705,7 @@ See the [LICENSE](LICENSE) file for complete terms and conditions.
 
 ---
 
-**Last Updated:** 2026-01-26
+**Last Updated:** 2026-01-29
 
 **Live Application:** [https://arossti.github.io/ARTexplorer/](https://arossti.github.io/ARTexplorer/)
 

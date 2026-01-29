@@ -348,6 +348,141 @@ Benefits:
 
 ---
 
+## Bug 4: Single-Node Movement in Connected Group Broken ✅ FIXED (Jan 29, 2026)
+
+**Status**: RESOLVED
+
+### Symptom
+After the rotation fix (commit `9f92935`), moving a **single Point** that is part of a connected group no longer updates the connected line. The line stays frozen at its original position while the Point moves away from it.
+
+**Expected behavior (worked before):**
+1. User creates 2 Point instances
+2. Multi-select + Connect → creates connectedLine between them
+3. ESC to deselect
+4. Click ONE of the Points and drag it
+5. Line follows the Point as it moves
+6. On mouseup, Point is relocated with line still connected
+
+**Current behavior (broken):**
+- Steps 1-4 work
+- Step 5: Line does NOT follow the dragged Point
+- Step 6: Point ends up disconnected from frozen line
+
+### Root Cause Analysis
+
+**Investigation of [rt-init.js](../modules/rt-init.js)**
+
+The code has TWO separate movement code paths:
+
+#### Path A: GUMBALL AXIS DRAG (Constrained movement along basis vectors)
+- Triggered when user drags along a gumball handle axis
+- Lines 4245-4399 in rt-init.js
+- **Has the fix** at lines 4361-4378:
+
+```javascript
+// Update connected geometry for any moved Point instances
+// BUT skip if the connectedLine was also in the selection (it was transformed together)
+const hasConnectedLine = selectedPolyhedra.some(
+  p => p.userData.type === "connectedLine"
+);
+if (!hasConnectedLine) {
+  selectedPolyhedra.forEach(poly => {
+    if (poly.userData.isInstance && poly.userData.type === "point" && poly.userData.instanceId) {
+      RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+    }
+  });
+}
+```
+
+#### Path B: FREE MOVEMENT (Direct polyhedron drag)
+- Triggered when user clicks on selected polyhedron body without hitting gumball handle
+- Lines 4085-4242 in rt-init.js
+- **Missing the fix** - returns early at line 4242 without calling `updateConnectedGeometry()`
+
+The free movement handler handles:
+1. Object snapping (lines 4092-4134) - returns early
+2. Grid snapping (lines 4140-4205)
+3. Drag-copy (lines 4207-4237)
+4. Cleanup (lines 4239-4242) - **returns without connection update**
+
+### Why This Broke
+
+The rotation fix in commit `9f92935` added the `updateConnectedGeometry()` call to the **gumball axis drag** path (lines 4361-4378), but the **free movement** path was not updated.
+
+When clicking directly on a Point (not on a gumball handle), the movement uses the free movement path, which completes successfully but never tells the connected line to update its geometry.
+
+### Solution
+
+Add the same connected geometry update logic to the FREE MOVEMENT handler, just before the `return` at line 4242:
+
+```javascript
+// Location: rt-init.js, lines 4239-4242 (before return)
+
+// === FIX: Update connected geometry for moved Point instances ===
+// Same logic as gumball drag handler (lines 4361-4378)
+const hasConnectedLine = selectedPolyhedra.some(
+  p => p.userData.type === "connectedLine"
+);
+if (!hasConnectedLine) {
+  selectedPolyhedra.forEach(poly => {
+    if (poly.userData.isInstance && poly.userData.type === "point" && poly.userData.instanceId) {
+      RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+    }
+  });
+}
+// === END FIX ===
+
+justFinishedDrag = true;
+isFreeMoving = false;
+selectedPolyhedra = [];
+return;
+```
+
+### Why This Fix Works
+
+1. `RTStateManager.updateConnectedGeometry(pointId)` ([rt-state-manager.js:597-655](../modules/rt-state-manager.js#L597-L655)) handles all the connection update logic:
+   - Finds all connectedLines referencing the moved Point
+   - Gets positions of both endpoint Points
+   - Recalculates the line's midpoint
+   - Updates the LineSegments geometry to span the two Points
+
+2. The `hasConnectedLine` check prevents double-updates when the line was moved as part of a group (the existing fix for Bug 2 & 3)
+
+### Alternative Debug Approach
+
+If the above fix doesn't work, add logging to verify which code path is executing:
+
+```javascript
+// Add at start of FREE MOVEMENT handler (line 4085)
+console.log("🟢 FREE MOVEMENT mouseup - selectedPolyhedra:",
+  selectedPolyhedra.map(p => ({type: p.userData.type, id: p.userData.instanceId})));
+
+// Add at start of GUMBALL DRAG handler (line 4246)
+console.log("🔵 GUMBALL DRAG mouseup - selectedPolyhedra:",
+  selectedPolyhedra.map(p => ({type: p.userData.type, id: p.userData.instanceId})));
+```
+
+Then drag a Point and check console to confirm which path executes.
+
+### Files to Modify
+
+| File | Line | Change |
+|------|------|--------|
+| [rt-init.js](../modules/rt-init.js#L4239-L4242) | ~4239 | Add `updateConnectedGeometry()` call before return |
+
+### Testing After Fix
+
+1. Create 2 Point instances
+2. Multi-select both, click Connect
+3. ESC to deselect all
+4. Click ONE Point (not on gumball handle - direct click on node)
+5. Drag the Point
+6. ✅ Line should follow the Point in real-time
+7. Release mouse
+8. ✅ Line should remain connected to both Points
+
+---
+
 ## Known Bugs (Jan 29, 2026)
 
 ### Bug 1: ConnectedLine selection fails in orthographic view

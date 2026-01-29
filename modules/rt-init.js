@@ -2658,7 +2658,10 @@ function startARTexplorer(
       applyHighlight(polyhedron);
 
       // AUTO-SELECT connected Points when selecting a connectedLine
-      if (polyhedron.userData.type === "connectedLine" && polyhedron.userData.connections) {
+      if (
+        polyhedron.userData.type === "connectedLine" &&
+        polyhedron.userData.connections
+      ) {
         const { startPoint, endPoint } = polyhedron.userData.connections;
         const startInst = RTStateManager.getInstance(startPoint);
         const endInst = RTStateManager.getInstance(endPoint);
@@ -4233,6 +4236,25 @@ function startARTexplorer(
             }
           }
 
+          // Update connected geometry for any moved Point instances
+          // Same logic as gumball drag handler - skip if connectedLine in selection
+          const hasConnectedLine = selectedPolyhedra.some(
+            p => p.userData.type === "connectedLine"
+          );
+          if (!hasConnectedLine) {
+            selectedPolyhedra.forEach(poly => {
+              if (
+                poly.userData.isInstance &&
+                poly.userData.type === "point" &&
+                poly.userData.instanceId
+              ) {
+                RTStateManager.updateConnectedGeometry(
+                  poly.userData.instanceId
+                );
+              }
+            });
+          }
+
           justFinishedDrag = true;
           isFreeMoving = false;
           selectedPolyhedra = [];
@@ -4367,7 +4389,9 @@ function startARTexplorer(
                 poly.userData.type === "point" &&
                 poly.userData.instanceId
               ) {
-                RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+                RTStateManager.updateConnectedGeometry(
+                  poly.userData.instanceId
+                );
               }
             });
           }
@@ -4782,4 +4806,8 @@ function startARTexplorer(
   // Expose handlers globally for context menu
   window.handleConnectAction = handleConnectAction;
   window.handleDisconnectAction = handleDisconnectAction;
+
+  // Signal that app initialization is complete
+  window.dispatchEvent(new CustomEvent("artexplorer-ready"));
+  console.log("✅ ARTexplorer initialization complete");
 } // End startARTexplorer function

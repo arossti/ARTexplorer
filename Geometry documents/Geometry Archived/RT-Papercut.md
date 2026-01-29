@@ -1996,3 +1996,81 @@ The cutplane automatically switches coordinate basis when changing between XYZ a
 **Branch**: `WXYZ-Basis-Views`
 **Completion Date**: 2026-01-12
 **Next Action**: Test and refine, then merge to main
+
+---
+
+## 17. Future Development: RT-Pure Circle Generation
+
+### 17.1 Current Implementation (Classical Trig)
+
+**Identified in Code Audit**: 2026-01-29
+
+The section node circles in `rt-papercut.js:988-990` currently use classical trigonometry:
+
+```javascript
+const angle = (i / segments) * Math.PI * 2;
+const x = Math.cos(angle) * circleRadius;
+const y = Math.sin(angle) * circleRadius;
+```
+
+### 17.2 Proposed RT-Pure Alternative: Weierstrass Substitution
+
+The Weierstrass half-angle substitution provides a **rational parametrization** of the circle:
+
+```
+t = tan(θ/2)
+
+x = (1 - t²) / (1 + t²)
+y = (2t) / (1 + t²)
+```
+
+**Key Properties**:
+- For any rational value of `t`, both `x` and `y` are rational
+- Sweeping `t` from -∞ to +∞ traces the entire unit circle (except (-1, 0))
+- The "missing point" at `t = ±∞` can be handled separately
+
+**RT-Pure Implementation** (proposed):
+
+```javascript
+/**
+ * RT-Pure circle point generation using Weierstrass substitution
+ * @param {number} segments - Number of points on circle
+ * @param {number} radius - Circle radius
+ * @returns {Array<{x: number, y: number}>} Array of circle points
+ */
+function generateRTPureCircle(segments, radius) {
+  const points = [];
+
+  // Use evenly-spaced t values for visual uniformity
+  // Note: Points are NOT equidistant in arc length, but form a valid circle
+  for (let i = 0; i < segments; i++) {
+    // Map i to t range (e.g., -10 to +10 for good coverage)
+    const t = -10 + (20 * i) / (segments - 1);
+
+    const denom = 1 + t * t; // Pure algebra
+    const x = radius * (1 - t * t) / denom;
+    const y = radius * (2 * t) / denom;
+
+    points.push({ x, y });
+  }
+
+  // Add the "missing point" at (-radius, 0) explicitly
+  points.push({ x: -radius, y: 0 });
+
+  return points;
+}
+```
+
+**Trade-offs**:
+- ✅ RT-pure (no transcendental functions)
+- ✅ Exact rational coordinates for rational `t`
+- ⚠️ Non-uniform arc length spacing (visual clustering near t=0)
+- ⚠️ Requires handling the point at infinity
+
+**Recommendation**: Implement as optional "RT-Pure Circle Mode" toggle for educational purposes, keeping classical method as default for uniform visual appearance.
+
+### 17.3 Reference Implementation
+
+See `demos/rt-weierstrass-demo.js` for existing Weierstrass circle visualization.
+
+---
