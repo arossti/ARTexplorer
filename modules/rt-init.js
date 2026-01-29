@@ -2657,6 +2657,23 @@ function startARTexplorer(
       // Apply highlight
       applyHighlight(polyhedron);
 
+      // AUTO-SELECT connected Points when selecting a connectedLine
+      if (polyhedron.userData.type === "connectedLine" && polyhedron.userData.connections) {
+        const { startPoint, endPoint } = polyhedron.userData.connections;
+        const startInst = RTStateManager.getInstance(startPoint);
+        const endInst = RTStateManager.getInstance(endPoint);
+
+        if (startInst?.threeObject) {
+          applyHighlight(startInst.threeObject);
+          RTStateManager.addToSelection(startInst.threeObject);
+        }
+        if (endInst?.threeObject) {
+          applyHighlight(endInst.threeObject);
+          RTStateManager.addToSelection(endInst.threeObject);
+        }
+        console.log("🔗 Auto-selected connected Points with Line");
+      }
+
       // Update UI selection count
       updateSelectionCountUI();
     }
@@ -4340,16 +4357,21 @@ function startARTexplorer(
           }
 
           // Update connected geometry for any moved Point instances
-          // This must happen BEFORE clearing selectedPolyhedra
-          selectedPolyhedra.forEach(poly => {
-            if (
-              poly.userData.isInstance &&
-              poly.userData.type === "point" &&
-              poly.userData.instanceId
-            ) {
-              RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
-            }
-          });
+          // BUT skip if the connectedLine was also in the selection (it was transformed together)
+          const hasConnectedLine = selectedPolyhedra.some(
+            p => p.userData.type === "connectedLine"
+          );
+          if (!hasConnectedLine) {
+            selectedPolyhedra.forEach(poly => {
+              if (
+                poly.userData.isInstance &&
+                poly.userData.type === "point" &&
+                poly.userData.instanceId
+              ) {
+                RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+              }
+            });
+          }
 
           // Mark that we just finished a drag to prevent click-after-drag deselection
           justFinishedDrag = true;
