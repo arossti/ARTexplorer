@@ -452,6 +452,208 @@ export const RTStateManager = {
     };
   },
 
+  // ========================================================================
+  // POINT CONNECTION MANAGEMENT
+  // ========================================================================
+
+  /**
+   * Connect two Point instances with a Line
+   * Creates a new "connectedLine" instance that derives its geometry from the two Points
+   * @param {string} pointA_Id - First Point instance ID
+   * @param {string} pointB_Id - Second Point instance ID
+   * @param {THREE.Scene} scene - Scene to add Line to
+   * @returns {Object|null} Created Line instance or null on failure
+   */
+  connectPoints(pointA_Id, pointB_Id, scene) {
+    // Get Point instances
+    const pointA = this.getInstance(pointA_Id);
+    const pointB = this.getInstance(pointB_Id);
+
+    if (!pointA || !pointB) {
+      console.warn("⚠️ connectPoints: One or both Point instances not found");
+      return null;
+    }
+
+    // Verify both are Point type
+    if (pointA.type !== "point" || pointB.type !== "point") {
+      console.warn("⚠️ connectPoints: Both selections must be Point instances");
+      return null;
+    }
+
+    // Get positions from Point instances
+    const posA = pointA.threeObject.position;
+    const posB = pointB.threeObject.position;
+
+    // Create Line geometry between the two Points
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      posA.clone(),
+      posB.clone(),
+    ]);
+    const material = new THREE.LineBasicMaterial({ color: 0x888888 });
+    const lineSegments = new THREE.LineSegments(geometry, material);
+
+    // Create a Group to hold the line (consistent with other instances)
+    const lineGroup = new THREE.Group();
+    lineGroup.add(lineSegments);
+
+    // Store connection references in userData
+    lineGroup.userData.connections = {
+      startPoint: pointA_Id,
+      endPoint: pointB_Id,
+    };
+    lineGroup.userData.type = "connectedLine";
+    lineGroup.userData.isInstance = true;
+
+    // Generate unique ID
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 15);
+    const instanceId = `connectedLine_${timestamp}_${randomSuffix}`;
+    lineGroup.userData.instanceId = instanceId;
+
+    // Position at midpoint (for transform origin)
+    const midpoint = new THREE.Vector3()
+      .addVectors(posA, posB)
+      .multiplyScalar(0.5);
+    lineGroup.position.copy(midpoint);
+
+    // Adjust line geometry to be relative to group position
+    const relA = posA.clone().sub(midpoint);
+    const relB = posB.clone().sub(midpoint);
+    lineSegments.geometry.setFromPoints([relA, relB]);
+
+    // Add to scene
+    scene.add(lineGroup);
+
+    // Create instance metadata
+    const instance = {
+      id: instanceId,
+      timestamp: timestamp,
+      type: "connectedLine",
+      parameters: {
+        startPoint: pointA_Id,
+        endPoint: pointB_Id,
+      },
+      transform: {
+        position: { x: midpoint.x, y: midpoint.y, z: midpoint.z },
+        rotation: { x: 0, y: 0, z: 0, order: "XYZ" },
+        scale: { x: 1, y: 1, z: 1 },
+      },
+      appearance: { visible: true },
+      metadata: {
+        label: `connectedLine_${timestamp}`,
+        tags: [],
+        notes: "",
+      },
+      threeObject: lineGroup,
+    };
+
+    // Add to instances array
+    this.state.instances.push(instance);
+    this.state.depositedCount++;
+
+    // Add to undo stack
+    this.addToHistory({ action: "create", instance });
+
+    // Track modification
+    this.trackModification("create");
+
+    console.log(
+      `✅ Connected Points: ${pointA_Id} ↔ ${pointB_Id} → ${instanceId}`
+    );
+    return instance;
+  },
+
+  /**
+   * Disconnect a connected Line back to its component Points
+   * @param {string} lineInstanceId - Connected Line instance ID
+   * @param {THREE.Scene} scene - Scene to remove Line from
+   * @returns {boolean} True if disconnected successfully
+   */
+  disconnectLine(lineInstanceId, scene) {
+    const lineInstance = this.getInstance(lineInstanceId);
+
+    if (!lineInstance) {
+      console.warn("⚠️ disconnectLine: Line instance not found");
+      return false;
+    }
+
+    if (lineInstance.type !== "connectedLine") {
+      console.warn("⚠️ disconnectLine: Instance is not a connectedLine");
+      return false;
+    }
+
+    // Simply delete the connected line - the Points remain
+    this.deleteInstance(lineInstanceId, scene);
+
+    console.log(`✅ Disconnected Line: ${lineInstanceId}`);
+    return true;
+  },
+
+  /**
+   * Update all connected Lines that reference a moved Point
+   * Call this after any Point instance is moved
+   * @param {string} movedPointId - ID of the Point that was moved
+   */
+  updateConnectedGeometry(movedPointId) {
+    const movedPoint = this.getInstance(movedPointId);
+    if (!movedPoint) return;
+
+    // Find all connected lines referencing this point
+    const connectedLines = this.state.instances.filter(
+      inst =>
+        inst.type === "connectedLine" &&
+        (inst.parameters?.startPoint === movedPointId ||
+          inst.parameters?.endPoint === movedPointId)
+    );
+
+    connectedLines.forEach(lineInstance => {
+      const connections = lineInstance.parameters;
+      const startPoint = this.getInstance(connections.startPoint);
+      const endPoint = this.getInstance(connections.endPoint);
+
+      if (!startPoint || !endPoint) {
+        console.warn(
+          `⚠️ updateConnectedGeometry: Missing endpoint for ${lineInstance.id}`
+        );
+        return;
+      }
+
+      const posA = startPoint.threeObject.position;
+      const posB = endPoint.threeObject.position;
+
+      // Recalculate midpoint
+      const midpoint = new THREE.Vector3()
+        .addVectors(posA, posB)
+        .multiplyScalar(0.5);
+
+      // Update line group position
+      lineInstance.threeObject.position.copy(midpoint);
+      lineInstance.transform.position = {
+        x: midpoint.x,
+        y: midpoint.y,
+        z: midpoint.z,
+      };
+
+      // Update line geometry (relative to group position)
+      const relA = posA.clone().sub(midpoint);
+      const relB = posB.clone().sub(midpoint);
+
+      // Find the LineSegments child and update its geometry
+      lineInstance.threeObject.traverse(child => {
+        if (child.isLineSegments || child.isLine) {
+          child.geometry.setFromPoints([relA, relB]);
+          child.geometry.attributes.position.needsUpdate = true;
+        }
+      });
+    });
+
+    if (connectedLines.length > 0) {
+      console.log(
+        `🔗 Updated ${connectedLines.length} connected line(s) for Point ${movedPointId}`
+      );
+    }
+  },
+
   /**
    * Update Instance transform (after drag/edit)
    * @param {string} instanceId - Instance ID to update

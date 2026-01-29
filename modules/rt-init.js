@@ -4339,6 +4339,18 @@ function startARTexplorer(
             isDragCopying = false;
           }
 
+          // Update connected geometry for any moved Point instances
+          // This must happen BEFORE clearing selectedPolyhedra
+          selectedPolyhedra.forEach(poly => {
+            if (
+              poly.userData.isInstance &&
+              poly.userData.type === "point" &&
+              poly.userData.instanceId
+            ) {
+              RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+            }
+          });
+
           // Mark that we just finished a drag to prevent click-after-drag deselection
           justFinishedDrag = true;
 
@@ -4644,5 +4656,109 @@ function startARTexplorer(
       document.getElementById("nowCount").textContent =
         RTStateManager.getDepositedCount();
     }
+
+    // Connect: 'C' key (not Ctrl+C) - connect two selected Points with a Line
+    if (event.key === "c" && !event.ctrlKey && !event.metaKey) {
+      handleConnectAction();
+    }
   });
+
+  // ========================================================================
+  // CONNECT / DISCONNECT BUTTON HANDLERS
+  // ========================================================================
+
+  /**
+   * Handle Connect action - connect two selected Points with a Line
+   */
+  function handleConnectAction() {
+    const selected = RTStateManager.getSelectedObjects();
+
+    if (selected.length !== 2) {
+      console.warn("⚠️ Connect requires exactly 2 selected Points");
+      return;
+    }
+
+    // Get instance IDs
+    const idA = selected[0].userData.instanceId;
+    const idB = selected[1].userData.instanceId;
+
+    if (!idA || !idB) {
+      console.warn("⚠️ Connect requires 2 deposited Point instances");
+      return;
+    }
+
+    // Verify both are Points
+    const instA = RTStateManager.getInstance(idA);
+    const instB = RTStateManager.getInstance(idB);
+
+    if (!instA || instA.type !== "point" || !instB || instB.type !== "point") {
+      console.warn("⚠️ Connect requires 2 Point instances (not other types)");
+      return;
+    }
+
+    // Create connected line
+    const connectedLine = RTStateManager.connectPoints(idA, idB, scene);
+
+    if (connectedLine) {
+      // Update counter UI
+      document.getElementById("nowCount").textContent =
+        RTStateManager.getDepositedCount();
+
+      // Clear selection and select the new line
+      deselectAll();
+      selectPolyhedron(connectedLine.threeObject);
+    }
+  }
+
+  /**
+   * Handle Disconnect action - disconnect a connected Line back to Points
+   */
+  function handleDisconnectAction() {
+    const selected = RTStateManager.getSelectedObjects();
+
+    if (selected.length !== 1) {
+      console.warn("⚠️ Disconnect requires exactly 1 selected connectedLine");
+      return;
+    }
+
+    const lineObj = selected[0];
+    const lineId = lineObj.userData.instanceId;
+
+    if (!lineId) {
+      console.warn("⚠️ Disconnect requires a deposited connectedLine instance");
+      return;
+    }
+
+    const inst = RTStateManager.getInstance(lineId);
+    if (!inst || inst.type !== "connectedLine") {
+      console.warn("⚠️ Disconnect only works on connectedLine instances");
+      return;
+    }
+
+    // Disconnect (deletes the line, Points remain)
+    RTStateManager.disconnectLine(lineId, scene);
+
+    // Update counter UI
+    document.getElementById("nowCount").textContent =
+      RTStateManager.getDepositedCount();
+
+    // Clear selection
+    deselectAll();
+  }
+
+  // Wire up Connect button
+  const connectBtn = document.getElementById("connectBtn");
+  if (connectBtn) {
+    connectBtn.addEventListener("click", handleConnectAction);
+  }
+
+  // Wire up Disconnect button
+  const disconnectBtn = document.getElementById("disconnectBtn");
+  if (disconnectBtn) {
+    disconnectBtn.addEventListener("click", handleDisconnectAction);
+  }
+
+  // Expose handlers globally for context menu
+  window.handleConnectAction = handleConnectAction;
+  window.handleDisconnectAction = handleDisconnectAction;
 } // End startARTexplorer function

@@ -157,18 +157,20 @@ export function initContextMenu(THREE, scene, camera, renderer) {
       return;
     }
 
-    // Connect two Points with a Line (stub - not yet implemented)
+    // Connect two Points with a Line
     if (action === "connect") {
-      console.log("[Context] Connect action - not yet implemented");
-      // Future: RTStateManager.connectPoints(pointA_Id, pointB_Id)
+      if (window.handleConnectAction) {
+        window.handleConnectAction();
+      }
       hide();
       return;
     }
 
-    // Disconnect Line back to two Points (stub - not yet implemented)
+    // Disconnect Line back to two Points
     if (action === "disconnect") {
-      console.log("[Context] Disconnect action - not yet implemented");
-      // Future: RTStateManager.disconnectLine(lineInstanceId)
+      if (window.handleDisconnectAction) {
+        window.handleDisconnectAction();
+      }
       hide();
       return;
     }
