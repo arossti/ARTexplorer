@@ -7,6 +7,16 @@
  *
  * Extracted from rt-rendering.js (Jan 2026) for modularity.
  *
+ * CODE QUALITY AUDIT NOTE (2026-01-29):
+ * This module uses Math.PI for THREE.GridHelper rotation (lines 54, 75, 611, 632).
+ * This is justified as a THREE.js interface requirement - GridHelper is oriented
+ * in Y-up by default and requires rotation.x/z = Math.PI/2 for Z-up convention.
+ *
+ * FUTURE IMPROVEMENT: Replace THREE.GridHelper with custom RT-pure grid geometry
+ * that generates lines directly in the correct orientation without rotation.
+ * This would eliminate all Math.PI usage in this module.
+ * See: Geometry documents/CODE-QUALITY-AUDIT.md for RT-purity guidelines.
+ *
  * @requires THREE.js
  * @requires rt-math.js
  * @requires rt-polyhedra.js

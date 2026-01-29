@@ -2658,7 +2658,10 @@ function startARTexplorer(
       applyHighlight(polyhedron);
 
       // AUTO-SELECT connected Points when selecting a connectedLine
-      if (polyhedron.userData.type === "connectedLine" && polyhedron.userData.connections) {
+      if (
+        polyhedron.userData.type === "connectedLine" &&
+        polyhedron.userData.connections
+      ) {
         const { startPoint, endPoint } = polyhedron.userData.connections;
         const startInst = RTStateManager.getInstance(startPoint);
         const endInst = RTStateManager.getInstance(endPoint);
@@ -4367,7 +4370,9 @@ function startARTexplorer(
                 poly.userData.type === "point" &&
                 poly.userData.instanceId
               ) {
-                RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+                RTStateManager.updateConnectedGeometry(
+                  poly.userData.instanceId
+                );
               }
             });
           }
