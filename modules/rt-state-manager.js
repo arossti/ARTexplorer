@@ -1169,4 +1169,79 @@ export const RTStateManager = {
 
     console.log("🗑️  All instances cleared");
   },
+
+  // ========================================================================
+  // SELECTION-BASED CONNECT/DISCONNECT (Convenience Methods)
+  // ========================================================================
+  // These methods encapsulate validation logic that was previously in rt-init.js
+
+  /**
+   * Connect two selected Point instances with a Line
+   * Validates selection before calling connectPoints()
+   * @param {THREE.Scene} scene - Scene to add Line to
+   * @returns {Object|null} Created Line instance, or null on validation failure
+   */
+  connectFromSelection(scene) {
+    const selected = this.getSelectedObjects();
+
+    // Validate selection count
+    if (selected.length !== 2) {
+      console.warn("⚠️ Connect requires exactly 2 selected Points");
+      return null;
+    }
+
+    // Get instance IDs
+    const idA = selected[0].userData.instanceId;
+    const idB = selected[1].userData.instanceId;
+
+    if (!idA || !idB) {
+      console.warn("⚠️ Connect requires 2 deposited Point instances");
+      return null;
+    }
+
+    // Verify both are Points
+    const instA = this.getInstance(idA);
+    const instB = this.getInstance(idB);
+
+    if (!instA || instA.type !== "point" || !instB || instB.type !== "point") {
+      console.warn("⚠️ Connect requires 2 Point instances (not other types)");
+      return null;
+    }
+
+    // Delegate to existing connectPoints method
+    return this.connectPoints(idA, idB, scene);
+  },
+
+  /**
+   * Disconnect the selected connected Line back to its component Points
+   * Validates selection before calling disconnectLine()
+   * @param {THREE.Scene} scene - Scene to remove Line from
+   * @returns {boolean} True if disconnected successfully, false on validation failure
+   */
+  disconnectFromSelection(scene) {
+    const selected = this.getSelectedObjects();
+
+    // Validate selection count
+    if (selected.length !== 1) {
+      console.warn("⚠️ Disconnect requires exactly 1 selected connectedLine");
+      return false;
+    }
+
+    const lineObj = selected[0];
+    const lineId = lineObj.userData.instanceId;
+
+    if (!lineId) {
+      console.warn("⚠️ Disconnect requires a deposited connectedLine instance");
+      return false;
+    }
+
+    const inst = this.getInstance(lineId);
+    if (!inst || inst.type !== "connectedLine") {
+      console.warn("⚠️ Disconnect only works on connectedLine instances");
+      return false;
+    }
+
+    // Delegate to existing disconnectLine method
+    return this.disconnectLine(lineId, scene);
+  },
 };

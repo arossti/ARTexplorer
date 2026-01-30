@@ -1,0 +1,782 @@
+# JAN30-REFACTOR-PLAN: Non-Disruptive rt-init.js Modularization
+
+## Core Principle: Shadow + Switchover
+
+> **Never delete working code until its replacement is proven.**
+
+Each phase follows this pattern:
+1. **Build** the new module alongside existing code
+2. **Test** the new module independently
+3. **Shadow** - run both old and new in parallel (new code disabled by default)
+4. **Switchover** - enable new, disable old via feature flag
+5. **Remove** old code only after new is stable
+
+---
+
+## Phase 1: Declarative UI Binding System (Biggest Win)
+
+**Goal:** Replace 1,150 lines of individual event listeners with ~200 lines of data + generic handler
+
+**Impact:** -950 lines from rt-init.js (once complete)
+
+### Step 1.1: Create the Binding Engine (New File)
+
+```javascript
+// modules/rt-ui-bindings.js (NEW)
+
+/**
+ * Declarative UI binding system for ARTexplorer
+ * Replaces hundreds of individual addEventListener() calls with data-driven binding
+ */
+
+/**
+ * Binding types supported:
+ * - checkbox: Toggle visibility, triggers updateGeometry
+ * - checkbox-controls: Toggle visibility + show/hide sub-controls
+ * - slider: Update value display, triggers updateGeometry
+ * - slider-linked: Bidirectional conversion (e.g., Quadrance ↔ Length)
+ * - button-group: Exclusive selection within group
+ */
+
+export class RTUIBindings {
+  constructor() {
+    this.bindings = [];
+    this.updateGeometry = null; // Set during init
+    this.renderingAPI = null;   // Set during init
+  }
+
+  /**
+   * Initialize with dependencies
+   * @param {Object} deps - { updateGeometry, renderingAPI, RT, Quadray }
+   */
+  init(deps) {
+    this.updateGeometry = deps.updateGeometry;
+    this.renderingAPI = deps.renderingAPI;
+    this.RT = deps.RT;
+    this.Quadray = deps.Quadray;
+  }
+
+  /**
+   * Register a binding definition
+   * @param {Object} binding - Binding configuration
+   */
+  register(binding) {
+    this.bindings.push(binding);
+  }
+
+  /**
+   * Register multiple bindings at once
+   * @param {Array} bindings - Array of binding configurations
+   */
+  registerAll(bindings) {
+    bindings.forEach(b => this.register(b));
+  }
+
+  /**
+   * Apply all registered bindings to the DOM
+   * Call this AFTER DOM is ready
+   */
+  applyAll() {
+    this.bindings.forEach(binding => this._applyBinding(binding));
+    console.log(`✅ RTUIBindings: Applied ${this.bindings.length} bindings`);
+  }
+
+  /**
+   * Internal: Apply a single binding
+   */
+  _applyBinding(binding) {
+    const element = document.getElementById(binding.id);
+    if (!element) {
+      console.warn(`⚠️ RTUIBindings: Element not found: ${binding.id}`);
+      return;
+    }
+
+    switch (binding.type) {
+      case 'checkbox':
+        this._bindCheckbox(element, binding);
+        break;
+      case 'checkbox-controls':
+        this._bindCheckboxWithControls(element, binding);
+        break;
+      case 'slider':
+        this._bindSlider(element, binding);
+        break;
+      case 'slider-linked':
+        this._bindLinkedSliders(binding);
+        break;
+      case 'button-group':
+        this._bindButtonGroup(binding);
+        break;
+      default:
+        console.warn(`⚠️ RTUIBindings: Unknown binding type: ${binding.type}`);
+    }
+  }
+
+  _bindCheckbox(element, binding) {
+    element.addEventListener('change', () => {
+      if (binding.onChange) {
+        binding.onChange(element.checked, this.renderingAPI);
+      }
+      if (binding.updateGeometry !== false) {
+        this.updateGeometry();
+      }
+    });
+  }
+
+  _bindCheckboxWithControls(element, binding) {
+    const controlsElement = document.getElementById(binding.controlsId);
+
+    element.addEventListener('change', () => {
+      // Show/hide controls
+      if (controlsElement) {
+        controlsElement.style.display = element.checked ? 'block' : 'none';
+      }
+      // Custom handler
+      if (binding.onChange) {
+        binding.onChange(element.checked, this.renderingAPI);
+      }
+      // Update geometry
+      if (binding.updateGeometry !== false) {
+        this.updateGeometry();
+      }
+    });
+  }
+
+  _bindSlider(element, binding) {
+    const valueDisplay = binding.valueId ? document.getElementById(binding.valueId) : null;
+
+    element.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+
+      // Update value display
+      if (valueDisplay) {
+        const displayValue = binding.formatValue ? binding.formatValue(value) : value;
+        valueDisplay.textContent = displayValue;
+      }
+
+      // Custom handler
+      if (binding.onInput) {
+        binding.onInput(value, this.renderingAPI, this.RT);
+      }
+
+      // Update geometry
+      if (binding.updateGeometry !== false) {
+        this.updateGeometry();
+      }
+    });
+  }
+
+  _bindLinkedSliders(binding) {
+    const primaryEl = document.getElementById(binding.primaryId);
+    const secondaryEl = document.getElementById(binding.secondaryId);
+
+    if (!primaryEl || !secondaryEl) return;
+
+    // Primary → Secondary conversion
+    primaryEl.addEventListener('input', () => {
+      const primaryValue = parseFloat(primaryEl.value);
+      const secondaryValue = binding.primaryToSecondary(primaryValue);
+      secondaryEl.value = secondaryValue.toFixed(4);
+      this.updateGeometry();
+    });
+
+    // Secondary → Primary conversion
+    secondaryEl.addEventListener('input', () => {
+      const secondaryValue = parseFloat(secondaryEl.value);
+      const primaryValue = binding.secondaryToPrimary(secondaryValue);
+      primaryEl.value = primaryValue.toFixed(4);
+      this.updateGeometry();
+    });
+  }
+
+  _bindButtonGroup(binding) {
+    const buttons = binding.buttons.map(b => ({
+      element: document.getElementById(b.id),
+      ...b
+    })).filter(b => b.element);
+
+    buttons.forEach(btn => {
+      btn.element.addEventListener('click', () => {
+        // Remove active from all
+        buttons.forEach(b => b.element.classList.remove('active'));
+        // Add active to clicked
+        btn.element.classList.add('active');
+        // Call handler
+        if (btn.onClick) {
+          btn.onClick(this.renderingAPI);
+        }
+      });
+    });
+  }
+}
+
+// Singleton instance
+export const uiBindings = new RTUIBindings();
+```
+
+**This file is 100% NEW - no disruption to existing code.**
+
+### Step 1.2: Create Binding Definitions (New File)
+
+```javascript
+// modules/rt-ui-binding-defs.js (NEW)
+
+/**
+ * Declarative binding definitions for ARTexplorer UI
+ * Each binding replaces a manual addEventListener() in rt-init.js
+ */
+
+export const polyhedraBindings = [
+  // Simple checkboxes - just trigger updateGeometry
+  { id: 'showPoint', type: 'checkbox' },
+  { id: 'showCube', type: 'checkbox' },
+  { id: 'showDodecahedron', type: 'checkbox' },
+  { id: 'showCuboctahedron', type: 'checkbox' },
+  { id: 'showRhombicDodecahedron', type: 'checkbox' },
+
+  // Checkboxes with sub-controls
+  {
+    id: 'showLine',
+    type: 'checkbox-controls',
+    controlsId: 'line-controls'
+  },
+  {
+    id: 'showPolygon',
+    type: 'checkbox-controls',
+    controlsId: 'polygon-controls'
+  },
+  {
+    id: 'showPrism',
+    type: 'checkbox-controls',
+    controlsId: 'prism-controls'
+  },
+  {
+    id: 'showCone',
+    type: 'checkbox-controls',
+    controlsId: 'cone-controls'
+  },
+
+  // Tetrahedron with geodesic controls (complex case)
+  {
+    id: 'showTetrahedron',
+    type: 'checkbox-controls',
+    controlsId: 'geodesic-tetra-all',
+    // Keep controls visible if geodesic variant is also checked
+    onChange: (checked, renderingAPI) => {
+      const geodesicCheckbox = document.getElementById('showGeodesicTetrahedron');
+      const controls = document.getElementById('geodesic-tetra-all');
+      if (controls) {
+        const shouldShow = checked || (geodesicCheckbox && geodesicCheckbox.checked);
+        controls.style.display = shouldShow ? 'block' : 'none';
+      }
+    }
+  },
+  // ... more polyhedra
+];
+
+export const sliderBindings = [
+  // Simple sliders with value display
+  {
+    id: 'opacitySlider',
+    type: 'slider',
+    valueId: 'opacityValue'
+  },
+  {
+    id: 'nodeOpacitySlider',
+    type: 'slider',
+    valueId: 'nodeOpacityValue',
+    onInput: (value, renderingAPI) => {
+      renderingAPI.setNodeOpacity(value);
+    }
+  },
+
+  // Linked sliders (Quadrance ↔ Length)
+  {
+    type: 'slider-linked',
+    primaryId: 'lineQuadrance',
+    secondaryId: 'lineLength',
+    primaryToSecondary: (Q) => Math.sqrt(Q),  // Q → L = √Q
+    secondaryToPrimary: (L) => L * L          // L → Q = L²
+  },
+  {
+    type: 'slider-linked',
+    primaryId: 'polygonQuadrance',
+    secondaryId: 'polygonRadius',
+    primaryToSecondary: (Q) => Math.sqrt(Q),
+    secondaryToPrimary: (R) => R * R
+  },
+  // ... more linked sliders
+];
+
+export const matrixBindings = [
+  {
+    id: 'showCubeMatrix',
+    type: 'checkbox-controls',
+    controlsId: 'cube-matrix-controls'
+  },
+  {
+    id: 'cubeMatrixSizeSlider',
+    type: 'slider',
+    valueId: 'cubeMatrixSizeValue',
+    formatValue: (v) => `${v}×${v}`
+  },
+  { id: 'cubeMatrixRotate45', type: 'checkbox' },
+  // ... more matrix controls
+];
+
+// Combine all bindings
+export const allBindings = [
+  ...polyhedraBindings,
+  ...sliderBindings,
+  ...matrixBindings,
+];
+```
+
+**This file is 100% NEW - no disruption to existing code.**
+
+### Step 1.3: Shadow Integration in rt-init.js
+
+Add to rt-init.js (ALONGSIDE existing code, not replacing):
+
+```javascript
+// At top of rt-init.js, add import
+import { uiBindings } from './rt-ui-bindings.js';
+import { allBindings } from './rt-ui-binding-defs.js';
+
+// FEATURE FLAG - controls which system is active
+const USE_DECLARATIVE_UI = false; // Set to true to test new system
+
+// In startARTexplorer(), after renderingAPI is set up:
+if (USE_DECLARATIVE_UI) {
+  // Initialize new declarative binding system
+  uiBindings.init({
+    updateGeometry: renderingAPI.updateGeometry,
+    renderingAPI: renderingAPI,
+    RT: RT,
+    Quadray: Quadray
+  });
+  uiBindings.registerAll(allBindings);
+  uiBindings.applyAll();
+  console.log('🆕 Using DECLARATIVE UI bindings');
+} else {
+  // EXISTING CODE - all the manual addEventListener() calls
+  // ... (unchanged)
+  console.log('📜 Using LEGACY UI bindings');
+}
+```
+
+### Step 1.4: Testing Protocol
+
+1. **Flag OFF (default):** App works exactly as before
+2. **Flag ON:** New system handles UI bindings
+3. **Test each binding type:**
+   - Toggle polyhedra checkboxes
+   - Adjust sliders
+   - Verify updateGeometry is called
+   - Verify controls show/hide correctly
+
+### Step 1.5: Progressive Migration
+
+Once basic system works:
+1. Add more binding definitions (10-20 at a time)
+2. Test each batch
+3. When ALL bindings are migrated and tested:
+   - Set `USE_DECLARATIVE_UI = true` as default
+   - Comment out (don't delete!) legacy code
+   - Test for a week
+   - Delete legacy code in final cleanup
+
+---
+
+## Phase 2: RTGumball Module (The Big One)
+
+**Goal:** Extract gumball state + visuals + events as encapsulated class
+
+**Impact:** -1,700 lines from rt-init.js
+
+### Step 2.1: Create RTGumball Class (New File)
+
+```javascript
+// modules/rt-gumball.js (NEW)
+
+/**
+ * RTGumball - Encapsulated gumball transformation system
+ *
+ * Manages:
+ * - Tool state (move/scale/rotate)
+ * - Snap modes (free/xyz/wxyz)
+ * - Object snap targets (vertex/edge/face)
+ * - Editing basis visualization
+ * - Drag handling
+ */
+
+export class RTGumball {
+  constructor() {
+    // Internal state (was global variables in rt-init.js)
+    this.state = {
+      tool: null,           // null | 'move' | 'scale' | 'rotate'
+      snapMode: 'free',     // 'free' | 'xyz' | 'wxyz'
+      isDragging: false,
+      isFreeMoving: false,
+      isDragCopying: false,
+      selectedHandle: null,
+      editingBasis: null,
+      hoveredHandle: null,
+
+      // Object snap
+      objectSnapVertex: false,
+      objectSnapEdge: false,
+      objectSnapFace: false,
+      currentSnapTarget: null,
+      snapPreviewMarker: null,
+
+      // Drag state
+      dragPlane: null,
+      dragStartPoint: null,
+      freeMoveDragOffset: null,
+      freeMoveInitialPositions: [],
+      freeMoveStartPoint: null,
+      selectedPolyhedra: [],
+
+      // Drag-copy
+      dragCopyOriginalPosition: null,
+      dragCopyOriginalQuaternion: null,
+      dragCopyOriginalScale: null,
+    };
+
+    // Dependencies (set during init)
+    this.THREE = null;
+    this.Quadray = null;
+    this.RT = null;
+    this.scene = null;
+    this.camera = null;
+    this.renderer = null;
+    this.controls = null;
+    this.renderingAPI = null;
+
+    // Callbacks (set during init)
+    this.getSelectedPolyhedra = null;
+    this.onTransformComplete = null;
+  }
+
+  /**
+   * Initialize with dependencies
+   */
+  init(deps) {
+    this.THREE = deps.THREE;
+    this.Quadray = deps.Quadray;
+    this.RT = deps.RT;
+    this.scene = deps.scene;
+    this.camera = deps.camera;
+    this.renderer = deps.renderer;
+    this.controls = deps.controls;
+    this.renderingAPI = deps.renderingAPI;
+    this.getSelectedPolyhedra = deps.getSelectedPolyhedra;
+    this.onTransformComplete = deps.onTransformComplete;
+
+    // Initialize THREE objects
+    this.state.dragStartPoint = new this.THREE.Vector3();
+    this.state.freeMoveDragOffset = new this.THREE.Vector3();
+    this.state.freeMoveStartPoint = new this.THREE.Vector3();
+    this.state.dragCopyOriginalPosition = new this.THREE.Vector3();
+    this.state.dragCopyOriginalQuaternion = new this.THREE.Quaternion();
+    this.state.dragCopyOriginalScale = new this.THREE.Vector3();
+
+    // Initialize raycaster
+    this.raycaster = new this.THREE.Raycaster();
+    this.mouse = new this.THREE.Vector2();
+
+    console.log('✅ RTGumball initialized');
+  }
+
+  /**
+   * Attach event listeners to renderer
+   * Call this AFTER scene is ready
+   */
+  attachEventListeners() {
+    // mousedown
+    this.renderer.domElement.addEventListener('mousedown',
+      (e) => this._onMouseDown(e), { capture: true });
+
+    // mousemove
+    this.renderer.domElement.addEventListener('mousemove',
+      (e) => this._onMouseMove(e), { capture: true });
+
+    // mouseup
+    this.renderer.domElement.addEventListener('mouseup',
+      (e) => this._onMouseUp(e), { capture: true });
+
+    console.log('✅ RTGumball event listeners attached');
+  }
+
+  // ========== PUBLIC API ==========
+
+  /**
+   * Set active tool
+   * @param {string|null} tool - 'move' | 'scale' | 'rotate' | null
+   */
+  setTool(tool) {
+    this.state.tool = tool;
+
+    if (tool) {
+      this.controls.enabled = false;
+      this._createEditingBasis();
+    } else {
+      this.controls.enabled = true;
+      this._destroyEditingBasis();
+    }
+  }
+
+  /**
+   * Get current tool
+   */
+  getTool() {
+    return this.state.tool;
+  }
+
+  /**
+   * Set snap mode
+   */
+  setSnapMode(mode) {
+    this.state.snapMode = mode;
+  }
+
+  /**
+   * Set object snap flags
+   */
+  setObjectSnap(type, enabled) {
+    if (type === 'vertex') this.state.objectSnapVertex = enabled;
+    if (type === 'edge') this.state.objectSnapEdge = enabled;
+    if (type === 'face') this.state.objectSnapFace = enabled;
+  }
+
+  /**
+   * Update editing basis to follow selection
+   */
+  updatePosition(position) {
+    if (this.state.editingBasis) {
+      this.state.editingBasis.position.copy(position);
+    }
+  }
+
+  /**
+   * Clean up on selection change
+   */
+  onSelectionChanged(selection) {
+    if (selection && this.state.tool) {
+      this._createEditingBasis();
+    } else if (!selection) {
+      this._destroyEditingBasis();
+    }
+  }
+
+  // ========== INTERNAL METHODS ==========
+  // (Move all the existing functions here, prefixed with _)
+
+  _createEditingBasis() {
+    // ... existing createEditingBasis code
+  }
+
+  _destroyEditingBasis() {
+    // ... existing destroyEditingBasis code
+  }
+
+  _onMouseDown(event) {
+    // ... existing mousedown handler code
+  }
+
+  _onMouseMove(event) {
+    // ... existing mousemove handler code
+  }
+
+  _onMouseUp(event) {
+    // ... existing mouseup handler code
+  }
+
+  // ... all other internal methods
+}
+
+// Singleton instance
+export const gumball = new RTGumball();
+```
+
+### Step 2.2: Shadow Integration in rt-init.js
+
+```javascript
+// At top of rt-init.js
+import { gumball } from './rt-gumball.js';
+
+// FEATURE FLAG
+const USE_RTGUMBALL = false; // Set to true to test new system
+
+// In startARTexplorer(), after scene init:
+if (USE_RTGUMBALL) {
+  // Initialize new gumball system
+  gumball.init({
+    THREE, Quadray, RT,
+    scene, camera, renderer, controls,
+    renderingAPI,
+    getSelectedPolyhedra: () => getSelectedPolyhedra(),
+    onTransformComplete: () => { /* update UI */ }
+  });
+  gumball.attachEventListeners();
+
+  // Wire up tool buttons to new system
+  document.querySelectorAll('.toggle-btn.variant-tool').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tool = this.dataset.gumballTool;
+      // Toggle
+      if (gumball.getTool() === tool) {
+        gumball.setTool(null);
+        this.classList.remove('active');
+      } else {
+        document.querySelectorAll('.toggle-btn.variant-tool')
+          .forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        gumball.setTool(tool);
+      }
+    });
+  });
+
+  console.log('🆕 Using RTGumball module');
+} else {
+  // EXISTING CODE - all the gumball state and functions
+  // ... (unchanged)
+  console.log('📜 Using LEGACY gumball');
+}
+```
+
+### Step 2.3: Progressive Migration
+
+1. Start with just the STATE encapsulation (tool, snapMode)
+2. Add editing basis visualization
+3. Add drag handling (the complex part)
+4. Test each addition thoroughly
+5. Switchover when complete
+
+---
+
+## Phase 3: Connect/Disconnect to RTStateManager
+
+**Goal:** Move connection logic to where it belongs
+
+**Impact:** -50 lines from rt-init.js, better encapsulation
+
+### Step 3.1: Add Methods to RTStateManager
+
+```javascript
+// In rt-state-manager.js, add:
+
+/**
+ * Connect two Point instances with a Line
+ * (Moved from rt-init.js handleConnectAction)
+ */
+connectPointsFromSelection(scene) {
+  const selected = this.getSelectedObjects();
+
+  if (selected.length !== 2) {
+    console.warn('⚠️ Connect requires exactly 2 selected Points');
+    return null;
+  }
+
+  const idA = selected[0].userData.instanceId;
+  const idB = selected[1].userData.instanceId;
+
+  // ... existing validation logic
+
+  return this.connectPoints(idA, idB, scene);
+}
+
+/**
+ * Disconnect selected Line back to Points
+ * (Moved from rt-init.js handleDisconnectAction)
+ */
+disconnectFromSelection(scene) {
+  const selected = this.getSelectedObjects();
+
+  if (selected.length !== 1) {
+    console.warn('⚠️ Disconnect requires exactly 1 selected connectedLine');
+    return false;
+  }
+
+  // ... existing validation logic
+
+  return this.disconnectLine(lineId, scene);
+}
+```
+
+### Step 3.2: Update rt-init.js
+
+```javascript
+// Replace handleConnectAction() with:
+function handleConnectAction() {
+  const result = RTStateManager.connectPointsFromSelection(scene);
+  if (result) {
+    document.getElementById('nowCount').textContent = RTStateManager.getDepositedCount();
+    deselectAll();
+    selectPolyhedron(result.threeObject);
+  }
+}
+
+// Replace handleDisconnectAction() with:
+function handleDisconnectAction() {
+  if (RTStateManager.disconnectFromSelection(scene)) {
+    document.getElementById('nowCount').textContent = RTStateManager.getDepositedCount();
+    deselectAll();
+  }
+}
+```
+
+**This is LOW RISK and can be done immediately.**
+
+---
+
+## Implementation Timeline
+
+| Week | Phase | Risk | Lines Saved | Status |
+|------|-------|------|-------------|--------|
+| 1 | 3: Connect/Disconnect | 🟢 LOW | 50 | Can start now |
+| 1-2 | 1.1-1.2: Create binding engine | 🟢 LOW | 0 (new files) | Safe |
+| 2-3 | 1.3-1.4: Shadow integration | 🟡 MED | 0 (parallel) | Testable |
+| 3-4 | 1.5: Progressive migration | 🟡 MED | 950 | Incremental |
+| 5+ | 2: RTGumball | 🔴 HIGH | 1,700 | Future |
+
+**Total potential savings: ~2,700 lines (from 4,730 to ~2,030)**
+
+---
+
+## Rollback Safety
+
+At any point during this process:
+
+1. **Feature flags** allow instant rollback to legacy code
+2. **Legacy code remains** until new code is proven
+3. **Git branches** protect against mistakes
+4. **Each phase is independent** - can stop at any point
+
+```javascript
+// Quick rollback in rt-init.js
+const USE_DECLARATIVE_UI = false; // Instant rollback
+const USE_RTGUMBALL = false;      // Instant rollback
+```
+
+---
+
+## Key Insight
+
+> **The disruption is OPTIONAL, not REQUIRED.**
+>
+> By using feature flags and shadow integration, you can:
+> - Build new systems without touching working code
+> - Test new systems in parallel with old
+> - Switch over gradually, one feature at a time
+> - Roll back instantly if problems occur
+>
+> This is how large codebases evolve safely.
+
+---
+
+_Created: January 30, 2026_
+_Status: PLAN READY_
+_Risk: LOW (with feature flags)_
+_Author: Andy & Claude_

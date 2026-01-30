@@ -17,8 +17,18 @@ import {
   getPolyhedronFaceCentroids as getFaceCentroids,
 } from "./rt-snap-geometry.js";
 
+// Phase 1 Modularization: Declarative UI Bindings (Jan 30, 2026)
+import { uiBindings } from "./rt-ui-bindings.js";
+import { allBindings, getBindingStats } from "./rt-ui-binding-defs.js";
+
 // Make RTPolyhedra available globally for node geometry creation
 window.RTPolyhedra = Polyhedra;
+
+// ========================================================================
+// FEATURE FLAGS - Control which systems are active
+// ========================================================================
+// Set to true to use new declarative UI bindings instead of legacy addEventListener
+const USE_DECLARATIVE_UI = false; // Default: false (legacy mode)
 
 // TODO: Extract gumball to rt-controls.js module
 // import { RTControls } from "./modules/rt-controls.js";
@@ -129,6 +139,30 @@ function startARTexplorer(
   // ========================================================================
   // EVENT HANDLERS
   // ========================================================================
+
+  // ========================================================================
+  // DECLARATIVE UI BINDINGS (Phase 1 Modularization)
+  // ========================================================================
+  // When USE_DECLARATIVE_UI is true, use the new declarative binding system
+  // When false (default), use the legacy addEventListener() calls below
+  if (USE_DECLARATIVE_UI) {
+    // Initialize new declarative binding system
+    uiBindings.init({
+      updateGeometry: updateGeometry,
+      renderingAPI: renderingAPI,
+      RT: RT,
+      Quadray: Quadray,
+    });
+    uiBindings.registerAll(allBindings);
+    uiBindings.applyAll();
+
+    const stats = getBindingStats();
+    console.log(
+      `🆕 DECLARATIVE UI: ${stats.total} bindings (${stats.simpleCheckboxes} checkboxes, ${stats.simpleSliders} sliders, ${stats.linkedSliders} linked)`
+    );
+  }
+  // NOTE: Legacy event handlers below still run when USE_DECLARATIVE_UI is false
+  // Once declarative system is proven, legacy code will be removed
 
   // Plane iOS-style toggle switches (Cartesian XYZ + Quadray WXYZ)
   document
@@ -4631,35 +4665,10 @@ function startARTexplorer(
 
   /**
    * Handle Connect action - connect two selected Points with a Line
+   * Validation logic moved to RTStateManager.connectFromSelection()
    */
   function handleConnectAction() {
-    const selected = RTStateManager.getSelectedObjects();
-
-    if (selected.length !== 2) {
-      console.warn("⚠️ Connect requires exactly 2 selected Points");
-      return;
-    }
-
-    // Get instance IDs
-    const idA = selected[0].userData.instanceId;
-    const idB = selected[1].userData.instanceId;
-
-    if (!idA || !idB) {
-      console.warn("⚠️ Connect requires 2 deposited Point instances");
-      return;
-    }
-
-    // Verify both are Points
-    const instA = RTStateManager.getInstance(idA);
-    const instB = RTStateManager.getInstance(idB);
-
-    if (!instA || instA.type !== "point" || !instB || instB.type !== "point") {
-      console.warn("⚠️ Connect requires 2 Point instances (not other types)");
-      return;
-    }
-
-    // Create connected line
-    const connectedLine = RTStateManager.connectPoints(idA, idB, scene);
+    const connectedLine = RTStateManager.connectFromSelection(scene);
 
     if (connectedLine) {
       // Update counter UI
@@ -4674,38 +4683,17 @@ function startARTexplorer(
 
   /**
    * Handle Disconnect action - disconnect a connected Line back to Points
+   * Validation logic moved to RTStateManager.disconnectFromSelection()
    */
   function handleDisconnectAction() {
-    const selected = RTStateManager.getSelectedObjects();
+    if (RTStateManager.disconnectFromSelection(scene)) {
+      // Update counter UI
+      document.getElementById("nowCount").textContent =
+        RTStateManager.getDepositedCount();
 
-    if (selected.length !== 1) {
-      console.warn("⚠️ Disconnect requires exactly 1 selected connectedLine");
-      return;
+      // Clear selection
+      deselectAll();
     }
-
-    const lineObj = selected[0];
-    const lineId = lineObj.userData.instanceId;
-
-    if (!lineId) {
-      console.warn("⚠️ Disconnect requires a deposited connectedLine instance");
-      return;
-    }
-
-    const inst = RTStateManager.getInstance(lineId);
-    if (!inst || inst.type !== "connectedLine") {
-      console.warn("⚠️ Disconnect only works on connectedLine instances");
-      return;
-    }
-
-    // Disconnect (deletes the line, Points remain)
-    RTStateManager.disconnectLine(lineId, scene);
-
-    // Update counter UI
-    document.getElementById("nowCount").textContent =
-      RTStateManager.getDepositedCount();
-
-    // Clear selection
-    deselectAll();
   }
 
   // Wire up Connect button
