@@ -142,6 +142,45 @@ When modifying geometry code:
 ## GitHub CLI (gh)
 The `gh` CLI is installed and authenticated for this project. Use it for:
 
+### Issue Tracking Strategy
+**Use GitHub Issues** to track bugs and feature requests. This provides:
+- Persistent history for new contributors to understand decisions
+- Linkable references in commits (`Fixes #123`)
+- Searchable project history
+
+**When to create issues:**
+- Bugs that persist across coding sessions
+- Feature requests or enhancements
+- Known issues deferred for later (e.g., minor UX issues)
+
+**Labels to use:**
+- `bug` - Something isn't working
+- `enhancement` - New feature or improvement
+- `documentation` - Documentation changes
+- `deferred` - Known issue, low priority
+
+```bash
+# Create a bug issue
+gh issue create --title "Bug: Brief description" --label "bug" --body "## Description
+What's happening vs. what should happen
+
+## Steps to Reproduce
+1. Step one
+2. Step two
+
+## Expected Behavior
+What should happen"
+
+# Create a feature issue
+gh issue create --title "Feat: Brief description" --label "enhancement" --body "## Description
+What feature is needed and why"
+
+# Link commits to issues (auto-closes on merge)
+git commit -m "Fix: Description
+
+Fixes #123"
+```
+
 ### Pull Requests
 ```bash
 # Create PR with formatted description
@@ -171,5 +210,6 @@ gh pr list                 # List open PRs
 gh pr checkout <number>    # Check out a PR locally
 gh issue list              # List open issues
 gh issue create            # Create new issue
+gh issue view <number>     # View issue details
 gh repo view --web         # Open repo in browser
 ```
