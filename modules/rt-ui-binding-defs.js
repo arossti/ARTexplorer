@@ -423,6 +423,108 @@ export const lineweightSliderBindings = [
 ];
 
 // ============================================================================
+// GEODESIC PROJECTION RADIO BUTTONS
+// ============================================================================
+
+export const geodesicProjectionBindings = [
+  // Each geodesic form has out/in/mid projection options
+  { type: "radio-group", name: "geodesicTetraProjection" },
+  { type: "radio-group", name: "geodesicDualTetraProjection" },
+  { type: "radio-group", name: "geodesicOctaProjection" },
+  { type: "radio-group", name: "geodesicIcosaProjection" },
+  { type: "radio-group", name: "geodesicDualIcosaProjection" },
+];
+
+// ============================================================================
+// VIEW CONTROL BUTTONS
+// ============================================================================
+
+export const viewControlBindings = [
+  // Camera type toggle (perspective/orthographic)
+  {
+    type: "button-group",
+    groupId: "cameraType",
+    buttons: [
+      {
+        id: "cameraPerspective",
+        onClick: renderingAPI => renderingAPI.switchCameraType("perspective"),
+      },
+      {
+        id: "cameraOrthographic",
+        onClick: renderingAPI => renderingAPI.switchCameraType("orthographic"),
+      },
+    ],
+  },
+  // Camera presets (Cartesian views)
+  {
+    type: "button-group",
+    groupId: "cameraPresets",
+    buttons: [
+      {
+        id: "viewX",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("X"),
+      },
+      {
+        id: "viewY",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("Y"),
+      },
+      {
+        id: "viewZDown",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("Zdown"),
+      },
+      {
+        id: "viewZUp",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("Zup"),
+      },
+      {
+        id: "viewAxo",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("Axo"),
+      },
+      // Quadray views
+      {
+        id: "viewQuadW",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("QuadW"),
+      },
+      {
+        id: "viewQuadX",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("QuadX"),
+      },
+      {
+        id: "viewQuadY",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("QuadY"),
+      },
+      {
+        id: "viewQuadZ",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("QuadZ"),
+      },
+    ],
+  },
+];
+
+// ============================================================================
+// BASIS VISIBILITY CHECKBOXES
+// ============================================================================
+
+export const basisVisibilityBindings = [
+  {
+    id: "showCartesianBasis",
+    type: "checkbox",
+    onChange: (checked, renderingAPI) => {
+      renderingAPI.setCartesianBasisVisible(checked);
+    },
+    updateGeometry: false,
+  },
+  {
+    id: "showQuadray",
+    type: "checkbox",
+    onChange: (checked, renderingAPI) => {
+      renderingAPI.setQuadrayBasisVisible(checked);
+    },
+    updateGeometry: false,
+  },
+];
+
+// ============================================================================
 // COMBINED EXPORTS
 // ============================================================================
 
@@ -437,6 +539,9 @@ export const allBindings = [
   ...simpleSliderBindings,
   ...linkedSliderBindings,
   ...lineweightSliderBindings,
+  ...geodesicProjectionBindings,
+  ...viewControlBindings,
+  ...basisVisibilityBindings,
 ];
 
 /**
@@ -449,6 +554,9 @@ export function getBindingStats() {
     simpleSliders: simpleSliderBindings.length,
     linkedSliders: linkedSliderBindings.length,
     lineweightSliders: lineweightSliderBindings.length,
+    geodesicProjections: geodesicProjectionBindings.length,
+    viewControls: viewControlBindings.length,
+    basisVisibility: basisVisibilityBindings.length,
     total: allBindings.length,
   };
 }

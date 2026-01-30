@@ -22,6 +22,7 @@
  * - slider-linked: Bidirectional conversion (e.g., Quadrance ↔ Length)
  * - button-group: Exclusive selection within group
  * - toggle-group: Toggle buttons (can be combined, not exclusive)
+ * - radio-group: Radio button group by name attribute
  */
 
 export class RTUIBindings {
@@ -106,6 +107,10 @@ export class RTUIBindings {
 
     if (binding.type === "toggle-group") {
       return this._bindToggleGroup(binding);
+    }
+
+    if (binding.type === "radio-group") {
+      return this._bindRadioGroup(binding);
     }
 
     // Standard single-element bindings
@@ -342,6 +347,39 @@ export class RTUIBindings {
 
         // Update geometry if specified
         if (binding.updateGeometry) {
+          this.updateGeometry();
+        }
+      });
+    });
+
+    return true;
+  }
+
+  /**
+   * Bind a group of radio buttons by name attribute
+   * e.g., geodesic projection (out/in/mid)
+   */
+  _bindRadioGroup(binding) {
+    const radios = document.querySelectorAll(`input[name="${binding.name}"]`);
+
+    if (radios.length === 0) {
+      if (!binding.optional) {
+        console.warn(
+          `⚠️ RTUIBindings: No radio elements found for name: ${binding.name}`
+        );
+      }
+      return false;
+    }
+
+    radios.forEach(radio => {
+      radio.addEventListener("change", () => {
+        // Call custom handler with the selected value
+        if (binding.onChange) {
+          binding.onChange(radio.value, this.renderingAPI, this.RT);
+        }
+
+        // Update geometry (unless explicitly disabled)
+        if (binding.updateGeometry !== false) {
           this.updateGeometry();
         }
       });
