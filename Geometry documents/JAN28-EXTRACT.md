@@ -169,12 +169,17 @@ import {
 | Jan 26, 2026 | 4,120  | —      | Baseline                                     |
 | Jan 28, 2026 | 4,648  | +528   | Multi-select + attempted grouping (reverted) |
 | Jan 29, 2026 | ~4,700 | +52    | Bug 7 fix (selective connection updates)     |
+| Jan 30, 2026 | 4,733  | +33    | Added declarative UI import & init           |
 
 **Target**: Keep under 5,000 lines. If approaching limit, extract before adding new features.
+
+**Note (Jan 30)**: Declarative UI system adds ~33 lines to rt-init.js for imports and initialization, but creates foundation for removing ~1,000+ lines of legacy handlers in next phase.
 
 ---
 
 ## ⚠️ URGENT: Extract Before Jan 30 Feature Work
+
+> **Update (Jan 30, 2026)**: Declarative UI system implemented. rt-snap-geometry.js extraction already complete.
 
 **Next feature planned**: Polyhedral instance node selection (select/deselect vertices on deposited instances)
 
@@ -182,8 +187,9 @@ This will add ~100-200 lines of selection state and handlers. If we add this BEF
 
 **Required before node selection**:
 
-1. Extract `rt-snap-geometry.js` (~250 lines saved)
-2. Consider if node selection should be its own module (`rt-node-select.js`)
+1. ✅ Extract `rt-snap-geometry.js` (~173 lines extracted)
+2. ✅ Implement declarative UI binding system (foundation for 1,000+ line reduction)
+3. Consider if node selection should be its own module (`rt-node-select.js`)
 
 See [Deformations2.md](Deformations2.md) TODO section for Jan 30 work plan.
 
@@ -383,7 +389,34 @@ findNearestSnapTarget() - SPECIAL CASE
 
 ---
 
+## Extraction Status Summary (Jan 30, 2026)
+
+### Completed Extractions
+
+| Module | Lines | Status | Notes |
+|--------|-------|--------|-------|
+| `rt-snap-geometry.js` | 173 | ✅ DONE | Pure geometry helpers |
+| `rt-ui-bindings.js` | 370 | ✅ DONE | Declarative binding engine |
+| `rt-ui-binding-defs.js` | 455 | ✅ DONE | 79 binding definitions |
+
+### Pending Extractions
+
+| Module | Est. Lines | Status | Notes |
+|--------|------------|--------|-------|
+| Legacy handler cleanup | -1,000 | ⏳ NEXT | Wrap in conditional, then remove |
+| `rt-gumball.js` | 1,700 | 🔮 FUTURE | Phase 3 - high risk |
+
+### Current Strategy
+
+**Shadow + Switchover Pattern:**
+1. ✅ Build new system alongside old (declarative bindings)
+2. ✅ Test in parallel (both systems active)
+3. ⏳ Switchover via feature flag (`USE_DECLARATIVE_UI`)
+4. ⏳ Remove legacy handlers after verification
+
+---
+
 _Created: January 28, 2026_
-_Updated: January 30, 2026 - Added verification methodology_
-_Status: READY FOR EXTRACTION_
+_Updated: January 30, 2026 - End of Day_
+_Status: PHASE 2 COMPLETE (Declarative UI implemented)_
 _Author: Andy & Claude_

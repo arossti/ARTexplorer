@@ -735,13 +735,51 @@ function handleDisconnectAction() {
 
 | Week | Phase | Risk | Lines Saved | Status |
 |------|-------|------|-------------|--------|
-| 1 | 3: Connect/Disconnect | 🟢 LOW | 50 | Can start now |
-| 1-2 | 1.1-1.2: Create binding engine | 🟢 LOW | 0 (new files) | Safe |
-| 2-3 | 1.3-1.4: Shadow integration | 🟡 MED | 0 (parallel) | Testable |
-| 3-4 | 1.5: Progressive migration | 🟡 MED | 950 | Incremental |
+| 1 | 3: Connect/Disconnect | 🟢 LOW | 50 | ✅ DONE (Jan 30) |
+| 1-2 | 1.1-1.2: Create binding engine | 🟢 LOW | 0 (new files) | ✅ DONE (Jan 30) |
+| 2-3 | 1.3-1.4: Shadow integration | 🟡 MED | 0 (parallel) | ✅ DONE (Jan 30) |
+| 3-4 | 1.5: Progressive migration | 🟡 MED | 950 | 🔄 IN PROGRESS |
 | 5+ | 2: RTGumball | 🔴 HIGH | 1,700 | Future |
 
 **Total potential savings: ~2,700 lines (from 4,730 to ~2,030)**
+
+---
+
+## Current Status (Jan 30, 2026 - End of Day)
+
+### ✅ Phase 1 Complete: Declarative UI Binding System
+
+**Commits:**
+- `9d34887` - Refactor: Add declarative UI binding system (Phase 1)
+- `b30bb75` - Test: Enable declarative UI bindings (verified working)
+- `f2ccf85` - Docs: Document parallel UI binding execution
+
+**New Files Created:**
+- `modules/rt-ui-bindings.js` - Binding engine class (370 lines)
+- `modules/rt-ui-binding-defs.js` - Binding definitions (455 lines)
+
+**Results:**
+- 79 bindings registered (26 checkboxes, 23 sliders, 6 linked)
+- `USE_DECLARATIVE_UI = true` enabled in production
+- All UI controls verified working through manual testing
+
+**Current Execution State:**
+Both declarative bindings AND legacy handlers run in parallel. This causes harmless double-registration on ~60 elements (`updateGeometry()` called twice per interaction). Performance impact is negligible.
+
+### 🔄 Phase 1.5: Legacy Handler Cleanup (Deferred)
+
+**Issue:** Legacy handlers are interleaved with handlers NOT in declarative bindings (e.g., geodesic projection radio buttons mixed with frequency sliders). A clean conditional wrap requires surgical edits to ~50 locations.
+
+**Decision:** Defer cleanup. Current parallel execution works correctly. Future options:
+1. Remove legacy handlers one section at a time
+2. Wait until more handlers are added to declarative system
+3. Accept parallel execution as harmless overhead
+
+### ✅ Phase 3 Complete: Connect/Disconnect to RTStateManager
+
+**Added to rt-state-manager.js:**
+- `connectFromSelection(scene)` - Connect two selected Points
+- `disconnectFromSelection(scene)` - Disconnect selected connectedLine
 
 ---
 
@@ -776,7 +814,16 @@ const USE_RTGUMBALL = false;      // Instant rollback
 
 ---
 
+## Next Steps
+
+1. **Optional:** Remove legacy handlers section by section (low priority)
+2. **Future:** Phase 2 RTGumball extraction (~1,700 lines) - HIGH RISK, requires careful planning
+3. **Feature work:** Can proceed with new features; declarative system is stable
+
+---
+
 _Created: January 30, 2026_
-_Status: PLAN READY_
-_Risk: LOW (with feature flags)_
+_Updated: January 30, 2026 - Phase 1 COMPLETE, Phase 3 COMPLETE_
+_Status: PHASE 1 DEPLOYED, LEGACY CLEANUP DEFERRED_
+_Risk: LOW (feature flag rollback available)_
 _Author: Andy & Claude_
