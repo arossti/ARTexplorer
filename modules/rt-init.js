@@ -776,11 +776,29 @@ function startARTexplorer(
         renderingAPI.setCartesianBasisVisible(false);
         renderingAPI.setQuadrayBasisVisible(false);
 
-        // Create editing basis at selected Forms' center
+        // Create editing basis at appropriate position
+        // If in vertex mode with selected node(s), use first node's world position
+        // Otherwise use polyhedron centroid (classical behavior)
         const selected = getSelectedPolyhedra();
         if (selected.length > 0) {
-          // Use first selected polyhedron's position and pass the object for sizing
-          createEditingBasis(selected[0].position.clone(), selected[0]);
+          let basisPosition;
+          const selectedVertices = RTStateManager.getSelectedVertices();
+          const firstVertex = selectedVertices[0];
+
+          if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+            // NODE-BASED ORIGIN: Use first selected node's world position
+            const nodeWorldPos = new THREE.Vector3();
+            firstVertex.getWorldPosition(nodeWorldPos);
+            basisPosition = nodeWorldPos;
+            console.log(
+              `✅ Editing basis created: NODE ORIGIN at (${nodeWorldPos.x.toFixed(2)}, ${nodeWorldPos.y.toFixed(2)}, ${nodeWorldPos.z.toFixed(2)})`
+            );
+          } else {
+            // CLASSICAL: Use polyhedron centroid
+            basisPosition = selected[0].position.clone();
+          }
+
+          createEditingBasis(basisPosition, selected[0]);
         }
       }
     });
@@ -2127,8 +2145,8 @@ function startARTexplorer(
 
   /**
    * Handle click on a vertex node (for node selection)
-   * Node clicks select individual nodes, NOT the parent polyhedron.
-   * Face clicks (elsewhere) select the entire polyhedron.
+   * Node clicks select individual nodes and implicitly select the parent polyhedron
+   * for transform operations, but use the NODE as the transform origin (not centroid).
    * @param {THREE.Mesh} nodeMesh - The vertex node that was clicked
    * @param {THREE.Group} parentPoly - The parent polyhedron instance
    * @param {boolean} addToSelection - If true (Shift+click), toggle in selection
@@ -2140,12 +2158,22 @@ function startARTexplorer(
       RTStateManager.state.selection.object !== parentPoly
     ) {
       clearAllNodeSelections();
+      // Also clear object selection when switching polyhedra
+      RTStateManager.getSelectedObjects().forEach(obj => clearHighlight(obj));
+      RTStateManager.clearSelection();
     }
 
     // Enter vertex mode on this polyhedron (tracks which poly we're editing nodes on)
-    // Note: This does NOT select the polyhedron itself - only face clicks do that
     if (!RTStateManager.isVertexMode()) {
       RTStateManager.enterVertexMode(parentPoly);
+    }
+
+    // Ensure the parent polyhedron is in the object selection (for Move/Rotate/Scale)
+    // but DON'T apply the cyan highlight - we want node-only yellow highlight
+    if (!RTStateManager.isSelected(parentPoly)) {
+      RTStateManager.addToSelection(parentPoly);
+      currentSelection = parentPoly;
+      // Note: No applyHighlight(parentPoly) - the node highlight is sufficient
     }
 
     if (addToSelection) {
@@ -2875,9 +2903,22 @@ function startARTexplorer(
               }
             });
 
-            // Update editing basis position if it exists (use primary selection's new position)
+            // Update editing basis position if it exists
             if (editingBasis && selectedPolyhedra.length > 0) {
-              editingBasis.position.copy(selectedPolyhedra[0].position);
+              const selectedVertices = RTStateManager.getSelectedVertices();
+              const firstVertex = selectedVertices[0];
+              if (
+                RTStateManager.isVertexMode() &&
+                firstVertex?.getWorldPosition
+              ) {
+                // NODE-BASED: Follow the selected node's world position
+                const nodeWorldPos = new THREE.Vector3();
+                firstVertex.getWorldPosition(nodeWorldPos);
+                editingBasis.position.copy(nodeWorldPos);
+              } else {
+                // CLASSICAL: Follow polyhedron centroid
+                editingBasis.position.copy(selectedPolyhedra[0].position);
+              }
             }
 
             // Update coordinate displays (use primary selection's position)
@@ -3311,7 +3352,17 @@ function startARTexplorer(
 
             // Update editing basis position
             if (editingBasis) {
-              editingBasis.position.copy(currentSnapTarget.position);
+              const selectedVertices = RTStateManager.getSelectedVertices();
+              const firstVertex = selectedVertices[0];
+              if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+                // NODE-BASED: Follow the selected node's world position after snap
+                const nodeWorldPos = new THREE.Vector3();
+                firstVertex.getWorldPosition(nodeWorldPos);
+                editingBasis.position.copy(nodeWorldPos);
+              } else {
+                // CLASSICAL: Use snap target position
+                editingBasis.position.copy(currentSnapTarget.position);
+              }
             }
 
             console.log(
@@ -3417,7 +3468,17 @@ function startARTexplorer(
 
               // Update editing basis position after snapping
               if (editingBasis) {
-                editingBasis.position.copy(pos);
+                const selectedVertices = RTStateManager.getSelectedVertices();
+                const firstVertex = selectedVertices[0];
+                if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+                  // NODE-BASED: Follow the selected node's world position
+                  const nodeWorldPos = new THREE.Vector3();
+                  firstVertex.getWorldPosition(nodeWorldPos);
+                  editingBasis.position.copy(nodeWorldPos);
+                } else {
+                  // CLASSICAL: Use snapped position
+                  editingBasis.position.copy(pos);
+                }
               }
             }
           }
