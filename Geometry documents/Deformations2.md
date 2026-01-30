@@ -11,6 +11,7 @@
 - ⏭️ **Phase 1: Grouping** - SKIPPED (multi-select provides sufficient functionality)
 - ⚠️ **Phase 2: Line Deformation** - DEPRECATED (replaced by Point-Based Lines)
 - ✅ **Phase 2A: Point-Based Lines** - COMPLETED & DEPLOYED (PR #49, #50, #51)
+- 🔬 **Phase 2A+: Multi-Point Topology** - TESTING (Jan 29, 2026 evening)
 
 **Phase 2A Final Status** (Jan 29, 2026) - ALL DEPLOYED:
 - ✅ Create 2 Point instances, multi-select, Connect → creates connectedLine
@@ -22,7 +23,37 @@
 - ✅ Free move preserves relative positions of multi-selected objects (Bug 6 fix)
 - ✅ Opt-click drag-copy works correctly with delta-based movement
 
-**Ready for**: Phase 3 (Line2/thick lines) or Phase 4 (Polygon deformation)
+**Phase 2A+ Discovery** (Jan 29, 2026 evening):
+- ✅ **4+ Point connections work!** - Points can have multiple connections (valence > 2)
+- ✅ Created closed quadrilateral: 4 Points + 4 connectedLines forming a loop
+- ✅ Single Point move → both connected lines update correctly
+- ✅ Adjacent 2-Point move → shared edge and outer edges all update
+- ✅ **Bug 7 FIXED**: Opposite corner move now works - selective per-line updates
+
+**Architectural Insight**: This confirms the pathway to:
+1. **Planar case**: n Points + n edges = **Polygon** (when coplanar)
+2. **Non-planar case**: n Points + full edge connectivity = **Deformed Polyhedra**
+3. Base polyhedra remain inviolable - only instances are deformed via Point positions
+
+**Ready for**: Phase 4 (Polygon node deformation via connected Points)
+
+### Future Enhancement: Smart Multi-Point Connect
+
+When user selects 4+ Points and hits Connect:
+1. **Coplanarity test**: Are all Points in the same plane?
+   - **Yes → Polygon**: Connect edges in order (convex hull or user-specified winding)
+   - **No → Polyhedron**: Determine if Points define a valid polyhedron
+
+2. **Polyhedron detection** (non-planar case):
+   - 4 non-coplanar Points → Tetrahedron (6 edges, 4 faces)
+   - 8 Points → Could be Cube, or other hexahedron
+   - Use iterative solver similar to `rt-polyhedra.js` face construction
+   - Reference: Euler's formula V - E + F = 2 for validation
+
+3. **Implementation approach**:
+   - Leverage existing polyhedra generation in [rt-polyhedra.js](modules/rt-polyhedra.js)
+   - Calculate convex hull for edge determination
+   - Allow user to specify face winding if ambiguous
 
 ### Key Files to Modify
 | File | Purpose |
@@ -326,6 +357,7 @@ Benefits:
 - ~~Bug 4: Single-node movement doesn't update line~~ - **FIXED** (free movement path)
 - ~~Bug 5: Vertex snap causes self-collapse (Points snap to each other)~~ - **FIXED** (exclude connected Points from snap targets)
 - ~~Bug 6: Free move collapses multi-selected objects to same position~~ - **FIXED** (delta-based movement)
+- ~~Bug 7: Partial subset movement breaks unselected connections~~ - **FIXED** (selective per-line updates)
 
 **Solutions Applied**:
 1. Auto-select connected Points when selecting a connectedLine
@@ -333,6 +365,99 @@ Benefits:
 3. Add `updateConnectedGeometry()` call to OBJECT SNAP code path in free movement handler
 4. Exclude connected Points from snap target candidates in `findNearestSnapTarget()`
 5. Use delta-based movement in free move (like gumball drag) instead of absolute positioning
+
+### Bug 7: Partial Subset Movement (Opposite Corners) - ✅ FIXED
+
+**Discovered**: Jan 29, 2026 evening during 4-point quadrilateral testing
+**Fixed**: Jan 29, 2026 evening - selective per-line update logic
+
+**Symptom**:
+- Create 4 Points in a closed loop (quadrilateral with 4 connectedLines)
+- Select 2 **opposite** corners (non-adjacent Points)
+- Move them → the lines connecting to the **unselected** Points detach
+
+**What Works**:
+- Single Point move: ✅ Both connected lines update
+- Adjacent 2-Point move: ✅ All lines update (shared edge + outer edges)
+
+**What Was Breaking** (now fixed):
+- Opposite corner move: ~~❌ Lines to stationary Points freeze~~ ✅ NOW WORKS
+
+**Root Cause Analysis**:
+
+The `hasConnectedLine` check is **too coarse**:
+
+```javascript
+// Current logic (rt-init.js ~line 4361)
+const hasConnectedLine = selectedPolyhedra.some(
+  p => p.userData.type === "connectedLine"
+);
+if (!hasConnectedLine) {
+  // Update ALL connections for moved Points
+}
+```
+
+This assumes: "If ANY connectedLine is in selection, ALL lines moved together."
+
+But with opposite corners:
+- Point A and Point C are selected (opposite corners)
+- Line A-B is NOT in selection (B is stationary)
+- Line C-D is NOT in selection (D is stationary)
+- The `hasConnectedLine` check may pass (if user also selected an edge), skipping updates
+- OR: The lines A-B and C-D simply aren't being updated because their endpoints weren't both moved
+
+**Actual Issue**: When moving Point A, `updateConnectedGeometry(A)` should update:
+- Line A-B (A moved, B didn't → line must update)
+- Line A-D (A moved, D didn't → line must update)
+
+But if Line A-C was also selected (the diagonal), the current code skips ALL updates.
+
+**Proposed Fix**:
+
+Instead of all-or-nothing, check **per-line** whether both endpoints were in the selection:
+
+```javascript
+// For each moved Point, update connections where the OTHER endpoint wasn't moved
+selectedPolyhedra.forEach(poly => {
+  if (poly.userData.isInstance && poly.userData.type === "point") {
+    const pointId = poly.userData.instanceId;
+    const connectedLines = RTStateManager.getConnectedLines(pointId);
+
+    connectedLines.forEach(lineId => {
+      const line = RTStateManager.getInstanceById(lineId);
+      const otherPointId = line.connections.startPoint === pointId
+        ? line.connections.endPoint
+        : line.connections.startPoint;
+
+      // Only update if the OTHER point wasn't also moved
+      const otherPointMoved = selectedPolyhedra.some(
+        p => p.userData.instanceId === otherPointId
+      );
+
+      if (!otherPointMoved) {
+        RTStateManager.updateLineGeometry(lineId);
+      }
+    });
+  }
+});
+```
+
+**Key Insight**: The line needs updating when **exactly one** of its endpoints moved. When **both** endpoints moved together (and were in selection), the line's relative geometry is preserved by the transform.
+
+**Solution Implemented** (Jan 29, 2026):
+
+Added `updateConnectedGeometrySelective(movedPointId, allMovedPointIds)` to [rt-state-manager.js:656-732](modules/rt-state-manager.js#L656-L732):
+- Takes a Set of ALL moved Point IDs
+- For each connected line, checks if the OTHER endpoint also moved
+- Only updates lines where the other endpoint **didn't** move
+- Lines between two moved Points are skipped (geometry preserved by transform)
+
+Updated 3 locations in [rt-init.js](modules/rt-init.js) to use selective updates:
+- Line ~4178 (Object snap handler)
+- Line ~4308 (Free move handler)
+- Line ~4449 (Gumball drag handler)
+
+**Status**: ✅ FIXED - needs extensive edge case testing
 
 ---
 

@@ -4177,22 +4177,24 @@ function startARTexplorer(
 
             // Update connected geometry for any moved Point instances
             // Must happen BEFORE clearing selectedPolyhedra
-            const hasConnectedLine = selectedPolyhedra.some(
-              p => p.userData.type === "connectedLine"
+            // Bug 7 fix: Update per-line, skipping only lines where BOTH endpoints moved
+            const movedPointIds = new Set(
+              selectedPolyhedra
+                .filter(p => p.userData.type === "point" && p.userData.instanceId)
+                .map(p => p.userData.instanceId)
             );
-            if (!hasConnectedLine) {
-              selectedPolyhedra.forEach(poly => {
-                if (
-                  poly.userData.isInstance &&
-                  poly.userData.type === "point" &&
-                  poly.userData.instanceId
-                ) {
-                  RTStateManager.updateConnectedGeometry(
-                    poly.userData.instanceId
-                  );
-                }
-              });
-            }
+            selectedPolyhedra.forEach(poly => {
+              if (
+                poly.userData.isInstance &&
+                poly.userData.type === "point" &&
+                poly.userData.instanceId
+              ) {
+                RTStateManager.updateConnectedGeometrySelective(
+                  poly.userData.instanceId,
+                  movedPointIds
+                );
+              }
+            });
 
             justFinishedDrag = true;
             isFreeMoving = false;
@@ -4306,23 +4308,24 @@ function startARTexplorer(
           }
 
           // Update connected geometry for any moved Point instances
-          // Same logic as gumball drag handler - skip if connectedLine in selection
-          const hasConnectedLine = selectedPolyhedra.some(
-            p => p.userData.type === "connectedLine"
+          // Bug 7 fix: Update per-line, skipping only lines where BOTH endpoints moved
+          const movedPointIds = new Set(
+            selectedPolyhedra
+              .filter(p => p.userData.type === "point" && p.userData.instanceId)
+              .map(p => p.userData.instanceId)
           );
-          if (!hasConnectedLine) {
-            selectedPolyhedra.forEach(poly => {
-              if (
-                poly.userData.isInstance &&
-                poly.userData.type === "point" &&
-                poly.userData.instanceId
-              ) {
-                RTStateManager.updateConnectedGeometry(
-                  poly.userData.instanceId
-                );
-              }
-            });
-          }
+          selectedPolyhedra.forEach(poly => {
+            if (
+              poly.userData.isInstance &&
+              poly.userData.type === "point" &&
+              poly.userData.instanceId
+            ) {
+              RTStateManager.updateConnectedGeometrySelective(
+                poly.userData.instanceId,
+                movedPointIds
+              );
+            }
+          });
 
           justFinishedDrag = true;
           isFreeMoving = false;
@@ -4447,23 +4450,24 @@ function startARTexplorer(
           }
 
           // Update connected geometry for any moved Point instances
-          // BUT skip if the connectedLine was also in the selection (it was transformed together)
-          const hasConnectedLine = selectedPolyhedra.some(
-            p => p.userData.type === "connectedLine"
+          // Bug 7 fix: Update per-line, skipping only lines where BOTH endpoints moved
+          const movedPointIds = new Set(
+            selectedPolyhedra
+              .filter(p => p.userData.type === "point" && p.userData.instanceId)
+              .map(p => p.userData.instanceId)
           );
-          if (!hasConnectedLine) {
-            selectedPolyhedra.forEach(poly => {
-              if (
-                poly.userData.isInstance &&
-                poly.userData.type === "point" &&
-                poly.userData.instanceId
-              ) {
-                RTStateManager.updateConnectedGeometry(
-                  poly.userData.instanceId
-                );
-              }
-            });
-          }
+          selectedPolyhedra.forEach(poly => {
+            if (
+              poly.userData.isInstance &&
+              poly.userData.type === "point" &&
+              poly.userData.instanceId
+            ) {
+              RTStateManager.updateConnectedGeometrySelective(
+                poly.userData.instanceId,
+                movedPointIds
+              );
+            }
+          });
 
           // Mark that we just finished a drag to prevent click-after-drag deselection
           justFinishedDrag = true;

@@ -655,6 +655,87 @@ export const RTStateManager = {
   },
 
   /**
+   * Selective update for connected Lines - only updates lines where the OTHER endpoint wasn't moved
+   * Bug 7 fix: When moving a subset of Points (e.g., opposite corners of quadrilateral),
+   * lines connecting to unmoved Points need updating, but lines between two moved Points don't
+   * @param {string} movedPointId - ID of the Point that was moved
+   * @param {Set<string>} allMovedPointIds - Set of ALL Point IDs that were moved in this operation
+   */
+  updateConnectedGeometrySelective(movedPointId, allMovedPointIds) {
+    const movedPoint = this.getInstance(movedPointId);
+    if (!movedPoint) return;
+
+    // Find all connected lines referencing this point
+    const connectedLines = this.state.instances.filter(
+      inst =>
+        inst.type === "connectedLine" &&
+        (inst.parameters?.startPoint === movedPointId ||
+          inst.parameters?.endPoint === movedPointId)
+    );
+
+    let updatedCount = 0;
+    connectedLines.forEach(lineInstance => {
+      const connections = lineInstance.parameters;
+      const otherPointId =
+        connections.startPoint === movedPointId
+          ? connections.endPoint
+          : connections.startPoint;
+
+      // Skip if the OTHER endpoint also moved - line geometry preserved by transform
+      if (allMovedPointIds.has(otherPointId)) {
+        return;
+      }
+
+      // Other endpoint didn't move, so we need to update this line
+      const startPoint = this.getInstance(connections.startPoint);
+      const endPoint = this.getInstance(connections.endPoint);
+
+      if (!startPoint || !endPoint) {
+        console.warn(
+          `⚠️ updateConnectedGeometrySelective: Missing endpoint for ${lineInstance.id}`
+        );
+        return;
+      }
+
+      const posA = startPoint.threeObject.position;
+      const posB = endPoint.threeObject.position;
+
+      // Recalculate midpoint
+      const midpoint = new THREE.Vector3()
+        .addVectors(posA, posB)
+        .multiplyScalar(0.5);
+
+      // Update line group position
+      lineInstance.threeObject.position.copy(midpoint);
+      lineInstance.transform.position = {
+        x: midpoint.x,
+        y: midpoint.y,
+        z: midpoint.z,
+      };
+
+      // Update line geometry (relative to group position)
+      const relA = posA.clone().sub(midpoint);
+      const relB = posB.clone().sub(midpoint);
+
+      // Find the LineSegments child and update its geometry
+      lineInstance.threeObject.traverse(child => {
+        if (child.isLineSegments || child.isLine) {
+          child.geometry.setFromPoints([relA, relB]);
+          child.geometry.attributes.position.needsUpdate = true;
+        }
+      });
+
+      updatedCount++;
+    });
+
+    if (updatedCount > 0) {
+      console.log(
+        `🔗 Updated ${updatedCount} connected line(s) for Point ${movedPointId} (selective)`
+      );
+    }
+  },
+
+  /**
    * Update Instance transform (after drag/edit)
    * @param {string} instanceId - Instance ID to update
    * @param {Object} newTransform - New transform data
