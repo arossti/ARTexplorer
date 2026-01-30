@@ -39,30 +39,45 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          DIFF_CONTENT=$(cat diff_truncated.txt)
+          # Read and escape diff content for JSON
+          DIFF_CONTENT=$(cat diff_truncated.txt | jq -Rs .)
 
-          # Create the review request
+          # Build the prompt (already escaped from jq)
+          PROMPT="Review this PR diff for code quality issues. Focus ONLY on:\n\n1. **Debug code**: console.log statements that should be removed before merge\n2. **Commented-out code**: Dead code blocks that should be deleted\n3. **Code duplication**: Repeated code blocks (>5 lines) that could be consolidated\n4. **Large functions**: Functions >50 lines that could be extracted\n5. **Unused variables**: Declared but never used\n\nDO NOT comment on:\n- Style preferences\n- Alternative implementations\n- Architecture suggestions\n- Performance micro-optimizations\n\nFormat your response as a markdown checklist. If no issues found, say 'No issues found.'\n\nDiff:\n\`\`\`diff\n"
+
+          # Create JSON payload using jq for proper escaping
+          PAYLOAD=$(jq -n \
+            --arg prompt "$PROMPT" \
+            --argjson diff "$DIFF_CONTENT" \
+            '{
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 2048,
+              messages: [{
+                role: "user",
+                content: ($prompt + $diff + "\n```")
+              }]
+            }')
+
+          # Make API request
           RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
             -H "x-api-key: $ANTHROPIC_API_KEY" \
             -H "anthropic-version: 2023-06-01" \
-            -d @- << EOF
-          {
-            "model": "claude-sonnet-4-20250514",
-            "max_tokens": 2048,
-            "messages": [{
-              "role": "user",
-              "content": "Review this PR diff for code quality issues. Focus ONLY on:\n\n1. **Debug code**: console.log statements that should be removed before merge\n2. **Commented-out code**: Dead code blocks that should be deleted\n3. **Code duplication**: Repeated code blocks (>5 lines) that could be consolidated\n4. **Large functions**: Functions >50 lines that could be extracted\n5. **Unused variables**: Declared but never used\n\nDO NOT comment on:\n- Style preferences\n- Alternative implementations\n- Architecture suggestions\n- Performance micro-optimizations\n\nFormat your response as a markdown checklist. If no issues found, say 'No issues found.'\n\nDiff:\n\`\`\`diff\n${DIFF_CONTENT}\n\`\`\`"
-            }]
-          }
-          EOF
-          )
+            -d "$PAYLOAD")
 
-          # Extract the text content from Claude's response
-          REVIEW=$(echo "$RESPONSE" | jq -r '.content[0].text // "Error: Could not parse response"')
+          # Debug: show response type (but not content for security)
+          echo "Response keys: $(echo "$RESPONSE" | jq -r 'keys | join(", ")')"
 
-          # Save to file for the comment step
-          echo "$REVIEW" > review.md
+          # Check for error in response
+          if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+            ERROR_MSG=$(echo "$RESPONSE" | jq -r '.error.message // "Unknown API error"')
+            echo "API Error: $ERROR_MSG"
+            echo "API Error: $ERROR_MSG" > review.md
+          else
+            # Extract the text content from Claude's response
+            REVIEW=$(echo "$RESPONSE" | jq -r '.content[0].text // "Error: Could not parse response"')
+            echo "$REVIEW" > review.md
+          fi
 
       - name: Post PR Comment
         uses: actions/github-script@v7
