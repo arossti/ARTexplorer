@@ -37,6 +37,59 @@
 
 **Ready for**: Phase 4 (Polygon node deformation via connected Points)
 
+---
+
+## TODO: Jan 30, 2026 Work Plan
+
+### Priority 1: rt-init.js Extraction (MUST DO FIRST)
+
+**Rationale**: `rt-init.js` is now 4,700+ lines and growing. Every feature we add makes extraction harder. Before adding polyhedral node selection, we MUST lighten this file.
+
+**See**: [JAN28-EXTRACT.md](JAN28-EXTRACT.md) for full analysis.
+
+**Immediate extraction candidate**:
+- `rt-snap-geometry.js` (~250 lines) - Pure geometry helpers, no DOM, no state
+  - `getPolyhedronVertices()`
+  - `getPolyhedronEdgeMidpoints()`
+  - `getPolyhedronFaceCentroids()`
+  - `findNearestSnapTarget()`
+
+**Success criteria**:
+- [ ] Extract snap geometry functions to new module
+- [ ] Verify object snapping still works
+- [ ] rt-init.js reduced by ~250 lines
+- [ ] No regressions in existing functionality
+
+### Priority 2: Polyhedral Instance Node Selection (After Extraction)
+
+**Goal**: Enable selection of individual vertices on instantiated polyhedra (not Forms).
+
+**Scope** (deliberately minimal):
+1. Click on an instance vertex node → node highlights (selected)
+2. Shift+click → add to multi-node selection
+3. Click selected node → deselects that node
+4. ESC → release all node selections
+5. **NO EDITING** - just selection/deselection for now
+
+**Demonstration case**:
+- Deposit a Tetrahedron instance
+- Click one vertex node → highlights
+- Shift+click two more → 3 nodes highlighted
+- Click one of the selected → now 2 highlighted
+- ESC → all released, back to object selection mode
+
+**Why this order matters**:
+- Clean extraction BEFORE adding new selection state
+- New node selection will add ~100-200 lines to some file
+- Better to have that file be smaller before we add to it
+
+**Files likely affected**:
+- `rt-init.js` (selection handlers) or new `rt-node-select.js`
+- `rt-state-manager.js` (node selection state)
+- `rt-rendering.js` (node highlight materials)
+
+---
+
 ### Future Enhancement: Smart Multi-Point Connect
 
 When user selects 4+ Points and hits Connect:

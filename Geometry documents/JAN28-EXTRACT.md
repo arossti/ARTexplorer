@@ -154,8 +154,23 @@ import { getPolyhedronVertices, findNearestSnapTarget } from "./rt-snap-geometry
 |------|-------|--------|-------|
 | Jan 26, 2026 | 4,120 | — | Baseline |
 | Jan 28, 2026 | 4,648 | +528 | Multi-select + attempted grouping (reverted) |
+| Jan 29, 2026 | ~4,700 | +52 | Bug 7 fix (selective connection updates) |
 
 **Target**: Keep under 5,000 lines. If approaching limit, extract before adding new features.
+
+---
+
+## ⚠️ URGENT: Extract Before Jan 30 Feature Work
+
+**Next feature planned**: Polyhedral instance node selection (select/deselect vertices on deposited instances)
+
+This will add ~100-200 lines of selection state and handlers. If we add this BEFORE extracting, we'll be at ~4,900 lines and even harder to refactor.
+
+**Required before node selection**:
+1. Extract `rt-snap-geometry.js` (~250 lines saved)
+2. Consider if node selection should be its own module (`rt-node-select.js`)
+
+See [Deformations2.md](Deformations2.md) TODO section for Jan 30 work plan.
 
 ---
 
