@@ -25,7 +25,7 @@
 \newtheorem{definition}{Definition}
 \newtheorem{observation}{Observation}
 
-\title{Geometric Janus Inversion -- v4 (Jan 2026)\\
+\title{Geometric Janus Inversion -- v8 (Jan 2026)\\
 \large Extending the Janus Point from Temporal to Spatial Geometry\\
 via Tetrahedral (Quadray) Coordinates}
 
@@ -308,10 +308,34 @@ This interpretation preserves the genus-0 nature of the tetrahedron while permit
 \begin{tcolorbox}[colback=blue!5, colframe=blue!40, title=\textbf{On the Topological Singularity}]
 Standard topology prohibits a closed surface from turning inside-out without tearing or self-intersection. But this prohibition assumes continuous passage through 3D space.
 
-The Janus transition is different: the form collapses to a single point (the origin) and re-emerges inverted. The ``self-intersection'' occurs at a zero-measure singularity---a point with no extent.
+The Janus transition is different: the form collapses to a single point (the origin) and re-emerges inverted. The ``self-intersection'' occurs at a zero-measure singularity---a point with no extent. Barbour calls this the \emph{central configuration}---a shape that remains ``well defined despite the vanishing size'' (see Section 3.3).
 
 We question whether passage through a dimensionless point constitutes ``self-intersection'' in any meaningful sense. The origin may be precisely the kind of topological ``loophole'' that permits what 3D continuity forbids.
 \end{tcolorbox}
+
+\subsection{What Happens at the Singularity?}
+
+A natural question arises: what is the state of the form \emph{at} the origin, during the instant of zero measure? If the tetrahedron collapses to a dimensionless point, how can it retain the structural information needed to re-emerge as its dual?
+
+This question is not merely philosophical. In Chapter 16 of \emph{The Janus Point}, Barbour describes precisely this situation in Newtonian N-body dynamics:
+
+\begin{quote}
+``Newton's equations break down at the point of zero size because no way has been found to continue their solutions past that point. At it, there is a \emph{total collision}: all the particles collide simultaneously at their common centre of mass. Its significance for us is in the remarkable manner in which the system approaches the singularity, as well as the special shape, called a \emph{central configuration}, that it has there; it is still well defined despite the vanishing size.''
+\end{quote}
+
+The phrase ``well defined despite the vanishing size'' is crucial. Barbour identifies that at the singularity, the system possesses a \emph{central configuration}---a shape that persists even as spatial extent collapses to zero (see the earlier discussion ``On the Topological Singularity'' regarding passage through a zero-measure point). The mathematical problem is that Newton's equations provide no mechanism to continue solutions \emph{through} this point; the singularity is a boundary where the dynamics halt.
+
+\textbf{Our central argument:} This is precisely where the geometric Janus Point offers a potential resolution. If the origin in Quadray space is understood not as a termination point but as a \emph{transition locus} between positive and negative dimensional states, then the ``central configuration'' at zero size becomes the pivot through which the system can re-emerge inverted. The structure is preserved because it exists at the singularity in a dimensionless encoding---the same ``well defined'' shape Barbour identifies, now understood as capable of expression in either dimensional domain.
+
+\textbf{The implementation answer:} In ARTexplorer's software demonstration, the transition is necessarily \emph{representational}. We animate a continuous scaling through zero, and at the mathematical instant of $\text{scale} = 0$, the form has no spatial extent. The software then continues scaling into negative values, producing the inverted form. This visualization does not solve the dynamical problem---Newton's equations still break down at zero size---but it demonstrates geometrically what continuity through the singularity would \emph{look like} if such continuity were possible.
+
+\textbf{The deeper question:} Could Newton's equations be extended or reformulated to permit solutions that pass through the total collision singularity? This would require treating the central configuration at zero size not as a boundary condition but as a transition state---a momentary dimensionless encoding from which the system re-emerges with inverted parity.
+
+We do not claim to have solved this problem. But we observe that the geometric framework of Quadray coordinates provides a natural language for describing such a transition: the origin $(0,0,0,0)$ is the \emph{only} point that belongs to both 4D$^+$ and 4D$^-$. It is the unique intersection of the two dimensional states. The ``central configuration'' at total collision would be precisely such a point---a structure that exists in potentia, capable of expression in either dimensional direction.
+
+The tetrahedron's structural relationships---its edge lengths, face angles, vertex configurations---are preserved through the inversion because they are encoded in the \emph{ratios} between coordinates, not in the coordinates' absolute values. At the origin, these ratios become indeterminate ($0/0$), but the limiting behavior from either direction is well-defined. The central configuration is not destroyed at the singularity; it passes through in a form that transcends coordinate representation---``well defined despite the vanishing size.''
+
+Whether this geometric insight can inform a reformulation of Newton's equations that permits continuation through total collision remains an open question for mathematical physics. We note only that the framework is internally consistent: the origin serves as a genuine transition point, not merely an arbitrary coordinate reference, and the structure that persists there is precisely Barbour's ``central configuration.''
 
 %==============================================================================
 \section{The Geometric Janus Point}
@@ -383,6 +407,36 @@ In Cartesian coordinates, the eight octants created by $\pm X$, $\pm Y$, $\pm Z$
 Quadray coordinates operate differently. With four basis vectors spanning all of 3D space using \emph{non-negative values only}, the question immediately arises: \textbf{what is a negative position in this framework?}
 
 The answer cannot be ``the other direction''---the four basis vectors already cover all directions with positive values. The only coherent interpretation is that negative Quadray coordinates represent existence in a \textbf{complementary dimensional realm}.
+
+\subsection{A Subtler Objection: Vector Magnitude in XYZ}
+
+A careful reader might object: ``XYZ vectors from the origin also have a kind of all-positive representation. Any position can be described as a vector with \emph{positive magnitude} pointing outward (explosive, away from origin) or \emph{negative magnitude} pointing inward (implosive, toward origin). The sign of magnitude indicates direction relative to origin, not location in an octant. So XYZ already distinguishes OUT from IN---how is Quadray's $(-,-,-,-)$ different from an XYZ vector with negative magnitude?''
+
+This objection deserves a careful response, because it identifies a genuine parallel---but also a crucial difference.
+
+\textbf{What XYZ magnitude captures:} In XYZ, a vector $\vec{v} = (x, y, z)$ has magnitude $|\vec{v}| = \sqrt{x^2 + y^2 + z^2}$, always non-negative. To indicate ``implosive'' direction, one would use $-\vec{v}$, which points toward origin from some external position. But this is a \emph{directional} distinction: the vector $-\vec{v}$ still terminates at a point in ordinary 3D space (specifically, the point $(-x, -y, -z)$, which is in the opposite octant). The magnitude sign distinguishes ``toward origin'' from ``away from origin'' as a direction of motion or force, not as a dimensional state.
+
+\textbf{What Quadray $(-,-,-,-)$ captures:} In Quadray, the state $(-,-,-,-)$ is not a directional indicator---it is a \emph{positional} one. All four coordinates being negative means the form has passed \emph{through} the origin and now exists in a region that positive Quadray coordinates cannot reach by any combination of basis vectors. This is not ``the opposite direction''---the opposite direction in Quadray is already covered by combinations of the other three positive basis vectors (e.g., $-\mathbf{W} = \mathbf{X} + \mathbf{Y} + \mathbf{Z}$).
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{5.5cm}p{5.5cm}}
+\toprule
+\textbf{XYZ Negative Magnitude} & \textbf{Quadray $(-,-,-,-)$}\\
+\midrule
+Directional: indicates motion/force toward origin & Positional: indicates location in complementary space\\
+\addlinespace
+The point $-\vec{v}$ is in ordinary 3D space & The state $(-,-,-,-)$ is outside the positive span of all basis vectors\\
+\addlinespace
+Reversing magnitude flips a vector's direction & Inverting all signs requires passage through origin\\
+\addlinespace
+No topological transition involved & Implies dimensional inversion (Janus transition)\\
+\bottomrule
+\end{tabular}
+\caption{XYZ vector magnitude vs.\ Quadray coordinate signs: parallel but distinct concepts}
+\end{table}
+
+The key insight is that XYZ's ``negative magnitude'' is a property of \emph{vectors} (directed quantities), while Quadray's $(-,-,-,-)$ is a property of \emph{positions} (points in coordinate space). In XYZ, you can always express any position with a positive-magnitude vector; the sign is conventional. In Quadray, once you permit negative coordinates, the all-negative state has no equivalent positive representation---it describes a fundamentally different region.
 
 \subsection{Visual Demonstration}
 
@@ -605,11 +659,27 @@ Special thanks to:
 
 \subsection*{Note on the Janus Point (January 2026)}
 
-In correspondence with the author (22 January 2026, by email), Dr.\ Julian Barbour graciously responded to an early draft of this work. He indicated that he now favors \textbf{monodirectional} Big Bang solutions (as described in Chapter 16 of \emph{The Janus Point}) over bidirectional Janus Point solutions when Newtonian absolute elements are fully eliminated from the theory.
+In correspondence with the author (22 January 2026, by email), Dr.\ Julian Barbour graciously responded to an early draft of this work. We quote his remarks directly, followed by our reflections on their implications.
 
-Our geometric extension---applying the Janus Point concept to spatial rather than temporal structure---operates in a different domain and does not depend on the cosmological resolution of this question. The geometric Janus Point we describe is a property of tetrahedral coordinate systems, not a claim about the arrow of time.
+\begin{tcolorbox}[colback=gray!5, colframe=gray!40, title=\textbf{From Dr.\ Julian Barbour (22 January 2026)}]
+``I do find things like the Platonic solids very interesting. This is because I'm getting more and more convinced that science should be about shapes rather than dynamics. In fact one can see from early Greek thinking, starting with the myths associated with the constellations, and then the ideas of Plato and the atomists, who according to Lucretius were trying to explain the shapes of microscopic object and creatures of different genera, that very naturally they were trying to understand the origin of shapes. I think it is just possible that the development of dynamics, which happened at about the same time as Lucretius wrote his book when Hipparchus developed the first dynamical theory, his theory of the motion of the Sun around the ecliptic with the rotation of the Earth defining time, may have marked a wrong turn. I'm currently writing a book which will include discussion of that.
 
-We are grateful for Dr.\ Barbour's engagement and particularly for his observation that ``science should be about shapes rather than dynamics''---a view that aligns naturally with our tetrahedral geometric approach and with Fuller's emphasis on structure over motion.
+One other thing that I might say is that I am now not quite so keen on the Janus-point solutions in Newton gravity. That is not because there is anything wrong in what I said about them in my recent book but rather that if one eliminates all the absolute elements with which I would say Newton corrupted his own theory, then all that is left is Big Bang solutions as described in chapter 16 of my book. In this case bidirectional arrows of time are replaced by a monodirectional one.''
+\end{tcolorbox}
+
+\textbf{On Newtonian Gravity and the Janus Point.} Dr.\ Barbour's reconsideration of the Janus Point in Newtonian gravity is significant. The bidirectional solutions---where time extends in two directions from a central pivot---arise within Newton's framework, which retains ``absolute elements'' (absolute space, absolute time, absolute scale). When these absolutes are eliminated in favor of a fully relational dynamics, only monodirectional Big Bang solutions remain. The Janus Point, in this view, may be an artifact of residual Newtonian structure rather than a fundamental feature of reality.
+
+This distinction is crucial: Dr.\ Barbour is not retracting the mathematics of the Janus Point solutions, but questioning whether they survive the transition to a more fundamental (fully relational) theory.
+
+\textbf{Implications for Our Geometric Extension.} Our work applies the Janus Point concept to \emph{spatial} rather than \emph{temporal} geometry---a different domain entirely. The geometric Janus Point we describe is a property of tetrahedral coordinate systems: the origin as a transition point between positive and negative dimensional states. This does not depend on, nor make claims about, the cosmological arrow of time or the structure of gravitational theory.
+
+That said, Dr.\ Barbour's observation invites reflection: if the temporal Janus Point proves to be an artifact of residual absolute structure in Newtonian gravity, should we examine whether our geometric Janus Point similarly depends on unexamined assumptions? We believe the cases differ---the geometric origin is defined purely by the coordinate system's internal structure, not by external physics---but the question deserves ongoing scrutiny.
+
+\textbf{Shapes Over Dynamics.} Perhaps most resonant is Dr.\ Barbour's conviction that ``science should be about shapes rather than dynamics.'' He traces this intuition to early Greek thinking and suggests that the development of dynamics ``may have marked a wrong turn.'' This perspective aligns remarkably with Fuller's emphasis on structure over motion, Wildberger's rational geometry over calculus, and our own focus on the static geometry of tetrahedral coordinates rather than dynamical processes.
+
+The tetrahedron, as the minimum structural system, is fundamentally a \emph{shape}---a configuration of relationships that exists prior to any dynamics. Our Janus Inversion describes a geometric transformation, not a temporal process. In this sense, the framework may be more compatible with Dr.\ Barbour's ``shapes-first'' intuition than with conventional dynamical physics.
+
+We are deeply grateful for Dr.\ Barbour's engagement with this work and for the intellectual generosity that led him to share these reflections.
 
 \theendnotes
 
