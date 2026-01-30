@@ -161,8 +161,23 @@ function startARTexplorer(
       `🆕 DECLARATIVE UI: ${stats.total} bindings (${stats.simpleCheckboxes} checkboxes, ${stats.simpleSliders} sliders, ${stats.linkedSliders} linked)`
     );
   }
-  // NOTE: Legacy event handlers below still run when USE_DECLARATIVE_UI is false
-  // Once declarative system is proven, legacy code will be removed
+  // ========================================================================
+  // LEGACY EVENT HANDLERS (Run in parallel with declarative bindings)
+  // ========================================================================
+  // CURRENT STATE: Both declarative bindings AND legacy handlers run.
+  // This causes harmless double-registration on ~60 elements (updateGeometry
+  // called twice per interaction). Performance impact is negligible.
+  //
+  // FUTURE CLEANUP: Once declarative system is fully proven, wrap covered
+  // handlers in `if (!USE_DECLARATIVE_UI)` or remove them entirely.
+  // See: Geometry documents/JAN30-MODULARIZATION-ANALYSIS.md for handler inventory
+  //
+  // HANDLERS NOT IN DECLARATIVE (must always run):
+  // - Plane toggles (.plane-toggle-switch[data-plane])
+  // - Basis controls (showCartesianBasis, showQuadray)
+  // - Janus scale sliders (scaleSlider, tetScaleSlider) - complex inversion logic
+  // - Geodesic projection radio buttons
+  // - View controls, demo modals, data I/O (handled after line 1311)
 
   // Plane iOS-style toggle switches (Cartesian XYZ + Quadray WXYZ)
   document
