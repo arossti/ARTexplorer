@@ -3143,12 +3143,32 @@ function startARTexplorer(
     const allInstances = RTStateManager.getAllInstances();
     // DEBUG: Uncomment for snap debugging
     // console.log(`🔍 SNAP DEBUG: ${allInstances.length} instances in RTStateManager`);
+
+    // Build set of connected Point IDs to exclude (prevent self-collapse)
+    const excludeConnectedIds = new Set();
+    const excludeId = excludeGroup?.userData?.instanceId;
+    if (excludeId && excludeGroup?.userData?.type === "point") {
+      // Find all connectedLines referencing this Point
+      allInstances.forEach(inst => {
+        if (inst.type === "connectedLine") {
+          const startId = inst.parameters?.startPoint;
+          const endId = inst.parameters?.endPoint;
+          if (startId === excludeId) {
+            excludeConnectedIds.add(endId);
+          } else if (endId === excludeId) {
+            excludeConnectedIds.add(startId);
+          }
+        }
+      });
+    }
+
     allInstances.forEach(instance => {
       // console.log(`  Instance: ${instance.id}, visible: ${instance.threeObject?.visible}, excluded: ${instance.threeObject === excludeGroup}`);
       if (
         instance.threeObject &&
         instance.threeObject.visible &&
-        instance.threeObject !== excludeGroup
+        instance.threeObject !== excludeGroup &&
+        !excludeConnectedIds.has(instance.id) // Exclude connected Points
       ) {
         targetGroups.push(instance.threeObject);
       }
@@ -4124,6 +4144,25 @@ function startARTexplorer(
 
             // Clear snap state
             clearSnapPreviewMarker();
+
+            // Update connected geometry for any moved Point instances
+            // Must happen BEFORE clearing selectedPolyhedra
+            const hasConnectedLine = selectedPolyhedra.some(
+              p => p.userData.type === "connectedLine"
+            );
+            if (!hasConnectedLine) {
+              selectedPolyhedra.forEach(poly => {
+                if (
+                  poly.userData.isInstance &&
+                  poly.userData.type === "point" &&
+                  poly.userData.instanceId
+                ) {
+                  RTStateManager.updateConnectedGeometry(
+                    poly.userData.instanceId
+                  );
+                }
+              });
+            }
 
             justFinishedDrag = true;
             isFreeMoving = false;

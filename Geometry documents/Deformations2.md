@@ -10,14 +10,17 @@
 - ✅ **Phase 0: Multi-Select** - COMPLETED (`d5e48a0`)
 - ⏭️ **Phase 1: Grouping** - SKIPPED (multi-select provides sufficient functionality)
 - ⚠️ **Phase 2: Line Deformation** - DEPRECATED (replaced by Point-Based Lines)
-- ✅ **Phase 2A: Point-Based Lines** - COMPLETED (`9f92935`)
+- ✅ **Phase 2A: Point-Based Lines** - COMPLETED (all bugs resolved)
 
-**Phase 2 Status**:
-- Edge and nodes move during drag (works!)
-- lineWeight=1 now default for deform compatibility
-- BUT: mouse up doesn't exit (only ESC), subsequent edits delete nodes
-- Orphaned vertex nodes appear in space disconnected from rendered line
-- Complex code (~470 lines in rt-deform.js) for fragile results
+**Phase 2A Final Status** (Jan 29, 2026):
+- ✅ Create 2 Point instances, multi-select, Connect → creates connectedLine
+- ✅ Move single Point → line follows in real-time
+- ✅ Rotate connected group → all objects transform together
+- ✅ Vertex snap works without self-collapse (connected Points excluded from snap targets)
+- ✅ Object snap updates line geometry on mouseup
+- ✅ No deform mode needed - just use normal Move/Rotate tools
+
+**Ready for**: Phase 3 (Line2/thick lines) or Phase 4 (Polygon deformation)
 
 ### Key Files to Modify
 | File | Purpose |
@@ -306,18 +309,26 @@ Benefits:
 - [x] ESC → exit deform mode
 - [ ] Export/Import → deformation preserved (not tested)
 
-### Phase 2A: Point-Based Lines (Recommended Alternative)
+### Phase 2A: Point-Based Lines ✅ COMPLETED
 - [x] CONNECT feature: select 2 Points → create Line between them ✅
 - [x] Line stores references to Point instances ✅
 - [x] Moving Points automatically updates connected Lines ✅
 - [x] No deform mode needed - just use normal Move tool ✅
+- [x] Vertex snap with self-collapse prevention ✅
+- [x] Object snap triggers line geometry update ✅
 
-**Known Issues (Jan 29, 2026)**:
-- Bug 1: ConnectedLine hard to select in orthographic views (1px line) - OPEN
+**Resolved Issues (Jan 29, 2026)**:
+- ~~Bug 1: ConnectedLine hard to select in orthographic views (1px line)~~ - OPEN (minor UX issue)
 - ~~Bug 2: Rotating connectedLine alone disconnects it from Points~~ - **FIXED** (`9f92935`)
 - ~~Bug 3: Rotating 2 connected Points causes visual revert on mouseup~~ - **FIXED** (`9f92935`)
+- ~~Bug 4: Single-node movement doesn't update line~~ - **FIXED** (free movement path)
+- ~~Bug 5: Vertex snap causes self-collapse (Points snap to each other)~~ - **FIXED** (exclude connected Points from snap targets)
 
-**Solution for Bug 2 & 3**: Auto-select connected Points when selecting a connectedLine. When all three objects (line + 2 points) are in selection together, skip `updateConnectedGeometry()` on mouseup since they transformed as a unit.
+**Solutions Applied**:
+1. Auto-select connected Points when selecting a connectedLine
+2. Skip `updateConnectedGeometry()` on mouseup when connectedLine is in selection
+3. Add `updateConnectedGeometry()` call to OBJECT SNAP code path in free movement handler
+4. Exclude connected Points from snap target candidates in `findNearestSnapTarget()`
 
 ---
 
