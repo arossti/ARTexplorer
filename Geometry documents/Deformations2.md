@@ -91,7 +91,7 @@ selection: {
 - ✅ Drag node → edge follows in real-time
 - ✅ ESC exits deform mode
 
-**What Doesn't Work**:
+**What Didn't Work**n (resolvd now):
 - ❌ Mouse up doesn't complete the operation (must press ESC)
 - ❌ Subsequent edits delete one of the vertex nodes
 - ❌ Orphaned vertex nodes appear disconnected from rendered line
