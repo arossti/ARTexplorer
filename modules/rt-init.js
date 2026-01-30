@@ -776,11 +776,29 @@ function startARTexplorer(
         renderingAPI.setCartesianBasisVisible(false);
         renderingAPI.setQuadrayBasisVisible(false);
 
-        // Create editing basis at selected Forms' center
+        // Create editing basis at appropriate position
+        // If in vertex mode with selected node(s), use first node's world position
+        // Otherwise use polyhedron centroid (classical behavior)
         const selected = getSelectedPolyhedra();
         if (selected.length > 0) {
-          // Use first selected polyhedron's position and pass the object for sizing
-          createEditingBasis(selected[0].position.clone(), selected[0]);
+          let basisPosition;
+          const selectedVertices = RTStateManager.getSelectedVertices();
+          const firstVertex = selectedVertices[0];
+
+          if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+            // NODE-BASED ORIGIN: Use first selected node's world position
+            const nodeWorldPos = new THREE.Vector3();
+            firstVertex.getWorldPosition(nodeWorldPos);
+            basisPosition = nodeWorldPos;
+            console.log(
+              `✅ Editing basis created: NODE ORIGIN at (${nodeWorldPos.x.toFixed(2)}, ${nodeWorldPos.y.toFixed(2)}, ${nodeWorldPos.z.toFixed(2)})`
+            );
+          } else {
+            // CLASSICAL: Use polyhedron centroid
+            basisPosition = selected[0].position.clone();
+          }
+
+          createEditingBasis(basisPosition, selected[0]);
         }
       }
     });
@@ -1910,6 +1928,81 @@ function startARTexplorer(
     });
   }
 
+  // ========================================================================
+  // VERTEX NODE SELECTION (Individual node highlighting)
+  // ========================================================================
+
+  /**
+   * Apply highlight to a single vertex node (yellow glow for selection)
+   * @param {THREE.Mesh} nodeMesh - The vertex node mesh to highlight
+   */
+  function applyNodeHighlight(nodeMesh) {
+    if (!nodeMesh?.isMesh || !nodeMesh.userData.isVertexNode) return;
+
+    // Store original colors if not already stored
+    if (!nodeMesh.userData.nodeOriginalColor) {
+      nodeMesh.userData.nodeOriginalColor = nodeMesh.material.color.getHex();
+      nodeMesh.userData.nodeOriginalEmissive =
+        nodeMesh.material.emissive.getHex();
+      nodeMesh.userData.nodeOriginalEmissiveIntensity =
+        nodeMesh.material.emissiveIntensity;
+    }
+
+    // Apply yellow highlight (distinct from cyan object selection)
+    nodeMesh.material.color.setHex(0xffff00); // Yellow
+    nodeMesh.material.emissive.setHex(0xffff00);
+    nodeMesh.material.emissiveIntensity = 0.8;
+  }
+
+  /**
+   * Clear highlight from a single vertex node
+   * @param {THREE.Mesh} nodeMesh - The vertex node mesh to unhighlight
+   */
+  function clearNodeHighlight(nodeMesh) {
+    if (!nodeMesh?.isMesh || !nodeMesh.userData.isVertexNode) return;
+
+    // Restore original colors
+    if (nodeMesh.userData.nodeOriginalColor !== undefined) {
+      nodeMesh.material.color.setHex(nodeMesh.userData.nodeOriginalColor);
+      nodeMesh.material.emissive.setHex(nodeMesh.userData.nodeOriginalEmissive);
+      nodeMesh.material.emissiveIntensity =
+        nodeMesh.userData.nodeOriginalEmissiveIntensity;
+
+      // Clean up stored data
+      delete nodeMesh.userData.nodeOriginalColor;
+      delete nodeMesh.userData.nodeOriginalEmissive;
+      delete nodeMesh.userData.nodeOriginalEmissiveIntensity;
+    }
+  }
+
+  /**
+   * Clear all vertex node selections and their highlights
+   */
+  function clearAllNodeSelections() {
+    const selectedNodes = RTStateManager.getSelectedVertices();
+    selectedNodes.forEach(node => {
+      clearNodeHighlight(node);
+    });
+    RTStateManager.clearVertexSelection();
+    RTStateManager.exitVertexMode();
+    updateNodeSelectionUI();
+  }
+
+  /**
+   * Update UI to show node selection count
+   */
+  function updateNodeSelectionUI() {
+    const count = RTStateManager.getSelectedVertexCount();
+    const nodeCountEl = document.getElementById("nodeSelectionCount");
+    if (nodeCountEl) {
+      nodeCountEl.textContent =
+        count > 0 ? `${count} node${count > 1 ? "s" : ""} selected` : "";
+    }
+    if (count > 0) {
+      console.log(`🔵 Node selection: ${count} vertices selected`);
+    }
+  }
+
   /**
    * Deselect all polyhedra (clears multi-selection)
    */
@@ -2028,12 +2121,85 @@ function startARTexplorer(
       );
 
       if (parentEntry) {
-        selectPolyhedron(parentEntry.parent, event.shiftKey);
+        // Check if we clicked a vertex node on an INSTANCE
+        const isVertexNode = hitObject.userData.isVertexNode;
+        const isInstance = parentEntry.parent.userData.isInstance;
+
+        if (isVertexNode && isInstance) {
+          // VERTEX NODE SELECTION on an instance
+          handleVertexNodeClick(hitObject, parentEntry.parent, event.shiftKey);
+        } else {
+          // Normal object selection
+          // If we were in vertex mode, exit it first
+          if (RTStateManager.isVertexMode()) {
+            clearAllNodeSelections();
+          }
+          selectPolyhedron(parentEntry.parent, event.shiftKey);
+        }
       }
     }
     // NOTE: Clicking empty space no longer deselects
     // Deselection now requires: ESC key OR NOW button
     // This allows users to orbit camera between transformations without losing selection
+  }
+
+  /**
+   * Handle click on a vertex node (for node selection)
+   * Node clicks select individual nodes and implicitly select the parent polyhedron
+   * for transform operations, but use the NODE as the transform origin (not centroid).
+   * @param {THREE.Mesh} nodeMesh - The vertex node that was clicked
+   * @param {THREE.Group} parentPoly - The parent polyhedron instance
+   * @param {boolean} addToSelection - If true (Shift+click), toggle in selection
+   */
+  function handleVertexNodeClick(nodeMesh, parentPoly, addToSelection) {
+    // If switching to a different polyhedron's nodes, clear previous node selection
+    if (
+      RTStateManager.isVertexMode() &&
+      RTStateManager.state.selection.object !== parentPoly
+    ) {
+      clearAllNodeSelections();
+      // Also clear object selection when switching polyhedra
+      RTStateManager.getSelectedObjects().forEach(obj => clearHighlight(obj));
+      RTStateManager.clearSelection();
+    }
+
+    // Enter vertex mode on this polyhedron (tracks which poly we're editing nodes on)
+    if (!RTStateManager.isVertexMode()) {
+      RTStateManager.enterVertexMode(parentPoly);
+    }
+
+    // Ensure the parent polyhedron is in the object selection (for Move/Rotate/Scale)
+    // but DON'T apply the cyan highlight - we want node-only yellow highlight
+    if (!RTStateManager.isSelected(parentPoly)) {
+      RTStateManager.addToSelection(parentPoly);
+      currentSelection = parentPoly;
+      // Note: No applyHighlight(parentPoly) - the node highlight is sufficient
+    }
+
+    if (addToSelection) {
+      // Shift+click: Toggle node in selection
+      if (RTStateManager.isVertexSelected(nodeMesh)) {
+        // Already selected - deselect
+        clearNodeHighlight(nodeMesh);
+        RTStateManager.deselectVertex(nodeMesh);
+      } else {
+        // Not selected - add to selection
+        applyNodeHighlight(nodeMesh);
+        RTStateManager.selectVertex(nodeMesh);
+      }
+    } else {
+      // Normal click: Clear previous node selection, select only this one
+      RTStateManager.getSelectedVertices().forEach(node => {
+        clearNodeHighlight(node);
+      });
+      RTStateManager.clearVertexSelection();
+
+      // Select the clicked node
+      applyNodeHighlight(nodeMesh);
+      RTStateManager.selectVertex(nodeMesh);
+    }
+
+    updateNodeSelectionUI();
   }
 
   // Get selected polyhedra - returns all selected objects (multi-select aware)
@@ -2206,9 +2372,21 @@ function startARTexplorer(
     // console.log(`🔍 SNAP DEBUG: ${targetGroups.length} target groups found (excluding dragged object)`);
 
     // Get source object's snap points (we need to compare geometry-to-geometry)
-    const sourceVertices = objectSnapVertex
-      ? getPolyhedronVertices(excludeGroup)
-      : [];
+    // NODE-BASED SNAP: If in vertex mode with a selected node, only use that node
+    let sourceVertices = [];
+    if (objectSnapVertex) {
+      const selectedVertices = RTStateManager.getSelectedVertices();
+      const firstVertex = selectedVertices[0];
+      if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+        // Use ONLY the selected node's world position for snapping
+        const nodeWorldPos = new THREE.Vector3();
+        firstVertex.getWorldPosition(nodeWorldPos);
+        sourceVertices = [nodeWorldPos];
+      } else {
+        // Classical: use all vertices
+        sourceVertices = getPolyhedronVertices(excludeGroup);
+      }
+    }
     const sourceEdges = objectSnapEdge
       ? getPolyhedronEdgeMidpoints(excludeGroup)
       : [];
@@ -2737,9 +2915,22 @@ function startARTexplorer(
               }
             });
 
-            // Update editing basis position if it exists (use primary selection's new position)
+            // Update editing basis position if it exists
             if (editingBasis && selectedPolyhedra.length > 0) {
-              editingBasis.position.copy(selectedPolyhedra[0].position);
+              const selectedVertices = RTStateManager.getSelectedVertices();
+              const firstVertex = selectedVertices[0];
+              if (
+                RTStateManager.isVertexMode() &&
+                firstVertex?.getWorldPosition
+              ) {
+                // NODE-BASED: Follow the selected node's world position
+                const nodeWorldPos = new THREE.Vector3();
+                firstVertex.getWorldPosition(nodeWorldPos);
+                editingBasis.position.copy(nodeWorldPos);
+              } else {
+                // CLASSICAL: Follow polyhedron centroid
+                editingBasis.position.copy(selectedPolyhedra[0].position);
+              }
             }
 
             // Update coordinate displays (use primary selection's position)
@@ -3173,7 +3364,17 @@ function startARTexplorer(
 
             // Update editing basis position
             if (editingBasis) {
-              editingBasis.position.copy(currentSnapTarget.position);
+              const selectedVertices = RTStateManager.getSelectedVertices();
+              const firstVertex = selectedVertices[0];
+              if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+                // NODE-BASED: Follow the selected node's world position after snap
+                const nodeWorldPos = new THREE.Vector3();
+                firstVertex.getWorldPosition(nodeWorldPos);
+                editingBasis.position.copy(nodeWorldPos);
+              } else {
+                // CLASSICAL: Use snap target position
+                editingBasis.position.copy(currentSnapTarget.position);
+              }
             }
 
             console.log(
@@ -3279,7 +3480,17 @@ function startARTexplorer(
 
               // Update editing basis position after snapping
               if (editingBasis) {
-                editingBasis.position.copy(pos);
+                const selectedVertices = RTStateManager.getSelectedVertices();
+                const firstVertex = selectedVertices[0];
+                if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+                  // NODE-BASED: Follow the selected node's world position
+                  const nodeWorldPos = new THREE.Vector3();
+                  firstVertex.getWorldPosition(nodeWorldPos);
+                  editingBasis.position.copy(nodeWorldPos);
+                } else {
+                  // CLASSICAL: Use snapped position
+                  editingBasis.position.copy(pos);
+                }
               }
             }
           }
@@ -3703,9 +3914,24 @@ function startARTexplorer(
         return; // Don't deselect, just cancel the copy operation
       }
 
+      // If a tool is active, exit tool mode first (consistent with normal behavior)
+      // This also clears vertex mode since tool exit ends the operation
       if (currentGumballTool) {
         exitToolMode();
+        // Also exit vertex mode when tool exits
+        if (RTStateManager.isVertexMode()) {
+          clearAllNodeSelections();
+        }
+        return;
       }
+
+      // If in vertex mode (no tool active), clear vertex selections
+      if (RTStateManager.isVertexMode()) {
+        clearAllNodeSelections();
+        return; // Don't deselect polyhedron yet, just exit vertex mode
+      }
+
+      // No tool, no vertex mode - just deselect
       deselectAll();
     }
 

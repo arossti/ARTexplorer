@@ -2,17 +2,19 @@
 
 ## Quick Start for New Agent
 
-**Branch**: `DEFORM` (created from `main` at `af25fcd`)
-**Status**: Phase 2A complete, all bugs resolved, merged to main
-**Goal**: Enable vertex-level editing of Line primitives
+**Branch**: `NODE-SELECT` (created from `main` after PR #54 merge)
+**Status**: Node selection implemented, node-based transforms next
+**Goal**: Enable vertex-level selection and eventually editing of polyhedra
 
-### Current State (Jan 29, 2026) - DEPLOYED TO MAIN
+### Current State (Jan 30, 2026)
 
 - ✅ **Phase 0: Multi-Select** - COMPLETED & DEPLOYED
 - ⏭️ **Phase 1: Grouping** - SKIPPED (multi-select provides sufficient functionality)
 - ⚠️ **Phase 2: Line Deformation** - DEPRECATED (replaced by Point-Based Lines)
 - ✅ **Phase 2A: Point-Based Lines** - COMPLETED & DEPLOYED (PR #49, #50, #51)
-- 🔬 **Phase 2A+: Multi-Point Topology** - TESTING (Jan 29, 2026 evening)
+- ✅ **Phase 2A+: Multi-Point Topology** - VERIFIED WORKING
+- ✅ **Phase 2B: Node Selection** - COMPLETED (commit `630c7c6`)
+- 🔧 **Phase 2C: Node-Based Transform Origin** - IN PROGRESS
 
 **Phase 2A Final Status** (Jan 29, 2026) - ALL DEPLOYED:
 
@@ -66,37 +68,87 @@
 - [ ] rt-init.js reduced by ~250 lines
 - [ ] No regressions in existing functionality
 
-### Priority 2: Polyhedral Instance Node Selection (After Extraction)
+### Priority 2: Polyhedral Instance Node Selection ✅ COMPLETED (Jan 30, 2026)
 
 **Goal**: Enable selection of individual vertices on instantiated polyhedra (not Forms).
 
-**Scope** (deliberately minimal):
+**Status**: ✅ IMPLEMENTED in commit `630c7c6`
 
-1. Click on an instance vertex node → node highlights (selected)
-2. Shift+click → add to multi-node selection
-3. Click selected node → deselects that node
-4. ESC → release all node selections
-5. **NO EDITING** - just selection/deselection for now
+**Implementation**:
 
-**Demonstration case**:
+1. ✅ Click on an instance vertex node → node highlights yellow (selected)
+2. ✅ Shift+click → add to multi-node selection
+3. ✅ Click selected node → deselects that node
+4. ✅ ESC → release all node selections, exit vertex mode
+5. ✅ Click on face → selects entire polyhedron (cyan highlight, classical behavior)
 
-- Deposit a Tetrahedron instance
-- Click one vertex node → highlights
-- Shift+click two more → 3 nodes highlighted
-- Click one of the selected → now 2 highlighted
-- ESC → all released, back to object selection mode
+**Files modified**:
 
-**Why this order matters**:
+- `rt-init.js` (+145 lines) - Node highlight functions, click detection, ESC handling
+- `rt-state-manager.js` (+111 lines) - Vertex mode state, selection methods
 
-- Clean extraction BEFORE adding new selection state
-- New node selection will add ~100-200 lines to some file
-- Better to have that file be smaller before we add to it
+---
+
+### Priority 3: Node-Based Transform Origin (Next Step)
+
+**Goal**: Use selected node as transform origin for Move/Rotate/Scale operations.
+
+**Key Insight**: When a user wants to move a cube to snap vertex-to-vertex with another cube, dragging from the centroid makes snapping imprecise. But if the editing basis appears at the selected node, transforms become intuitive:
+
+- **Move** from that node → precise vertex snapping
+- **Rotate** around that node → pivot point at vertex
+- **Scale** away from that node → anchor point at vertex
+
+**Selection Behavior Summary**:
+
+| Click Target | Selection Result | Editing Basis Position |
+|-------------|------------------|----------------------|
+| Instance face | Entire polyhedron (cyan) | Centroid (classical) |
+| Instance vertex node | Single node (yellow) | At selected node |
+| Shift+click nodes | Multi-node selection | At first selected node |
+
+**Implementation Scope**:
+
+1. When single node selected → position editing basis at that node's world position
+2. Move tool drags from node position (better snap targeting)
+3. Rotate tool pivots around node position
+4. Scale tool anchors at node position
+5. Multi-node selection → use first selected node as basis origin
+
+**Why This Matters**:
+
+- Vertex-to-vertex snapping becomes trivial (drag from source vertex, snap to target)
+- Rotation around a specific corner is intuitive (select corner, rotate)
+- Scale from anchor point (select anchor node, scale outward)
+
+**This is NOT Deform**: Move/Rotate/Scale still transform the entire polyhedron rigidly. The node selection only determines the transform origin. Deform (moving a node while stretching connected edges) is a separate future command.
+
+---
+
+### Priority 4: Deform Mode (Future)
+
+**Goal**: Move individual vertices while keeping rest of polyhedron intact.
+
+**Distinction from Priority 3**:
+
+| Operation | Priority 3 (Node-Based Origin) | Priority 4 (Deform) |
+|-----------|-------------------------------|---------------------|
+| Move | Entire polyhedron moves rigidly | Only selected node moves |
+| Geometry | Preserved (rigid transform) | Stretched (edges follow node) |
+| Use case | Precise positioning | Shape modification |
+
+**Deform behavior**:
+
+- Select node → Enter deform mode (D key or button)
+- Drag node → Node moves, connected edges stretch to follow
+- Other vertices stay fixed
+- Release → New geometry persisted
 
 **Files likely affected**:
 
-- `rt-init.js` (selection handlers) or new `rt-node-select.js`
-- `rt-state-manager.js` (node selection state)
-- `rt-rendering.js` (node highlight materials)
+- `rt-init.js` or new `rt-deform.js`
+- `rt-state-manager.js` (deformation state)
+- Instance geometry update functions
 
 ---
 
