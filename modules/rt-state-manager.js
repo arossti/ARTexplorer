@@ -727,7 +727,6 @@ export const RTStateManager = {
 
       updatedCount++;
     });
-
   },
 
   /**

@@ -10,12 +10,21 @@
       content="An interactive explorer for Algebraic Rational Trigonometry geometry by Andy Ross Thomson, M.Arch, OAA. with guidance by Metatron"
     />
     <!-- Open Graph meta tags for social media previews -->
-    <meta property="og:title" content="A.R.T. Explorer - Polyhedra Visualization" />
-    <meta property="og:description" content="An interactive explorer for Algebraic Rational Trigonometry geometry by Andy Ross Thomson, M.Arch, OAA." />
+    <meta
+      property="og:title"
+      content="A.R.T. Explorer - Polyhedra Visualization"
+    />
+    <meta
+      property="og:description"
+      content="An interactive explorer for Algebraic Rational Trigonometry geometry by Andy Ross Thomson, M.Arch, OAA."
+    />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://arossti.github.io/ARTexplorer/" />
     <link rel="stylesheet" href="art.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
   </head>
   <body>
     <!-- Info Modal - Shows on initialization -->
@@ -38,7 +47,9 @@
                 </div>
                 <div class="shortcut-row">
                   <span class="shortcut-key">Right-click</span>
-                  <span class="shortcut-desc">Context menu (edit selected)</span>
+                  <span class="shortcut-desc"
+                    >Context menu (edit selected)</span
+                  >
                 </div>
                 <div class="shortcut-row">
                   <span class="shortcut-key">Middle-click + drag</span>
@@ -175,15 +186,30 @@
               <i class="bi bi-arrows-move coords-icon" title="XYZ Position"></i>
               <div class="coord-container">
                 <label class="label-axis label-axis-x">X:</label>
-                <input type="text" id="coordX" class="coord-input axis-x" value="0.0000" />
+                <input
+                  type="text"
+                  id="coordX"
+                  class="coord-input axis-x"
+                  value="0.0000"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-y">Y:</label>
-                <input type="text" id="coordY" class="coord-input axis-y" value="0.0000" />
+                <input
+                  type="text"
+                  id="coordY"
+                  class="coord-input axis-y"
+                  value="0.0000"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-z">Z:</label>
-                <input type="text" id="coordZ" class="coord-input axis-z" value="0.0000" />
+                <input
+                  type="text"
+                  id="coordZ"
+                  class="coord-input axis-z"
+                  value="0.0000"
+                />
               </div>
             </div>
           </div>
@@ -191,22 +217,45 @@
           <!-- WXYZ Position -->
           <div class="coords-group">
             <div class="coords-row">
-              <i class="bi bi-arrows-move coords-icon" title="WXYZ Position"></i>
+              <i
+                class="bi bi-arrows-move coords-icon"
+                title="WXYZ Position"
+              ></i>
               <div class="coord-container">
                 <label class="label-axis label-axis-qw">W:</label>
-                <input type="text" id="coordW" class="coord-input axis-qw" value="0.0000" />
+                <input
+                  type="text"
+                  id="coordW"
+                  class="coord-input axis-qw"
+                  value="0.0000"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-qx">X:</label>
-                <input type="text" id="coordX2" class="coord-input axis-qx" value="0.0000" />
+                <input
+                  type="text"
+                  id="coordX2"
+                  class="coord-input axis-qx"
+                  value="0.0000"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-qy">Y:</label>
-                <input type="text" id="coordY2" class="coord-input axis-qy" value="0.0000" />
+                <input
+                  type="text"
+                  id="coordY2"
+                  class="coord-input axis-qy"
+                  value="0.0000"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-qz">Z:</label>
-                <input type="text" id="coordZ2" class="coord-input axis-qz" value="0.0000" />
+                <input
+                  type="text"
+                  id="coordZ2"
+                  class="coord-input axis-qz"
+                  value="0.0000"
+                />
               </div>
             </div>
           </div>
@@ -216,35 +265,70 @@
           <!-- XYZ Rotation -->
           <div class="coords-group">
             <div class="coords-row">
-              <i class="bi bi-arrow-clockwise coords-icon" title="XYZ Rotation"></i>
+              <i
+                class="bi bi-arrow-clockwise coords-icon"
+                title="XYZ Rotation"
+              ></i>
               <span class="coords-unit-label">degrees°</span>
               <div class="coord-container">
                 <label class="label-axis label-axis-x">X:</label>
-                <input type="text" id="rotXDegrees" class="coord-input axis-x" value="0.00" />
+                <input
+                  type="text"
+                  id="rotXDegrees"
+                  class="coord-input axis-x"
+                  value="0.00"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-y">Y:</label>
-                <input type="text" id="rotYDegrees" class="coord-input axis-y" value="0.00" />
+                <input
+                  type="text"
+                  id="rotYDegrees"
+                  class="coord-input axis-y"
+                  value="0.00"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-z">Z:</label>
-                <input type="text" id="rotZDegrees" class="coord-input axis-z" value="0.00" />
+                <input
+                  type="text"
+                  id="rotZDegrees"
+                  class="coord-input axis-z"
+                  value="0.00"
+                />
               </div>
             </div>
             <div class="coords-row">
-              <i class="bi bi-arrow-clockwise coords-icon coords-icon-placeholder"></i>
+              <i
+                class="bi bi-arrow-clockwise coords-icon coords-icon-placeholder"
+              ></i>
               <span class="coords-unit-label">spread (s)</span>
               <div class="coord-container">
                 <label class="label-axis label-axis-x">X:</label>
-                <input type="text" id="rotXSpread" class="coord-input axis-x" value="0.00" />
+                <input
+                  type="text"
+                  id="rotXSpread"
+                  class="coord-input axis-x"
+                  value="0.00"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-y">Y:</label>
-                <input type="text" id="rotYSpread" class="coord-input axis-y" value="0.00" />
+                <input
+                  type="text"
+                  id="rotYSpread"
+                  class="coord-input axis-y"
+                  value="0.00"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-z">Z:</label>
-                <input type="text" id="rotZSpread" class="coord-input axis-z" value="0.00" />
+                <input
+                  type="text"
+                  id="rotZSpread"
+                  class="coord-input axis-z"
+                  value="0.00"
+                />
               </div>
             </div>
           </div>
@@ -252,43 +336,88 @@
           <!-- WXYZ Rotation -->
           <div class="coords-group">
             <div class="coords-row">
-              <i class="bi bi-arrow-clockwise coords-icon" title="WXYZ Rotation"></i>
+              <i
+                class="bi bi-arrow-clockwise coords-icon"
+                title="WXYZ Rotation"
+              ></i>
               <span class="coords-unit-label">degrees°</span>
               <div class="coord-container">
                 <label class="label-axis label-axis-qw">W:</label>
-                <input type="text" id="rotWDegrees" class="coord-input axis-qw" value="0.00" />
+                <input
+                  type="text"
+                  id="rotWDegrees"
+                  class="coord-input axis-qw"
+                  value="0.00"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-qx">X:</label>
-                <input type="text" id="rotXQDegrees" class="coord-input axis-qx" value="0.00" />
+                <input
+                  type="text"
+                  id="rotXQDegrees"
+                  class="coord-input axis-qx"
+                  value="0.00"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-qy">Y:</label>
-                <input type="text" id="rotYQDegrees" class="coord-input axis-qy" value="0.00" />
+                <input
+                  type="text"
+                  id="rotYQDegrees"
+                  class="coord-input axis-qy"
+                  value="0.00"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-qz">Z:</label>
-                <input type="text" id="rotZQDegrees" class="coord-input axis-qz" value="0.00" />
+                <input
+                  type="text"
+                  id="rotZQDegrees"
+                  class="coord-input axis-qz"
+                  value="0.00"
+                />
               </div>
             </div>
             <div class="coords-row">
-              <i class="bi bi-arrow-clockwise coords-icon coords-icon-placeholder"></i>
+              <i
+                class="bi bi-arrow-clockwise coords-icon coords-icon-placeholder"
+              ></i>
               <span class="coords-unit-label">spread (s)</span>
               <div class="coord-container">
                 <label class="label-axis label-axis-qw">W:</label>
-                <input type="text" id="rotWSpread" class="coord-input axis-qw" value="0.00" />
+                <input
+                  type="text"
+                  id="rotWSpread"
+                  class="coord-input axis-qw"
+                  value="0.00"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-qx">X:</label>
-                <input type="text" id="rotXQSpread" class="coord-input axis-qx" value="0.00" />
+                <input
+                  type="text"
+                  id="rotXQSpread"
+                  class="coord-input axis-qx"
+                  value="0.00"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-qy">Y:</label>
-                <input type="text" id="rotYQSpread" class="coord-input axis-qy" value="0.00" />
+                <input
+                  type="text"
+                  id="rotYQSpread"
+                  class="coord-input axis-qy"
+                  value="0.00"
+                />
               </div>
               <div class="coord-container">
                 <label class="label-axis label-axis-qz">Z:</label>
-                <input type="text" id="rotZQSpread" class="coord-input axis-qz" value="0.00" />
+                <input
+                  type="text"
+                  id="rotZQSpread"
+                  class="coord-input axis-qz"
+                  value="0.00"
+                />
               </div>
             </div>
           </div>
@@ -580,7 +709,10 @@
              ======================================== -->
         <div class="control-group">
           <h3>
-            <span class="section-toggle collapsed" data-target="primitives-section"></span>
+            <span
+              class="section-toggle collapsed"
+              data-target="primitives-section"
+            ></span>
             Primitives
           </h3>
           <div id="primitives-section" class="section-content collapsed">
@@ -601,30 +733,41 @@
                 class="line-options"
                 style="display: none; margin-left: 20px; margin-top: 5px"
               >
-                <div class="line-quadrance-container" style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
-                  <label style="font-size: 0.85em;">Q:</label>
+                <div
+                  class="line-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q:</label>
                   <input
                     type="number"
                     id="lineQuadrance"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 60px; font-size: 0.85em;"
+                    style="width: 60px; font-size: 0.85em"
                     title="Quadrance (Q = length²)"
                   />
-                  <label style="font-size: 0.85em;">L:</label>
+                  <label style="font-size: 0.85em">L:</label>
                   <input
                     type="number"
                     id="lineLength"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 60px; font-size: 0.85em;"
+                    style="width: 60px; font-size: 0.85em"
                     title="Length (L = √Q)"
                   />
                 </div>
-                <div class="line-weight-container slider-container" style="display: flex; gap: 5px; align-items: center;">
-                  <label style="font-size: 0.85em;">Weight:</label>
+                <div
+                  class="line-weight-container slider-container"
+                  style="display: flex; gap: 5px; align-items: center"
+                >
+                  <label style="font-size: 0.85em">Weight:</label>
                   <input
                     type="range"
                     id="lineWeight"
@@ -648,8 +791,16 @@
                 class="polygon-options"
                 style="display: none; margin-left: 20px; margin-top: 5px"
               >
-                <div class="polygon-sides-container" style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
-                  <label style="font-size: 0.85em;">Sides:</label>
+                <div
+                  class="polygon-sides-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Sides:</label>
                   <input
                     type="number"
                     id="polygonSides"
@@ -657,40 +808,59 @@
                     max="24"
                     step="1"
                     value="3"
-                    style="width: 50px; font-size: 0.85em;"
+                    style="width: 50px; font-size: 0.85em"
                     title="Number of sides (n-gon)"
                   />
                 </div>
-                <div class="polygon-quadrance-container" style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
-                  <label style="font-size: 0.85em;">Q<sub>R</sub>:</label>
+                <div
+                  class="polygon-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q<sub>R</sub>:</label>
                   <input
                     type="number"
                     id="polygonQuadrance"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 60px; font-size: 0.85em;"
+                    style="width: 60px; font-size: 0.85em"
                     title="Circumradius Quadrance (Q_R = R²)"
                   />
-                  <label style="font-size: 0.85em;">R:</label>
+                  <label style="font-size: 0.85em">R:</label>
                   <input
                     type="number"
                     id="polygonRadius"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 60px; font-size: 0.85em;"
+                    style="width: 60px; font-size: 0.85em"
                     title="Circumradius (R = √Q_R)"
                   />
                 </div>
-                <div class="polygon-face-container" style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                <div
+                  class="polygon-face-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="polygonShowFace" checked />
                     Show Face
                   </label>
                 </div>
-                <div class="polygon-weight-container slider-container" style="display: flex; gap: 5px; align-items: center;">
-                  <label style="font-size: 0.85em;">Edge Weight:</label>
+                <div
+                  class="polygon-weight-container slider-container"
+                  style="display: flex; gap: 5px; align-items: center"
+                >
+                  <label style="font-size: 0.85em">Edge Weight:</label>
                   <input
                     type="range"
                     id="polygonEdgeWeight"
@@ -699,7 +869,9 @@
                     step="1"
                     value="2"
                   />
-                  <span class="slider-value" id="polygonEdgeWeightValue">2</span>
+                  <span class="slider-value" id="polygonEdgeWeightValue"
+                    >2</span
+                  >
                 </div>
               </div>
             </div>
@@ -714,8 +886,16 @@
                 class="prism-options"
                 style="display: none; margin-left: 20px; margin-top: 5px"
               >
-                <div class="prism-sides-container" style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
-                  <label style="font-size: 0.85em;">Sides:</label>
+                <div
+                  class="prism-sides-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Sides:</label>
                   <input
                     type="number"
                     id="prismSides"
@@ -723,56 +903,77 @@
                     max="24"
                     step="1"
                     value="6"
-                    style="width: 50px; font-size: 0.85em;"
+                    style="width: 50px; font-size: 0.85em"
                     title="Number of sides (n-gon prism)"
                   />
                 </div>
-                <div class="prism-quadrance-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
-                  <label style="font-size: 0.85em;">Q<sub>R</sub>:</label>
+                <div
+                  class="prism-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q<sub>R</sub>:</label>
                   <input
                     type="number"
                     id="prismBaseQuadrance"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 55px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em"
                     title="Base circumradius quadrance (Q_R = R²)"
                   />
-                  <label style="font-size: 0.85em;">R:</label>
+                  <label style="font-size: 0.85em">R:</label>
                   <input
                     type="number"
                     id="prismBaseRadius"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 55px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em"
                     title="Base circumradius (R = √Q_R)"
                   />
                 </div>
-                <div class="prism-height-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
-                  <label style="font-size: 0.85em;">Q<sub>H</sub>:</label>
+                <div
+                  class="prism-height-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q<sub>H</sub>:</label>
                   <input
                     type="number"
                     id="prismHeightQuadrance"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 55px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em"
                     title="Height quadrance (Q_H = H²)"
                   />
-                  <label style="font-size: 0.85em;">H:</label>
+                  <label style="font-size: 0.85em">H:</label>
                   <input
                     type="number"
                     id="prismHeight"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 55px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em"
                     title="Height (H = √Q_H)"
                   />
                 </div>
-                <div class="prism-face-container" style="display: flex; gap: 10px; align-items: center;">
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                <div
+                  class="prism-face-container"
+                  style="display: flex; gap: 10px; align-items: center"
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="prismShowFaces" checked />
                     Show Faces
                   </label>
@@ -790,8 +991,16 @@
                 class="cone-options"
                 style="display: none; margin-left: 20px; margin-top: 5px"
               >
-                <div class="cone-sides-container" style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
-                  <label style="font-size: 0.85em;">Sides:</label>
+                <div
+                  class="cone-sides-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Sides:</label>
                   <input
                     type="number"
                     id="coneSides"
@@ -799,56 +1008,77 @@
                     max="24"
                     step="1"
                     value="6"
-                    style="width: 50px; font-size: 0.85em;"
+                    style="width: 50px; font-size: 0.85em"
                     title="Number of sides (n-gon cone)"
                   />
                 </div>
-                <div class="cone-quadrance-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
-                  <label style="font-size: 0.85em;">Q<sub>R</sub>:</label>
+                <div
+                  class="cone-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q<sub>R</sub>:</label>
                   <input
                     type="number"
                     id="coneBaseQuadrance"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 55px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em"
                     title="Base circumradius quadrance (Q_R = R²)"
                   />
-                  <label style="font-size: 0.85em;">R:</label>
+                  <label style="font-size: 0.85em">R:</label>
                   <input
                     type="number"
                     id="coneBaseRadius"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 55px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em"
                     title="Base circumradius (R = √Q_R)"
                   />
                 </div>
-                <div class="cone-height-container" style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap;">
-                  <label style="font-size: 0.85em;">Q<sub>H</sub>:</label>
+                <div
+                  class="cone-height-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q<sub>H</sub>:</label>
                   <input
                     type="number"
                     id="coneHeightQuadrance"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 55px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em"
                     title="Height quadrance (Q_H = H²)"
                   />
-                  <label style="font-size: 0.85em;">H:</label>
+                  <label style="font-size: 0.85em">H:</label>
                   <input
                     type="number"
                     id="coneHeight"
                     min="0.001"
                     step="0.1"
                     value="1"
-                    style="width: 55px; font-size: 0.85em;"
+                    style="width: 55px; font-size: 0.85em"
                     title="Height (H = √Q_H)"
                   />
                 </div>
-                <div class="cone-face-container" style="display: flex; gap: 10px; align-items: center;">
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                <div
+                  class="cone-face-container"
+                  style="display: flex; gap: 10px; align-items: center"
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="coneShowFaces" checked />
                     Show Faces
                   </label>
@@ -1329,7 +1559,10 @@
              ======================================== -->
         <div class="control-group">
           <h3>
-            <span class="section-toggle collapsed" data-target="planar-matrices-section"></span>
+            <span
+              class="section-toggle collapsed"
+              data-target="planar-matrices-section"
+            ></span>
             Planar Matrices
           </h3>
           <div id="planar-matrices-section" class="section-content collapsed">
@@ -1532,7 +1765,10 @@
              ======================================== -->
         <div class="control-group">
           <h3>
-            <span class="section-toggle collapsed" data-target="radial-matrices-section"></span>
+            <span
+              class="section-toggle collapsed"
+              data-target="radial-matrices-section"
+            ></span>
             Radial Matrices
           </h3>
           <div id="radial-matrices-section" class="section-content collapsed">
@@ -1827,7 +2063,9 @@
               <label class="label-section">Edit Actions</label>
               <div class="selection-status">
                 <span id="selectionCount">None selected</span>
-                <span class="selection-hint">(Shift+click to multi-select)</span>
+                <span class="selection-hint"
+                  >(Shift+click to multi-select)</span
+                >
               </div>
               <div class="toggle-btn-group">
                 <button
@@ -1867,7 +2105,8 @@
               </div>
               <div class="snap-description snap-description-small">
                 Deform: Select instance vertices. Group: Combine 2+ objects.<br />
-                Connect: Link 2 Points with a Line. Disconnect: Unlink Line to Points.
+                Connect: Link 2 Points with a Line. Disconnect: Unlink Line to
+                Points.
               </div>
             </div>
 
@@ -1948,7 +2187,10 @@
             <p class="info-text" style="font-size: 10px; margin-top: 5px">
               Linked sliders: rational units follow whichever you adjust
             </p>
-            <p class="info-text" style="font-size: 9px; margin-top: 3px; color: #888;">
+            <p
+              class="info-text"
+              style="font-size: 9px; margin-top: 3px; color: #888"
+            >
               💫 Negative = inverted through origin (Janus Point)
             </p>
           </div>
@@ -2075,10 +2317,16 @@
             <div class="control-item">
               <label class="label-section">Projection</label>
               <div class="toggle-btn-group">
-                <button class="toggle-btn variant-standard active" id="cameraPerspective">
+                <button
+                  class="toggle-btn variant-standard active"
+                  id="cameraPerspective"
+                >
                   Perspective
                 </button>
-                <button class="toggle-btn variant-standard" id="cameraOrthographic">
+                <button
+                  class="toggle-btn variant-standard"
+                  id="cameraOrthographic"
+                >
                   Orthographic
                 </button>
                 <button class="toggle-btn variant-standard" id="cameraCentre">
@@ -2147,9 +2395,18 @@
           </h3>
           <div id="papercut-section" class="section-content collapsed">
             <div class="control-item">
-              <label style="font-size: 12px; color: #b0b0b0">Cut Line Weight</label>
+              <label style="font-size: 12px; color: #b0b0b0"
+                >Cut Line Weight</label
+              >
               <div class="slider-container">
-                <input type="range" id="cutplaneLineWeight" min="1" max="10" step="1" value="3" />
+                <input
+                  type="range"
+                  id="cutplaneLineWeight"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value="3"
+                />
                 <span class="slider-value" id="cutplaneLineWeightValue">3</span>
               </div>
             </div>
@@ -2270,15 +2527,44 @@
             </div>
 
             <!-- View Capture Section -->
-            <div class="control-item" style="margin-top: 12px; border-top: 1px solid #444; padding-top: 12px;">
+            <div
+              class="control-item"
+              style="
+                margin-top: 12px;
+                border-top: 1px solid #444;
+                padding-top: 12px;
+              "
+            >
               <label class="label-section">View Capture</label>
 
               <!-- View Name Input + Save Button -->
-              <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 8px;">
-                <input type="text" id="viewNameInput"
-                       style="flex: 1; background: #333; border: 1px solid #555; color: #fff; padding: 6px 8px; font-size: 12px; border-radius: 4px;"
-                       placeholder="Auto: Z1" />
-                <button class="toggle-btn variant-standard" id="saveViewBtn" title="Save current view">
+              <div
+                style="
+                  display: flex;
+                  gap: 4px;
+                  align-items: center;
+                  margin-bottom: 8px;
+                "
+              >
+                <input
+                  type="text"
+                  id="viewNameInput"
+                  style="
+                    flex: 1;
+                    background: #333;
+                    border: 1px solid #555;
+                    color: #fff;
+                    padding: 6px 8px;
+                    font-size: 12px;
+                    border-radius: 4px;
+                  "
+                  placeholder="Auto: Z1"
+                />
+                <button
+                  class="toggle-btn variant-standard"
+                  id="saveViewBtn"
+                  title="Save current view"
+                >
                   Save
                 </button>
               </div>
@@ -2289,33 +2575,98 @@
               <label class="label-section">Saved Views</label>
 
               <!-- Table Header with Sort Controls -->
-              <div class="views-table-header" style="display: flex; gap: 4px; margin-bottom: 4px; font-size: 10px; color: #888;">
-                <span style="flex: 0 0 50px; cursor: pointer;" id="sortByName" title="Sort by name">Name ▼</span>
-                <span style="flex: 0 0 50px; cursor: pointer;" id="sortByAxis" title="Sort by axis">Axis</span>
-                <span style="flex: 1; cursor: pointer;" id="sortByDate" title="Sort by date">Date</span>
-                <span style="flex: 0 0 60px;">Actions</span>
+              <div
+                class="views-table-header"
+                style="
+                  display: flex;
+                  gap: 4px;
+                  margin-bottom: 4px;
+                  font-size: 10px;
+                  color: #888;
+                "
+              >
+                <span
+                  style="flex: 0 0 50px; cursor: pointer"
+                  id="sortByName"
+                  title="Sort by name"
+                  >Name ▼</span
+                >
+                <span
+                  style="flex: 0 0 50px; cursor: pointer"
+                  id="sortByAxis"
+                  title="Sort by axis"
+                  >Axis</span
+                >
+                <span
+                  style="flex: 1; cursor: pointer"
+                  id="sortByDate"
+                  title="Sort by date"
+                  >Date</span
+                >
+                <span style="flex: 0 0 60px">Actions</span>
               </div>
 
               <!-- Views Table Body (scrollable) -->
-              <div id="viewsTableBody" style="max-height: 150px; overflow-y: auto; border: 1px solid #444; border-radius: 4px;">
+              <div
+                id="viewsTableBody"
+                style="
+                  max-height: 150px;
+                  overflow-y: auto;
+                  border: 1px solid #444;
+                  border-radius: 4px;
+                "
+              >
                 <!-- Empty state (replaced by JS) -->
-                <div class="views-empty-state" style="padding: 12px; text-align: center; color: #666; font-size: 11px;">
+                <div
+                  class="views-empty-state"
+                  style="
+                    padding: 12px;
+                    text-align: center;
+                    color: #666;
+                    font-size: 11px;
+                  "
+                >
                   No saved views yet.
                 </div>
               </div>
 
               <!-- Bulk Actions -->
-              <div style="display: flex; gap: 4px; margin-top: 8px;">
-                <button class="toggle-btn variant-small" id="downloadSelectedBtn" title="Download selected view as SVG" style="flex: 1;">
+              <div style="display: flex; gap: 4px; margin-top: 8px">
+                <button
+                  class="toggle-btn variant-small"
+                  id="downloadSelectedBtn"
+                  title="Download selected view as SVG"
+                  style="flex: 1"
+                >
                   SVG
                 </button>
-                <button class="toggle-btn variant-small" id="exportAllViewsBtn" title="Export all views to .artview file" style="flex: 1;">
+                <button
+                  class="toggle-btn variant-small"
+                  id="exportAllViewsBtn"
+                  title="Export all views to .artview file"
+                  style="flex: 1"
+                >
                   Export
                 </button>
-                <button class="toggle-btn variant-small" id="importViewsBtn" title="Import views from file" style="flex: 1;">
+                <button
+                  class="toggle-btn variant-small"
+                  id="importViewsBtn"
+                  title="Import views from file"
+                  style="flex: 1"
+                >
                   Import
                 </button>
-                <button class="toggle-btn variant-small" id="clearAllViewsBtn" title="Delete all views" style="width: 28px; min-width: 28px; padding: 4px; color: #ff6b6b;">
+                <button
+                  class="toggle-btn variant-small"
+                  id="clearAllViewsBtn"
+                  title="Delete all views"
+                  style="
+                    width: 28px;
+                    min-width: 28px;
+                    padding: 4px;
+                    color: #ff6b6b;
+                  "
+                >
                   ✕
                 </button>
               </div>
@@ -2338,11 +2689,19 @@
           <div id="geometry-info-section" class="section-content">
             <!-- Individual polyhedra stats (populated by rt-rendering.js) -->
             <div class="stats" id="polyhedraStats">
-              <div style="color: #888;">Select a polyhedron to see stats</div>
+              <div style="color: #888">Select a polyhedron to see stats</div>
             </div>
 
             <!-- Scene totals (updated by PerformanceClock) -->
-            <div class="stats" id="geometryStats" style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #444;">
+            <div
+              class="stats"
+              id="geometryStats"
+              style="
+                margin-top: 12px;
+                padding-top: 10px;
+                border-top: 1px solid #444;
+              "
+            >
               <div><strong>Scene Totals:</strong></div>
               <div id="totalVertices">Vertices: --</div>
               <div id="totalEdges">Edges: --</div>
@@ -2372,7 +2731,10 @@
              ======================================== -->
         <div class="control-group">
           <h3>
-            <span class="section-toggle collapsed" data-target="math-demos-section"></span>
+            <span
+              class="section-toggle collapsed"
+              data-target="math-demos-section"
+            ></span>
             Math Demos
           </h3>
           <div id="math-demos-section" class="section-content collapsed">
@@ -2428,9 +2790,7 @@
                 >
                   Color Theory
                 </a>
-                <span style="color: #888">
-                  - backface culling calibration</span
-                >
+                <span style="color: #888"> - backface culling calibration</span>
               </li>
             </ul>
           </div>
@@ -2465,34 +2825,70 @@
       <div class="context-menu-section">
         <div class="context-menu-label">Object Snaps</div>
         <div class="context-menu-btn-group">
-          <button class="context-btn toggle" data-action="objsnap-vertex"
-            >Vertex</button
-          >
-          <button class="context-btn toggle" data-action="objsnap-edge"
-            >Edge</button
-          >
-          <button class="context-btn toggle" data-action="objsnap-face"
-            >Face</button
-          >
+          <button class="context-btn toggle" data-action="objsnap-vertex">
+            Vertex
+          </button>
+          <button class="context-btn toggle" data-action="objsnap-edge">
+            Edge
+          </button>
+          <button class="context-btn toggle" data-action="objsnap-face">
+            Face
+          </button>
         </div>
       </div>
       <div class="context-menu-divider"></div>
       <div class="context-menu-section">
         <div class="context-menu-label">Edit</div>
         <div class="context-menu-btn-group">
-          <button class="context-btn" data-action="deform" title="Enter vertex deformation mode">Deform</button>
-          <button class="context-btn" data-action="group" title="Group selected objects (Ctrl/Cmd+G)">Group</button>
+          <button
+            class="context-btn"
+            data-action="deform"
+            title="Enter vertex deformation mode"
+          >
+            Deform
+          </button>
+          <button
+            class="context-btn"
+            data-action="group"
+            title="Group selected objects (Ctrl/Cmd+G)"
+          >
+            Group
+          </button>
         </div>
         <div class="context-menu-btn-group">
-          <button class="context-btn" data-action="connect" title="Connect two Points with a Line (C)">Connect</button>
-          <button class="context-btn" data-action="disconnect" title="Disconnect Line back to two Points">Disconnect</button>
+          <button
+            class="context-btn"
+            data-action="connect"
+            title="Connect two Points with a Line (C)"
+          >
+            Connect
+          </button>
+          <button
+            class="context-btn"
+            data-action="disconnect"
+            title="Disconnect Line back to two Points"
+          >
+            Disconnect
+          </button>
         </div>
       </div>
       <div class="context-menu-section">
         <div class="context-menu-label">History</div>
         <div class="context-menu-btn-group">
-          <button class="context-btn" data-action="undo" title="Undo (Ctrl/Cmd+Z)">Undo</button>
-          <button class="context-btn" data-action="redo" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
+          <button
+            class="context-btn"
+            data-action="undo"
+            title="Undo (Ctrl/Cmd+Z)"
+          >
+            Undo
+          </button>
+          <button
+            class="context-btn"
+            data-action="redo"
+            title="Redo (Ctrl/Cmd+Shift+Z)"
+          >
+            Redo
+          </button>
         </div>
       </div>
       <div class="context-menu-divider"></div>

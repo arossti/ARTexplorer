@@ -66,6 +66,7 @@ Instead of cloning complex geometry, store only the parameters needed to recreat
 **Goal:** Ensure all matrix parameters are captured in export
 
 **Planar Matrix Parameters:**
+
 - `type`: `cubeMatrix`, `tetMatrix`, `octaMatrix`, `cuboctaMatrix`, `rhombicDodecMatrix`
 - `matrixSize`: Integer (N×N grid)
 - `rotate45`: Boolean
@@ -73,6 +74,7 @@ Instead of cloning complex geometry, store only the parameters needed to recreat
 - `color`: Hex color (optional, can use palette default)
 
 **Radial Matrix Parameters:**
+
 - `type`: `radialCubeMatrix`, `radialRhombicDodecMatrix`, `radialTetMatrix`, `radialOctMatrix`, `radialVEMatrix`
 - `frequency`: Integer (shell count)
 - `opacity`: Float
@@ -80,6 +82,7 @@ Instead of cloning complex geometry, store only the parameters needed to recreat
 - `useIVMPositions`: Boolean (for octahedron only)
 
 **Transform:**
+
 - `position`: {x, y, z}
 - `rotation`: {x, y, z, order}
 - `scale`: {x, y, z}
@@ -124,7 +127,7 @@ Reuse the same code path as checkbox-based creation:
 // Reset checkbox state
 ```
 
-*Approach A is cleaner and recommended.*
+_Approach A is cleaner and recommended._
 
 ### Phase 3: StateManager Update
 
@@ -174,20 +177,24 @@ if (nodeSize !== "off") {
 ## Implementation Tasks
 
 ### Task 1: Verify Export Parameters
+
 - [ ] Confirm `userData.parameters` contains all needed values for each matrix type
 - [ ] Add any missing parameters during matrix creation
 
 ### Task 2: Simplify createPolyhedronByTypeAsync
+
 - [ ] Remove complex cloning logic
 - [ ] Call matrix generators directly with stored parameters
 - [ ] Return properly structured group
 
 ### Task 3: Update StateManager for Matrix Types
+
 - [ ] Add matrix type detection
 - [ ] Skip deep clone for matrices (use direct reference)
 - [ ] Ensure transform is applied correctly
 
 ### Task 4: Test All Matrix Types
+
 - [ ] Planar: cubeMatrix, tetMatrix, octaMatrix, cuboctaMatrix, rhombicDodecMatrix
 - [ ] Radial: radialCubeMatrix, radialRhombicDodecMatrix, radialTetMatrix, radialOctMatrix, radialVEMatrix
 - [ ] Test with various sizes/frequencies
@@ -195,6 +202,7 @@ if (nodeSize !== "off") {
 - [ ] Test transform preservation (position, rotation, scale)
 
 ### Task 5: Node Restoration
+
 - [ ] Decide on node state persistence strategy
 - [ ] Implement node recreation on import
 - [ ] Test node appearance matches original
@@ -243,12 +251,14 @@ if (nodeSize !== "off") {
 ## Testing Checklist
 
 ### Export Tests
+
 - [ ] Export scene with single planar matrix instance
 - [ ] Export scene with single radial matrix instance
 - [ ] Export scene with mixed matrix and polyhedra instances
 - [ ] Verify JSON contains correct parameters
 
 ### Import Tests
+
 - [ ] Import planar matrix - geometry recreated correctly
 - [ ] Import radial matrix - geometry recreated correctly
 - [ ] Transform preserved (move matrix, export, import, verify position)
@@ -256,10 +266,12 @@ if (nodeSize !== "off") {
 - [ ] Rotation preserved
 
 ### Round-Trip Tests
+
 - [ ] Export → Import → Export produces equivalent JSON
 - [ ] Visual comparison before/after import
 
 ### Edge Cases
+
 - [ ] Large matrix (10×10)
 - [ ] High frequency radial (5+ shells)
 - [ ] Multiple matrix instances of same type
@@ -290,4 +302,4 @@ if (nodeSize !== "off") {
 
 ---
 
-*Last Updated: 2026-01-26*
+_Last Updated: 2026-01-26_

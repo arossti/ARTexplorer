@@ -1753,11 +1753,13 @@ The cutplane slider represents signed **distance** (not quadrance) from origin a
 **Grid Alignment Verification**:
 
 Grid intersections (from `createIVMGrid()` in rt-rendering.js):
+
 ```
 Position = i × gridInterval × basis1 + j × gridInterval × basis2
 ```
 
 Cutplane positions when snapped:
+
 ```
 Position = n × gridInterval along selected basis vector (n ∈ ℤ)
 ```
@@ -1827,12 +1829,13 @@ if (basis === "tetrahedral" && RTPapercut.state.intervalSnapWXYZEnabled) {
 
 console.log(
   `✂️ Cutplane: ${basis === "tetrahedral" ? "WXYZ" : "XYZ"}-${axis} | ` +
-  `Distance d = ${value.toFixed(6)}, Quadrance Q = ${quadrance.toFixed(6)} | ` +
-  `Interval: ${intervalNum} × gridStep`
+    `Distance d = ${value.toFixed(6)}, Quadrance Q = ${quadrance.toFixed(6)} | ` +
+    `Interval: ${intervalNum} × gridStep`
 );
 ```
 
 Example console output:
+
 ```
 ✂️ Cutplane: WXYZ-W | Distance d = 3.674234, Quadrance Q = 13.500000 | Interval: 6 × gridStep
 ```
@@ -1862,12 +1865,14 @@ This discovery reveals the deep connection between the Rhombic Dodecahedron and 
 The snap interval system integrates seamlessly with both XYZ and WXYZ camera view presets:
 
 **XYZ Camera Views** (Cartesian basis):
+
 - Top / Bottom - Look along ±Z axis
 - Front / Back - Look along ±Y axis
 - Left / Right - Look along ±X axis
 - When active: XYZ Interval Snap locks cutplane to integer grid positions (step = 1.0)
 
 **WXYZ Camera Views** (Tetrahedral basis):
+
 - W View - Look along W basis vector (0.577, 0.577, 0.577)
 - X View - Look along X basis vector (0.577, -0.577, -0.577)
 - Y View - Look along Y basis vector (-0.577, 0.577, -0.577)
@@ -1888,24 +1893,28 @@ The cutplane automatically switches coordinate basis when changing between XYZ a
 ##### Verification & Testing
 
 **Test Case 1**: XYZ Interval Snap
+
 - Enable XYZ Interval Snap
 - Select Top View (Z axis)
 - Drag cutplane slider: should lock at integer positions (0, ±1, ±2, ±3...)
 - Grid intersections align perfectly with snap positions ✅
 
 **Test Case 2**: WXYZ Interval Snap
+
 - Enable WXYZ Interval Snap
 - Select W View (tetrahedral W axis)
 - Drag cutplane slider: should lock at IVM grid intervals (0, ±0.612, ±1.225, ±1.837...)
 - Grid intersections align perfectly with snap positions ✅
 
 **Test Case 3**: Dynamic Range Scaling
+
 - Set Quadray tessellation slider to 12
 - Note cutplane range: ±7.35 (12 × 0.612)
 - Increase tessellation to 20
 - Cutplane range expands to ±12.25 (20 × 0.612) ✅
 
 **Test Case 4**: Independent Operation
+
 - Enable both XYZ and WXYZ snap modes
 - Switch between Top View (XYZ) and W View (WXYZ)
 - Each maintains its own snap behavior ✅
@@ -2025,6 +2034,7 @@ y = (2t) / (1 + t²)
 ```
 
 **Key Properties**:
+
 - For any rational value of `t`, both `x` and `y` are rational
 - Sweeping `t` from -∞ to +∞ traces the entire unit circle (except (-1, 0))
 - The "missing point" at `t = ±∞` can be handled separately
@@ -2048,8 +2058,8 @@ function generateRTPureCircle(segments, radius) {
     const t = -10 + (20 * i) / (segments - 1);
 
     const denom = 1 + t * t; // Pure algebra
-    const x = radius * (1 - t * t) / denom;
-    const y = radius * (2 * t) / denom;
+    const x = (radius * (1 - t * t)) / denom;
+    const y = (radius * (2 * t)) / denom;
 
     points.push({ x, y });
   }
@@ -2062,6 +2072,7 @@ function generateRTPureCircle(segments, radius) {
 ```
 
 **Trade-offs**:
+
 - ✅ RT-pure (no transcendental functions)
 - ✅ Exact rational coordinates for rational `t`
 - ⚠️ Non-uniform arc length spacing (visual clustering near t=0)

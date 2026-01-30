@@ -17,6 +17,7 @@ Implement macOS-native Option+click drag behavior to create copies of polyhedra 
 ## Current Implementation Status (v1)
 
 ### What Works
+
 - [x] Alt/Option key detected on mousedown
 - [x] Original transform stored at drag start
 - [x] Instance created at release position via `RTStateManager.createInstance()`
@@ -31,7 +32,7 @@ Implement macOS-native Option+click drag behavior to create copies of polyhedra 
    - Currently: The original form moves with the drag and STAYS at the new position
    - An instance is created, but it's at the same position as the moved original
    - The original is effectively "lost" - subsequent drags move it further away
-   - Expected: Original stays in place (like a ghost), user drags a *copy* away from it
+   - Expected: Original stays in place (like a ghost), user drags a _copy_ away from it
    - The original never moves - standard macOS opt-drag behavior
    - Implementation: On alt-mousedown, immediately create a clone for dragging; original stays put
 
@@ -61,19 +62,19 @@ Implement macOS-native Option+click drag behavior to create copies of polyhedra 
 
 ### Key Locations
 
-| Component | File | Line Range | Purpose |
-|-----------|------|------------|---------|
-| Drag-copy state vars | rt-init.js | ~1259 | `isDragCopying`, `dragCopyOriginal*` |
-| Gumball mousedown | rt-init.js | ~2682 | Alt detection for axis drag |
-| Free move mousedown | rt-init.js | ~2769 | Alt detection for body drag |
-| Free move mouseup | rt-init.js | ~3444 | Copy creation (free move) |
-| Gumball mouseup | rt-init.js | ~3565 | Copy creation (axis drag) |
-| Instance creation | rt-state-manager.js | ~162 | `RTStateManager.createInstance()` |
+| Component            | File                | Line Range | Purpose                              |
+| -------------------- | ------------------- | ---------- | ------------------------------------ |
+| Drag-copy state vars | rt-init.js          | ~1259      | `isDragCopying`, `dragCopyOriginal*` |
+| Gumball mousedown    | rt-init.js          | ~2682      | Alt detection for axis drag          |
+| Free move mousedown  | rt-init.js          | ~2769      | Alt detection for body drag          |
+| Free move mouseup    | rt-init.js          | ~3444      | Copy creation (free move)            |
+| Gumball mouseup      | rt-init.js          | ~3565      | Copy creation (axis drag)            |
+| Instance creation    | rt-state-manager.js | ~162       | `RTStateManager.createInstance()`    |
 
 ### State Variables (added in v1)
 
 ```javascript
-let isDragCopying = false;              // Alt/Option key held during drag
+let isDragCopying = false; // Alt/Option key held during drag
 let dragCopyOriginalPosition = new THREE.Vector3();
 let dragCopyOriginalQuaternion = new THREE.Quaternion();
 let dragCopyOriginalScale = new THREE.Vector3();
@@ -88,17 +89,20 @@ let dragCopyOriginalScale = new THREE.Vector3();
 **Architectural Change Required:**
 
 Current flow:
+
 1. Alt+mousedown → store original position
 2. User drags → original moves with cursor
 3. Mouseup → create instance at current pos, restore original
 
 New flow:
+
 1. Alt+mousedown → immediately create a draggable clone
 2. Original stays exactly where it is (never moves)
 3. User drags → clone moves with cursor
 4. Mouseup → finalize clone as instance (or delete if Alt released/Escape pressed)
 
 **Implementation:**
+
 ```javascript
 // On Alt+mousedown:
 if (event.altKey && currentSelection) {
@@ -123,8 +127,9 @@ if (isDragCopying && dragCopyClone) {
 ```
 
 **New state variable needed:**
+
 ```javascript
-let dragCopyClone = null;  // The clone being dragged
+let dragCopyClone = null; // The clone being dragged
 ```
 
 ### Phase 2: Escape key cancellation ✅ DONE
@@ -138,6 +143,7 @@ Implemented - Escape cancels drag-copy and restores original.
 **Locations:** Both mouseup handlers
 
 **Change:**
+
 ```javascript
 // Only keep clone if Alt is STILL held at release
 if (isDragCopying && dragCopyClone) {
@@ -161,6 +167,7 @@ if (isDragCopying && dragCopyClone) {
 **Location:** Before existing mousedown gumball check (~2640)
 
 **Change:**
+
 ```javascript
 // ALT-CLICK AUTO-MOVE: If Alt held + clicking on selected poly, auto-engage move
 if (event.altKey && currentSelection && !currentGumballTool) {
@@ -192,6 +199,7 @@ if (event.altKey && currentSelection && !currentGumballTool) {
 ## Testing Checklist
 
 ### v1 Tests (current)
+
 - [x] Opt+drag on selected polyhedron with Move tool active creates copy
 - [x] Original returns to starting position after release
 - [x] NOW counter increments
@@ -199,6 +207,7 @@ if (event.altKey && currentSelection && !currentGumballTool) {
 - [x] Works with free body drag
 
 ### v2 Tests (after refinements)
+
 - [ ] Releasing Alt mid-drag cancels copy (no instance created)
 - [ ] Escape during drag-copy restores original, no instance created
 - [ ] Alt+click on selected poly (no tool active) starts move+copy

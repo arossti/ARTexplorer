@@ -7,6 +7,7 @@
 **Goal**: Enable vertex-level editing of Line primitives
 
 ### Current State (Jan 29, 2026) - DEPLOYED TO MAIN
+
 - ✅ **Phase 0: Multi-Select** - COMPLETED & DEPLOYED
 - ⏭️ **Phase 1: Grouping** - SKIPPED (multi-select provides sufficient functionality)
 - ⚠️ **Phase 2: Line Deformation** - DEPRECATED (replaced by Point-Based Lines)
@@ -14,6 +15,7 @@
 - 🔬 **Phase 2A+: Multi-Point Topology** - TESTING (Jan 29, 2026 evening)
 
 **Phase 2A Final Status** (Jan 29, 2026) - ALL DEPLOYED:
+
 - ✅ Create 2 Point instances, multi-select, Connect → creates connectedLine
 - ✅ Move single Point → line follows in real-time
 - ✅ Rotate connected group → all objects transform together
@@ -24,6 +26,7 @@
 - ✅ Opt-click drag-copy works correctly with delta-based movement
 
 **Phase 2A+ Discovery** (Jan 29, 2026 evening):
+
 - ✅ **4+ Point connections work!** - Points can have multiple connections (valence > 2)
 - ✅ Created closed quadrilateral: 4 Points + 4 connectedLines forming a loop
 - ✅ Single Point move → both connected lines update correctly
@@ -31,6 +34,7 @@
 - ✅ **Bug 7 FIXED**: Opposite corner move now works - selective per-line updates
 
 **Architectural Insight**: This confirms the pathway to:
+
 1. **Planar case**: n Points + n edges = **Polygon** (when coplanar)
 2. **Non-planar case**: n Points + full edge connectivity = **Deformed Polyhedra**
 3. Base polyhedra remain inviolable - only instances are deformed via Point positions
@@ -48,6 +52,7 @@
 **See**: [JAN28-EXTRACT.md](JAN28-EXTRACT.md) for full analysis.
 
 **Immediate extraction candidate**:
+
 - `rt-snap-geometry.js` (~250 lines) - Pure geometry helpers, no DOM, no state
   - `getPolyhedronVertices()`
   - `getPolyhedronEdgeMidpoints()`
@@ -55,6 +60,7 @@
   - `findNearestSnapTarget()`
 
 **Success criteria**:
+
 - [ ] Extract snap geometry functions to new module
 - [ ] Verify object snapping still works
 - [ ] rt-init.js reduced by ~250 lines
@@ -65,6 +71,7 @@
 **Goal**: Enable selection of individual vertices on instantiated polyhedra (not Forms).
 
 **Scope** (deliberately minimal):
+
 1. Click on an instance vertex node → node highlights (selected)
 2. Shift+click → add to multi-node selection
 3. Click selected node → deselects that node
@@ -72,6 +79,7 @@
 5. **NO EDITING** - just selection/deselection for now
 
 **Demonstration case**:
+
 - Deposit a Tetrahedron instance
 - Click one vertex node → highlights
 - Shift+click two more → 3 nodes highlighted
@@ -79,11 +87,13 @@
 - ESC → all released, back to object selection mode
 
 **Why this order matters**:
+
 - Clean extraction BEFORE adding new selection state
 - New node selection will add ~100-200 lines to some file
 - Better to have that file be smaller before we add to it
 
 **Files likely affected**:
+
 - `rt-init.js` (selection handlers) or new `rt-node-select.js`
 - `rt-state-manager.js` (node selection state)
 - `rt-rendering.js` (node highlight materials)
@@ -93,6 +103,7 @@
 ### Future Enhancement: Smart Multi-Point Connect
 
 When user selects 4+ Points and hits Connect:
+
 1. **Coplanarity test**: Are all Points in the same plane?
    - **Yes → Polygon**: Connect edges in order (convex hull or user-specified winding)
    - **No → Polyhedron**: Determine if Points define a valid polyhedron
@@ -109,15 +120,17 @@ When user selects 4+ Points and hits Connect:
    - Allow user to specify face winding if ambiguous
 
 ### Key Files to Modify
-| File | Purpose |
-|------|---------|
-| `modules/rt-init.js` | Add deform mode handlers, keyboard shortcuts |
-| `modules/rt-state-manager.js` | Add selection state, deformation data structure |
-| `modules/rt-rendering.js` | Add `updateLineGeometry()` function |
-| `index.html` | Buttons already in place (lines 1820-1867) |
-| `modules/rt-context.js` | Action handlers already in place (lines 144-180) |
+
+| File                          | Purpose                                          |
+| ----------------------------- | ------------------------------------------------ |
+| `modules/rt-init.js`          | Add deform mode handlers, keyboard shortcuts     |
+| `modules/rt-state-manager.js` | Add selection state, deformation data structure  |
+| `modules/rt-rendering.js`     | Add `updateLineGeometry()` function              |
+| `index.html`                  | Buttons already in place (lines 1820-1867)       |
+| `modules/rt-context.js`       | Action handlers already in place (lines 144-180) |
 
 ### ⚠️ Critical Architecture Note
+
 **rt-init.js is 4,648 lines** - avoid adding significant code here. Any new feature requiring >50 lines should be extracted to a separate module. See `JAN28-EXTRACT.md` for candidates.
 
 ---
@@ -125,9 +138,11 @@ When user selects 4+ Points and hits Connect:
 ## Implementation Order (Prerequisites First)
 
 ### Phase 0: Multi-Select ✅ COMPLETED
+
 **Commit**: `d5e48a0` - "Feat: Add multi-select support (Phase 0 for Deform)"
 
 **Implementation**:
+
 - Extended selection state in rt-state-manager.js with `objects[]` array
 - Added helper methods: `addToSelection()`, `removeFromSelection()`, `isSelected()`, `getSelectedObjects()`, `getSelectionCount()`, `clearSelection()`
 - Modified `selectPolyhedron()` in rt-init.js to accept `addToSelection` parameter
@@ -135,6 +150,7 @@ When user selects 4+ Points and hits Connect:
 - Added selection count UI in Edit Actions section
 
 **Selection state** (rt-state-manager.js):
+
 ```javascript
 selection: {
   type: null,           // 'form' or 'instance'
@@ -153,9 +169,11 @@ selection: {
 **Bonus**: Move and Rotate tools work with multi-select out of the box!
 
 ### Phase 1: Grouping ⏭️ SKIPPED
+
 **Decision**: Skip formal grouping for now. Multi-select already provides group-like behavior for transforms.
 
 **Why skipped (Jan 28, 2026)**:
+
 1. Multi-select + transform tools already provide core "group" behavior
 2. Implementation attempt revealed issues: cursor feedback, selection consistency, editing basis positioning
 3. Adding ~200 lines to rt-init.js (already 4,648 lines) was unacceptable
@@ -168,6 +186,7 @@ selection: {
 **Commits**: `5de61af`, `4905e54`
 
 **What Works**:
+
 - ✅ lineWeight=1 now default (uses LineSegments, not Line2)
 - ✅ D key and Deform button enter deform mode
 - ✅ Green vertex nodes appear at line endpoints
@@ -176,6 +195,7 @@ selection: {
 - ✅ ESC exits deform mode
 
 **What Didn't Work** (resolved now):
+
 - ❌ Mouse up doesn't complete the operation (must press ESC)
 - ❌ Subsequent edits delete one of the vertex nodes
 - ❌ Orphaned vertex nodes appear disconnected from rendered line
@@ -183,6 +203,7 @@ selection: {
 
 **Root Cause Analysis**:
 The current approach fights the existing architecture:
+
 1. Line instances clone geometry separately from the state-managed Point nodes
 2. The deform code must track and update multiple objects (LineSegments, vertex Meshes)
 3. Proximity matching between nodes is fragile and accumulates errors
@@ -193,7 +214,9 @@ The current approach fights the existing architecture:
 ## 💡 Alternative Approach: Point-Based Lines (RECOMMENDED)
 
 ### Key Insight
+
 **Points already work perfectly** with:
+
 - StateManager (create, select, move, delete)
 - FileHandler (export, import)
 - All snap modes (vertex, edge, face, object)
@@ -208,8 +231,8 @@ Instead of complex deform code, leverage existing infrastructure:
 ```javascript
 // A Line is defined by references to two Point instances
 line.userData.connections = {
-  startPoint: pointInstanceId1,  // Reference to Point instance
-  endPoint: pointInstanceId2     // Reference to Point instance
+  startPoint: pointInstanceId1, // Reference to Point instance
+  endPoint: pointInstanceId2, // Reference to Point instance
 };
 
 // When a Point moves, any connected Lines update automatically
@@ -227,21 +250,25 @@ RTStateManager.updateConnectedGeometry(pointInstance);
 ### Implementation Plan
 
 **Phase 2A: CONNECT Feature**
+
 1. Select two Point instances (using multi-select)
 2. Press "Connect" button or 'C' key
 3. Creates a Line instance that references both Points
 4. Line edge renders between Point positions
 
 **Phase 2B: Automatic Updates**
+
 1. When a Point moves, find all Lines that reference it
 2. Update those Line geometries to match new Point positions
 3. No special "deform mode" - just normal move operations
 
 **Phase 2C: Visual Feedback**
+
 1. When Line is selected, highlight connected Points
 2. Optionally show "connection lines" during hover
 
 ### Research Needed
+
 - THREE.js constraints (may not need - just update on move)
 - How to store Point→Line relationships efficiently
 - Whether to allow "orphan" Lines (not connected to Points)
@@ -251,10 +278,12 @@ RTStateManager.updateConnectedGeometry(pointInstance);
 ### Phase 2 Original Approach (DEPRECATED)
 
 **Key Discovery from Previous Attempt**:
+
 > Line2 from three/addons uses **Mesh** internally, not Line objects.
 > When lineWidth > 1, Line2 creates a triangular prism (Mesh) to simulate thick lines.
 
 **Tasks (mostly done but fragile)**:
+
 - [x] Force LineSegments (not Line2) for Line primitives during deform
 - [ ] Add `deformation` field to instance schema
 - [x] Implement `enterDeformMode()` / `exitDeformMode()`
@@ -264,6 +293,7 @@ RTStateManager.updateConnectedGeometry(pointInstance);
 - [x] Wire Deform button and 'D' keyboard shortcut
 
 ### Phase 3: Line2 Support (Thick Lines)
+
 **After thin lines work**, add Line2 handling:
 
 ```javascript
@@ -283,9 +313,11 @@ if (child.isLine2) {
 ```
 
 ### Phase 4: Polygon Deformation
+
 Extend to n-gon polygons (multiple vertices, edges update automatically).
 
 ### Phase 5: Polyhedra Deformation
+
 Full 3D: vertices shared across faces, all incident geometry updates.
 
 ---
@@ -295,11 +327,13 @@ Full 3D: vertices shared across faces, all incident geometry updates.
 ### From UI-TWEAKS-J28 Branch (Earlier Deform Attempt)
 
 **What Went Wrong**:
+
 1. **Jumped straight to deform** without multi-select infrastructure
 2. **Didn't understand Line2 structure** - spent cycles debugging wrong object types
 3. **Too many code changes at once** - hard to isolate issues
 
 **What the Logs Revealed**:
+
 ```
 [Deform] updateLineGeometry called. Group children:
   - type=Group, constructor=Group, isLine2=undefined
@@ -312,11 +346,13 @@ The instance had 4 Meshes (2 vertex nodes + 2 Line2 internal prism meshes) but N
 ### Line2 Technical Details
 
 **Line2 internal structure**:
+
 - Line2 object has `isLine2 = true`
 - But Line2's **children** are regular Meshes (triangular prism geometry)
 - Checking `child.isLine2` on traversed children returns `undefined`
 
 **Correct approach for Line2**:
+
 - Check for Line2 at the **group level** before traversing
 - Clone Line2 as a unit, not its internal meshes
 - Update via `line2.geometry.setPositions()` not position attributes
@@ -324,6 +360,7 @@ The instance had 4 Meshes (2 vertex nodes + 2 Line2 internal prism meshes) but N
 ### From DEFORM Branch Phase 1 (Grouping Attempt - Jan 28, 2026)
 
 **What Went Wrong**:
+
 1. **Grouping didn't add value over multi-select** - Move/Rotate already worked with multiple selections
 2. **Too much code in rt-init.js** - Adding ~200 lines pushed file past 4,800 lines
 3. **Multiple bugs appeared**: cursor stuck as pointer, individual items could be deselected from group, editing basis appeared at wrong position, Group button didn't toggle to Ungroup
@@ -341,16 +378,17 @@ The instance had 4 Meshes (2 vertex nodes + 2 Line2 internal prism meshes) but N
 instance.deformation = {
   vertices: [
     { index: 0, offset: { x: 0, y: 0, z: 0 } },
-    { index: 1, offset: { x: 0.5, y: 0, z: 0 } }
+    { index: 1, offset: { x: 0.5, y: 0, z: 0 } },
   ],
   originalVertices: [
     { x: 0, y: 0, z: -0.5 },
-    { x: 0, y: 0, z: 0.5 }
-  ]
-}
+    { x: 0, y: 0, z: 0.5 },
+  ],
+};
 ```
 
 Benefits:
+
 - Non-destructive (original geometry preserved)
 - Easy undo/redo (modify offsets)
 - Clean serialization for export/import
@@ -360,10 +398,12 @@ Benefits:
 ## UI Elements Already in Place
 
 ### index.html (Controls section ~line 1820-1867)
+
 - Edit Actions: Deform button, Group button (disabled stubs)
 - History: Undo button, Redo button (disabled stubs)
 
 ### rt-context.js (lines 144-180)
+
 - `action === "deform"` → calls `window.enterDeformMode()`
 - `action === "group"` → logs stub message
 - `action === "undo"` → calls `window.RTStateManager?.undo()`
@@ -374,6 +414,7 @@ Benefits:
 ## Testing Checklist
 
 ### Phase 0: Multi-Select ✅ PASSED
+
 - [x] Click object A → selected
 - [x] Shift+click object B → both selected
 - [x] Shift+click object A → deselected, only B remains
@@ -382,9 +423,11 @@ Benefits:
 - [x] Rotate tool works with multi-select
 
 ### Phase 1: Grouping ⏭️ SKIPPED
+
 (Multi-select provides equivalent functionality)
 
 ### Phase 2: Line Deformation (Current Approach - Partial)
+
 - [x] Create Line primitive (lineWidth = 1) - now default
 - [x] Deposit instance with NOW
 - [x] Select instance
@@ -396,6 +439,7 @@ Benefits:
 - [ ] Export/Import → deformation preserved (not tested)
 
 ### Phase 2A: Point-Based Lines ✅ COMPLETED
+
 - [x] CONNECT feature: select 2 Points → create Line between them ✅
 - [x] Line stores references to Point instances ✅
 - [x] Moving Points automatically updates connected Lines ✅
@@ -404,6 +448,7 @@ Benefits:
 - [x] Object snap triggers line geometry update ✅
 
 **Resolved Issues (Jan 29, 2026)**:
+
 - ~~Bug 1: ConnectedLine hard to select in orthographic views (1px line)~~ - OPEN (minor UX issue)
 - ~~Bug 2: Rotating connectedLine alone disconnects it from Points~~ - **FIXED** (`9f92935`)
 - ~~Bug 3: Rotating 2 connected Points causes visual revert on mouseup~~ - **FIXED** (`9f92935`)
@@ -413,6 +458,7 @@ Benefits:
 - ~~Bug 7: Partial subset movement breaks unselected connections~~ - **FIXED** (selective per-line updates)
 
 **Solutions Applied**:
+
 1. Auto-select connected Points when selecting a connectedLine
 2. Skip `updateConnectedGeometry()` on mouseup when connectedLine is in selection
 3. Add `updateConnectedGeometry()` call to OBJECT SNAP code path in free movement handler
@@ -425,15 +471,18 @@ Benefits:
 **Fixed**: Jan 29, 2026 evening - selective per-line update logic
 
 **Symptom**:
+
 - Create 4 Points in a closed loop (quadrilateral with 4 connectedLines)
 - Select 2 **opposite** corners (non-adjacent Points)
 - Move them → the lines connecting to the **unselected** Points detach
 
 **What Works**:
+
 - Single Point move: ✅ Both connected lines update
 - Adjacent 2-Point move: ✅ All lines update (shared edge + outer edges)
 
 **What Was Breaking** (now fixed):
+
 - Opposite corner move: ~~❌ Lines to stationary Points freeze~~ ✅ NOW WORKS
 
 **Root Cause Analysis**:
@@ -453,6 +502,7 @@ if (!hasConnectedLine) {
 This assumes: "If ANY connectedLine is in selection, ALL lines moved together."
 
 But with opposite corners:
+
 - Point A and Point C are selected (opposite corners)
 - Line A-B is NOT in selection (B is stationary)
 - Line C-D is NOT in selection (D is stationary)
@@ -460,6 +510,7 @@ But with opposite corners:
 - OR: The lines A-B and C-D simply aren't being updated because their endpoints weren't both moved
 
 **Actual Issue**: When moving Point A, `updateConnectedGeometry(A)` should update:
+
 - Line A-B (A moved, B didn't → line must update)
 - Line A-D (A moved, D didn't → line must update)
 
@@ -478,9 +529,10 @@ selectedPolyhedra.forEach(poly => {
 
     connectedLines.forEach(lineId => {
       const line = RTStateManager.getInstanceById(lineId);
-      const otherPointId = line.connections.startPoint === pointId
-        ? line.connections.endPoint
-        : line.connections.startPoint;
+      const otherPointId =
+        line.connections.startPoint === pointId
+          ? line.connections.endPoint
+          : line.connections.startPoint;
 
       // Only update if the OTHER point wasn't also moved
       const otherPointMoved = selectedPolyhedra.some(
@@ -500,12 +552,14 @@ selectedPolyhedra.forEach(poly => {
 **Solution Implemented** (Jan 29, 2026):
 
 Added `updateConnectedGeometrySelective(movedPointId, allMovedPointIds)` to [rt-state-manager.js:656-732](modules/rt-state-manager.js#L656-L732):
+
 - Takes a Set of ALL moved Point IDs
 - For each connected line, checks if the OTHER endpoint also moved
 - Only updates lines where the other endpoint **didn't** move
 - Lines between two moved Points are skipped (geometry preserved by transform)
 
 Updated 3 locations in [rt-init.js](modules/rt-init.js) to use selective updates:
+
 - Line ~4178 (Object snap handler)
 - Line ~4308 (Free move handler)
 - Line ~4449 (Gumball drag handler)
@@ -517,28 +571,30 @@ Updated 3 locations in [rt-init.js](modules/rt-init.js) to use selective updates
 ## Reference: Branch Commits
 
 ### DEFORM Branch - All Merged to Main
-| Commit | Description | Status | PR |
-|--------|-------------|--------|-----|
-| `67f73a6` | Fix opt-click drag-copy after Bug 6 fix | ✅ Deployed | #51 |
-| `23a3c1e` | Fix free move multi-select collapse (Bug 6) | ✅ Deployed | #51 |
-| `fc36a1b` | Object snap + self-collapse prevention (Bug 5) | ✅ Deployed | #50 |
-| `2355cb0` | Single-node movement fix (Bug 4) | ✅ Deployed | #49 |
-| `9f92935` | Auto-select connected Points, fix rotation | ✅ Deployed | #49 |
-| `d5e48a0` | Multi-select support (Phase 0) | ✅ Deployed | #49 |
-| `af25fcd` | Branch base (from main) | Starting point | - |
+
+| Commit    | Description                                    | Status         | PR  |
+| --------- | ---------------------------------------------- | -------------- | --- |
+| `67f73a6` | Fix opt-click drag-copy after Bug 6 fix        | ✅ Deployed    | #51 |
+| `23a3c1e` | Fix free move multi-select collapse (Bug 6)    | ✅ Deployed    | #51 |
+| `fc36a1b` | Object snap + self-collapse prevention (Bug 5) | ✅ Deployed    | #50 |
+| `2355cb0` | Single-node movement fix (Bug 4)               | ✅ Deployed    | #49 |
+| `9f92935` | Auto-select connected Points, fix rotation     | ✅ Deployed    | #49 |
+| `d5e48a0` | Multi-select support (Phase 0)                 | ✅ Deployed    | #49 |
+| `af25fcd` | Branch base (from main)                        | Starting point | -   |
 
 ### Previous Attempts (UI-TWEAKS-J28)
-| Commit | Description | Status |
-|--------|-------------|--------|
-| `e15d326` | Final state with diagnostic logging | Exploratory (discarded) |
-| `f13df86` | First deform mode (nodes move, edge doesn't) | Bug discovered |
-| `cf033dc` | HiFi UI styling (clean base) | Merged to main |
+
+| Commit    | Description                                  | Status                  |
+| --------- | -------------------------------------------- | ----------------------- |
+| `e15d326` | Final state with diagnostic logging          | Exploratory (discarded) |
+| `f13df86` | First deform mode (nodes move, edge doesn't) | Bug discovered          |
+| `cf033dc` | HiFi UI styling (clean base)                 | Merged to main          |
 
 ---
 
-*Document updated: January 29, 2026*
-*Branch: DEFORM*
-*Author: Andy & Claude*
+_Document updated: January 29, 2026_
+_Branch: DEFORM_
+_Author: Andy & Claude_
 
 ---
 
@@ -547,9 +603,11 @@ Updated 3 locations in [rt-init.js](modules/rt-init.js) to use selective updates
 **Status**: RESOLVED
 
 ### Symptom
+
 After the rotation fix (commit `9f92935`), moving a **single Point** that is part of a connected group no longer updates the connected line. The line stays frozen at its original position while the Point moves away from it.
 
 **Expected behavior (worked before):**
+
 1. User creates 2 Point instances
 2. Multi-select + Connect → creates connectedLine between them
 3. ESC to deselect
@@ -558,6 +616,7 @@ After the rotation fix (commit `9f92935`), moving a **single Point** that is par
 6. On mouseup, Point is relocated with line still connected
 
 **Current behavior (broken):**
+
 - Steps 1-4 work
 - Step 5: Line does NOT follow the dragged Point
 - Step 6: Point ends up disconnected from frozen line
@@ -569,6 +628,7 @@ After the rotation fix (commit `9f92935`), moving a **single Point** that is par
 The code has TWO separate movement code paths:
 
 #### Path A: GUMBALL AXIS DRAG (Constrained movement along basis vectors)
+
 - Triggered when user drags along a gumball handle axis
 - Lines 4245-4399 in rt-init.js
 - **Has the fix** at lines 4361-4378:
@@ -581,7 +641,11 @@ const hasConnectedLine = selectedPolyhedra.some(
 );
 if (!hasConnectedLine) {
   selectedPolyhedra.forEach(poly => {
-    if (poly.userData.isInstance && poly.userData.type === "point" && poly.userData.instanceId) {
+    if (
+      poly.userData.isInstance &&
+      poly.userData.type === "point" &&
+      poly.userData.instanceId
+    ) {
       RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
     }
   });
@@ -589,11 +653,13 @@ if (!hasConnectedLine) {
 ```
 
 #### Path B: FREE MOVEMENT (Direct polyhedron drag)
+
 - Triggered when user clicks on selected polyhedron body without hitting gumball handle
 - Lines 4085-4242 in rt-init.js
 - **Missing the fix** - returns early at line 4242 without calling `updateConnectedGeometry()`
 
 The free movement handler handles:
+
 1. Object snapping (lines 4092-4134) - returns early
 2. Grid snapping (lines 4140-4205)
 3. Drag-copy (lines 4207-4237)
@@ -619,7 +685,11 @@ const hasConnectedLine = selectedPolyhedra.some(
 );
 if (!hasConnectedLine) {
   selectedPolyhedra.forEach(poly => {
-    if (poly.userData.isInstance && poly.userData.type === "point" && poly.userData.instanceId) {
+    if (
+      poly.userData.isInstance &&
+      poly.userData.type === "point" &&
+      poly.userData.instanceId
+    ) {
       RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
     }
   });
@@ -648,20 +718,30 @@ If the above fix doesn't work, add logging to verify which code path is executin
 
 ```javascript
 // Add at start of FREE MOVEMENT handler (line 4085)
-console.log("🟢 FREE MOVEMENT mouseup - selectedPolyhedra:",
-  selectedPolyhedra.map(p => ({type: p.userData.type, id: p.userData.instanceId})));
+console.log(
+  "🟢 FREE MOVEMENT mouseup - selectedPolyhedra:",
+  selectedPolyhedra.map(p => ({
+    type: p.userData.type,
+    id: p.userData.instanceId,
+  }))
+);
 
 // Add at start of GUMBALL DRAG handler (line 4246)
-console.log("🔵 GUMBALL DRAG mouseup - selectedPolyhedra:",
-  selectedPolyhedra.map(p => ({type: p.userData.type, id: p.userData.instanceId})));
+console.log(
+  "🔵 GUMBALL DRAG mouseup - selectedPolyhedra:",
+  selectedPolyhedra.map(p => ({
+    type: p.userData.type,
+    id: p.userData.instanceId,
+  }))
+);
 ```
 
 Then drag a Point and check console to confirm which path executes.
 
 ### Files to Modify
 
-| File | Line | Change |
-|------|------|--------|
+| File                                            | Line  | Change                                             |
+| ----------------------------------------------- | ----- | -------------------------------------------------- |
 | [rt-init.js](../modules/rt-init.js#L4239-L4242) | ~4239 | Add `updateConnectedGeometry()` call before return |
 
 ### Testing After Fix
@@ -680,24 +760,29 @@ Then drag a Point and check console to confirm which path executes.
 ## Known Bugs (Jan 29, 2026)
 
 ### Bug 1: ConnectedLine selection fails in orthographic view
+
 **Symptom**: User cannot select connectedLine instances in orthographic camera modes (Z-down, etc.), though selection works in perspective mode. Original Point instances remain selectable in all views.
 
 **Root Cause (suspected)**: `connectPoints()` creates bare `THREE.LineSegments` with `THREE.LineBasicMaterial` - a 1px thin line with no vertex node meshes. Regular polyhedra have vertex node spheres that make them clickable. The raycast threshold (`selectionRaycaster.params.Line.threshold = 0.1`) may not be sufficient for orthographic projection.
 
 **Potential Fix**:
+
 - Use `Line2` with `LineMaterial` instead of `LineSegments` (provides thicker, more clickable geometry)
 - Or add small invisible hit-test meshes at endpoints
 
 ### Bug 2: ConnectedLine transforms independently from its Points ✅ FIXED
+
 **Status**: RESOLVED in commit `9f92935`
 
 **Original Symptom**:
+
 - Select connectedLine → Rotate → Line rotates correctly ✅
 - BUT the connected Points do NOT move with the line ❌
 
 **Solution**: Auto-select connected Points when selecting a connectedLine. In `selectPolyhedron()`, when the selected object is a `connectedLine`, automatically add its connected Points to the selection with highlights. This implements option 3 (group-like behavior) from the potential fixes.
 
 ### Bug 3: Rotate with 2 connected Points causes visual revert ✅ FIXED
+
 **Status**: RESOLVED in commit `9f92935`
 
 **Original Symptom**: Multi-select 2 Points that are connected, then Rotate → visual revert on mouseup.
@@ -730,6 +815,7 @@ Then drag a Point and check console to confirm which path executes.
 ### A Line = Two Connected Points
 
 Instead of:
+
 ```
 Line Instance
 ├── Mesh (vertex node 0)
@@ -738,6 +824,7 @@ Line Instance
 ```
 
 Use:
+
 ```
 Point Instance A (existing, proven)
 Point Instance B (existing, proven)

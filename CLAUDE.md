@@ -3,6 +3,7 @@
 > **First time on this project?** Read `README.md` for mathematical foundations, architecture overview, and RT principles.
 
 ## Project Overview
+
 **ARTexplorer** (Algebraic Rational Trigonometry Explorer) - Interactive 3D geometry visualization combining R. Buckminster Fuller's Synergetics with N.J. Wildberger's Rational Trigonometry.
 
 - **Live Site**: https://arossti.github.io/ARTexplorer/
@@ -14,13 +15,16 @@
 **Standard flow**: Pull main → Branch → Work → Test → Commit → Push → PR → Merge
 
 ### Critical Rules
+
 - **ALWAYS push before switching branches** (unpushed = can be lost!)
 - **Branch from main only** (never from feature branches)
 - **Test locally before commits** - User prefers to verify before committing
 - **NEVER commit large binary files** (PDFs, images) - local resources only
 
 ### Commit Format
+
 Always use HEREDOC syntax for commit messages:
+
 ```bash
 git commit -m "$(cat <<'EOF'
 Type: Brief description of the change
@@ -35,6 +39,7 @@ EOF
 **Commit types**: `Feat`, `Fix`, `Refactor`, `Docs`, `Improve`, `Clean`
 
 ### Pull Requests
+
 ```bash
 gh pr create --title "Type: Brief description" --body "$(cat <<'EOF'
 ## Summary
@@ -53,23 +58,26 @@ EOF
 ## Key Technical Concepts
 
 ### Coordinate Systems
+
 - **Cartesian XYZ**: Traditional 3D coordinates
 - **Quadray WXYZ**: Tetrahedral coordinates (4 basis vectors)
 - Conversion in `modules/rt-math.js`
 
 ### Rational Trigonometry
+
 - **Quadrance**: Q = a² (replaces distance)
 - **Spread**: s = sin²θ (replaces angle)
 - Maintains algebraic exactness until GPU boundary
 
 ### Core Modules
-| File | Purpose |
-|------|---------|
-| `modules/rt-rendering.js` | WebGL rendering, camera, scene |
-| `modules/rt-init.js` | App initialization, UI, event handlers |
-| `modules/rt-state-manager.js` | State persistence, undo/redo |
-| `modules/rt-polyhedra.js` | Polyhedra generation |
-| `modules/rt-math.js` | Quadray coords, rational trig |
+
+| File                          | Purpose                                |
+| ----------------------------- | -------------------------------------- |
+| `modules/rt-rendering.js`     | WebGL rendering, camera, scene         |
+| `modules/rt-init.js`          | App initialization, UI, event handlers |
+| `modules/rt-state-manager.js` | State persistence, undo/redo           |
+| `modules/rt-polyhedra.js`     | Polyhedra generation                   |
+| `modules/rt-math.js`          | Quadray coords, rational trig          |
 
 ## Development Guidelines
 
@@ -79,6 +87,7 @@ EOF
 4. **User tests before commits** - Don't assume changes need immediate commit
 
 ### When Modifying Geometry
+
 - Verify rational exactness (check console for "Max error")
 - Test in both Cartesian and Quadray modes
 - Ensure face winding is counter-clockwise (outward normals)

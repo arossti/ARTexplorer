@@ -1,6 +1,7 @@
 # ART Explorer - HiFi UI Component Workplan
 
 ## Overview
+
 This workplan outlines the implementation of HiFi (1970s High Fidelity Stereo inspired) UI components for ART Explorer, matching the dark theme background (#2A2A2A) and existing control panel dimensions.
 
 **Style Name:** HiFi - inspired by vintage 1970s High Fidelity stereo equipment aesthetics.
@@ -14,19 +15,21 @@ This workplan outlines the implementation of HiFi (1970s High Fidelity Stereo in
 ## Finalized Design Decisions
 
 ### Color Palette
-| Color | Hex | Usage |
-|-------|-----|-------|
+
+| Color        | Hex       | Usage                                                   |
+| ------------ | --------- | ------------------------------------------------------- |
 | Classic Blue | `#00B4FF` | Primary accent, LED dots, section titles, slider values |
-| Ice Blue | `#7DF9FF` | Active/pressed state glow |
-| Background | `#2A2A2A` | Base background (matches `#controls-panel`) |
-| Dark | `#1a1a1a` | Inset track backgrounds |
-| Light | `#353535` | Raised element highlights |
+| Ice Blue     | `#7DF9FF` | Active/pressed state glow                               |
+| Background   | `#2A2A2A` | Base background (matches `#controls-panel`)             |
+| Dark         | `#1a1a1a` | Inset track backgrounds                                 |
+| Light        | `#353535` | Raised element highlights                               |
 
 ### Design System Variables
+
 ```css
 :root {
   /* Base colors */
-  --hifi-bg: #2A2A2A;
+  --hifi-bg: #2a2a2a;
   --hifi-bg-dark: #1a1a1a;
   --hifi-bg-light: #353535;
 
@@ -35,8 +38,8 @@ This workplan outlines the implementation of HiFi (1970s High Fidelity Stereo in
   --hifi-shadow-light: rgba(255, 255, 255, 0.07);
 
   /* Accent colors */
-  --hifi-accent: #00B4FF;          /* Classic Blue - primary */
-  --hifi-accent-glow: #7DF9FF;     /* Ice Blue - active glow */
+  --hifi-accent: #00b4ff; /* Classic Blue - primary */
+  --hifi-accent-glow: #7df9ff; /* Ice Blue - active glow */
 
   /* Text colors */
   --hifi-text: #e0e0e0;
@@ -60,17 +63,18 @@ This workplan outlines the implementation of HiFi (1970s High Fidelity Stereo in
 
 **Style:** Inset track with raised circular thumb containing blue LED dot center.
 
-| Property | Value |
-|----------|-------|
-| Track height | 6px |
-| Track background | `--hifi-bg-dark` with inset shadow |
-| Thumb size | 16px diameter |
-| Thumb style | Raised gradient with LED dot center |
-| LED color | `#00B4FF` (Classic Blue) |
+| Property         | Value                               |
+| ---------------- | ----------------------------------- |
+| Track height     | 6px                                 |
+| Track background | `--hifi-bg-dark` with inset shadow  |
+| Thumb size       | 16px diameter                       |
+| Thumb style      | Raised gradient with LED dot center |
+| LED color        | `#00B4FF` (Classic Blue)            |
 
 **Variant:** `.hifi-slider--led` - Blue LED dot in thumb center (USE FOR ALL SLIDERS)
 
 **States:**
+
 - Default: Classic Blue `#00B4FF` LED dot
 - Hover: Brightened LED with increased inner glow
 - Active/Pressed: Thumb becomes inset, LED brightens to `#7DF9FF`
@@ -81,19 +85,21 @@ This workplan outlines the implementation of HiFi (1970s High Fidelity Stereo in
 
 **Style:** Raised gradient surface, pressed state becomes inset.
 
-| Property | Value |
-|----------|-------|
-| Padding | 8px 12px (standard), 5px 8px (small) |
-| Font size | 11px (standard), 10px (small) |
-| Border radius | 4px (standard), 3px (small) |
-| Text color | `#b0b0b0` default, `#00B4FF` active |
+| Property      | Value                                |
+| ------------- | ------------------------------------ |
+| Padding       | 8px 12px (standard), 5px 8px (small) |
+| Font size     | 11px (standard), 10px (small)        |
+| Border radius | 4px (standard), 3px (small)          |
+| Text color    | `#b0b0b0` default, `#00B4FF` active  |
 
 **Variants:**
+
 - `.hifi-btn--sm` - Small button for node sizes
 - `.hifi-btn--action` - Action button (NOW) - Classic Blue text
 - `.hifi-btn--danger` - Danger button (Delete) - Classic Blue text (same as action)
 
 **States:**
+
 - Default (Up): Raised with outer shadow
 - Hover: Slightly brighter
 - Active/Pressed (Down): Inset shadow, text becomes `#00B4FF`
@@ -105,14 +111,15 @@ This workplan outlines the implementation of HiFi (1970s High Fidelity Stereo in
 
 **Style:** Horizontal pill switch with sliding circular thumb.
 
-| Size | Width | Height | Thumb |
-|------|-------|--------|-------|
-| Standard | 36px | 18px | 14px |
-| Small (`.hifi-toggle--sm`) | 28px | 14px | 10px |
+| Size                       | Width | Height | Thumb |
+| -------------------------- | ----- | ------ | ----- |
+| Standard                   | 36px  | 18px   | 14px  |
+| Small (`.hifi-toggle--sm`) | 28px  | 14px   | 10px  |
 
 **USE SMALL SIZE (`.hifi-toggle--sm`) for all form toggles** to match vertical dropdown toggle proportions.
 
 **States:**
+
 - Off: Thumb left, no glow
 - On (`.active`): Thumb right, blue border glow on track, blue glow on thumb
 
@@ -122,12 +129,13 @@ This workplan outlines the implementation of HiFi (1970s High Fidelity Stereo in
 
 **Style:** Vertical pill switch for section expand/collapse.
 
-| Size | Width | Height | Thumb |
-|------|-------|--------|-------|
-| Standard | 14px | 28px | 10px |
-| Small (`.hifi-dropdown-toggle--sm`) | 10px | 20px | 6px |
+| Size                                | Width | Height | Thumb |
+| ----------------------------------- | ----- | ------ | ----- |
+| Standard                            | 14px  | 28px   | 10px  |
+| Small (`.hifi-dropdown-toggle--sm`) | 10px  | 20px   | 6px   |
 
 **States:**
+
 - Collapsed (default): Thumb at TOP, no glow
 - Expanded (`.expanded`): Thumb at BOTTOM, blue border glow on track, blue glow on thumb
 
@@ -136,7 +144,9 @@ This workplan outlines the implementation of HiFi (1970s High Fidelity Stereo in
 ## Implementation Strategy
 
 ### Phase 1: Add CSS to art.css
+
 Copy the finalized CSS from `button-test.html` into `art.css`:
+
 1. CSS custom properties (`:root` variables)
 2. `.hifi-slider` and `.hifi-slider--led` styles
 3. `.hifi-btn` and variants
@@ -144,40 +154,48 @@ Copy the finalized CSS from `button-test.html` into `art.css`:
 5. `.hifi-dropdown-toggle` and `.hifi-dropdown-toggle--sm`
 
 ### Phase 2: Update Sliders
+
 Replace all `input[type="range"]` styling:
 
-| Element | Current | New |
-|---------|---------|-----|
+| Element     | Current         | New                              |
+| ----------- | --------------- | -------------------------------- |
 | All sliders | Browser default | `.hifi-slider .hifi-slider--led` |
 
 **Files:** `index.html`, `art.css`
 
 ### Phase 3: Update Push Buttons
+
 Replace button styling:
 
-| Element | Current Class | New Class |
-|---------|---------------|-----------|
-| Tool mode buttons | `.toggle-btn.variant-tool` | `.hifi-btn` |
-| View buttons | `.toggle-btn.variant-standard` | `.hifi-btn` |
-| Node size buttons | `.node-size-btn` | `.hifi-btn .hifi-btn--sm` |
-| Action buttons | `.gumball-action-btn` | `.hifi-btn .hifi-btn--action` |
+| Element           | Current Class                  | New Class                     |
+| ----------------- | ------------------------------ | ----------------------------- |
+| Tool mode buttons | `.toggle-btn.variant-tool`     | `.hifi-btn`                   |
+| View buttons      | `.toggle-btn.variant-standard` | `.hifi-btn`                   |
+| Node size buttons | `.node-size-btn`               | `.hifi-btn .hifi-btn--sm`     |
+| Action buttons    | `.gumball-action-btn`          | `.hifi-btn .hifi-btn--action` |
 
 **Files:** `index.html`, `art.css`, `modules/rt-ui.js`
 
 ### Phase 4: Convert Checkboxes to Toggles
+
 Replace checkbox inputs with toggle switches:
 
 **HTML Pattern (Before):**
+
 ```html
 <label class="checkbox-label">
-  <input type="checkbox" id="showCube" checked>
+  <input type="checkbox" id="showCube" checked />
   Hexahedron (Cube)
 </label>
 ```
 
 **HTML Pattern (After):**
+
 ```html
-<label class="hifi-toggle-label" onclick="this.querySelector('.hifi-toggle').classList.toggle('active')">
+<label
+  class="hifi-toggle-label"
+  onclick="this.querySelector('.hifi-toggle').classList.toggle('active')"
+>
   <div class="hifi-toggle hifi-toggle--sm active">
     <div class="hifi-toggle-thumb"></div>
   </div>
@@ -186,6 +204,7 @@ Replace checkbox inputs with toggle switches:
 ```
 
 **Checkbox → Toggle Candidates:**
+
 - `#showCartesianBasis`, `#showQuadray`
 - `#showPoint`, `#showLine`, `#showPolygon`, `#showPrism`, `#showCone`
 - `#showCube`, `#showTetrahedron`, `#showDualTetrahedron`
@@ -197,11 +216,12 @@ Replace checkbox inputs with toggle switches:
 **JavaScript Update Required:** Update event handlers to check for `.active` class instead of checkbox `checked` property.
 
 ### Phase 5: Update Section Toggles
+
 Replace CSS triangle arrows with vertical dropdown toggles:
 
-| Element | Current Class | New Class |
-|---------|---------------|-----------|
-| Section toggles | `.section-toggle` | `.hifi-dropdown-toggle` |
+| Element          | Current Class      | New Class                                         |
+| ---------------- | ------------------ | ------------------------------------------------- |
+| Section toggles  | `.section-toggle`  | `.hifi-dropdown-toggle`                           |
 | Geodesic toggles | `.geodesic-toggle` | `.hifi-dropdown-toggle .hifi-dropdown-toggle--sm` |
 
 **JavaScript Update Required:** Toggle `.expanded` class on click, update section visibility logic.
@@ -210,14 +230,14 @@ Replace CSS triangle arrows with vertical dropdown toggles:
 
 ## Size Reference
 
-| Component | Width | Height | Notes |
-|-----------|-------|--------|-------|
-| Standard button | flex: 1 | 28-32px | Fills container |
-| Small button | auto | 24px | Compact |
-| Toggle (small) | 28px | 14px | Use for all forms |
-| Dropdown toggle | 14px | 28px | Vertical orientation |
-| Slider track | 100% | 6px | Flexible width |
-| Slider thumb | 16px | 16px | Circular with LED |
+| Component       | Width   | Height  | Notes                |
+| --------------- | ------- | ------- | -------------------- |
+| Standard button | flex: 1 | 28-32px | Fills container      |
+| Small button    | auto    | 24px    | Compact              |
+| Toggle (small)  | 28px    | 14px    | Use for all forms    |
+| Dropdown toggle | 14px    | 28px    | Vertical orientation |
+| Slider track    | 100%    | 6px     | Flexible width       |
+| Slider thumb    | 16px    | 16px    | Circular with LED    |
 
 ---
 
@@ -232,6 +252,7 @@ Replace CSS triangle arrows with vertical dropdown toggles:
 ## Test File
 
 `button-test.html` contains:
+
 - ✅ All finalized component styles
 - ✅ Interactive demos (click to toggle states)
 - ✅ Combined example showing real-world usage

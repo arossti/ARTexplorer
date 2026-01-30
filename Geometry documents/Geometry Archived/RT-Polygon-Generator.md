@@ -7,10 +7,11 @@ This workplan rationalizes n-gon generation in ARTExplorer using Wildberger's Ra
 ### Current State (rt-polyhedra.js)
 
 The current `Polyhedra.polygon()` implementation uses classical trigonometry:
+
 ```javascript
 // Current: Classical trig approach
 const centralAngle = Math.PI / n;
-const spread = Math.pow(Math.sin(centralAngle), 2);  // spread from sin²
+const spread = Math.pow(Math.sin(centralAngle), 2); // spread from sin²
 const angle = (2 * Math.PI * i) / n;
 vertices.push(new THREE.Vector3(R * Math.cos(angle), R * Math.sin(angle), 0));
 ```
@@ -21,13 +22,13 @@ vertices.push(new THREE.Vector3(R * Math.cos(angle), R * Math.sin(angle), 0));
 
 We already have powerful tools available:
 
-| Namespace | Purpose | Key Methods |
-|-----------|---------|-------------|
-| `RT.PurePhi` | Golden ratio algebra | `sqrt5()`, `value()`, `inverse()`, `squared()`, `cubed()`, `Symbolic` class |
-| `RT.PureRadicals` | Cached radical constants | `sqrt2()`, `sqrt3()`, `sqrt6()`, `QUADRAY_GRID_INTERVAL` |
-| `RT.spread()` | Spread between vectors | Measures perpendicularity (0-1) |
-| `RT.quadrance()` | Distance squared | Avoids sqrt in calculations |
-| `RT.circleParam()` | Rational circle points | Weierstrass parameterization |
+| Namespace          | Purpose                  | Key Methods                                                                 |
+| ------------------ | ------------------------ | --------------------------------------------------------------------------- |
+| `RT.PurePhi`       | Golden ratio algebra     | `sqrt5()`, `value()`, `inverse()`, `squared()`, `cubed()`, `Symbolic` class |
+| `RT.PureRadicals`  | Cached radical constants | `sqrt2()`, `sqrt3()`, `sqrt6()`, `QUADRAY_GRID_INTERVAL`                    |
+| `RT.spread()`      | Spread between vectors   | Measures perpendicularity (0-1)                                             |
+| `RT.quadrance()`   | Distance squared         | Avoids sqrt in calculations                                                 |
+| `RT.circleParam()` | Rational circle points   | Weierstrass parameterization                                                |
 
 ---
 
@@ -38,33 +39,35 @@ We already have powerful tools available:
 From Chapter 14, a **regular star of order n** exists when the spread polynomial Sₙ(s) = 0 has valid spread number solutions.
 
 **Critical Formula**: For a regular n-gon with circumradius quadrance Q:
+
 ```
 Q(A₀, A₂ₖ) = 4·Sₖ(s)·Q
 ```
+
 where s = spread between consecutive star lines, and Sₖ is the k-th spread polynomial.
 
 ### 1.2 The Polygon Triangle Theorem (Theorem 98, p.165)
 
 For a regular n-gon constructed from a star with spread s and circumradius quadrance Q:
 
-| Quantity | Formula |
-|----------|---------|
-| **Edge quadrance** R | R = Q(A₀,A₂) = 4sQ |
+| Quantity                 | Formula                  |
+| ------------------------ | ------------------------ |
+| **Edge quadrance** R     | R = Q(A₀,A₂) = 4sQ       |
 | **Diagonal quadrance** D | D = Q(A₀,A₄) = 16s(1-s)Q |
-| **Corner spreads** | s(A₀A₄,A₀A₂) = s |
-| **Vertex spread** | s(A₂A₀,A₂A₄) = 4s(1-s) |
+| **Corner spreads**       | s(A₀A₄,A₀A₂) = s         |
+| **Vertex spread**        | s(A₂A₀,A₂A₄) = 4s(1-s)   |
 
 ### 1.3 Exact Spread Values for Common n-gons
 
-| n | Star Spread s | Spread Formula | Radical Required |
-|---|---------------|----------------|------------------|
-| 3 | 3/4 | s = 3/4 (exact rational!) | `RT.PureRadicals.sqrt3()` |
-| 4 | 1/2 | s = 1/2 (exact rational!) | `RT.PureRadicals.sqrt2()` |
-| 5 | (5+√5)/8 | s = (5+√5)/8 ≈ 0.9045 | `RT.PurePhi.sqrt5()` |
-| 6 | 1/4 | s = 1/4 (exact rational!) | `RT.PureRadicals.sqrt3()` |
-| 8 | (2-√2)/4 | Nested radicals | `RT.PureRadicals.sqrt2()` |
-| 10 | (3-√5)/8 | Uses golden ratio | `RT.PurePhi.sqrt5()` |
-| 12 | (2-√3)/4 | Uses √3 | `RT.PureRadicals.sqrt3()` |
+| n   | Star Spread s | Spread Formula            | Radical Required          |
+| --- | ------------- | ------------------------- | ------------------------- |
+| 3   | 3/4           | s = 3/4 (exact rational!) | `RT.PureRadicals.sqrt3()` |
+| 4   | 1/2           | s = 1/2 (exact rational!) | `RT.PureRadicals.sqrt2()` |
+| 5   | (5+√5)/8      | s = (5+√5)/8 ≈ 0.9045     | `RT.PurePhi.sqrt5()`      |
+| 6   | 1/4           | s = 1/4 (exact rational!) | `RT.PureRadicals.sqrt3()` |
+| 8   | (2-√2)/4      | Nested radicals           | `RT.PureRadicals.sqrt2()` |
+| 10  | (3-√5)/8      | Uses golden ratio         | `RT.PurePhi.sqrt5()`      |
+| 12  | (2-√3)/4      | Uses √3                   | `RT.PureRadicals.sqrt3()` |
 
 ---
 
@@ -76,16 +79,16 @@ The existing `RT.PurePhi` namespace (lines 283-504 of rt-math.js) provides every
 
 ```javascript
 // Already available:
-RT.PurePhi.sqrt5()      // Cached √5 ≈ 2.2360679774997896
-RT.PurePhi.value()      // φ = (1+√5)/2 ≈ 1.6180339887498948
-RT.PurePhi.inverse()    // 1/φ = φ-1 ≈ 0.618033988749895
-RT.PurePhi.squared()    // φ² = φ+1 (algebraic identity!)
-RT.PurePhi.cubed()      // φ³ = 2φ+1 (algebraic identity!)
-RT.PurePhi.fourthPower() // φ⁴ = 3φ+2 (algebraic identity!)
+RT.PurePhi.sqrt5(); // Cached √5 ≈ 2.2360679774997896
+RT.PurePhi.value(); // φ = (1+√5)/2 ≈ 1.6180339887498948
+RT.PurePhi.inverse(); // 1/φ = φ-1 ≈ 0.618033988749895
+RT.PurePhi.squared(); // φ² = φ+1 (algebraic identity!)
+RT.PurePhi.cubed(); // φ³ = 2φ+1 (algebraic identity!)
+RT.PurePhi.fourthPower(); // φ⁴ = 3φ+2 (algebraic identity!)
 
 // Symbolic algebra for exact computation:
-const phi = new RT.PurePhi.Symbolic(1, 1, 2);  // (1 + 1√5)/2 = φ
-const phiSq = phi.multiply(phi);               // Exact: (3 + √5)/2
+const phi = new RT.PurePhi.Symbolic(1, 1, 2); // (1 + 1√5)/2 = φ
+const phiSq = phi.multiply(phi); // Exact: (3 + √5)/2
 ```
 
 ### 2.2 RT.PureRadicals for Triangle/Square/Hexagon
@@ -94,14 +97,14 @@ The existing `RT.PureRadicals` namespace (lines 519-616 of rt-math.js) provides:
 
 ```javascript
 // Already available:
-RT.PureRadicals.sqrt2()  // Cached √2 ≈ 1.4142135623730951
-RT.PureRadicals.sqrt3()  // Cached √3 ≈ 1.7320508075688772
-RT.PureRadicals.sqrt6()  // Cached √6 ≈ 2.4494897427831781
+RT.PureRadicals.sqrt2(); // Cached √2 ≈ 1.4142135623730951
+RT.PureRadicals.sqrt3(); // Cached √3 ≈ 1.7320508075688772
+RT.PureRadicals.sqrt6(); // Cached √6 ≈ 2.4494897427831781
 
 // Pre-computed values:
-RT.PureRadicals.sqrt2Values.half     // √2/2 = 1/√2
-RT.PureRadicals.sqrt3Values.half     // √3/2
-RT.PureRadicals.sqrt3Values.inverse  // 1/√3 = √3/3
+RT.PureRadicals.sqrt2Values.half; // √2/2 = 1/√2
+RT.PureRadicals.sqrt3Values.half; // √3/2
+RT.PureRadicals.sqrt3Values.inverse; // 1/√3 = √3/3
 ```
 
 ### 2.3 RT.circleParam for Rational Points
@@ -110,12 +113,12 @@ The existing `RT.circleParam()` (lines 156-163) generates unit circle points wit
 
 ```javascript
 // Weierstrass parameterization: t → ((1-t²)/(1+t²), 2t/(1+t²))
-RT.circleParam(0)   // → {x: 1, y: 0}   (0°)
-RT.circleParam(1)   // → {x: 0, y: 1}   (90°)
-RT.circleParam(-1)  // → {x: 0, y: -1}  (270°)
+RT.circleParam(0); // → {x: 1, y: 0}   (0°)
+RT.circleParam(1); // → {x: 0, y: 1}   (90°)
+RT.circleParam(-1); // → {x: 0, y: -1}  (270°)
 
 // For specific angles, find t such that spread = 4t²/(1+t²)²
-RT.spreadToParam(spread)  // Solves for t given target spread
+RT.spreadToParam(spread); // Solves for t given target spread
 ```
 
 ---
@@ -129,21 +132,29 @@ RT.spreadToParam(spread)  // Solves for t given target spread
 
 ```javascript
 function polygonTriangle(quadrance, options) {
-  const R = Math.sqrt(quadrance);  // Circumradius (deferred √)
-  const sqrt3 = RT.PureRadicals.sqrt3();  // Cached, computed once
+  const R = Math.sqrt(quadrance); // Circumradius (deferred √)
+  const sqrt3 = RT.PureRadicals.sqrt3(); // Cached, computed once
 
   // RT-pure vertices using exact √3
   const vertices = [
-    new THREE.Vector3(R, 0, 0),                    // A₀
-    new THREE.Vector3(-R/2, R * sqrt3/2, 0),       // A₂
-    new THREE.Vector3(-R/2, -R * sqrt3/2, 0),      // A₄
+    new THREE.Vector3(R, 0, 0), // A₀
+    new THREE.Vector3(-R / 2, (R * sqrt3) / 2, 0), // A₂
+    new THREE.Vector3(-R / 2, (-R * sqrt3) / 2, 0), // A₄
   ];
 
   // Verify using RT.spread() if desired
   // const starSpread = RT.spread(vertices[0], vertices[1]); // Should be 3/4
 
-  return { vertices, edges: [[0,1],[1,2],[2,0]], faces: [[0,1,2]],
-           metadata: { starSpread: 3/4, edgeQuadrance: 3 * quadrance } };
+  return {
+    vertices,
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 0],
+    ],
+    faces: [[0, 1, 2]],
+    metadata: { starSpread: 3 / 4, edgeQuadrance: 3 * quadrance },
+  };
 }
 ```
 
@@ -155,18 +166,27 @@ function polygonTriangle(quadrance, options) {
 ```javascript
 function polygonSquare(quadrance, options) {
   const R = Math.sqrt(quadrance);
-  const sqrt2over2 = RT.PureRadicals.sqrt2Values.half;  // Pre-computed √2/2
+  const sqrt2over2 = RT.PureRadicals.sqrt2Values.half; // Pre-computed √2/2
 
   // RT-pure vertices using exact √2
   const vertices = [
-    new THREE.Vector3(R * sqrt2over2,  R * sqrt2over2, 0),   // A₀
-    new THREE.Vector3(-R * sqrt2over2, R * sqrt2over2, 0),   // A₂
-    new THREE.Vector3(-R * sqrt2over2, -R * sqrt2over2, 0),  // A₄
-    new THREE.Vector3(R * sqrt2over2,  -R * sqrt2over2, 0),  // A₆
+    new THREE.Vector3(R * sqrt2over2, R * sqrt2over2, 0), // A₀
+    new THREE.Vector3(-R * sqrt2over2, R * sqrt2over2, 0), // A₂
+    new THREE.Vector3(-R * sqrt2over2, -R * sqrt2over2, 0), // A₄
+    new THREE.Vector3(R * sqrt2over2, -R * sqrt2over2, 0), // A₆
   ];
 
-  return { vertices, edges: [[0,1],[1,2],[2,3],[3,0]], faces: [[0,1,2,3]],
-           metadata: { starSpread: 1/2, edgeQuadrance: 2 * quadrance } };
+  return {
+    vertices,
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 0],
+    ],
+    faces: [[0, 1, 2, 3]],
+    metadata: { starSpread: 1 / 2, edgeQuadrance: 2 * quadrance },
+  };
 }
 ```
 
@@ -177,17 +197,17 @@ function polygonSquare(quadrance, options) {
 ```javascript
 function polygonPentagon(quadrance, options) {
   const R = Math.sqrt(quadrance);
-  const sqrt5 = RT.PurePhi.sqrt5();  // Cached √5
+  const sqrt5 = RT.PurePhi.sqrt5(); // Cached √5
 
   // Pentagon spreads from Exercise 14.3, p.166
-  const alpha = (5 - sqrt5) / 8;  // ≈ 0.345491 (base spread)
-  const beta = (5 + sqrt5) / 8;   // ≈ 0.904508 (star spread)
+  const alpha = (5 - sqrt5) / 8; // ≈ 0.345491 (base spread)
+  const beta = (5 + sqrt5) / 8; // ≈ 0.904508 (star spread)
 
   // Exact cosines using algebraic identities (no trig!)
   // cos(72°) = (√5-1)/4 = inverse(φ)/2
   // cos(144°) = -(1+√5)/4 = -φ/2
-  const cos72 = (sqrt5 - 1) / 4;           // = RT.PurePhi.inverse() / 2
-  const cos144 = -(1 + sqrt5) / 4;         // = -RT.PurePhi.value() / 2
+  const cos72 = (sqrt5 - 1) / 4; // = RT.PurePhi.inverse() / 2
+  const cos144 = -(1 + sqrt5) / 4; // = -RT.PurePhi.value() / 2
 
   // Sines require nested radicals (compute once, cache)
   // sin(72°) = √(10 + 2√5)/4
@@ -196,17 +216,30 @@ function polygonPentagon(quadrance, options) {
   const sin144 = Math.sqrt(10 - 2 * sqrt5) / 4;
 
   const vertices = [
-    new THREE.Vector3(R, 0, 0),                      // A₀ (0°)
-    new THREE.Vector3(R * cos72, R * sin72, 0),      // A₂ (72°)
-    new THREE.Vector3(R * cos144, R * sin144, 0),    // A₄ (144°)
-    new THREE.Vector3(R * cos144, -R * sin144, 0),   // A₆ (216°)
-    new THREE.Vector3(R * cos72, -R * sin72, 0),     // A₈ (288°)
+    new THREE.Vector3(R, 0, 0), // A₀ (0°)
+    new THREE.Vector3(R * cos72, R * sin72, 0), // A₂ (72°)
+    new THREE.Vector3(R * cos144, R * sin144, 0), // A₄ (144°)
+    new THREE.Vector3(R * cos144, -R * sin144, 0), // A₆ (216°)
+    new THREE.Vector3(R * cos72, -R * sin72, 0), // A₈ (288°)
   ];
 
-  return { vertices, edges: [[0,1],[1,2],[2,3],[3,4],[4,0]],
-           faces: [[0,1,2,3,4]],
-           metadata: { starSpread: beta, alpha, beta,
-                       edgeQuadrance: 4 * beta * quadrance } };
+  return {
+    vertices,
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 0],
+    ],
+    faces: [[0, 1, 2, 3, 4]],
+    metadata: {
+      starSpread: beta,
+      alpha,
+      beta,
+      edgeQuadrance: 4 * beta * quadrance,
+    },
+  };
 }
 ```
 
@@ -218,20 +251,30 @@ function polygonPentagon(quadrance, options) {
 ```javascript
 function polygonHexagon(quadrance, options) {
   const R = Math.sqrt(quadrance);
-  const sqrt3over2 = RT.PureRadicals.sqrt3Values.half;  // Pre-computed √3/2
+  const sqrt3over2 = RT.PureRadicals.sqrt3Values.half; // Pre-computed √3/2
 
   const vertices = [
-    new THREE.Vector3(R, 0, 0),                       // A₀
-    new THREE.Vector3(R/2, R * sqrt3over2, 0),        // A₂
-    new THREE.Vector3(-R/2, R * sqrt3over2, 0),       // A₄
-    new THREE.Vector3(-R, 0, 0),                      // A₆
-    new THREE.Vector3(-R/2, -R * sqrt3over2, 0),      // A₈
-    new THREE.Vector3(R/2, -R * sqrt3over2, 0),       // A₁₀
+    new THREE.Vector3(R, 0, 0), // A₀
+    new THREE.Vector3(R / 2, R * sqrt3over2, 0), // A₂
+    new THREE.Vector3(-R / 2, R * sqrt3over2, 0), // A₄
+    new THREE.Vector3(-R, 0, 0), // A₆
+    new THREE.Vector3(-R / 2, -R * sqrt3over2, 0), // A₈
+    new THREE.Vector3(R / 2, -R * sqrt3over2, 0), // A₁₀
   ];
 
-  return { vertices, edges: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]],
-           faces: [[0,1,2,3,4,5]],
-           metadata: { starSpread: 1/4, edgeQuadrance: quadrance } };
+  return {
+    vertices,
+    edges: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+      [5, 0],
+    ],
+    faces: [[0, 1, 2, 3, 4, 5]],
+    metadata: { starSpread: 1 / 4, edgeQuadrance: quadrance },
+  };
 }
 ```
 
@@ -269,24 +312,24 @@ RT.SpreadPolynomials = {
    * S₃(s) = s(3-4s)²
    * Used for triangular stars (Theorem 95)
    */
-  S3: s => s * (3 - 4*s) * (3 - 4*s),
+  S3: s => s * (3 - 4 * s) * (3 - 4 * s),
 
   /**
    * S₄(s) = 16s(1-s)(1-2s)²
    */
-  S4: s => 16 * s * (1-s) * (1 - 2*s) * (1 - 2*s),
+  S4: s => 16 * s * (1 - s) * (1 - 2 * s) * (1 - 2 * s),
 
   /**
    * S₅(s) = s(5 - 20s + 16s²)²
    * Used for pentagonal stars (Theorem 96, Eq. 14.1)
    */
-  S5: s => s * Math.pow(5 - 20*s + 16*s*s, 2),
+  S5: s => s * Math.pow(5 - 20 * s + 16 * s * s, 2),
 
   /**
    * S₇(s) = s(7 - 56s + 112s² - 64s³)²
    * Used for heptagonal stars (Theorem 97, Eq. 14.2)
    */
-  S7: s => s * Math.pow(7 - 56*s + 112*s*s - 64*s*s*s, 2),
+  S7: s => s * Math.pow(7 - 56 * s + 112 * s * s - 64 * s * s * s, 2),
 
   /**
    * General Sₙ via Chebyshev-like recurrence
@@ -300,17 +343,17 @@ RT.SpreadPolynomials = {
     if (n === 0) return 0;
     if (n === 1) return s;
 
-    let prev = 0;       // S₀
-    let curr = s;       // S₁
+    let prev = 0; // S₀
+    let curr = s; // S₁
 
     for (let k = 2; k <= n; k++) {
-      const next = (1 - 2*s) * curr - prev + s;
+      const next = (1 - 2 * s) * curr - prev + s;
       prev = curr;
       curr = next;
     }
 
     return curr;
-  }
+  },
 };
 ```
 
@@ -331,13 +374,13 @@ RT.StarSpreads = {
    * Theorem 95: requires 3 = (√3)² to be a square
    * @returns {number} 0.75 (exact rational)
    */
-  triangle: () => 3/4,
+  triangle: () => 3 / 4,
 
   /**
    * Square (n=4): s = 1/2
    * @returns {number} 0.5 (exact rational)
    */
-  square: () => 1/2,
+  square: () => 1 / 2,
 
   /**
    * Pentagon (n=5): s = (5+√5)/8 = β
@@ -350,7 +393,7 @@ RT.StarSpreads = {
    * Hexagon (n=6): s = 1/4
    * @returns {number} 0.25 (exact rational)
    */
-  hexagon: () => 1/4,
+  hexagon: () => 1 / 4,
 
   /**
    * Octagon (n=8): s = (2-√2)/4
@@ -386,7 +429,7 @@ RT.StarSpreads = {
       12: RT.StarSpreads.dodecagon,
     };
     return spreads[n] ? spreads[n]() : null;
-  }
+  },
 };
 ```
 
@@ -505,19 +548,20 @@ RT.PurePhi.pentagon = {
 
 The polygon generator now uses a **dual-engine approach**:
 
-| n | Engine | Method | Radicals |
-|---|--------|--------|----------|
-| 3 | RT-pure | `_polygonTriangle` | √3 |
-| 4 | RT-pure | `_polygonSquare` | integers |
-| 5 | RT-pure | `_polygonPentagon` | φ, √5 |
-| 6 | RT-pure | `_polygonHexagon` | √3 |
-| 8 | RT-pure | `_polygonOctagon` | √2 |
-| 9 | RT-pure | `_polygonNonagon` | √3 (triangle subdivision) |
-| 10 | RT-pure | `_polygonDecagon` | φ, √5 |
-| 12 | RT-pure | `_polygonDodecagon` | √3 |
-| 7, 11, 13+ | Classical | `_polygonClassical` | Math.sin/cos |
+| n          | Engine    | Method              | Radicals                  |
+| ---------- | --------- | ------------------- | ------------------------- |
+| 3          | RT-pure   | `_polygonTriangle`  | √3                        |
+| 4          | RT-pure   | `_polygonSquare`    | integers                  |
+| 5          | RT-pure   | `_polygonPentagon`  | φ, √5                     |
+| 6          | RT-pure   | `_polygonHexagon`   | √3                        |
+| 8          | RT-pure   | `_polygonOctagon`   | √2                        |
+| 9          | RT-pure   | `_polygonNonagon`   | √3 (triangle subdivision) |
+| 10         | RT-pure   | `_polygonDecagon`   | φ, √5                     |
+| 12         | RT-pure   | `_polygonDodecagon` | √3                        |
+| 7, 11, 13+ | Classical | `_polygonClassical` | Math.sin/cos              |
 
 **Key Design Decisions**:
+
 1. No errors for non-constructible n — seamless fallback to classical trig
 2. `metadata.rtPure: true/false` flag indicates which path was taken
 3. Console logs distinguish: `[RT] Triangle: ...` vs `[RT] 7-gon using classical trig...`
@@ -529,25 +573,25 @@ The polygon generator now uses a **dual-engine approach**:
 
 ### What Makes This "RT-Pure"?
 
-| Criterion | Implementation |
-|-----------|----------------|
-| Parameterization by quadrance | `quadrance` parameter (not radius) |
-| Star spread defines geometry | `RT.StarSpreads.forN(n)` |
-| Exact algebraic coordinates | Uses `RT.PurePhi`, `RT.PureRadicals` |
-| Deferred √ expansion | Radicals cached, single computation |
-| Spread polynomials | `RT.SpreadPolynomials.Sn(k, s)` for diagonals |
+| Criterion                     | Implementation                                |
+| ----------------------------- | --------------------------------------------- |
+| Parameterization by quadrance | `quadrance` parameter (not radius)            |
+| Star spread defines geometry  | `RT.StarSpreads.forN(n)`                      |
+| Exact algebraic coordinates   | Uses `RT.PurePhi`, `RT.PureRadicals`          |
+| Deferred √ expansion          | Radicals cached, single computation           |
+| Spread polynomials            | `RT.SpreadPolynomials.Sn(k, s)` for diagonals |
 
 ### Radical Usage Summary
 
-| n | Primary Radical | Source |
-|---|-----------------|--------|
-| 3 | √3 | `RT.PureRadicals.sqrt3()` |
-| 4 | √2 | `RT.PureRadicals.sqrt2()` |
-| 5 | √5 | `RT.PurePhi.sqrt5()` |
-| 6 | √3 | `RT.PureRadicals.sqrt3()` |
-| 8 | √2 | `RT.PureRadicals.sqrt2()` |
-| 10 | √5 | `RT.PurePhi.sqrt5()` |
-| 12 | √3 | `RT.PureRadicals.sqrt3()` |
+| n   | Primary Radical | Source                    |
+| --- | --------------- | ------------------------- |
+| 3   | √3              | `RT.PureRadicals.sqrt3()` |
+| 4   | √2              | `RT.PureRadicals.sqrt2()` |
+| 5   | √5              | `RT.PurePhi.sqrt5()`      |
+| 6   | √3              | `RT.PureRadicals.sqrt3()` |
+| 8   | √2              | `RT.PureRadicals.sqrt2()` |
+| 10  | √5              | `RT.PurePhi.sqrt5()`      |
+| 12  | √3              | `RT.PureRadicals.sqrt3()` |
 
 ### Where Classical Trig Remains Necessary
 
@@ -563,6 +607,7 @@ For **arbitrary n** not in {3, 4, 5, 6, 8, 10, 12, ...}, classical sin/cos are m
 ## References
 
 ### Wildberger Sources
+
 - "Divine Proportions: Rational Trigonometry to Universal Geometry"
   - **Chapter 14**: Regular Stars and Polygons (pp. 159-166)
   - **Theorem 95**: Order three star — s = 3/4 (p. 160)
@@ -573,12 +618,13 @@ For **arbitrary n** not in {3, 4, 5, 6, 8, 10, 12, ...}, classical sin/cos are m
   - **Exercise 14.3**: Pentagon α = (5-√5)/8, β = (5+√5)/8 (p. 166)
 
 ### ARTExplorer Codebase
+
 - [rt-math.js](../modules/rt-math.js) — RT library with PurePhi, PureRadicals
 - [rt-polyhedra.js](../modules/rt-polyhedra.js) — Current polygon implementation
 
 ---
 
-*Created: 2026-01-25*
-*Revised: 2026-01-25 — Integrated with existing RT.PurePhi and RT.PureRadicals*
-*Completed: 2026-01-25 — Full implementation with dual-engine approach*
-*Status: ✅ IMPLEMENTED*
+_Created: 2026-01-25_
+_Revised: 2026-01-25 — Integrated with existing RT.PurePhi and RT.PureRadicals_
+_Completed: 2026-01-25 — Full implementation with dual-engine approach_
+_Status: ✅ IMPLEMENTED_

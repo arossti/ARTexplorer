@@ -3,6 +3,7 @@
 ## Overview
 
 A new **View Management System** for ARTexplorer that enables:
+
 1. **SVG Export** - Vector graphics export of the current canvas view (geometry, cutplanes, section lines)
 2. **View Persistence** - Save/restore named views with full recreation capability
 3. **Parametric Recreation** - Views store parameters, not geometry clones (like instancing pattern)
@@ -12,6 +13,7 @@ A new **View Management System** for ARTexplorer that enables:
 ### New Module: `rt-viewmanager.js`
 
 Central coordinator that integrates with:
+
 - **RTPapercut** - Section rendering, cutplane state, intersection lines
 - **RTFileHandler** - Import/export (`.artview` files)
 - **RTStateManager** - View registry, environment state persistence
@@ -41,17 +43,17 @@ Central coordinator that integrates with:
 
 Views are named by **camera axis** (viewing direction) and sequential **drawing number**.
 
-| Camera View | Basis | Axis Code | Example Names |
-|-------------|-------|-----------|---------------|
-| X (Right) | Cartesian | X | X1, X2, X3... |
-| Y (Front) | Cartesian | Y | Y1, Y2, Y3... |
-| Z (Top) | Cartesian | Z | Z1, Z2, Z3... |
-| W (Quadray) | Tetrahedral | QW | QW1, QW2, QW3... |
-| X (Quadray) | Tetrahedral | QX | QX1, QX2, QX3... |
-| Y (Quadray) | Tetrahedral | QY | QY1, QY2, QY3... |
-| Z (Quadray) | Tetrahedral | QZ | QZ1, QZ2, QZ3... |
-| Axonometric | Combined | AXO | AXO1, AXO2... |
-| Perspective | Free | P | P1, P2, P3... |
+| Camera View | Basis       | Axis Code | Example Names    |
+| ----------- | ----------- | --------- | ---------------- |
+| X (Right)   | Cartesian   | X         | X1, X2, X3...    |
+| Y (Front)   | Cartesian   | Y         | Y1, Y2, Y3...    |
+| Z (Top)     | Cartesian   | Z         | Z1, Z2, Z3...    |
+| W (Quadray) | Tetrahedral | QW        | QW1, QW2, QW3... |
+| X (Quadray) | Tetrahedral | QX        | QX1, QX2, QX3... |
+| Y (Quadray) | Tetrahedral | QY        | QY1, QY2, QY3... |
+| Z (Quadray) | Tetrahedral | QZ        | QZ1, QZ2, QZ3... |
+| Axonometric | Combined    | AXO       | AXO1, AXO2...    |
+| Perspective | Free        | P         | P1, P2, P3...    |
 
 **Auto-increment**: Each new view of the same axis type increments the drawing number.
 
@@ -126,14 +128,21 @@ Views are named by **camera axis** (viewing direction) and sequential **drawing 
 
 ```javascript
 RTStateManager.state.views = {
-  registry: [],                        // Array of View objects
-  counters: {                          // Drawing number counters per axis
-    X: 0, Y: 0, Z: 0,
-    QW: 0, QX: 0, QY: 0, QZ: 0,
-    AXO: 0, P: 0
+  registry: [], // Array of View objects
+  counters: {
+    // Drawing number counters per axis
+    X: 0,
+    Y: 0,
+    Z: 0,
+    QW: 0,
+    QX: 0,
+    QY: 0,
+    QZ: 0,
+    AXO: 0,
+    P: 0,
   },
-  activeView: null                     // Currently displayed view ID
-}
+  activeView: null, // Currently displayed view ID
+};
 ```
 
 ---
@@ -141,12 +150,14 @@ RTStateManager.state.views = {
 ## SVG Generation Strategy
 
 ### Phase 1: Canvas Raster Capture (Quick Win)
+
 - Use `renderer.domElement.toDataURL('image/png')`
 - Embed in SVG as `<image>` element
 - Preserves exact visual output
 - Limitation: Not true vector
 
 ### Phase 2: Vector Path Generation (Full Implementation)
+
 Extract vector data from RTPapercut's intersection lines:
 
 ```javascript
@@ -159,11 +170,11 @@ function generateSVGPaths() {
   RTPapercut._intersectionLines.traverse(child => {
     if (child.isLine2) {
       const positions = child.geometry.attributes.position.array;
-      const projected = projectToScreen(positions);  // 3D → 2D
+      const projected = projectToScreen(positions); // 3D → 2D
       paths.push({
         d: positionsToSVGPath(projected),
         stroke: getMaterialColor(child.material),
-        strokeWidth: child.material.linewidth * 1000  // Scale to SVG units
+        strokeWidth: child.material.linewidth * 1000, // Scale to SVG units
       });
     }
   });
@@ -231,79 +242,79 @@ export const RTViewManager = {
   _renderer: null,
 
   // Initialize with dependencies
-  init(stateManager, fileHandler, papercut, scene, camera, renderer) { },
+  init(stateManager, fileHandler, papercut, scene, camera, renderer) {},
 
   // ==================== VIEW CREATION ====================
 
   // Capture current state as a new view
-  captureView(options = {}) { },          // Returns View object
+  captureView(options = {}) {}, // Returns View object
 
   // Generate view name based on current camera/cutplane
-  generateViewName() { },                  // Returns "Z1", "QW2", etc.
+  generateViewName() {}, // Returns "Z1", "QW2", etc.
 
   // ==================== SVG EXPORT ====================
 
   // Export current view to SVG file
-  exportSVG(options = {}) { },            // Triggers download
+  exportSVG(options = {}) {}, // Triggers download
 
   // Generate SVG string from current state
-  generateSVG(options = {}) { },          // Returns SVG string
+  generateSVG(options = {}) {}, // Returns SVG string
 
   // Generate vector paths from intersection lines
-  extractVectorPaths() { },               // Returns path data array
+  extractVectorPaths() {}, // Returns path data array
 
   // ==================== VIEW MANAGEMENT ====================
 
   // Save view to registry
-  saveView(view) { },
+  saveView(view) {},
 
   // Load view by ID or name
-  loadView(idOrName) { },                 // Restores camera, cutplane, etc.
+  loadView(idOrName) {}, // Restores camera, cutplane, etc.
 
   // Delete view by ID or name
-  deleteView(idOrName) { },
+  deleteView(idOrName) {},
 
   // Delete all views (with confirmation)
-  clearAllViews() { },
+  clearAllViews() {},
 
   // List all views
-  listViews() { },                        // Returns array of view summaries
+  listViews() {}, // Returns array of view summaries
 
   // ==================== TABLE UI ====================
 
   // Render views table to DOM
-  renderViewsTable() { },                 // Updates #viewsTableBody
+  renderViewsTable() {}, // Updates #viewsTableBody
 
   // Sort views by column
-  sortViews(column, direction) { },       // column: 'name'|'axis'|'date', direction: 'asc'|'desc'
+  sortViews(column, direction) {}, // column: 'name'|'axis'|'date', direction: 'asc'|'desc'
 
   // Get current sort state
-  getSortState() { },                     // Returns { column, direction }
+  getSortState() {}, // Returns { column, direction }
 
   // Highlight active view in table
-  setActiveViewRow(viewId) { },
+  setActiveViewRow(viewId) {},
 
   // ==================== VIEW RECREATION ====================
 
   // Recreate view from definition (parametric rebuild)
-  recreateView(viewDef) { },
+  recreateView(viewDef) {},
 
   // Apply camera state
-  applyCameraState(cameraState) { },
+  applyCameraState(cameraState) {},
 
   // Apply cutplane state
-  applyCutplaneState(cutplaneState) { },
+  applyCutplaneState(cutplaneState) {},
 
   // ==================== IMPORT/EXPORT ====================
 
   // Export views to .artview file
-  exportViewsFile(viewIds = null) { },    // null = all views
+  exportViewsFile(viewIds = null) {}, // null = all views
 
   // Import views from .artview file
-  importViewsFile(file) { },              // Returns imported view count
+  importViewsFile(file) {}, // Returns imported view count
 
   // Parse SVG metadata for view recreation
-  parseSVGMetadata(svgString) { },        // Returns View object or null
+  parseSVGMetadata(svgString) {}, // Returns View object or null
 };
 ```
 
@@ -316,20 +327,32 @@ export const RTViewManager = {
 ```html
 <!-- In index.html, within papercut-section -->
 
-<div class="control-item" style="margin-top: 12px; border-top: 1px solid #444; padding-top: 12px;">
+<div
+  class="control-item"
+  style="margin-top: 12px; border-top: 1px solid #444; padding-top: 12px;"
+>
   <label class="label-section">View Export</label>
 
   <!-- Save SVG Button -->
-  <button class="toggle-btn variant-tool" id="saveSVGView" style="width: 100%; margin-bottom: 8px;">
+  <button
+    class="toggle-btn variant-tool"
+    id="saveSVGView"
+    style="width: 100%; margin-bottom: 8px;"
+  >
     Save SVG View
   </button>
 
   <!-- View Name Display/Edit -->
-  <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+  <div
+    style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;"
+  >
     <label style="font-size: 11px; color: #888;">View:</label>
-    <input type="text" id="viewNameInput"
-           style="flex: 1; background: #333; border: 1px solid #555; color: #fff; padding: 4px 8px; font-size: 12px;"
-           placeholder="Auto: Z1" />
+    <input
+      type="text"
+      id="viewNameInput"
+      style="flex: 1; background: #333; border: 1px solid #555; color: #fff; padding: 4px 8px; font-size: 12px;"
+      placeholder="Auto: Z1"
+    />
   </div>
 </div>
 
@@ -338,17 +361,38 @@ export const RTViewManager = {
   <label class="label-section">Saved Views</label>
 
   <!-- Table Header with Sort Controls -->
-  <div class="views-table-header" style="display: flex; gap: 4px; margin-bottom: 4px; font-size: 10px; color: #888;">
-    <span style="flex: 0 0 50px; cursor: pointer;" id="sortByName" title="Sort by name">Name ▼</span>
-    <span style="flex: 0 0 50px; cursor: pointer;" id="sortByAxis" title="Sort by axis">Axis</span>
-    <span style="flex: 1; cursor: pointer;" id="sortByDate" title="Sort by date">Date</span>
+  <div
+    class="views-table-header"
+    style="display: flex; gap: 4px; margin-bottom: 4px; font-size: 10px; color: #888;"
+  >
+    <span
+      style="flex: 0 0 50px; cursor: pointer;"
+      id="sortByName"
+      title="Sort by name"
+      >Name ▼</span
+    >
+    <span
+      style="flex: 0 0 50px; cursor: pointer;"
+      id="sortByAxis"
+      title="Sort by axis"
+      >Axis</span
+    >
+    <span style="flex: 1; cursor: pointer;" id="sortByDate" title="Sort by date"
+      >Date</span
+    >
     <span style="flex: 0 0 60px;">Actions</span>
   </div>
 
   <!-- Views Table Body (scrollable) -->
-  <div id="viewsTableBody" style="max-height: 150px; overflow-y: auto; border: 1px solid #444; border-radius: 4px;">
+  <div
+    id="viewsTableBody"
+    style="max-height: 150px; overflow-y: auto; border: 1px solid #444; border-radius: 4px;"
+  >
     <!-- Empty state -->
-    <div class="views-empty-state" style="padding: 12px; text-align: center; color: #666; font-size: 11px;">
+    <div
+      class="views-empty-state"
+      style="padding: 12px; text-align: center; color: #666; font-size: 11px;"
+    >
       No saved views. Click "Save SVG View" to capture current view.
     </div>
     <!-- Populated rows (generated by JS) -->
@@ -368,13 +412,28 @@ export const RTViewManager = {
 
   <!-- Bulk Actions -->
   <div style="display: flex; gap: 4px; margin-top: 8px;">
-    <button class="toggle-btn variant-small" id="exportAllViewsBtn" title="Export all views to .artview file" style="flex: 1;">
+    <button
+      class="toggle-btn variant-small"
+      id="exportAllViewsBtn"
+      title="Export all views to .artview file"
+      style="flex: 1;"
+    >
       Export All
     </button>
-    <button class="toggle-btn variant-small" id="importViewsBtn" title="Import views from file" style="flex: 1;">
+    <button
+      class="toggle-btn variant-small"
+      id="importViewsBtn"
+      title="Import views from file"
+      style="flex: 1;"
+    >
       Import
     </button>
-    <button class="toggle-btn variant-small" id="clearAllViewsBtn" title="Delete all views" style="flex: 0 0 auto; color: #ff6b6b;">
+    <button
+      class="toggle-btn variant-small"
+      id="clearAllViewsBtn"
+      title="Delete all views"
+      style="flex: 0 0 auto; color: #ff6b6b;"
+    >
       Clear
     </button>
   </div>
@@ -383,13 +442,13 @@ export const RTViewManager = {
 
 ### Views Table Features
 
-| Feature | Description |
-|---------|-------------|
+| Feature              | Description                                                                    |
+| -------------------- | ------------------------------------------------------------------------------ |
 | **Sortable Columns** | Click column headers to sort by Name (A-Z), Axis type, or Date (newest/oldest) |
-| **Row Actions** | Each row has Load (▶), Export SVG (↓), and Delete (✕) buttons |
-| **Scrollable** | Table body scrolls when >5 views, keeps UI compact |
-| **Empty State** | Helpful message when no views saved |
-| **Bulk Actions** | Export All (`.artview`), Import, Clear All |
+| **Row Actions**      | Each row has Load (▶), Export SVG (↓), and Delete (✕) buttons                  |
+| **Scrollable**       | Table body scrolls when >5 views, keeps UI compact                             |
+| **Empty State**      | Helpful message when no views saved                                            |
+| **Bulk Actions**     | Export All (`.artview`), Import, Clear All                                     |
 
 ### CSS for Views Table
 
@@ -398,7 +457,7 @@ export const RTViewManager = {
 
 /* Views Table Styling */
 .views-table-header span:hover {
-  color: #00B4FF;
+  color: #00b4ff;
 }
 
 .view-row {
@@ -411,7 +470,7 @@ export const RTViewManager = {
 
 .view-row.active {
   background: rgba(0, 180, 255, 0.2);
-  border-left: 2px solid #00B4FF;
+  border-left: 2px solid #00b4ff;
 }
 
 .view-actions button {
@@ -427,7 +486,7 @@ export const RTViewManager = {
 .view-actions button:hover {
   background: #444;
   color: #fff;
-  border-color: #00B4FF;
+  border-color: #00b4ff;
 }
 
 .view-actions .view-delete-btn:hover {
@@ -437,8 +496,12 @@ export const RTViewManager = {
 }
 
 /* Sort indicator */
-.sort-asc::after { content: " ▲"; }
-.sort-desc::after { content: " ▼"; }
+.sort-asc::after {
+  content: " ▲";
+}
+.sort-desc::after {
+  content: " ▼";
+}
 ```
 
 ### Workflow
@@ -462,6 +525,7 @@ export const RTViewManager = {
 ### Status: Phase 3 Complete (2026-01-27)
 
 **What's Working:**
+
 - ✅ Full `rt-viewmanager.js` module with 1000+ lines of functionality
 - ✅ View capture with auto-naming (X1, Y2, QW1, AXO3, P1, etc.)
 - ✅ Sheet size presets (A4, Letter, A3, Custom)
@@ -488,6 +552,7 @@ export const RTViewManager = {
 **Remaining Work - SVG Export Refinement:**
 
 🟡 **SVG Content Missing:**
+
 1. **Geodesic Edge Vectors Not Exporting** - Geodesic wireframe edges missing from SVG
 2. **Polyhedral Edge Vectors Not Exporting** - Wireframe edges (likely hairlines) not captured
 3. **Grids Not Exporting** - Cartesian/Quadray grids not included even when visible
@@ -500,6 +565,7 @@ export const RTViewManager = {
 
 **Root Cause:**
 The Save button in index.html had `class="toggle-btn variant-tool"`. The `variant-tool` class is reserved for gumball tools (Move, Scale, Rotate). Code in rt-init.js attaches event listeners to all `.toggle-btn.variant-tool` buttons that:
+
 1. Add `.active` class (causing stuck down appearance)
 2. Set `controls.enabled = false` (disabling orbit controls)
 
@@ -507,6 +573,7 @@ The Save button in index.html had `class="toggle-btn variant-tool"`. The `varian
 Changed Save button class from `variant-tool` to `variant-standard` in index.html. The `variant-standard` class is for action buttons (file ops, print, etc.) that don't affect orbit controls.
 
 **Additional Improvements:**
+
 - Added event delegation in `renderViewsTable()` to prevent listener accumulation
 - Added `e.preventDefault()` and `btn.blur()` to table button handlers
 - Added focus release in `saveCurrentView()` as extra safeguard
@@ -519,6 +586,7 @@ Changed Save button class from `variant-tool` to `variant-standard` in index.htm
 Views were stored in `RTViewManager.state.views` but `RTFileHandler.exportState()` didn't include them, and `importState()` didn't restore them.
 
 **Fix Applied:**
+
 1. Added `views` array to `exportState()` return object in rt-filehandler.js
 2. Added views restoration logic to `importState()` including:
    - Restoring views array to RTViewManager.state
@@ -527,6 +595,7 @@ Views were stored in `RTViewManager.state.views` but `RTFileHandler.exportState(
 
 **SVG Output Quality:**
 The vector SVG output is clean and high quality. Exports include:
+
 - Translucent colored mesh faces with proper depth layering
 - Section cut lines (black in print mode, red otherwise)
 - Vertex nodes as filled circles with outlines
@@ -546,30 +615,30 @@ A detailed comparison was performed using annotated screenshots of the ARTexplor
 
 #### What's Visible On-Screen (Canvas)
 
-| # | Element | Description |
-|---|---------|-------------|
-| 1 | **Grid lines** | Gray hairline Cartesian grid visible in background |
-| 2 | **Geodesic edges** | Faint orange wireframe edges on geodesic sphere (below cutplane) |
-| 3 | **Cutplane effect** | Nothing visible above the cutplane (Papercut working) |
-| 4 | **Interior faces** | Cube interior faces visible (backface culling off) |
-| 5 | **Section at cutplane** | Tetrahedron cleanly cut at cutplane position |
-| 6 | **Nodes below cutplane** | All vertex nodes showing below cutplane, hidden above |
-| 7 | **Face fill with opacity** | Primary hexahedron face fill on, tetrahedron visible behind |
-| 8 | **Basis vector tetrahedra** | Colored basis tetrahedra visible (user option enabled) |
+| #   | Element                     | Description                                                      |
+| --- | --------------------------- | ---------------------------------------------------------------- |
+| 1   | **Grid lines**              | Gray hairline Cartesian grid visible in background               |
+| 2   | **Geodesic edges**          | Faint orange wireframe edges on geodesic sphere (below cutplane) |
+| 3   | **Cutplane effect**         | Nothing visible above the cutplane (Papercut working)            |
+| 4   | **Interior faces**          | Cube interior faces visible (backface culling off)               |
+| 5   | **Section at cutplane**     | Tetrahedron cleanly cut at cutplane position                     |
+| 6   | **Nodes below cutplane**    | All vertex nodes showing below cutplane, hidden above            |
+| 7   | **Face fill with opacity**  | Primary hexahedron face fill on, tetrahedron visible behind      |
+| 8   | **Basis vector tetrahedra** | Colored basis tetrahedra visible (user option enabled)           |
 
 #### What's in the Exported SVG (Inkscape)
 
-| # | Element | Status |
-|---|---------|--------|
-| 1 | **Everything above cutplane** | ❌ **SHOWS** - cutplane filtering not applied |
-| 2 | **Backface differentiation** | ❌ **MISSING** - no difference between front/back face colors |
-| 3 | **Geodesic edge lines** | ❌ **MISSING** - no wireframe edges exported |
-| 4 | **Grid lines** | ❌ **MISSING** - no grid exported |
-| 5 | **Section cut lines** | ✅ Working - heavy black outline at cutplane |
-| 6 | **Mesh faces** | ✅ Working - icosahedron and geodesic faces export |
-| 7 | **Vertex nodes** | ✅ Working - circles at vertices |
-| 8 | **Basis tetrahedra** | ✅ Working - colored triangles export |
-| 9 | **SVG layers** | ✅ Working - properly separated in Inkscape |
+| #   | Element                       | Status                                                        |
+| --- | ----------------------------- | ------------------------------------------------------------- |
+| 1   | **Everything above cutplane** | ❌ **SHOWS** - cutplane filtering not applied                 |
+| 2   | **Backface differentiation**  | ❌ **MISSING** - no difference between front/back face colors |
+| 3   | **Geodesic edge lines**       | ❌ **MISSING** - no wireframe edges exported                  |
+| 4   | **Grid lines**                | ❌ **MISSING** - no grid exported                             |
+| 5   | **Section cut lines**         | ✅ Working - heavy black outline at cutplane                  |
+| 6   | **Mesh faces**                | ✅ Working - icosahedron and geodesic faces export            |
+| 7   | **Vertex nodes**              | ✅ Working - circles at vertices                              |
+| 8   | **Basis tetrahedra**          | ✅ Working - colored triangles export                         |
+| 9   | **SVG layers**                | ✅ Working - properly separated in Inkscape                   |
 
 ### Root Cause Analysis
 
@@ -580,16 +649,18 @@ A detailed comparison was performed using annotated screenshots of the ARTexplor
 **Problem**: Function only traverses `RTPapercut._intersectionLines` looking for `Line2` objects. Polyhedron edges are stored as `LineSegments` objects inside each polyhedron's Group (at `renderOrder = 2`).
 
 **Object Types**:
+
 ```
 Section cut lines:  Line2 + LineGeometry + LineMaterial     → ✅ Exported
 Polyhedron edges:   LineSegments + BufferGeometry + LineBasicMaterial → ❌ Not found
 ```
 
 **Code Location** (rt-rendering.js, lines 609-634):
+
 ```javascript
 const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
 edgeLines.renderOrder = 2;
-group.add(edgeLines);  // Stored inside polyhedron Group
+group.add(edgeLines); // Stored inside polyhedron Group
 ```
 
 #### Issue 2: Grid Lines Not Exporting
@@ -597,10 +668,12 @@ group.add(edgeLines);  // Stored inside polyhedron Group
 **Location**: `rt-grids.js` creates grids, `rt-viewmanager.js` explicitly skips them
 
 **Grid Types**:
+
 - **Cartesian Grid**: `THREE.GridHelper` objects (gridXY, gridXZ, gridYZ) in "cartesianGrid" Group
 - **Quadray Grid**: `LineSegments` objects in "ivmPlanes" Group (6 planes: WX, WY, WZ, XY, XZ, YZ)
 
 **Why Skipped**: `extractMeshFaces()` has explicit skip list (line ~589):
+
 ```javascript
 const skipNames = ["Helper", "Handle", "Gumball", "Basis", "Arrow", "Cone",
                    "basis", "Grid", "grid", "Cartesian", "Quadray", ...];
@@ -609,6 +682,7 @@ const skipNames = ["Helper", "Handle", "Gumball", "Basis", "Arrow", "Cone",
 #### Issue 3: Cutplane Not Filtering SVG Output
 
 **3D Renderer**: Uses **shader-based clipping** via `material.clippingPlanes`:
+
 ```javascript
 // rt-papercut.js, lines 494-512
 const plane = new THREE.Plane(normal, adjustedValue);
@@ -621,6 +695,7 @@ renderer.localClippingEnabled = true;
 ```
 
 **SVG Export**: Only does partial vertex check (rt-viewmanager.js, line ~677):
+
 ```javascript
 // Skip if ALL vertices behind plane - but partial faces still included
 if (d0 < 0 && d1 < 0 && d2 < 0) continue;
@@ -630,14 +705,14 @@ if (d0 < 0 && d1 < 0 && d2 < 0) continue;
 
 ### Technical Summary: Object Types & Export Status
 
-| Content | THREE.js Type | Storage Location | Exported? |
-|---------|---------------|------------------|-----------|
-| Section cut lines | Line2 | `RTPapercut._intersectionLines` | ✅ Yes |
-| Mesh faces | Mesh | Scene graph | ✅ Yes |
-| Vertex nodes | Mesh (spheres) | Scene graph | ✅ Yes |
-| **Polyhedron edges** | **LineSegments** | Inside polyhedron Group | ❌ **No** |
-| **Cartesian grid** | GridHelper | "cartesianGrid" Group | ❌ **No** |
-| **Quadray grid** | LineSegments | "ivmPlanes" Group | ❌ **No** |
+| Content              | THREE.js Type    | Storage Location                | Exported? |
+| -------------------- | ---------------- | ------------------------------- | --------- |
+| Section cut lines    | Line2            | `RTPapercut._intersectionLines` | ✅ Yes    |
+| Mesh faces           | Mesh             | Scene graph                     | ✅ Yes    |
+| Vertex nodes         | Mesh (spheres)   | Scene graph                     | ✅ Yes    |
+| **Polyhedron edges** | **LineSegments** | Inside polyhedron Group         | ❌ **No** |
+| **Cartesian grid**   | GridHelper       | "cartesianGrid" Group           | ❌ **No** |
+| **Quadray grid**     | LineSegments     | "ivmPlanes" Group               | ❌ **No** |
 
 ### Proposed Solutions
 
@@ -678,6 +753,7 @@ if (d0 < 0 && d1 < 0 && d2 < 0) continue;
    - Export only the portion on the visible side
 
 **Implementation Priority**:
+
 1. ✅ **High**: Polyhedron edge export - **COMPLETE** (commit `fb3266b`)
 2. ✅ **Medium**: Grid line export - **COMPLETE** (commit `3c1e444`)
 3. ✅ **Complete**: Proper cutplane clipping - **COMPLETE** (2026-01-27)
@@ -685,6 +761,7 @@ if (d0 < 0 && d1 < 0 && d2 < 0) continue;
 ### Implementation Status (2026-01-27)
 
 **Commits on SVG-VIEWS2 branch:**
+
 - `1d651d4` - Docs: Add visual analysis and implementation plan
 - `fb3266b` - Feat: Add polyhedron edge line export to SVG
 - `3c1e444` - Feat: Add grid line export to SVG (Cartesian and Quadray)
@@ -718,10 +795,12 @@ if (d0 < 0 && d1 < 0 && d2 < 0) continue;
    - Handles non-triangular shapes from clipping
 
 **Updated `generateSVG()` options:**
+
 - `includeGrids` (default: true)
 - `includeEdges` (default: true)
 
 **SVG Layer Order:**
+
 1. Background rect
 2. Raster (optional)
 3. Grid lines
@@ -750,6 +829,7 @@ Attempted fix (reverted): Adding `if (dist < radius) return;` excluded crossing 
 **The real solution requires**: Either proper sphere-plane intersection clipping (drawing arcs instead of full circles) or a more nuanced approach that accounts for which side of the sphere is visible to the camera. This is a complex geometric problem that may not be worth solving for the current use case - the red section circles from RTPapercut already show the intersection correctly.
 
 **Code refactoring opportunities identified:**
+
 1. Extract shared `_shouldSkipObject(object)` helper for duplicated skip logic (the `skipNames` array and visibility checks are duplicated in `extractEdgeLines()`, `extractMeshFaces()`, and `extractGridLines()`)
 2. Extract `_isClippedByPlane(point, radius, plane)` returning `'hidden' | 'visible' | 'crossing'` to unify cutplane logic
 3. Consolidate projection/depth calculation patterns (the pattern of getting canvas dimensions, projecting vertices, and calculating depth is repeated across extraction functions)
@@ -762,6 +842,7 @@ The cutplane is stored in `RTPapercut.state.cutplaneNormal` (which is actually a
 ## Implementation Phases
 
 ### Phase 1: Foundation (MVP) ✅ COMPLETE
+
 **Goal**: Basic SVG export with raster fallback
 
 - [x] Create `rt-viewmanager.js` module skeleton
@@ -775,9 +856,10 @@ The cutplane is stored in `RTPapercut.state.cutplaneNormal` (which is actually a
 **Deliverable**: Click button → Downloads PNG-in-SVG with metadata ✅
 
 ### Phase 2: Vector Paths ✅ COMPLETE
+
 **Goal**: True vector SVG from intersection lines
 
-- [x] Implement `extractVectorPaths()` to read RTPapercut._intersectionLines
+- [x] Implement `extractVectorPaths()` to read RTPapercut.\_intersectionLines
 - [x] Implement 3D→2D projection using camera matrices
 - [x] Generate SVG `<path>` elements from projected coordinates
 - [x] Handle line colors from material/palette
@@ -789,6 +871,7 @@ The cutplane is stored in `RTPapercut.state.cutplaneNormal` (which is actually a
 **Deliverable**: Clean vector SVG output ✅
 
 ### Phase 3: View Registry & Table UI ✅ MOSTLY COMPLETE
+
 **Goal**: Save/load views within session with sortable table
 
 - [x] Add `views` structure to RTStateManager.state
@@ -809,6 +892,7 @@ The cutplane is stored in `RTPapercut.state.cutplaneNormal` (which is actually a
 **Deliverable**: Full views table with sort, load, delete, and bulk actions ✅
 
 ### Phase 4: File Persistence
+
 **Goal**: Import/export views as files
 
 - [ ] Define `.artview` JSON file format
@@ -821,6 +905,7 @@ The cutplane is stored in `RTPapercut.state.cutplaneNormal` (which is actually a
 **Deliverable**: Views survive page refresh via file import
 
 ### Phase 5: Integration & Polish
+
 **Goal**: Full integration with existing systems
 
 - [ ] Persist views in auto-save (localStorage)
@@ -846,14 +931,20 @@ The cutplane is stored in `RTPapercut.state.cutplaneNormal` (which is actually a
   "version": "1.0",
   "exported": "2024-01-27T12:00:00Z",
   "views": [
-    { /* View object */ },
-    { /* View object */ }
+    {
+      /* View object */
+    },
+    {
+      /* View object */
+    }
   ],
   "instanceDefinitions": {
     "instance_123": {
       "type": "geodesicIcosahedron",
       "parameters": { "frequency": 3, "projection": "out" },
-      "transform": { /* position, rotation, scale */ }
+      "transform": {
+        /* position, rotation, scale */
+      }
     }
   }
 }
@@ -877,7 +968,7 @@ function projectToScreen(point3D, camera, renderer) {
 
   return {
     x: (vector.x * 0.5 + 0.5) * width,
-    y: (-vector.y * 0.5 + 0.5) * height  // Flip Y for SVG coordinates
+    y: (-vector.y * 0.5 + 0.5) * height, // Flip Y for SVG coordinates
   };
 }
 ```
@@ -891,12 +982,12 @@ function detectCameraAxis(camera) {
 
   // Check alignment with cardinal axes
   const axes = [
-    { name: 'Z', vec: new THREE.Vector3(0, 0, 1), threshold: 0.9 },
-    { name: 'Z', vec: new THREE.Vector3(0, 0, -1), threshold: 0.9 },
-    { name: 'Y', vec: new THREE.Vector3(0, 1, 0), threshold: 0.9 },
-    { name: 'Y', vec: new THREE.Vector3(0, -1, 0), threshold: 0.9 },
-    { name: 'X', vec: new THREE.Vector3(1, 0, 0), threshold: 0.9 },
-    { name: 'X', vec: new THREE.Vector3(-1, 0, 0), threshold: 0.9 },
+    { name: "Z", vec: new THREE.Vector3(0, 0, 1), threshold: 0.9 },
+    { name: "Z", vec: new THREE.Vector3(0, 0, -1), threshold: 0.9 },
+    { name: "Y", vec: new THREE.Vector3(0, 1, 0), threshold: 0.9 },
+    { name: "Y", vec: new THREE.Vector3(0, -1, 0), threshold: 0.9 },
+    { name: "X", vec: new THREE.Vector3(1, 0, 0), threshold: 0.9 },
+    { name: "X", vec: new THREE.Vector3(-1, 0, 0), threshold: 0.9 },
   ];
 
   for (const axis of axes) {
@@ -906,11 +997,15 @@ function detectCameraAxis(camera) {
   }
 
   // Check for axonometric (equal components)
-  if (Math.abs(forward.x) > 0.4 && Math.abs(forward.y) > 0.4 && Math.abs(forward.z) > 0.4) {
-    return 'AXO';
+  if (
+    Math.abs(forward.x) > 0.4 &&
+    Math.abs(forward.y) > 0.4 &&
+    Math.abs(forward.z) > 0.4
+  ) {
+    return "AXO";
   }
 
-  return 'P';  // Perspective/free view
+  return "P"; // Perspective/free view
 }
 ```
 
@@ -920,9 +1015,9 @@ For tetrahedral cutplane basis, detect which quadray axis:
 
 ```javascript
 function detectQuadrayAxis(cutplaneState) {
-  if (cutplaneState.basis !== 'tetrahedral') return null;
+  if (cutplaneState.basis !== "tetrahedral") return null;
 
-  const axisMap = { w: 'QW', x: 'QX', y: 'QY', z: 'QZ' };
+  const axisMap = { w: "QW", x: "QX", y: "QY", z: "QZ" };
   return axisMap[cutplaneState.axis] || null;
 }
 ```
@@ -942,12 +1037,14 @@ function detectQuadrayAxis(cutplaneState) {
 ## Summary
 
 This system follows the existing architectural patterns:
+
 - **Parametric recreation** (like instancing) rather than geometry clones
 - **Module separation** with clear responsibilities
 - **State persistence** through RTStateManager
 - **File I/O** through RTFileHandler patterns
 
 The view naming convention (X1, QW2, etc.) provides clear identification of:
+
 - Camera orientation (which axis you're looking along)
 - Drawing sequence (for multiple views of same orientation)
 
