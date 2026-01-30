@@ -3395,6 +3395,12 @@ function startARTexplorer(
               .copy(currentSelection.position)
               .sub(dragStartPoint);
 
+            // Store initial positions for delta-based movement
+            freeMoveStartPoint.copy(dragStartPoint);
+            freeMoveInitialPositions = selectedPolyhedra.map(poly =>
+              poly.position.clone()
+            );
+
             console.log(
               "📋 ALT-CLICK AUTO-MOVE: Drag-copy started without tool activation"
             );
