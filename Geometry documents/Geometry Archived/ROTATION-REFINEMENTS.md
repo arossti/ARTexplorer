@@ -34,6 +34,7 @@ When using orthographic camera views (e.g., Y-axis view in Quadray mode), rotati
 ### Understanding the Geometry
 
 A rotation ring's **axis** is the vector perpendicular to the ring plane:
+
 - When axis is **parallel** to camera direction (dot ≈ 1.0) → ring appears as **full circle** (KEEP)
 - When axis is **perpendicular** to camera direction (dot ≈ 0.0) → ring appears **edge-on** (FILTER)
 
@@ -58,6 +59,7 @@ if (obj.userData.isRotationHandle && obj.userData.basisAxis) {
 ```
 
 **Why 0.15 threshold:**
+
 - `dot = 0.0` = perfectly edge-on (ring appears as a line) - FILTER
 - `dot = 1.0` = perfectly face-on (ring appears as a full circle) - KEEP
 - `0.15` corresponds to ~81° from face-on, filtering rings that are nearly invisible
@@ -66,21 +68,21 @@ if (obj.userData.isRotationHandle && obj.userData.basisAxis) {
 
 ### XYZ Cartesian Views (with XYZ coordinate system enabled)
 
-| View | Expected Selectable Axes | Edge-On (Filtered) | Status |
-|------|--------------------------|-------------------|--------|
-| X | Y, Z (green, blue) | X (red) | [✓] |
-| Y | X, Z (red, blue) | Y (green) | [✓] |
-| Z-Down | X, Y (red, green) | Z (blue) | [✓] |
-| Z-Up | X, Y (red, green) | Z (blue) | [✓] |
+| View   | Expected Selectable Axes | Edge-On (Filtered) | Status |
+| ------ | ------------------------ | ------------------ | ------ |
+| X      | Y, Z (green, blue)       | X (red)            | [✓]    |
+| Y      | X, Z (red, blue)         | Y (green)          | [✓]    |
+| Z-Down | X, Y (red, green)        | Z (blue)           | [✓]    |
+| Z-Up   | X, Y (red, green)        | Z (blue)           | [✓]    |
 
 ### WXYZ Tetrahedral Views (with WXYZ coordinate system enabled)
 
 | View | Expected Selectable Axes | Edge-On (Filtered) | Status |
-|------|--------------------------|-------------------|--------|
-| W | X, Y, Z (quadray) | W | [✓] |
-| X | W, Y, Z (quadray) | X | [✓] |
-| Y | W, X, Z (quadray) | Y | [✓] |
-| Z | W, X, Y (quadray) | Z | [✓] |
+| ---- | ------------------------ | ------------------ | ------ |
+| W    | X, Y, Z (quadray)        | W                  | [✓]    |
+| X    | W, Y, Z (quadray)        | X                  | [✓]    |
+| Y    | W, X, Z (quadray)        | Y                  | [✓]    |
+| Z    | W, X, Y (quadray)        | Z                  | [✓]    |
 
 ## Debug Logging
 
@@ -97,11 +99,13 @@ The implementation includes debug logging (can be removed for production):
 ## Potential Refinements
 
 ### If 0.15 threshold needs adjustment:
+
 - Increase to 0.2 for more aggressive filtering
 - Decrease to 0.1 for less aggressive filtering
 - Could make threshold camera-type dependent (stricter for orthographic only)
 
 ### Alternative approaches not implemented:
+
 - **Option A:** Increase hit zone thickness dynamically for orthographic
 - **Option B:** Use raycaster layers to test each axis separately
 - **Option D:** Offset tori slightly along their axes (may cause visual issues)

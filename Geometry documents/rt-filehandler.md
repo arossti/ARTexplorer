@@ -10,6 +10,7 @@
 ## Overview
 
 The File Handler system provides complete state persistence for ARTexplorer, enabling:
+
 - JSON export/import of scene state (environment + instances)
 - glTF/glB geometry export for external applications
 - CSV data export for analysis
@@ -25,11 +26,13 @@ The File Handler system provides complete state persistence for ARTexplorer, ena
 Primary file I/O module handling all export/import operations.
 
 **Initialization:**
+
 ```javascript
 RTFileHandler.init(stateManager, scene, camera);
 ```
 
 **Dependencies:**
+
 - `RTStateManager` - Instance management
 - `THREE.Scene` - Scene reference for geometry operations
 - `THREE.Camera` - Camera state persistence
@@ -42,10 +45,12 @@ RTFileHandler.init(stateManager, scene, camera);
 State management module following TEUI/OBJECTIVE pattern.
 
 **Key Concepts:**
+
 - **Forms** - Templates at origin (not persisted)
 - **Instances** - Deposited snapshots with transforms (persisted)
 
 **Instance Lifecycle:**
+
 1. User transforms a Form at origin
 2. "NOW" button creates Instance via `createInstance()`
 3. Instance stored in `state.instances[]` with full transform data
@@ -127,44 +132,47 @@ State management module following TEUI/OBJECTIVE pattern.
 
 ### Supported Instance Types
 
-| Type | Parameters | Notes |
-|------|------------|-------|
-| `cube` | — | Basic hexahedron |
-| `tetrahedron` | — | Basic tetrahedron |
-| `dualTetrahedron` | — | Inverted tetrahedron |
-| `octahedron` | — | Dual of cube |
-| `icosahedron` | — | 20 triangular faces |
-| `dodecahedron` | — | 12 pentagonal faces |
-| `dualIcosahedron` | — | Rotated icosahedron at φ scale |
-| `cuboctahedron` | — | Vector Equilibrium |
-| `rhombicDodecahedron` | — | Dual of cuboctahedron |
-| `geodesicIcosahedron` | `frequency`, `projection` | Geodesic sphere |
-| `geodesicTetrahedron` | `frequency`, `projection` | Geodesic tetrahedron |
-| `geodesicOctahedron` | `frequency`, `projection` | Geodesic octahedron |
-| `geodesicDualTetrahedron` | `frequency`, `projection` | Geodesic dual tetrahedron |
-| `geodesicDualIcosahedron` | `frequency`, `projection` | Geodesic dual icosahedron |
-| `quadrayTetrahedron` | `wxyz`, `normalize` | Native Quadray coords |
-| `quadrayTetraDeformed` | `wxyz`, `zStretch` | Deformed Quadray |
-| `cubeMatrix` | `matrixSize`, `rotate45` | Planar cube array |
-| `tetMatrix` | `matrixSize`, `rotate45` | Planar tetrahedron array |
-| `octaMatrix` | `matrixSize`, `rotate45` | Planar octahedron array |
-| `cuboctaMatrix` | `matrixSize`, `rotate45` | Planar VE array |
-| `rhombicDodecMatrix` | `matrixSize`, `rotate45` | Planar RD array |
-| `point` | — | 0D primitive |
-| `line` | `quadrance`, `length`, `weight` | 1D primitive |
-| `polygon` | `sides`, `quadrance`, `radius`, `edgeWeight`, `showFace` | 2D primitive |
+| Type                      | Parameters                                               | Notes                          |
+| ------------------------- | -------------------------------------------------------- | ------------------------------ |
+| `cube`                    | —                                                        | Basic hexahedron               |
+| `tetrahedron`             | —                                                        | Basic tetrahedron              |
+| `dualTetrahedron`         | —                                                        | Inverted tetrahedron           |
+| `octahedron`              | —                                                        | Dual of cube                   |
+| `icosahedron`             | —                                                        | 20 triangular faces            |
+| `dodecahedron`            | —                                                        | 12 pentagonal faces            |
+| `dualIcosahedron`         | —                                                        | Rotated icosahedron at φ scale |
+| `cuboctahedron`           | —                                                        | Vector Equilibrium             |
+| `rhombicDodecahedron`     | —                                                        | Dual of cuboctahedron          |
+| `geodesicIcosahedron`     | `frequency`, `projection`                                | Geodesic sphere                |
+| `geodesicTetrahedron`     | `frequency`, `projection`                                | Geodesic tetrahedron           |
+| `geodesicOctahedron`      | `frequency`, `projection`                                | Geodesic octahedron            |
+| `geodesicDualTetrahedron` | `frequency`, `projection`                                | Geodesic dual tetrahedron      |
+| `geodesicDualIcosahedron` | `frequency`, `projection`                                | Geodesic dual icosahedron      |
+| `quadrayTetrahedron`      | `wxyz`, `normalize`                                      | Native Quadray coords          |
+| `quadrayTetraDeformed`    | `wxyz`, `zStretch`                                       | Deformed Quadray               |
+| `cubeMatrix`              | `matrixSize`, `rotate45`                                 | Planar cube array              |
+| `tetMatrix`               | `matrixSize`, `rotate45`                                 | Planar tetrahedron array       |
+| `octaMatrix`              | `matrixSize`, `rotate45`                                 | Planar octahedron array        |
+| `cuboctaMatrix`           | `matrixSize`, `rotate45`                                 | Planar VE array                |
+| `rhombicDodecMatrix`      | `matrixSize`, `rotate45`                                 | Planar RD array                |
+| `point`                   | —                                                        | 0D primitive                   |
+| `line`                    | `quadrance`, `length`, `weight`                          | 1D primitive                   |
+| `polygon`                 | `sides`, `quadrance`, `radius`, `edgeWeight`, `showFace` | 2D primitive                   |
 
 ### Parameter Details
 
 **Geodesic Parameters:**
+
 - `frequency`: Integer 1-7 (Fuller notation)
 - `projection`: `"off"`, `"in"`, `"mid"`, `"out"`
 
 **Matrix Parameters:**
+
 - `matrixSize`: Integer (N×N grid)
 - `rotate45`: Boolean (45° rotation for IVM alignment)
 
 **Quadray Parameters:**
+
 - `wxyz`: Array `[w, x, y, z]` coordinates
 - `normalize`: Boolean (zero-sum normalization)
 - `zStretch`: Float (Z-axis deformation factor)
@@ -228,13 +236,13 @@ RTFileHandler.clearAutoSave();
 
 ```javascript
 // Save current state as preset
-RTFileHandler.savePreset('my-preset');
+RTFileHandler.savePreset("my-preset");
 
 // Load preset
-RTFileHandler.loadPreset('my-preset');
+RTFileHandler.loadPreset("my-preset");
 
 // Delete preset
-RTFileHandler.deletePreset('my-preset');
+RTFileHandler.deletePreset("my-preset");
 
 // List all presets
 const presets = RTFileHandler.listPresets();
@@ -346,10 +354,10 @@ When importing a JSON state file, instances are restored through this pipeline:
 ```javascript
 RTFileHandler.config = {
   autoSaveEnabled: true,
-  autoSaveThreshold: 10,  // Save every N modifications
-  autoSaveKey: 'art-explorer-autosave',
-  presetKeyPrefix: 'art-explorer-preset-',
-  maxAutoSaveHistory: 5
+  autoSaveThreshold: 10, // Save every N modifications
+  autoSaveKey: "art-explorer-autosave",
+  presetKeyPrefix: "art-explorer-preset-",
+  maxAutoSaveHistory: 5,
 };
 ```
 
@@ -364,12 +372,12 @@ RTFileHandler.config = {
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| `Ctrl+S` | Export state to JSON file |
-| `Ctrl+O` | Import state from JSON file |
-| `Ctrl+Z` | Undo |
-| `Ctrl+Shift+Z` | Redo |
+| Key            | Action                      |
+| -------------- | --------------------------- |
+| `Ctrl+S`       | Export state to JSON file   |
+| `Ctrl+O`       | Import state from JSON file |
+| `Ctrl+Z`       | Undo                        |
+| `Ctrl+Shift+Z` | Redo                        |
 
 ---
 
@@ -392,24 +400,28 @@ RTFileHandler.config = {
 ## File Formats
 
 ### JSON (.json)
+
 - Complete state persistence
 - Human-readable
 - Version-controlled
 - Recommended for project saves
 
 ### glTF (.gltf)
+
 - JSON-based 3D format
 - Geometry only (no state)
 - External texture references
 - Good for editing in other tools
 
 ### glB (.glb)
+
 - Binary glTF format
 - Single file with embedded data
 - Smaller file size
 - Good for sharing/archiving
 
 ### CSV (.csv)
+
 - Instance data table
 - Position/rotation/scale columns
 - Good for data analysis
@@ -420,6 +432,7 @@ RTFileHandler.config = {
 ## Testing Checklist
 
 ### Basic Operations
+
 - [ ] Export empty scene
 - [ ] Export scene with single instance
 - [ ] Export scene with multiple instances
@@ -429,6 +442,7 @@ RTFileHandler.config = {
 - [ ] Verify instances restored with correct transforms
 
 ### All Polyhedron Types
+
 - [ ] Basic polyhedra (cube, tetrahedron, octahedron, etc.)
 - [ ] Dual polyhedra
 - [ ] Archimedean solids
@@ -438,12 +452,14 @@ RTFileHandler.config = {
 - [ ] Primitives (point, line, polygon)
 
 ### Edge Cases
+
 - [ ] 50+ instances
 - [ ] Extreme transforms (large scale, rotation)
 - [ ] Mixed polyhedron types
 - [ ] Custom color palette
 
 ### Round-Trip Fidelity
+
 - [ ] Export → Import → Export produces identical JSON
 
 ---
@@ -457,5 +473,5 @@ RTFileHandler.config = {
 
 ---
 
-*Last Updated: 2026-01-26*
-*Status: COMPLETE - All functionality implemented and working*
+_Last Updated: 2026-01-26_
+_Status: COMPLETE - All functionality implemented and working_

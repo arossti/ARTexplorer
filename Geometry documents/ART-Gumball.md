@@ -1917,16 +1917,16 @@ uuid3,1234567892,cube,quadray,0,2,0,0,0,0,0,0,0,0,1.414,1.414,1.414,Cube_Center
 
 ### Status Summary (Updated 2025-01-26)
 
-| Phase | Status | Key Features |
-|-------|--------|--------------|
-| **Phase 1: Core Gumball** | ✅ COMPLETED | Move/Scale/Rotate modes, XYZ+WXYZ handles |
-| **Phase 1.5: StateManager** | ✅ COMPLETED | Forms/Instances, NOW button, reset workflow |
-| **Phase 1.6: Selection** | ✅ PARTIAL | Click-to-select, highlight glow (no multi-select) |
-| **Phase 1.7: Polish** | ✅ PARTIAL | Scale/Rotate handles (no keyboard shortcuts) |
-| **Phase 2: Spread Rotation** | ✅ PARTIAL | Rotation handles, Degrees↔Spread (no presets) |
-| **Phase 3: NOW System** | ✅ PARTIAL | Instance deposition (no full RT-pure schema) |
-| **Phase 4: Import/Export** | ❌ PENDING | JSON/CSV export |
-| **Phase 5: Advanced** | ❌ PENDING | Timeline, Undo/Redo, Trajectories |
+| Phase                        | Status       | Key Features                                      |
+| ---------------------------- | ------------ | ------------------------------------------------- |
+| **Phase 1: Core Gumball**    | ✅ COMPLETED | Move/Scale/Rotate modes, XYZ+WXYZ handles         |
+| **Phase 1.5: StateManager**  | ✅ COMPLETED | Forms/Instances, NOW button, reset workflow       |
+| **Phase 1.6: Selection**     | ✅ PARTIAL   | Click-to-select, highlight glow (no multi-select) |
+| **Phase 1.7: Polish**        | ✅ PARTIAL   | Scale/Rotate handles (no keyboard shortcuts)      |
+| **Phase 2: Spread Rotation** | ✅ PARTIAL   | Rotation handles, Degrees↔Spread (no presets)     |
+| **Phase 3: NOW System**      | ✅ PARTIAL   | Instance deposition (no full RT-pure schema)      |
+| **Phase 4: Import/Export**   | ❌ PENDING   | JSON/CSV export                                   |
+| **Phase 5: Advanced**        | ❌ PENDING   | Timeline, Undo/Redo, Trajectories                 |
 
 **Branch:** `GUMBALL-REFINE`
 **Primary Code Location:** `modules/rt-init.js`
@@ -3612,6 +3612,7 @@ When selecting polyhedra of varying sizes, the gumball edit handles (Move, Scale
 3. **Large objects (octahedral VM matrix, geodesic subdivisions):** Handles are completely invisible inside the object, though still functional via raycasting
 
 The screenshots demonstrate this progression:
+
 - Image 1: Icosahedron - handles visible, hit zones (debug spheres) accessible
 - Image 2: Planar cubic matrix - handles partially obscured by geometry
 - Image 3: Octahedral VM matrix - handles entirely buried within the structure
@@ -3670,14 +3671,23 @@ function calculateHandleLength(selectedObject) {
 #### Integration Points
 
 **Move Handles:**
+
 ```javascript
 const arrowLength = calculateHandleLength(selectedObject);
-const arrow = new THREE.ArrowHelper(vec, origin, arrowLength, color, headLength, 0.2);
+const arrow = new THREE.ArrowHelper(
+  vec,
+  origin,
+  arrowLength,
+  color,
+  headLength,
+  0.2
+);
 const tipPosition = vec.clone().multiplyScalar(arrowLength);
 // Sphere handle at tipPosition
 ```
 
 **Scale Handles:**
+
 ```javascript
 const arrowLength = calculateHandleLength(selectedObject);
 const tipPosition = vec.clone().multiplyScalar(arrowLength);
@@ -3686,6 +3696,7 @@ const tipPosition = vec.clone().multiplyScalar(arrowLength);
 ```
 
 **Rotate Handles:**
+
 ```javascript
 const arrowLength = calculateHandleLength(selectedObject);
 const circleRadius = arrowLength * 0.9; // Rotation ring slightly inside handle tips
@@ -3699,6 +3710,7 @@ const circleRadius = arrowLength * 0.9; // Rotation ring slightly inside handle 
 **Concern:** `Box3.setFromObject()` traverses all vertices - expensive for large geodesics.
 
 **Mitigations:**
+
 - Cache bounding box on object creation (`selectedObject.userData.boundingBox`)
 - Invalidate cache only when object transforms change
 - For multi-selection, compute union of cached boxes
@@ -3706,17 +3718,19 @@ const circleRadius = arrowLength * 0.9; // Rotation ring slightly inside handle 
 ```javascript
 // Cache on object creation
 polyhedron.userData.boundingBox = new THREE.Box3().setFromObject(polyhedron);
-polyhedron.userData.boundingSphereRadius = polyhedron.userData.boundingBox
-  .getBoundingSphere(new THREE.Sphere()).radius;
+polyhedron.userData.boundingSphereRadius =
+  polyhedron.userData.boundingBox.getBoundingSphere(new THREE.Sphere()).radius;
 
 // Use cached value in handle creation
-const radius = selectedObject.userData.boundingSphereRadius ||
-               computeBoundingSphereRadius(selectedObject);
+const radius =
+  selectedObject.userData.boundingSphereRadius ||
+  computeBoundingSphereRadius(selectedObject);
 ```
 
 #### 2. Multi-Selection Behavior
 
 When multiple polyhedra are selected:
+
 - Compute union bounding box of all selected objects
 - Handles sized to encompass entire selection
 - Center position already handled by `getSelectionCenter()`
@@ -3725,8 +3739,8 @@ When multiple polyhedra are selected:
 function getSelectionBounds(selectedPolyhedra) {
   const unionBox = new THREE.Box3();
   selectedPolyhedra.forEach(poly => {
-    const polyBox = poly.userData.boundingBox ||
-                    new THREE.Box3().setFromObject(poly);
+    const polyBox =
+      poly.userData.boundingBox || new THREE.Box3().setFromObject(poly);
     unionBox.union(polyBox);
   });
   return unionBox;
@@ -3755,7 +3769,7 @@ new THREE.SphereGeometry(hitZoneRadius, 16, 16);
 ```javascript
 const handleLength = Math.min(
   Math.max(circumRadius * paddingFactor, minHandleLength),
-  maxHandleLength  // e.g., 20 units
+  maxHandleLength // e.g., 20 units
 );
 ```
 
@@ -3779,10 +3793,12 @@ const handleLength = Math.min(
 ### Alternative Approaches Considered
 
 #### A. Slider-Based Scaling (Current Approach)
+
 - **Pros:** User control, simple implementation
 - **Cons:** Requires manual adjustment per object, breaks workflow
 
 #### B. Fixed Scale Categories
+
 - Small objects: arrowLength = 1.5
 - Medium objects: arrowLength = 3.0
 - Large objects: arrowLength = 6.0
@@ -3790,9 +3806,11 @@ const handleLength = Math.min(
 - **Cons:** Doesn't handle continuous size variation
 
 #### C. Logarithmic Scaling
+
 ```javascript
 const arrowLength = 1.5 + Math.log10(circumRadius + 1) * 2;
 ```
+
 - **Pros:** Handles extreme size ranges gracefully
 - **Cons:** Less intuitive relationship between object and handle size
 
@@ -3801,6 +3819,7 @@ const arrowLength = 1.5 + Math.log10(circumRadius + 1) * 2;
 ### RT Considerations
 
 This feature is primarily a UX improvement and does not affect RT principles:
+
 - Handle positions use the same basis vectors (WXYZ/XYZ)
 - Quadrance relationships preserved (handles at Q = arrowLength^2)
 - No transcendental functions required for size calculation

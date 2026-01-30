@@ -104,12 +104,12 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 
 ### 2.1 Classical Trigonometry Audit
 
-| Category | Count | Status |
-|----------|-------|--------|
-| Math.PI | 17 | All justified (THREE.js interface) |
-| Math.sin/cos | 10 | 6 justified, 4 conversion utilities |
-| Math.atan2 | 2 | Justified (mouse rotation UX) |
-| Math.asin/acos | 4 | Justified (spread↔degrees conversion) |
+| Category       | Count | Status                                |
+| -------------- | ----- | ------------------------------------- |
+| Math.PI        | 17    | All justified (THREE.js interface)    |
+| Math.sin/cos   | 10    | 6 justified, 4 conversion utilities   |
+| Math.atan2     | 2     | Justified (mouse rotation UX)         |
+| Math.asin/acos | 4     | Justified (spread↔degrees conversion) |
 
 **Classification by File:**
 
@@ -143,40 +143,42 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 
 ### 3.1 File Statistics
 
-| File | Lines | console.log | Status |
-|------|-------|-------------|--------|
-| rt-init.js | 4,147 | 65 | Large orchestration file |
-| rt-rendering.js | 3,456 | 26 | Factory pattern ✅ |
-| rt-polyhedra.js | 1,789 | 92 | Geometry generators |
-| rt-matrix-radial.js | 1,441 | 43 | Radial matrices |
-| rt-math.js | 1,100 | 2 | Pure math ✅ |
-| rt-papercut.js | 1,092 | 2 | Cutplane ✅ |
-| rt-controls.js | 1,065 | 17 | Gumball UI |
-| rt-filehandler.js | 1,045 | 21 | Import/export |
-| rt-matrix-planar.js | 840 | 6 | Planar matrices |
-| rt-state-manager.js | 740 | 16 | State persistence |
-| rt-context.js | 225 | 1 | Context menu ✅ |
-| **Total** | **16,940** | **291** | |
+| File                | Lines      | console.log | Status                   |
+| ------------------- | ---------- | ----------- | ------------------------ |
+| rt-init.js          | 4,147      | 65          | Large orchestration file |
+| rt-rendering.js     | 3,456      | 26          | Factory pattern ✅       |
+| rt-polyhedra.js     | 1,789      | 92          | Geometry generators      |
+| rt-matrix-radial.js | 1,441      | 43          | Radial matrices          |
+| rt-math.js          | 1,100      | 2           | Pure math ✅             |
+| rt-papercut.js      | 1,092      | 2           | Cutplane ✅              |
+| rt-controls.js      | 1,065      | 17          | Gumball UI               |
+| rt-filehandler.js   | 1,045      | 21          | Import/export            |
+| rt-matrix-planar.js | 840        | 6           | Planar matrices          |
+| rt-state-manager.js | 740        | 16          | State persistence        |
+| rt-context.js       | 225        | 1           | Context menu ✅          |
+| **Total**           | **16,940** | **291**     |                          |
 
 ### 3.2 Architecture Boundary Check
 
-| Module | Expected | Actual | Status |
-|--------|----------|--------|--------|
-| rt-math.js | No THREE.js | Uses THREE.Matrix4 for rotations | ⚠️ Minor (boundary fn) |
-| rt-polyhedra.js | No DOM refs | Clean | ✅ |
-| rt-state-manager.js | No direct DOM | Has DOM refs (lines 477-499) | ⚠️ Violation |
-| rt-rendering.js | Delegates to rt-math | Properly delegates | ✅ |
-| Circular deps | None | None found | ✅ |
+| Module              | Expected             | Actual                           | Status                 |
+| ------------------- | -------------------- | -------------------------------- | ---------------------- |
+| rt-math.js          | No THREE.js          | Uses THREE.Matrix4 for rotations | ⚠️ Minor (boundary fn) |
+| rt-polyhedra.js     | No DOM refs          | Clean                            | ✅                     |
+| rt-state-manager.js | No direct DOM        | Has DOM refs (lines 477-499)     | ⚠️ Violation           |
+| rt-rendering.js     | Delegates to rt-math | Properly delegates               | ✅                     |
+| Circular deps       | None                 | None found                       | ✅                     |
 
 ### 3.3 Code Quality Findings
 
 **✅ Positive:**
+
 - No duplicate functions - `subdivideTriangles()` properly shared
 - `updateGeometry` single definition in rt-rendering.js
 - Clean dependency graph, no circular imports
 - Golden ratio identities correct
 
 **⚠️ Issues Fixed:**
+
 1. ✅ **rt-state-manager.js** - DOM manipulation refactored (now uses lookup table)
 2. ✅ **rt-init.js** - Removed PHASE 6 EXTRACTION comments, kept TODOs
 3. ✅ **console.log reduced** - 291 → 257 (removed interaction debug logs, kept RT verification)
@@ -200,21 +202,23 @@ Complete the instance restoration feature so ESLint won't flag unused functions.
 
 **Progress:** 4,147 → 3,777 lines (-370 lines, -9%)
 
-| Status | Section | Target Module | Lines Extracted |
-|--------|---------|---------------|-----------------|
-| ✅ Done | Info Modal | `rt-info-modal.js` | ~50 lines |
-| ✅ Done | Janus System | `rt-janus.js` | ~240 lines |
-| ⏸️ Defer | Object Snapping | `rt-snapping.js` | ~390 lines (tightly coupled*) |
-| ⏸️ Defer | Coord Input Handlers | `rt-input-handlers.js` | Medium risk |
-| ⏸️ Defer | Gumball/Controls | `rt-controls.js` | High risk |
+| Status   | Section              | Target Module          | Lines Extracted                |
+| -------- | -------------------- | ---------------------- | ------------------------------ |
+| ✅ Done  | Info Modal           | `rt-info-modal.js`     | ~50 lines                      |
+| ✅ Done  | Janus System         | `rt-janus.js`          | ~240 lines                     |
+| ⏸️ Defer | Object Snapping      | `rt-snapping.js`       | ~390 lines (tightly coupled\*) |
+| ⏸️ Defer | Coord Input Handlers | `rt-input-handlers.js` | Medium risk                    |
+| ⏸️ Defer | Gumball/Controls     | `rt-controls.js`       | High risk                      |
 
-*Object Snapping has ~20 hardcoded form group references - requires refactoring before extraction
+\*Object Snapping has ~20 hardcoded form group references - requires refactoring before extraction
 
 **Completed extractions:**
+
 - [x] `rt-info-modal.js` - Info modal with sessionStorage, keyboard, click-outside
 - [x] `rt-janus.js` - Janus Point crossing detection, background animation, flash effect
 
 **Deferred (needs refactoring first):**
+
 - [ ] Object Snapping - needs form group references passed as dependency
 - [ ] rt-controls.js extraction - complex state interdependencies
 
@@ -317,15 +321,15 @@ grep -rn "console.log" modules/
 
 ## Progress Tracking
 
-| Phase   | Description              | Status         |
-| ------- | ------------------------ | -------------- |
-| Phase 0 | rt-filehandler.js        | ✅ Completed   |
-| Phase 1 | Automated Checks         | ✅ Completed   |
-| Phase 2 | RT-Purity Scan           | ✅ Completed   |
-| Phase 3 | Code Quality Review      | ✅ Completed   |
-| Phase 4 | Refactoring              | 🔧 In Progress |
-| Phase 5 | Documentation & Report   | ✅ Completed   |
-| Phase 6 | Commit & Close           | ✅ Completed   |
+| Phase   | Description            | Status         |
+| ------- | ---------------------- | -------------- |
+| Phase 0 | rt-filehandler.js      | ✅ Completed   |
+| Phase 1 | Automated Checks       | ✅ Completed   |
+| Phase 2 | RT-Purity Scan         | ✅ Completed   |
+| Phase 3 | Code Quality Review    | ✅ Completed   |
+| Phase 4 | Refactoring            | 🔧 In Progress |
+| Phase 5 | Documentation & Report | ✅ Completed   |
+| Phase 6 | Commit & Close         | ✅ Completed   |
 
 ---
 

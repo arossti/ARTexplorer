@@ -1190,6 +1190,7 @@ See [rt-polyhedra.js](../../../src/geometry/modules/rt-polyhedra.js) for complet
 
 **Note on RT-Pure vs THREE.js Quaternion Rotations:**
 ARTexplorer maintains a clear separation between rotation calculation methods:
+
 - **RT-Pure rotations** (`rt-math.js`): Used for predetermined, algebraically exact rotations
   - `RT.applyRotation45()`: Uses spread s=0.5, cross c=0.5 (exact rationals for 45°)
   - `RT.applyRotation180()`: Uses spread s=0, cross c=1 (trivial case, no sqrt needed)
@@ -1200,6 +1201,7 @@ ARTexplorer maintains a clear separation between rotation calculation methods:
   - Unavoidable for GPU interface and smooth interactive manipulation
 
 This hybrid approach is architecturally sound: RT-pure calculations preserve algebraic exactness for geometry generation and predetermined rotations, while THREE.js quaternions provide the necessary interface for real-time user interaction. The quaternions in gumball code are not a deviation from RT principles—they are the required bridge to THREE.js's rendering system.
+
 - ✅ **HTML refactoring** - Removed 71-line embedded `<style>` block
 - ✅ **UI compaction** - Inline axis prefixes, 4-column WXYZ layout, 330px panel width
 - ✅ **Password simplification** - Changed from URL to 'enzyme2026'
@@ -1852,7 +1854,7 @@ Continue development of deformation features (selecting and moving points/edges 
 **Priority:** Medium
 **Discussed With:** Mark Pavlidis
 
-Debug and resolve JSON export/import issues in Safari browser (noted during demo). Chrome export works fine. 
+Debug and resolve JSON export/import issues in Safari browser (noted during demo). Chrome export works fine.
 
 ---
 
@@ -1882,7 +1884,7 @@ Add slider control for node sphere size adjustment.
 **Priority:** Medium
 **Requested By:** Stroopi and Melodi
 
-Consider implementing dynamic/kinematic features including inverse kinematics and geometric constraints, noting current dev is to refine architecture before complicating StateManager with dynammics and complex solvers. Primary physics ideas are shapes focus, with dynamics as illusory/temporal basis per @.tex whitepaper. 
+Consider implementing dynamic/kinematic features including inverse kinematics and geometric constraints, noting current dev is to refine architecture before complicating StateManager with dynammics and complex solvers. Primary physics ideas are shapes focus, with dynamics as illusory/temporal basis per @.tex whitepaper.
 
 ---
 

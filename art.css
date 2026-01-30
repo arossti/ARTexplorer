@@ -51,12 +51,12 @@ body {
 
 /* Outline title styling */
 .title-outline {
-  font-family: 'Arial Black', Arial, sans-serif;
+  font-family: "Arial Black", Arial, sans-serif;
   font-weight: 900;
   font-size: 34px;
   letter-spacing: 2px;
   color: transparent;
-  -webkit-text-stroke: 1px #00B4FF;
+  -webkit-text-stroke: 1px #00b4ff;
   margin: 0;
 }
 
@@ -70,7 +70,7 @@ body {
 .info-icon-btn {
   background: transparent;
   border: none;
-  color: #00B4FF;
+  color: #00b4ff;
   cursor: pointer;
   padding: 0;
   width: 28px;
@@ -85,7 +85,7 @@ body {
 
 .info-icon-btn:hover {
   background: rgba(74, 158, 255, 0.1);
-  color: #00B4FF;
+  color: #00b4ff;
   transform: scale(1.1);
 }
 
@@ -100,7 +100,7 @@ body {
 h1 {
   font-size: 18px;
   margin-bottom: 10px;
-  color: #00B4FF;
+  color: #00b4ff;
   text-align: center;
 }
 
@@ -117,7 +117,7 @@ h1 {
 .control-group h3 {
   font-size: 14px;
   margin-bottom: 8px;
-  color: #00B4FF;
+  color: #00b4ff;
   font-weight: 600;
 }
 
@@ -150,7 +150,7 @@ h1 {
 
 .control-item select:focus {
   outline: none;
-  border-color: #00B4FF;
+  border-color: #00b4ff;
 }
 
 /* --------------------------------------------------------------------------
@@ -184,7 +184,7 @@ h1 {
   height: 16px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 3px, transparent 3px),
     linear-gradient(145deg, #383838, #2a2a2a);
   box-shadow:
     2px 2px 5px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
@@ -207,7 +207,7 @@ h1 {
 
 .slider-container input[type="range"]::-webkit-slider-thumb:active {
   background:
-    radial-gradient(circle at center, #7DF9FF 0%, #7DF9FF 3px, transparent 3px),
+    radial-gradient(circle at center, #7df9ff 0%, #7df9ff 3px, transparent 3px),
     #1a1a1a;
   box-shadow:
     inset 1px 1px 3px rgba(0, 0, 0, 0.5),
@@ -220,7 +220,7 @@ h1 {
   height: 16px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 3px, transparent 3px),
     linear-gradient(145deg, #383838, #2a2a2a);
   box-shadow:
     2px 2px 5px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
@@ -234,7 +234,7 @@ h1 {
   min-width: 40px;
   text-align: right;
   font-size: 11px;
-  color: #00B4FF;
+  color: #00b4ff;
 }
 
 .info-text {
@@ -247,7 +247,7 @@ h1 {
 button {
   width: 100%;
   padding: 10px;
-  background: #00B4FF;
+  background: #00b4ff;
   border: none;
   color: white;
   border-radius: 4px;
@@ -298,7 +298,7 @@ button:active {
 
 /* Toggle thumb (using ::before pseudo-element) */
 .checkbox-label input[type="checkbox"]::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 2px;
   left: 2px;
@@ -323,7 +323,7 @@ button:active {
 .checkbox-label input[type="checkbox"]:checked::before {
   left: 18px;
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
     linear-gradient(145deg, #555555, #454545);
   box-shadow:
     2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
@@ -339,7 +339,7 @@ button:active {
 /* Hover state when checked - keep the LED dot */
 .checkbox-label:hover input[type="checkbox"]:checked::before {
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
     linear-gradient(145deg, #585858, #484848);
 }
 
@@ -366,14 +366,19 @@ button:active {
 
 /* Thumb using ::before */
 .geodesic-toggle::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 14px;
   left: 2px;
   width: 8px;
   height: 8px;
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    radial-gradient(
+      circle at center,
+      #00b4ff 0%,
+      #00b4ff 1.5px,
+      transparent 1.5px
+    ),
     linear-gradient(145deg, #555555, #454545);
   border-radius: 50%;
   transition: all 0.2s ease-out;
@@ -400,7 +405,12 @@ button:active {
 
 .geodesic-toggle:hover::before {
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    radial-gradient(
+      circle at center,
+      #00b4ff 0%,
+      #00b4ff 1.5px,
+      transparent 1.5px
+    ),
     linear-gradient(145deg, #585858, #484848);
 }
 
@@ -451,7 +461,7 @@ button:active {
 }
 
 .node-size-btn.active {
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
   background: var(--hifi-bg-dark, #1a1a1a);
   box-shadow:
     inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
@@ -491,7 +501,7 @@ button:active {
 }
 
 .plane-toggle-switch.active {
-  background-color: #00B4FF;
+  background-color: #00b4ff;
 }
 
 .plane-toggle-slider {
@@ -517,7 +527,7 @@ button:active {
 }
 
 .coord-label {
-  color: #00B4FF;
+  color: #00b4ff;
   font-weight: 600;
 }
 
@@ -543,14 +553,14 @@ button:active {
 
 /* Thumb using ::before */
 .section-toggle::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 18px;
   left: 2px;
   width: 12px;
   height: 12px;
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
     linear-gradient(145deg, #555555, #454545);
   border-radius: 50%;
   transition: all 0.2s ease-out;
@@ -577,7 +587,7 @@ button:active {
 
 .section-toggle:hover::before {
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
     linear-gradient(145deg, #585858, #484848);
 }
 
@@ -639,9 +649,9 @@ button:disabled {
 }
 
 .gumball-tool-btn.active {
-  background: #00B4FF;
+  background: #00b4ff;
   color: white;
-  border-color: #00B4FF;
+  border-color: #00b4ff;
 }
 
 /* Coordinate Input Fields */
@@ -672,7 +682,7 @@ button:disabled {
 
 .coord-input:focus {
   outline: none;
-  border-color: #00B4FF;
+  border-color: #00b4ff;
   background: #353535;
 }
 
@@ -734,7 +744,7 @@ button:disabled {
   box-shadow:
     inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
     inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
 }
 
 /* Variant: Standard (node-size, camera, file ops, print) */
@@ -749,7 +759,7 @@ button:disabled {
 }
 
 .toggle-btn.variant-standard.active {
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
 }
 
 /* Variant: Tool mode (move/scale/rotate) */
@@ -762,7 +772,7 @@ button:disabled {
 }
 
 .toggle-btn.variant-tool.active {
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
 }
 
 /* Variant: Snap mode (free/xyz/wxyz) - green accent */
@@ -820,7 +830,7 @@ button:disabled {
 }
 
 .selection-status #selectionCount {
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
   font-weight: 500;
 }
 
@@ -836,7 +846,7 @@ button:disabled {
 }
 
 .toggle-btn.variant-toggle.active {
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
 }
 
 /* Variant: Small (compact cutplane axis selectors) */
@@ -851,7 +861,7 @@ button:disabled {
 }
 
 .toggle-btn.variant-small.active {
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
 }
 
 /* Geodesic dropdown styling */
@@ -1026,7 +1036,7 @@ button:disabled {
   border-radius: var(--hifi-radius-md, 4px);
   cursor: pointer;
   transition: all 0.15s ease-out;
-  color: #00B4FF;
+  color: #00b4ff;
   background: linear-gradient(145deg, #2f2f2f, #262626);
   box-shadow:
     3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
@@ -1039,7 +1049,7 @@ button:disabled {
 }
 
 .gumball-action-btn:active {
-  color: #7DF9FF;
+  color: #7df9ff;
   text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
   background: var(--hifi-bg-dark, #1a1a1a);
   box-shadow:
@@ -1274,12 +1284,12 @@ button:disabled {
 }
 
 #info-modal h2 {
-  font-family: 'Arial Black', Arial, sans-serif;
+  font-family: "Arial Black", Arial, sans-serif;
   font-weight: 900;
   font-size: 36px;
   letter-spacing: 3px;
   color: transparent;
-  -webkit-text-stroke: 1px #00B4FF;
+  -webkit-text-stroke: 1px #00b4ff;
   margin-bottom: 10px;
   text-align: center;
 }
@@ -1338,7 +1348,7 @@ button:disabled {
 }
 
 .shortcut-key {
-  color: #00B4FF; /* Match app blue accent */
+  color: #00b4ff; /* Match app blue accent */
   font-family: "Courier New", monospace;
   font-size: 11px;
   font-weight: bold;
@@ -1381,7 +1391,7 @@ button:disabled {
   content: "▸";
   position: absolute;
   left: 0;
-  color: #00B4FF; /* App blue accent */
+  color: #00b4ff; /* App blue accent */
   font-weight: bold;
 }
 
@@ -1412,7 +1422,7 @@ button:disabled {
   content: "•";
   position: absolute;
   left: 0;
-  color: #00B4FF;
+  color: #00b4ff;
   font-weight: bold;
 }
 
@@ -1422,7 +1432,7 @@ button:disabled {
   padding: 12px;
   font-size: 16px;
   font-weight: bold;
-  background: linear-gradient(135deg, #00B4FF 0%, #357abd 100%);
+  background: linear-gradient(135deg, #00b4ff 0%, #357abd 100%);
   color: white;
   border: none;
   border-radius: 5px;
@@ -1572,7 +1582,7 @@ button:disabled {
 }
 
 .cross-color-cross {
-  color: #00B4FF;
+  color: #00b4ff;
   font-weight: bold;
 }
 
@@ -1718,7 +1728,7 @@ button:disabled {
 }
 
 .color-theory-modal-header h2 {
-  color: #00B4FF;
+  color: #00b4ff;
   font-size: 20px;
   margin: 0;
 }
@@ -1747,7 +1757,7 @@ button:disabled {
 }
 
 .color-info-box strong {
-  color: #00B4FF;
+  color: #00b4ff;
 }
 
 /* Global controls section */
@@ -1760,7 +1770,7 @@ button:disabled {
 }
 
 .color-global-controls h3 {
-  color: #00B4FF;
+  color: #00b4ff;
   font-size: 16px;
   margin-bottom: 15px;
 }
@@ -1775,7 +1785,7 @@ button:disabled {
 }
 
 .color-section h3 {
-  color: #00B4FF;
+  color: #00b4ff;
   font-size: 16px;
   margin-bottom: 12px;
   border-bottom: 1px solid #444;
@@ -1848,7 +1858,7 @@ button:disabled {
 }
 
 .color-picker-btn:hover {
-  border-color: #00B4FF;
+  border-color: #00b4ff;
   transform: scale(1.05);
 }
 
@@ -1885,7 +1895,7 @@ button:disabled {
   width: 100%;
   background: #1a1a1a;
   border: 1px solid #444;
-  color: #00B4FF;
+  color: #00b4ff;
   padding: 4px 6px;
   font-size: 11px;
   font-family: "Monaco", "Courier New", monospace;
@@ -1894,7 +1904,7 @@ button:disabled {
 
 .color-hex-input:focus {
   outline: none;
-  border-color: #00B4FF;
+  border-color: #00b4ff;
 }
 
 /* LEGACY STYLES (kept for backward compatibility if needed) */
@@ -1929,7 +1939,7 @@ button:disabled {
 }
 
 .color-swatch:hover {
-  border-color: #00B4FF;
+  border-color: #00b4ff;
   transform: scale(1.02);
 }
 
@@ -1944,7 +1954,7 @@ button:disabled {
 
 .color-label .type {
   font-weight: 600;
-  color: #00B4FF;
+  color: #00b4ff;
 }
 
 .color-label .value {
@@ -1973,7 +1983,7 @@ button:disabled {
 
 .color-input:focus {
   outline: none;
-  border-color: #00B4FF;
+  border-color: #00b4ff;
 }
 
 /* Color picker button (macOS native picker) */
@@ -1991,7 +2001,7 @@ button:disabled {
 }
 
 .color-picker-btn:hover {
-  border-color: #00B4FF;
+  border-color: #00b4ff;
 }
 
 .color-picker-btn input[type="color"] {
@@ -2040,7 +2050,7 @@ button:disabled {
 }
 
 .color-export-section h3 {
-  color: #00B4FF;
+  color: #00b4ff;
   margin-bottom: 15px;
   font-size: 16px;
 }
@@ -2089,7 +2099,7 @@ button:disabled {
 #context-menu-title {
   font-size: 12px;
   font-weight: 600;
-  color: #00B4FF;
+  color: #00b4ff;
 }
 
 .context-menu-section {
@@ -2138,7 +2148,7 @@ button:disabled {
   box-shadow:
     inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
     inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
 }
 
 /* Object snap toggles: orange accent when active */
@@ -2155,7 +2165,7 @@ button:disabled {
 .context-btn.action-btn {
   width: 100%;
   font-weight: 600;
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
   background: linear-gradient(145deg, #2f2f2f, #262626);
   box-shadow:
     3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
@@ -2168,7 +2178,7 @@ button:disabled {
 }
 
 .context-btn.action-btn:active {
-  color: #7DF9FF;
+  color: #7df9ff;
   text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
   background: var(--hifi-bg-dark, #1a1a1a);
   box-shadow:
@@ -2180,7 +2190,7 @@ button:disabled {
 .context-btn.danger-btn {
   width: 100%;
   font-weight: 500;
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
   background: linear-gradient(145deg, #2f2f2f, #262626);
   box-shadow:
     3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
@@ -2193,7 +2203,7 @@ button:disabled {
 }
 
 .context-btn.danger-btn:active {
-  color: #7DF9FF;
+  color: #7df9ff;
   text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
   background: var(--hifi-bg-dark, #1a1a1a);
   box-shadow:
@@ -2294,7 +2304,7 @@ button:disabled {
 /* Coordinate panel icons */
 .coords-icon {
   font-size: 16px;
-  color: var(--hifi-accent, #00B4FF);
+  color: var(--hifi-accent, #00b4ff);
   min-width: 20px;
   text-align: center;
 }
@@ -2311,7 +2321,7 @@ button:disabled {
 
 :root {
   /* Base colors */
-  --hifi-bg: #2A2A2A;
+  --hifi-bg: #2a2a2a;
   --hifi-bg-dark: #1a1a1a;
   --hifi-bg-light: #353535;
 
@@ -2320,8 +2330,8 @@ button:disabled {
   --hifi-shadow-light: rgba(255, 255, 255, 0.07);
 
   /* Accent colors */
-  --hifi-accent: #00B4FF;
-  --hifi-accent-glow: #7DF9FF;
+  --hifi-accent: #00b4ff;
+  --hifi-accent-glow: #7df9ff;
 
   /* Text colors */
   --hifi-text: #e0e0e0;
@@ -2406,7 +2416,7 @@ button:disabled {
   min-width: 40px;
   text-align: right;
   font-size: 11px;
-  color: #00B4FF;
+  color: #00b4ff;
 }
 
 /* --------------------------------------------------------------------------
@@ -2424,7 +2434,7 @@ button:disabled {
   height: 16px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 3px, transparent 3px),
     linear-gradient(145deg, #383838, #2a2a2a);
   box-shadow:
     2px 2px 5px var(--hifi-shadow-dark),
@@ -2447,7 +2457,7 @@ button:disabled {
 
 .hifi-slider--led::-webkit-slider-thumb:active {
   background:
-    radial-gradient(circle at center, #7DF9FF 0%, #7DF9FF 3px, transparent 3px),
+    radial-gradient(circle at center, #7df9ff 0%, #7df9ff 3px, transparent 3px),
     var(--hifi-bg-dark);
   box-shadow:
     inset 1px 1px 3px var(--hifi-shadow-dark),
@@ -2460,7 +2470,7 @@ button:disabled {
   height: 16px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 3px, transparent 3px),
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 3px, transparent 3px),
     linear-gradient(145deg, #383838, #2a2a2a);
   box-shadow:
     2px 2px 5px var(--hifi-shadow-dark),
@@ -2517,7 +2527,7 @@ button:disabled {
 
 /* Action button - Classic Blue LED style */
 .hifi-btn--action {
-  color: #00B4FF;
+  color: #00b4ff;
 }
 
 .hifi-btn--action:hover {
@@ -2526,13 +2536,13 @@ button:disabled {
 
 .hifi-btn--action:active,
 .hifi-btn--action.active {
-  color: #7DF9FF;
+  color: #7df9ff;
   text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
 }
 
 /* Danger button - Classic Blue LED style (same as action) */
 .hifi-btn--danger {
-  color: #00B4FF;
+  color: #00b4ff;
 }
 
 .hifi-btn--danger:hover {
@@ -2541,7 +2551,7 @@ button:disabled {
 
 .hifi-btn--danger:active,
 .hifi-btn--danger.active {
-  color: #7DF9FF;
+  color: #7df9ff;
   text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
 }
 
@@ -2598,7 +2608,7 @@ button:disabled {
 .hifi-toggle.active .hifi-toggle-thumb {
   left: 20px;
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
     linear-gradient(145deg, #555555, #454545);
   box-shadow:
     2px 2px 4px var(--hifi-shadow-dark),
@@ -2623,7 +2633,7 @@ button:disabled {
 /* Hover when active - keep the LED dot */
 .hifi-toggle-label:hover .hifi-toggle.active .hifi-toggle-thumb {
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 2px, transparent 2px),
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
     linear-gradient(145deg, #585858, #484848);
 }
 
@@ -2688,7 +2698,12 @@ button:disabled {
 .hifi-dropdown-toggle.expanded .hifi-dropdown-toggle-thumb {
   top: 16px;
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    radial-gradient(
+      circle at center,
+      #00b4ff 0%,
+      #00b4ff 1.5px,
+      transparent 1.5px
+    ),
     linear-gradient(145deg, #555555, #454545);
   box-shadow:
     2px 2px 4px var(--hifi-shadow-dark),
@@ -2703,7 +2718,12 @@ button:disabled {
 /* Hover when expanded - keep the LED dot */
 .hifi-dropdown-toggle.expanded:hover .hifi-dropdown-toggle-thumb {
   background:
-    radial-gradient(circle at center, #00B4FF 0%, #00B4FF 1.5px, transparent 1.5px),
+    radial-gradient(
+      circle at center,
+      #00b4ff 0%,
+      #00b4ff 1.5px,
+      transparent 1.5px
+    ),
     linear-gradient(145deg, #585858, #484848);
 }
 
@@ -2735,7 +2755,7 @@ button:disabled {
 }
 
 .views-table-header span:hover {
-  color: #00B4FF;
+  color: #00b4ff;
 }
 
 /* View row styling */
@@ -2749,7 +2769,7 @@ button:disabled {
 
 .view-row.active {
   background: rgba(0, 180, 255, 0.2);
-  border-left: 2px solid #00B4FF;
+  border-left: 2px solid #00b4ff;
   padding-left: 6px !important;
 }
 
@@ -2768,7 +2788,7 @@ button:disabled {
 .view-actions button:hover {
   background: #444;
   color: #fff;
-  border-color: #00B4FF;
+  border-color: #00b4ff;
 }
 
 .view-actions .view-delete-btn:hover {
@@ -2791,7 +2811,7 @@ button:disabled {
 
 #viewNameInput:focus {
   outline: none;
-  border-color: #00B4FF;
+  border-color: #00b4ff;
 }
 
 /* ==========================================================================
@@ -2824,7 +2844,7 @@ input[type="radio"]:checked {
 }
 
 input[type="radio"]::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -2837,7 +2857,7 @@ input[type="radio"]::before {
 }
 
 input[type="radio"]:checked::before {
-  background: #00B4FF;
+  background: #00b4ff;
   box-shadow: 0 0 6px rgba(0, 180, 255, 0.6);
 }
 
@@ -2857,7 +2877,7 @@ input[type="number"],
 input[type="text"] {
   background: var(--hifi-bg-dark, #1a1a1a);
   border: 1px solid #444;
-  color: #00B4FF;
+  color: #00b4ff;
   border-radius: var(--hifi-radius-sm, 3px);
   padding: 6px 8px;
   font-size: 12px;
@@ -2870,7 +2890,7 @@ input[type="text"] {
 input[type="number"]:focus,
 input[type="text"]:focus {
   outline: none;
-  border-color: #00B4FF;
+  border-color: #00b4ff;
 }
 
 input[type="number"]::placeholder,

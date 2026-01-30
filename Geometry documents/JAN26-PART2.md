@@ -3,6 +3,7 @@
 ## Overview
 
 Two new features building on the completed JAN26-EXTRACT refactoring:
+
 1. **Comprehensive Triangle Counter** - Expand Geometry Info to count all triangles
 2. **RT-Pure Prisms** - Extend Line primitive to N-gon prisms and cones
 
@@ -13,6 +14,7 @@ Two new features building on the completed JAN26-EXTRACT refactoring:
 ### Current State
 
 The Geometry Info panel shows triangle counts for individual polyhedra, but does not aggregate:
+
 - Polyhedra triangles
 - Matrix form triangles
 - Node sphere triangles
@@ -22,6 +24,7 @@ Grids should be excluded (they are lines, not triangles).
 ### Goal
 
 Display total triangle count in Geometry Info panel as:
+
 ```
 Total Triangles: 12,456 (Scene)
 ```
@@ -43,9 +46,9 @@ function countSceneTriangles() {
   let matrix = 0;
   let nodes = 0;
 
-  scene.traverse((object) => {
+  scene.traverse(object => {
     // Skip grids and non-mesh objects
-    if (object.type === 'Line' || object.type === 'LineSegments') return;
+    if (object.type === "Line" || object.type === "LineSegments") return;
     if (!object.isMesh) return;
 
     const geometry = object.geometry;
@@ -73,7 +76,7 @@ function countSceneTriangles() {
     total: polyhedra + matrix + nodes,
     polyhedra,
     matrix,
-    nodes
+    nodes,
   };
 }
 ```
@@ -92,6 +95,7 @@ Add to Geometry Info section in `index.html`:
 #### 3. Event Binding
 
 Call `countSceneTriangles()` and update display:
+
 - On form changes (polyhedra visibility, geodesic frequency)
 - On matrix generation
 - On node settings changes
@@ -113,6 +117,7 @@ Call `countSceneTriangles()` and update display:
 ### Current State
 
 `rt-primitives.js` contains:
+
 - `point()` - 0D: Single vertex
 - `line()` - 1D: Two vertices, one edge (uses triangle for lineweight, camera-facing)
 - `polygon()` - 2D: N-gon using RT-pure generators for n = 3, 4, 5, 6, 8, 9, 10, 12
@@ -120,6 +125,7 @@ Call `countSceneTriangles()` and update display:
 ### Goal
 
 Extend to 3D primitives using RT-pure polygon generators:
+
 - **Prism** - Two parallel N-gon caps connected by rectangular side faces
 - **Cone** - One N-gon base, one point apex (prism where top radius = 0)
 - **Cylinder** - Prism approximation with high N (e.g., N=24 or N=36)
@@ -131,20 +137,24 @@ These are distinct from the current Line's triangle-based lineweight rendering w
 #### Prism (N-gon × height)
 
 Given:
+
 - `n` - Number of sides (uses RT-pure polygon generators)
 - `Q_R` - Circumradius quadrance of the N-gon caps
 - `Q_H` - Height quadrance (deferred √ until vertex creation)
 
 Vertices: `2n` total
+
 - Bottom cap: N-gon at z = -h/2
 - Top cap: N-gon at z = +h/2
 
 Edges: `3n` total
+
 - N edges for bottom cap perimeter
 - N edges for top cap perimeter
 - N vertical edges connecting corresponding vertices
 
 Faces: `n + 2` total
+
 - 1 bottom cap (N-gon)
 - 1 top cap (N-gon)
 - N rectangular side faces (each splits into 2 triangles for rendering)
@@ -152,19 +162,23 @@ Faces: `n + 2` total
 #### Cone (N-gon base → point apex)
 
 Given:
+
 - `n` - Number of sides
 - `Q_R` - Base circumradius quadrance
 - `Q_H` - Height quadrance
 
 Vertices: `n + 1` total
+
 - Base: N-gon at z = 0
 - Apex: Single point at z = h
 
 Edges: `2n` total
+
 - N edges for base perimeter
 - N edges connecting base vertices to apex
 
 Faces: `n + 1` total
+
 - 1 base (N-gon)
 - N triangular side faces
 
@@ -403,19 +417,41 @@ Add to Base Forms section in `index.html`:
 <!-- After existing primitives -->
 <div class="form-group">
   <label>Prism</label>
-  <input type="checkbox" id="showPrism">
+  <input type="checkbox" id="showPrism" />
   <div class="sub-options">
-    <label>Sides: <input type="number" id="prismSides" min="3" max="12" value="6"></label>
-    <label>Height Q: <input type="number" id="prismHeightQ" min="0.1" max="10" step="0.1" value="1"></label>
+    <label
+      >Sides: <input type="number" id="prismSides" min="3" max="12" value="6"
+    /></label>
+    <label
+      >Height Q:
+      <input
+        type="number"
+        id="prismHeightQ"
+        min="0.1"
+        max="10"
+        step="0.1"
+        value="1"
+    /></label>
   </div>
 </div>
 
 <div class="form-group">
   <label>Cone</label>
-  <input type="checkbox" id="showCone">
+  <input type="checkbox" id="showCone" />
   <div class="sub-options">
-    <label>Sides: <input type="number" id="coneSides" min="3" max="12" value="6"></label>
-    <label>Height Q: <input type="number" id="coneHeightQ" min="0.1" max="10" step="0.1" value="1"></label>
+    <label
+      >Sides: <input type="number" id="coneSides" min="3" max="12" value="6"
+    /></label>
+    <label
+      >Height Q:
+      <input
+        type="number"
+        id="coneHeightQ"
+        min="0.1"
+        max="10"
+        step="0.1"
+        value="1"
+    /></label>
   </div>
 </div>
 ```
@@ -428,15 +464,15 @@ Wire up checkbox and slider events to call `Primitives.prism()` and `Primitives.
 
 The following N-gon prisms/cones are fully RT-pure:
 
-| N | Polygon | Prism Name | RT-Pure Radicals |
-|---|---------|------------|------------------|
-| 3 | Triangle | Triangular Prism | √3 |
-| 4 | Square | Square Prism (Box) | integers only |
-| 5 | Pentagon | Pentagonal Prism | φ (golden ratio) |
-| 6 | Hexagon | Hexagonal Prism | √3 |
-| 8 | Octagon | Octagonal Prism | √2 |
-| 10 | Decagon | Decagonal Prism | φ |
-| 12 | Dodecagon | Dodecagonal Prism | √2, √3 |
+| N   | Polygon   | Prism Name         | RT-Pure Radicals |
+| --- | --------- | ------------------ | ---------------- |
+| 3   | Triangle  | Triangular Prism   | √3               |
+| 4   | Square    | Square Prism (Box) | integers only    |
+| 5   | Pentagon  | Pentagonal Prism   | φ (golden ratio) |
+| 6   | Hexagon   | Hexagonal Prism    | √3               |
+| 8   | Octagon   | Octagonal Prism    | √2               |
+| 10  | Decagon   | Decagonal Prism    | φ                |
+| 12  | Dodecagon | Dodecagonal Prism  | √2, √3           |
 
 ### Validation Checklist
 
@@ -455,18 +491,18 @@ The following N-gon prisms/cones are fully RT-pure:
 
 ## File Changes Summary
 
-| File | Changes | Status |
-|------|---------|--------|
-| rt-primitives.js | Add `prism()`, `cone()`, `cylinder()` functions | ✅ Complete |
-| rt-rendering.js | Add colors, groups, rendering blocks, geometry stats | ✅ Complete |
-| rt-nodes.js | Add edge quadrance cases for prism/cone | ✅ Complete |
-| index.html | Add Prism/Cone UI controls | ✅ Complete |
-| rt-init.js | Wire up Prism/Cone events, selection support | ✅ Complete |
-| rt-filehandler.js | Add state save/restore for prism/cone | ✅ Complete |
+| File              | Changes                                              | Status      |
+| ----------------- | ---------------------------------------------------- | ----------- |
+| rt-primitives.js  | Add `prism()`, `cone()`, `cylinder()` functions      | ✅ Complete |
+| rt-rendering.js   | Add colors, groups, rendering blocks, geometry stats | ✅ Complete |
+| rt-nodes.js       | Add edge quadrance cases for prism/cone              | ✅ Complete |
+| index.html        | Add Prism/Cone UI controls                           | ✅ Complete |
+| rt-init.js        | Wire up Prism/Cone events, selection support         | ✅ Complete |
+| rt-filehandler.js | Add state save/restore for prism/cone                | ✅ Complete |
 
 ---
 
-*Created: 2026-01-26*
-*Updated: 2026-01-26*
-*Status: PRISMS COMPLETE, TRIANGLES PENDING*
-*Prerequisites: JAN26-EXTRACT completed*
+_Created: 2026-01-26_
+_Updated: 2026-01-26_
+_Status: PRISMS COMPLETE, TRIANGLES PENDING_
+_Prerequisites: JAN26-EXTRACT completed_

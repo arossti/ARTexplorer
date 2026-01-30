@@ -25,59 +25,62 @@ The ART Gumball is a transform control system for manipulating polyhedra using R
 
 ### Completed Features
 
-| Feature | Status | Location |
-|---------|--------|----------|
-| **Move Tool** | ✅ Complete | `rt-init.js:1488+` |
-| **Scale Tool** | ✅ Complete | `rt-init.js:2224+` |
-| **Rotate Tool** | ✅ Complete | `rt-init.js:2148+` |
-| **XYZ Handles** | ✅ Complete | Arrows (move), Cubes (scale), Circles (rotate) |
-| **WXYZ Handles** | ✅ Complete | Arrows (move), Cubes (scale), Hexagons (rotate) |
-| **Click-to-Select** | ✅ Complete | `onCanvasClick()`, `selectPolyhedron()` |
-| **Selection Highlight** | ✅ Complete | Cyan emissive glow (0x00ffff) |
-| **NOW Button** | ✅ Complete | Deposits Instance, resets Form to origin |
-| **NOW Counter** | ✅ Complete | `RTStateManager.getDepositedCount()` |
-| **Form Reset** | ✅ Complete | `RTStateManager.resetForm()` |
-| **Instance Selection** | ✅ Complete | Instances selectable same as Forms |
-| **Coordinate Inputs** | ✅ Complete | XYZ + WXYZ fields, Enter to apply |
-| **Rotation Inputs** | ✅ Complete | Degrees ↔ Spread bidirectional |
-| **Grid Snapping** | ✅ Complete | 0.1 intervals for RT precision |
-| **Object Snapping** | ✅ Complete | Vertex/Edge/Face snap toggles |
-| **Uniform Scale** | ✅ Complete | Central sphere handle |
-| **Orbit Lock** | ✅ Complete | Disabled when tool active |
+| Feature                 | Status      | Location                                        |
+| ----------------------- | ----------- | ----------------------------------------------- |
+| **Move Tool**           | ✅ Complete | `rt-init.js:1488+`                              |
+| **Scale Tool**          | ✅ Complete | `rt-init.js:2224+`                              |
+| **Rotate Tool**         | ✅ Complete | `rt-init.js:2148+`                              |
+| **XYZ Handles**         | ✅ Complete | Arrows (move), Cubes (scale), Circles (rotate)  |
+| **WXYZ Handles**        | ✅ Complete | Arrows (move), Cubes (scale), Hexagons (rotate) |
+| **Click-to-Select**     | ✅ Complete | `onCanvasClick()`, `selectPolyhedron()`         |
+| **Selection Highlight** | ✅ Complete | Cyan emissive glow (0x00ffff)                   |
+| **NOW Button**          | ✅ Complete | Deposits Instance, resets Form to origin        |
+| **NOW Counter**         | ✅ Complete | `RTStateManager.getDepositedCount()`            |
+| **Form Reset**          | ✅ Complete | `RTStateManager.resetForm()`                    |
+| **Instance Selection**  | ✅ Complete | Instances selectable same as Forms              |
+| **Coordinate Inputs**   | ✅ Complete | XYZ + WXYZ fields, Enter to apply               |
+| **Rotation Inputs**     | ✅ Complete | Degrees ↔ Spread bidirectional                  |
+| **Grid Snapping**       | ✅ Complete | 0.1 intervals for RT precision                  |
+| **Object Snapping**     | ✅ Complete | Vertex/Edge/Face snap toggles                   |
+| **Uniform Scale**       | ✅ Complete | Central sphere handle                           |
+| **Orbit Lock**          | ✅ Complete | Disabled when tool active                       |
 
 ### Partial / In Progress
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **Drag Rotation** | 🔶 Partial | Torus handles exist, drag logic pending |
-| **Spread Presets** | 🔶 Partial | Input conversion works, preset buttons pending |
+| Feature            | Status     | Notes                                                      |
+| ------------------ | ---------- | ---------------------------------------------------------- |
+| **Drag Rotation**  | 🔶 Partial | Torus handles exist, drag logic pending                    |
+| **Spread Presets** | 🔶 Partial | Input conversion works, preset buttons pending             |
 | **RT-Pure Schema** | 🔶 Partial | Basic transform stored, full quadray/spread schema pending |
 
 ### Not Yet Implemented
 
-| Feature | Priority | Notes |
-|---------|----------|-------|
-| **Multi-Select** | High | Shift+click to add to selection |
-| **Delete Key** | High | Remove selected Instance |
-| **Undo/Redo** | Medium | Cmd+Z / Cmd+Shift+Z |
-| **Keyboard Shortcuts** | Medium | G=Move, S=Scale, R=Rotate, N=NOW, ESC=Deselect |
-| **Handle Hover Feedback** | Low | Color/scale change on hover |
-| **JSON/CSV Export** | Low | Full session export |
+| Feature                   | Priority | Notes                                          |
+| ------------------------- | -------- | ---------------------------------------------- |
+| **Multi-Select**          | High     | Shift+click to add to selection                |
+| **Delete Key**            | High     | Remove selected Instance                       |
+| **Undo/Redo**             | Medium   | Cmd+Z / Cmd+Shift+Z                            |
+| **Keyboard Shortcuts**    | Medium   | G=Move, S=Scale, R=Rotate, N=NOW, ESC=Deselect |
+| **Handle Hover Feedback** | Low      | Color/scale change on hover                    |
+| **JSON/CSV Export**       | Low      | Full session export                            |
 
 ---
 
 ## Known Issues
 
 ### Selection System
+
 - Single selection only (`currentSelection` object)
 - `selectedPolyhedra` array exists but not wired for multi-select
 - Clicking empty space preserves selection (by design - allows orbit)
 
 ### Rotation
+
 - Interactive drag rotation on torus handles not fully connected
 - Rotation via input fields works (Enter key)
 
 ### Scale
+
 - Axis-constrained scale drag working
 - Uniform scale via central sphere working
 
@@ -117,6 +120,7 @@ The ART Gumball is a transform control system for manipulating polyhedra using R
 **Goal:** Allow selecting multiple Forms/Instances simultaneously
 
 **Tasks:**
+
 - [ ] Replace `currentSelection` with `selectedPolyhedra` array usage
 - [ ] Implement Shift+click to add/remove from selection
 - [ ] Update `getSelectedPolyhedra()` to return full array
@@ -128,6 +132,7 @@ The ART Gumball is a transform control system for manipulating polyhedra using R
 **Goal:** Allow removing Instances and reversing actions
 
 **Tasks:**
+
 - [ ] Delete key listener for selected Instances
 - [ ] Prevent deletion of Forms (only Instances deletable)
 - [ ] Implement undo stack in RTStateManager
@@ -140,6 +145,7 @@ The ART Gumball is a transform control system for manipulating polyhedra using R
 **Goal:** Professional CAD-like keyboard workflow
 
 **Tasks:**
+
 - [ ] G key = activate Move tool
 - [ ] S key = activate Scale tool
 - [ ] R key = activate Rotate tool
@@ -152,6 +158,7 @@ The ART Gumball is a transform control system for manipulating polyhedra using R
 **Goal:** Complete interactive rotation via handle dragging
 
 **Tasks:**
+
 - [ ] Connect torus handle mousedown to rotation start
 - [ ] Calculate rotation from mouse movement around axis
 - [ ] Apply spread-based snapping during drag
@@ -163,6 +170,7 @@ The ART Gumball is a transform control system for manipulating polyhedra using R
 **Goal:** One-click buttons for common exact spread values
 
 **Preset Values:**
+
 - `s = 0` (0° - parallel)
 - `s = 1/6` (≈23.6°)
 - `s = 1/4` (30°)
@@ -173,6 +181,7 @@ The ART Gumball is a transform control system for manipulating polyhedra using R
 - `s = 1` (90° - perpendicular)
 
 **Tasks:**
+
 - [ ] Add preset buttons to rotation UI section
 - [ ] Click preset = apply rotation immediately
 - [ ] Visual indication of current rotation matching preset
@@ -182,6 +191,7 @@ The ART Gumball is a transform control system for manipulating polyhedra using R
 **Goal:** Save and restore sessions
 
 **Tasks:**
+
 - [ ] JSON export of all Instances with transforms
 - [ ] CSV export for spreadsheet analysis
 - [ ] Import JSON to restore session
@@ -204,6 +214,7 @@ When implementing new features, maintain RT principles:
 ## Architecture Notes
 
 ### File Structure
+
 ```
 modules/
 ├── rt-init.js          # Main app, gumball logic (~4000 lines)
@@ -215,6 +226,7 @@ modules/
 ```
 
 ### Key Functions in rt-init.js
+
 - `createEditingBasis()` - Creates localized gumball handles
 - `selectPolyhedron()` - Selection with highlight
 - `applyHighlight()` / `clearHighlight()` - Visual feedback
@@ -224,6 +236,7 @@ modules/
 - `findNearestSnapTarget()` - Object snapping
 
 ### StateManager API
+
 - `RTStateManager.createInstance(poly, scene)` - Deposit Instance
 - `RTStateManager.resetForm(poly)` - Reset Form to origin
 - `RTStateManager.getDepositedCount()` - Instance count

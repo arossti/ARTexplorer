@@ -6,22 +6,22 @@ Extract components from oversized modules to improve maintainability and code or
 
 ### Initial State (Jan 25, 2026)
 
-| File | Lines | Content |
-|------|-------|---------|
-| rt-init.js | 4,120 | Event handlers, UI wiring, initialization |
+| File            | Lines | Content                                      |
+| --------------- | ----- | -------------------------------------------- |
+| rt-init.js      | 4,120 | Event handlers, UI wiring, initialization    |
 | rt-rendering.js | 3,866 | Scene setup, grids, nodes, rendering, camera |
-| rt-polyhedra.js | 2,760 | 2D primitives + 3D polyhedra |
+| rt-polyhedra.js | 2,760 | 2D primitives + 3D polyhedra                 |
 
 ### Final State (Jan 26, 2026)
 
-| File | Lines | Change |
-|------|-------|--------|
-| rt-init.js | 4,120 | (unchanged) |
-| rt-rendering.js | 2,656 | -1,210 (-31%) |
-| rt-polyhedra.js | 2,060 | -700 (-25%) |
-| **rt-primitives.js** | 744 | NEW |
-| **rt-grids.js** | 480 | NEW |
-| **rt-nodes.js** | 772 | NEW |
+| File                 | Lines | Change        |
+| -------------------- | ----- | ------------- |
+| rt-init.js           | 4,120 | (unchanged)   |
+| rt-rendering.js      | 2,656 | -1,210 (-31%) |
+| rt-polyhedra.js      | 2,060 | -700 (-25%)   |
+| **rt-primitives.js** | 744   | NEW           |
+| **rt-grids.js**      | 480   | NEW           |
+| **rt-nodes.js**      | 772   | NEW           |
 
 ---
 
@@ -33,20 +33,20 @@ Extract components from oversized modules to improve maintainability and code or
 
 ### Functions Extracted
 
-| Function | Description |
-|----------|-------------|
-| `point()` | 0D primitive |
-| `line()` | 1D primitive |
-| `polygon()` | Dispatcher with dual-engine logic |
-| `_polygonClassical()` | Classical trig fallback |
-| `_polygonTriangle()` | RT-pure using √3 |
-| `_polygonSquare()` | RT-pure using integers |
-| `_polygonPentagon()` | RT-pure using φ |
-| `_polygonHexagon()` | RT-pure using √3 |
-| `_polygonOctagon()` | RT-pure using √2 |
-| `_polygonNonagon()` | Triangle subdivision |
-| `_polygonDecagon()` | RT-pure using φ |
-| `_polygonDodecagon()` | RT-pure using √3 |
+| Function              | Description                       |
+| --------------------- | --------------------------------- |
+| `point()`             | 0D primitive                      |
+| `line()`              | 1D primitive                      |
+| `polygon()`           | Dispatcher with dual-engine logic |
+| `_polygonClassical()` | Classical trig fallback           |
+| `_polygonTriangle()`  | RT-pure using √3                  |
+| `_polygonSquare()`    | RT-pure using integers            |
+| `_polygonPentagon()`  | RT-pure using φ                   |
+| `_polygonHexagon()`   | RT-pure using √3                  |
+| `_polygonOctagon()`   | RT-pure using √2                  |
+| `_polygonNonagon()`   | Triangle subdivision              |
+| `_polygonDecagon()`   | RT-pure using φ                   |
+| `_polygonDodecagon()` | RT-pure using √3                  |
 
 ### Validation ✅
 
@@ -65,15 +65,15 @@ Extract components from oversized modules to improve maintainability and code or
 
 ### Functions Extracted
 
-| Function | Description |
-|----------|-------------|
-| `createCartesianGrid()` | XY/XZ/YZ plane grids |
-| `createTetrahedralArrow()` | WXYZ basis arrowheads |
-| `createQuadrayBasis()` | WXYZ tetrahedral basis |
-| `createIVMGrid()` | Triangular lattice generation |
-| `createIVMPlanes()` | 6 central angle planes |
-| `rebuildQuadrayGrids()` | Dynamic tessellation update |
-| `rebuildCartesianGrids()` | Dynamic divisions update |
+| Function                   | Description                   |
+| -------------------------- | ----------------------------- |
+| `createCartesianGrid()`    | XY/XZ/YZ plane grids          |
+| `createTetrahedralArrow()` | WXYZ basis arrowheads         |
+| `createQuadrayBasis()`     | WXYZ tetrahedral basis        |
+| `createIVMGrid()`          | Triangular lattice generation |
+| `createIVMPlanes()`        | 6 central angle planes        |
+| `rebuildQuadrayGrids()`    | Dynamic tessellation update   |
+| `rebuildCartesianGrids()`  | Dynamic divisions update      |
 
 ### Validation ✅
 
@@ -92,22 +92,23 @@ Extract components from oversized modules to improve maintainability and code or
 
 ### Functions Extracted
 
-| Function | Description |
-|----------|-------------|
-| `getPolyhedronEdgeQuadrance()` | RT-pure edge Q for each type |
-| `getClosePackedRadius()` | Universal r = √(Q/4) |
-| `getCachedNodeGeometry()` | Geometry cache management |
-| `addMatrixNodes()` | Planar matrix node generation |
-| `addRadialMatrixNodes()` | Radial matrix node generation |
-| `setNodeGeometryType()` | Toggle RT/classical geometry |
-| `setGeodesicFrequency()` | Set geodesic subdivision level |
-| `setNodeOpacity()` | Set node transparency |
-| `clearNodeCache()` | Clear geometry cache |
-| `getNodeConfig()` | Get current node state |
+| Function                       | Description                    |
+| ------------------------------ | ------------------------------ |
+| `getPolyhedronEdgeQuadrance()` | RT-pure edge Q for each type   |
+| `getClosePackedRadius()`       | Universal r = √(Q/4)           |
+| `getCachedNodeGeometry()`      | Geometry cache management      |
+| `addMatrixNodes()`             | Planar matrix node generation  |
+| `addRadialMatrixNodes()`       | Radial matrix node generation  |
+| `setNodeGeometryType()`        | Toggle RT/classical geometry   |
+| `setGeodesicFrequency()`       | Set geodesic subdivision level |
+| `setNodeOpacity()`             | Set node transparency          |
+| `clearNodeCache()`             | Clear geometry cache           |
+| `getNodeConfig()`              | Get current node state         |
 
 ### Module-Level State
 
 State variables moved to rt-nodes.js with accessor functions:
+
 - `nodeGeometryCache` - Map for caching node geometries
 - `useRTNodeGeometry` - Boolean for RT vs classical mode
 - `geodesicFrequency` - Integer 1-4 for geodesic level
@@ -131,10 +132,10 @@ State variables moved to rt-nodes.js with accessor functions:
 
 ### Functions Identified
 
-| Function | Lines | Description |
-|----------|-------|-------------|
-| `setCameraPreset()` | ~170 | Named view presets (iso, top, front, WXYZ, etc.) |
-| `switchCameraType()` | ~60 | Perspective ↔ Orthographic |
+| Function             | Lines | Description                                      |
+| -------------------- | ----- | ------------------------------------------------ |
+| `setCameraPreset()`  | ~170  | Named view presets (iso, top, front, WXYZ, etc.) |
+| `switchCameraType()` | ~60   | Perspective ↔ Orthographic                       |
 
 ### Complexity Analysis
 
@@ -166,12 +167,12 @@ Camera functions remain in rt-rendering.js. The ~224 lines of camera code mutate
 
 ## Summary
 
-| Phase | Module | Status | Lines |
-|-------|--------|--------|-------|
-| 1 | rt-primitives.js | ✅ Complete | 744 |
-| 2 | rt-grids.js | ✅ Complete | 480 |
-| 3 | rt-nodes.js | ✅ Complete | 772 |
-| 4 | rt-camera.js | ❌ Not pursued | — |
+| Phase | Module           | Status         | Lines |
+| ----- | ---------------- | -------------- | ----- |
+| 1     | rt-primitives.js | ✅ Complete    | 744   |
+| 2     | rt-grids.js      | ✅ Complete    | 480   |
+| 3     | rt-nodes.js      | ✅ Complete    | 772   |
+| 4     | rt-camera.js     | ❌ Not pursued | —     |
 
 **Total lines extracted**: ~1,996 lines
 **rt-rendering.js reduction**: 3,866 → 2,656 (-31%)
@@ -179,10 +180,10 @@ Camera functions remain in rt-rendering.js. The ~224 lines of camera code mutate
 
 ---
 
-*Created: 2026-01-25*
-*Completed: 2026-01-26*
-*Archived: 2026-01-26*
-*Status: COMPLETED — Phases 1-3 extracted; Phase 4 evaluated and declined*
+_Created: 2026-01-25_
+_Completed: 2026-01-26_
+_Archived: 2026-01-26_
+_Status: COMPLETED — Phases 1-3 extracted; Phase 4 evaluated and declined_
 
 ---
 
@@ -195,6 +196,7 @@ Relocate coordinate and rotation input fields from the Controls section in the r
 ### Current Location (index.html lines 1522-1754)
 
 The Controls section contains these coordinate/rotation groups:
+
 - **XYZ Coordinates** (lines 1522-1554): X, Y, Z position inputs
 - **WXYZ Coordinates** (lines 1556-1597): W, X, Y, Z quadray position inputs
 - **XYZ Rotation (°)** (lines 1599-1631): X, Y, Z rotation in degrees
@@ -307,6 +309,7 @@ Add new panel inside `#canvas-container` after the canvas element:
 ### 2.1 Preserve Element IDs
 
 All input IDs must remain identical for existing JavaScript bindings:
+
 - `coordX`, `coordY`, `coordZ`
 - `coordW`, `coordX2`, `coordY2`, `coordZ2`
 - `rotXDegrees`, `rotYDegrees`, `rotZDegrees`
@@ -317,6 +320,7 @@ All input IDs must remain identical for existing JavaScript bindings:
 ### 2.2 Test Event Bindings
 
 Verify in rt-init.js that all coordinate input event handlers still work:
+
 - Manual coordinate entry updates object position
 - Object selection populates coordinate fields
 - Rotation inputs update object orientation
@@ -342,6 +346,7 @@ Verify in rt-init.js that all coordinate input event handlers still work:
 ### 3.1 Remove from Controls Section
 
 Delete these elements from `#controls-section` in index.html:
+
 - Lines 1522-1554: XYZ Coordinates block
 - Lines 1556-1597: WXYZ Coordinates block
 - Lines 1599-1631: XYZ Rotation (°) block
@@ -365,13 +370,13 @@ Delete these elements from `#controls-section` in index.html:
 
 ## File Changes Summary
 
-| File | Changes |
-|------|---------|
+| File       | Changes                                                                                            |
+| ---------- | -------------------------------------------------------------------------------------------------- |
 | index.html | Add `#coordinates-panel` in `#canvas-container`; remove coordinate blocks from `#controls-section` |
-| art.css | Add bottom panel styles (~40 lines) |
-| rt-init.js | No changes expected (IDs preserved) |
+| art.css    | Add bottom panel styles (~40 lines)                                                                |
+| rt-init.js | No changes expected (IDs preserved)                                                                |
 
 ---
 
-*Created: 2026-01-26*
-*Status: PLANNING*
+_Created: 2026-01-26_
+_Status: PLANNING_
