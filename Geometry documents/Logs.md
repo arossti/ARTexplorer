@@ -51,1827 +51,582 @@ rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=
 rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
 rt-filehandler.js:67 💾 Auto-save enabled (every 10 modifications)
 rt-filehandler.js:77 ✅ RTFileHandler initialized
-rt-init.js:4492 ✅ RTFileHandler module initialized
+rt-init.js:3526 ✅ RTFileHandler module initialized
 rt-papercut.js:325 ✂️ Cutplane range: [-10, 10] step=1.000000 (basis: cartesian, snap: XYZ)
 rt-viewmanager.js:112 ✅ RTViewManager initialized
-rt-init.js:4780 ✅ ARTexplorer initialization complete
+rt-init.js:3814 ✅ ARTexplorer initialization complete
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=24
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=24
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=36
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=36
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=48
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=48
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=60
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=60
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=72
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=72
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=84
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=84
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=96
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=96
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=108
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=108
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=120
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=120
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=108
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=108
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=96
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=96
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=84
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=84
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=72
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=72
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=60
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=60
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=48
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=48
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=36
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=36
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=24
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=24
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=12
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=12
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=24
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=24
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=36
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=36
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=48
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=48
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=60
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=60
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=72
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=72
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=84
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=84
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=96
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=96
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=108
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=108
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=120
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=120
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=108
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=108
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=96
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=96
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=84
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=84
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=60
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=60
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=48
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=48
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=36
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=36
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=24
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=24
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=12
+rt-grids.js:578 ✅ Rebuilt Central Angle grids with tessellation=12
+rt-primitives.js:35 [RT] Point: single vertex at origin
+ [PurePhi] Icosahedron - High-precision symbolic construction:
+   φ = (1 + 1√5)/2 = 1.618033988749895
+   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+   Normalization: 1/√(1 + φ²) = 0.525731112119134
+   a = 1·norm = 0.021029244484765
+rt-polyhedra.js:354   b = φ·norm = 0.034026032334082
+rt-polyhedra.js:355   Precision: 15 decimal places maintained via symbolic algebra
+rt-polyhedra.js:363   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+rt-polyhedra.js:465 Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+rt-polyhedra.js:744 [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+rt-polyhedra.js:790   Subdivided vertices: 92, faces: 180
+rt-polyhedra.js:871   Projection: OutSphere (through vertices - Fuller geodesic)
+rt-polyhedra.js:877   Target quadrance: Q = 0.001600, r = 0.040000
+rt-polyhedra.js:898   Edge quadrance: avg=0.000251, max error=7.77e-5
+rt-polyhedra.js:901   RT PURITY: Normalization deferred until final step ✓
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:66 [RT] Line: Q=1.000000, length=1.000000
+ [PurePhi] Icosahedron - High-precision symbolic construction:
+   φ = (1 + 1√5)/2 = 1.618033988749895
+   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+   Normalization: 1/√(1 + φ²) = 0.525731112119134
+   a = 1·norm = 0.021029244484765
+rt-polyhedra.js:354   b = φ·norm = 0.034026032334082
+rt-polyhedra.js:355   Precision: 15 decimal places maintained via symbolic algebra
+rt-polyhedra.js:363   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+rt-polyhedra.js:465 Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+rt-polyhedra.js:744 [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+rt-polyhedra.js:790   Subdivided vertices: 92, faces: 180
+rt-polyhedra.js:871   Projection: OutSphere (through vertices - Fuller geodesic)
+rt-polyhedra.js:877   Target quadrance: Q = 0.001600, r = 0.040000
+rt-polyhedra.js:898   Edge quadrance: avg=0.000251, max error=7.77e-5
+rt-polyhedra.js:901   RT PURITY: Normalization deferred until final step ✓
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-polyhedra.js:342 [PurePhi] Icosahedron - High-precision symbolic construction:
+rt-polyhedra.js:345   φ = (1 + 1√5)/2 = 1.618033988749895
+rt-polyhedra.js:346   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+rt-polyhedra.js:349   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+rt-polyhedra.js:352   Normalization: 1/√(1 + φ²) = 0.525731112119134
+rt-polyhedra.js:353   a = 1·norm = 0.021029244484765
+rt-polyhedra.js:354   b = φ·norm = 0.034026032334082
+rt-polyhedra.js:355   Precision: 15 decimal places maintained via symbolic algebra
+rt-polyhedra.js:363   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+rt-polyhedra.js:465 Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+rt-polyhedra.js:744 [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+rt-polyhedra.js:790   Subdivided vertices: 92, faces: 180
+rt-polyhedra.js:871   Projection: OutSphere (through vertices - Fuller geodesic)
+rt-polyhedra.js:877   Target quadrance: Q = 0.001600, r = 0.040000
+rt-polyhedra.js:898   Edge quadrance: avg=0.000251, max error=7.77e-5
+rt-polyhedra.js:901   RT PURITY: Normalization deferred until final step ✓
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-polyhedra.js:342 [PurePhi] Icosahedron - High-precision symbolic construction:
+rt-polyhedra.js:345   φ = (1 + 1√5)/2 = 1.618033988749895
+rt-polyhedra.js:346   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+rt-polyhedra.js:349   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+rt-polyhedra.js:352   Normalization: 1/√(1 + φ²) = 0.525731112119134
+rt-polyhedra.js:353   a = 1·norm = 0.021029244484765
+rt-polyhedra.js:354   b = φ·norm = 0.034026032334082
+rt-polyhedra.js:355   Precision: 15 decimal places maintained via symbolic algebra
+rt-polyhedra.js:363   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+rt-polyhedra.js:465 Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+rt-polyhedra.js:744 [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+rt-polyhedra.js:790   Subdivided vertices: 92, faces: 180
+rt-polyhedra.js:871   Projection: OutSphere (through vertices - Fuller geodesic)
+rt-polyhedra.js:877   Target quadrance: Q = 0.001600, r = 0.040000
+rt-polyhedra.js:898   Edge quadrance: avg=0.000251, max error=7.77e-5
+rt-polyhedra.js:901   RT PURITY: Normalization deferred until final step ✓
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:375 [RT] Pentagon: Q_R=1.000000, R=1.000000, s=0.904508, Q_edge=3.618034
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:375 [RT] Pentagon: Q_R=1.000000, R=1.000000, s=0.904508, Q_edge=3.618034
+ [PurePhi] Icosahedron - High-precision symbolic construction:
+   φ = (1 + 1√5)/2 = 1.618033988749895
+   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+   Normalization: 1/√(1 + φ²) = 0.525731112119134
+   a = 1·norm = 0.021029244484765
+rt-polyhedra.js:354   b = φ·norm = 0.034026032334082
+rt-polyhedra.js:355   Precision: 15 decimal places maintained via symbolic algebra
+rt-polyhedra.js:363   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+rt-polyhedra.js:465 Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+rt-polyhedra.js:744 [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+rt-polyhedra.js:790   Subdivided vertices: 92, faces: 180
+rt-polyhedra.js:871   Projection: OutSphere (through vertices - Fuller geodesic)
+rt-polyhedra.js:877   Target quadrance: Q = 0.001600, r = 0.040000
+rt-polyhedra.js:898   Edge quadrance: avg=0.000251, max error=7.77e-5
+rt-polyhedra.js:901   RT PURITY: Normalization deferred until final step ✓
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:375 [RT] Pentagon: Q_R=2.000000, R=1.414214, s=0.904508, Q_edge=7.236068
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:431 [RT] Hexagon: Q_R=1.000000, R=1.000000, s=1/4, Q_edge=1.000000 (edge=R)
+rt-primitives.js:844 [RT] Prism (6-gon): Q_R=1.000000, Q_H=1.000000, V=12, E=18, F=8, rtPure=true
+ [PurePhi] Icosahedron - High-precision symbolic construction:
+   φ = (1 + 1√5)/2 = 1.618033988749895
+   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+   Normalization: 1/√(1 + φ²) = 0.525731112119134
+   a = 1·norm = 0.021029244484765
+rt-polyhedra.js:354   b = φ·norm = 0.034026032334082
+rt-polyhedra.js:355   Precision: 15 decimal places maintained via symbolic algebra
+rt-polyhedra.js:363   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+rt-polyhedra.js:465 Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+rt-polyhedra.js:744 [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+rt-polyhedra.js:790   Subdivided vertices: 92, faces: 180
+rt-polyhedra.js:871   Projection: OutSphere (through vertices - Fuller geodesic)
+rt-polyhedra.js:877   Target quadrance: Q = 0.001600, r = 0.040000
+rt-polyhedra.js:898   Edge quadrance: avg=0.000251, max error=7.77e-5
+rt-polyhedra.js:901   RT PURITY: Normalization deferred until final step ✓
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:431 [RT] Hexagon: Q_R=1.000000, R=1.000000, s=1/4, Q_edge=1.000000 (edge=R)
+rt-primitives.js:942 [RT] Cone (6-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=7, E=12, F=7
+rt-polyhedra.js:342 [PurePhi] Icosahedron - High-precision symbolic construction:
+rt-polyhedra.js:345   φ = (1 + 1√5)/2 = 1.618033988749895
+rt-polyhedra.js:346   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+rt-polyhedra.js:349   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+rt-polyhedra.js:352   Normalization: 1/√(1 + φ²) = 0.525731112119134
+rt-polyhedra.js:353   a = 1·norm = 0.021029244484765
+rt-polyhedra.js:354   b = φ·norm = 0.034026032334082
+rt-polyhedra.js:355   Precision: 15 decimal places maintained via symbolic algebra
+rt-polyhedra.js:363   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+rt-polyhedra.js:465 Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+rt-polyhedra.js:744 [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+rt-polyhedra.js:790   Subdivided vertices: 92, faces: 180
+rt-polyhedra.js:871   Projection: OutSphere (through vertices - Fuller geodesic)
+rt-polyhedra.js:877   Target quadrance: Q = 0.001600, r = 0.040000
+rt-polyhedra.js:898   Edge quadrance: avg=0.000251, max error=7.77e-5
+rt-polyhedra.js:901   RT PURITY: Normalization deferred until final step ✓
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+ [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+ [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:342 [PurePhi] Icosahedron - High-precision symbolic construction:
+rt-polyhedra.js:345   φ = (1 + 1√5)/2 = 1.618033988749895
+rt-polyhedra.js:346   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+rt-polyhedra.js:349   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+rt-polyhedra.js:352   Normalization: 1/√(1 + φ²) = 0.525731112119134
+rt-polyhedra.js:353   a = 1·norm = 0.021029244484765
+rt-polyhedra.js:354   b = φ·norm = 0.034026032334082
+rt-polyhedra.js:355   Precision: 15 decimal places maintained via symbolic algebra
+rt-polyhedra.js:363   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+rt-polyhedra.js:465 Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+rt-polyhedra.js:744 [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+rt-polyhedra.js:790   Subdivided vertices: 92, faces: 180
+rt-polyhedra.js:871   Projection: OutSphere (through vertices - Fuller geodesic)
+rt-polyhedra.js:877   Target quadrance: Q = 0.001600, r = 0.040000
+rt-polyhedra.js:898   Edge quadrance: avg=0.000251, max error=7.77e-5
+rt-polyhedra.js:901   RT PURITY: Normalization deferred until final step ✓
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:342 [PurePhi] Icosahedron - High-precision symbolic construction:
+rt-polyhedra.js:345   φ = (1 + 1√5)/2 = 1.618033988749895
+rt-polyhedra.js:346   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+rt-polyhedra.js:349   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+rt-polyhedra.js:352   Normalization: 1/√(1 + φ²) = 0.525731112119134
+rt-polyhedra.js:353   a = 1·norm = 0.021029244484765
+rt-polyhedra.js:354   b = φ·norm = 0.034026032334082
+rt-polyhedra.js:355   Precision: 15 decimal places maintained via symbolic algebra
+rt-polyhedra.js:363   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+rt-polyhedra.js:465 Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+ [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+   Subdivided vertices: 92, faces: 180
+   Projection: OutSphere (through vertices - Fuller geodesic)
+   Target quadrance: Q = 0.001600, r = 0.040000
+   Edge quadrance: avg=0.000251, max error=7.77e-5
+   RT PURITY: Normalization deferred until final step ✓
+ Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+ Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+ Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+ [RT] Quadray Tetrahedron: normalize=true, scale=0.7071067811865475
+   WXYZ raw: [1,0,0,0] → [0,0,0,1]
+   WXYZ normalized: [0.750, -0.250, -0.250, -0.250]
+   Edge Q: expected=4.000000, actual=4.000000, error=0.00e+0
+ [PurePhi] Icosahedron - High-precision symbolic construction:
+   φ = (1 + 1√5)/2 = 1.618033988749895
+   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+   Normalization: 1/√(1 + φ²) = 0.525731112119134
+   a = 1·norm = 0.021029244484765
+   b = φ·norm = 0.034026032334082
+rt-polyhedra.js:355   Precision: 15 decimal places maintained via symbolic algebra
+rt-polyhedra.js:363   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+rt-polyhedra.js:465 Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+rt-polyhedra.js:744 [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+rt-polyhedra.js:790   Subdivided vertices: 92, faces: 180
+rt-polyhedra.js:871   Projection: OutSphere (through vertices - Fuller geodesic)
+rt-polyhedra.js:877   Target quadrance: Q = 0.001600, r = 0.040000
+rt-polyhedra.js:898   Edge quadrance: avg=0.000251, max error=7.77e-5
+rt-polyhedra.js:901   RT PURITY: Normalization deferred until final step ✓
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:1603 [RT] Quadray Tetrahedron: normalize=true, scale=1
+rt-polyhedra.js:1606   WXYZ raw: [1,0,0,0] → [0,0,0,1]
+rt-polyhedra.js:1607   WXYZ normalized: [0.750, -0.250, -0.250, -0.250]
+rt-polyhedra.js:1610   Edge Q: expected=8.000000, actual=8.000000, error=0.00e+0
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:1603 [RT] Quadray Tetrahedron: normalize=false, scale=0.7071067811865475
+rt-polyhedra.js:1606   WXYZ raw: [1,0,0,0] → [0,0,0,1]
+rt-polyhedra.js:1607   WXYZ normalized: [1.000, 0.000, 0.000, 0.000]
+rt-polyhedra.js:1610   Edge Q: expected=4.000000, actual=4.000000, error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:1603 [RT] Quadray Tetrahedron: normalize=false, scale=1
+rt-polyhedra.js:1606   WXYZ raw: [1,0,0,0] → [0,0,0,1]
+rt-polyhedra.js:1607   WXYZ normalized: [1.000, 0.000, 0.000, 0.000]
+rt-polyhedra.js:1610   Edge Q: expected=8.000000, actual=8.000000, error=0.00e+0
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+ Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+ Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+ [RT] Quadray Cuboctahedron (Vector Equilibrium): normalize=true, scale=0.35355339059327373
+   WXYZ raw: {2,1,1,0} permutations — 12 vertices
+   Sum of each vertex coordinates: 4 (consistent)
+   Physical meaning: 12-around-1 closest sphere packing (IVM lattice)
+   Edges: 24 (expected 24)
+   Edge Q: 1.000000
+   Faces computed: 8 triangles, 6 squares
+ [PurePhi] Icosahedron - High-precision symbolic construction:
+   φ = (1 + 1√5)/2 = 1.618033988749895
+   φ² = (3 + 1√5)/2 = 2.618033988749895 (identity: φ + 1)
+   1 + φ² = (5 + 1√5)/2 = 3.618033988749895
+   Normalization: 1/√(1 + φ²) = 0.525731112119134
+   a = 1·norm = 0.021029244484765
+   b = φ·norm = 0.034026032334082
+   Precision: 15 decimal places maintained via symbolic algebra
+   Identity check: |φ² - (φ + 1)| = 0e+0 (should be ~0)
+ Icosahedron: Expected Q=0.001769, Max error=2.17e-19, Face spread S=0.444444 (4/9)
+rt-polyhedra.js:768 [RT] Geodesic Icosahedron: frequency=3, projection=out
+rt-polyhedra.js:771   Base vertices: 12, faces: 20
+rt-polyhedra.js:744 [RT] Geodesic subdivision: freq=3, divisions=3, faces=180 (expected: 180)
+rt-polyhedra.js:790   Subdivided vertices: 92, faces: 180
+rt-polyhedra.js:871   Projection: OutSphere (through vertices - Fuller geodesic)
+rt-polyhedra.js:877   Target quadrance: Q = 0.001600, r = 0.040000
+rt-polyhedra.js:898   Edge quadrance: avg=0.000251, max error=7.77e-5
+rt-polyhedra.js:901   RT PURITY: Normalization deferred until final step ✓
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:1838 [RT] Quadray Cuboctahedron (Vector Equilibrium): normalize=true, scale=1
+rt-polyhedra.js:1841   WXYZ raw: {2,1,1,0} permutations — 12 vertices
+rt-polyhedra.js:1842   Sum of each vertex coordinates: 4 (consistent)
+rt-polyhedra.js:1843   Physical meaning: 12-around-1 closest sphere packing (IVM lattice)
+rt-polyhedra.js:1846   Edges: 24 (expected 24)
+rt-polyhedra.js:1847   Edge Q: 8.000000
+rt-polyhedra.js:1906   Faces computed: 8 triangles, 6 squares
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 1×1 = 1 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 8 nodes to 1×1 cube matrix
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+ Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+ Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 2×2 = 4 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 18 nodes to 2×2 cube matrix
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 3×3 = 9 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 32 nodes to 3×3 cube matrix
+ [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+ [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+ Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+ Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+ Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 4×4 = 16 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 50 nodes to 4×4 cube matrix
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 5×5 = 25 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 72 nodes to 5×5 cube matrix
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 6×6 = 36 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 98 nodes to 6×6 cube matrix
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+ Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+ Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+ Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 5×5 = 25 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 72 nodes to 5×5 cube matrix
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 4×4 = 16 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 50 nodes to 4×4 cube matrix
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 3×3 = 9 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 32 nodes to 3×3 cube matrix
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 2×2 = 4 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 18 nodes to 2×2 cube matrix
+rt-primitives.js:268 [RT] Triangle: Q_R=1.000000, R=1.000000, s=3/4, Q_edge=3.000000
+rt-primitives.js:942 [RT] Cone (3-gon): Q_R=1.000000, Q_H=1.000000, Q_slant=2.000000, V=4, E=6, F=4
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=4.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:194 Dual Tetrahedron: Expected Q=4.000000, Max error=0.00e+0
+rt-polyhedra.js:103 Cube: Expected Q=4.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-polyhedra.js:152 Tetrahedron: Expected Q=8.000000, Max error=0.00e+0, Face spread S=0.888889 (8/9)
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-matrix-planar.js:181 [RTMatrix] Cube matrix created: 1×1 = 1 cubes, rotate45=false
+rt-polyhedra.js:103 Cube: Expected Q=2.000000, Max error=0.00e+0, Face spread S=1 (perpendicular)
+rt-nodes.js:559 [Matrix Nodes] Added 8 nodes to 1×1 cube matrix
 rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-init.js:3397 📋 ALT-CLICK AUTO-MOVE: Drag-copy started without tool activation
-rt-state-manager.js:332 ✅ Instance created: instance_1769801262085_ngpqrxan41p (cube) at position (0.76, 2.20, 1.41)
-rt-init.js:4274 ✅ DRAG-COPY complete: Instance created, original restored
-rt-init.js:3397 📋 ALT-CLICK AUTO-MOVE: Drag-copy started without tool activation
-rt-state-manager.js:332 ✅ Instance created: instance_1769801263524_wkuvvv49aq (cube) at position (-2.84, -1.53, 1.35)
-rt-init.js:4274 ✅ DRAG-COPY complete: Instance created, original restored
+rt-init.js:2431 📋 ALT-CLICK AUTO-MOVE: Drag-copy started without tool activation
+rt-state-manager.js:332 ✅ Instance created: instance_1769802022574_84iievk7ss9 (cube) at position (0.74, 1.58, 0.57)
+rt-init.js:3308 ✅ DRAG-COPY complete: Instance created, original restored
+rt-init.js:2431 📋 ALT-CLICK AUTO-MOVE: Drag-copy started without tool activation
+rt-state-manager.js:332 ✅ Instance created: instance_1769802023686_6htrf2c5v3v (cube) at position (-1.47, -1.49, 0.30)
+rt-init.js:3308 ✅ DRAG-COPY complete: Instance created, original restored
+rt-state-manager.js:373 ✅ Added to selection: dualTetrahedron (1 selected)
+rt-init.js:1601 ✅ Editing basis created:  | arrowLength=1.49 (adaptive) headLength=0.20
+rt-init.js:882 🚪 Exiting move mode - selection preserved
+rt-init.js:910 ✅ Tool mode exited - orbit enabled, selection preserved
 rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-state-manager.js:373 ✅ Added to selection: cube (2 selected)
-rt-init.js:2801 📦 Multi-select: 2 objects selected
-rt-init.js:2567 ✅ Editing basis created: WXYZ | arrowLength=1.49 (adaptive) headLength=0.20
-rt-init.js:3525 ✅ Gumball handle selected: QUADRAY Z-axis, polyhedra count: 2
- 🔄 Rotation: 0.00°, Spread: 0.00, Axis: quadray[3]
- ✅ Rotated Instance: 0.00° around quadray[3]
- ✅ Rotated Instance: 0.00° around quadray[3]
- 🔄 Rotation: -0.28°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.28° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.28° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -0.28°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.28° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.28° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -0.28°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.28° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.28° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -0.28°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.28° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.28° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -0.55°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.55° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.55° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -0.84°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.84° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.84° around quadray[3]
- 🔄 Rotation: -0.84°, Spread: 0.00, Axis: quadray[3]
- ✅ Rotated Instance: -0.84° around quadray[3]
- ✅ Rotated Instance: -0.84° around quadray[3]
- 🔄 Rotation: -1.12°, Spread: 0.00, Axis: quadray[3]
- ✅ Rotated Instance: -1.12° around quadray[3]
- ✅ Rotated Instance: -1.12° around quadray[3]
- 🔄 Rotation: -1.83°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -1.83° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -1.83° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -2.13°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -2.13° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -2.13° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -3.03°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -3.03° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -3.03° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -3.96°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -3.96° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -3.96° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -4.44°, Spread: 0.01, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -4.44° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -4.44° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -5.27°, Spread: 0.01, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -5.27° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -5.27° around quadray[3]
- 🔄 Rotation: -6.81°, Spread: 0.01, Axis: quadray[3]
- ✅ Rotated Instance: -6.81° around quadray[3]
- ✅ Rotated Instance: -6.81° around quadray[3]
- 🔄 Rotation: -8.23°, Spread: 0.02, Axis: quadray[3]
- ✅ Rotated Instance: -8.23° around quadray[3]
- ✅ Rotated Instance: -8.23° around quadray[3]
- 🔄 Rotation: -10.31°, Spread: 0.03, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -10.31° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -10.31° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -10.69°, Spread: 0.03, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -10.69° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -10.69° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -12.53°, Spread: 0.05, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -12.53° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -12.53° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -14.89°, Spread: 0.07, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -14.89° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -14.89° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -15.32°, Spread: 0.07, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -15.32° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -15.32° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -16.95°, Spread: 0.09, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -16.95° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -16.95° around quadray[3]
- 🔄 Rotation: -18.32°, Spread: 0.10, Axis: quadray[3]
- ✅ Rotated Instance: -18.32° around quadray[3]
- ✅ Rotated Instance: -18.32° around quadray[3]
- 🔄 Rotation: -18.32°, Spread: 0.10, Axis: quadray[3]
- ✅ Rotated Instance: -18.32° around quadray[3]
- ✅ Rotated Instance: -18.32° around quadray[3]
- 🔄 Rotation: -18.79°, Spread: 0.10, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -18.79° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -18.79° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -20.20°, Spread: 0.12, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -20.20° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -20.20° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -20.20°, Spread: 0.12, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -20.20° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -20.20° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -21.04°, Spread: 0.13, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -21.04° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -21.04° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -21.04°, Spread: 0.13, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -21.04° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -21.04° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -21.53°, Spread: 0.13, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -21.53° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -21.53° around quadray[3]
- 🔄 Rotation: -21.53°, Spread: 0.13, Axis: quadray[3]
- ✅ Rotated Instance: -21.53° around quadray[3]
- ✅ Rotated Instance: -21.53° around quadray[3]
- 🔄 Rotation: -22.51°, Spread: 0.15, Axis: quadray[3]
- ✅ Rotated Instance: -22.51° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -22.51° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -22.51°, Spread: 0.15, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -22.51° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -22.51° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -23.01°, Spread: 0.15, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -23.01° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -23.01° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -23.01°, Spread: 0.15, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -23.01° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -23.01° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -23.52°, Spread: 0.16, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -23.52° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -23.52° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -23.52°, Spread: 0.16, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -23.52° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -23.52° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -24.02°, Spread: 0.17, Axis: quadray[3]
- ✅ Rotated Instance: -24.02° around quadray[3]
- ✅ Rotated Instance: -24.02° around quadray[3]
- 🔄 Rotation: -24.02°, Spread: 0.17, Axis: quadray[3]
- ✅ Rotated Instance: -24.02° around quadray[3]
- ✅ Rotated Instance: -24.02° around quadray[3]
- 🔄 Rotation: -24.02°, Spread: 0.17, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.02° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.02° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -24.53°, Spread: 0.17, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.53° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.53° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -24.42°, Spread: 0.17, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.42° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.42° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -24.94°, Spread: 0.18, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.94° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.94° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -24.94°, Spread: 0.18, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.94° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.94° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -24.94°, Spread: 0.18, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.94° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -24.94° around quadray[3]
- 🔄 Rotation: -25.46°, Spread: 0.18, Axis: quadray[3]
- ✅ Rotated Instance: -25.46° around quadray[3]
- ✅ Rotated Instance: -25.46° around quadray[3]
- 🔄 Rotation: -25.98°, Spread: 0.19, Axis: quadray[3]
- ✅ Rotated Instance: -25.98° around quadray[3]
- ✅ Rotated Instance: -25.98° around quadray[3]
- 🔄 Rotation: -25.98°, Spread: 0.19, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -25.98° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -25.98° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -27.47°, Spread: 0.21, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -27.47° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -27.47° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -27.47°, Spread: 0.21, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -27.47° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -27.47° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -27.47°, Spread: 0.21, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -27.47° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -27.47° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -28.55°, Spread: 0.23, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -28.55° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -28.55° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -29.64°, Spread: 0.24, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -29.64° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -29.64° around quadray[3]
- 🔄 Rotation: -30.19°, Spread: 0.25, Axis: quadray[3]
- ✅ Rotated Instance: -30.19° around quadray[3]
- ✅ Rotated Instance: -30.19° around quadray[3]
- 🔄 Rotation: -30.19°, Spread: 0.25, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -30.19° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -30.19° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -30.74°, Spread: 0.26, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -30.74° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -30.74° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -30.74°, Spread: 0.26, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -30.74° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -30.74° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -31.22°, Spread: 0.27, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -31.22° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -31.22° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -31.78°, Spread: 0.28, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -31.78° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -31.78° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -32.35°, Spread: 0.29, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -32.35° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -32.35° around quadray[3]
- 🔄 Rotation: -32.91°, Spread: 0.30, Axis: quadray[3]
- ✅ Rotated Instance: -32.91° around quadray[3]
- ✅ Rotated Instance: -32.91° around quadray[3]
- 🔄 Rotation: -33.48°, Spread: 0.30, Axis: quadray[3]
- ✅ Rotated Instance: -33.48° around quadray[3]
- ✅ Rotated Instance: -33.48° around quadray[3]
- 🔄 Rotation: -35.15°, Spread: 0.33, Axis: quadray[3]
- ✅ Rotated Instance: -35.15° around quadray[3]
- ✅ Rotated Instance: -35.15° around quadray[3]
- 🔄 Rotation: -35.73°, Spread: 0.34, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -35.73° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -35.73° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -35.73°, Spread: 0.34, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -35.73° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -35.73° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -37.49°, Spread: 0.37, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -37.49° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -37.49° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -39.22°, Spread: 0.40, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -39.22° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -39.22° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -39.22°, Spread: 0.40, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -39.22° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -39.22° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -41.02°, Spread: 0.43, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -41.02° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -41.02° around quadray[3]
- 🔄 Rotation: -43.41°, Spread: 0.47, Axis: quadray[3]
- ✅ Rotated Instance: -43.41° around quadray[3]
- ✅ Rotated Instance: -43.41° around quadray[3]
- 🔄 Rotation: -43.41°, Spread: 0.47, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -43.41° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -43.41° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -44.62°, Spread: 0.49, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -44.62° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -44.62° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -44.62°, Spread: 0.49, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -44.62° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -44.62° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -46.44°, Spread: 0.53, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -46.44° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -46.44° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -46.45°, Spread: 0.53, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -46.45° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -46.45° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -48.28°, Spread: 0.56, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -48.28° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -48.28° around quadray[3]
- 🔄 Rotation: -48.28°, Spread: 0.56, Axis: quadray[3]
- ✅ Rotated Instance: -48.28° around quadray[3]
- ✅ Rotated Instance: -48.28° around quadray[3]
- 🔄 Rotation: -48.88°, Spread: 0.57, Axis: quadray[3]
- ✅ Rotated Instance: -48.88° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -48.88° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -48.88°, Spread: 0.57, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -48.88° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -48.88° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -49.49°, Spread: 0.58, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -49.49° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -49.49° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -49.49°, Spread: 0.58, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -49.49° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -49.49° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -49.49°, Spread: 0.58, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -49.49° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -49.49° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -50.10°, Spread: 0.59, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -50.10° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -50.10° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -50.10°, Spread: 0.59, Axis: quadray[3]
- ✅ Rotated Instance: -50.10° around quadray[3]
- ✅ Rotated Instance: -50.10° around quadray[3]
- 🔄 Rotation: -50.70°, Spread: 0.60, Axis: quadray[3]
- ✅ Rotated Instance: -50.70° around quadray[3]
- ✅ Rotated Instance: -50.70° around quadray[3]
- 🔄 Rotation: -51.31°, Spread: 0.61, Axis: quadray[3]
- ✅ Rotated Instance: -51.31° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -51.31° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -51.34°, Spread: 0.61, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -51.34° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -51.34° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -53.16°, Spread: 0.64, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -53.16° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -53.16° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -53.16°, Spread: 0.64, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -53.16° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -53.16° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -53.76°, Spread: 0.65, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -53.76° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -53.76° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -53.76°, Spread: 0.65, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -53.76° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -53.76° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -55.56°, Spread: 0.68, Axis: quadray[3]
- ✅ Rotated Instance: -55.56° around quadray[3]
- ✅ Rotated Instance: -55.56° around quadray[3]
- 🔄 Rotation: -55.56°, Spread: 0.68, Axis: quadray[3]
- ✅ Rotated Instance: -55.56° around quadray[3]
- ✅ Rotated Instance: -55.56° around quadray[3]
- 🔄 Rotation: -56.15°, Spread: 0.69, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -56.15° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -56.15° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -56.81°, Spread: 0.70, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -56.81° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -56.81° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -57.40°, Spread: 0.71, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -57.40° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -57.40° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -57.40°, Spread: 0.71, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -57.40° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -57.40° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -57.99°, Spread: 0.72, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -57.99° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -57.99° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -57.99°, Spread: 0.72, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -57.99° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -57.99° around quadray[3]
- 🔄 Rotation: -59.83°, Spread: 0.75, Axis: quadray[3]
- ✅ Rotated Instance: -59.83° around quadray[3]
- ✅ Rotated Instance: -59.83° around quadray[3]
- 🔄 Rotation: -59.83°, Spread: 0.75, Axis: quadray[3]
- ✅ Rotated Instance: -59.83° around quadray[3]
- ✅ Rotated Instance: -59.83° around quadray[3]
- 🔄 Rotation: -60.41°, Spread: 0.76, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -60.41° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -60.41° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -60.41°, Spread: 0.76, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -60.41° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -60.41° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -60.98°, Spread: 0.76, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -60.98° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -60.98° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -61.65°, Spread: 0.77, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -61.65° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -61.65° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -62.23°, Spread: 0.78, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -62.23° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -62.23° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -62.23°, Spread: 0.78, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -62.23° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -62.23° around quadray[3]
- 🔄 Rotation: -62.80°, Spread: 0.79, Axis: quadray[3]
- ✅ Rotated Instance: -62.80° around quadray[3]
- ✅ Rotated Instance: -62.80° around quadray[3]
- 🔄 Rotation: -62.80°, Spread: 0.79, Axis: quadray[3]
- ✅ Rotated Instance: -62.80° around quadray[3]
- ✅ Rotated Instance: -62.80° around quadray[3]
- 🔄 Rotation: -63.37°, Spread: 0.80, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.37° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.37° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -63.37°, Spread: 0.80, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.37° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.37° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -63.37°, Spread: 0.80, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.37° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.37° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -63.93°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.93° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.93° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -63.93°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.93° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.93° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -63.93°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.93° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -63.93° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -64.49°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -64.49° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -64.49° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -64.49°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -64.49° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -64.49° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -64.49°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -64.49° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -64.49° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -64.49°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -64.49° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -64.49° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -64.49°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -64.49° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -64.49° around quadray[3]
-rt-init.js:4378 ✨ Free mode - no snapping applied (full precision preserved)
-rt-init.js:1848 🚪 Exiting rotate mode - selection preserved
-rt-init.js:1876 ✅ Tool mode exited - orbit enabled, selection preserved
-rt-init.js:4429 ✅ Gumball drag ended - tool mode exited, selection preserved
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-state-manager.js:373 ✅ Added to selection: cube (2 selected)
-rt-init.js:2801 📦 Multi-select: 2 objects selected
-rt-init.js:2567 ✅ Editing basis created: WXYZ | arrowLength=2.47 (adaptive) headLength=0.25
-rt-init.js:3525 ✅ Gumball handle selected: QUADRAY Z-axis, polyhedra count: 2
-rt-init.js:4011 🔄 Rotation: 0.00°, Spread: 0.00, Axis: quadray[3]
- ✅ Rotated Instance: 0.00° around quadray[3]
- ✅ Rotated Instance: 0.00° around quadray[3]
- 🔄 Rotation: 0.30°, Spread: 0.00, Axis: quadray[3]
- ✅ Rotated Instance: 0.30° around quadray[3]
- ✅ Rotated Instance: 0.30° around quadray[3]
- 🔄 Rotation: 0.30°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 0.30° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 0.30° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 0.45°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 0.45° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 0.45° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 1.07°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 1.07° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 1.07° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 1.37°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 1.37° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 1.37° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 2.66°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 2.66° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 2.66° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 3.16°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 3.16° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 3.16° around quadray[3]
- 🔄 Rotation: 4.17°, Spread: 0.01, Axis: quadray[3]
- ✅ Rotated Instance: 4.17° around quadray[3]
- ✅ Rotated Instance: 4.17° around quadray[3]
- 🔄 Rotation: 5.06°, Spread: 0.01, Axis: quadray[3]
- ✅ Rotated Instance: 5.06° around quadray[3]
- ✅ Rotated Instance: 5.06° around quadray[3]
- 🔄 Rotation: 6.13°, Spread: 0.01, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 6.13° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 6.13° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 7.09°, Spread: 0.02, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 7.09° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 7.09° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 8.66°, Spread: 0.02, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 8.66° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 8.66° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 10.23°, Spread: 0.03, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 10.23° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 10.23° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 11.31°, Spread: 0.04, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 11.31° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 11.31° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 12.58°, Spread: 0.05, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 12.58° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 12.58° around quadray[3]
- 🔄 Rotation: 14.82°, Spread: 0.07, Axis: quadray[3]
- ✅ Rotated Instance: 14.82° around quadray[3]
- ✅ Rotated Instance: 14.82° around quadray[3]
- 🔄 Rotation: 16.19°, Spread: 0.08, Axis: quadray[3]
- ✅ Rotated Instance: 16.19° around quadray[3]
- ✅ Rotated Instance: 16.19° around quadray[3]
- 🔄 Rotation: 17.02°, Spread: 0.09, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 17.02° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 17.02° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 18.60°, Spread: 0.10, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 18.60° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 18.60° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 20.38°, Spread: 0.12, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 20.38° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 20.38° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 21.44°, Spread: 0.13, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 21.44° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 21.44° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 22.52°, Spread: 0.15, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 22.52° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 22.52° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 24.09°, Spread: 0.17, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 24.09° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 24.09° around quadray[3]
- 🔄 Rotation: 24.42°, Spread: 0.17, Axis: quadray[3]
- ✅ Rotated Instance: 24.42° around quadray[3]
- ✅ Rotated Instance: 24.42° around quadray[3]
- 🔄 Rotation: 25.35°, Spread: 0.18, Axis: quadray[3]
- ✅ Rotated Instance: 25.35° around quadray[3]
- ✅ Rotated Instance: 25.35° around quadray[3]
- 🔄 Rotation: 26.50°, Spread: 0.20, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 26.50° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 26.50° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 26.85°, Spread: 0.20, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 26.85° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 26.85° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 28.15°, Spread: 0.22, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 28.15° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 28.15° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 29.22°, Spread: 0.24, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 29.22° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 29.22° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 29.71°, Spread: 0.25, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 29.71° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 29.71° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 30.07°, Spread: 0.25, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 30.07° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 30.07° around quadray[3]
- 🔄 Rotation: 30.55°, Spread: 0.26, Axis: quadray[3]
- ✅ Rotated Instance: 30.55° around quadray[3]
- ✅ Rotated Instance: 30.55° around quadray[3]
- 🔄 Rotation: 30.92°, Spread: 0.26, Axis: quadray[3]
- ✅ Rotated Instance: 30.92° around quadray[3]
- ✅ Rotated Instance: 30.92° around quadray[3]
- 🔄 Rotation: 31.41°, Spread: 0.27, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 31.41° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 31.41° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 31.78°, Spread: 0.28, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 31.78° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 31.78° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 31.78°, Spread: 0.28, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 31.78° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 31.78° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 32.16°, Spread: 0.28, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 32.16° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 32.16° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 32.27°, Spread: 0.29, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 32.27° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 32.27° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 33.03°, Spread: 0.30, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 33.03° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 33.03° around quadray[3]
- 🔄 Rotation: 33.03°, Spread: 0.30, Axis: quadray[3]
- ✅ Rotated Instance: 33.03° around quadray[3]
- ✅ Rotated Instance: 33.03° around quadray[3]
- 🔄 Rotation: 33.52°, Spread: 0.30, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 33.52° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 33.52° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 33.52°, Spread: 0.30, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 33.52° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 33.52° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 33.91°, Spread: 0.31, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 33.91° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 33.91° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 34.40°, Spread: 0.32, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 34.40° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 34.40° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 34.79°, Spread: 0.33, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 34.79° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 34.79° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 35.18°, Spread: 0.33, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 35.18° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 35.18° around quadray[3]
- 🔄 Rotation: 35.28°, Spread: 0.33, Axis: quadray[3]
- ✅ Rotated Instance: 35.28° around quadray[3]
- ✅ Rotated Instance: 35.28° around quadray[3]
- 🔄 Rotation: 35.67°, Spread: 0.34, Axis: quadray[3]
- ✅ Rotated Instance: 35.67° around quadray[3]
- ✅ Rotated Instance: 35.67° around quadray[3]
- 🔄 Rotation: 35.67°, Spread: 0.34, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 35.67° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 35.67° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 36.07°, Spread: 0.35, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 36.07° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 36.07° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 36.07°, Spread: 0.35, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 36.07° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 36.07° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 36.07°, Spread: 0.35, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 36.07° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 36.07° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 36.46°, Spread: 0.35, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 36.46° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 36.46° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 36.56°, Spread: 0.35, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 36.56° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 36.56° around quadray[3]
- 🔄 Rotation: 36.56°, Spread: 0.35, Axis: quadray[3]
- ✅ Rotated Instance: 36.56° around quadray[3]
- ✅ Rotated Instance: 36.56° around quadray[3]
- 🔄 Rotation: 36.96°, Spread: 0.36, Axis: quadray[3]
- ✅ Rotated Instance: 36.96° around quadray[3]
- ✅ Rotated Instance: 36.96° around quadray[3]
- 🔄 Rotation: 37.36°, Spread: 0.37, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 37.36° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 37.36° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 37.45°, Spread: 0.37, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 37.45° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 37.45° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 37.45°, Spread: 0.37, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 37.45° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 37.45° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 38.26°, Spread: 0.38, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.26° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.26° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 38.26°, Spread: 0.38, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.26° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.26° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 38.35°, Spread: 0.38, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.35° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.35° around quadray[3]
- 🔄 Rotation: 38.75°, Spread: 0.39, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.75° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.75° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 38.75°, Spread: 0.39, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.75° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.75° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 38.75°, Spread: 0.39, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.75° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.75° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 38.75°, Spread: 0.39, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.75° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.75° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 38.75°, Spread: 0.39, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.75° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.75° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 39.16°, Spread: 0.40, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 39.16° around quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 39.16° around quadray[3]
-rt-init.js:4378 ✨ Free mode - no snapping applied (full precision preserved)
-rt-init.js:1848 🚪 Exiting rotate mode - selection preserved
-rt-init.js:1876 ✅ Tool mode exited - orbit enabled, selection preserved
-rt-init.js:4429 ✅ Gumball drag ended - tool mode exited, selection preserved
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-state-manager.js:373 ✅ Added to selection: cube (2 selected)
-rt-init.js:2801 📦 Multi-select: 2 objects selected
-rt-init.js:2567 ✅ Editing basis created: WXYZ | arrowLength=2.13 (adaptive) headLength=0.21
-rt-init.js:3586 🖐️ FREE MOVE started: cube, polyhedra count: 2
-rt-init.js:1848 🚪 Exiting move mode - selection preserved
-rt-init.js:1876 ✅ Tool mode exited - orbit enabled, selection preserved
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-state-manager.js:373 ✅ Added to selection: cube (2 selected)
-rt-init.js:2801 📦 Multi-select: 2 objects selected
-rt-init.js:2567 ✅ Editing basis created: WXYZ | arrowLength=2.13 (adaptive) headLength=0.21
-rt-init.js:3525 ✅ Gumball handle selected: QUADRAY Y-axis, polyhedra count: 2
-rt-init.js:4011 🔄 Rotation: 0.00°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 0.00° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 0.00° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 0.00°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 0.00° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 0.00° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -0.51°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -0.51° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -0.51° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -0.51°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -0.51° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -0.51° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -0.88°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -0.88° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -0.88° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -0.88°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -0.88° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -0.88° around quadray[2]
- 🔄 Rotation: -1.40°, Spread: 0.00, Axis: quadray[2]
- ✅ Rotated Instance: -1.40° around quadray[2]
- ✅ Rotated Instance: -1.40° around quadray[2]
- 🔄 Rotation: -1.40°, Spread: 0.00, Axis: quadray[2]
- ✅ Rotated Instance: -1.40° around quadray[2]
- ✅ Rotated Instance: -1.40° around quadray[2]
- 🔄 Rotation: -1.78°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.78° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.78° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -1.91°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.91° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.91° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -1.91°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.91° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.91° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -2.29°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.29° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.29° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -2.29°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.29° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.29° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -2.43°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.43° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.43° around quadray[2]
- 🔄 Rotation: -2.81°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.81° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.81° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -2.81°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.81° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.81° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -2.81°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.81° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.81° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -2.81°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.81° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.81° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -2.81°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.81° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.81° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -3.33°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.33° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.33° around quadray[2]
- 🔄 Rotation: -3.33°, Spread: 0.00, Axis: quadray[2]
- ✅ Rotated Instance: -3.33° around quadray[2]
- ✅ Rotated Instance: -3.33° around quadray[2]
- 🔄 Rotation: -3.33°, Spread: 0.00, Axis: quadray[2]
- ✅ Rotated Instance: -3.33° around quadray[2]
- ✅ Rotated Instance: -3.33° around quadray[2]
- 🔄 Rotation: -3.33°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.33° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.33° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -3.72°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.72° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.72° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -3.72°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.72° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.72° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -3.72°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.72° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.72° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -3.85°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.85° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.85° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -3.85°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.85° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.85° around quadray[2]
- 🔄 Rotation: -4.24°, Spread: 0.01, Axis: quadray[2]
- ✅ Rotated Instance: -4.24° around quadray[2]
- ✅ Rotated Instance: -4.24° around quadray[2]
- 🔄 Rotation: -4.24°, Spread: 0.01, Axis: quadray[2]
- ✅ Rotated Instance: -4.24° around quadray[2]
- ✅ Rotated Instance: -4.24° around quadray[2]
- 🔄 Rotation: -4.24°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.24° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.24° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -4.24°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.24° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.24° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -4.24°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.24° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.24° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -4.76°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.76° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.76° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -4.76°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.76° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.76° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -4.76°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.76° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -4.76° around quadray[2]
- 🔄 Rotation: -5.16°, Spread: 0.01, Axis: quadray[2]
- ✅ Rotated Instance: -5.16° around quadray[2]
- ✅ Rotated Instance: -5.16° around quadray[2]
- 🔄 Rotation: -5.16°, Spread: 0.01, Axis: quadray[2]
- ✅ Rotated Instance: -5.16° around quadray[2]
- ✅ Rotated Instance: -5.16° around quadray[2]
- 🔄 Rotation: -5.16°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -5.16° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -5.16° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -5.68°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -5.68° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -5.68° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -5.68°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -5.68° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -5.68° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -6.09°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.09° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.09° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -6.09°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.09° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.09° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -6.09°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.09° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.09° around quadray[2]
- 🔄 Rotation: -6.21°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.21° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.21° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -6.61°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.61° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.61° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -6.61°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.61° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.61° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -6.61°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.61° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.61° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -6.61°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.61° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -6.61° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.02°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.02° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.02° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.02°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.02° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.02° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.02°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.02° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.02° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.02°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.02° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.02° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.43°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.43° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.43° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.43°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.43° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.43° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.55°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.55° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.55° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.96°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.96° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.96° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.96°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.96° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.96° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.96°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.96° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.96° around quadray[2]
- 🔄 Rotation: -7.96°, Spread: 0.02, Axis: quadray[2]
- ✅ Rotated Instance: -7.96° around quadray[2]
- ✅ Rotated Instance: -7.96° around quadray[2]
- 🔄 Rotation: -8.37°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.37° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.37° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -8.37°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.37° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.37° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -8.37°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.37° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.37° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -8.49°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.49° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.49° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -8.90°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.90° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.90° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -8.90°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.90° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -8.90° around quadray[2]
- 🔄 Rotation: -8.90°, Spread: 0.02, Axis: quadray[2]
- ✅ Rotated Instance: -8.90° around quadray[2]
- ✅ Rotated Instance: -8.90° around quadray[2]
- 🔄 Rotation: -9.32°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.32° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.32° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -9.32°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.32° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.32° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -9.32°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.32° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.32° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -9.74°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.74° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.74° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -9.74°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.74° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.74° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -9.74°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.74° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.74° around quadray[2]
- 🔄 Rotation: -9.74°, Spread: 0.03, Axis: quadray[2]
- ✅ Rotated Instance: -9.74° around quadray[2]
- ✅ Rotated Instance: -9.74° around quadray[2]
- 🔄 Rotation: -10.28°, Spread: 0.03, Axis: quadray[2]
- ✅ Rotated Instance: -10.28° around quadray[2]
- ✅ Rotated Instance: -10.28° around quadray[2]
- 🔄 Rotation: -10.28°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -10.28° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -10.28° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -10.28°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -10.28° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -10.28° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -10.70°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -10.70° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -10.70° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -10.70°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -10.70° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -10.70° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -11.13°, Spread: 0.04, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -11.13° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -11.13° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -11.13°, Spread: 0.04, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -11.13° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -11.13° around quadray[2]
- 🔄 Rotation: -11.13°, Spread: 0.04, Axis: quadray[2]
- ✅ Rotated Instance: -11.13° around quadray[2]
- ✅ Rotated Instance: -11.13° around quadray[2]
- 🔄 Rotation: -11.56°, Spread: 0.04, Axis: quadray[2]
- ✅ Rotated Instance: -11.56° around quadray[2]
- ✅ Rotated Instance: -11.56° around quadray[2]
- 🔄 Rotation: -11.67°, Spread: 0.04, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -11.67° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -11.67° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -12.10°, Spread: 0.04, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.10° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.10° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -12.10°, Spread: 0.04, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.10° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.10° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -12.54°, Spread: 0.05, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.54° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.54° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -12.54°, Spread: 0.05, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.54° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.54° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -12.98°, Spread: 0.05, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.98° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.98° around quadray[2]
- 🔄 Rotation: -12.98°, Spread: 0.05, Axis: quadray[2]
- ✅ Rotated Instance: -12.98° around quadray[2]
- ✅ Rotated Instance: -12.98° around quadray[2]
- 🔄 Rotation: -13.42°, Spread: 0.05, Axis: quadray[2]
- ✅ Rotated Instance: -13.42° around quadray[2]
- ✅ Rotated Instance: -13.42° around quadray[2]
- 🔄 Rotation: -13.42°, Spread: 0.05, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -13.42° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -13.42° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -13.86°, Spread: 0.06, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -13.86° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -13.86° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -13.86°, Spread: 0.06, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -13.86° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -13.86° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -14.31°, Spread: 0.06, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -14.31° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -14.31° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -14.40°, Spread: 0.06, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -14.40° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -14.40° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -14.85°, Spread: 0.07, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -14.85° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -14.85° around quadray[2]
- 🔄 Rotation: -14.85°, Spread: 0.07, Axis: quadray[2]
- ✅ Rotated Instance: -14.85° around quadray[2]
- ✅ Rotated Instance: -14.85° around quadray[2]
- 🔄 Rotation: -15.30°, Spread: 0.07, Axis: quadray[2]
- ✅ Rotated Instance: -15.30° around quadray[2]
- ✅ Rotated Instance: -15.30° around quadray[2]
- 🔄 Rotation: -15.30°, Spread: 0.07, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -15.30° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -15.30° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -15.30°, Spread: 0.07, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -15.30° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -15.30° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -15.75°, Spread: 0.07, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -15.75° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -15.75° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -15.75°, Spread: 0.07, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -15.75° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -15.75° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -16.21°, Spread: 0.08, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.21° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.21° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -16.21°, Spread: 0.08, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.21° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.21° around quadray[2]
- 🔄 Rotation: -16.21°, Spread: 0.08, Axis: quadray[2]
- ✅ Rotated Instance: -16.21° around quadray[2]
- ✅ Rotated Instance: -16.21° around quadray[2]
- 🔄 Rotation: -16.67°, Spread: 0.08, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.67° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.67° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -16.67°, Spread: 0.08, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.67° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.67° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -17.13°, Spread: 0.09, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -17.13° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -17.13° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -17.13°, Spread: 0.09, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -17.13° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -17.13° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -17.59°, Spread: 0.09, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -17.59° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -17.59° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -17.67°, Spread: 0.09, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -17.67° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -17.67° around quadray[2]
- 🔄 Rotation: -18.14°, Spread: 0.10, Axis: quadray[2]
- ✅ Rotated Instance: -18.14° around quadray[2]
- ✅ Rotated Instance: -18.14° around quadray[2]
- 🔄 Rotation: -18.14°, Spread: 0.10, Axis: quadray[2]
- ✅ Rotated Instance: -18.14° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -18.14° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -18.14°, Spread: 0.10, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -18.14° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -18.14° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -18.60°, Spread: 0.10, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -18.60° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -18.60° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -19.07°, Spread: 0.11, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -19.07° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -19.07° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -19.07°, Spread: 0.11, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -19.07° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -19.07° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -19.07°, Spread: 0.11, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -19.07° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -19.07° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -19.54°, Spread: 0.11, Axis: quadray[2]
- ✅ Rotated Instance: -19.54° around quadray[2]
- ✅ Rotated Instance: -19.54° around quadray[2]
- 🔄 Rotation: -19.54°, Spread: 0.11, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -19.54° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -19.54° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -20.01°, Spread: 0.12, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -20.01° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -20.01° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -20.01°, Spread: 0.12, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -20.01° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -20.01° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -20.96°, Spread: 0.13, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -20.96° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -20.96° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -20.96°, Spread: 0.13, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -20.96° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -20.96° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -21.44°, Spread: 0.13, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -21.44° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -21.44° around quadray[2]
- 🔄 Rotation: -22.40°, Spread: 0.15, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -22.40° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -22.40° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -22.40°, Spread: 0.15, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -22.40° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -22.40° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -22.89°, Spread: 0.15, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -22.89° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -22.89° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -22.89°, Spread: 0.15, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -22.89° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -22.89° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -23.37°, Spread: 0.16, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -23.37° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -23.37° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -23.37°, Spread: 0.16, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -23.37° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -23.37° around quadray[2]
- 🔄 Rotation: -23.86°, Spread: 0.16, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -23.86° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -23.86° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -24.35°, Spread: 0.17, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -24.35° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -24.35° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -24.35°, Spread: 0.17, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -24.35° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -24.35° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -24.35°, Spread: 0.17, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -24.35° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -24.35° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -24.84°, Spread: 0.18, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -24.84° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -24.84° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -25.33°, Spread: 0.18, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -25.33° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -25.33° around quadray[2]
- 🔄 Rotation: -25.83°, Spread: 0.19, Axis: quadray[2]
- ✅ Rotated Instance: -25.83° around quadray[2]
- ✅ Rotated Instance: -25.83° around quadray[2]
- 🔄 Rotation: -25.83°, Spread: 0.19, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -25.83° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -25.83° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -26.32°, Spread: 0.20, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -26.32° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -26.32° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -26.32°, Spread: 0.20, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -26.32° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -26.32° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -26.82°, Spread: 0.20, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -26.82° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -26.82° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -26.82°, Spread: 0.20, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -26.82° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -26.82° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -27.31°, Spread: 0.21, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -27.31° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -27.31° around quadray[2]
- 🔄 Rotation: -27.81°, Spread: 0.22, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -27.81° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -27.81° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -27.81°, Spread: 0.22, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -27.81° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -27.81° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -28.81°, Spread: 0.23, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -28.81° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -28.81° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -28.81°, Spread: 0.23, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -28.81° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -28.81° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -29.82°, Spread: 0.25, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -29.82° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -29.82° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -29.82°, Spread: 0.25, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -29.82° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -29.82° around quadray[2]
- 🔄 Rotation: -30.32°, Spread: 0.25, Axis: quadray[2]
- ✅ Rotated Instance: -30.32° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -30.32° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -31.33°, Spread: 0.27, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -31.33° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -31.33° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -31.84°, Spread: 0.28, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -31.84° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -31.84° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -32.34°, Spread: 0.29, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -32.34° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -32.34° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -32.85°, Spread: 0.29, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -32.85° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -32.85° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -33.36°, Spread: 0.30, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -33.36° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -33.36° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -33.36°, Spread: 0.30, Axis: quadray[2]
- ✅ Rotated Instance: -33.36° around quadray[2]
- ✅ Rotated Instance: -33.36° around quadray[2]
- 🔄 Rotation: -33.36°, Spread: 0.30, Axis: quadray[2]
- ✅ Rotated Instance: -33.36° around quadray[2]
- ✅ Rotated Instance: -33.36° around quadray[2]
- 🔄 Rotation: -33.87°, Spread: 0.31, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -33.87° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -33.87° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -34.37°, Spread: 0.32, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -34.37° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -34.37° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -34.37°, Spread: 0.32, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -34.37° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -34.37° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -34.88°, Spread: 0.33, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -34.88° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -34.88° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -34.88°, Spread: 0.33, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -34.88° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -34.88° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -34.88°, Spread: 0.33, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -34.88° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -34.88° around quadray[2]
- 🔄 Rotation: -35.39°, Spread: 0.34, Axis: quadray[2]
- ✅ Rotated Instance: -35.39° around quadray[2]
- ✅ Rotated Instance: -35.39° around quadray[2]
- 🔄 Rotation: -35.90°, Spread: 0.34, Axis: quadray[2]
- ✅ Rotated Instance: -35.90° around quadray[2]
- ✅ Rotated Instance: -35.90° around quadray[2]
- 🔄 Rotation: -35.90°, Spread: 0.34, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -35.90° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -35.90° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -35.90°, Spread: 0.34, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -35.90° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -35.90° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -36.40°, Spread: 0.35, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -36.40° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -36.40° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -36.40°, Spread: 0.35, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -36.40° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -36.40° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -36.91°, Spread: 0.36, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -36.91° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -36.91° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -36.91°, Spread: 0.36, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -36.91° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -36.91° around quadray[2]
- 🔄 Rotation: -37.42°, Spread: 0.37, Axis: quadray[2]
- ✅ Rotated Instance: -37.42° around quadray[2]
- ✅ Rotated Instance: -37.42° around quadray[2]
- 🔄 Rotation: -37.42°, Spread: 0.37, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -37.42° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -37.42° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -37.42°, Spread: 0.37, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -37.42° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -37.42° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -37.92°, Spread: 0.38, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -37.92° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -37.92° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -37.92°, Spread: 0.38, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -37.92° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -37.92° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -38.43°, Spread: 0.39, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -38.43° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -38.43° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -38.43°, Spread: 0.39, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -38.43° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -38.43° around quadray[2]
- 🔄 Rotation: -38.43°, Spread: 0.39, Axis: quadray[2]
- ✅ Rotated Instance: -38.43° around quadray[2]
- ✅ Rotated Instance: -38.43° around quadray[2]
- 🔄 Rotation: -38.94°, Spread: 0.39, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -38.94° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -38.94° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -39.44°, Spread: 0.40, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -39.44° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -39.44° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -39.44°, Spread: 0.40, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -39.44° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -39.44° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -39.95°, Spread: 0.41, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -39.95° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -39.95° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -40.45°, Spread: 0.42, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -40.45° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -40.45° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -40.95°, Spread: 0.43, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -40.95° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -40.95° around quadray[2]
- 🔄 Rotation: -41.49°, Spread: 0.44, Axis: quadray[2]
- ✅ Rotated Instance: -41.49° around quadray[2]
- ✅ Rotated Instance: -41.49° around quadray[2]
- 🔄 Rotation: -41.99°, Spread: 0.45, Axis: quadray[2]
- ✅ Rotated Instance: -41.99° around quadray[2]
- ✅ Rotated Instance: -41.99° around quadray[2]
- 🔄 Rotation: -42.49°, Spread: 0.46, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -42.49° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -42.49° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -42.99°, Spread: 0.46, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -42.99° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -42.99° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -42.99°, Spread: 0.46, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -42.99° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -42.99° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -43.49°, Spread: 0.47, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -43.49° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -43.49° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -43.49°, Spread: 0.47, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -43.49° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -43.49° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -43.99°, Spread: 0.48, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -43.99° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -43.99° around quadray[2]
- 🔄 Rotation: -43.99°, Spread: 0.48, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -43.99° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -43.99° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -44.49°, Spread: 0.49, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -44.49° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -44.49° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -44.49°, Spread: 0.49, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -44.49° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -44.49° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -44.98°, Spread: 0.50, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -44.98° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -44.98° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -45.48°, Spread: 0.51, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -45.48° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -45.48° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -45.97°, Spread: 0.52, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -45.97° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -45.97° around quadray[2]
- 🔄 Rotation: -45.97°, Spread: 0.52, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -45.97° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -45.97° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -46.95°, Spread: 0.53, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -46.95° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -46.95° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -47.44°, Spread: 0.54, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -47.44° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -47.44° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -47.93°, Spread: 0.55, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -47.93° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -47.93° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -48.41°, Spread: 0.56, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -48.41° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -48.41° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -48.89°, Spread: 0.57, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -48.89° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -48.89° around quadray[2]
- 🔄 Rotation: -49.37°, Spread: 0.58, Axis: quadray[2]
- ✅ Rotated Instance: -49.37° around quadray[2]
- ✅ Rotated Instance: -49.37° around quadray[2]
- 🔄 Rotation: -49.37°, Spread: 0.58, Axis: quadray[2]
- ✅ Rotated Instance: -49.37° around quadray[2]
- ✅ Rotated Instance: -49.37° around quadray[2]
- 🔄 Rotation: -49.92°, Spread: 0.59, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -49.92° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -49.92° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -49.92°, Spread: 0.59, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -49.92° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -49.92° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -50.40°, Spread: 0.59, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -50.40° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -50.40° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -50.40°, Spread: 0.59, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -50.40° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -50.40° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -50.88°, Spread: 0.60, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -50.88° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -50.88° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -50.88°, Spread: 0.60, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -50.88° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -50.88° around quadray[2]
- 🔄 Rotation: -51.35°, Spread: 0.61, Axis: quadray[2]
- ✅ Rotated Instance: -51.35° around quadray[2]
- ✅ Rotated Instance: -51.35° around quadray[2]
- 🔄 Rotation: -51.35°, Spread: 0.61, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -51.35° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -51.35° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -51.82°, Spread: 0.62, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -51.82° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -51.82° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -51.82°, Spread: 0.62, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -51.82° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -51.82° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -51.82°, Spread: 0.62, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -51.82° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -51.82° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -52.29°, Spread: 0.63, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.29° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.29° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -52.29°, Spread: 0.63, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.29° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.29° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -52.29°, Spread: 0.63, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.29° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.29° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -52.76°, Spread: 0.63, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.76° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.76° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -52.76°, Spread: 0.63, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.76° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.76° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -52.76°, Spread: 0.63, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.76° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.76° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -52.76°, Spread: 0.63, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.76° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -52.76° around quadray[2]
- 🔄 Rotation: -51.35°, Spread: 0.61, Axis: quadray[2]
- ✅ Rotated Instance: -51.35° around quadray[2]
- ✅ Rotated Instance: -51.35° around quadray[2]
- 🔄 Rotation: -51.35°, Spread: 0.61, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -51.35° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -51.35° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -47.44°, Spread: 0.54, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -47.44° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -47.44° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -45.97°, Spread: 0.52, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -45.97° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -45.97° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -43.95°, Spread: 0.48, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -43.95° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -43.95° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -41.92°, Spread: 0.45, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -41.92° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -41.92° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -39.90°, Spread: 0.41, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -39.90° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -39.90° around quadray[2]
- 🔄 Rotation: -36.38°, Spread: 0.35, Axis: quadray[2]
- ✅ Rotated Instance: -36.38° around quadray[2]
- ✅ Rotated Instance: -36.38° around quadray[2]
- 🔄 Rotation: -35.38°, Spread: 0.34, Axis: quadray[2]
- ✅ Rotated Instance: -35.38° around quadray[2]
- ✅ Rotated Instance: -35.38° around quadray[2]
- 🔄 Rotation: -33.39°, Spread: 0.30, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -33.39° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -33.39° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -30.91°, Spread: 0.26, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -30.91° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -30.91° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -29.95°, Spread: 0.25, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -29.95° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -29.95° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -29.46°, Spread: 0.24, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -29.46° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -29.46° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -28.48°, Spread: 0.23, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -28.48° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -28.48° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -26.57°, Spread: 0.20, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -26.57° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -26.57° around quadray[2]
- 🔄 Rotation: -25.13°, Spread: 0.18, Axis: quadray[2]
- ✅ Rotated Instance: -25.13° around quadray[2]
- ✅ Rotated Instance: -25.13° around quadray[2]
- 🔄 Rotation: -23.75°, Spread: 0.16, Axis: quadray[2]
- ✅ Rotated Instance: -23.75° around quadray[2]
- ✅ Rotated Instance: -23.75° around quadray[2]
- 🔄 Rotation: -21.88°, Spread: 0.14, Axis: quadray[2]
- ✅ Rotated Instance: -21.88° around quadray[2]
- ✅ Rotated Instance: -21.88° around quadray[2]
- 🔄 Rotation: -21.88°, Spread: 0.14, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -21.88° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -21.88° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -20.49°, Spread: 0.12, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -20.49° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -20.49° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -18.75°, Spread: 0.10, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -18.75° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -18.75° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -18.75°, Spread: 0.10, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -18.75° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -18.75° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -16.61°, Spread: 0.08, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.61° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.61° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -16.17°, Spread: 0.08, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.17° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -16.17° around quadray[2]
- 🔄 Rotation: -14.54°, Spread: 0.06, Axis: quadray[2]
- ✅ Rotated Instance: -14.54° around quadray[2]
- ✅ Rotated Instance: -14.54° around quadray[2]
- 🔄 Rotation: -12.45°, Spread: 0.05, Axis: quadray[2]
- ✅ Rotated Instance: -12.45° around quadray[2]
- ✅ Rotated Instance: -12.45° around quadray[2]
- 🔄 Rotation: -12.04°, Spread: 0.04, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.04° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -12.04° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -10.13°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -10.13° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -10.13° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -9.73°, Spread: 0.03, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.73° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -9.73° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.91°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.91° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.91° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -7.53°, Spread: 0.02, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.53° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -7.53° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -5.80°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -5.80° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -5.80° around quadray[2]
- 🔄 Rotation: -5.43°, Spread: 0.01, Axis: quadray[2]
- ✅ Rotated Instance: -5.43° around quadray[2]
- ✅ Rotated Instance: -5.43° around quadray[2]
- 🔄 Rotation: -4.01°, Spread: 0.00, Axis: quadray[2]
- ✅ Rotated Instance: -4.01° around quadray[2]
- ✅ Rotated Instance: -4.01° around quadray[2]
- 🔄 Rotation: -3.32°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.32° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -3.32° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -2.98°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.98° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -2.98° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -1.63°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.63° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.63° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -1.42°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.42° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.42° around quadray[2]
-rt-init.js:4011 🔄 Rotation: -1.09°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.09° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: -1.09° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 0.19°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 0.19° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 0.19° around quadray[2]
- 🔄 Rotation: 0.51°, Spread: 0.00, Axis: quadray[2]
- ✅ Rotated Instance: 0.51° around quadray[2]
- ✅ Rotated Instance: 0.51° around quadray[2]
- 🔄 Rotation: 0.82°, Spread: 0.00, Axis: quadray[2]
- ✅ Rotated Instance: 0.82° around quadray[2]
- ✅ Rotated Instance: 0.82° around quadray[2]
- 🔄 Rotation: 2.04°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 2.04° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 2.04° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 2.04°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 2.04° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 2.04° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 2.35°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 2.35° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 2.35° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 2.94°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 2.94° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 2.94° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 3.23°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 3.23° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 3.23° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 3.23°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 3.23° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 3.23° around quadray[2]
- 🔄 Rotation: 3.52°, Spread: 0.00, Axis: quadray[2]
- ✅ Rotated Instance: 3.52° around quadray[2]
- ✅ Rotated Instance: 3.52° around quadray[2]
- 🔄 Rotation: 3.81°, Spread: 0.00, Axis: quadray[2]
- ✅ Rotated Instance: 3.81° around quadray[2]
- ✅ Rotated Instance: 3.81° around quadray[2]
- 🔄 Rotation: 3.81°, Spread: 0.00, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 3.81° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 3.81° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 4.10°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.10° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.10° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 4.10°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.10° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.10° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 4.38°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.38° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.38° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 4.66°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.66° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.66° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 4.66°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.66° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.66° around quadray[2]
- 🔄 Rotation: 4.66°, Spread: 0.01, Axis: quadray[2]
- ✅ Rotated Instance: 4.66° around quadray[2]
- ✅ Rotated Instance: 4.66° around quadray[2]
- 🔄 Rotation: 4.94°, Spread: 0.01, Axis: quadray[2]
- ✅ Rotated Instance: 4.94° around quadray[2]
- ✅ Rotated Instance: 4.94° around quadray[2]
- 🔄 Rotation: 4.94°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.94° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 4.94° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 5.22°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.22° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.22° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 5.22°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.22° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.22° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 5.49°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.49° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.49° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 5.49°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.49° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.49° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 5.49°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.49° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.49° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 5.77°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.77° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.77° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 5.77°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.77° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.77° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 5.77°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.77° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 5.77° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 6.04°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 6.04° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 6.04° around quadray[2]
-rt-init.js:4011 🔄 Rotation: 6.04°, Spread: 0.01, Axis: quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 6.04° around quadray[2]
-rt-init.js:4074 ✅ Rotated Instance: 6.04° around quadray[2]
-rt-init.js:4378 ✨ Free mode - no snapping applied (full precision preserved)
-rt-init.js:1848 🚪 Exiting rotate mode - selection preserved
-rt-init.js:1876 ✅ Tool mode exited - orbit enabled, selection preserved
-rt-init.js:4429 ✅ Gumball drag ended - tool mode exited, selection preserved
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-state-manager.js:373 ✅ Added to selection: cube (2 selected)
-rt-init.js:2801 📦 Multi-select: 2 objects selected
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-init.js:2567 ✅ Editing basis created: WXYZ | arrowLength=2.16 (adaptive) headLength=0.22
-rt-init.js:3586 🖐️ FREE MOVE started: cube, polyhedra count: 1
-rt-init.js:1848 🚪 Exiting move mode - selection preserved
-rt-init.js:1876 ✅ Tool mode exited - orbit enabled, selection preserved
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-init.js:2567 ✅ Editing basis created: WXYZ | arrowLength=2.16 (adaptive) headLength=0.22
-rt-init.js:3586 🖐️ FREE MOVE started: cube, polyhedra count: 1
-rt-init.js:4145 🎯 OBJECT SNAP (VERTEX): Snapped to (-3.2356, -0.6001, 3.5732)
-rt-init.js:4177 ✅ FREE MOVE ended with OBJECT SNAP - selection and tool preserved
-rt-init.js:1848 🚪 Exiting move mode - selection preserved
-rt-init.js:1876 ✅ Tool mode exited - orbit enabled, selection preserved
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-init.js:1808 🔄 Y (Quadray): 0.00° → Spread: 0.00
-rt-init.js:1820 🔄 Y (Quadray): Spread: 0.00 → 0.00°
-rt-init.js:1808 🔄 Z (Quadray): 0.00° → Spread: 0.00
-rt-init.js:2567 ✅ Editing basis created: WXYZ | arrowLength=2.16 (adaptive) headLength=0.22
-rt-init.js:1808 🔄 Z (Quadray): 0.00° → Spread: 0.00
-rt-init.js:1820 🔄 Z (Quadray): Spread: 0.00 → 0.00°
-rt-init.js:1808 🔄 Y (Quadray): 0.00° → Spread: 0.00
-rt-init.js:1820 🔄 Y (Quadray): Spread: 0.00 → 0.00°
-rt-init.js:1808 🔄 X (Quadray): 0.00° → Spread: 0.00
-rt-init.js:1820 🔄 X (Quadray): Spread: 0.00 → 0.00°
-rt-init.js:1808 🔄 W: 0.00° → Spread: 0.00
-rt-init.js:1820 🔄 W: Spread: 0.00 → 0.00°
-rt-init.js:1848 🚪 Exiting rotate mode - selection preserved
-rt-init.js:1876 ✅ Tool mode exited - orbit enabled, selection preserved
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-init.js:2567 ✅ Editing basis created: WXYZ | arrowLength=2.16 (adaptive) headLength=0.22
-rt-init.js:3525 ✅ Gumball handle selected: QUADRAY Z-axis, polyhedra count: 1
-rt-init.js:4011 🔄 Rotation: -0.79°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.79° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -0.79°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.79° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -0.79°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -0.79° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -1.57°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -1.57° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -3.14°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -3.14° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -4.68°, Spread: 0.01, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -4.68° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -6.96°, Spread: 0.01, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -6.96° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -9.93°, Spread: 0.03, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -9.93° around quadray[3]
- 🔄 Rotation: -12.82°, Spread: 0.05, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -12.82° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -12.73°, Spread: 0.05, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -12.73° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -15.50°, Spread: 0.07, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -15.50° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -17.36°, Spread: 0.09, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -17.36° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -19.39°, Spread: 0.11, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -19.39° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -19.26°, Spread: 0.11, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -19.26° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -21.74°, Spread: 0.14, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -21.74° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -23.34°, Spread: 0.16, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -23.34° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -23.95°, Spread: 0.16, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -23.95° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -25.01°, Spread: 0.18, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -25.01° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -27.04°, Spread: 0.21, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -27.04° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -27.61°, Spread: 0.21, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -27.61° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -29.65°, Spread: 0.24, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -29.65° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -29.65°, Spread: 0.24, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -29.65° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -31.25°, Spread: 0.27, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -31.25° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -31.76°, Spread: 0.28, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -31.76° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -32.43°, Spread: 0.29, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -32.43° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -33.40°, Spread: 0.30, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -33.40° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -34.48°, Spread: 0.32, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -34.48° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -34.31°, Spread: 0.32, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -34.31° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -34.77°, Spread: 0.33, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -34.77° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -35.05°, Spread: 0.33, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -35.05° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -35.50°, Spread: 0.34, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -35.50° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -35.78°, Spread: 0.34, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -35.78° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -35.78°, Spread: 0.34, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -35.78° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -36.22°, Spread: 0.35, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -36.22° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -36.48°, Spread: 0.35, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -36.48° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -36.91°, Spread: 0.36, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -36.91° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -36.91°, Spread: 0.36, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -36.91° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -38.06°, Spread: 0.38, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -38.06° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -38.46°, Spread: 0.39, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -38.46° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -38.46°, Spread: 0.39, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -38.46° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -39.09°, Spread: 0.40, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -39.09° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -40.28°, Spread: 0.42, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -40.28° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -40.28°, Spread: 0.42, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -40.28° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -40.48°, Spread: 0.42, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -40.48° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -40.85°, Spread: 0.43, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -40.85° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -41.78°, Spread: 0.44, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -41.78° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -42.13°, Spread: 0.45, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -42.13° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -42.47°, Spread: 0.46, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -42.47° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -42.31°, Spread: 0.45, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -42.31° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -43.15°, Spread: 0.47, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -43.15° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -43.48°, Spread: 0.47, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -43.48° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -43.31°, Spread: 0.47, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -43.31° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -43.64°, Spread: 0.48, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -43.64° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -43.64°, Spread: 0.48, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -43.64° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -43.80°, Spread: 0.48, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -43.80° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -43.80°, Spread: 0.48, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -43.80° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -44.73°, Spread: 0.50, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -44.73° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -44.87°, Spread: 0.50, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -44.87° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.17°, Spread: 0.50, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.17° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.47°, Spread: 0.51, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.47° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.31°, Spread: 0.51, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.31° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.61°, Spread: 0.51, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.61° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.61°, Spread: 0.51, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.61° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.61°, Spread: 0.51, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.61° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.61°, Spread: 0.51, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.61° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.90°, Spread: 0.52, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.90° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.90°, Spread: 0.52, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.90° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.74°, Spread: 0.51, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.74° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.74°, Spread: 0.51, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.74° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.45°, Spread: 0.51, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.45° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.45°, Spread: 0.51, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.45° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -45.15°, Spread: 0.50, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -45.15° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -44.54°, Spread: 0.49, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -44.54° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -43.78°, Spread: 0.48, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -43.78° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -42.49°, Spread: 0.46, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -42.49° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -40.27°, Spread: 0.42, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -40.27° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -38.63°, Spread: 0.39, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -38.63° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -36.09°, Spread: 0.35, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -36.09° around quadray[3]
- 🔄 Rotation: -35.69°, Spread: 0.34, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -35.69° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -32.93°, Spread: 0.30, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -32.93° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -29.50°, Spread: 0.24, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -29.50° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -26.41°, Spread: 0.20, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -26.41° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -22.54°, Spread: 0.15, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -22.54° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -18.36°, Spread: 0.10, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -18.36° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -14.46°, Spread: 0.06, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -14.46° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -12.80°, Spread: 0.05, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -12.80° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -8.54°, Spread: 0.02, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -8.54° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -3.47°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -3.47° around quadray[3]
-rt-init.js:4011 🔄 Rotation: -1.49°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: -1.49° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 3.94°, Spread: 0.00, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 3.94° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 11.66°, Spread: 0.04, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 11.66° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 15.28°, Spread: 0.07, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 15.28° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 19.44°, Spread: 0.11, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 19.44° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 23.19°, Spread: 0.16, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 23.19° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 26.15°, Spread: 0.19, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 26.15° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 30.06°, Spread: 0.25, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 30.06° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 33.11°, Spread: 0.30, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 33.11° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 35.69°, Spread: 0.34, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 35.69° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 38.41°, Spread: 0.39, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.41° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 38.90°, Spread: 0.39, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 38.90° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 41.99°, Spread: 0.45, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 41.99° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 44.25°, Spread: 0.49, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 44.25° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 47.32°, Spread: 0.54, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 47.32° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 47.97°, Spread: 0.55, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 47.97° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 50.61°, Spread: 0.60, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 50.61° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 52.77°, Spread: 0.63, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 52.77° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 55.09°, Spread: 0.67, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 55.09° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 55.40°, Spread: 0.68, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 55.40° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 57.07°, Spread: 0.70, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 57.07° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 57.33°, Spread: 0.71, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 57.33° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 59.21°, Spread: 0.74, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 59.21° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 59.47°, Spread: 0.74, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 59.47° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 60.74°, Spread: 0.76, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 60.74° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 60.98°, Spread: 0.76, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 60.98° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 62.45°, Spread: 0.79, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 62.45° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 62.67°, Spread: 0.79, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 62.67° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 63.61°, Spread: 0.80, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 63.61° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 63.86°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 63.86° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 64.07°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 64.07° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 64.53°, Spread: 0.81, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 64.53° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 64.98°, Spread: 0.82, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 64.98° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 65.17°, Spread: 0.82, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 65.17° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 65.42°, Spread: 0.83, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 65.42° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 66.23°, Spread: 0.84, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 66.23° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 66.48°, Spread: 0.84, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 66.48° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 66.66°, Spread: 0.84, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 66.66° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 67.08°, Spread: 0.85, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 67.08° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 67.08°, Spread: 0.85, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 67.08° around quadray[3]
- 🔄 Rotation: 67.25°, Spread: 0.85, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 67.25° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 67.67°, Spread: 0.86, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 67.67° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 68.07°, Spread: 0.86, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 68.07° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 68.07°, Spread: 0.86, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 68.07° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 68.07°, Spread: 0.86, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 68.07° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 68.24°, Spread: 0.86, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 68.24° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 68.47°, Spread: 0.87, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 68.47° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 68.47°, Spread: 0.87, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 68.47° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 68.47°, Spread: 0.87, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 68.47° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 68.63°, Spread: 0.87, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 68.63° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 68.63°, Spread: 0.87, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 68.63° around quadray[3]
-rt-init.js:4011 🔄 Rotation: 68.63°, Spread: 0.87, Axis: quadray[3]
-rt-init.js:4074 ✅ Rotated Instance: 68.63° around quadray[3]
-rt-init.js:4378 ✨ Free mode - no snapping applied (full precision preserved)
-rt-init.js:1848 🚪 Exiting rotate mode - selection preserved
-rt-init.js:1876 ✅ Tool mode exited - orbit enabled, selection preserved
-rt-init.js:4429 ✅ Gumball drag ended - tool mode exited, selection preserved
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
-rt-state-manager.js:373 ✅ Added to selection: cube (1 selected)
+rt-init.js:1601 ✅ Editing basis created:  | arrowLength=1.49 (adaptive) headLength=0.20
+rt-init.js:2620 🖐️ FREE MOVE started: cube, polyhedra count: 1
+rt-init.js:882 🚪 Exiting move mode - selection preserved
+rt-init.js:910 ✅ Tool mode exited - orbit enabled, selection preserved
+rt-state-manager.js:373 ✅ Added to selection: dualTetrahedron (1 selected)
+rt-state-manager.js:373 ✅ Added to selection: cubeMatrix (1 selected)
+rt-init.js:1601 ✅ Editing basis created:  | arrowLength=1.49 (adaptive) headLength=0.20
+rt-init.js:2620 🖐️ FREE MOVE started: cubeMatrix, polyhedra count: 1
+rt-init.js:882 🚪 Exiting move mode - selection preserved
+rt-init.js:910 ✅ Tool mode exited - orbit enabled, selection preserved
