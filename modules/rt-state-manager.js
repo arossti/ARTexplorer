@@ -728,11 +728,6 @@ export const RTStateManager = {
       updatedCount++;
     });
 
-    if (updatedCount > 0) {
-      console.log(
-        `🔗 Updated ${updatedCount} connected line(s) for Point ${movedPointId} (selective)`
-      );
-    }
   },
 
   /**
