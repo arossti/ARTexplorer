@@ -14,20 +14,49 @@
 | View controls + basis visibility bindings | ✅ DONE | d236dfe |
 | Legacy handlers wrapped in conditional | ✅ DONE | 62bf77b |
 | Documentation updates | ✅ DONE | c57b9dc |
+| **RTSelection module created** | ⏪ REVERTED | Lesson learned |
+| **RTSelection shadow integration** | ⏪ REVERTED | Lesson learned |
 
 ### Current State
 
 - **`USE_DECLARATIVE_UI = true`** in [rt-init.js:31](modules/rt-init.js#L31)
+- **RTSelection: REVERTED** - Module deleted, shadow integration removed (see lessons learned)
 - **88 declarative bindings** active, 0 skipped
 - **~957 lines of legacy handlers** wrapped in `if (!USE_DECLARATIVE_UI)` (lines 256-1213)
 - **App tested and working** with declarative-only mode
 
 ### What Remains
 
-1. **Extended Verification** (TODAY) - Use app normally to confirm stability
-2. **Delete Legacy Block** (WHEN READY) - Remove lines 256-1213 (~957 lines)
+1. **Delete Legacy Block** (WHEN READY) - Remove lines 256-1213 (~957 lines)
    - This will bring rt-init.js from 4,774 → ~3,800 lines
+2. ~~**Phase 2b: RTSelection Switchover**~~ - **REVERTED** (see lessons learned below)
 3. **Phase 3: Gumball Extraction** (FUTURE) - ~1,700 lines, high risk
+
+### 📚 Lessons Learned: Why RTSelection Was Reverted
+
+**The Problem:** Selection and gumball are tightly coupled by design, not by accident.
+
+When `USE_RTSELECTION = true` was enabled, opt-click-drag copy broke because:
+- Gumball code reads local `currentSelection` variable (~40 references throughout drag/copy/transform code)
+- RTSelection maintained its own `selection.state.currentSelection`
+- This created two sources of truth that couldn't easily sync
+
+**The Insight:** The "sync issue" wasn't a bug to fix - it was **architectural feedback** that selection belongs with gumball.
+
+**Contrast with Declarative UI (which worked):**
+- UI bindings are genuinely decoupled from the rest of the system
+- They just call `updateGeometry()` and don't need shared state
+- The extraction provided real value by centralizing 88 scattered handlers
+
+**Selection is different:**
+- Selection IS gumball's concern - they're inherently coupled
+- `currentSelection` is read by move, scale, rotate, copy, connect, disconnect...
+- Future node selection will need gumball changes anyway
+- Adding callback sync would create dual source of truth without benefit
+
+**Decision:** Revert the extraction. Selection stays in rt-init.js as part of the gumball system.
+
+**Key Takeaway:** Extract genuinely decoupled systems (like UI bindings). Don't artificially separate tightly coupled systems just to reduce file size.
 
 ### Files Modified Today
 
@@ -35,7 +64,8 @@
 |------|-------|--------|
 | `modules/rt-ui-bindings.js` | 402 | Added `_bindRadioGroup()` method |
 | `modules/rt-ui-binding-defs.js` | 562 | Added 9 bindings (geodesic radios, views, basis) |
-| `modules/rt-init.js` | 4,774 | Wrapped legacy handlers in conditional |
+| `modules/rt-init.js` | 4,774 | Wrapped legacy handlers; RTSelection shadow integration added then reverted |
+| ~~`modules/rt-selection.js`~~ | ~~566~~ | **DELETED** - Reverted extraction attempt |
 
 ### Quick Resume Commands
 
@@ -711,6 +741,198 @@ if (USE_RTGUMBALL) {
 
 ---
 
+## Phase 2b: Selection System Extraction - ⏪ REVERTED
+
+> **STATUS: REVERTED** - This extraction was attempted and reverted. See lessons learned below.
+
+**Original Goal:** Extract selection logic to prepare for node-based selection and deformation features
+
+**What Happened:** Selection is tightly coupled with gumball (~40 references to `currentSelection` in drag/copy/transform code). Extracting selection without gumball created an artificial separation that added complexity without real value.
+
+**Lesson Learned:** Extract genuinely decoupled systems (like UI bindings). Don't artificially separate tightly coupled systems just to reduce file size. The "sync issue" wasn't a bug to fix - it was architectural feedback that selection belongs with gumball.
+
+### Current Selection Code in rt-init.js
+
+| Function | Lines | Purpose |
+|----------|-------|---------|
+| `selectPolyhedron()` | 2707-2778 | Select/multi-select with highlight |
+| `updateSelectionCountUI()` | 2784-2796 | Update UI counter |
+| `applyHighlight()` | 2802-2833 | Visual highlight on selected |
+| `clearHighlight()` | 2839-2869 | Remove highlight |
+| `deselectAll()` | 2875-2886 | Clear all selections |
+| `onCanvasClick()` | 2891-2996 | Click-to-select handler |
+| `getSelectedPolyhedra()` | 2999-3009 | Get selection array |
+| **Total** | ~300 lines | |
+
+### Step 2b.1: Stub File Created ✅
+
+```javascript
+// modules/rt-selection.js (CREATED)
+
+export class RTSelection {
+  constructor() {
+    this.state = {
+      currentSelection: null,
+      selectedNodes: [],        // Future: node-level selection
+      nodeSelectionMode: false, // Future: toggle object vs node selection
+    };
+  }
+
+  init(deps) { /* THREE, scene, camera, renderer, RTStateManager */ }
+
+  // Object selection (current)
+  selectPolyhedron(polyhedron, addToSelection = false) { /* STUB */ }
+  deselectAll() { /* STUB */ }
+  applyHighlight(polyhedron) { /* STUB */ }
+  clearHighlight(polyhedron) { /* STUB */ }
+  onCanvasClick(event, formGroups) { /* STUB */ }
+  getSelectedPolyhedra() { /* STUB */ }
+
+  // Node selection (future)
+  enterNodeSelectionMode() { /* STUB */ }
+  exitNodeSelectionMode() { /* STUB */ }
+  selectNode(instanceId, nodeType, nodeIndex, addToSelection) { /* STUB */ }
+  getSelectedNodes() { /* STUB */ }
+  moveSelectedNodes(offset) { /* STUB */ }
+  snapSelectedNodesToPosition(targetPosition) { /* STUB */ }
+}
+
+export const selection = new RTSelection();
+```
+
+### Step 2b.2: Migration Protocol
+
+Follow the same Shadow + Switchover pattern used for declarative UI:
+
+#### Phase A: Shadow Integration (NO DISRUPTION)
+
+1. Add import to rt-init.js (don't use yet):
+   ```javascript
+   import { selection } from './rt-selection.js';
+
+   const USE_RTSELECTION = false; // Feature flag
+   ```
+
+2. Initialize in startARTexplorer():
+   ```javascript
+   if (USE_RTSELECTION) {
+     selection.init({ THREE, scene, camera, renderer, RTStateManager,
+       onSelectionChanged: updateSelectionCountUI });
+   }
+   ```
+
+#### Phase B: Move Implementation
+
+3. Copy function bodies from rt-init.js to rt-selection.js methods
+4. Wire up click handler:
+   ```javascript
+   if (USE_RTSELECTION) {
+     renderer.domElement.addEventListener('click', (e) => {
+       selection.onCanvasClick(e, formGroups);
+     });
+   }
+   ```
+
+5. Test with `USE_RTSELECTION = true`
+
+#### Phase C: Switchover
+
+6. Set `USE_RTSELECTION = true` as default
+7. Wrap legacy selection code in `if (!USE_RTSELECTION)`
+8. After verification, delete legacy code
+
+### Step 2b.3: Dependencies to Pass
+
+RTSelection needs access to:
+
+| Dependency | Source | Notes |
+|------------|--------|-------|
+| `THREE` | Global | For raycasting, Vector3, etc. |
+| `scene` | rt-init.js | For traversing objects |
+| `camera` | renderingAPI | For raycasting (may switch ortho/persp) |
+| `renderer` | renderingAPI | For cursor changes |
+| `RTStateManager` | Import | For selection state, getInstance() |
+| `formGroups[]` | rt-init.js | Array of form groups for hit testing |
+
+**Option A:** Pass formGroups as parameter to `onCanvasClick()`
+**Option B:** Pass formGroups during init(), update on visibility change
+**Recommended:** Option A (simpler, no stale state)
+
+### Step 2b.4: Verification Tests
+
+After extraction, verify in browser console:
+
+```javascript
+// Test 1: Object selection
+// Click on a visible polyhedron
+console.log('Selected:', RTStateManager.getSelectionCount()); // Should be 1
+
+// Test 2: Multi-select
+// Shift+click on another polyhedron
+console.log('Selected:', RTStateManager.getSelectionCount()); // Should be 2
+
+// Test 3: Deselect
+// Press ESC or click NOW button
+console.log('Selected:', RTStateManager.getSelectionCount()); // Should be 0
+
+// Test 4: Highlight visual
+// Select a polyhedron - should show cyan glow
+// Deselect - glow should disappear
+```
+
+### Step 2b.5: Current Status & Known Issues
+
+**Shadow Integration Status: ✅ COMPLETE**
+
+- Import added to rt-init.js
+- Feature flag: `USE_RTSELECTION = false`
+- `selection.init()` wired up after scene initialization
+- Canvas click handler routes to RTSelection when flag is true
+- Drag state coordination: `selection.setDragging()`, `selection.setJustFinishedDrag()` called at 4 locations
+
+**Known Issue: currentSelection State Sync**
+
+When `USE_RTSELECTION = true`, opt-click-drag copy functionality breaks.
+
+**Root Cause:** The gumball/drag-copy code reads from local `currentSelection` variable in rt-init.js (line ~3342), but RTSelection updates its own `selection.state.currentSelection`. The two systems don't share the same selection state.
+
+**Symptoms:**
+- Single-click selection works ✅
+- Multi-select (shift+click) works ✅
+- Highlight visualization works ✅
+- Opt-click-drag to create copies: **BROKEN** ❌
+
+**Resolution Options for Future Switchover:**
+
+| Option | Description | Pros | Cons |
+|--------|-------------|------|------|
+| A | RTSelection also updates local `currentSelection` | Minimal change | Dual source of truth |
+| B | All code reading `currentSelection` checks flag and uses `selection.state` | Clean separation | Many edit locations |
+| C | Keep in shadow mode until full gumball extraction | No risk | Delays cleanup |
+| D | Expose `selection.getCurrentSelection()` and replace all reads | Single API | Requires thorough audit |
+
+**Recommended:** Option D when ready for full extraction. Audit all ~15 locations that read `currentSelection` and route through RTSelection API.
+
+**Current Decision:** Flag remains OFF (`USE_RTSELECTION = false`). Shadow integration complete, ready for future switchover when sync issue is resolved.
+
+### Step 2b.6: Future Node Selection Integration
+
+Once object selection is extracted, adding node selection:
+
+1. Add UI toggle: "Object Mode" | "Node Mode"
+2. In Node Mode, `onCanvasClick()` calls `selectNode()` instead
+3. Node selection highlights individual vertices (small spheres)
+4. `getSelectedNodes()` returns array of `{ instanceId, nodeType, nodeIndex }`
+5. Gumball move uses node centroid instead of object centroid
+6. Deform commands operate on selected nodes
+
+This architecture separates concerns:
+- **RTSelection**: What is selected (objects or nodes)
+- **RTGumball**: How transformations work
+- **RTStateManager**: Persistence and undo/redo
+
+---
+
 ## Phase 3: Connect/Disconnect to RTStateManager
 
 **Goal:** Move connection logic to where it belongs
@@ -794,9 +1016,22 @@ function handleDisconnectAction() {
 | 1-2 | 1.1-1.2: Create binding engine | 🟢 LOW | 0 (new files) | ✅ DONE (Jan 30) |
 | 2-3 | 1.3-1.4: Shadow integration | 🟡 MED | 0 (parallel) | ✅ DONE (Jan 30) |
 | 3-4 | 1.5: Progressive migration | 🟡 MED | 950 | 🔄 IN PROGRESS |
-| 5+ | 2: RTGumball | 🔴 HIGH | 1,700 | Future |
+| ~~4-5~~ | ~~2b: RTSelection~~ | ~~🟡 MED~~ | ~~300~~ | ⏪ REVERTED (lesson learned) |
+| 6+ | 2: RTGumball | 🔴 HIGH | 1,700 | Future |
 
 **Total potential savings: ~2,700 lines (from 4,730 to ~2,030)**
+
+### Revised Strategy: Extract Around Gumball
+
+Instead of extracting gumball (high risk), extract everything ELSE:
+- ✅ Declarative UI bindings (-950 lines when legacy deleted)
+- ⏪ ~~Selection system (-300 lines)~~ - REVERTED: Selection is coupled with gumball
+- 🔮 Coordinate input handlers (~350 lines) - future
+- 🔮 View controls (~60 lines) - future
+
+**Result:** rt-init.js becomes focused gumball+selection orchestration (~2,000 lines)
+
+**Key insight:** Selection and gumball are one logical unit. Don't separate them artificially.
 
 ---
 
@@ -814,27 +1049,48 @@ function handleDisconnectAction() {
 - `modules/rt-ui-binding-defs.js` - Binding definitions (455 lines)
 
 **Results:**
-- 79 bindings registered (26 checkboxes, 23 sliders, 6 linked)
+- 88 bindings registered (26 checkboxes, 23 sliders, 6 linked, 5 radio-groups, 2 button-groups, 2 basis visibility)
 - `USE_DECLARATIVE_UI = true` enabled in production
 - All UI controls verified working through manual testing
 
 **Current Execution State:**
-Both declarative bindings AND legacy handlers run in parallel. This causes harmless double-registration on ~60 elements (`updateGeometry()` called twice per interaction). Performance impact is negligible.
+Legacy handlers wrapped in `if (!USE_DECLARATIVE_UI)` conditional. Only declarative bindings are active.
 
-### 🔄 Phase 1.5: Legacy Handler Cleanup (Deferred)
+### ⏳ Phase 1.5: Legacy Handler Deletion (READY)
 
-**Issue:** Legacy handlers are interleaved with handlers NOT in declarative bindings (e.g., geodesic projection radio buttons mixed with frequency sliders). A clean conditional wrap requires surgical edits to ~50 locations.
+**Status:** ~957 lines wrapped in conditional, ready to delete after extended verification.
 
-**Decision:** Defer cleanup. Current parallel execution works correctly. Future options:
-1. Remove legacy handlers one section at a time
-2. Wait until more handlers are added to declarative system
-3. Accept parallel execution as harmless overhead
+**To delete:**
+1. Remove lines 256-1213 in rt-init.js
+2. Run `npm run lint`
+3. Test in browser
+4. Commit with message "Refactor: Delete legacy handlers (~957 lines)"
 
 ### ✅ Phase 3 Complete: Connect/Disconnect to RTStateManager
 
 **Added to rt-state-manager.js:**
 - `connectFromSelection(scene)` - Connect two selected Points
 - `disconnectFromSelection(scene)` - Disconnect selected connectedLine
+
+### ⏪ Phase 2b: RTSelection - REVERTED
+
+**What Happened:**
+- Created `modules/rt-selection.js` (566 lines)
+- Added shadow integration with feature flag
+- Discovered `currentSelection` sync issue broke opt-click-drag copy
+- Analyzed the coupling: ~40 references to `currentSelection` in gumball code
+- Realized selection-gumball coupling is by design, not accidental
+
+**Resolution:**
+- Deleted `modules/rt-selection.js`
+- Removed all shadow integration from rt-init.js
+- Documented lessons learned (see Handoff Status above)
+
+**Why This Was the Right Call:**
+- Declarative UI extraction worked because UI bindings are genuinely decoupled
+- Selection extraction failed because selection IS gumball's concern
+- Adding sync callbacks would create dual source of truth without real benefit
+- "We learned. Let's be smart not stupid."
 
 ---
 
@@ -878,7 +1134,8 @@ const USE_RTGUMBALL = false;      // Instant rollback
 ---
 
 _Created: January 30, 2026_
-_Updated: January 30, 2026 - Phase 1 COMPLETE, Phase 3 COMPLETE_
-_Status: PHASE 1 DEPLOYED, LEGACY CLEANUP DEFERRED_
+_Updated: January 30, 2026 - Phase 1 COMPLETE, Phase 2b REVERTED, Phase 3 COMPLETE_
+_Status: DECLARATIVE UI DEPLOYED, LEGACY READY TO DELETE_
 _Risk: LOW (feature flag rollback available)_
+_Lesson: Extract genuinely decoupled systems; don't artificially separate tightly coupled ones_
 _Author: Andy & Claude_

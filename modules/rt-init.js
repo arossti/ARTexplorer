@@ -21,6 +21,11 @@ import {
 import { uiBindings } from "./rt-ui-bindings.js";
 import { allBindings, getBindingStats } from "./rt-ui-binding-defs.js";
 
+// Phase 2b Modularization: Selection System - REVERTED
+// Selection is tightly coupled with gumball (~40 references to currentSelection)
+// Extracting selection without gumball creates artificial separation that adds
+// complexity without real value. Lesson learned: extract genuinely decoupled systems only.
+
 // Make RTPolyhedra available globally for node geometry creation
 window.RTPolyhedra = Polyhedra;
 
@@ -29,6 +34,8 @@ window.RTPolyhedra = Polyhedra;
 // ========================================================================
 // Set to true to use new declarative UI bindings instead of legacy addEventListener
 const USE_DECLARATIVE_UI = true; // Testing declarative bindings (Jan 30)
+
+// Phase 2b RTSelection: REVERTED - Selection-gumball coupling is by design, not a bug
 
 // TODO: Extract gumball to rt-controls.js module
 // import { RTControls } from "./modules/rt-controls.js";
