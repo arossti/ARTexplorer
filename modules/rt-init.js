@@ -1910,6 +1910,81 @@ function startARTexplorer(
     });
   }
 
+  // ========================================================================
+  // VERTEX NODE SELECTION (Individual node highlighting)
+  // ========================================================================
+
+  /**
+   * Apply highlight to a single vertex node (yellow glow for selection)
+   * @param {THREE.Mesh} nodeMesh - The vertex node mesh to highlight
+   */
+  function applyNodeHighlight(nodeMesh) {
+    if (!nodeMesh?.isMesh || !nodeMesh.userData.isVertexNode) return;
+
+    // Store original colors if not already stored
+    if (!nodeMesh.userData.nodeOriginalColor) {
+      nodeMesh.userData.nodeOriginalColor = nodeMesh.material.color.getHex();
+      nodeMesh.userData.nodeOriginalEmissive =
+        nodeMesh.material.emissive.getHex();
+      nodeMesh.userData.nodeOriginalEmissiveIntensity =
+        nodeMesh.material.emissiveIntensity;
+    }
+
+    // Apply yellow highlight (distinct from cyan object selection)
+    nodeMesh.material.color.setHex(0xffff00); // Yellow
+    nodeMesh.material.emissive.setHex(0xffff00);
+    nodeMesh.material.emissiveIntensity = 0.8;
+  }
+
+  /**
+   * Clear highlight from a single vertex node
+   * @param {THREE.Mesh} nodeMesh - The vertex node mesh to unhighlight
+   */
+  function clearNodeHighlight(nodeMesh) {
+    if (!nodeMesh?.isMesh || !nodeMesh.userData.isVertexNode) return;
+
+    // Restore original colors
+    if (nodeMesh.userData.nodeOriginalColor !== undefined) {
+      nodeMesh.material.color.setHex(nodeMesh.userData.nodeOriginalColor);
+      nodeMesh.material.emissive.setHex(nodeMesh.userData.nodeOriginalEmissive);
+      nodeMesh.material.emissiveIntensity =
+        nodeMesh.userData.nodeOriginalEmissiveIntensity;
+
+      // Clean up stored data
+      delete nodeMesh.userData.nodeOriginalColor;
+      delete nodeMesh.userData.nodeOriginalEmissive;
+      delete nodeMesh.userData.nodeOriginalEmissiveIntensity;
+    }
+  }
+
+  /**
+   * Clear all vertex node selections and their highlights
+   */
+  function clearAllNodeSelections() {
+    const selectedNodes = RTStateManager.getSelectedVertices();
+    selectedNodes.forEach(node => {
+      clearNodeHighlight(node);
+    });
+    RTStateManager.clearVertexSelection();
+    RTStateManager.exitVertexMode();
+    updateNodeSelectionUI();
+  }
+
+  /**
+   * Update UI to show node selection count
+   */
+  function updateNodeSelectionUI() {
+    const count = RTStateManager.getSelectedVertexCount();
+    const nodeCountEl = document.getElementById("nodeSelectionCount");
+    if (nodeCountEl) {
+      nodeCountEl.textContent =
+        count > 0 ? `${count} node${count > 1 ? "s" : ""} selected` : "";
+    }
+    if (count > 0) {
+      console.log(`🔵 Node selection: ${count} vertices selected`);
+    }
+  }
+
   /**
    * Deselect all polyhedra (clears multi-selection)
    */
@@ -2028,12 +2103,75 @@ function startARTexplorer(
       );
 
       if (parentEntry) {
-        selectPolyhedron(parentEntry.parent, event.shiftKey);
+        // Check if we clicked a vertex node on an INSTANCE
+        const isVertexNode = hitObject.userData.isVertexNode;
+        const isInstance = parentEntry.parent.userData.isInstance;
+
+        if (isVertexNode && isInstance) {
+          // VERTEX NODE SELECTION on an instance
+          handleVertexNodeClick(hitObject, parentEntry.parent, event.shiftKey);
+        } else {
+          // Normal object selection
+          // If we were in vertex mode, exit it first
+          if (RTStateManager.isVertexMode()) {
+            clearAllNodeSelections();
+          }
+          selectPolyhedron(parentEntry.parent, event.shiftKey);
+        }
       }
     }
     // NOTE: Clicking empty space no longer deselects
     // Deselection now requires: ESC key OR NOW button
     // This allows users to orbit camera between transformations without losing selection
+  }
+
+  /**
+   * Handle click on a vertex node (for node selection)
+   * Node clicks select individual nodes, NOT the parent polyhedron.
+   * Face clicks (elsewhere) select the entire polyhedron.
+   * @param {THREE.Mesh} nodeMesh - The vertex node that was clicked
+   * @param {THREE.Group} parentPoly - The parent polyhedron instance
+   * @param {boolean} addToSelection - If true (Shift+click), toggle in selection
+   */
+  function handleVertexNodeClick(nodeMesh, parentPoly, addToSelection) {
+    // If switching to a different polyhedron's nodes, clear previous node selection
+    if (
+      RTStateManager.isVertexMode() &&
+      RTStateManager.state.selection.object !== parentPoly
+    ) {
+      clearAllNodeSelections();
+    }
+
+    // Enter vertex mode on this polyhedron (tracks which poly we're editing nodes on)
+    // Note: This does NOT select the polyhedron itself - only face clicks do that
+    if (!RTStateManager.isVertexMode()) {
+      RTStateManager.enterVertexMode(parentPoly);
+    }
+
+    if (addToSelection) {
+      // Shift+click: Toggle node in selection
+      if (RTStateManager.isVertexSelected(nodeMesh)) {
+        // Already selected - deselect
+        clearNodeHighlight(nodeMesh);
+        RTStateManager.deselectVertex(nodeMesh);
+      } else {
+        // Not selected - add to selection
+        applyNodeHighlight(nodeMesh);
+        RTStateManager.selectVertex(nodeMesh);
+      }
+    } else {
+      // Normal click: Clear previous node selection, select only this one
+      RTStateManager.getSelectedVertices().forEach(node => {
+        clearNodeHighlight(node);
+      });
+      RTStateManager.clearVertexSelection();
+
+      // Select the clicked node
+      applyNodeHighlight(nodeMesh);
+      RTStateManager.selectVertex(nodeMesh);
+    }
+
+    updateNodeSelectionUI();
   }
 
   // Get selected polyhedra - returns all selected objects (multi-select aware)
@@ -3701,6 +3839,12 @@ function startARTexplorer(
 
         console.log("❌ DRAG-COPY cancelled via Escape, original restored");
         return; // Don't deselect, just cancel the copy operation
+      }
+
+      // If in vertex mode, first clear vertex selections (ESC once = exit vertex mode)
+      if (RTStateManager.isVertexMode()) {
+        clearAllNodeSelections();
+        return; // Don't deselect polyhedron yet, just exit vertex mode
       }
 
       if (currentGumballTool) {

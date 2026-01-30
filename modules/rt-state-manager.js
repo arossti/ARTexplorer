@@ -453,6 +453,117 @@ export const RTStateManager = {
   },
 
   // ========================================================================
+  // NODE (VERTEX) SELECTION MANAGEMENT
+  // ========================================================================
+  // For selecting individual vertices on polyhedra instances
+  // These are the small spheres at each vertex, not entire objects
+
+  /**
+   * Enter vertex selection mode for a polyhedron
+   * @param {THREE.Object3D} polyhedron - The polyhedron to select vertices on
+   */
+  enterVertexMode(polyhedron) {
+    if (!polyhedron?.userData.isInstance) {
+      console.warn("⚠️ Vertex mode only available for instances");
+      return false;
+    }
+    this.state.selection.mode = "vertex";
+    this.state.selection.object = polyhedron;
+    this.state.selection.subSelection.vertices = [];
+    console.log(
+      `🔵 Entered vertex mode for ${polyhedron.userData.type || "polyhedron"}`
+    );
+    return true;
+  },
+
+  /**
+   * Exit vertex selection mode
+   */
+  exitVertexMode() {
+    this.state.selection.mode = "object";
+    this.state.selection.subSelection.vertices = [];
+    console.log("🔵 Exited vertex mode");
+  },
+
+  /**
+   * Check if in vertex selection mode
+   * @returns {boolean} True if in vertex mode
+   */
+  isVertexMode() {
+    return this.state.selection.mode === "vertex";
+  },
+
+  /**
+   * Add a vertex node to selection
+   * @param {THREE.Mesh} nodeMesh - The vertex node mesh to select
+   * @returns {boolean} True if added, false if already selected
+   */
+  selectVertex(nodeMesh) {
+    if (!nodeMesh?.userData.isVertexNode) {
+      console.warn("⚠️ selectVertex: Not a vertex node");
+      return false;
+    }
+    if (this.state.selection.subSelection.vertices.includes(nodeMesh)) {
+      return false; // Already selected
+    }
+    this.state.selection.subSelection.vertices.push(nodeMesh);
+    console.log(
+      `✅ Vertex selected (${this.state.selection.subSelection.vertices.length} total)`
+    );
+    return true;
+  },
+
+  /**
+   * Remove a vertex node from selection
+   * @param {THREE.Mesh} nodeMesh - The vertex node mesh to deselect
+   * @returns {boolean} True if removed, false if not in selection
+   */
+  deselectVertex(nodeMesh) {
+    const index = this.state.selection.subSelection.vertices.indexOf(nodeMesh);
+    if (index === -1) {
+      return false; // Not in selection
+    }
+    this.state.selection.subSelection.vertices.splice(index, 1);
+    console.log(
+      `✅ Vertex deselected (${this.state.selection.subSelection.vertices.length} remaining)`
+    );
+    return true;
+  },
+
+  /**
+   * Check if a vertex node is selected
+   * @param {THREE.Mesh} nodeMesh - The vertex node mesh to check
+   * @returns {boolean} True if selected
+   */
+  isVertexSelected(nodeMesh) {
+    return this.state.selection.subSelection.vertices.includes(nodeMesh);
+  },
+
+  /**
+   * Get all selected vertex nodes
+   * @returns {Array<THREE.Mesh>} Array of selected vertex node meshes
+   */
+  getSelectedVertices() {
+    return this.state.selection.subSelection.vertices;
+  },
+
+  /**
+   * Get count of selected vertices
+   * @returns {number} Number of selected vertices
+   */
+  getSelectedVertexCount() {
+    return this.state.selection.subSelection.vertices.length;
+  },
+
+  /**
+   * Clear all vertex selections (but stay in vertex mode)
+   */
+  clearVertexSelection() {
+    this.state.selection.subSelection.vertices = [];
+    console.log("🔵 Vertex selection cleared");
+  },
+
+  // ========================================================================
   // POINT CONNECTION MANAGEMENT
   // ========================================================================
 
