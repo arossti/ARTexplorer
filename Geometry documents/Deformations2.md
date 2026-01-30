@@ -323,12 +323,14 @@ Benefits:
 - ~~Bug 3: Rotating 2 connected Points causes visual revert on mouseup~~ - **FIXED** (`9f92935`)
 - ~~Bug 4: Single-node movement doesn't update line~~ - **FIXED** (free movement path)
 - ~~Bug 5: Vertex snap causes self-collapse (Points snap to each other)~~ - **FIXED** (exclude connected Points from snap targets)
+- ~~Bug 6: Free move collapses multi-selected objects to same position~~ - **FIXED** (delta-based movement)
 
 **Solutions Applied**:
 1. Auto-select connected Points when selecting a connectedLine
 2. Skip `updateConnectedGeometry()` on mouseup when connectedLine is in selection
 3. Add `updateConnectedGeometry()` call to OBJECT SNAP code path in free movement handler
 4. Exclude connected Points from snap target candidates in `findNearestSnapTarget()`
+5. Use delta-based movement in free move (like gumball drag) instead of absolute positioning
 
 ---
 

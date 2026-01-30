@@ -1503,6 +1503,8 @@ function startARTexplorer(
   let dragPlane = null; // THREE.Plane for raycasting
   let dragStartPoint = new THREE.Vector3();
   let freeMoveDragOffset = new THREE.Vector3(); // Offset from click point to object center
+  let freeMoveInitialPositions = []; // Initial positions of all selected polyhedra (for delta-based movement)
+  let freeMoveStartPoint = new THREE.Vector3(); // World position where free move drag started
   let selectedPolyhedra = []; // Will store currently selected polyhedra
   let justFinishedDrag = false; // Track if we just completed a drag (prevent deselect on click-after-drag)
   let editingBasis = null; // Localized gumball that follows selected Forms
@@ -3393,6 +3395,12 @@ function startARTexplorer(
               .copy(currentSelection.position)
               .sub(dragStartPoint);
 
+            // Store initial positions for delta-based movement
+            freeMoveStartPoint.copy(dragStartPoint);
+            freeMoveInitialPositions = selectedPolyhedra.map(poly =>
+              poly.position.clone()
+            );
+
             console.log(
               "📋 ALT-CLICK AUTO-MOVE: Drag-copy started without tool activation"
             );
@@ -3576,6 +3584,12 @@ function startARTexplorer(
                 .copy(currentSelection.position)
                 .sub(dragStartPoint);
 
+              // Store initial positions of ALL selected polyhedra for delta-based movement
+              freeMoveStartPoint.copy(dragStartPoint);
+              freeMoveInitialPositions = selectedPolyhedra.map(poly =>
+                poly.position.clone()
+              );
+
               console.log(
                 `🖐️ FREE MOVE started: ${currentSelection.userData.type}, polyhedra count: ${selectedPolyhedra.length}`
               );
@@ -3615,6 +3629,12 @@ function startARTexplorer(
             freeMoveDragOffset
               .copy(currentSelection.position)
               .sub(dragStartPoint);
+
+            // Store initial positions of ALL selected polyhedra for delta-based movement
+            freeMoveStartPoint.copy(dragStartPoint);
+            freeMoveInitialPositions = selectedPolyhedra.map(poly =>
+              poly.position.clone()
+            );
 
             console.log(
               `🖐️ FREE MOVE started (no basis): ${currentSelection.userData.type}`
@@ -3678,18 +3698,28 @@ function startARTexplorer(
               }
             }
 
-            // Move all selected polyhedra
-            selectedPolyhedra.forEach(poly => {
-              poly.position.copy(newPosition);
+            // Calculate movement delta from drag start (preserves relative positions)
+            const movementDelta = currentPoint.clone().sub(freeMoveStartPoint);
+
+            // Move all selected polyhedra using delta-based positioning
+            selectedPolyhedra.forEach((poly, index) => {
+              if (freeMoveInitialPositions[index]) {
+                poly.position
+                  .copy(freeMoveInitialPositions[index])
+                  .add(movementDelta);
+              }
             });
 
-            // Update editing basis position if it exists
-            if (editingBasis) {
-              editingBasis.position.copy(newPosition);
+            // Update editing basis position if it exists (use primary selection's new position)
+            if (editingBasis && selectedPolyhedra.length > 0) {
+              editingBasis.position.copy(selectedPolyhedra[0].position);
             }
 
-            // Update coordinate displays
-            const pos = newPosition;
+            // Update coordinate displays (use primary selection's position)
+            const pos =
+              selectedPolyhedra.length > 0
+                ? selectedPolyhedra[0].position
+                : currentPoint;
             document.getElementById("coordX").value = pos.x.toFixed(4);
             document.getElementById("coordY").value = pos.y.toFixed(4);
             document.getElementById("coordZ").value = pos.z.toFixed(4);
