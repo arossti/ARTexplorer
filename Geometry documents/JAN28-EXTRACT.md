@@ -170,10 +170,11 @@ import {
 | Jan 28, 2026 | 4,648  | +528   | Multi-select + attempted grouping (reverted) |
 | Jan 29, 2026 | ~4,700 | +52    | Bug 7 fix (selective connection updates)     |
 | Jan 30, 2026 | 4,733  | +33    | Added declarative UI import & init           |
+| Jan 30, 2026 | 4,774  | +41    | Legacy handlers wrapped in conditional       |
 
 **Target**: Keep under 5,000 lines. If approaching limit, extract before adding new features.
 
-**Note (Jan 30)**: Declarative UI system adds ~33 lines to rt-init.js for imports and initialization, but creates foundation for removing ~1,000+ lines of legacy handlers in next phase.
+**Note (Jan 30)**: Legacy handlers now wrapped in `if (!USE_DECLARATIVE_UI)`. When verified, deleting the conditional block will remove ~957 lines, bringing rt-init.js to ~3,800 lines.
 
 ---
 
@@ -396,14 +397,15 @@ findNearestSnapTarget() - SPECIAL CASE
 | Module | Lines | Status | Notes |
 |--------|-------|--------|-------|
 | `rt-snap-geometry.js` | 173 | ✅ DONE | Pure geometry helpers |
-| `rt-ui-bindings.js` | 370 | ✅ DONE | Declarative binding engine |
-| `rt-ui-binding-defs.js` | 455 | ✅ DONE | 79 binding definitions |
+| `rt-ui-bindings.js` | 402 | ✅ DONE | Declarative binding engine |
+| `rt-ui-binding-defs.js` | 562 | ✅ DONE | 88 binding definitions |
+| Legacy handler wrap | ~957 | ✅ DONE | Wrapped in `if (!USE_DECLARATIVE_UI)` |
 
 ### Pending Extractions
 
 | Module | Est. Lines | Status | Notes |
 |--------|------------|--------|-------|
-| Legacy handler cleanup | -1,000 | ⏳ NEXT | Wrap in conditional, then remove |
+| Legacy handler deletion | -957 | ⏳ READY | Delete after extended verification |
 | `rt-gumball.js` | 1,700 | 🔮 FUTURE | Phase 3 - high risk |
 
 ### Current Strategy
@@ -411,12 +413,12 @@ findNearestSnapTarget() - SPECIAL CASE
 **Shadow + Switchover Pattern:**
 1. ✅ Build new system alongside old (declarative bindings)
 2. ✅ Test in parallel (both systems active)
-3. ⏳ Switchover via feature flag (`USE_DECLARATIVE_UI`)
-4. ⏳ Remove legacy handlers after verification
+3. ✅ Switchover via feature flag (`USE_DECLARATIVE_UI = true`)
+4. ⏳ Remove legacy handlers after extended verification
 
 ---
 
 _Created: January 28, 2026_
-_Updated: January 30, 2026 - End of Day_
-_Status: PHASE 2 COMPLETE (Declarative UI implemented)_
+_Updated: January 30, 2026 - Legacy handlers wrapped_
+_Status: SWITCHOVER COMPLETE (declarative-only mode active)_
 _Author: Andy & Claude_

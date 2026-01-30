@@ -515,7 +515,7 @@ No. The file IS initialization and should stay named that way. The goal is to ma
 
 ---
 
-## Implementation Status (Jan 30, 2026 - End of Day)
+## Implementation Status (Jan 30, 2026 - Legacy Handlers Wrapped)
 
 ### Commits Made
 
@@ -524,32 +524,35 @@ No. The file IS initialization and should stay named that way. The goal is to ma
 | 9d34887 | Created rt-ui-bindings.js binding engine |
 | b30bb75 | Created rt-ui-binding-defs.js with 79 bindings |
 | f2ccf85 | Added documentation about parallel execution state |
+| d236dfe | Added radio-group, view controls, basis visibility bindings (88 total) |
+| 62bf77b | Wrapped ~957 lines of legacy handlers in conditional |
 
 ### Current rt-init.js State
 
-- **Line count:** 4,733 lines
+- **Line count:** 4,774 lines
 - **Feature flag:** `USE_DECLARATIVE_UI = true` at line 31
-- **Execution mode:** Parallel (both declarative and legacy handlers active)
-- **Binding coverage:** ~61 handlers have declarative equivalents, ~37 legacy-only
+- **Execution mode:** Declarative-only (legacy handlers skipped)
+- **Binding coverage:** 88 declarative bindings active
+- **Legacy block:** Lines 256-1213 wrapped in `if (!USE_DECLARATIVE_UI)`
 
-### Files Created
+### Files Created/Updated
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `modules/rt-ui-bindings.js` | 370 | RTUIBindings class - generic binding engine |
-| `modules/rt-ui-binding-defs.js` | 455 | Binding definitions (79 total) |
+| `modules/rt-ui-bindings.js` | 402 | RTUIBindings class - generic binding engine |
+| `modules/rt-ui-binding-defs.js` | 562 | Binding definitions (88 total) |
 
 ### Next Steps
 
-1. **Legacy handler cleanup** - Wrap covered handlers in `if (!USE_DECLARATIVE_UI)`
-2. **Add missing handlers** - Geodesic projection radio buttons, view controls
-3. **Test switchover** - Set flag to false, verify legacy-only works
-4. **Final cleanup** - Remove legacy handlers after full verification
+1. ✅ **Legacy handler cleanup** - Wrapped in `if (!USE_DECLARATIVE_UI)`
+2. ✅ **Add missing handlers** - Radio groups, view controls, basis visibility
+3. ⏳ **Extended verification** - Use app normally to confirm stability
+4. ⏳ **Final cleanup** - Delete legacy handler block after verification (~957 lines)
 
 ---
 
 _Created: January 30, 2026_
-_Updated: January 30, 2026 - End of Day_
-_Status: PHASE 2 COMPLETE (Declarative UI system implemented)_
-_Next: Legacy handler cleanup, then Phase 3 (Gumball)_
+_Updated: January 30, 2026 - Switchover Complete_
+_Status: SWITCHOVER COMPLETE (declarative-only mode active, ~957 legacy lines ready to delete)_
+_Next: Extended verification, then delete legacy block, then Phase 3 (Gumball)_
 _Author: Andy & Claude_
