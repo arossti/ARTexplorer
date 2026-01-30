@@ -3914,15 +3914,24 @@ function startARTexplorer(
         return; // Don't deselect, just cancel the copy operation
       }
 
-      // If in vertex mode, first clear vertex selections (ESC once = exit vertex mode)
+      // If a tool is active, exit tool mode first (consistent with normal behavior)
+      // This also clears vertex mode since tool exit ends the operation
+      if (currentGumballTool) {
+        exitToolMode();
+        // Also exit vertex mode when tool exits
+        if (RTStateManager.isVertexMode()) {
+          clearAllNodeSelections();
+        }
+        return;
+      }
+
+      // If in vertex mode (no tool active), clear vertex selections
       if (RTStateManager.isVertexMode()) {
         clearAllNodeSelections();
         return; // Don't deselect polyhedron yet, just exit vertex mode
       }
 
-      if (currentGumballTool) {
-        exitToolMode();
-      }
+      // No tool, no vertex mode - just deselect
       deselectAll();
     }
 
