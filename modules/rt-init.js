@@ -1,6 +1,5 @@
 // MODULE IMPORTS
 // ========================================================================
-// Test comment to trigger Claude review workflow
 import { Polyhedra } from "./rt-polyhedra.js";
 import { RTPapercut } from "./rt-papercut.js";
 import { RTViewManager } from "./rt-viewmanager.js";

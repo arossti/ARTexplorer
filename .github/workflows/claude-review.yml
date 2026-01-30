@@ -65,9 +65,6 @@ jobs:
             -H "anthropic-version: 2023-06-01" \
             -d "$PAYLOAD")
 
-          # Debug: show response type (but not content for security)
-          echo "Response keys: $(echo "$RESPONSE" | jq -r 'keys | join(", ")')"
-
           # Check for error in response
           if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
             ERROR_MSG=$(echo "$RESPONSE" | jq -r '.error.message // "Unknown API error"')
