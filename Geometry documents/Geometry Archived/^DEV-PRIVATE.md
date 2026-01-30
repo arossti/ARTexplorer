@@ -1790,4 +1790,111 @@ Add generalized primitive forms (Line/Cylinder + Cone with configurable resoluti
 
 ---
 
+### 11.5 BFI/Synergetics Community Meeting Action Items (2025-01-29)
+
+**Source:** Meeting minutes from presentation to Fuller associates, BFI Stanford Archivist, and international geometry experts.
+
+#### 11.5.1 Volume Display/Selection Functionality
+
+**Status:** ⚠️ Active
+**Priority:** High
+**Requested By:** Casey House
+**Discussed With:** Kirby Urner
+
+Implement volume display and selection functionality in the app.
+
+---
+
+#### 11.5.2 Fix Save/Restore View Functionality
+
+**Status:** ⚠️ Active - Bug Fix CANNOT REPRODUCE, GLITCH?
+**Priority:** High
+**Source:** Noted during live demo
+
+Fix the "save view" and "restore view" functionality that failed during demonstration.
+
+---
+
+#### 11.5.3 Tetrahelix Generation (Parent/Child Local Space Algorithm)
+
+**Status:** ⚠️ Active - Research & Implementation
+**Priority:** High
+**Discussed With:** Gary Doskas
+
+Investigate and implement tetrahelix generation using parent/child (local space) algorithm as discussed. Gary to share insights and/or algorithms for robust tetrahelix generation.
+
+---
+
+#### 11.5.4 Five-Fold Symmetry & Penrose Tiling on Spheres
+
+**Status:** ⚠️ Active - Research & Implementation
+**Priority:** High
+**Requested By:** Bonnie DeVarco (BFI Archivist)
+
+Explore and implement five-fold symmetry and Penrose tiling around spheres functionality.
+
+---
+
+#### 11.5.5 Continue Deformation Features Development
+
+**Status:** ⚠️ Active (In Progress on DEFORM branch)
+**Priority:** High
+
+Continue development of deformation features (selecting and moving points/edges on polyhedra) as mentioned as next on the roadmap.
+
+**Note:** Phase 2A (Point-Based Lines) completed and deployed. Ready for Phase 3 (Line2/thick lines) or Phase 4 (Polygon deformation).
+
+---
+
+#### 11.5.6 Safari JSON Export/Import Bug
+
+**Status:** ⚠️ Active - Bug Fix
+**Priority:** Medium
+**Discussed With:** Mark Pavlidis
+
+Debug and resolve JSON export/import issues in Safari browser (noted during demo). Chrome export works fine. 
+
+---
+
+#### 11.5.7 Quantization (A, B, T Modules) Implementation
+
+**Status:** 🔮 Future Enhancement
+**Priority:** Medium
+**Requested By:** Casey House and others
+
+Consider implementing quantization using Fuller's A, B, T modules for volumetric analysis.
+
+---
+
+#### 11.5.8 Node Size Slider
+
+**Status:** 🔮 Future Enhancement
+**Priority:** Low
+**Requested By:** Casey House and others
+
+Add slider control for node sphere size adjustment.
+
+---
+
+#### 11.5.9 Dynamic/Kinematic Features (Inverse Kinematics, Constraints)
+
+**Status:** 🔮 Future Enhancement
+**Priority:** Medium
+**Requested By:** Stroopi and Melodi
+
+Consider implementing dynamic/kinematic features including inverse kinematics and geometric constraints, noting current dev is to refine architecture before complicating StateManager with dynammics and complex solvers. Primary physics ideas are shapes focus, with dynamics as illusory/temporal basis per @.tex whitepaper. 
+
+---
+
+#### 11.5.10 Community Engagement
+
+**Status:** 🔄 Ongoing
+
+- All interested participants: Report bugs, feature requests, and issues to the GitHub repository
+- All interested participants: Provide peer review and feedback on Andy's white paper (link shared in chat), especially regarding terminology, translation, dimension, and degrees of freedom
+- Bonnie DeVarco: Post the video, chat, and relevant links from the meeting for group access (with Andy's permission)
+- Andy: Notify the group when tetrahelix and five-fold symmetry features are implemented and ready for testing/demo
+
+---
+
 **Document End**
