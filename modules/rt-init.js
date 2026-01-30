@@ -28,7 +28,7 @@ window.RTPolyhedra = Polyhedra;
 // FEATURE FLAGS - Control which systems are active
 // ========================================================================
 // Set to true to use new declarative UI bindings instead of legacy addEventListener
-const USE_DECLARATIVE_UI = false; // Default: false (legacy mode)
+const USE_DECLARATIVE_UI = true; // Testing declarative bindings (Jan 30)
 
 // TODO: Extract gumball to rt-controls.js module
 // import { RTControls } from "./modules/rt-controls.js";
