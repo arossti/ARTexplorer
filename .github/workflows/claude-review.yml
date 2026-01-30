@@ -1,0 +1,120 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '**.js'
+      - '**.css'
+      - '**.html'
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD > diff.txt
+          # Truncate if too large (Claude has context limits)
+          head -c 50000 diff.txt > diff_truncated.txt
+          echo "diff_size=$(wc -c < diff.txt)" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Claude Review
+        id: claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          DIFF_CONTENT=$(cat diff_truncated.txt)
+
+          # Create the review request
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d @- << EOF
+          {
+            "model": "claude-sonnet-4-20250514",
+            "max_tokens": 2048,
+            "messages": [{
+              "role": "user",
+              "content": "Review this PR diff for code quality issues. Focus ONLY on:\n\n1. **Debug code**: console.log statements that should be removed before merge\n2. **Commented-out code**: Dead code blocks that should be deleted\n3. **Code duplication**: Repeated code blocks (>5 lines) that could be consolidated\n4. **Large functions**: Functions >50 lines that could be extracted\n5. **Unused variables**: Declared but never used\n\nDO NOT comment on:\n- Style preferences\n- Alternative implementations\n- Architecture suggestions\n- Performance micro-optimizations\n\nFormat your response as a markdown checklist. If no issues found, say 'No issues found.'\n\nDiff:\n\`\`\`diff\n${DIFF_CONTENT}\n\`\`\`"
+            }]
+          }
+          EOF
+          )
+
+          # Extract the text content from Claude's response
+          REVIEW=$(echo "$RESPONSE" | jq -r '.content[0].text // "Error: Could not parse response"')
+
+          # Save to file for the comment step
+          echo "$REVIEW" > review.md
+
+      - name: Post PR Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const review = fs.readFileSync('review.md', 'utf8');
+            const diffSize = '${{ steps.diff.outputs.diff_size }}';
+
+            const body = `## 🤖 Claude Code Review
+
+            ${review}
+
+            ---
+            <details>
+            <summary>ℹ️ About this review</summary>
+
+            This automated review checks for:
+            - Debug statements (console.log)
+            - Commented-out code
+            - Code duplication
+            - Large functions (>50 lines)
+            - Unused variables
+
+            **Human review required** - these are suggestions only.
+            Diff size: ${diffSize} bytes
+            </details>`;
+
+            // Find existing comment to update (avoid spam)
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.includes('🤖 Claude Code Review')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
