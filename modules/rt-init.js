@@ -2372,9 +2372,21 @@ function startARTexplorer(
     // console.log(`🔍 SNAP DEBUG: ${targetGroups.length} target groups found (excluding dragged object)`);
 
     // Get source object's snap points (we need to compare geometry-to-geometry)
-    const sourceVertices = objectSnapVertex
-      ? getPolyhedronVertices(excludeGroup)
-      : [];
+    // NODE-BASED SNAP: If in vertex mode with a selected node, only use that node
+    let sourceVertices = [];
+    if (objectSnapVertex) {
+      const selectedVertices = RTStateManager.getSelectedVertices();
+      const firstVertex = selectedVertices[0];
+      if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+        // Use ONLY the selected node's world position for snapping
+        const nodeWorldPos = new THREE.Vector3();
+        firstVertex.getWorldPosition(nodeWorldPos);
+        sourceVertices = [nodeWorldPos];
+      } else {
+        // Classical: use all vertices
+        sourceVertices = getPolyhedronVertices(excludeGroup);
+      }
+    }
     const sourceEdges = objectSnapEdge
       ? getPolyhedronEdgeMidpoints(excludeGroup)
       : [];
