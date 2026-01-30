@@ -3,22 +3,24 @@
 ## Quick Start for New Agent
 
 **Branch**: `DEFORM` (created from `main` at `af25fcd`)
-**Status**: Phase 0 complete, Phase 1 skipped, ready for Phase 2
+**Status**: Phase 2A complete, all bugs resolved, merged to main
 **Goal**: Enable vertex-level editing of Line primitives
 
-### Current State (Jan 29, 2026)
-- ✅ **Phase 0: Multi-Select** - COMPLETED (`d5e48a0`)
+### Current State (Jan 29, 2026) - DEPLOYED TO MAIN
+- ✅ **Phase 0: Multi-Select** - COMPLETED & DEPLOYED
 - ⏭️ **Phase 1: Grouping** - SKIPPED (multi-select provides sufficient functionality)
 - ⚠️ **Phase 2: Line Deformation** - DEPRECATED (replaced by Point-Based Lines)
-- ✅ **Phase 2A: Point-Based Lines** - COMPLETED (all bugs resolved)
+- ✅ **Phase 2A: Point-Based Lines** - COMPLETED & DEPLOYED (PR #49, #50, #51)
 
-**Phase 2A Final Status** (Jan 29, 2026):
+**Phase 2A Final Status** (Jan 29, 2026) - ALL DEPLOYED:
 - ✅ Create 2 Point instances, multi-select, Connect → creates connectedLine
 - ✅ Move single Point → line follows in real-time
 - ✅ Rotate connected group → all objects transform together
 - ✅ Vertex snap works without self-collapse (connected Points excluded from snap targets)
 - ✅ Object snap updates line geometry on mouseup
 - ✅ No deform mode needed - just use normal Move/Rotate tools
+- ✅ Free move preserves relative positions of multi-selected objects (Bug 6 fix)
+- ✅ Opt-click drag-copy works correctly with delta-based movement
 
 **Ready for**: Phase 3 (Line2/thick lines) or Phase 4 (Polygon deformation)
 
@@ -336,15 +338,16 @@ Benefits:
 
 ## Reference: Branch Commits
 
-### DEFORM Branch (Current)
-| Commit | Description | Status |
-|--------|-------------|--------|
-| `9f92935` | Auto-select connected Points, fix rotation | ✅ Complete |
-| `4905e54` | Line deform with lineWeight=1 default | ⚠️ Partial |
-| `5de61af` | WIP: rt-deform.js module skeleton | ⚠️ Partial |
-| `9e4e548` | Docs: roadmap + extraction analysis | ✅ Complete |
-| `d5e48a0` | Multi-select support (Phase 0) | ✅ Complete |
-| `af25fcd` | Branch base (from main) | Starting point |
+### DEFORM Branch - All Merged to Main
+| Commit | Description | Status | PR |
+|--------|-------------|--------|-----|
+| `67f73a6` | Fix opt-click drag-copy after Bug 6 fix | ✅ Deployed | #51 |
+| `23a3c1e` | Fix free move multi-select collapse (Bug 6) | ✅ Deployed | #51 |
+| `fc36a1b` | Object snap + self-collapse prevention (Bug 5) | ✅ Deployed | #50 |
+| `2355cb0` | Single-node movement fix (Bug 4) | ✅ Deployed | #49 |
+| `9f92935` | Auto-select connected Points, fix rotation | ✅ Deployed | #49 |
+| `d5e48a0` | Multi-select support (Phase 0) | ✅ Deployed | #49 |
+| `af25fcd` | Branch base (from main) | Starting point | - |
 
 ### Previous Attempts (UI-TWEAKS-J28)
 | Commit | Description | Status |
