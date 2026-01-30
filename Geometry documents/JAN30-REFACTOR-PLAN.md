@@ -1,5 +1,60 @@
 # JAN30-REFACTOR-PLAN: Non-Disruptive rt-init.js Modularization
 
+---
+
+## 📋 HANDOFF STATUS (End of Jan 30, 2026)
+
+### What Was Completed Today
+
+| Task | Status | Commits |
+|------|--------|---------|
+| Declarative UI binding engine | ✅ DONE | 9d34887 |
+| 88 binding definitions | ✅ DONE | b30bb75, d236dfe |
+| Radio-group binding type | ✅ DONE | d236dfe |
+| View controls + basis visibility bindings | ✅ DONE | d236dfe |
+| Legacy handlers wrapped in conditional | ✅ DONE | 62bf77b |
+| Documentation updates | ✅ DONE | c57b9dc |
+
+### Current State
+
+- **`USE_DECLARATIVE_UI = true`** in [rt-init.js:31](modules/rt-init.js#L31)
+- **88 declarative bindings** active, 0 skipped
+- **~957 lines of legacy handlers** wrapped in `if (!USE_DECLARATIVE_UI)` (lines 256-1213)
+- **App tested and working** with declarative-only mode
+
+### What Remains
+
+1. **Extended Verification** (TODAY) - Use app normally to confirm stability
+2. **Delete Legacy Block** (WHEN READY) - Remove lines 256-1213 (~957 lines)
+   - This will bring rt-init.js from 4,774 → ~3,800 lines
+3. **Phase 3: Gumball Extraction** (FUTURE) - ~1,700 lines, high risk
+
+### Files Modified Today
+
+| File | Lines | Change |
+|------|-------|--------|
+| `modules/rt-ui-bindings.js` | 402 | Added `_bindRadioGroup()` method |
+| `modules/rt-ui-binding-defs.js` | 562 | Added 9 bindings (geodesic radios, views, basis) |
+| `modules/rt-init.js` | 4,774 | Wrapped legacy handlers in conditional |
+
+### Quick Resume Commands
+
+```bash
+# Check current state
+git log --oneline -5
+
+# Verify app works
+# Open in browser, check console for "88 bindings"
+
+# When ready to delete legacy block (AFTER extended verification):
+# 1. Delete lines 256-1213 in rt-init.js
+# 2. Run: npm run lint
+# 3. Test in browser
+# 4. Commit with message "Refactor: Delete legacy handlers (~957 lines)"
+```
+
+---
+
 ## Core Principle: Shadow + Switchover
 
 > **Never delete working code until its replacement is proven.**
