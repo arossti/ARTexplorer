@@ -422,7 +422,7 @@
             </div>
           </div>
 
-          <!-- Coordinate Mode Toggle (Absolute/Relative) - far right -->
+          <!-- Coordinate Mode Toggle (Absolute/Relative/Group Centre) - far right -->
           <div class="coords-mode-group toggle-btn-group">
             <button
               id="coordModeAbsolute"
@@ -436,9 +436,18 @@
               id="coordModeRelative"
               class="toggle-btn variant-objsnap"
               data-coord-mode="relative"
-              title="Coordinates relative to selected node (local 0,0,0)"
+              title="Coordinates relative to selected object (local transform)"
             >
               Relative
+            </button>
+            <button
+              id="coordModeGroupCentre"
+              class="toggle-btn variant-objsnap"
+              data-coord-mode="group-centre"
+              disabled
+              title="Coordinates relative to group centroid (requires 2+ selected)"
+            >
+              Group
             </button>
           </div>
         </div>

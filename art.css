@@ -2308,6 +2308,13 @@ button:disabled {
   min-width: 70px;
 }
 
+/* Disabled state for Group Centre button (requires 2+ selection) */
+.coords-mode-group .toggle-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .coords-unit-label {
   font-size: 11px;
   color: #666;

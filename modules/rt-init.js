@@ -186,6 +186,15 @@ function startARTexplorer(
       getSelectedPolyhedra: getSelectedPolyhedra,
     });
     RTCoordinates.setupModeToggles();
+
+    // Callback to reposition editingBasis when mode changes to group-centre
+    RTCoordinates.onModeChangeCallback = (mode, centroid) => {
+      if (mode === 'group-centre' && centroid && editingBasis) {
+        editingBasis.position.copy(centroid);
+        console.log(`📍 EditingBasis moved to group centroid: (${centroid.x.toFixed(2)}, ${centroid.y.toFixed(2)}, ${centroid.z.toFixed(2)})`);
+      }
+    };
+
     console.log('🆕 COORDINATE MODULE: Active');
   }
 
@@ -1943,6 +1952,11 @@ function startARTexplorer(
     if (count > 1) {
       console.log(`📦 Multi-select: ${count} objects selected`);
     }
+
+    // Update RTCoordinates Group Centre button state
+    if (USE_COORDINATE_MODULE) {
+      RTCoordinates.updateGroupCentreButtonState(count);
+    }
   }
 
   /**
@@ -3262,9 +3276,15 @@ function startARTexplorer(
             // ====================================================================
             // Use screen-space mouse movement for rotation
             // Project rotation center to screen space
-            const rotationCenter = editingBasis
-              ? editingBasis.position
-              : new THREE.Vector3(0, 0, 0);
+            // When Group Centre mode is active, use calculated centroid instead of editingBasis
+            let rotationCenter;
+            if (USE_COORDINATE_MODULE && RTCoordinates.getMode() === 'group-centre') {
+              rotationCenter = RTCoordinates.getRotationCenter(editingBasis, selectedPolyhedra);
+            } else {
+              rotationCenter = editingBasis
+                ? editingBasis.position
+                : new THREE.Vector3(0, 0, 0);
+            }
             const centerScreen = rotationCenter.clone().project(camera);
 
             // Current mouse position in normalized device coordinates

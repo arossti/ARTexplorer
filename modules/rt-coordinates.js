@@ -29,6 +29,9 @@ export const RTCoordinates = {
   // Dependencies (injected via init())
   deps: null,
 
+  // Callback when mode changes (for repositioning editingBasis)
+  onModeChangeCallback: null,
+
   // ========================================================================
   // INITIALIZATION
   // ========================================================================
@@ -360,10 +363,71 @@ export const RTCoordinates = {
               self.updateRotationDisplay(displayValues.rotation);
             }
           }
+
+          // Notify rt-init.js to reposition editingBasis if needed
+          if (self.onModeChangeCallback) {
+            self.onModeChangeCallback(newMode, self.groupCentroid);
+          }
         }
       });
     });
 
     console.log('✅ RTCoordinates mode toggles bound');
+  },
+
+  // ========================================================================
+  // SELECTION STATE MANAGEMENT
+  // ========================================================================
+
+  /**
+   * Update Group Centre button state based on selection count
+   * Called when selection changes
+   * @param {number} selectionCount - Number of selected objects
+   */
+  updateGroupCentreButtonState(selectionCount) {
+    const groupBtn = document.getElementById('coordModeGroupCentre');
+    if (!groupBtn) return;
+
+    if (selectionCount >= 2) {
+      // Enable the button
+      groupBtn.disabled = false;
+      groupBtn.title = 'Coordinates relative to group centroid';
+    } else {
+      // Disable the button
+      groupBtn.disabled = true;
+      groupBtn.title = 'Coordinates relative to group centroid (requires 2+ selected)';
+
+      // If Group Centre was active, switch to Absolute
+      if (this.mode === 'group-centre') {
+        this.setMode('absolute', []);
+        document.querySelectorAll('[data-coord-mode]').forEach(b => {
+          b.classList.remove('active');
+        });
+        document.getElementById('coordModeAbsolute')?.classList.add('active');
+        console.log('📍 Group Centre disabled - switched to Absolute');
+      }
+    }
+  },
+
+  /**
+   * Called when selection changes - update display and button states
+   * @param {Array} selectedObjects - Currently selected objects
+   */
+  onSelectionChange(selectedObjects) {
+    const count = selectedObjects?.length || 0;
+
+    // Update Group Centre button state
+    this.updateGroupCentreButtonState(count);
+
+    // Update coordinate display
+    if (count > 0) {
+      const displayValues = this.getDisplayValues(selectedObjects[0]);
+      this.updatePositionDisplay(displayValues.position);
+      if (displayValues.rotation) {
+        this.updateRotationDisplay(displayValues.rotation);
+      }
+    } else {
+      this.clearDisplay();
+    }
   },
 };
