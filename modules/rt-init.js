@@ -21,6 +21,9 @@ import {
 import { uiBindings } from "./rt-ui-bindings.js";
 import { allBindings, getBindingStats } from "./rt-ui-binding-defs.js";
 
+// Phase 3 Modularization: Coordinate Display System (Jan 30, 2026)
+import { RTCoordinates } from "./rt-coordinates.js";
+
 // Phase 2b Modularization: Selection System - REVERTED
 // Selection is tightly coupled with gumball (~40 references to currentSelection)
 // Extracting selection without gumball creates artificial separation that adds
@@ -34,6 +37,9 @@ window.RTPolyhedra = Polyhedra;
 // ========================================================================
 // Set to true to use new declarative UI bindings instead of legacy addEventListener
 const USE_DECLARATIVE_UI = true; // Testing declarative bindings (Jan 30)
+
+// Set to true to use new RTCoordinates module for coordinate display
+const USE_COORDINATE_MODULE = true; // Shadow testing coordinate module (Jan 30)
 
 // Phase 2b RTSelection: REVERTED - Selection-gumball coupling is by design, not a bug
 
@@ -168,6 +174,21 @@ function startARTexplorer(
       `🆕 DECLARATIVE UI: ${stats.total} bindings (${stats.simpleCheckboxes} checkboxes, ${stats.simpleSliders} sliders, ${stats.linkedSliders} linked)`
     );
   }
+
+  // ========================================================================
+  // COORDINATE DISPLAY MODULE (Phase 3 Modularization)
+  // ========================================================================
+  if (USE_COORDINATE_MODULE) {
+    RTCoordinates.init({
+      Quadray: Quadray,
+      RTStateManager: RTStateManager,
+      THREE: THREE,
+      getSelectedPolyhedra: getSelectedPolyhedra,
+    });
+    RTCoordinates.setupModeToggles();
+    console.log('🆕 COORDINATE MODULE: Active');
+  }
+
   // ========================================================================
   // LEGACY EVENT HANDLERS (Run in parallel with declarative bindings)
   // ========================================================================
@@ -837,19 +858,22 @@ function startARTexplorer(
   });
 
   // Coordinate mode toggle (Absolute/Relative) - mutually exclusive
-  document.querySelectorAll("[data-coord-mode]").forEach(btn => {
-    btn.addEventListener("click", function () {
-      const mode = this.dataset.coordMode;
-      // Remove active from all coord mode buttons
-      document.querySelectorAll("[data-coord-mode]").forEach(b => {
-        b.classList.remove("active");
+  // When USE_COORDINATE_MODULE is true, this is handled by RTCoordinates.setupModeToggles()
+  if (!USE_COORDINATE_MODULE) {
+    document.querySelectorAll("[data-coord-mode]").forEach(btn => {
+      btn.addEventListener("click", function () {
+        const mode = this.dataset.coordMode;
+        // Remove active from all coord mode buttons
+        document.querySelectorAll("[data-coord-mode]").forEach(b => {
+          b.classList.remove("active");
+        });
+        // Activate clicked button
+        this.classList.add("active");
+        console.log(`📍 Coordinate mode: ${mode}`);
+        // TODO: Update coordinate display based on mode
       });
-      // Activate clicked button
-      this.classList.add("active");
-      console.log(`📍 Coordinate mode: ${mode}`);
-      // TODO: Update coordinate display based on mode
     });
-  });
+  }
 
   // ========================================================================
   // ROTATION INPUT FIELDS - Per-Axis Bidirectional Conversion (Degrees ↔ Spread)
@@ -953,6 +977,13 @@ function startARTexplorer(
    * @param {THREE.Vector3} pos - Position to display
    */
   function updateCoordinateDisplay(pos) {
+    // When coordinate module is active, delegate to it
+    if (USE_COORDINATE_MODULE) {
+      RTCoordinates.updatePositionDisplay(pos);
+      return;
+    }
+
+    // Legacy implementation
     if (!pos) {
       // Clear display if no position
       document.getElementById("coordX").value = "0.0000";
