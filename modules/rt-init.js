@@ -191,7 +191,6 @@ function startARTexplorer(
     RTCoordinates.onModeChangeCallback = (mode, centroid) => {
       if (mode === 'group-centre' && centroid && editingBasis) {
         editingBasis.position.copy(centroid);
-        console.log(`📍 EditingBasis moved to group centroid: (${centroid.x.toFixed(2)}, ${centroid.y.toFixed(2)}, ${centroid.z.toFixed(2)})`);
       }
     };
 
@@ -807,15 +806,18 @@ function startARTexplorer(
         renderingAPI.setQuadrayBasisVisible(false);
 
         // Create editing basis at appropriate position
-        // If in vertex mode with selected node(s), use first node's world position
-        // Otherwise use polyhedron centroid (classical behavior)
+        // Priority: 1) Group Centre mode → centroid, 2) Vertex mode → node, 3) Classical → primary centroid
         const selected = getSelectedPolyhedra();
         if (selected.length > 0) {
           let basisPosition;
           const selectedVertices = RTStateManager.getSelectedVertices();
           const firstVertex = selectedVertices[0];
 
-          if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+          // Check for Group Centre mode first (requires 2+ selected)
+          if (USE_COORDINATE_MODULE && RTCoordinates.getMode() === 'group-centre' && selected.length >= 2) {
+            // GROUP CENTRE: Use calculated centroid of all selected objects
+            basisPosition = RTCoordinates.calculateGroupCentroid(selected);
+          } else if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
             // NODE-BASED ORIGIN: Use first selected node's world position
             const nodeWorldPos = new THREE.Vector3();
             firstVertex.getWorldPosition(nodeWorldPos);
