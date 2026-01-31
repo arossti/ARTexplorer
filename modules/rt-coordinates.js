@@ -291,17 +291,13 @@ export const RTCoordinates = {
       };
 
     } else if (this.mode === 'relative') {
-      // Return local transforms from StateManager
-      // TODO: Add localPosition/localRotation to StateManager schema
+      // Relative mode: object's own centre is the origin
+      // Position is always 0,0,0 (you ARE the origin)
+      // Rotation/scale show how transformed from Form's identity
+      // Since Forms start at identity, world rotation = local rotation
       return {
-        position: instance.localPosition
-          ? new this.deps.THREE.Vector3(
-              instance.localPosition.x,
-              instance.localPosition.y,
-              instance.localPosition.z
-            )
-          : new this.deps.THREE.Vector3(0, 0, 0),
-        rotation: instance.localRotation || { x: 0, y: 0, z: 0 }
+        position: new this.deps.THREE.Vector3(0, 0, 0),
+        rotation: object.rotation.clone()
       };
 
     } else if (this.mode === 'group-centre') {

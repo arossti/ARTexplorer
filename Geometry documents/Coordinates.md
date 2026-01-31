@@ -3,7 +3,7 @@
 ## Quick Start for New Agent
 
 **Branch**: `FOOTER-COORDINATES`
-**Status**: Absolute mode working, Relative mode next, module extraction recommended
+**Status**: Module extracted, Group Centre complete, Relative mode and bi-directional input next
 **Goal**: Complete coordinate display system with Absolute/Relative/Group Centre modes
 
 ### TL;DR - What This Document Covers
@@ -11,56 +11,145 @@
 This document specifies a **coordinate display system** for ARTexplorer that:
 
 1. **Shows object transforms** in the footer panel (XYZ + WXYZ position, rotation)
-2. **Supports three modes**: Absolute (world), Relative (local), Group Centre (multi-select)
+2. **Supports three modes**: Absolute (world), Relative (object-local), Group Centre (multi-select)
 3. **Reads from StateManager** - display is a window into persisted state, not transient
-4. **Recommends extraction** to `rt-coordinates.js` module using shadow/switchover pattern
+4. **Extracted to** `rt-coordinates.js` module using shadow/switchover pattern
 
 ### Key Design Decisions (Already Made)
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | **Source of truth** | StateManager | Display matches JSON export; bi-directional input modifies state |
-| **Relative mode meaning** | Local transform from Form identity | NOT transient delta; persists across selection changes |
+| **Relative mode meaning** | Object-centre coordinates | Shows 0,0,0 at object centre; useful when Forms displaced from world origin |
 | **Group Centre behavior** | Third button, only when 2+ selected | Changes rotation/scale pivot to centroid |
-| **Module extraction** | Yes, `rt-coordinates.js` | 60+ duplicate getElementById calls, 6 WXYZ conversion blocks |
+| **Module extraction** | Done, `rt-coordinates.js` | DOM caching, single WXYZ conversion, mode management |
 
 ### Current State (Jan 30, 2026)
 
-**Completed:**
-- [x] **Absolute/Relative toggle buttons** - Added to footer (far right)
+**✅ COMPLETED:**
+- [x] **Module extracted** - `rt-coordinates.js` with shadow/switchover pattern (`USE_COORDINATE_MODULE = true`)
+- [x] **Absolute/Relative/Group toggle buttons** - Added to footer (far right)
 - [x] **Mutually exclusive toggle** - Buttons work as radio group
-- [x] **Selection updates coordinates** - Selecting object shows its position (Absolute)
-- [x] **`updateCoordinateDisplay(pos)`** - Helper function in rt-init.js (lines 951-990)
+- [x] **Selection updates coordinates** - Selecting object shows its position
+- [x] **Group Centre button** - Enabled only when 2+ objects selected
+- [x] **Group Centre rotation pivot** - Objects rotate around calculated centroid
+- [x] **Group Centre gumball positioning** - Editing basis appears at centroid
+- [x] **Auto-switch on deselect** - Falls back to Absolute when selection drops below 2
+- [x] **DOM element caching** - All coordinate fields cached in module init
+- [x] **WXYZ conversion consolidated** - Single `updatePositionDisplay()` replaces 6 duplicate blocks
 
-**Next Steps (in order):**
-1. [ ] Create `modules/rt-coordinates.js` skeleton with `USE_COORDINATE_MODULE = false`
-2. [ ] Add `localRotation`/`localScale` fields to StateManager instance schema
-3. [ ] Implement mode-aware display (reads from StateManager based on active mode)
-4. [ ] Add Group Centre button (disabled when <2 objects selected)
-5. [ ] Switchover: replace 6 duplicate WXYZ blocks with single module call
+**🔧 IN PROGRESS / TODO:**
+1. [ ] **Relative mode implementation** - Currently shows same as Absolute (see below)
+2. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
+3. [ ] **Bi-directional input handlers** - Typing in coordinate fields moves objects
+4. [ ] **Node-based coordinate display** - Show node position when vertex selected
+5. [ ] **Remove legacy coordinate code from rt-init.js** - Full switchover cleanup
 
-### Files to Modify
+### Files Modified
 
-| File | What to Do |
-|------|------------|
-| `modules/rt-coordinates.js` | **CREATE** - New module (~200 lines) |
-| `modules/rt-init.js` | Add flag, import, replace duplicate blocks |
-| `modules/rt-state-manager.js` | Add `localRotation`, `localScale` to instance schema |
-| `index.html` | Add Group Centre button (lines ~425-443) |
-| `art.css` | Add disabled state styling for Group Centre |
+| File | Status | Changes |
+|------|--------|---------|
+| `modules/rt-coordinates.js` | **NEW** (~430 lines) | Complete module with mode management, display, Group Centre |
+| `modules/rt-init.js` | Modified | Feature flag, imports, gumball positioning, rotation center |
+| `modules/rt-state-manager.js` | TODO | Need `localPosition`, `localRotation`, `localScale` fields |
+| `index.html` | Modified | Added Group Centre button |
+| `art.css` | Modified | Added disabled state styling for Group Centre |
 
-### Don't Re-Litigate
+### Commits on FOOTER-COORDINATES Branch
 
-The following were discussed and decided:
-- ✅ Both Absolute and Relative show **persisted state** (not transient deltas)
-- ✅ Relative mode shows local transform (how different from Form's identity)
-- ✅ Group Centre changes the **rotation pivot**, not just the display
-- ✅ Node selection defines pivot point, not coordinate system (gumball stays world-aligned)
-- ✅ Module extraction uses shadow/switchover pattern (see `rt-ui-bindings.js` as precedent)
+1. `3bf9788` - Docs: Comprehensive Coordinates.md workplan
+2. `ee44523` - Feat: Add rt-coordinates.js module with shadow/switchover pattern
+3. `406c126` - Feat: Add Group Centre mode with centroid-based rotation
+4. `ea9335a` - Fix: Position gumball at group centroid in Group Centre mode
 
 ---
 
-## Coordinate Mode Definitions
+## ⚠️ OPEN QUESTIONS - Relative Mode Semantics (Jan 30, 2026)
+
+These questions need resolution before completing Relative mode implementation:
+
+### Question 1: What should Relative mode show for POSITION?
+
+**Scenario**: Cube at world position (5, 3, 2). User clicks "Relative" button.
+
+| Option | Display Shows | Rationale |
+|--------|---------------|-----------|
+| **A) Always 0,0,0** | `0.0000, 0.0000, 0.0000` | Object centre = origin. Position display is meaningless in Relative. |
+| **B) Delta since mode switch** | `0.0000, 0.0000, 0.0000` initially, then shows movement delta | Useful for "move this object by X units" workflow. Resets on mode switch or reselection. |
+
+**Follow-up**: If user moves cube by (1, 0, 0) while in Relative mode, then clicks away and reselects, what shows?
+- Option A: Still 0,0,0 (always)
+- Option B: 0,0,0 (delta resets on selection change)
+
+### Question 2: What should Relative mode show for ROTATION?
+
+**Key insight from user**: "Relative is frankly more important for rotations, where I may wish to simply rotate a cube 45° based on wherever it may be located, without reference to some global coordinate rotation position."
+
+**Scenario**: Cube has been rotated 30° (world). User switches to Relative, wants to add 45° more.
+
+| Option | Initial Display | After +45° rotation | Use Case |
+|--------|-----------------|---------------------|----------|
+| **A) World rotation** | `30°` | `75°` | See accumulated rotation from Form identity |
+| **B) Zero (tool mode)** | `0°` | `45°` | "How much am I rotating right now?" - transient delta |
+
+**User's insight**: Relative mode is almost more a **'Tool' mode** where you switch to local just to perform an object self-rotation, without caring about world coordinates.
+
+### Question 3: Does Relative mode need persistence?
+
+**Current understanding**:
+- Group Centre centroid is NOT persisted after deselection (calculated dynamically)
+- Individual object transforms ARE persisted in StateManager
+- Coordinate display is a "window into StateManager" for the selected object
+
+**Question**: Should Relative mode store anything, or is it purely a display/tool mode?
+
+| Aspect | Absolute | Relative | Group Centre |
+|--------|----------|----------|--------------|
+| Position displayed | World (persisted) | ? | Centroid (calculated) |
+| Rotation displayed | World (persisted) | ? | N/A |
+| Persisted to StateManager | Yes | ? | No |
+
+### Proposed Resolution
+
+Based on user feedback, Relative mode should behave as a **transient tool mode**:
+
+1. **Position**: Shows 0,0,0 initially. During drag, shows delta from drag start. Resets on mouseup or reselection.
+2. **Rotation**: Shows 0° initially. During rotation, shows delta being applied. After rotation completes, could either reset or show accumulated session delta.
+3. **Bi-directional input**: Typing "45" in rotation field applies +45° to current orientation (additive, not absolute).
+
+This makes Relative mode useful for: "Rotate this 45°" or "Move this 2 units in X" without needing to know/care about world coordinates.
+
+---
+
+## Coordinate Mode Definitions (Clarified)
+
+### Absolute Mode (Default)
+Coordinates shown relative to **world origin (Alpha = 0,0,0)**:
+- Select any object → display shows its world position (distance from origin)
+- Useful for: Placing objects at specific world coordinates
+- Example: Form displaced to (5, 0, 3) shows `X: 5.0000, Y: 0.0000, Z: 3.0000`
+- **Persisted**: Yes, these are StateManager values
+
+### Relative Mode (Object-Local) - ⚠️ NEEDS CLARIFICATION
+Coordinates shown relative to **the object's own centre**:
+- Select any object → display shows **0,0,0** (object centre IS the origin)
+- Useful for: Performing local rotations without reference to world coordinates
+- **Primary use case**: "Rotate this cube 45°" regardless of where it is in the world
+- **Persisted**: TBD - possibly transient (tool mode) rather than persisted state
+
+**Key distinction from Absolute**:
+- Absolute = "Where am I in the world?" (persisted state)
+- Relative = "How much am I transforming right now?" (possibly transient/tool mode)
+
+### Group Centre Mode (Multi-Select Only)
+Coordinates shown relative to **calculated centroid of all selected objects**:
+- Multi-select 2+ objects → display shows centroid's world position
+- During rotate → objects rotate AROUND the centroid (not individual origins)
+- Gumball (editing basis) appears at centroid
+- Automatically disabled when selection drops below 2 objects
+- **NOT persisted**: Centroid is calculated dynamically, not stored
+
+**Key insight**: Group Centre treats the selection AS a group - like grabbing multiple objects and rotating them around their collective center of mass
 
 ### Absolute Mode (Default)
 Coordinates shown relative to **world origin (Alpha = 0,0,0)**:
@@ -332,244 +421,220 @@ Scale is stored per-object in `poly.userData.currentScale` and per-dimension if 
 
 ## Implementation Phases
 
-### Phase 1: Selection-Based Display - DONE
+### Phase 1: Module Extraction ✅ COMPLETE
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Add `updateCoordinateDisplay(pos)` function | Done | Reusable helper |
-| Call on `selectPolyhedron()` | Done | Shows selected object position |
-| Clear display on deselect | TODO | Show 0,0,0 when nothing selected |
+| Create `rt-coordinates.js` module | ✅ Done | ~430 lines, full module |
+| Add `USE_COORDINATE_MODULE` flag | ✅ Done | Set to `true` |
+| Cache DOM elements | ✅ Done | All coord fields in `elements` object |
+| `updatePositionDisplay(pos)` | ✅ Done | XYZ + WXYZ conversion |
+| `updateRotationDisplay(rotation)` | ✅ Done | Degrees + spread |
+| Mode toggle handlers | ✅ Done | Absolute/Relative/Group buttons |
 
-### Phase 2: Relative Mode - IN PROGRESS
-
-| Task | Status | Notes |
-|------|--------|-------|
-| Add toggle buttons to footer | Done | Absolute/Relative, far right |
-| Store mode state in variable | TODO | `let coordinateMode = 'absolute'` |
-| Add `localRotation` to StateManager | TODO | Store local transform separately |
-| Add `localScale` to StateManager | TODO | Store local scale separately |
-| Relative: read local transforms on select | TODO | From StateManager, not computed |
-| Relative: update local transforms on drag | TODO | Persist to StateManager |
-| Relative: bi-directional input | TODO | Type value → apply as local offset |
-
-### Phase 3: Multi-Select Handling
+### Phase 2: Group Centre Mode ✅ COMPLETE
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Define "primary" object for display | Existing | First selected = primary |
-| Absolute: show primary's position | Done | Already works |
-| Relative: show 0,0,0 for primary | TODO | Same as single select |
-| Multi-move delta tracking | TODO | Track primary's start pos |
+| Add Group Centre toggle button | ✅ Done | Third button in footer |
+| Calculate group centroid function | ✅ Done | `calculateGroupCentroid()` |
+| Group Centre: show centroid position | ✅ Done | Display updates on mode change |
+| Group Centre rotation pivot | ✅ Done | `getRotationCenter()` uses centroid |
+| Group Centre gumball positioning | ✅ Done | `editingBasis` created at centroid |
+| Disable when <2 objects selected | ✅ Done | `updateGroupCentreButtonState()` |
+| Auto-switch to Absolute on deselect | ✅ Done | Falls back when count < 2 |
 
-### Phase 3B: Group Centre Mode
-
-| Task | Status | Notes |
-|------|--------|-------|
-| Add Group Centre toggle button | TODO | Third button below Absolute/Relative |
-| Calculate group centroid function | TODO | Average position of all selected |
-| Group Centre: show centroid position | TODO | Display calculated centroid |
-| Group Centre rotation pivot | TODO | Set editingBasis at centroid |
-| Group Centre scale origin | TODO | Scale toward/away from centroid |
-| Disable when <2 objects selected | TODO | Grey out or hide button |
-| Show editing basis at centroid | TODO | Visual indicator of group center |
-
-### Phase 4: Node-Based Coordinates
+### Phase 3: Relative Mode 🔧 TODO
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Node select shows node position | TODO | Use node's world pos, not centroid |
-| Node-based move updates correctly | TODO | Show polyhedron pos during move |
-| Relative mode with node selected | TODO | Show 0,0,0, then delta |
+| Add `localPosition` to StateManager | TODO | Offset from object centre |
+| Add `localRotation` to StateManager | TODO | Delta from Form identity |
+| Add `localScale` to StateManager | TODO | Multiplier from Form identity |
+| Relative: show 0,0,0 for position | TODO | Object centre = origin |
+| Relative: show local rotation/scale | TODO | Read from StateManager |
+| Update StateManager on transform | TODO | Persist local values |
 
-### Phase 5: Input Field Bi-directional
+### Phase 4: Bi-Directional Input 🔧 TODO
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Absolute: typing moves to world pos | Existing | Works |
-| Relative: typing moves by delta | TODO | Add offset to current pos |
+| Absolute: typing moves to world pos | Partial | Legacy code exists, not in module |
+| Relative: typing applies local offset | TODO | Requires Phase 3 first |
+| Move input handlers to module | TODO | `setupInputHandlers()` placeholder exists |
+
+### Phase 5: Node-Based Coordinates 🔧 TODO
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Node select shows node position | TODO | Use node's world pos |
+| Node-based origin for moves | ✅ Done | Already implemented in rt-init.js |
+| Relative mode with node selected | TODO | Show 0,0,0 at node position |
+
+### Phase 6: Cleanup 🔧 TODO
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Remove legacy coord code from rt-init.js | TODO | 6 duplicate WXYZ blocks |
+| Remove `USE_COORDINATE_MODULE` flag | TODO | After full switchover verified |
+| Update all drag handlers to use module | TODO | Consistent display updates |
 
 ---
 
-## Technical Implementation
+## Technical Implementation (Current)
 
-### State Variables Needed
+### RTCoordinates Module Structure
 
-**Location**: `modules/rt-init.js` near line 630 (with other state variables)
+**Location**: `modules/rt-coordinates.js` (~430 lines)
+
+The module is now fully extracted and active (`USE_COORDINATE_MODULE = true` in rt-init.js).
 
 ```javascript
-let coordinateMode = 'absolute'; // 'absolute', 'relative', or 'group-centre'
-let groupCentroid = null; // Calculated centroid for group-centre mode
-// Note: No reference variables needed - we read from StateManager, not track deltas
+export const RTCoordinates = {
+  // State
+  mode: 'absolute',           // 'absolute' | 'relative' | 'group-centre'
+  groupCentroid: null,        // Calculated centroid for group-centre mode
+  elements: null,             // DOM element cache
+  deps: null,                 // Injected dependencies
+  onModeChangeCallback: null, // Callback for rt-init.js to respond to mode changes
+
+  // Core Functions (all implemented)
+  init(dependencies),                    // Initialize with Quadray, RTStateManager, THREE, getSelectedPolyhedra
+  updatePositionDisplay(pos),            // Update XYZ + WXYZ fields
+  updateRotationDisplay(rotation),       // Update degrees + spread fields
+  clearDisplay(),                        // Clear all coordinate fields
+  setMode(newMode, selectedObjects),     // Change coordinate mode
+  getMode(),                             // Get current mode
+  calculateGroupCentroid(objects),       // Calculate centroid of objects
+  getRotationCenter(editingBasis, selectedObjects), // Get pivot point based on mode
+  getDisplayValues(object),              // Get values to display based on mode
+  setupModeToggles(),                    // Bind mode toggle button handlers
+  updateGroupCentreButtonState(count),   // Enable/disable Group button
+  onSelectionChange(selectedObjects),    // Called when selection changes
+
+  // Placeholder (TODO)
+  setupInputHandlers(callbacks),         // Bi-directional coordinate input
+};
 ```
 
-### Centroid Calculation
+### Integration in rt-init.js
 
-**Location**: `modules/rt-init.js` or `modules/rt-math.js`
-
+**Initialization** (lines ~181-199):
 ```javascript
-function calculateGroupCentroid(selectedObjects) {
-  if (selectedObjects.length < 2) return null;
-
-  const centroid = new THREE.Vector3();
-  selectedObjects.forEach(obj => centroid.add(obj.position));
-  centroid.divideScalar(selectedObjects.length);
-  return centroid;
-}
-```
-
-### Reading from StateManager
-
-**Location**: `modules/rt-init.js` - new helper functions
-
-```javascript
-/**
- * Get coordinate display values based on current mode
- * Reads from StateManager - this is the source of truth
- * @param {THREE.Object3D} object - Selected object
- * @returns {Object} { position: Vector3, rotation: Euler/Quaternion }
- */
-function getCoordinateDisplayValues(object) {
-  const instanceId = object.userData.instanceId;
-  const instance = RTStateManager.getInstance(instanceId);
-
-  if (!instance) {
-    console.warn('⚠️ No StateManager record for object');
-    return { position: object.position.clone(), rotation: object.rotation.clone() };
-  }
-
-  if (coordinateMode === 'absolute') {
-    // Return world transforms from StateManager
-    return {
-      position: new THREE.Vector3(instance.position.x, instance.position.y, instance.position.z),
-      rotation: instance.rotation // Euler or Quaternion depending on storage
-    };
-
-  } else if (coordinateMode === 'relative') {
-    // Return local transforms from StateManager
-    // These represent "how different from Form's identity"
-    return {
-      position: instance.localPosition
-        ? new THREE.Vector3(instance.localPosition.x, instance.localPosition.y, instance.localPosition.z)
-        : new THREE.Vector3(0, 0, 0), // No local offset = at Form origin
-      rotation: instance.localRotation || { x: 0, y: 0, z: 0 } // No local rotation = Form identity
-    };
-
-  } else if (coordinateMode === 'group-centre') {
-    // Return centroid position (rotation N/A for group centre display)
-    const selected = getSelectedPolyhedra();
-    const centroid = calculateGroupCentroid(selected);
-    return {
-      position: centroid || object.position.clone(),
-      rotation: null // Group centre doesn't display rotation
-    };
-  }
-}
-```
-
-### Mode Toggle Handler (Corrected)
-
-**Location**: `modules/rt-init.js` near line 833 (existing toggle handler)
-
-```javascript
-// Coordinate mode toggle (Absolute/Relative/Group Centre)
-document.querySelectorAll("[data-coord-mode]").forEach(btn => {
-  btn.addEventListener("click", function () {
-    const newMode = this.dataset.coordMode;
-    const selected = getSelectedPolyhedra();
-
-    // Validate Group Centre requires 2+ objects
-    if (newMode === 'group-centre' && selected.length < 2) {
-      console.warn('⚠️ Group Centre requires 2+ selected objects');
-      return; // Don't switch mode
-    }
-
-    // Update mode
-    coordinateMode = newMode;
-
-    // Update button states
-    document.querySelectorAll("[data-coord-mode]").forEach(b => b.classList.remove("active"));
-    this.classList.add("active");
-
-    // Update display based on new mode (reads from StateManager)
-    if (selected.length > 0) {
-      const displayValues = getCoordinateDisplayValues(selected[0]);
-      updateCoordinateDisplay(displayValues.position);
-      if (displayValues.rotation) {
-        updateRotationDisplay(displayValues.rotation);
-      }
-    }
-
-    // For Group Centre, also move editingBasis to centroid
-    if (coordinateMode === 'group-centre' && editingBasis) {
-      groupCentroid = calculateGroupCentroid(selected);
-      if (groupCentroid) {
-        editingBasis.position.copy(groupCentroid);
-      }
-    }
-
-    console.log(`📍 Coordinate mode: ${coordinateMode}`);
+if (USE_COORDINATE_MODULE) {
+  RTCoordinates.init({
+    Quadray: Quadray,
+    RTStateManager: RTStateManager,
+    THREE: THREE,
+    getSelectedPolyhedra: getSelectedPolyhedra,
   });
-});
-```
-
-### Updating StateManager on Input
-
-**Location**: `modules/rt-init.js` - coordinate input handlers (existing, needs modification)
-
-```javascript
-// When user types in coordinate field (bi-directional input)
-document.getElementById("coordX").addEventListener("change", function() {
-  const selected = getSelectedPolyhedra();
-  if (selected.length === 0) return;
-
-  const newValue = parseFloat(this.value);
-  const object = selected[0];
-  const instanceId = object.userData.instanceId;
-
-  if (coordinateMode === 'absolute') {
-    // Move to absolute world position
-    object.position.x = newValue;
-    RTStateManager.updateInstancePosition(instanceId, object.position);
-
-  } else if (coordinateMode === 'relative') {
-    // Apply as local offset from current position
-    // newValue represents "how far from Form origin"
-    const formOrigin = getFormOrigin(object); // Would need to implement
-    object.position.x = formOrigin.x + newValue;
-    RTStateManager.updateInstanceLocalPosition(instanceId, { x: newValue, y: ..., z: ... });
-  }
-});
-```
-
-### Rotation Center Selection (Unchanged)
-
-**Location**: `modules/rt-init.js` - used in rotation drag handler (~line 3234)
-
-```javascript
-function getRotationCenter() {
-  if (coordinateMode === 'group-centre') {
-    const selected = getSelectedPolyhedra();
-    return calculateGroupCentroid(selected) || editingBasis.position;
-  }
-  // Absolute or Relative: use editingBasis position (primary object or node)
-  return editingBasis ? editingBasis.position : new THREE.Vector3(0, 0, 0);
+  RTCoordinates.setupModeToggles();
+  RTCoordinates.onModeChangeCallback = (mode, centroid) => {
+    if (mode === 'group-centre' && centroid && editingBasis) {
+      editingBasis.position.copy(centroid);
+    }
+  };
 }
 ```
 
-### Selection Handler Update
-
-**Location**: `modules/rt-init.js` - `selectPolyhedron()` function (~line 1896)
-
+**Gumball Positioning** (lines ~818-836):
 ```javascript
-// In selectPolyhedron(), after setting selection:
-// Update coordinate display based on current mode
-const displayValues = getCoordinateDisplayValues(polyhedron);
-updateCoordinateDisplay(displayValues.position);
-if (displayValues.rotation) {
-  updateRotationDisplay(displayValues.rotation);
+// Check for Group Centre mode first (requires 2+ selected)
+if (USE_COORDINATE_MODULE && RTCoordinates.getMode() === 'group-centre' && selected.length >= 2) {
+  basisPosition = RTCoordinates.calculateGroupCentroid(selected);
+} else if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+  // NODE-BASED ORIGIN
+  basisPosition = nodeWorldPos;
+} else {
+  // CLASSICAL: Use polyhedron centroid
+  basisPosition = selected[0].position.clone();
 }
 ```
 
+**Rotation Center** (lines ~3275-3285):
+```javascript
+let rotationCenter;
+if (USE_COORDINATE_MODULE && RTCoordinates.getMode() === 'group-centre') {
+  rotationCenter = RTCoordinates.getRotationCenter(editingBasis, selectedPolyhedra);
+} else {
+  rotationCenter = editingBasis ? editingBasis.position : new THREE.Vector3(0, 0, 0);
+}
+```
+
+---
+
+## TODO: Relative Mode Implementation
+
+### StateManager Schema Extension
+
+Add to instance record in `rt-state-manager.js`:
+
+```javascript
+instance: {
+  // Existing world transforms (Absolute mode reads these)
+  transform: {
+    position: { x, y, z },
+    rotation: { x, y, z, order },
+    scale: { x, y, z },
+  },
+
+  // NEW: Local transforms (Relative mode reads these)
+  localTransform: {
+    position: { x: 0, y: 0, z: 0 },     // Offset from object centre (always 0,0,0 for position display)
+    rotation: { x: 0, y: 0, z: 0 },     // Delta from Form identity orientation
+    scale: { x: 1, y: 1, z: 1 },        // Multiplier from Form identity scale
+  },
+}
+```
+
+### Relative Mode Display Logic
+
+In `RTCoordinates.getDisplayValues()`:
+
+```javascript
+if (this.mode === 'relative') {
+  // Position: Object centre = origin, always show 0,0,0
+  // Rotation: Show local rotation (how rotated from Form identity)
+  // Scale: Show local scale (how scaled from Form identity)
+  return {
+    position: new this.deps.THREE.Vector3(0, 0, 0),
+    rotation: instance.localTransform?.rotation || { x: 0, y: 0, z: 0 },
+    scale: instance.localTransform?.scale || { x: 1, y: 1, z: 1 },
+  };
+}
+```
+
+---
+
+## TODO: Bi-Directional Input Handlers
+
+**Location**: `RTCoordinates.setupInputHandlers()` (currently placeholder)
+
+```javascript
+setupInputHandlers(callbacks) {
+  const self = this;
+
+  // Position input handlers
+  ['coordX', 'coordY', 'coordZ'].forEach((id, index) => {
+    const field = this.elements[id];
+    if (!field) return;
+
+    field.addEventListener('change', function() {
+      const selected = self.deps.getSelectedPolyhedra();
+      if (selected.length === 0) return;
+
+      const newValue = parseFloat(this.value);
+      const object = selected[0];
+
+      if (self.mode === 'absolute') {
+        // Move to world position
+        object.position.setComponent(index, newValue);
+        self.deps.RTStateManager.updateInstanceTransform(object.userData.instanceId, object);
+      }
+      // Relative mode: position input is read-only (always 0,0,0)
+    });
+  });
+}
 ---
 
 ## Coordinate Display Fields
@@ -606,272 +671,43 @@ Footer panel (left to right):
 
 ---
 
-## Related Files with Line References
+## Related Files
 
-### `index.html`
-- **Lines 425-443**: Absolute/Relative toggle buttons in footer
-- **Footer panel structure**: Coordinate input fields (coordX, coordY, coordZ, etc.)
+### Primary Files
 
-### `art.css`
-- **Lines 2296-2309**: `.coords-mode-group` styling (far-right positioning, vertical stack)
-
-### `modules/rt-init.js`
-- **Line ~630**: State variables (`selectedPolyhedra`, `editingBasis`, etc.) - add `coordinateMode` here
-- **Lines 833-848**: Coordinate mode toggle handler (currently just logs, needs update)
-- **Lines 951-990**: `updateCoordinateDisplay(pos)` function
-- **Line ~1896**: `selectPolyhedron()` - calls `updateCoordinateDisplay()` on selection
-- **Lines 3234-3362**: Rotation drag handler - uses `rotationCenter` (needs `getRotationCenter()`)
-- **Lines 2768-2790**: Drag start - stores initial quaternions/positions
-
-### `modules/rt-state-manager.js`
-- **Lines ~200-300**: Instance creation methods - need to add `localRotation`, `localScale` fields
-- **Lines 546-556**: `getSelectedVertices()` - for node-based coordinate display
-- **Lines ~400-450**: `updateInstance()` methods - need local transform update methods
-
-### `modules/rt-math.js`
-- Quadray conversion functions for WXYZ display
-
----
-
-## Recommended Refactoring: `rt-coordinates.js` Module
-
-### Why Extract Now?
-
-The coordinate display system is about to grow significantly with:
-- Absolute/Relative/Group Centre modes
-- StateManager integration
-- Local transform storage
-- Bi-directional input handling
-
-Currently, coordinate-related code is scattered across rt-init.js:
-- **60+ getElementById calls** for coord/rotation fields
-- **6 duplicate WXYZ conversion blocks** in drag handlers
-- **~200 lines** of coordinate input/display logic
-
-### Proposed Module Structure
-
-```javascript
-// rt-coordinates.js - Coordinate Display System
-export const RTCoordinates = {
-  // ========================================================================
-  // STATE
-  // ========================================================================
-  mode: 'absolute', // 'absolute' | 'relative' | 'group-centre'
-  groupCentroid: null,
-
-  // DOM element cache (initialized once, avoids repeated getElementById)
-  elements: null,
-
-  // ========================================================================
-  // INITIALIZATION
-  // ========================================================================
-  init() {
-    // Cache all coordinate DOM elements
-    this.elements = {
-      coordX: document.getElementById('coordX'),
-      coordY: document.getElementById('coordY'),
-      coordZ: document.getElementById('coordZ'),
-      coordW: document.getElementById('coordW'),
-      coordX2: document.getElementById('coordX2'),
-      coordY2: document.getElementById('coordY2'),
-      coordZ2: document.getElementById('coordZ2'),
-      rotXDegrees: document.getElementById('rotXDegrees'),
-      // ... etc
-    };
-    console.log('✅ RTCoordinates initialized');
-  },
-
-  // ========================================================================
-  // CORE DISPLAY FUNCTIONS
-  // ========================================================================
-
-  /**
-   * Update position display (XYZ + auto-convert to WXYZ)
-   * Replaces 6 duplicate blocks in rt-init.js drag handlers
-   */
-  updatePositionDisplay(pos, Quadray) {
-    if (!pos || !this.elements.coordX) return;
-
-    // XYZ
-    this.elements.coordX.value = pos.x.toFixed(4);
-    this.elements.coordY.value = pos.y.toFixed(4);
-    this.elements.coordZ.value = pos.z.toFixed(4);
-
-    // WXYZ conversion
-    const basisVectors = Quadray.basisVectors;
-    let wxyz = [0, 0, 0, 0];
-    for (let i = 0; i < 4; i++) {
-      wxyz[i] = pos.dot(basisVectors[i]);
-    }
-    const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
-    wxyz = wxyz.map(c => c - mean);
-
-    this.elements.coordW.value = wxyz[0].toFixed(4);
-    this.elements.coordX2.value = wxyz[1].toFixed(4);
-    this.elements.coordY2.value = wxyz[2].toFixed(4);
-    this.elements.coordZ2.value = wxyz[3].toFixed(4);
-  },
-
-  /**
-   * Update rotation display (Euler → degrees + spread)
-   */
-  updateRotationDisplay(rotation, RT) {
-    // Implementation
-  },
-
-  /**
-   * Get display values based on current mode (reads from StateManager)
-   */
-  getDisplayValues(object, RTStateManager) {
-    const instanceId = object.userData.instanceId;
-    const instance = RTStateManager.getInstance(instanceId);
-
-    if (this.mode === 'absolute') {
-      return { position: instance.position, rotation: instance.rotation };
-    } else if (this.mode === 'relative') {
-      return { position: instance.localPosition, rotation: instance.localRotation };
-    } else if (this.mode === 'group-centre') {
-      return { position: this.groupCentroid, rotation: null };
-    }
-  },
-
-  // ========================================================================
-  // MODE MANAGEMENT
-  // ========================================================================
-
-  setMode(mode, selectedObjects) {
-    if (mode === 'group-centre' && selectedObjects.length < 2) {
-      console.warn('⚠️ Group Centre requires 2+ selected objects');
-      return false;
-    }
-    this.mode = mode;
-    if (mode === 'group-centre') {
-      this.groupCentroid = this.calculateGroupCentroid(selectedObjects);
-    }
-    return true;
-  },
-
-  calculateGroupCentroid(objects) {
-    if (objects.length < 2) return null;
-    const centroid = new THREE.Vector3();
-    objects.forEach(obj => centroid.add(obj.position));
-    centroid.divideScalar(objects.length);
-    return centroid;
-  },
-
-  getRotationCenter(editingBasis, selectedObjects) {
-    if (this.mode === 'group-centre') {
-      return this.calculateGroupCentroid(selectedObjects) || editingBasis?.position;
-    }
-    return editingBasis?.position || new THREE.Vector3(0, 0, 0);
-  },
-
-  // ========================================================================
-  // INPUT HANDLERS
-  // ========================================================================
-
-  setupInputHandlers(dependencies) {
-    // Move coordinate input handlers here from rt-init.js
-    // dependencies = { getSelectedPolyhedra, exitToolMode, Quadray, RTStateManager }
-  }
-};
-```
-
-### Shadow & Switchover Process
-
-Following the pattern from `rt-ui-bindings.js` (Jan 30, 2026):
-
-**Phase A: Create Shadow Module**
-```javascript
-// In rt-init.js (line ~36)
-const USE_COORDINATE_MODULE = false; // Testing new coordinate module
-
-// Import new module
-import { RTCoordinates } from './rt-coordinates.js';
-```
-
-**Phase B: Initialize in Parallel**
-```javascript
-// In startARTexplorer() after scene init
-if (USE_COORDINATE_MODULE) {
-  RTCoordinates.init();
-  RTCoordinates.setupInputHandlers({ ... });
-  console.log('🆕 COORDINATE MODULE: Active');
-}
-```
-
-**Phase C: Replace Calls Incrementally**
-```javascript
-// In drag handlers, replace:
-document.getElementById("coordX").value = pos.x.toFixed(4);
-document.getElementById("coordY").value = pos.y.toFixed(4);
-document.getElementById("coordZ").value = pos.z.toFixed(4);
-// ... 10 more lines of WXYZ conversion ...
-
-// With:
-if (USE_COORDINATE_MODULE) {
-  RTCoordinates.updatePositionDisplay(pos, Quadray);
-} else {
-  // Legacy code (kept until switchover complete)
-}
-```
-
-**Phase D: Full Switchover**
-- Set `USE_COORDINATE_MODULE = true`
-- Test all coordinate scenarios
-- Remove legacy code blocks
-- Remove feature flag
-
-### Benefits After Extraction
-
-| Metric | Before | After |
-|--------|--------|-------|
-| rt-init.js lines | ~4100 | ~3900 |
-| Duplicate WXYZ blocks | 6 | 0 |
-| getElementById calls | 60+ | 0 (cached) |
-| Mode logic locations | Scattered | 1 file |
-| Testable in isolation | No | Yes |
-
-### Files Affected
-
-| File | Changes |
+| File | Purpose |
 |------|---------|
-| `modules/rt-coordinates.js` | **NEW** - ~200 lines |
-| `modules/rt-init.js` | Remove ~200 lines, add imports |
-| `modules/rt-state-manager.js` | Add `localRotation`, `localScale` fields |
-| `index.html` | Add Group Centre button |
-| `art.css` | Add disabled state for Group Centre |
+| `modules/rt-coordinates.js` | **Main module** - mode management, display, Group Centre logic |
+| `modules/rt-init.js` | Integration - gumball positioning, rotation center, feature flag |
+| `modules/rt-state-manager.js` | TODO: Add `localTransform` fields for Relative mode |
+
+### Supporting Files
+
+| File | Purpose |
+|------|---------|
+| `index.html` | Toggle buttons (Absolute/Relative/Group), coordinate input fields |
+| `art.css` | Button styling, disabled state for Group Centre |
+| `modules/rt-math.js` | Quadray basis vectors for WXYZ conversion |
 
 ---
 
-## Implementation Checklist for Next Session
+## Next Steps Checklist
 
-### Phase 1: Module Creation
-1. [ ] Create `modules/rt-coordinates.js` with skeleton structure
-2. [ ] Add `USE_COORDINATE_MODULE = false` flag to rt-init.js
-3. [ ] Add import statement for new module
-4. [ ] Implement `RTCoordinates.init()` with DOM element caching
-5. [ ] Implement `RTCoordinates.updatePositionDisplay()`
+### Immediate: Relative Mode
+1. [ ] Add `localTransform` object to StateManager instance schema
+2. [ ] Update `RTCoordinates.getDisplayValues()` to return 0,0,0 for position in Relative mode
+3. [ ] Update `RTCoordinates.getDisplayValues()` to return local rotation/scale values
+4. [ ] Test: Select object in Relative mode → shows 0,0,0 position
 
-### Phase 2: StateManager Extension
-6. [ ] Add `localRotation` field to instance schema
-7. [ ] Add `localScale` field to instance schema
-8. [ ] Add `updateInstanceLocalRotation()` method
-9. [ ] Add `updateInstanceLocalScale()` method
+### Next: Bi-Directional Input
+5. [ ] Implement `RTCoordinates.setupInputHandlers()`
+6. [ ] Add change listeners to position fields (Absolute mode)
+7. [ ] Typing value moves object to that world position
+8. [ ] Add change listeners to rotation fields
+9. [ ] Test: Type coordinates → object moves
 
-### Phase 3: Mode Implementation
-10. [ ] Implement `RTCoordinates.setMode()`
-11. [ ] Implement `RTCoordinates.getDisplayValues()`
-12. [ ] Implement `RTCoordinates.getRotationCenter()`
-13. [ ] Add mode toggle handler to new module
-
-### Phase 4: UI Updates
-14. [ ] Add Group Centre button to index.html
-15. [ ] Add disabled state styling to art.css
-16. [ ] Wire up mode toggle to RTCoordinates
-
-### Phase 5: Switchover
-17. [ ] Replace first drag handler block with module call
-18. [ ] Test, then replace remaining 5 blocks
-19. [ ] Set `USE_COORDINATE_MODULE = true`
-20. [ ] Remove legacy code and feature flag
+### Cleanup: Full Switchover
+10. [ ] Update all drag handlers in rt-init.js to call `RTCoordinates.updatePositionDisplay()`
+11. [ ] Remove duplicate WXYZ conversion blocks from rt-init.js
+12. [ ] Remove `USE_COORDINATE_MODULE` flag (keep module always active)
+13. [ ] Document final line count reduction
