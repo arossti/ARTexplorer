@@ -820,6 +820,10 @@ function startARTexplorer(
   document.querySelectorAll(".toggle-btn.variant-objsnap").forEach(btn => {
     btn.addEventListener("click", function () {
       const snapType = this.dataset.objsnap;
+      // Coordinate mode buttons are mutually exclusive (not toggleable)
+      if (this.dataset.coordMode) {
+        return; // Handled by separate listener below
+      }
       this.classList.toggle("active");
       const isActive = this.classList.contains("active");
       if (snapType === "vertex") {
@@ -829,6 +833,21 @@ function startARTexplorer(
       } else if (snapType === "face") {
         objectSnapFace = isActive;
       }
+    });
+  });
+
+  // Coordinate mode toggle (Absolute/Relative) - mutually exclusive
+  document.querySelectorAll("[data-coord-mode]").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const mode = this.dataset.coordMode;
+      // Remove active from all coord mode buttons
+      document.querySelectorAll("[data-coord-mode]").forEach(b => {
+        b.classList.remove("active");
+      });
+      // Activate clicked button
+      this.classList.add("active");
+      console.log(`📍 Coordinate mode: ${mode}`);
+      // TODO: Update coordinate display based on mode
     });
   });
 
@@ -927,6 +946,44 @@ function startARTexplorer(
 
       console.log("✅ Tool mode exited - orbit enabled, selection preserved");
     }
+  }
+
+  /**
+   * Update coordinate display fields with a position (XYZ and WXYZ)
+   * @param {THREE.Vector3} pos - Position to display
+   */
+  function updateCoordinateDisplay(pos) {
+    if (!pos) {
+      // Clear display if no position
+      document.getElementById("coordX").value = "0.0000";
+      document.getElementById("coordY").value = "0.0000";
+      document.getElementById("coordZ").value = "0.0000";
+      document.getElementById("coordW").value = "0.0000";
+      document.getElementById("coordX2").value = "0.0000";
+      document.getElementById("coordY2").value = "0.0000";
+      document.getElementById("coordZ2").value = "0.0000";
+      return;
+    }
+
+    // Update XYZ coordinates
+    document.getElementById("coordX").value = pos.x.toFixed(4);
+    document.getElementById("coordY").value = pos.y.toFixed(4);
+    document.getElementById("coordZ").value = pos.z.toFixed(4);
+
+    // Convert to WXYZ (Quadray coordinates)
+    const basisVectors = Quadray.basisVectors;
+    let wxyz = [0, 0, 0, 0];
+    for (let i = 0; i < 4; i++) {
+      wxyz[i] = pos.dot(basisVectors[i]);
+    }
+    // Apply zero-sum normalization
+    const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
+    wxyz = wxyz.map(c => c - mean);
+
+    document.getElementById("coordW").value = wxyz[0].toFixed(4);
+    document.getElementById("coordX2").value = wxyz[1].toFixed(4);
+    document.getElementById("coordY2").value = wxyz[2].toFixed(4);
+    document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
   }
 
   /**
@@ -1834,6 +1891,9 @@ function startARTexplorer(
 
       // Update UI selection count
       updateSelectionCountUI();
+
+      // Update coordinate display to show selected object's position
+      updateCoordinateDisplay(polyhedron.position);
     }
   }
 

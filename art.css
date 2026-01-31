@@ -2293,6 +2293,21 @@ button:disabled {
   align-self: center;
 }
 
+/* Coordinate mode toggle group (Absolute/Relative) - far right */
+.coords-mode-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-self: center;
+  margin-left: auto;
+}
+
+.coords-mode-group .toggle-btn {
+  font-size: 10px;
+  padding: 6px 10px;
+  min-width: 70px;
+}
+
 .coords-unit-label {
   font-size: 11px;
   color: #666;
