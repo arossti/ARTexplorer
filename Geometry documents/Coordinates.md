@@ -64,60 +64,60 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 
 ---
 
-## ⚠️ OPEN QUESTIONS - Relative Mode Semantics (Jan 30, 2026)
+## ✅ DECISIONS MADE - Coordinate Mode Behavior (Jan 31, 2026)
 
-These questions need resolution before completing Relative mode implementation:
+### Core Principle: StateManager is Source of Truth
 
-### Question 1: What should Relative mode show for POSITION?
+The coordinate display is a **window into StateManager**. Whatever is persisted to StateManager (and would be exported to JSON) is what Absolute mode displays.
 
-**Scenario**: Cube at world position (5, 3, 2). User clicks "Relative" button.
+### Bug Fixed: Rotation Display
 
-| Option | Display Shows | Rationale |
-|--------|---------------|-----------|
-| **A) Always 0,0,0** | `0.0000, 0.0000, 0.0000` | Object centre = origin. Position display is meaningless in Relative. |
-| **B) Delta since mode switch** | `0.0000, 0.0000, 0.0000` initially, then shows movement delta | Useful for "move this object by X units" workflow. Resets on mode switch or reselection. |
+**Problem**: Rotation was showing last operation's delta, not StateManager value.
+**Fix**: `getDisplayValues()` now correctly reads `instance.transform.rotation` from StateManager.
 
-**Follow-up**: If user moves cube by (1, 0, 0) while in Relative mode, then clicks away and reselects, what shows?
-- Option A: Still 0,0,0 (always)
-- Option B: 0,0,0 (delta resets on selection change)
+### Absolute Mode Behavior (DECIDED)
 
-### Question 2: What should Relative mode show for ROTATION?
+| Transform | Display Shows | Source |
+|-----------|---------------|--------|
+| **Position** | World position | `instance.transform.position` from StateManager |
+| **Rotation** | World rotation | `instance.transform.rotation` from StateManager |
+| **Scale** | World scale | `instance.transform.scale` from StateManager |
 
-**Key insight from user**: "Relative is frankly more important for rotations, where I may wish to simply rotate a cube 45° based on wherever it may be located, without reference to some global coordinate rotation position."
+When you select an instance in Absolute mode:
+- Position shows where it is in world space
+- Rotation shows accumulated rotation from Form identity (persisted)
+- These values match what would be saved/loaded in JSON export
 
-**Scenario**: Cube has been rotated 30° (world). User switches to Relative, wants to add 45° more.
+### Relative Mode Behavior (DECIDED)
 
-| Option | Initial Display | After +45° rotation | Use Case |
-|--------|-----------------|---------------------|----------|
-| **A) World rotation** | `30°` | `75°` | See accumulated rotation from Form identity |
-| **B) Zero (tool mode)** | `0°` | `45°` | "How much am I rotating right now?" - transient delta |
+Relative mode is a **transient tool mode** for performing local operations:
 
-**User's insight**: Relative mode is almost more a **'Tool' mode** where you switch to local just to perform an object self-rotation, without caring about world coordinates.
+| Transform | Initial Display | During Operation | After Operation |
+|-----------|-----------------|------------------|-----------------|
+| **Position** | `0, 0, 0` | Delta from drag start | Resets to `0, 0, 0` |
+| **Rotation** | `0°, 0°, 0°` | Delta being applied | Resets to `0°, 0°, 0°` |
 
-### Question 3: Does Relative mode need persistence?
+**Use case**: "Rotate this cube 45°" or "Move this 2 units in X" without caring about world coordinates.
 
-**Current understanding**:
-- Group Centre centroid is NOT persisted after deselection (calculated dynamically)
-- Individual object transforms ARE persisted in StateManager
-- Coordinate display is a "window into StateManager" for the selected object
+**Bi-directional input in Relative mode**: Typing a value ADDS to current transform (additive), not sets absolute.
 
-**Question**: Should Relative mode store anything, or is it purely a display/tool mode?
+### Group Centre Mode Behavior (ALREADY IMPLEMENTED)
+
+| Transform | Display Shows | Source |
+|-----------|---------------|--------|
+| **Position** | Centroid of selection | Calculated dynamically |
+| **Rotation** | N/A | Objects rotate around centroid |
+
+Group Centre is NOT persisted - it's calculated each time from selected objects.
+
+### Summary Table
 
 | Aspect | Absolute | Relative | Group Centre |
 |--------|----------|----------|--------------|
-| Position displayed | World (persisted) | ? | Centroid (calculated) |
-| Rotation displayed | World (persisted) | ? | N/A |
-| Persisted to StateManager | Yes | ? | No |
-
-### Proposed Resolution
-
-Based on user feedback, Relative mode should behave as a **transient tool mode**:
-
-1. **Position**: Shows 0,0,0 initially. During drag, shows delta from drag start. Resets on mouseup or reselection.
-2. **Rotation**: Shows 0° initially. During rotation, shows delta being applied. After rotation completes, could either reset or show accumulated session delta.
-3. **Bi-directional input**: Typing "45" in rotation field applies +45° to current orientation (additive, not absolute).
-
-This makes Relative mode useful for: "Rotate this 45°" or "Move this 2 units in X" without needing to know/care about world coordinates.
+| Position displayed | World (StateManager) | 0,0,0 → delta | Centroid (calculated) |
+| Rotation displayed | World (StateManager) | 0° → delta | N/A |
+| Persisted | Yes | No (tool mode) | No (calculated) |
+| Input behavior | Set absolute value | Add to current | N/A |
 
 ---
 

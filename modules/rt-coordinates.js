@@ -281,13 +281,22 @@ export const RTCoordinates = {
 
     if (this.mode === 'absolute') {
       // Return world transforms from StateManager
+      // StateManager stores transforms in instance.transform.position/rotation/scale
+      const transform = instance.transform;
       return {
         position: new this.deps.THREE.Vector3(
-          instance.position?.x || 0,
-          instance.position?.y || 0,
-          instance.position?.z || 0
+          transform?.position?.x || 0,
+          transform?.position?.y || 0,
+          transform?.position?.z || 0
         ),
-        rotation: instance.rotation || object.rotation.clone()
+        rotation: transform?.rotation
+          ? new this.deps.THREE.Euler(
+              transform.rotation.x || 0,
+              transform.rotation.y || 0,
+              transform.rotation.z || 0,
+              transform.rotation.order || 'XYZ'
+            )
+          : object.rotation.clone()
       };
 
     } else if (this.mode === 'relative') {
