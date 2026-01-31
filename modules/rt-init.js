@@ -1891,6 +1891,11 @@ function startARTexplorer(
 
       // Update UI selection count
       updateSelectionCountUI();
+
+      // Update coordinate display for multi-selection
+      if (USE_COORDINATE_MODULE) {
+        RTCoordinates.onSelectionChange(RTStateManager.getSelectedObjects());
+      }
     } else {
       // Normal click: Clear previous selection(s), select only this one
       // Clear all existing selections
@@ -1934,8 +1939,14 @@ function startARTexplorer(
       // Update UI selection count
       updateSelectionCountUI();
 
-      // Update coordinate display to show selected object's position
-      updateCoordinateDisplay(polyhedron.position);
+      // Update coordinate display to show selected object's position/rotation
+      if (USE_COORDINATE_MODULE) {
+        // Use RTCoordinates module - reads from StateManager for accurate values
+        RTCoordinates.onSelectionChange(RTStateManager.getSelectedObjects());
+      } else {
+        // Legacy: just position display
+        updateCoordinateDisplay(polyhedron.position);
+      }
     }
   }
 
@@ -3778,6 +3789,31 @@ function startARTexplorer(
           selectedPolyhedra.forEach(poly => {
             delete poly.userData.dragStartQuaternion;
             delete poly.userData.dragStartPosition;
+          });
+
+          // Persist transforms to StateManager (critical for rotation/position to be saved)
+          selectedPolyhedra.forEach(poly => {
+            if (poly.userData.isInstance && poly.userData.instanceId) {
+              const newTransform = {
+                position: {
+                  x: poly.position.x,
+                  y: poly.position.y,
+                  z: poly.position.z,
+                },
+                rotation: {
+                  x: poly.rotation.x,
+                  y: poly.rotation.y,
+                  z: poly.rotation.z,
+                  order: poly.rotation.order,
+                },
+                scale: {
+                  x: poly.scale.x,
+                  y: poly.scale.y,
+                  z: poly.scale.z,
+                },
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            }
           });
 
           selectedPolyhedra = [];
