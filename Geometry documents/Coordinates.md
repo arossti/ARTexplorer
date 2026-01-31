@@ -39,11 +39,14 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 - [x] **WXYZ conversion consolidated** - Single `updatePositionDisplay()` replaces 6 duplicate blocks
 
 **🔧 IN PROGRESS / TODO:**
-1. [ ] **Relative mode implementation** - Currently shows same as Absolute (see below)
-2. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
-3. [ ] **Bi-directional input handlers** - Typing in coordinate fields moves objects
-4. [ ] **Node-based coordinate display** - Show node position when vertex selected
-5. [ ] **Remove legacy coordinate code from rt-init.js** - Full switchover cleanup
+1. [x] **StateManager persistence** - Transforms now saved after gumball operations (commit `4c1021f`)
+2. [x] **XYZ rotation display from StateManager** - Works correctly for Cartesian coordinates
+3. [ ] **WXYZ rotation display from StateManager** - Need same fix for Quadray rotation fields
+4. [ ] **Relative mode implementation** - Currently shows same as Absolute (see below)
+5. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
+6. [ ] **Bi-directional input handlers** - Typing in coordinate fields moves objects
+7. [ ] **Node-based coordinate display** - Show node position when vertex selected
+8. [ ] **Remove legacy coordinate code from rt-init.js** - Full switchover cleanup
 
 ### Files Modified
 
@@ -61,6 +64,8 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 2. `ee44523` - Feat: Add rt-coordinates.js module with shadow/switchover pattern
 3. `406c126` - Feat: Add Group Centre mode with centroid-based rotation
 4. `ea9335a` - Fix: Position gumball at group centroid in Group Centre mode
+5. `a6a312e` - Fix: Absolute mode reads rotation from StateManager correctly
+6. `4c1021f` - Fix: Persist transforms to StateManager after gumball operations
 
 ---
 
@@ -70,10 +75,24 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 
 The coordinate display is a **window into StateManager**. Whatever is persisted to StateManager (and would be exported to JSON) is what Absolute mode displays.
 
-### Bug Fixed: Rotation Display
+### Critical Bug Fixed: Transform Persistence (Jan 31, 2026)
 
-**Problem**: Rotation was showing last operation's delta, not StateManager value.
-**Fix**: `getDisplayValues()` now correctly reads `instance.transform.rotation` from StateManager.
+**Problem**: After move/rotate/scale via gumball, transforms were NOT being saved to StateManager.
+- Only the THREE.js object was updated in memory
+- StateManager still had the initial creation-time transforms
+- **This affected JSON export** - exported files had stale position/rotation values!
+- Coordinate display showed last operation delta, not persisted values
+
+**Root Cause**: `RTStateManager.updateInstance()` was never called after gumball operations.
+
+**Fix** (commit `4c1021f`):
+1. Added `RTStateManager.updateInstance()` call after gumball drag ends
+2. Added `RTCoordinates.onSelectionChange()` call when selection changes
+3. Now transforms are persisted AND display updates correctly
+
+**Impact**: This was a significant data integrity bug. Before this fix:
+- Rotating an object, then exporting → exported file had WRONG rotation
+- Selecting different objects → display showed last operation, not stored values
 
 ### Absolute Mode Behavior (DECIDED)
 
