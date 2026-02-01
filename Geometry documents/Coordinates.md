@@ -69,6 +69,68 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 
 ---
 
+## Quadray Axis Index Mapping: Why `{qw: 3, qx: 0, qy: 2, qz: 1}`?
+
+The seemingly arbitrary index mapping `{qw: 3, qx: 0, qy: 2, qz: 1}` (defined in `Quadray.AXIS_INDEX` in `rt-math.js`) arises from two independent conventions colliding:
+
+### 1. The `basisVectors` Array Order (Geometric)
+
+The Quadray basis vectors are stored in an array ordered by their Cartesian coordinate patterns (following Tom Ace / Kirby Urner's original C++ implementation):
+
+```javascript
+basisVectors = [
+  ( 1,  1,  1)/√3   // index 0 - "A" - top-front-right
+  ( 1, -1, -1)/√3   // index 1 - "B" - bottom-back-right
+  (-1,  1, -1)/√3   // index 2 - "C" - bottom-front-left
+  (-1, -1,  1)/√3   // index 3 - "D" - top-back-left
+]
+```
+
+This order (A, B, C, D) follows a clean pattern in Cartesian space: all combinations of ±1 that form a tetrahedron inscribed in a cube.
+
+### 2. The Color Assignment (Visual)
+
+Colors were assigned sequentially to the array indices for visual distinction:
+
+```javascript
+colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00]; // R, G, B, Y
+// index 0 (A) → Red
+// index 1 (B) → Green
+// index 2 (C) → Blue
+// index 3 (D) → Yellow
+```
+
+### 3. The QW/QX/QY/QZ Naming (User-Facing)
+
+The Q-names were assigned based on **color**, not array index, to create a memorable user convention:
+
+| Q-Name | Color  | Array Index | Basis Vector |
+|--------|--------|-------------|--------------|
+| **QW** | Yellow | 3           | D: (-1,-1,+1)/√3 |
+| **QX** | Red    | 0           | A: (+1,+1,+1)/√3 |
+| **QY** | Blue   | 2           | C: (-1,+1,-1)/√3 |
+| **QZ** | Green  | 1           | B: (+1,-1,-1)/√3 |
+
+### Result: The 3, 0, 2, 1 Mapping
+
+The mapping `{qw: 3, qx: 0, qy: 2, qz: 1}` translates **user-visible color-based names** to **geometry-based array indices**:
+
+- **QW (Yellow)** → index 3 because Yellow was assigned to the 4th vector (D)
+- **QX (Red)** → index 0 because Red was assigned to the 1st vector (A)
+- **QY (Blue)** → index 2 because Blue was assigned to the 3rd vector (C)
+- **QZ (Green)** → index 1 because Green was assigned to the 2nd vector (B)
+
+### Why Not Reorder?
+
+We could reorder the `basisVectors` array to make indices match names (0,1,2,3), but this would:
+1. Break the clean Cartesian coordinate pattern (A,B,C,D progression)
+2. Require updating all existing code that uses array indices
+3. Diverge from the original Quadray reference implementation
+
+The current approach keeps the mathematical foundation clean while providing a single canonical mapping (`Quadray.AXIS_INDEX`) for UI/display purposes.
+
+---
+
 ## ✅ DECISIONS MADE - Coordinate Mode Behavior (Jan 31, 2026)
 
 ### Core Principle: StateManager is Source of Truth
