@@ -661,10 +661,10 @@ button:disabled {
   gap: 5px;
 }
 
-/* Four-column layout for WXYZ (coordinates and rotation) */
-.coordinate-inputs:has(#coordW),
-.coordinate-inputs:has(#rotWDegrees),
-.coordinate-inputs:has(#rotWSpread) {
+/* Four-column layout for QWXYZ (coordinates and rotation) */
+.coordinate-inputs:has(#coordQW),
+.coordinate-inputs:has(#rotQWDegrees),
+.coordinate-inputs:has(#rotQWSpread) {
   grid-template-columns: repeat(4, 1fr);
 }
 
@@ -2291,6 +2291,28 @@ button:disabled {
   height: 50px;
   background: #444;
   align-self: center;
+}
+
+/* Coordinate mode toggle group (Absolute/Relative) - far right */
+.coords-mode-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-self: center;
+  margin-left: auto;
+}
+
+.coords-mode-group .toggle-btn {
+  font-size: 10px;
+  padding: 6px 10px;
+  min-width: 70px;
+}
+
+/* Disabled state for Group Centre button (requires 2+ selection) */
+.coords-mode-group .toggle-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .coords-unit-label {

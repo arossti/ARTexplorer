@@ -2371,20 +2371,20 @@ export function initScene(THREE, OrbitControls, RT) {
         break;
       }
 
-      // WXYZ Tetrahedral Basis Views
-      // WXYZ Tetrahedral Basis Views (Quadray coordinate system)
-      case "quadw":
-      case "quadx":
-      case "quady":
-      case "quadz": {
+      // QWXYZ Tetrahedral Basis Views (Quadray coordinate system)
+      // Correct color mapping: QW=Yellow(3), QX=Red(0), QY=Blue(2), QZ=Green(1)
+      case "quadqw":
+      case "quadqx":
+      case "quadqy":
+      case "quadqz": {
         // Initialize Quadray basis vectors if not already done
         if (!Quadray.basisVectors) {
           Quadray.init(THREE);
         }
 
-        // Map view name to basis vector index
-        // W=0, X=1, Y=2, Z=3 (matches Quadray.basisVectors order)
-        const axisMap = { quadw: 0, quadx: 1, quady: 2, quadz: 3 };
+        // Map view name to basis vector index with correct color mapping
+        // QW=Yellow(3), QX=Red(0), QY=Blue(2), QZ=Green(1)
+        const axisMap = { quadqw: 3, quadqx: 0, quadqy: 2, quadqz: 1 };
         const axisIndex = axisMap[view];
         const basisVector = Quadray.basisVectors[axisIndex];
 
@@ -2404,10 +2404,10 @@ export function initScene(THREE, OrbitControls, RT) {
 
         camera.up.copy(upVector);
 
-        // Extract axis letter for logging (remove 'quad' prefix)
-        const axisLetter = view.slice(4).toUpperCase();
+        // Extract axis name for logging (remove 'quad' prefix)
+        const axisName = view.slice(4).toUpperCase();
         console.log(
-          `WXYZ View ${axisLetter}: Camera at tetrahedral basis vector`,
+          `QWXYZ View ${axisName}: Camera at tetrahedral basis vector`,
           basisVector
         );
 
@@ -2454,16 +2454,16 @@ export function initScene(THREE, OrbitControls, RT) {
     };
 
     const tetrahedralAxisMap = {
-      w: "w",
-      x: "x",
-      y: "y",
-      z: "z",
+      quadqw: "qw",
+      quadqx: "qx",
+      quadqy: "qy",
+      quadqz: "qz",
     };
 
     // Set cutplane axis based on view
     if (tetrahedralAxisMap[view]) {
-      // WXYZ Tetrahedral views
-      RTPapercut.setCutplaneAxis("tetrahedral", view, scene);
+      // QWXYZ Tetrahedral views
+      RTPapercut.setCutplaneAxis("tetrahedral", tetrahedralAxisMap[view], scene);
     } else if (cartesianAxisMap[view]) {
       // XYZ Cartesian views
       RTPapercut.setCutplaneAxis("cartesian", cartesianAxisMap[view], scene);

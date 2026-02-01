@@ -225,7 +225,7 @@
                 <label class="label-axis label-axis-qw">W:</label>
                 <input
                   type="text"
-                  id="coordW"
+                  id="coordQW"
                   class="coord-input axis-qw"
                   value="0.0000"
                 />
@@ -234,7 +234,7 @@
                 <label class="label-axis label-axis-qx">X:</label>
                 <input
                   type="text"
-                  id="coordX2"
+                  id="coordQX"
                   class="coord-input axis-qx"
                   value="0.0000"
                 />
@@ -243,7 +243,7 @@
                 <label class="label-axis label-axis-qy">Y:</label>
                 <input
                   type="text"
-                  id="coordY2"
+                  id="coordQY"
                   class="coord-input axis-qy"
                   value="0.0000"
                 />
@@ -252,7 +252,7 @@
                 <label class="label-axis label-axis-qz">Z:</label>
                 <input
                   type="text"
-                  id="coordZ2"
+                  id="coordQZ"
                   class="coord-input axis-qz"
                   value="0.0000"
                 />
@@ -345,7 +345,7 @@
                 <label class="label-axis label-axis-qw">W:</label>
                 <input
                   type="text"
-                  id="rotWDegrees"
+                  id="rotQWDegrees"
                   class="coord-input axis-qw"
                   value="0.00"
                 />
@@ -354,7 +354,7 @@
                 <label class="label-axis label-axis-qx">X:</label>
                 <input
                   type="text"
-                  id="rotXQDegrees"
+                  id="rotQXDegrees"
                   class="coord-input axis-qx"
                   value="0.00"
                 />
@@ -363,7 +363,7 @@
                 <label class="label-axis label-axis-qy">Y:</label>
                 <input
                   type="text"
-                  id="rotYQDegrees"
+                  id="rotQYDegrees"
                   class="coord-input axis-qy"
                   value="0.00"
                 />
@@ -372,7 +372,7 @@
                 <label class="label-axis label-axis-qz">Z:</label>
                 <input
                   type="text"
-                  id="rotZQDegrees"
+                  id="rotQZDegrees"
                   class="coord-input axis-qz"
                   value="0.00"
                 />
@@ -387,7 +387,7 @@
                 <label class="label-axis label-axis-qw">W:</label>
                 <input
                   type="text"
-                  id="rotWSpread"
+                  id="rotQWSpread"
                   class="coord-input axis-qw"
                   value="0.00"
                 />
@@ -396,7 +396,7 @@
                 <label class="label-axis label-axis-qx">X:</label>
                 <input
                   type="text"
-                  id="rotXQSpread"
+                  id="rotQXSpread"
                   class="coord-input axis-qx"
                   value="0.00"
                 />
@@ -405,7 +405,7 @@
                 <label class="label-axis label-axis-qy">Y:</label>
                 <input
                   type="text"
-                  id="rotYQSpread"
+                  id="rotQYSpread"
                   class="coord-input axis-qy"
                   value="0.00"
                 />
@@ -414,12 +414,41 @@
                 <label class="label-axis label-axis-qz">Z:</label>
                 <input
                   type="text"
-                  id="rotZQSpread"
+                  id="rotQZSpread"
                   class="coord-input axis-qz"
                   value="0.00"
                 />
               </div>
             </div>
+          </div>
+
+          <!-- Coordinate Mode Toggle (Absolute/Relative/Group Centre) - far right -->
+          <div class="coords-mode-group toggle-btn-group">
+            <button
+              id="coordModeAbsolute"
+              class="toggle-btn variant-objsnap active"
+              data-coord-mode="absolute"
+              title="Coordinates relative to world origin (Alpha)"
+            >
+              Absolute
+            </button>
+            <button
+              id="coordModeRelative"
+              class="toggle-btn variant-objsnap"
+              data-coord-mode="relative"
+              title="Coordinates relative to selected object (local transform)"
+            >
+              Relative
+            </button>
+            <button
+              id="coordModeGroupCentre"
+              class="toggle-btn variant-objsnap"
+              data-coord-mode="group-centre"
+              disabled
+              title="Coordinates relative to group centroid (requires 2+ selected)"
+            >
+              Group
+            </button>
           </div>
         </div>
       </div>
@@ -2357,24 +2386,24 @@
               </div>
             </div>
 
-            <!-- WXYZ Tetrahedral Basis Views -->
+            <!-- QWXYZ Tetrahedral Basis Views -->
             <div class="control-item spacing-top-large">
               <hr
                 style="border: none; border-top: 1px solid #444; margin: 20px 0"
               />
-              <label class="label-section">WXYZ Tetrahedral Views</label>
+              <label class="label-section">QWXYZ Tetrahedral Views</label>
               <div class="button-grid-2col">
-                <button class="toggle-btn variant-standard" id="viewQuadW">
-                  W
+                <button class="toggle-btn variant-standard" id="viewQuadQW">
+                  QW
                 </button>
-                <button class="toggle-btn variant-standard" id="viewQuadX">
-                  X
+                <button class="toggle-btn variant-standard" id="viewQuadQX">
+                  QX
                 </button>
-                <button class="toggle-btn variant-standard" id="viewQuadY">
-                  Y
+                <button class="toggle-btn variant-standard" id="viewQuadQY">
+                  QY
                 </button>
-                <button class="toggle-btn variant-standard" id="viewQuadZ">
-                  Z
+                <button class="toggle-btn variant-standard" id="viewQuadQZ">
+                  QZ
                 </button>
               </div>
             </div>
@@ -2484,26 +2513,26 @@
               </div>
               <label class="label-subsection">Tetrahedral Basis</label>
               <div style="display: flex; gap: 4px">
-                <button class="toggle-btn variant-small" id="cutplaneAxisW">
-                  W
+                <button class="toggle-btn variant-small" id="cutplaneAxisQW">
+                  QW
                 </button>
                 <button
                   class="toggle-btn variant-small"
-                  id="cutplaneAxisTetraX"
+                  id="cutplaneAxisQX"
                 >
-                  X
+                  QX
                 </button>
                 <button
                   class="toggle-btn variant-small"
-                  id="cutplaneAxisTetraY"
+                  id="cutplaneAxisQY"
                 >
-                  Y
+                  QY
                 </button>
                 <button
                   class="toggle-btn variant-small"
-                  id="cutplaneAxisTetraZ"
+                  id="cutplaneAxisQZ"
                 >
-                  Z
+                  QZ
                 </button>
               </div>
             </div>

@@ -21,6 +21,9 @@ import {
 import { uiBindings } from "./rt-ui-bindings.js";
 import { allBindings, getBindingStats } from "./rt-ui-binding-defs.js";
 
+// Phase 3 Modularization: Coordinate Display System (Jan 30, 2026)
+import { RTCoordinates } from "./rt-coordinates.js";
+
 // Phase 2b Modularization: Selection System - REVERTED
 // Selection is tightly coupled with gumball (~40 references to currentSelection)
 // Extracting selection without gumball creates artificial separation that adds
@@ -34,6 +37,9 @@ window.RTPolyhedra = Polyhedra;
 // ========================================================================
 // Set to true to use new declarative UI bindings instead of legacy addEventListener
 const USE_DECLARATIVE_UI = true; // Testing declarative bindings (Jan 30)
+
+// Set to true to use new RTCoordinates module for coordinate display
+const USE_COORDINATE_MODULE = true; // Shadow testing coordinate module (Jan 30)
 
 // Phase 2b RTSelection: REVERTED - Selection-gumball coupling is by design, not a bug
 
@@ -168,6 +174,29 @@ function startARTexplorer(
       `🆕 DECLARATIVE UI: ${stats.total} bindings (${stats.simpleCheckboxes} checkboxes, ${stats.simpleSliders} sliders, ${stats.linkedSliders} linked)`
     );
   }
+
+  // ========================================================================
+  // COORDINATE DISPLAY MODULE (Phase 3 Modularization)
+  // ========================================================================
+  if (USE_COORDINATE_MODULE) {
+    RTCoordinates.init({
+      Quadray: Quadray,
+      RTStateManager: RTStateManager,
+      THREE: THREE,
+      getSelectedPolyhedra: getSelectedPolyhedra,
+    });
+    RTCoordinates.setupModeToggles();
+
+    // Callback to reposition editingBasis when mode changes to group-centre
+    RTCoordinates.onModeChangeCallback = (mode, centroid) => {
+      if (mode === 'group-centre' && centroid && editingBasis) {
+        editingBasis.position.copy(centroid);
+      }
+    };
+
+    console.log('🆕 COORDINATE MODULE: Active');
+  }
+
   // ========================================================================
   // LEGACY EVENT HANDLERS (Run in parallel with declarative bindings)
   // ========================================================================
@@ -439,11 +468,12 @@ function startARTexplorer(
     { id: "viewZDown", view: "zdown" },
     { id: "viewZUp", view: "zup" },
     { id: "viewAxo", view: "axo" },
-    // WXYZ Tetrahedral Basis Views (looking down each quadray axis)
-    { id: "viewQuadW", view: "quadw" },
-    { id: "viewQuadX", view: "quadx" },
-    { id: "viewQuadY", view: "quady" },
-    { id: "viewQuadZ", view: "quadz" },
+    // QWXYZ Tetrahedral Basis Views (looking down each quadray axis)
+    // QW=Yellow(3), QX=Red(0), QY=Blue(2), QZ=Green(1)
+    { id: "viewQuadQW", view: "quadqw" },
+    { id: "viewQuadQX", view: "quadqx" },
+    { id: "viewQuadQY", view: "quadqy" },
+    { id: "viewQuadQZ", view: "quadqz" },
   ];
 
   // Track active view button for persistent highlighting
@@ -777,15 +807,18 @@ function startARTexplorer(
         renderingAPI.setQuadrayBasisVisible(false);
 
         // Create editing basis at appropriate position
-        // If in vertex mode with selected node(s), use first node's world position
-        // Otherwise use polyhedron centroid (classical behavior)
+        // Priority: 1) Group Centre mode → centroid, 2) Vertex mode → node, 3) Classical → primary centroid
         const selected = getSelectedPolyhedra();
         if (selected.length > 0) {
           let basisPosition;
           const selectedVertices = RTStateManager.getSelectedVertices();
           const firstVertex = selectedVertices[0];
 
-          if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+          // Check for Group Centre mode first (requires 2+ selected)
+          if (USE_COORDINATE_MODULE && RTCoordinates.getMode() === 'group-centre' && selected.length >= 2) {
+            // GROUP CENTRE: Use calculated centroid of all selected objects
+            basisPosition = RTCoordinates.calculateGroupCentroid(selected);
+          } else if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
             // NODE-BASED ORIGIN: Use first selected node's world position
             const nodeWorldPos = new THREE.Vector3();
             firstVertex.getWorldPosition(nodeWorldPos);
@@ -820,6 +853,10 @@ function startARTexplorer(
   document.querySelectorAll(".toggle-btn.variant-objsnap").forEach(btn => {
     btn.addEventListener("click", function () {
       const snapType = this.dataset.objsnap;
+      // Coordinate mode buttons are mutually exclusive (not toggleable)
+      if (this.dataset.coordMode) {
+        return; // Handled by separate listener below
+      }
       this.classList.toggle("active");
       const isActive = this.classList.contains("active");
       if (snapType === "vertex") {
@@ -831,6 +868,24 @@ function startARTexplorer(
       }
     });
   });
+
+  // Coordinate mode toggle (Absolute/Relative) - mutually exclusive
+  // When USE_COORDINATE_MODULE is true, this is handled by RTCoordinates.setupModeToggles()
+  if (!USE_COORDINATE_MODULE) {
+    document.querySelectorAll("[data-coord-mode]").forEach(btn => {
+      btn.addEventListener("click", function () {
+        const mode = this.dataset.coordMode;
+        // Remove active from all coord mode buttons
+        document.querySelectorAll("[data-coord-mode]").forEach(b => {
+          b.classList.remove("active");
+        });
+        // Activate clicked button
+        this.classList.add("active");
+        console.log(`📍 Coordinate mode: ${mode}`);
+        // TODO: Update coordinate display based on mode
+      });
+    });
+  }
 
   // ========================================================================
   // ROTATION INPUT FIELDS - Per-Axis Bidirectional Conversion (Degrees ↔ Spread)
@@ -882,10 +937,10 @@ function startARTexplorer(
   setupRotationInputs("rotZDegrees", "rotZSpread", "Z");
 
   // Setup bidirectional conversion for WXYZ (Quadray) axes
-  setupRotationInputs("rotWDegrees", "rotWSpread", "W");
-  setupRotationInputs("rotXQDegrees", "rotXQSpread", "X (Quadray)");
-  setupRotationInputs("rotYQDegrees", "rotYQSpread", "Y (Quadray)");
-  setupRotationInputs("rotZQDegrees", "rotZQSpread", "Z (Quadray)");
+  setupRotationInputs("rotQWDegrees", "rotQWSpread", "W");
+  setupRotationInputs("rotQXDegrees", "rotQXSpread", "X (Quadray)");
+  setupRotationInputs("rotQYDegrees", "rotQYSpread", "Y (Quadray)");
+  setupRotationInputs("rotQZDegrees", "rotQZSpread", "Z (Quadray)");
 
   // ========================================================================
   // COORDINATE INPUT HANDLERS - Execute transformations on Enter
@@ -930,6 +985,51 @@ function startARTexplorer(
   }
 
   /**
+   * Update coordinate display fields with a position (XYZ and WXYZ)
+   * @param {THREE.Vector3} pos - Position to display
+   */
+  function updateCoordinateDisplay(pos) {
+    // When coordinate module is active, delegate to it
+    if (USE_COORDINATE_MODULE) {
+      RTCoordinates.updatePositionDisplay(pos);
+      return;
+    }
+
+    // Legacy implementation
+    if (!pos) {
+      // Clear display if no position
+      document.getElementById("coordX").value = "0.0000";
+      document.getElementById("coordY").value = "0.0000";
+      document.getElementById("coordZ").value = "0.0000";
+      document.getElementById("coordQW").value = "0.0000";
+      document.getElementById("coordQX").value = "0.0000";
+      document.getElementById("coordQY").value = "0.0000";
+      document.getElementById("coordQZ").value = "0.0000";
+      return;
+    }
+
+    // Update XYZ coordinates
+    document.getElementById("coordX").value = pos.x.toFixed(4);
+    document.getElementById("coordY").value = pos.y.toFixed(4);
+    document.getElementById("coordZ").value = pos.z.toFixed(4);
+
+    // Convert to WXYZ (Quadray coordinates)
+    const basisVectors = Quadray.basisVectors;
+    let wxyz = [0, 0, 0, 0];
+    for (let i = 0; i < 4; i++) {
+      wxyz[i] = pos.dot(basisVectors[i]);
+    }
+    // Apply zero-sum normalization
+    const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
+    wxyz = wxyz.map(c => c - mean);
+
+    document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+    document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+    document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+    document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
+  }
+
+  /**
    * Setup coordinate input handler for MOVE mode (XYZ fields)
    */
   function setupMoveCoordinateInputs() {
@@ -970,10 +1070,10 @@ function startARTexplorer(
             const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
             wxyz = wxyz.map(c => c - mean);
 
-            document.getElementById("coordW").value = wxyz[0].toFixed(4);
-            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+            document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+            document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+            document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
           }
 
           // Update editing basis position if it exists
@@ -993,10 +1093,10 @@ function startARTexplorer(
    */
   function setupMoveQuadrayInputs() {
     const coordInputs = [
-      { id: "coordW", index: 0, name: "W" },
-      { id: "coordX2", index: 1, name: "X" },
-      { id: "coordY2", index: 2, name: "Y" },
-      { id: "coordZ2", index: 3, name: "Z" },
+      { id: "coordQW", index: 0, name: "W" },
+      { id: "coordQX", index: 1, name: "X" },
+      { id: "coordQY", index: 2, name: "Y" },
+      { id: "coordQZ", index: 3, name: "Z" },
     ];
 
     coordInputs.forEach(({ id }) => {
@@ -1016,10 +1116,10 @@ function startARTexplorer(
 
           // Get all WXYZ values
           let wxyz = [
-            parseFloat(document.getElementById("coordW").value),
-            parseFloat(document.getElementById("coordX2").value),
-            parseFloat(document.getElementById("coordY2").value),
-            parseFloat(document.getElementById("coordZ2").value),
+            parseFloat(document.getElementById("coordQW").value),
+            parseFloat(document.getElementById("coordQX").value),
+            parseFloat(document.getElementById("coordQY").value),
+            parseFloat(document.getElementById("coordQZ").value),
           ];
 
           // Convert WXYZ to Cartesian
@@ -1102,11 +1202,12 @@ function startARTexplorer(
    * Setup rotation input handler for ROTATE mode (Degrees fields - WXYZ)
    */
   function setupRotateQuadrayDegreesInputs() {
+    // Correct color-to-axis mapping: W=Yellow(3), X=Red(0), Y=Blue(2), Z=Green(1)
     const rotInputs = [
-      { id: "rotWDegrees", basisIndex: 0, name: "W" },
-      { id: "rotXQDegrees", basisIndex: 1, name: "X (Quadray)" },
-      { id: "rotYQDegrees", basisIndex: 2, name: "Y (Quadray)" },
-      { id: "rotZQDegrees", basisIndex: 3, name: "Z (Quadray)" },
+      { id: "rotQWDegrees", basisIndex: 3, name: "W (Yellow)" },
+      { id: "rotQXDegrees", basisIndex: 0, name: "X (Red)" },
+      { id: "rotQYDegrees", basisIndex: 2, name: "Y (Blue)" },
+      { id: "rotQZDegrees", basisIndex: 1, name: "Z (Green)" },
     ];
 
     rotInputs.forEach(({ id, basisIndex, name }) => {
@@ -1190,11 +1291,12 @@ function startARTexplorer(
    * Setup rotation input handler for ROTATE mode (Spread fields - WXYZ)
    */
   function setupRotateQuadraySpreadInputs() {
+    // Correct color-to-axis mapping: W=Yellow(3), X=Red(0), Y=Blue(2), Z=Green(1)
     const rotInputs = [
-      { id: "rotWSpread", basisIndex: 0, name: "W" },
-      { id: "rotXQSpread", basisIndex: 1, name: "X (Quadray)" },
-      { id: "rotYQSpread", basisIndex: 2, name: "Y (Quadray)" },
-      { id: "rotZQSpread", basisIndex: 3, name: "Z (Quadray)" },
+      { id: "rotQWSpread", basisIndex: 3, name: "W (Yellow)" },
+      { id: "rotQXSpread", basisIndex: 0, name: "X (Red)" },
+      { id: "rotQYSpread", basisIndex: 2, name: "Y (Blue)" },
+      { id: "rotQZSpread", basisIndex: 1, name: "Z (Green)" },
     ];
 
     rotInputs.forEach(({ id, basisIndex, name }) => {
@@ -1792,6 +1894,11 @@ function startARTexplorer(
 
       // Update UI selection count
       updateSelectionCountUI();
+
+      // Update coordinate display for multi-selection
+      if (USE_COORDINATE_MODULE) {
+        RTCoordinates.onSelectionChange(RTStateManager.getSelectedObjects());
+      }
     } else {
       // Normal click: Clear previous selection(s), select only this one
       // Clear all existing selections
@@ -1834,6 +1941,15 @@ function startARTexplorer(
 
       // Update UI selection count
       updateSelectionCountUI();
+
+      // Update coordinate display to show selected object's position/rotation
+      if (USE_COORDINATE_MODULE) {
+        // Use RTCoordinates module - reads from StateManager for accurate values
+        RTCoordinates.onSelectionChange(RTStateManager.getSelectedObjects());
+      } else {
+        // Legacy: just position display
+        updateCoordinateDisplay(polyhedron.position);
+      }
     }
   }
 
@@ -1851,6 +1967,11 @@ function startARTexplorer(
     // Log for debugging
     if (count > 1) {
       console.log(`📦 Multi-select: ${count} objects selected`);
+    }
+
+    // Update RTCoordinates Group Centre button state
+    if (USE_COORDINATE_MODULE) {
+      RTCoordinates.updateGroupCentreButtonState(count);
     }
   }
 
@@ -2951,10 +3072,10 @@ function startARTexplorer(
             const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
             wxyz = wxyz.map(c => c - mean);
 
-            document.getElementById("coordW").value = wxyz[0].toFixed(4);
-            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+            document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+            document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+            document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
           }
           return; // Don't process gumball drag
         }
@@ -3171,9 +3292,15 @@ function startARTexplorer(
             // ====================================================================
             // Use screen-space mouse movement for rotation
             // Project rotation center to screen space
-            const rotationCenter = editingBasis
-              ? editingBasis.position
-              : new THREE.Vector3(0, 0, 0);
+            // When Group Centre mode is active, use calculated centroid instead of editingBasis
+            let rotationCenter;
+            if (USE_COORDINATE_MODULE && RTCoordinates.getMode() === 'group-centre') {
+              rotationCenter = RTCoordinates.getRotationCenter(editingBasis, selectedPolyhedra);
+            } else {
+              rotationCenter = editingBasis
+                ? editingBasis.position
+                : new THREE.Vector3(0, 0, 0);
+            }
             const centerScreen = rotationCenter.clone().project(camera);
 
             // Current mouse position in normalized device coordinates
@@ -3247,8 +3374,9 @@ function startARTexplorer(
               degreesFieldId = `rot${axis}Degrees`;
               spreadFieldId = `rot${axis}Spread`;
             } else if (selectedHandle.type === "quadray") {
-              // WXYZ axes: index 0=W, 1=X, 2=Y, 3=Z
-              const axisNames = ["W", "XQ", "YQ", "ZQ"];
+              // Quadray axes match color order: 0=Red(QX), 1=Green(QZ), 2=Blue(QY), 3=Yellow(QW)
+              // QW=Yellow, QX=Red, QY=Blue, QZ=Green (user-specified correct mapping)
+              const axisNames = ["QX", "QZ", "QY", "QW"];
               const axis = axisNames[selectedHandle.index];
               degreesFieldId = `rot${axis}Degrees`;
               spreadFieldId = `rot${axis}Spread`;
@@ -3329,10 +3457,10 @@ function startARTexplorer(
             const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
             wxyz = wxyz.map(c => c - mean);
 
-            document.getElementById("coordW").value = wxyz[0].toFixed(4);
-            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+            document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+            document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+            document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
           }
 
           // CRITICAL FIX: Only update drag start point for MOVE and SCALE modes
@@ -3395,10 +3523,10 @@ function startARTexplorer(
             const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
             wxyz = wxyz.map(c => c - mean);
 
-            document.getElementById("coordW").value = wxyz[0].toFixed(4);
-            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+            document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+            document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+            document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
 
             // Clear snap state
             clearSnapPreviewMarker();
@@ -3473,10 +3601,10 @@ function startARTexplorer(
               const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
               wxyz = wxyz.map(c => c - mean);
 
-              document.getElementById("coordW").value = wxyz[0].toFixed(4);
-              document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-              document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-              document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+              document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+              document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+              document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+              document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
 
               // Update editing basis position after snapping
               if (editingBasis) {
@@ -3614,10 +3742,10 @@ function startARTexplorer(
               const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
               wxyz = wxyz.map(c => c - mean);
 
-              document.getElementById("coordW").value = wxyz[0].toFixed(4);
-              document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-              document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-              document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+              document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+              document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+              document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+              document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
             }
           } else {
             console.log(
@@ -3665,6 +3793,31 @@ function startARTexplorer(
           selectedPolyhedra.forEach(poly => {
             delete poly.userData.dragStartQuaternion;
             delete poly.userData.dragStartPosition;
+          });
+
+          // Persist transforms to StateManager (critical for rotation/position to be saved)
+          selectedPolyhedra.forEach(poly => {
+            if (poly.userData.isInstance && poly.userData.instanceId) {
+              const newTransform = {
+                position: {
+                  x: poly.position.x,
+                  y: poly.position.y,
+                  z: poly.position.z,
+                },
+                rotation: {
+                  x: poly.rotation.x,
+                  y: poly.rotation.y,
+                  z: poly.rotation.z,
+                  order: poly.rotation.order,
+                },
+                scale: {
+                  x: poly.scale.x,
+                  y: poly.scale.y,
+                  z: poly.scale.z,
+                },
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            }
           });
 
           selectedPolyhedra = [];
@@ -3855,11 +4008,11 @@ function startARTexplorer(
     { id: "cutplaneAxisX", basis: "cartesian", axis: "x" },
     { id: "cutplaneAxisY", basis: "cartesian", axis: "y" },
     { id: "cutplaneAxisZ", basis: "cartesian", axis: "z" },
-    // Tetrahedral basis
-    { id: "cutplaneAxisW", basis: "tetrahedral", axis: "w" },
-    { id: "cutplaneAxisTetraX", basis: "tetrahedral", axis: "x" },
-    { id: "cutplaneAxisTetraY", basis: "tetrahedral", axis: "y" },
-    { id: "cutplaneAxisTetraZ", basis: "tetrahedral", axis: "z" },
+    // Tetrahedral basis (QW/QX/QY/QZ matches camera naming convention)
+    { id: "cutplaneAxisQW", basis: "tetrahedral", axis: "qw" },
+    { id: "cutplaneAxisQX", basis: "tetrahedral", axis: "qx" },
+    { id: "cutplaneAxisQY", basis: "tetrahedral", axis: "qy" },
+    { id: "cutplaneAxisQZ", basis: "tetrahedral", axis: "qz" },
   ];
 
   // Track active cutplane axis button for persistent highlighting
