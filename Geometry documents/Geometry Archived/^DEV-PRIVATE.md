@@ -1898,5 +1898,9 @@ Consider implementing dynamic/kinematic features including inverse kinematics an
 - Andy: Notify the group when tetrahelix and five-fold symmetry features are implemented and ready for testing/demo
 
 ---
+**VIROLOGY INTERESTS**
+- https://online.kitp.ucsb.edu/online/biomachine06/twarock/pdf/Twarock_KITP.pdf
+- Penrose tiling on surface of Geodesic? 
+- Consider wrapping/unwrapping of a penrose net
 
 **Document End**
