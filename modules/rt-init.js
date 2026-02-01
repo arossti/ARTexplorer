@@ -1024,19 +1024,23 @@ function startARTexplorer(
     document.getElementById("coordZ").value = pos.z.toFixed(4);
 
     // Convert to WXYZ (Quadray coordinates)
+    // Project position onto each basisVector to get raw quadray values
     const basisVectors = Quadray.basisVectors;
-    let wxyz = [0, 0, 0, 0];
+    let rawQuadray = [0, 0, 0, 0];
     for (let i = 0; i < 4; i++) {
-      wxyz[i] = pos.dot(basisVectors[i]);
+      rawQuadray[i] = pos.dot(basisVectors[i]);
     }
     // Apply zero-sum normalization
-    const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
-    wxyz = wxyz.map(c => c - mean);
+    const mean = (rawQuadray[0] + rawQuadray[1] + rawQuadray[2] + rawQuadray[3]) / 4;
+    rawQuadray = rawQuadray.map(c => c - mean);
 
-    document.getElementById("coordQW").value = wxyz[0].toFixed(4);
-    document.getElementById("coordQX").value = wxyz[1].toFixed(4);
-    document.getElementById("coordQY").value = wxyz[2].toFixed(4);
-    document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
+    // Map basisVector indices to UI fields using AXIS_INDEX
+    // AXIS_INDEX: { qw: 3, qx: 0, qy: 2, qz: 1 }
+    // So: QW displays rawQuadray[3], QX displays rawQuadray[0], etc.
+    document.getElementById("coordQW").value = rawQuadray[Quadray.AXIS_INDEX.qw].toFixed(4);
+    document.getElementById("coordQX").value = rawQuadray[Quadray.AXIS_INDEX.qx].toFixed(4);
+    document.getElementById("coordQY").value = rawQuadray[Quadray.AXIS_INDEX.qy].toFixed(4);
+    document.getElementById("coordQZ").value = rawQuadray[Quadray.AXIS_INDEX.qz].toFixed(4);
   }
 
   /**
@@ -1123,20 +1127,27 @@ function startARTexplorer(
             return;
           }
 
-          // Get all WXYZ values
-          let wxyz = [
-            parseFloat(document.getElementById("coordQW").value),
-            parseFloat(document.getElementById("coordQX").value),
-            parseFloat(document.getElementById("coordQY").value),
-            parseFloat(document.getElementById("coordQZ").value),
-          ];
+          // Get all QWXYZ values from UI fields
+          const qwValue = parseFloat(document.getElementById("coordQW").value);
+          const qxValue = parseFloat(document.getElementById("coordQX").value);
+          const qyValue = parseFloat(document.getElementById("coordQY").value);
+          const qzValue = parseFloat(document.getElementById("coordQZ").value);
 
-          // Convert WXYZ to Cartesian
+          // Build array in basisVector order (A=0, B=1, C=2, D=3) using AXIS_INDEX
+          // AXIS_INDEX: { qw: 3, qx: 0, qy: 2, qz: 1 }
+          // toCartesian expects (a, b, c, d) = basisVector indices (0, 1, 2, 3)
+          let basisOrderQuadray = [0, 0, 0, 0];
+          basisOrderQuadray[Quadray.AXIS_INDEX.qw] = qwValue;  // D = index 3
+          basisOrderQuadray[Quadray.AXIS_INDEX.qx] = qxValue;  // A = index 0
+          basisOrderQuadray[Quadray.AXIS_INDEX.qy] = qyValue;  // C = index 2
+          basisOrderQuadray[Quadray.AXIS_INDEX.qz] = qzValue;  // B = index 1
+
+          // Convert to Cartesian using basisVector-ordered array
           const newPos = Quadray.toCartesian(
-            wxyz[0],
-            wxyz[1],
-            wxyz[2],
-            wxyz[3],
+            basisOrderQuadray[0],
+            basisOrderQuadray[1],
+            basisOrderQuadray[2],
+            basisOrderQuadray[3],
             THREE
           );
 
@@ -1144,7 +1155,7 @@ function startARTexplorer(
           selected.forEach(poly => {
             poly.position.copy(newPos);
             console.log(
-              `📍 QWXYZ position set: (${wxyz[0].toFixed(4)}, ${wxyz[1].toFixed(4)}, ${wxyz[2].toFixed(4)}, ${wxyz[3].toFixed(4)})`
+              `📍 QWXYZ position set: QW=${qwValue.toFixed(4)}, QX=${qxValue.toFixed(4)}, QY=${qyValue.toFixed(4)}, QZ=${qzValue.toFixed(4)}`
             );
 
             // Persist position to StateManager (instances only)

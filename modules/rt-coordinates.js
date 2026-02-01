@@ -125,18 +125,24 @@ export const RTCoordinates = {
     // Convert to QWXYZ (Quadray coordinates)
     if (this.deps?.Quadray?.basisVectors) {
       const basisVectors = this.deps.Quadray.basisVectors;
-      let qwxyz = [0, 0, 0, 0];
+      const AXIS_INDEX = this.deps.Quadray.AXIS_INDEX;
+
+      // Project position onto each basisVector to get raw quadray values
+      let rawQuadray = [0, 0, 0, 0];
       for (let i = 0; i < 4; i++) {
-        qwxyz[i] = pos.dot(basisVectors[i]);
+        rawQuadray[i] = pos.dot(basisVectors[i]);
       }
       // Apply zero-sum normalization
-      const mean = (qwxyz[0] + qwxyz[1] + qwxyz[2] + qwxyz[3]) / 4;
-      qwxyz = qwxyz.map(c => c - mean);
+      const mean = (rawQuadray[0] + rawQuadray[1] + rawQuadray[2] + rawQuadray[3]) / 4;
+      rawQuadray = rawQuadray.map(c => c - mean);
 
-      this.elements.coordQW.value = qwxyz[0].toFixed(4);
-      this.elements.coordQX.value = qwxyz[1].toFixed(4);
-      this.elements.coordQY.value = qwxyz[2].toFixed(4);
-      this.elements.coordQZ.value = qwxyz[3].toFixed(4);
+      // Map basisVector indices to UI fields using AXIS_INDEX
+      // AXIS_INDEX: { qw: 3, qx: 0, qy: 2, qz: 1 }
+      // QW displays rawQuadray[3], QX displays rawQuadray[0], etc.
+      this.elements.coordQW.value = rawQuadray[AXIS_INDEX.qw].toFixed(4);
+      this.elements.coordQX.value = rawQuadray[AXIS_INDEX.qx].toFixed(4);
+      this.elements.coordQY.value = rawQuadray[AXIS_INDEX.qy].toFixed(4);
+      this.elements.coordQZ.value = rawQuadray[AXIS_INDEX.qz].toFixed(4);
     }
   },
 
