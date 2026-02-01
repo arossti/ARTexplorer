@@ -52,6 +52,9 @@ export const simpleCheckboxBindings = [
   { id: "prismShowFaces", type: "checkbox" },
   { id: "coneShowFaces", type: "checkbox" },
 
+  // Helix options
+  { id: "tetrahelixLeftHanded", type: "checkbox" },
+
   // Node shading
   { id: "nodeFlatShading", type: "checkbox" },
 ];
@@ -81,6 +84,11 @@ export const checkboxWithControlsBindings = [
     id: "showCone",
     type: "checkbox-controls",
     controlsId: "cone-controls",
+  },
+  {
+    id: "showTetrahelix",
+    type: "checkbox-controls",
+    controlsId: "tetrahelix-controls",
   },
 
   // Polyhedra with geodesic controls (complex: sibling checkbox keeps controls visible)
@@ -348,6 +356,9 @@ export const simpleSliderBindings = [
   { id: "polygonSides", type: "slider" },
   { id: "prismSides", type: "slider" },
   { id: "coneSides", type: "slider" },
+
+  // Helix controls
+  { id: "tetrahelixCountSlider", type: "slider", valueId: "tetrahelixCountDisplay" },
 ];
 
 // ============================================================================
@@ -433,6 +444,8 @@ export const geodesicProjectionBindings = [
   { type: "radio-group", name: "geodesicOctaProjection" },
   { type: "radio-group", name: "geodesicIcosaProjection" },
   { type: "radio-group", name: "geodesicDualIcosaProjection" },
+  // Helix start face selection
+  { type: "radio-group", name: "tetrahelixStartFace" },
 ];
 
 // ============================================================================
