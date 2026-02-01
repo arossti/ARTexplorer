@@ -1414,14 +1414,33 @@ export const RT = {
  */
 export const Quadray = {
   /**
+   * Axis name to basisVector index mapping
+   * Maps QW/QX/QY/QZ names to their corresponding basisVectors[] indices
+   *
+   * Color convention: QW=Yellow(3), QX=Red(0), QY=Blue(2), QZ=Green(1)
+   * This is the canonical mapping used throughout the codebase for:
+   * - Camera view presets (quadqw, quadqx, quadqy, quadqz)
+   * - Cutplane axis selection
+   * - Editing basis visualization
+   *
+   * @type {Object.<string, number>}
+   */
+  AXIS_INDEX: {
+    qw: 3, // Yellow - D basis vector
+    qx: 0, // Red - A basis vector
+    qy: 2, // Blue - C basis vector
+    qz: 1, // Green - B basis vector
+  },
+
+  /**
    * 4 basis vectors pointing to tetrahedral vertices inscribed in cube
    * These are the face normals of a regular tetrahedron
    *
    * Z-up convention: Z coordinate indicates height
-   * A: ( 1,  1,  1)  // top-front-right
-   * B: ( 1, -1, -1)  // bottom-back-right
-   * C: (-1,  1, -1)  // bottom-front-left
-   * D: (-1, -1,  1)  // top-back-left
+   * A: ( 1,  1,  1)  // top-front-right  [index 0, QX/Red]
+   * B: ( 1, -1, -1)  // bottom-back-right [index 1, QZ/Green]
+   * C: (-1,  1, -1)  // bottom-front-left [index 2, QY/Blue]
+   * D: (-1, -1,  1)  // top-back-left     [index 3, QW/Yellow]
    *
    * Note: This will be initialized when THREE.js is available
    * @type {Array<THREE.Vector3>}

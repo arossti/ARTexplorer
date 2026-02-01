@@ -2382,10 +2382,10 @@ export function initScene(THREE, OrbitControls, RT) {
           Quadray.init(THREE);
         }
 
-        // Map view name to basis vector index with correct color mapping
-        // QW=Yellow(3), QX=Red(0), QY=Blue(2), QZ=Green(1)
-        const axisMap = { quadqw: 3, quadqx: 0, quadqy: 2, quadqz: 1 };
-        const axisIndex = axisMap[view];
+        // Use centralized axis mapping from Quadray module
+        // View names are "quadqw", "quadqx", etc. - strip "quad" prefix to get axis key
+        const axisKey = view.replace("quad", ""); // "quadqw" -> "qw"
+        const axisIndex = Quadray.AXIS_INDEX[axisKey];
         const basisVector = Quadray.basisVectors[axisIndex];
 
         // Camera positioned at grid extent along the basis vector

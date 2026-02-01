@@ -464,10 +464,8 @@ export const RTPapercut = {
         Quadray.init(THREE);
       }
 
-      // Map axis to Quadray basis vector with correct color mapping
-      // QW=Yellow(3), QX=Red(0), QY=Blue(2), QZ=Green(1)
-      const axisMap = { qw: 3, qx: 0, qy: 2, qz: 1 };
-      const axisIndex = axisMap[RTPapercut.state.cutplaneAxis];
+      // Use centralized axis mapping from Quadray module
+      const axisIndex = Quadray.AXIS_INDEX[RTPapercut.state.cutplaneAxis];
       const basisVector = Quadray.basisVectors[axisIndex];
 
       // Use the Quadray basis vector as the normal (with inversion)
