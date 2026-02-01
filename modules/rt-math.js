@@ -1503,4 +1503,39 @@ export const Quadray = {
 
     return result;
   },
+
+  /**
+   * Convert Cartesian position to Quadray coordinates (QW, QX, QY, QZ)
+   * Returns an object with named fields using AXIS_INDEX mapping
+   *
+   * @param {THREE.Vector3} pos - Cartesian position
+   * @returns {Object} { qw, qx, qy, qz } - Zero-sum normalized Quadray coordinates
+   *
+   * @example
+   * const quadray = Quadray.fromCartesian(new THREE.Vector3(1, 0, 0));
+   * // Returns { qw: ..., qx: ..., qy: ..., qz: ... }
+   */
+  fromCartesian: pos => {
+    if (!Quadray.basisVectors) {
+      console.warn('⚠️ Quadray.basisVectors not initialized');
+      return { qw: 0, qx: 0, qy: 0, qz: 0 };
+    }
+
+    // Project position onto each basisVector
+    const rawQuadray = [0, 0, 0, 0];
+    for (let i = 0; i < 4; i++) {
+      rawQuadray[i] = pos.dot(Quadray.basisVectors[i]);
+    }
+
+    // Apply zero-sum normalization
+    const normalized = Quadray.zeroSumNormalize(rawQuadray);
+
+    // Return named object using AXIS_INDEX mapping
+    return {
+      qw: normalized[Quadray.AXIS_INDEX.qw],
+      qx: normalized[Quadray.AXIS_INDEX.qx],
+      qy: normalized[Quadray.AXIS_INDEX.qy],
+      qz: normalized[Quadray.AXIS_INDEX.qz],
+    };
+  },
 };
