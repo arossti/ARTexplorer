@@ -76,6 +76,8 @@ export const RTCoordinates = {
       rotQXSpread: document.getElementById('rotQXSpread'),
       rotQYSpread: document.getElementById('rotQYSpread'),
       rotQZSpread: document.getElementById('rotQZSpread'),
+      // Scale (uniform)
+      coordScale: document.getElementById('coordScale'),
     };
 
     // Verify critical elements exist
@@ -190,10 +192,26 @@ export const RTCoordinates = {
   },
 
   /**
+   * Update scale display
+   * @param {number} scale - Uniform scale value to display
+   */
+  updateScaleDisplay(scale) {
+    if (!this.elements?.coordScale) return;
+
+    if (scale === null || scale === undefined) {
+      this.elements.coordScale.value = '1.0000';
+      return;
+    }
+
+    this.elements.coordScale.value = scale.toFixed(4);
+  },
+
+  /**
    * Clear all coordinate displays
    */
   clearDisplay() {
     this.updatePositionDisplay(null);
+    this.updateScaleDisplay(null);
     // TODO: Clear rotation display
   },
 
@@ -276,11 +294,11 @@ export const RTCoordinates = {
   /**
    * Get display values based on current mode (reads from StateManager)
    * @param {THREE.Object3D} object - Selected object
-   * @returns {Object} { position: Vector3, rotation: Euler, quadrayRotation: Object }
+   * @returns {Object} { position: Vector3, rotation: Euler, quadrayRotation: Object, scale: number }
    */
   getDisplayValues(object) {
     if (!object || !this.deps?.RTStateManager) {
-      return { position: null, rotation: null, quadrayRotation: null };
+      return { position: null, rotation: null, quadrayRotation: null, scale: null };
     }
 
     const instanceId = object.userData?.instanceId;
@@ -289,7 +307,8 @@ export const RTCoordinates = {
       return {
         position: object.position.clone(),
         rotation: object.rotation.clone(),
-        quadrayRotation: null
+        quadrayRotation: null,
+        scale: object.scale.x // Assume uniform scale
       };
     }
 
@@ -299,7 +318,8 @@ export const RTCoordinates = {
       return {
         position: object.position.clone(),
         rotation: object.rotation.clone(),
-        quadrayRotation: null
+        quadrayRotation: null,
+        scale: object.scale.x
       };
     }
 
@@ -322,7 +342,9 @@ export const RTCoordinates = {
             )
           : object.rotation.clone(),
         // Absolute mode: show cumulative Quadray rotations from StateManager
-        quadrayRotation: transform?.quadrayRotation || { qw: 0, qx: 0, qy: 0, qz: 0 }
+        quadrayRotation: transform?.quadrayRotation || { qw: 0, qx: 0, qy: 0, qz: 0 },
+        // Uniform scale from StateManager (assume x = y = z)
+        scale: transform?.scale?.x || 1
       };
 
     } else if (this.mode === 'relative') {
@@ -334,7 +356,8 @@ export const RTCoordinates = {
         position: new this.deps.THREE.Vector3(0, 0, 0),
         rotation: object.rotation.clone(),
         // Relative mode: Quadray is tool mode, show zeros
-        quadrayRotation: { qw: 0, qx: 0, qy: 0, qz: 0 }
+        quadrayRotation: { qw: 0, qx: 0, qy: 0, qz: 0 },
+        scale: object.scale.x
       };
 
     } else if (this.mode === 'group-centre') {
@@ -344,11 +367,12 @@ export const RTCoordinates = {
       return {
         position: centroid || object.position.clone(),
         rotation: null,
-        quadrayRotation: null
+        quadrayRotation: null,
+        scale: null // Scale N/A for group centre
       };
     }
 
-    return { position: null, rotation: null, quadrayRotation: null };
+    return { position: null, rotation: null, quadrayRotation: null, scale: null };
   },
 
   // ========================================================================
@@ -393,6 +417,7 @@ export const RTCoordinates = {
           if (selected.length > 0) {
             const displayValues = self.getDisplayValues(selected[0]);
             self.updatePositionDisplay(displayValues.position);
+            self.updateScaleDisplay(displayValues.scale);
             if (displayValues.rotation || displayValues.quadrayRotation) {
               self.updateRotationDisplay(displayValues.rotation, displayValues.quadrayRotation);
             }
@@ -457,6 +482,7 @@ export const RTCoordinates = {
     if (count > 0) {
       const displayValues = this.getDisplayValues(selectedObjects[0]);
       this.updatePositionDisplay(displayValues.position);
+      this.updateScaleDisplay(displayValues.scale);
       if (displayValues.rotation || displayValues.quadrayRotation) {
         this.updateRotationDisplay(displayValues.rotation, displayValues.quadrayRotation);
       }

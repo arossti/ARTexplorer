@@ -2288,6 +2288,15 @@ button:disabled {
   font-size: 11px;
 }
 
+/* Quadray inputs need extra width for 3-char labels (QW:, QX:, QY:, QZ:) */
+#coordinates-panel .coord-input.axis-qw,
+#coordinates-panel .coord-input.axis-qx,
+#coordinates-panel .coord-input.axis-qy,
+#coordinates-panel .coord-input.axis-qz {
+  width: 78px;
+  padding-left: 30px !important;
+}
+
 #coordinates-panel .label-axis {
   position: absolute;
   left: 6px;
@@ -2301,13 +2310,19 @@ button:disabled {
   align-self: center;
 }
 
-/* Coordinate mode toggle group (Absolute/Relative/Group) - far right, horizontal */
+/* Coordinate mode row (buttons + scale input) */
+.coords-mode-row {
+  justify-content: flex-start;
+  gap: 8px;
+  padding-left: 20px; /* Align with inputs above (after icon) */
+}
+
+/* Coordinate mode toggle group (Absolute/Relative/Group) */
 .coords-mode-group {
   display: flex;
   flex-direction: row;
   gap: 4px;
   align-self: center;
-  margin-left: auto;
 }
 
 .coords-mode-group .toggle-btn {
@@ -2321,6 +2336,21 @@ button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* Scale input styling */
+.scale-container {
+  margin-left: 8px;
+}
+
+.label-axis-scale {
+  color: #888; /* Neutral gray for scale */
+}
+
+#coordinates-panel .coord-input.axis-scale {
+  border-left: 2px solid #888;
+  width: 90px;
+  padding-left: 38px !important; /* Room for "Scale:" label (6 chars) */
 }
 
 .coords-unit-label {
