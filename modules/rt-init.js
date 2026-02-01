@@ -4144,20 +4144,27 @@ function startARTexplorer(
   // ========================================================================
 
   /**
-   * Handle Connect action - connect two selected Points with a Line
+   * Handle Connect action - connect selected Points with Line(s)
+   * - 2 Points: Creates 1 line
+   * - 3 Points: Creates 3 lines (triangle)
    * Validation logic moved to RTStateManager.connectFromSelection()
    */
   function handleConnectAction() {
-    const connectedLine = RTStateManager.connectFromSelection(scene);
+    const result = RTStateManager.connectFromSelection(scene);
 
-    if (connectedLine) {
+    if (result) {
       // Update counter UI
       document.getElementById("nowCount").textContent =
         RTStateManager.getDepositedCount();
 
-      // Clear selection and select the new line
+      // Clear selection and select the new line(s)
       deselectAll();
-      selectPolyhedron(connectedLine.threeObject);
+
+      // Handle both single line and array of lines (triangle)
+      const lines = Array.isArray(result) ? result : [result];
+      lines.forEach(line => {
+        selectPolyhedron(line.threeObject, true); // true = add to selection
+      });
     }
   }
 
