@@ -96,6 +96,11 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
       return 4 * scale * coneSpread; // Base edge quadrance
     }
 
+    case "tetrahelix":
+      // Tetrahelix edge quadrance = tetrahedron edge quadrance
+      // Q = 8s² (same as base tetrahedron)
+      return 8 * s2;
+
     case "tetrahedron":
       // Edge quadrance Q = 8s² (edge = 2s√2)
       return 8 * s2;

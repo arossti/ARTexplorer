@@ -137,17 +137,21 @@ Add new collapsible section in `index.html` **after** "Radial Matrices":
             <span class="slider-value" id="tetrahelixCountDisplay">10</span>
           </div>
         </div>
-        <!-- Start face selection (A, B, C, D) -->
+        <!-- Start face selection (A, B, C, D) - Radio buttons like geodesic projection -->
         <div class="matrix-control-item">
           <label class="matrix-size-label">Start Face</label>
-          <div class="face-select-container">
-            <select id="tetrahelixStartFace">
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-            </select>
-          </div>
+          <label class="geodesic-projection-option">
+            <input type="radio" name="tetrahelixStartFace" value="A" checked /> A
+          </label>
+          <label class="geodesic-projection-option">
+            <input type="radio" name="tetrahelixStartFace" value="B" /> B
+          </label>
+          <label class="geodesic-projection-option">
+            <input type="radio" name="tetrahelixStartFace" value="C" /> C
+          </label>
+          <label class="geodesic-projection-option">
+            <input type="radio" name="tetrahelixStartFace" value="D" /> D
+          </label>
         </div>
         <!-- Chirality -->
         <label class="checkbox-label matrix-checkbox-label">
@@ -322,7 +326,7 @@ Following the pattern from `Add-Polyhedra-Guide.md`:
 
 - [ ] Add `showTetrahelix` to polyhedraCheckboxes
 - [ ] Add `tetrahelixCount` to sliderValues
-- [ ] Add `tetrahelixStartFace` to dropdown values (A, B, C, D)
+- [ ] Add `tetrahelixStartFace` to radio button values (A, B, C, D)
 - [ ] Add `tetrahelixLeftHanded` to checkboxes
 - [ ] Handle controls visibility on restore
 

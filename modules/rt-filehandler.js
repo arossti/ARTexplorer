@@ -122,6 +122,9 @@ export const RTFileHandler = {
       showPolygon: document.getElementById("showPolygon")?.checked || false,
       showPrism: document.getElementById("showPrism")?.checked || false,
       showCone: document.getElementById("showCone")?.checked || false,
+      // Helices
+      showTetrahelix:
+        document.getElementById("showTetrahelix")?.checked || false,
       // Regular polyhedra
       showCube: document.getElementById("showCube")?.checked || false,
       showTetrahedron:
@@ -258,6 +261,15 @@ export const RTFileHandler = {
       ),
       coneShowFaces:
         document.getElementById("coneShowFaces")?.checked !== false,
+      // Tetrahelix parameters
+      tetrahelixCount: parseInt(
+        document.getElementById("tetrahelixCountSlider")?.value || "10"
+      ),
+      tetrahelixStartFace:
+        document.querySelector('input[name="tetrahelixStartFace"]:checked')
+          ?.value || "A",
+      tetrahelixLeftHanded:
+        document.getElementById("tetrahelixLeftHanded")?.checked || false,
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -607,6 +619,23 @@ export const RTFileHandler = {
           const el = document.getElementById("coneShowFaces");
           if (el) el.checked = sliders.coneShowFaces;
         }
+        // Tetrahelix parameters
+        if (sliders.tetrahelixCount !== undefined) {
+          const slider = document.getElementById("tetrahelixCountSlider");
+          const display = document.getElementById("tetrahelixCountDisplay");
+          if (slider) slider.value = sliders.tetrahelixCount;
+          if (display) display.textContent = sliders.tetrahelixCount;
+        }
+        if (sliders.tetrahelixStartFace !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelixStartFace"][value="${sliders.tetrahelixStartFace}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelixLeftHanded !== undefined) {
+          const el = document.getElementById("tetrahelixLeftHanded");
+          if (el) el.checked = sliders.tetrahelixLeftHanded;
+        }
         // Planar matrix size sliders
         if (sliders.cubeMatrixSizeSlider !== undefined) {
           const el = document.getElementById("cubeMatrixSizeSlider");
@@ -748,6 +777,14 @@ export const RTFileHandler = {
         const coneControls = document.getElementById("cone-controls");
         if (coneControls && checkboxes.showCone) {
           coneControls.style.display = "block";
+        }
+
+        // Show/hide Tetrahelix controls based on checkbox state
+        const tetrahelixControls = document.getElementById(
+          "tetrahelix-controls"
+        );
+        if (tetrahelixControls && checkboxes.showTetrahelix) {
+          tetrahelixControls.style.display = "block";
         }
 
         // Trigger updateGeometry to render the restored forms
