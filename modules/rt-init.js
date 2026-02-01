@@ -2245,9 +2245,13 @@ function startARTexplorer(
         // Check if we clicked a vertex node on an INSTANCE
         const isVertexNode = hitObject.userData.isVertexNode;
         const isInstance = parentEntry.parent.userData.isInstance;
+        const parentType = parentEntry.parent.userData.type;
 
-        if (isVertexNode && isInstance) {
-          // VERTEX NODE SELECTION on an instance
+        // Exclude Points from vertex node selection - a Point IS its own node,
+        // so selecting it should use normal object selection (enabling Shift+click
+        // multi-select for Connect functionality)
+        if (isVertexNode && isInstance && parentType !== "point") {
+          // VERTEX NODE SELECTION on an instance (but not Points)
           handleVertexNodeClick(hitObject, parentEntry.parent, event.shiftKey);
         } else {
           // Normal object selection
