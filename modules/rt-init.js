@@ -2245,9 +2245,13 @@ function startARTexplorer(
         // Check if we clicked a vertex node on an INSTANCE
         const isVertexNode = hitObject.userData.isVertexNode;
         const isInstance = parentEntry.parent.userData.isInstance;
+        const parentType = parentEntry.parent.userData.type;
 
-        if (isVertexNode && isInstance) {
-          // VERTEX NODE SELECTION on an instance
+        // Exclude Points from vertex node selection - a Point IS its own node,
+        // so selecting it should use normal object selection (enabling Shift+click
+        // multi-select for Connect functionality)
+        if (isVertexNode && isInstance && parentType !== "point") {
+          // VERTEX NODE SELECTION on an instance (but not Points)
           handleVertexNodeClick(hitObject, parentEntry.parent, event.shiftKey);
         } else {
           // Normal object selection
@@ -2359,6 +2363,24 @@ function startARTexplorer(
           poly.userData.instanceId,
           movedPointIds
         );
+      }
+    });
+  }
+
+  /**
+   * Update all connected line geometry for Point instances (non-selective)
+   * Used for rubberband effect during drag/rotate - always updates all lines
+   * even when both endpoints move together (midpoint still shifts)
+   * @param {Array} polyhedra - Array of polyhedra being moved/rotated
+   */
+  function updateConnectedLinesRubberband(polyhedra) {
+    polyhedra.forEach(poly => {
+      if (
+        poly.userData.isInstance &&
+        poly.userData.type === "point" &&
+        poly.userData.instanceId
+      ) {
+        RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
       }
     });
   }
@@ -3036,6 +3058,9 @@ function startARTexplorer(
               }
             });
 
+            // RUBBERBAND: Update connected line geometry in real-time during drag
+            updateConnectedLinesRubberband(selectedPolyhedra);
+
             // Update editing basis position if it exists
             if (editingBasis && selectedPolyhedra.length > 0) {
               const selectedVertices = RTStateManager.getSelectedVertices();
@@ -3130,6 +3155,9 @@ function startARTexplorer(
               poly.position.add(constrainedMovement);
               // Snapping will be applied at mouseup based on currentSnapMode
             });
+
+            // RUBBERBAND: Update connected line geometry in real-time during drag
+            updateConnectedLinesRubberband(selectedPolyhedra);
 
             // Update editing basis to follow the Forms
             if (selectedPolyhedra.length > 0) {
@@ -3428,6 +3456,9 @@ function startARTexplorer(
                   `✅ Rotated ${poly.userData.isInstance ? "Instance" : "Form"}: ${snappedAngleDegrees.toFixed(2)}° around ${selectedHandle.type}[${selectedHandle.index}]`
                 );
               });
+
+              // RUBBERBAND: Update connected line geometry in real-time during rotation
+              updateConnectedLinesRubberband(selectedPolyhedra);
             }
 
             // NOTE: Do NOT update dragStartPoint - we calculate angle from original start point
@@ -4140,20 +4171,27 @@ function startARTexplorer(
   // ========================================================================
 
   /**
-   * Handle Connect action - connect two selected Points with a Line
+   * Handle Connect action - connect selected Points with Line(s)
+   * - 2 Points: Creates 1 line
+   * - 3 Points: Creates 3 lines (triangle)
    * Validation logic moved to RTStateManager.connectFromSelection()
    */
   function handleConnectAction() {
-    const connectedLine = RTStateManager.connectFromSelection(scene);
+    const result = RTStateManager.connectFromSelection(scene);
 
-    if (connectedLine) {
+    if (result) {
       // Update counter UI
       document.getElementById("nowCount").textContent =
         RTStateManager.getDepositedCount();
 
-      // Clear selection and select the new line
+      // Clear selection and select the new line(s)
       deselectAll();
-      selectPolyhedron(connectedLine.threeObject);
+
+      // Handle both single line and array of lines (triangle)
+      const lines = Array.isArray(result) ? result : [result];
+      lines.forEach(line => {
+        selectPolyhedron(line.threeObject, true); // true = add to selection
+      });
     }
   }
 
