@@ -995,17 +995,6 @@ function startARTexplorer(
   }
 
   /**
-   * Update coordinate display fields with a position (XYZ and WXYZ)
-   * @param {THREE.Vector3} pos - Position to display
-   */
-  function updateCoordinateDisplay(pos) {
-    // When coordinate module is active, delegate to it
-    if (USE_COORDINATE_MODULE) {
-      RTCoordinates.updatePositionDisplay(pos);
-      return;
-    }
-
-  /**
    * Persist a polyhedron's current transform to StateManager
    * Consolidates the repeated transform persistence pattern used in input handlers
    *
@@ -1030,6 +1019,17 @@ function startARTexplorer(
 
     RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
   }
+
+  /**
+   * Update coordinate display fields with a position (XYZ and WXYZ)
+   * @param {THREE.Vector3} pos - Position to display
+   */
+  function updateCoordinateDisplay(pos) {
+    // When coordinate module is active, delegate to it
+    if (USE_COORDINATE_MODULE) {
+      RTCoordinates.updatePositionDisplay(pos);
+      return;
+    }
 
     // Legacy implementation
     if (!pos) {
