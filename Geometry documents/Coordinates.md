@@ -28,7 +28,7 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 
 **✅ COMPLETED:**
 - [x] **Module extracted** - `rt-coordinates.js` with shadow/switchover pattern (`USE_COORDINATE_MODULE = true`)
-- [x] **Absolute/Relative/Group toggle buttons** - Added to footer (far right)
+- [x] **Absolute/Relative/Group toggle buttons** - Moved under XYZ position (Feb 1)
 - [x] **Mutually exclusive toggle** - Buttons work as radio group
 - [x] **Selection updates coordinates** - Selecting object shows its position
 - [x] **Group Centre button** - Enabled only when 2+ objects selected
@@ -38,16 +38,19 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 - [x] **DOM element caching** - All coordinate fields cached in module init
 - [x] **QWXYZ conversion consolidated** - Single `updatePositionDisplay()` replaces 6 duplicate blocks
 - [x] **Rotation input persistence** - All rotation input handlers now persist to StateManager (Feb 1)
+- [x] **Quadray label consistency** - Renamed W/X/Y/Z → QW/QX/QY/QZ in footer (Feb 1)
+- [x] **Scale input field** - Added Scale display with real-time gumball updates (Feb 1)
+- [x] **Scale input handler** - Type scale factor + Enter in Scale mode applies scale (Feb 1)
 
 **🔧 IN PROGRESS / TODO:**
 1. [x] **StateManager persistence** - Transforms now saved after gumball operations (commit `4c1021f`)
 2. [x] **XYZ rotation display from StateManager** - Works correctly for Cartesian coordinates
 3. [x] **Rotation input persistence** - Numerical rotation inputs now persist to StateManager (Feb 1 fix)
-4. [ ] **QWXYZ rotation storage** - Add `quadrayRotation` field to StateManager (decision made Feb 1)
-5. [ ] **QWXYZ rotation display** - Absolute=cumulative, Relative=tool mode (decision made Feb 1)
-6. [ ] **Relative mode implementation** - Currently shows same as Absolute (see below)
-7. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
-8. [ ] **Bi-directional input handlers** - Typing in coordinate fields moves objects
+4. [x] **Position input persistence** - XYZ and QWXYZ position inputs now persist to StateManager (Feb 1)
+5. [ ] **QWXYZ rotation storage** - Add `quadrayRotation` field to StateManager (decision made Feb 1)
+6. [ ] **QWXYZ rotation display** - Absolute=cumulative, Relative=tool mode (decision made Feb 1)
+7. [ ] **Relative mode implementation** - Currently shows same as Absolute (see below)
+8. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
 9. [ ] **Node-based coordinate display** - Show node position when vertex selected
 10. [ ] **Remove legacy coordinate code from rt-init.js** - Full switchover cleanup
 
@@ -302,6 +305,59 @@ Example:
 4. [ ] Update `RTCoordinates.updateRotationDisplay()` to show Quadray values in Absolute mode
 5. [ ] Update `RTCoordinates.getDisplayValues()` to return quadrayRotation from StateManager
 6. [ ] Clear Quadray display in Relative mode (show 0,0,0,0)
+
+---
+
+## 🐛 Known Issue: Quadray Position Input Zero-Sum Interdependence (Feb 1, 2026)
+
+### Problem Observed
+
+When moving an object along a single Quadray axis and then attempting to return to origin by entering `0` in that field, the object does **not** return to origin:
+
+**Steps to reproduce:**
+1. Place a Rhombic Dodecahedron at origin (QW=0, QX=0, QY=0, QZ=0)
+2. Enter Move mode, type `2` in QW field, press Enter
+3. Object moves 2 units along QW (Yellow axis) ✅
+4. Display shows: QW=0.6667, QX=-0.2222, QY=-0.2222, QZ=-0.2222 (zero-sum normalized)
+5. Enter `0` in QW field, press Enter
+6. **Expected**: Object returns to origin
+7. **Actual**: QW shows 0.6667, object overshoots origin
+8. Enter `-2` in QW → QW shows -1.3333, still wrong position
+
+### Root Cause Analysis
+
+The Quadray position input handler reads **all four** QWXYZ values from UI fields and converts them together using `Quadray.toCartesian()`. This creates an interdependency problem:
+
+1. After moving 2 units on QW, the display shows zero-sum normalized values: `(0.6667, -0.2222, -0.2222, -0.2222)`
+2. When user enters `0` in QW, the other fields still contain `-0.2222`
+3. The input handler sends `(0, -0.2222, -0.2222, -0.2222)` to `toCartesian()`
+4. This does NOT produce origin - it produces a different position
+5. To reach origin, user would need to enter `(0, 0, 0, 0)` in ALL four fields
+
+### Possible Solutions
+
+| Approach | Description | Pros | Cons |
+|----------|-------------|------|------|
+| **A. Single-axis delta** | Input field represents a MOVE delta, not absolute position | Intuitive "move by X units" | Loses direct position entry |
+| **B. All-four entry** | Require all four values to be entered together | Mathematically correct | Unintuitive UX |
+| **C. Auto-normalize** | When one field changes, auto-adjust others to maintain zero-sum | Keeps total position intent | Complex logic, may confuse users |
+| **D. Non-normalized display** | Display raw projections (not zero-sum normalized) | Simpler math | Values don't sum to zero, breaks Quadray convention |
+| **E. Hybrid mode** | Absolute mode = all-four, Relative mode = single-axis delta | Best of both | More complex to implement |
+
+### Recommended Solution: Hybrid Mode (E)
+
+- **Absolute mode**: Display shows absolute Quadray position. Changing ANY field recalculates all four to maintain consistency with the world position.
+- **Relative mode**: Input is treated as a **delta move** along that single Quadray axis. Entering `2` in QW moves +2 along QW from current position.
+
+This aligns with existing Absolute/Relative semantics:
+- Absolute = "Where am I?" (full state)
+- Relative = "How much am I moving?" (delta operation)
+
+### TODO
+
+- [ ] Decide on solution approach
+- [ ] Implement chosen solution
+- [ ] Test: Object at origin → move 2 QW → enter 0 QW → should return to origin
 
 ---
 
