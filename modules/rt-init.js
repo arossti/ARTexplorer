@@ -1193,12 +1193,22 @@ function startARTexplorer(
 
           const radians = (degrees * Math.PI) / 180;
 
-          // Apply rotation
+          // Apply rotation and persist to StateManager
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
             console.log(
               `🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`
             );
+
+            // Persist rotation to StateManager
+            if (poly.userData?.instanceId) {
+              const newTransform = {
+                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            }
           });
 
           // Exit tool mode but keep selection
@@ -1213,14 +1223,15 @@ function startARTexplorer(
    */
   function setupRotateQuadrayDegreesInputs() {
     // Correct color-to-axis mapping: W=Yellow(3), X=Red(0), Y=Blue(2), Z=Green(1)
+    // quadrayKey maps basisIndex to the quadrayRotation object key
     const rotInputs = [
-      { id: "rotQWDegrees", basisIndex: 3, name: "W (Yellow)" },
-      { id: "rotQXDegrees", basisIndex: 0, name: "X (Red)" },
-      { id: "rotQYDegrees", basisIndex: 2, name: "Y (Blue)" },
-      { id: "rotQZDegrees", basisIndex: 1, name: "Z (Green)" },
+      { id: "rotQWDegrees", basisIndex: 3, name: "W (Yellow)", quadrayKey: "qw" },
+      { id: "rotQXDegrees", basisIndex: 0, name: "X (Red)", quadrayKey: "qx" },
+      { id: "rotQYDegrees", basisIndex: 2, name: "Y (Blue)", quadrayKey: "qy" },
+      { id: "rotQZDegrees", basisIndex: 1, name: "Z (Green)", quadrayKey: "qz" },
     ];
 
-    rotInputs.forEach(({ id, basisIndex, name }) => {
+    rotInputs.forEach(({ id, basisIndex, name, quadrayKey }) => {
       const input = document.getElementById(id);
       if (!input) return;
 
@@ -1238,12 +1249,32 @@ function startARTexplorer(
           const radians = (degrees * Math.PI) / 180;
           const axis = Quadray.basisVectors[basisIndex];
 
-          // Apply rotation
+          // Apply rotation and persist to StateManager (with cumulative Quadray tracking)
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
             console.log(
               `🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`
             );
+
+            // Persist rotation to StateManager with cumulative Quadray rotation
+            if (poly.userData?.instanceId) {
+              // Get existing quadrayRotation from StateManager (or default to zeros)
+              const instance = RTStateManager.getInstance(poly.userData.instanceId);
+              const existingQuadray = instance?.transform?.quadrayRotation || { qw: 0, qx: 0, qy: 0, qz: 0 };
+
+              // Accumulate the new rotation on the appropriate axis
+              const newQuadrayRotation = { ...existingQuadray };
+              newQuadrayRotation[quadrayKey] = (existingQuadray[quadrayKey] || 0) + degrees;
+
+              const newTransform = {
+                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+                quadrayRotation: newQuadrayRotation,
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+              console.log(`📐 Quadray ${quadrayKey.toUpperCase()}: ${newQuadrayRotation[quadrayKey].toFixed(2)}° (cumulative)`);
+            }
           });
 
           // Exit tool mode but keep selection
@@ -1282,12 +1313,22 @@ function startARTexplorer(
           const degrees = RT.spreadToDegrees(spread);
           const radians = (degrees * Math.PI) / 180;
 
-          // Apply rotation
+          // Apply rotation and persist to StateManager
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
             console.log(
               `🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`
             );
+
+            // Persist rotation to StateManager
+            if (poly.userData?.instanceId) {
+              const newTransform = {
+                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            }
           });
 
           // Exit tool mode but keep selection
@@ -1302,14 +1343,15 @@ function startARTexplorer(
    */
   function setupRotateQuadraySpreadInputs() {
     // Correct color-to-axis mapping: W=Yellow(3), X=Red(0), Y=Blue(2), Z=Green(1)
+    // quadrayKey maps basisIndex to the quadrayRotation object key
     const rotInputs = [
-      { id: "rotQWSpread", basisIndex: 3, name: "W (Yellow)" },
-      { id: "rotQXSpread", basisIndex: 0, name: "X (Red)" },
-      { id: "rotQYSpread", basisIndex: 2, name: "Y (Blue)" },
-      { id: "rotQZSpread", basisIndex: 1, name: "Z (Green)" },
+      { id: "rotQWSpread", basisIndex: 3, name: "W (Yellow)", quadrayKey: "qw" },
+      { id: "rotQXSpread", basisIndex: 0, name: "X (Red)", quadrayKey: "qx" },
+      { id: "rotQYSpread", basisIndex: 2, name: "Y (Blue)", quadrayKey: "qy" },
+      { id: "rotQZSpread", basisIndex: 1, name: "Z (Green)", quadrayKey: "qz" },
     ];
 
-    rotInputs.forEach(({ id, basisIndex, name }) => {
+    rotInputs.forEach(({ id, basisIndex, name, quadrayKey }) => {
       const input = document.getElementById(id);
       if (!input) return;
 
@@ -1329,12 +1371,32 @@ function startARTexplorer(
           const radians = (degrees * Math.PI) / 180;
           const axis = Quadray.basisVectors[basisIndex];
 
-          // Apply rotation
+          // Apply rotation and persist to StateManager (with cumulative Quadray tracking)
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
             console.log(
               `🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`
             );
+
+            // Persist rotation to StateManager with cumulative Quadray rotation
+            if (poly.userData?.instanceId) {
+              // Get existing quadrayRotation from StateManager (or default to zeros)
+              const instance = RTStateManager.getInstance(poly.userData.instanceId);
+              const existingQuadray = instance?.transform?.quadrayRotation || { qw: 0, qx: 0, qy: 0, qz: 0 };
+
+              // Accumulate the new rotation on the appropriate axis
+              const newQuadrayRotation = { ...existingQuadray };
+              newQuadrayRotation[quadrayKey] = (existingQuadray[quadrayKey] || 0) + degrees;
+
+              const newTransform = {
+                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+                quadrayRotation: newQuadrayRotation,
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+              console.log(`📐 Quadray ${quadrayKey.toUpperCase()}: ${newQuadrayRotation[quadrayKey].toFixed(2)}° (cumulative)`);
+            }
           });
 
           // Exit tool mode but keep selection

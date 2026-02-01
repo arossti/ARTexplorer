@@ -293,6 +293,9 @@ export const RTStateManager = {
           y: polyhedronGroup.scale.y,
           z: polyhedronGroup.scale.z,
         },
+        // Quadray rotation tracking (cumulative degrees around each tetrahedral axis)
+        // Stored separately from Euler - tracks user intent for Quadray operations
+        quadrayRotation: { qw: 0, qx: 0, qy: 0, qz: 0 },
       },
 
       // Visual properties

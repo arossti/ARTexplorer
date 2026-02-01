@@ -858,129 +858,132 @@ export const RTFileHandler = {
             return 0;
           });
 
-          // Helper function to restore a single instance
-          const restoreInstance = async instanceData => {
-            // Special handling for connectedLine - recreate via connectPoints
-            if (instanceData.type === "connectedLine") {
-              const { startPoint, endPoint } = instanceData.parameters || {};
-              if (!startPoint || !endPoint) {
-                console.warn(
-                  `⚠️ connectedLine missing endpoint IDs: ${instanceData.id}`
-                );
-                return false;
-              }
-
-              // Check if RTStateManager has the endpoint instances
-              if (!window.RTStateManager) {
-                console.warn(
-                  "⚠️ RTStateManager not available for connectedLine restore"
-                );
-                return false;
-              }
-
-              // Map old endpoint IDs to new IDs
-              const newStartId = instanceIdMap.get(startPoint);
-              const newEndId = instanceIdMap.get(endPoint);
-
-              if (!newStartId || !newEndId) {
-                console.warn(
-                  `⚠️ connectedLine endpoint mapping not found: ${startPoint} → ${newStartId}, ${endPoint} → ${newEndId}`
-                );
-                return false;
-              }
-
-              const startInst = window.RTStateManager.getInstance(newStartId);
-              const endInst = window.RTStateManager.getInstance(newEndId);
-
-              if (!startInst || !endInst) {
-                console.warn(
-                  `⚠️ connectedLine endpoints not found: ${newStartId}, ${newEndId}`
-                );
-                return false;
-              }
-
-              // Recreate the connection using existing connectPoints with NEW IDs
-              const lineInstance = window.RTStateManager.connectPoints(
-                newStartId,
-                newEndId,
-                window.renderingAPI.getScene()
+          // ----------------------------------------------------------------
+          // Helper: Restore a connectedLine by recreating the connection
+          // ----------------------------------------------------------------
+          const restoreConnectedLine = (instanceData, instanceIdMap) => {
+            const { startPoint, endPoint } = instanceData.parameters || {};
+            if (!startPoint || !endPoint) {
+              console.warn(
+                `⚠️ connectedLine missing endpoint IDs: ${instanceData.id}`
               );
-
-              if (lineInstance) {
-                console.log(
-                  `  ✅ Restored: connectedLine ${newStartId} ↔ ${newEndId}`
-                );
-                return true;
-              } else {
-                console.warn(
-                  `⚠️ Failed to restore connectedLine: ${instanceData.id}`
-                );
-                return false;
-              }
+              return false;
             }
 
-            // Standard polyhedron restoration (existing code)
-            // Build options for polyhedron creation
+            if (!window.RTStateManager) {
+              console.warn(
+                "⚠️ RTStateManager not available for connectedLine restore"
+              );
+              return false;
+            }
+
+            // Map old endpoint IDs to new IDs
+            const newStartId = instanceIdMap.get(startPoint);
+            const newEndId = instanceIdMap.get(endPoint);
+
+            if (!newStartId || !newEndId) {
+              console.warn(
+                `⚠️ connectedLine endpoint mapping not found: ${startPoint} → ${newStartId}, ${endPoint} → ${newEndId}`
+              );
+              return false;
+            }
+
+            const startInst = window.RTStateManager.getInstance(newStartId);
+            const endInst = window.RTStateManager.getInstance(newEndId);
+
+            if (!startInst || !endInst) {
+              console.warn(
+                `⚠️ connectedLine endpoints not found: ${newStartId}, ${newEndId}`
+              );
+              return false;
+            }
+
+            // Recreate the connection using existing connectPoints with NEW IDs
+            const lineInstance = window.RTStateManager.connectPoints(
+              newStartId,
+              newEndId,
+              window.renderingAPI.getScene()
+            );
+
+            if (lineInstance) {
+              console.log(
+                `  ✅ Restored: connectedLine ${newStartId} ↔ ${newEndId}`
+              );
+              return true;
+            } else {
+              console.warn(
+                `⚠️ Failed to restore connectedLine: ${instanceData.id}`
+              );
+              return false;
+            }
+          };
+
+          // ----------------------------------------------------------------
+          // Helper: Build creation options from instance parameters
+          // ----------------------------------------------------------------
+          const buildCreationOptions = instanceData => {
             const options = {
               opacity: instanceData.appearance?.opacity ?? 0.25,
             };
 
-            // Add type-specific parameters if present
-            if (instanceData.parameters) {
-              // Geodesic parameters
-              if (instanceData.parameters.frequency !== undefined) {
-                options.frequency = instanceData.parameters.frequency;
-              }
-              if (instanceData.parameters.projection !== undefined) {
-                options.projection = instanceData.parameters.projection;
-              }
-              // Matrix parameters
-              if (instanceData.parameters.matrixSize !== undefined) {
-                options.matrixSize = instanceData.parameters.matrixSize;
-              }
-              if (instanceData.parameters.rotate45 !== undefined) {
-                options.rotate45 = instanceData.parameters.rotate45;
-              }
-              // Quadray parameters (preserves native WXYZ coordinates)
-              if (instanceData.parameters.normalize !== undefined) {
-                options.normalize = instanceData.parameters.normalize;
-              }
-              if (instanceData.parameters.zStretch !== undefined) {
-                options.zStretch = instanceData.parameters.zStretch;
-              }
-              if (instanceData.parameters.wxyz !== undefined) {
-                options.wxyz = instanceData.parameters.wxyz;
-              }
-              // Primitive parameters (polygon, prism, cone)
-              if (instanceData.parameters.sides !== undefined) {
-                options.sides = instanceData.parameters.sides;
-              }
-              if (instanceData.parameters.baseQuadrance !== undefined) {
-                options.baseQuadrance = instanceData.parameters.baseQuadrance;
-              }
-              if (instanceData.parameters.heightQuadrance !== undefined) {
-                options.heightQuadrance =
-                  instanceData.parameters.heightQuadrance;
-              }
-              if (instanceData.parameters.showFaces !== undefined) {
-                options.showFaces = instanceData.parameters.showFaces;
-              }
-              // Polygon-specific parameters
-              if (instanceData.parameters.quadrance !== undefined) {
-                options.quadrance = instanceData.parameters.quadrance;
-              }
-              if (instanceData.parameters.showFace !== undefined) {
-                options.showFace = instanceData.parameters.showFace;
-              }
-              if (instanceData.parameters.edgeWeight !== undefined) {
-                options.edgeWeight = instanceData.parameters.edgeWeight;
-              }
-            }
+            if (!instanceData.parameters) return options;
+
+            const params = instanceData.parameters;
+
+            // Geodesic parameters
+            if (params.frequency !== undefined)
+              options.frequency = params.frequency;
+            if (params.projection !== undefined)
+              options.projection = params.projection;
+
+            // Matrix parameters
+            if (params.matrixSize !== undefined)
+              options.matrixSize = params.matrixSize;
+            if (params.rotate45 !== undefined)
+              options.rotate45 = params.rotate45;
+
+            // Quadray parameters (preserves native WXYZ coordinates)
+            if (params.normalize !== undefined)
+              options.normalize = params.normalize;
+            if (params.zStretch !== undefined)
+              options.zStretch = params.zStretch;
+            if (params.wxyz !== undefined) options.wxyz = params.wxyz;
+
+            // Primitive parameters (polygon, prism, cone)
+            if (params.sides !== undefined) options.sides = params.sides;
+            if (params.baseQuadrance !== undefined)
+              options.baseQuadrance = params.baseQuadrance;
+            if (params.heightQuadrance !== undefined)
+              options.heightQuadrance = params.heightQuadrance;
+            if (params.showFaces !== undefined)
+              options.showFaces = params.showFaces;
+
+            // Polygon-specific parameters
+            if (params.quadrance !== undefined)
+              options.quadrance = params.quadrance;
+            if (params.showFace !== undefined)
+              options.showFace = params.showFace;
+            if (params.edgeWeight !== undefined)
+              options.edgeWeight = params.edgeWeight;
+
+            return options;
+          };
+
+          // ----------------------------------------------------------------
+          // Helper: Restore a standard polyhedron (non-connectedLine)
+          // ----------------------------------------------------------------
+          const restoreStandardPolyhedron = async (
+            instanceData,
+            instanceIdMap,
+            matrixTypes,
+            stateManager,
+            scene
+          ) => {
+            const options = buildCreationOptions(instanceData);
 
             // Create polyhedron group from type (async for matrices, sync for others)
             let polyhedronGroup;
             if (matrixTypes.includes(instanceData.type)) {
-              // Use async version for matrix types
               if (window.renderingAPI?.createPolyhedronByTypeAsync) {
                 polyhedronGroup =
                   await window.renderingAPI.createPolyhedronByTypeAsync(
@@ -1043,10 +1046,9 @@ export const RTFileHandler = {
 
             // Register as instance via StateManager
             // Use skipClone: true since geometry was freshly created for import
-            // This avoids the deep clone that can fail on complex matrix structures
-            const restoredInstance = this.stateManager.createInstance(
+            const restoredInstance = stateManager.createInstance(
               polyhedronGroup,
-              this.scene,
+              scene,
               { skipClone: true }
             );
 
@@ -1062,6 +1064,22 @@ export const RTFileHandler = {
               return true;
             }
             return false;
+          };
+
+          // ----------------------------------------------------------------
+          // Main dispatcher: Restore a single instance
+          // ----------------------------------------------------------------
+          const restoreInstance = async instanceData => {
+            if (instanceData.type === "connectedLine") {
+              return restoreConnectedLine(instanceData, instanceIdMap);
+            }
+            return restoreStandardPolyhedron(
+              instanceData,
+              instanceIdMap,
+              matrixTypes,
+              this.stateManager,
+              this.scene
+            );
           };
 
           // Restore all instances (handles both sync and async types)

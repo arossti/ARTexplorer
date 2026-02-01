@@ -24,7 +24,7 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 | **Group Centre behavior** | Third button, only when 2+ selected | Changes rotation/scale pivot to centroid |
 | **Module extraction** | Done, `rt-coordinates.js` | DOM caching, single WXYZ conversion, mode management |
 
-### Current State (Jan 30, 2026)
+### Current State (Feb 1, 2026)
 
 **✅ COMPLETED:**
 - [x] **Module extracted** - `rt-coordinates.js` with shadow/switchover pattern (`USE_COORDINATE_MODULE = true`)
@@ -37,23 +37,26 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 - [x] **Auto-switch on deselect** - Falls back to Absolute when selection drops below 2
 - [x] **DOM element caching** - All coordinate fields cached in module init
 - [x] **QWXYZ conversion consolidated** - Single `updatePositionDisplay()` replaces 6 duplicate blocks
+- [x] **Rotation input persistence** - All rotation input handlers now persist to StateManager (Feb 1)
 
 **🔧 IN PROGRESS / TODO:**
 1. [x] **StateManager persistence** - Transforms now saved after gumball operations (commit `4c1021f`)
 2. [x] **XYZ rotation display from StateManager** - Works correctly for Cartesian coordinates
-3. [ ] **QWXYZ rotation display from StateManager** - See design question below
-4. [ ] **Relative mode implementation** - Currently shows same as Absolute (see below)
-5. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
-6. [ ] **Bi-directional input handlers** - Typing in coordinate fields moves objects
-7. [ ] **Node-based coordinate display** - Show node position when vertex selected
-8. [ ] **Remove legacy coordinate code from rt-init.js** - Full switchover cleanup
+3. [x] **Rotation input persistence** - Numerical rotation inputs now persist to StateManager (Feb 1 fix)
+4. [ ] **QWXYZ rotation storage** - Add `quadrayRotation` field to StateManager (decision made Feb 1)
+5. [ ] **QWXYZ rotation display** - Absolute=cumulative, Relative=tool mode (decision made Feb 1)
+6. [ ] **Relative mode implementation** - Currently shows same as Absolute (see below)
+7. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
+8. [ ] **Bi-directional input handlers** - Typing in coordinate fields moves objects
+9. [ ] **Node-based coordinate display** - Show node position when vertex selected
+10. [ ] **Remove legacy coordinate code from rt-init.js** - Full switchover cleanup
 
 ### Files Modified
 
 | File | Status | Changes |
 |------|--------|---------|
 | `modules/rt-coordinates.js` | **NEW** (~430 lines) | Complete module with mode management, display, Group Centre |
-| `modules/rt-init.js` | Modified | Feature flag, imports, gumball positioning, rotation center |
+| `modules/rt-init.js` | Modified | Feature flag, imports, gumball positioning, rotation center, rotation input persistence |
 | `modules/rt-state-manager.js` | TODO | Need `localPosition`, `localRotation`, `localScale` fields |
 | `index.html` | Modified | Added Group Centre button |
 | `art.css` | Modified | Added disabled state styling for Group Centre |
@@ -66,6 +69,7 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 4. `ea9335a` - Fix: Position gumball at group centroid in Group Centre mode
 5. `a6a312e` - Fix: Absolute mode reads rotation from StateManager correctly
 6. `4c1021f` - Fix: Persist transforms to StateManager after gumball operations
+7. `pending` - Fix: Persist rotation from numerical input to StateManager
 
 ---
 
@@ -156,6 +160,24 @@ The coordinate display is a **window into StateManager**. Whatever is persisted 
 - Rotating an object, then exporting → exported file had WRONG rotation
 - Selecting different objects → display showed last operation, not stored values
 
+### Critical Bug Fixed: Numerical Rotation Input Persistence (Feb 1, 2026)
+
+**Problem**: When rotating an object via numerical input (typing 45° in the rotation field and pressing Enter), the rotation was applied visually but NOT persisted to StateManager.
+- Rotating cube A by 45° via input field → visually correct
+- Selecting cube B → shows 0° rotation (correct)
+- Re-selecting cube A → shows 0° rotation (WRONG - should show 45°)
+
+**Root Cause**: The four rotation input handlers (`setupRotateDegreesInputs`, `setupRotateQuadrayDegreesInputs`, `setupRotateSpreadInputs`, `setupRotateQuadraySpreadInputs`) called `poly.rotateOnWorldAxis()` but never called `RTStateManager.updateInstance()`.
+
+**Fix** (Feb 1, 2026):
+Added `RTStateManager.updateInstance()` call after each rotation in all four handlers:
+- `setupRotateDegreesInputs()` - XYZ degrees input (~line 1197)
+- `setupRotateQuadrayDegreesInputs()` - QWXYZ degrees input (~line 1251)
+- `setupRotateSpreadInputs()` - XYZ spread input (~line 1303)
+- `setupRotateQuadraySpreadInputs()` - QWXYZ spread input (~line 1357)
+
+**Impact**: Numerical rotation inputs now persist correctly. Selecting away and back shows the correct rotation value.
+
 ### Absolute Mode Behavior (DECIDED)
 
 | Transform | Display Shows | Source |
@@ -196,41 +218,90 @@ Group Centre is NOT persisted - it's calculated each time from selected objects.
 | Aspect | Absolute | Relative | Group Centre |
 |--------|----------|----------|--------------|
 | Position displayed | World (StateManager) | 0,0,0 → delta | Centroid (calculated) |
-| Rotation displayed | World (StateManager) | 0° → delta | N/A |
-| Persisted | Yes | No (tool mode) | No (calculated) |
+| XYZ Rotation displayed | World Euler (StateManager) | 0° → delta | N/A |
+| QWXYZ Rotation displayed | Cumulative Quadray (StateManager) | 0° → delta (tool mode) | N/A |
+| Persisted | Yes (Euler + Quadray) | No (tool mode) | No (calculated) |
 | Input behavior | Set absolute value | Add to current | N/A |
 
 ---
 
-## ⚠️ DESIGN QUESTION: QWXYZ Rotation Display
+## ✅ DECIDED: QWXYZ Rotation Storage & Display (Feb 1, 2026)
 
 ### The Problem
 
-StateManager stores rotation as **Euler XYZ** (radians). When you rotate using a Quadray axis (QW, QX, QY, QZ), the rotation is converted to Euler and stored.
+StateManager stores rotation as **Euler XYZ** (radians). When you rotate using a Quadray axis (QW, QX, QY, QZ), the rotation is converted to Euler and stored, but the **which Quadray axis was used** information is lost.
 
-**Current behavior**:
-- XYZ rotation fields: Now correctly show Euler values from StateManager ✅
-- QWXYZ rotation fields: Only update DURING Quadray drag (show delta), blank on selection
+**Previous behavior**:
+- XYZ rotation fields: Show Euler values from StateManager ✅
+- QWXYZ rotation fields: Only update DURING Quadray drag (show delta), blank on selection ❌
 
-**The question**: What should QWXYZ rotation fields show when an object is selected?
+### Solution: Store Quadray Rotations Separately
 
-### Options
+Add a `quadrayRotation` field to StateManager instance transform:
 
-| Option | QWXYZ Display Shows | Pros | Cons |
-|--------|-------------------|------|------|
-| **A: Euler→Quadray decomposition** | Decompose Euler into 4 tetrahedral axis components | "True" Quadray representation | Complex math, may not have unique decomposition |
-| **B: Last Quadray operation** | Store which Quadray axis was used and show that | Simple, shows what user did | Loses info if mixed operations |
-| **C: Zeros on selection** | Show 0,0,0,0 until user drags | Consistent with "tool mode" behavior | Loses rotation info |
-| **D: Mirror XYZ** | Copy XYZ values to first 3 QWXYZ fields | Quick fix | Mathematically incorrect |
+```javascript
+instance.transform = {
+  position: { x, y, z },
+  rotation: { x, y, z, order },           // Euler (for THREE.js rendering)
+  scale: { x, y, z },
+  quadrayRotation: { qw: 0, qx: 0, qy: 0, qz: 0 }  // NEW: Quadray rotation state
+}
+```
 
-### Recommendation
+**Key insight**: Euler XYZ and Quadray QWXYZ are both valid representations of the same final orientation. They're not independent - THREE.js uses Euler for rendering, but we store Quadray separately so users can think in Quadray terms when working with Quadray axes.
 
-Option **B** or **C** seems most practical. True Quadray rotation representation (Option A) would require:
-1. Decomposing Euler rotation into 4 axis-angle components
-2. This decomposition may not be unique or meaningful
-3. Mixed Cartesian + Quadray rotations don't cleanly separate
+### Mode-Dependent Behavior
 
-**Suggest**: For now, QWXYZ fields show zeros on selection (Option C), and only update during Quadray drag operations. This is consistent with them being a "tool mode" display rather than a state representation.
+| Mode | QWXYZ Display | QWXYZ Input | Persistence |
+|------|---------------|-------------|-------------|
+| **Absolute** | Cumulative totals from StateManager | Adds to stored value | Yes (quadrayRotation field) |
+| **Relative** | Last operation delta (tool mode) | Applies rotation, resets to 0 after | No (transient) |
+
+### Absolute Mode: Cumulative Quadray Rotations
+
+In Absolute mode, QWXYZ fields show **accumulated Quadray rotations**:
+
+1. Select cube → QW shows 0°
+2. Rotate 60° around QW → QW shows 60° (stored: `quadrayRotation.qw = 60`)
+3. Click away, select other objects
+4. Re-select cube → QW still shows 60° (read from StateManager)
+5. Rotate another 30° around QW → QW shows 90° (stored: `quadrayRotation.qw = 90`)
+6. Enter -90° in QW field → applies reverse, QW shows 0° (stored: `quadrayRotation.qw = 0`)
+
+**Use case**: User can see total Quadray rotations applied and reverse them precisely.
+
+### Relative Mode: Tool Mode (Last Operation Only)
+
+In Relative mode, QWXYZ fields show **current operation delta**:
+
+1. Select cube → QW shows 0° (always starts at zero)
+2. Rotate 60° around QW → QW shows 60° during operation
+3. Operation completes → QW resets to 0°
+4. Re-select cube → QW shows 0° (tool mode, not persisted)
+
+**Use case**: "Rotate this 45°" without caring about accumulated state.
+
+### Mixed XYZ + Quadray Rotations
+
+When user mixes Cartesian and Quadray rotations:
+- **Euler XYZ**: Always accurate (THREE.js source of truth for rendering)
+- **Quadray QWXYZ**: Only tracks rotations applied via Quadray axes
+
+Example:
+1. Rotate 45° around Cartesian Z → Euler Z = 45°, Quadray all = 0°
+2. Rotate 60° around QW → Euler updates (complex), Quadray QW = 60°
+3. The Euler and Quadray values are both "correct" but describe different aspects
+
+**Note**: We do NOT attempt Euler→Quadray decomposition. The Quadray fields track user intent (which Quadray axes were used), not a mathematical decomposition of the final orientation.
+
+### Implementation Tasks
+
+1. [ ] Add `quadrayRotation` field to StateManager instance schema
+2. [ ] Update `setupRotateQuadrayDegreesInputs()` to accumulate QW/QX/QY/QZ values
+3. [ ] Update `setupRotateQuadraySpreadInputs()` to accumulate values
+4. [ ] Update `RTCoordinates.updateRotationDisplay()` to show Quadray values in Absolute mode
+5. [ ] Update `RTCoordinates.getDisplayValues()` to return quadrayRotation from StateManager
+6. [ ] Clear Quadray display in Relative mode (show 0,0,0,0)
 
 ---
 
