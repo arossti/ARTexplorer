@@ -1406,6 +1406,60 @@ function startARTexplorer(
     });
   }
 
+  /**
+   * Setup Scale input handler for SCALE mode
+   * User can type a scale factor (e.g., 2.0 = double size) and press Enter
+   */
+  function setupScaleInput() {
+    const input = document.getElementById("coordScale");
+    if (!input) return;
+
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && currentGumballTool === "scale") {
+        const newScale = parseFloat(e.target.value);
+        if (isNaN(newScale) || newScale <= 0) {
+          console.warn("⚠️ Invalid scale value (must be positive number)");
+          return;
+        }
+
+        const selected = getSelectedPolyhedra();
+        if (selected.length === 0) {
+          console.warn("⚠️ No polyhedra selected");
+          return;
+        }
+
+        // Apply scale to all selected objects
+        selected.forEach(poly => {
+          // Apply uniform scale
+          poly.scale.set(newScale, newScale, newScale);
+          poly.userData.currentScale = newScale;
+
+          console.log(
+            `📐 Scaled ${poly.userData.isInstance ? "Instance" : "Form"}: ${newScale.toFixed(4)}`
+          );
+
+          // Persist scale to StateManager (instances only)
+          if (poly.userData?.instanceId) {
+            const newTransform = {
+              position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+              rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+              scale: { x: newScale, y: newScale, z: newScale },
+            };
+            RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+          }
+        });
+
+        // Update footer display
+        if (USE_COORDINATE_MODULE) {
+          RTCoordinates.updateScaleDisplay(newScale);
+        }
+
+        // Exit tool mode but keep selection
+        exitToolMode();
+      }
+    });
+  }
+
   // Initialize all coordinate/rotation input handlers
   setupMoveCoordinateInputs();
   setupMoveQuadrayInputs();
@@ -1413,6 +1467,7 @@ function startARTexplorer(
   setupRotateQuadrayDegreesInputs();
   setupRotateSpreadInputs();
   setupRotateQuadraySpreadInputs();
+  setupScaleInput();
 
   // ========================================================================
   // EDITING BASIS MANAGEMENT (Localized Gumball)
@@ -3357,6 +3412,11 @@ function startARTexplorer(
                   `✅ Scaled ${poly.userData.isInstance ? "Instance" : "Form"}: ${clampedScale.toFixed(4)} (${poly.userData.dimensionalState})`
                 );
               });
+
+              // Update footer Scale display during gumball scaling
+              if (USE_COORDINATE_MODULE && selectedPolyhedra.length > 0) {
+                RTCoordinates.updateScaleDisplay(selectedPolyhedra[0].scale.x);
+              }
 
               // If scaling a Form at origin, also update sliders to reflect change
               if (
