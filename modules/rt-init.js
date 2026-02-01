@@ -4008,11 +4008,11 @@ function startARTexplorer(
     { id: "cutplaneAxisX", basis: "cartesian", axis: "x" },
     { id: "cutplaneAxisY", basis: "cartesian", axis: "y" },
     { id: "cutplaneAxisZ", basis: "cartesian", axis: "z" },
-    // Tetrahedral basis
-    { id: "cutplaneAxisW", basis: "tetrahedral", axis: "w" },
-    { id: "cutplaneAxisTetraX", basis: "tetrahedral", axis: "x" },
-    { id: "cutplaneAxisTetraY", basis: "tetrahedral", axis: "y" },
-    { id: "cutplaneAxisTetraZ", basis: "tetrahedral", axis: "z" },
+    // Tetrahedral basis (QW/QX/QY/QZ matches camera naming convention)
+    { id: "cutplaneAxisQW", basis: "tetrahedral", axis: "qw" },
+    { id: "cutplaneAxisQX", basis: "tetrahedral", axis: "qx" },
+    { id: "cutplaneAxisQY", basis: "tetrahedral", axis: "qy" },
+    { id: "cutplaneAxisQZ", basis: "tetrahedral", axis: "qz" },
   ];
 
   // Track active cutplane axis button for persistent highlighting
