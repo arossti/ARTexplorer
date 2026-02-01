@@ -10,6 +10,14 @@
 - **Architecture**: Client-side JavaScript/WebGL (THREE.js)
 - **Documentation**: See `README.md` for overview, `Geometry documents/` for detailed docs
 
+### Logs.md (Human/Agent Communication)
+
+`Geometry documents/Logs.md` is a **pasteboard for human/agent communication**:
+- Used for cut/pasting console output, errors, and debug info
+- Does NOT update automatically - content is manually pasted by the user
+- Never needs to be committed (local working file only)
+- Read this file when user references "see logs" or similar
+
 ## Git Workflow
 
 **Standard flow**: Pull main → Branch → Work → Test → Commit → Push → PR → Merge
