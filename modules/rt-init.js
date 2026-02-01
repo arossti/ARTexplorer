@@ -1193,12 +1193,22 @@ function startARTexplorer(
 
           const radians = (degrees * Math.PI) / 180;
 
-          // Apply rotation
+          // Apply rotation and persist to StateManager
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
             console.log(
               `🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`
             );
+
+            // Persist rotation to StateManager
+            if (poly.userData?.instanceId) {
+              const newTransform = {
+                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            }
           });
 
           // Exit tool mode but keep selection
@@ -1238,12 +1248,22 @@ function startARTexplorer(
           const radians = (degrees * Math.PI) / 180;
           const axis = Quadray.basisVectors[basisIndex];
 
-          // Apply rotation
+          // Apply rotation and persist to StateManager
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
             console.log(
               `🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`
             );
+
+            // Persist rotation to StateManager
+            if (poly.userData?.instanceId) {
+              const newTransform = {
+                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            }
           });
 
           // Exit tool mode but keep selection
@@ -1282,12 +1302,22 @@ function startARTexplorer(
           const degrees = RT.spreadToDegrees(spread);
           const radians = (degrees * Math.PI) / 180;
 
-          // Apply rotation
+          // Apply rotation and persist to StateManager
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
             console.log(
               `🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`
             );
+
+            // Persist rotation to StateManager
+            if (poly.userData?.instanceId) {
+              const newTransform = {
+                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            }
           });
 
           // Exit tool mode but keep selection
@@ -1329,12 +1359,22 @@ function startARTexplorer(
           const radians = (degrees * Math.PI) / 180;
           const axis = Quadray.basisVectors[basisIndex];
 
-          // Apply rotation
+          // Apply rotation and persist to StateManager
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
             console.log(
               `🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`
             );
+
+            // Persist rotation to StateManager
+            if (poly.userData?.instanceId) {
+              const newTransform = {
+                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            }
           });
 
           // Exit tool mode but keep selection
