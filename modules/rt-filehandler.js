@@ -845,8 +845,81 @@ export const RTFileHandler = {
           let restoredCount = 0;
           let failedCount = 0;
 
+          // Map old instance IDs to new instance IDs (for connectedLine endpoint resolution)
+          const instanceIdMap = new Map();
+
+          // Sort instances: Points first, then connectedLines last
+          // This ensures endpoints exist before we try to restore connections
+          const sortedInstances = [...stateData.instances].sort((a, b) => {
+            if (a.type === "connectedLine" && b.type !== "connectedLine")
+              return 1;
+            if (a.type !== "connectedLine" && b.type === "connectedLine")
+              return -1;
+            return 0;
+          });
+
           // Helper function to restore a single instance
           const restoreInstance = async instanceData => {
+            // Special handling for connectedLine - recreate via connectPoints
+            if (instanceData.type === "connectedLine") {
+              const { startPoint, endPoint } = instanceData.parameters || {};
+              if (!startPoint || !endPoint) {
+                console.warn(
+                  `⚠️ connectedLine missing endpoint IDs: ${instanceData.id}`
+                );
+                return false;
+              }
+
+              // Check if RTStateManager has the endpoint instances
+              if (!window.RTStateManager) {
+                console.warn(
+                  "⚠️ RTStateManager not available for connectedLine restore"
+                );
+                return false;
+              }
+
+              // Map old endpoint IDs to new IDs
+              const newStartId = instanceIdMap.get(startPoint);
+              const newEndId = instanceIdMap.get(endPoint);
+
+              if (!newStartId || !newEndId) {
+                console.warn(
+                  `⚠️ connectedLine endpoint mapping not found: ${startPoint} → ${newStartId}, ${endPoint} → ${newEndId}`
+                );
+                return false;
+              }
+
+              const startInst = window.RTStateManager.getInstance(newStartId);
+              const endInst = window.RTStateManager.getInstance(newEndId);
+
+              if (!startInst || !endInst) {
+                console.warn(
+                  `⚠️ connectedLine endpoints not found: ${newStartId}, ${newEndId}`
+                );
+                return false;
+              }
+
+              // Recreate the connection using existing connectPoints with NEW IDs
+              const lineInstance = window.RTStateManager.connectPoints(
+                newStartId,
+                newEndId,
+                window.renderingAPI.getScene()
+              );
+
+              if (lineInstance) {
+                console.log(
+                  `  ✅ Restored: connectedLine ${newStartId} ↔ ${newEndId}`
+                );
+                return true;
+              } else {
+                console.warn(
+                  `⚠️ Failed to restore connectedLine: ${instanceData.id}`
+                );
+                return false;
+              }
+            }
+
+            // Standard polyhedron restoration (existing code)
             // Build options for polyhedron creation
             const options = {
               opacity: instanceData.appearance?.opacity ?? 0.25,
@@ -978,6 +1051,11 @@ export const RTFileHandler = {
             );
 
             if (restoredInstance) {
+              // Store mapping from old ID to new ID (for connectedLine endpoint resolution)
+              if (instanceData.id && restoredInstance.id) {
+                instanceIdMap.set(instanceData.id, restoredInstance.id);
+              }
+
               console.log(
                 `  ✅ Restored: ${instanceData.type} at (${instanceData.transform?.position?.x?.toFixed(2) ?? 0}, ${instanceData.transform?.position?.y?.toFixed(2) ?? 0}, ${instanceData.transform?.position?.z?.toFixed(2) ?? 0})`
               );
@@ -987,7 +1065,8 @@ export const RTFileHandler = {
           };
 
           // Restore all instances (handles both sync and async types)
-          for (const instanceData of stateData.instances) {
+          // Uses sortedInstances to ensure Points are restored before connectedLines
+          for (const instanceData of sortedInstances) {
             try {
               const success = await restoreInstance(instanceData);
               if (success) {
