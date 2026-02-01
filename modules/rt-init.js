@@ -761,14 +761,24 @@ function startARTexplorer(
     btn.addEventListener("click", function () {
       const tool = this.dataset.gumballTool;
 
-      // Check if selected form allows this tool (Point only allows "move")
+      // Check if selected form allows this tool (Point only allows "move" for single selection)
+      // Exception: Allow "rotate" when 2+ Points are selected (group rotation around centroid)
       if (currentSelection) {
         const allowedTools = currentSelection.userData?.allowedTools;
         if (allowedTools && !allowedTools.includes(tool)) {
-          console.log(
-            `[Tool] '${tool}' not allowed for ${currentSelection.userData.type}`
-          );
-          return; // Don't activate disallowed tool
+          // Check for multi-Point rotation exception
+          const selected = RTStateManager.getSelectedObjects();
+          const isMultiPointRotation =
+            tool === "rotate" &&
+            selected.length >= 2 &&
+            selected.every(obj => obj.userData.type === "point");
+
+          if (!isMultiPointRotation) {
+            console.log(
+              `[Tool] '${tool}' not allowed for ${currentSelection.userData.type}`
+            );
+            return; // Don't activate disallowed tool
+          }
         }
       }
 
