@@ -2367,6 +2367,24 @@ function startARTexplorer(
     });
   }
 
+  /**
+   * Update all connected line geometry for Point instances (non-selective)
+   * Used for rubberband effect during drag/rotate - always updates all lines
+   * even when both endpoints move together (midpoint still shifts)
+   * @param {Array} polyhedra - Array of polyhedra being moved/rotated
+   */
+  function updateConnectedLinesRubberband(polyhedra) {
+    polyhedra.forEach(poly => {
+      if (
+        poly.userData.isInstance &&
+        poly.userData.type === "point" &&
+        poly.userData.instanceId
+      ) {
+        RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+      }
+    });
+  }
+
   // ========================================================================
   // OBJECT SNAPPING HELPER FUNCTIONS
   // ========================================================================
@@ -3041,17 +3059,7 @@ function startARTexplorer(
             });
 
             // RUBBERBAND: Update connected line geometry in real-time during drag
-            // Note: Use non-selective update - even when both endpoints move together,
-            // the line group position (midpoint) still needs updating
-            selectedPolyhedra.forEach(poly => {
-              if (
-                poly.userData.isInstance &&
-                poly.userData.type === "point" &&
-                poly.userData.instanceId
-              ) {
-                RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
-              }
-            });
+            updateConnectedLinesRubberband(selectedPolyhedra);
 
             // Update editing basis position if it exists
             if (editingBasis && selectedPolyhedra.length > 0) {
@@ -3149,17 +3157,7 @@ function startARTexplorer(
             });
 
             // RUBBERBAND: Update connected line geometry in real-time during drag
-            // Note: Use non-selective update - even when both endpoints move together,
-            // the line group position (midpoint) still needs updating
-            selectedPolyhedra.forEach(poly => {
-              if (
-                poly.userData.isInstance &&
-                poly.userData.type === "point" &&
-                poly.userData.instanceId
-              ) {
-                RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
-              }
-            });
+            updateConnectedLinesRubberband(selectedPolyhedra);
 
             // Update editing basis to follow the Forms
             if (selectedPolyhedra.length > 0) {
@@ -3460,17 +3458,7 @@ function startARTexplorer(
               });
 
               // RUBBERBAND: Update connected line geometry in real-time during rotation
-              // Note: For rotation, we must update ALL connected lines (not selective)
-              // because relative positions change even when both endpoints rotate together
-              selectedPolyhedra.forEach(poly => {
-                if (
-                  poly.userData.isInstance &&
-                  poly.userData.type === "point" &&
-                  poly.userData.instanceId
-                ) {
-                  RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
-                }
-              });
+              updateConnectedLinesRubberband(selectedPolyhedra);
             }
 
             // NOTE: Do NOT update dragStartPoint - we calculate angle from original start point
