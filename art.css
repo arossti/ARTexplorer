@@ -30,6 +30,7 @@ body {
   width: 330px;
   background: #2a2a2a;
   padding: 15px;
+  padding-bottom: 100px; /* Space for fixed footer */
   overflow-y: auto;
   border-left: 1px solid #444;
   scrollbar-width: none; /* Firefox */
@@ -1713,6 +1714,12 @@ button:disabled {
   padding: 20px;
   overflow-y: auto;
   flex: 1;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.color-theory-modal-body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
 }
 
 .color-theory-modal-header {
@@ -1830,8 +1837,9 @@ button:disabled {
 .color-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px;
+  gap: 8px;
+  padding: 4px;
+  margin-bottom: 4px;
   background: #222;
   border-radius: 4px;
   border: 1px solid #333;
@@ -2232,7 +2240,7 @@ button:disabled {
    ======================================================================== */
 
 #coordinates-panel {
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
@@ -2243,7 +2251,7 @@ button:disabled {
   align-items: flex-start;
   gap: 20px;
   backdrop-filter: blur(4px);
-  z-index: 100;
+  z-index: 1000; /* Above controls panel */
 }
 
 .coords-group {
@@ -2293,10 +2301,10 @@ button:disabled {
   align-self: center;
 }
 
-/* Coordinate mode toggle group (Absolute/Relative) - far right */
+/* Coordinate mode toggle group (Absolute/Relative/Group) - far right, horizontal */
 .coords-mode-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 4px;
   align-self: center;
   margin-left: auto;
@@ -2304,8 +2312,8 @@ button:disabled {
 
 .coords-mode-group .toggle-btn {
   font-size: 10px;
-  padding: 6px 10px;
-  min-width: 70px;
+  padding: 6px 8px;
+  min-width: auto;
 }
 
 /* Disabled state for Group Centre button (requires 2+ selection) */
