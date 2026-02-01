@@ -122,27 +122,13 @@ export const RTCoordinates = {
     this.elements.coordY.value = pos.y.toFixed(4);
     this.elements.coordZ.value = pos.z.toFixed(4);
 
-    // Convert to QWXYZ (Quadray coordinates)
-    if (this.deps?.Quadray?.basisVectors) {
-      const basisVectors = this.deps.Quadray.basisVectors;
-      const AXIS_INDEX = this.deps.Quadray.AXIS_INDEX;
-
-      // Project position onto each basisVector to get raw quadray values
-      let rawQuadray = [0, 0, 0, 0];
-      for (let i = 0; i < 4; i++) {
-        rawQuadray[i] = pos.dot(basisVectors[i]);
-      }
-      // Apply zero-sum normalization
-      const mean = (rawQuadray[0] + rawQuadray[1] + rawQuadray[2] + rawQuadray[3]) / 4;
-      rawQuadray = rawQuadray.map(c => c - mean);
-
-      // Map basisVector indices to UI fields using AXIS_INDEX
-      // AXIS_INDEX: { qw: 3, qx: 0, qy: 2, qz: 1 }
-      // QW displays rawQuadray[3], QX displays rawQuadray[0], etc.
-      this.elements.coordQW.value = rawQuadray[AXIS_INDEX.qw].toFixed(4);
-      this.elements.coordQX.value = rawQuadray[AXIS_INDEX.qx].toFixed(4);
-      this.elements.coordQY.value = rawQuadray[AXIS_INDEX.qy].toFixed(4);
-      this.elements.coordQZ.value = rawQuadray[AXIS_INDEX.qz].toFixed(4);
+    // Convert to QWXYZ (Quadray coordinates) using shared utility
+    if (this.deps?.Quadray?.fromCartesian) {
+      const quadray = this.deps.Quadray.fromCartesian(pos);
+      this.elements.coordQW.value = quadray.qw.toFixed(4);
+      this.elements.coordQX.value = quadray.qx.toFixed(4);
+      this.elements.coordQY.value = quadray.qy.toFixed(4);
+      this.elements.coordQZ.value = quadray.qz.toFixed(4);
     }
   },
 
