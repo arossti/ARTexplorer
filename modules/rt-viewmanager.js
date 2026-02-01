@@ -308,8 +308,8 @@ export const RTViewManager = {
     const state = this._papercut.state;
     if (state.cutplaneBasis !== "tetrahedral") return null;
 
-    const axisMap = { w: "QW", x: "QX", y: "QY", z: "QZ" };
-    return axisMap[state.cutplaneAxis] || null;
+    // Axis values are now qw/qx/qy/qz - convert to display names
+    return state.cutplaneAxis ? state.cutplaneAxis.toUpperCase() : null;
   },
 
   /**
