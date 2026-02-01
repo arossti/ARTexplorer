@@ -1005,6 +1005,32 @@ function startARTexplorer(
       return;
     }
 
+  /**
+   * Persist a polyhedron's current transform to StateManager
+   * Consolidates the repeated transform persistence pattern used in input handlers
+   *
+   * @param {THREE.Object3D} poly - The polyhedron to persist
+   * @param {Object} options - Optional overrides for transform values
+   * @param {Object} options.scale - Override scale { x, y, z }
+   * @param {Object} options.quadrayRotation - Quadray rotation state { qw, qx, qy, qz }
+   */
+  function persistTransformToState(poly, options = {}) {
+    if (!poly.userData?.instanceId) return;
+
+    const newTransform = {
+      position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+      rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+      scale: options.scale || { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+    };
+
+    // Include quadrayRotation if provided
+    if (options.quadrayRotation) {
+      newTransform.quadrayRotation = options.quadrayRotation;
+    }
+
+    RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+  }
+
     // Legacy implementation
     if (!pos) {
       // Clear display if no position
@@ -1023,24 +1049,12 @@ function startARTexplorer(
     document.getElementById("coordY").value = pos.y.toFixed(4);
     document.getElementById("coordZ").value = pos.z.toFixed(4);
 
-    // Convert to WXYZ (Quadray coordinates)
-    // Project position onto each basisVector to get raw quadray values
-    const basisVectors = Quadray.basisVectors;
-    let rawQuadray = [0, 0, 0, 0];
-    for (let i = 0; i < 4; i++) {
-      rawQuadray[i] = pos.dot(basisVectors[i]);
-    }
-    // Apply zero-sum normalization
-    const mean = (rawQuadray[0] + rawQuadray[1] + rawQuadray[2] + rawQuadray[3]) / 4;
-    rawQuadray = rawQuadray.map(c => c - mean);
-
-    // Map basisVector indices to UI fields using AXIS_INDEX
-    // AXIS_INDEX: { qw: 3, qx: 0, qy: 2, qz: 1 }
-    // So: QW displays rawQuadray[3], QX displays rawQuadray[0], etc.
-    document.getElementById("coordQW").value = rawQuadray[Quadray.AXIS_INDEX.qw].toFixed(4);
-    document.getElementById("coordQX").value = rawQuadray[Quadray.AXIS_INDEX.qx].toFixed(4);
-    document.getElementById("coordQY").value = rawQuadray[Quadray.AXIS_INDEX.qy].toFixed(4);
-    document.getElementById("coordQZ").value = rawQuadray[Quadray.AXIS_INDEX.qz].toFixed(4);
+    // Convert to QWXYZ (Quadray coordinates) using shared utility
+    const quadray = Quadray.fromCartesian(pos);
+    document.getElementById("coordQW").value = quadray.qw.toFixed(4);
+    document.getElementById("coordQX").value = quadray.qx.toFixed(4);
+    document.getElementById("coordQY").value = quadray.qy.toFixed(4);
+    document.getElementById("coordQZ").value = quadray.qz.toFixed(4);
   }
 
   /**
@@ -1072,16 +1086,7 @@ function startARTexplorer(
           selected.forEach(poly => {
             poly.position[axis] = value;
             console.log(`📍 Moved ${axis.toUpperCase()} to ${value.toFixed(4)}`);
-
-            // Persist position to StateManager (instances only)
-            if (poly.userData?.instanceId) {
-              const newTransform = {
-                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
-                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
-                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
-              };
-              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
-            }
+            persistTransformToState(poly);
           });
 
           // Update footer coordinate display via module
@@ -1157,16 +1162,7 @@ function startARTexplorer(
             console.log(
               `📍 QWXYZ position set: QW=${qwValue.toFixed(4)}, QX=${qxValue.toFixed(4)}, QY=${qyValue.toFixed(4)}, QZ=${qzValue.toFixed(4)}`
             );
-
-            // Persist position to StateManager (instances only)
-            if (poly.userData?.instanceId) {
-              const newTransform = {
-                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
-                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
-                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
-              };
-              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
-            }
+            persistTransformToState(poly);
           });
 
           // Update footer coordinate display via module
@@ -1216,19 +1212,8 @@ function startARTexplorer(
           // Apply rotation and persist to StateManager
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
-            console.log(
-              `🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`
-            );
-
-            // Persist rotation to StateManager
-            if (poly.userData?.instanceId) {
-              const newTransform = {
-                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
-                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
-                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
-              };
-              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
-            }
+            console.log(`🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`);
+            persistTransformToState(poly);
           });
 
           // Exit tool mode but keep selection
@@ -1272,27 +1257,16 @@ function startARTexplorer(
           // Apply rotation and persist to StateManager (with cumulative Quadray tracking)
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
-            console.log(
-              `🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`
-            );
+            console.log(`🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`);
 
-            // Persist rotation to StateManager with cumulative Quadray rotation
+            // Calculate cumulative Quadray rotation
             if (poly.userData?.instanceId) {
-              // Get existing quadrayRotation from StateManager (or default to zeros)
               const instance = RTStateManager.getInstance(poly.userData.instanceId);
               const existingQuadray = instance?.transform?.quadrayRotation || { qw: 0, qx: 0, qy: 0, qz: 0 };
-
-              // Accumulate the new rotation on the appropriate axis
               const newQuadrayRotation = { ...existingQuadray };
               newQuadrayRotation[quadrayKey] = (existingQuadray[quadrayKey] || 0) + degrees;
 
-              const newTransform = {
-                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
-                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
-                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
-                quadrayRotation: newQuadrayRotation,
-              };
-              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+              persistTransformToState(poly, { quadrayRotation: newQuadrayRotation });
               console.log(`📐 Quadray ${quadrayKey.toUpperCase()}: ${newQuadrayRotation[quadrayKey].toFixed(2)}° (cumulative)`);
             }
           });
@@ -1336,19 +1310,8 @@ function startARTexplorer(
           // Apply rotation and persist to StateManager
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
-            console.log(
-              `🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`
-            );
-
-            // Persist rotation to StateManager
-            if (poly.userData?.instanceId) {
-              const newTransform = {
-                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
-                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
-                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
-              };
-              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
-            }
+            console.log(`🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`);
+            persistTransformToState(poly);
           });
 
           // Exit tool mode but keep selection
@@ -1394,27 +1357,16 @@ function startARTexplorer(
           // Apply rotation and persist to StateManager (with cumulative Quadray tracking)
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
-            console.log(
-              `🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`
-            );
+            console.log(`🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`);
 
-            // Persist rotation to StateManager with cumulative Quadray rotation
+            // Calculate cumulative Quadray rotation
             if (poly.userData?.instanceId) {
-              // Get existing quadrayRotation from StateManager (or default to zeros)
               const instance = RTStateManager.getInstance(poly.userData.instanceId);
               const existingQuadray = instance?.transform?.quadrayRotation || { qw: 0, qx: 0, qy: 0, qz: 0 };
-
-              // Accumulate the new rotation on the appropriate axis
               const newQuadrayRotation = { ...existingQuadray };
               newQuadrayRotation[quadrayKey] = (existingQuadray[quadrayKey] || 0) + degrees;
 
-              const newTransform = {
-                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
-                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
-                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
-                quadrayRotation: newQuadrayRotation,
-              };
-              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+              persistTransformToState(poly, { quadrayRotation: newQuadrayRotation });
               console.log(`📐 Quadray ${quadrayKey.toUpperCase()}: ${newQuadrayRotation[quadrayKey].toFixed(2)}° (cumulative)`);
             }
           });
@@ -1454,19 +1406,8 @@ function startARTexplorer(
           poly.scale.set(newScale, newScale, newScale);
           poly.userData.currentScale = newScale;
 
-          console.log(
-            `📐 Scaled ${poly.userData.isInstance ? "Instance" : "Form"}: ${newScale.toFixed(4)}`
-          );
-
-          // Persist scale to StateManager (instances only)
-          if (poly.userData?.instanceId) {
-            const newTransform = {
-              position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
-              rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
-              scale: { x: newScale, y: newScale, z: newScale },
-            };
-            RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
-          }
+          console.log(`📐 Scaled ${poly.userData.isInstance ? "Instance" : "Form"}: ${newScale.toFixed(4)}`);
+          persistTransformToState(poly, { scale: { x: newScale, y: newScale, z: newScale } });
         });
 
         // Update footer display
@@ -3980,26 +3921,8 @@ function startARTexplorer(
 
           // Persist transforms to StateManager (critical for rotation/position to be saved)
           selectedPolyhedra.forEach(poly => {
-            if (poly.userData.isInstance && poly.userData.instanceId) {
-              const newTransform = {
-                position: {
-                  x: poly.position.x,
-                  y: poly.position.y,
-                  z: poly.position.z,
-                },
-                rotation: {
-                  x: poly.rotation.x,
-                  y: poly.rotation.y,
-                  z: poly.rotation.z,
-                  order: poly.rotation.order,
-                },
-                scale: {
-                  x: poly.scale.x,
-                  y: poly.scale.y,
-                  z: poly.scale.z,
-                },
-              };
-              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            if (poly.userData.isInstance) {
+              persistTransformToState(poly);
             }
           });
 
