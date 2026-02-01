@@ -3040,6 +3040,10 @@ function startARTexplorer(
               }
             });
 
+            // RUBBERBAND: Update connected line geometry in real-time during drag
+            // Note: Can be disabled later if performance becomes an issue with many connections
+            updateMovedPointConnections(selectedPolyhedra);
+
             // Update editing basis position if it exists
             if (editingBasis && selectedPolyhedra.length > 0) {
               const selectedVertices = RTStateManager.getSelectedVertices();
@@ -3134,6 +3138,10 @@ function startARTexplorer(
               poly.position.add(constrainedMovement);
               // Snapping will be applied at mouseup based on currentSnapMode
             });
+
+            // RUBBERBAND: Update connected line geometry in real-time during drag
+            // Note: Can be disabled later if performance becomes an issue with many connections
+            updateMovedPointConnections(selectedPolyhedra);
 
             // Update editing basis to follow the Forms
             if (selectedPolyhedra.length > 0) {
@@ -3431,6 +3439,19 @@ function startARTexplorer(
                 console.log(
                   `✅ Rotated ${poly.userData.isInstance ? "Instance" : "Form"}: ${snappedAngleDegrees.toFixed(2)}° around ${selectedHandle.type}[${selectedHandle.index}]`
                 );
+              });
+
+              // RUBBERBAND: Update connected line geometry in real-time during rotation
+              // Note: For rotation, we must update ALL connected lines (not selective)
+              // because relative positions change even when both endpoints rotate together
+              selectedPolyhedra.forEach(poly => {
+                if (
+                  poly.userData.isInstance &&
+                  poly.userData.type === "point" &&
+                  poly.userData.instanceId
+                ) {
+                  RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+                }
               });
             }
 
