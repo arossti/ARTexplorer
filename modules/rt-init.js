@@ -3041,8 +3041,17 @@ function startARTexplorer(
             });
 
             // RUBBERBAND: Update connected line geometry in real-time during drag
-            // Note: Can be disabled later if performance becomes an issue with many connections
-            updateMovedPointConnections(selectedPolyhedra);
+            // Note: Use non-selective update - even when both endpoints move together,
+            // the line group position (midpoint) still needs updating
+            selectedPolyhedra.forEach(poly => {
+              if (
+                poly.userData.isInstance &&
+                poly.userData.type === "point" &&
+                poly.userData.instanceId
+              ) {
+                RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+              }
+            });
 
             // Update editing basis position if it exists
             if (editingBasis && selectedPolyhedra.length > 0) {
@@ -3140,8 +3149,17 @@ function startARTexplorer(
             });
 
             // RUBBERBAND: Update connected line geometry in real-time during drag
-            // Note: Can be disabled later if performance becomes an issue with many connections
-            updateMovedPointConnections(selectedPolyhedra);
+            // Note: Use non-selective update - even when both endpoints move together,
+            // the line group position (midpoint) still needs updating
+            selectedPolyhedra.forEach(poly => {
+              if (
+                poly.userData.isInstance &&
+                poly.userData.type === "point" &&
+                poly.userData.instanceId
+              ) {
+                RTStateManager.updateConnectedGeometry(poly.userData.instanceId);
+              }
+            });
 
             // Update editing basis to follow the Forms
             if (selectedPolyhedra.length > 0) {
