@@ -468,11 +468,12 @@ function startARTexplorer(
     { id: "viewZDown", view: "zdown" },
     { id: "viewZUp", view: "zup" },
     { id: "viewAxo", view: "axo" },
-    // WXYZ Tetrahedral Basis Views (looking down each quadray axis)
-    { id: "viewQuadW", view: "quadw" },
-    { id: "viewQuadX", view: "quadx" },
-    { id: "viewQuadY", view: "quady" },
-    { id: "viewQuadZ", view: "quadz" },
+    // QWXYZ Tetrahedral Basis Views (looking down each quadray axis)
+    // QW=Yellow(3), QX=Red(0), QY=Blue(2), QZ=Green(1)
+    { id: "viewQuadQW", view: "quadqw" },
+    { id: "viewQuadQX", view: "quadqx" },
+    { id: "viewQuadQY", view: "quadqy" },
+    { id: "viewQuadQZ", view: "quadqz" },
   ];
 
   // Track active view button for persistent highlighting
@@ -936,10 +937,10 @@ function startARTexplorer(
   setupRotationInputs("rotZDegrees", "rotZSpread", "Z");
 
   // Setup bidirectional conversion for WXYZ (Quadray) axes
-  setupRotationInputs("rotWDegrees", "rotWSpread", "W");
-  setupRotationInputs("rotXQDegrees", "rotXQSpread", "X (Quadray)");
-  setupRotationInputs("rotYQDegrees", "rotYQSpread", "Y (Quadray)");
-  setupRotationInputs("rotZQDegrees", "rotZQSpread", "Z (Quadray)");
+  setupRotationInputs("rotQWDegrees", "rotQWSpread", "W");
+  setupRotationInputs("rotQXDegrees", "rotQXSpread", "X (Quadray)");
+  setupRotationInputs("rotQYDegrees", "rotQYSpread", "Y (Quadray)");
+  setupRotationInputs("rotQZDegrees", "rotQZSpread", "Z (Quadray)");
 
   // ========================================================================
   // COORDINATE INPUT HANDLERS - Execute transformations on Enter
@@ -1000,10 +1001,10 @@ function startARTexplorer(
       document.getElementById("coordX").value = "0.0000";
       document.getElementById("coordY").value = "0.0000";
       document.getElementById("coordZ").value = "0.0000";
-      document.getElementById("coordW").value = "0.0000";
-      document.getElementById("coordX2").value = "0.0000";
-      document.getElementById("coordY2").value = "0.0000";
-      document.getElementById("coordZ2").value = "0.0000";
+      document.getElementById("coordQW").value = "0.0000";
+      document.getElementById("coordQX").value = "0.0000";
+      document.getElementById("coordQY").value = "0.0000";
+      document.getElementById("coordQZ").value = "0.0000";
       return;
     }
 
@@ -1022,10 +1023,10 @@ function startARTexplorer(
     const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
     wxyz = wxyz.map(c => c - mean);
 
-    document.getElementById("coordW").value = wxyz[0].toFixed(4);
-    document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-    document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-    document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+    document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+    document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+    document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+    document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
   }
 
   /**
@@ -1069,10 +1070,10 @@ function startARTexplorer(
             const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
             wxyz = wxyz.map(c => c - mean);
 
-            document.getElementById("coordW").value = wxyz[0].toFixed(4);
-            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+            document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+            document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+            document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
           }
 
           // Update editing basis position if it exists
@@ -1092,10 +1093,10 @@ function startARTexplorer(
    */
   function setupMoveQuadrayInputs() {
     const coordInputs = [
-      { id: "coordW", index: 0, name: "W" },
-      { id: "coordX2", index: 1, name: "X" },
-      { id: "coordY2", index: 2, name: "Y" },
-      { id: "coordZ2", index: 3, name: "Z" },
+      { id: "coordQW", index: 0, name: "W" },
+      { id: "coordQX", index: 1, name: "X" },
+      { id: "coordQY", index: 2, name: "Y" },
+      { id: "coordQZ", index: 3, name: "Z" },
     ];
 
     coordInputs.forEach(({ id }) => {
@@ -1115,10 +1116,10 @@ function startARTexplorer(
 
           // Get all WXYZ values
           let wxyz = [
-            parseFloat(document.getElementById("coordW").value),
-            parseFloat(document.getElementById("coordX2").value),
-            parseFloat(document.getElementById("coordY2").value),
-            parseFloat(document.getElementById("coordZ2").value),
+            parseFloat(document.getElementById("coordQW").value),
+            parseFloat(document.getElementById("coordQX").value),
+            parseFloat(document.getElementById("coordQY").value),
+            parseFloat(document.getElementById("coordQZ").value),
           ];
 
           // Convert WXYZ to Cartesian
@@ -1201,11 +1202,12 @@ function startARTexplorer(
    * Setup rotation input handler for ROTATE mode (Degrees fields - WXYZ)
    */
   function setupRotateQuadrayDegreesInputs() {
+    // Correct color-to-axis mapping: W=Yellow(3), X=Red(0), Y=Blue(2), Z=Green(1)
     const rotInputs = [
-      { id: "rotWDegrees", basisIndex: 0, name: "W" },
-      { id: "rotXQDegrees", basisIndex: 1, name: "X (Quadray)" },
-      { id: "rotYQDegrees", basisIndex: 2, name: "Y (Quadray)" },
-      { id: "rotZQDegrees", basisIndex: 3, name: "Z (Quadray)" },
+      { id: "rotQWDegrees", basisIndex: 3, name: "W (Yellow)" },
+      { id: "rotQXDegrees", basisIndex: 0, name: "X (Red)" },
+      { id: "rotQYDegrees", basisIndex: 2, name: "Y (Blue)" },
+      { id: "rotQZDegrees", basisIndex: 1, name: "Z (Green)" },
     ];
 
     rotInputs.forEach(({ id, basisIndex, name }) => {
@@ -1289,11 +1291,12 @@ function startARTexplorer(
    * Setup rotation input handler for ROTATE mode (Spread fields - WXYZ)
    */
   function setupRotateQuadraySpreadInputs() {
+    // Correct color-to-axis mapping: W=Yellow(3), X=Red(0), Y=Blue(2), Z=Green(1)
     const rotInputs = [
-      { id: "rotWSpread", basisIndex: 0, name: "W" },
-      { id: "rotXQSpread", basisIndex: 1, name: "X (Quadray)" },
-      { id: "rotYQSpread", basisIndex: 2, name: "Y (Quadray)" },
-      { id: "rotZQSpread", basisIndex: 3, name: "Z (Quadray)" },
+      { id: "rotQWSpread", basisIndex: 3, name: "W (Yellow)" },
+      { id: "rotQXSpread", basisIndex: 0, name: "X (Red)" },
+      { id: "rotQYSpread", basisIndex: 2, name: "Y (Blue)" },
+      { id: "rotQZSpread", basisIndex: 1, name: "Z (Green)" },
     ];
 
     rotInputs.forEach(({ id, basisIndex, name }) => {
@@ -3069,10 +3072,10 @@ function startARTexplorer(
             const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
             wxyz = wxyz.map(c => c - mean);
 
-            document.getElementById("coordW").value = wxyz[0].toFixed(4);
-            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+            document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+            document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+            document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
           }
           return; // Don't process gumball drag
         }
@@ -3371,8 +3374,9 @@ function startARTexplorer(
               degreesFieldId = `rot${axis}Degrees`;
               spreadFieldId = `rot${axis}Spread`;
             } else if (selectedHandle.type === "quadray") {
-              // WXYZ axes: index 0=W, 1=X, 2=Y, 3=Z
-              const axisNames = ["W", "XQ", "YQ", "ZQ"];
+              // Quadray axes match color order: 0=Red(QX), 1=Green(QZ), 2=Blue(QY), 3=Yellow(QW)
+              // QW=Yellow, QX=Red, QY=Blue, QZ=Green (user-specified correct mapping)
+              const axisNames = ["QX", "QZ", "QY", "QW"];
               const axis = axisNames[selectedHandle.index];
               degreesFieldId = `rot${axis}Degrees`;
               spreadFieldId = `rot${axis}Spread`;
@@ -3453,10 +3457,10 @@ function startARTexplorer(
             const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
             wxyz = wxyz.map(c => c - mean);
 
-            document.getElementById("coordW").value = wxyz[0].toFixed(4);
-            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+            document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+            document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+            document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
           }
 
           // CRITICAL FIX: Only update drag start point for MOVE and SCALE modes
@@ -3519,10 +3523,10 @@ function startARTexplorer(
             const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
             wxyz = wxyz.map(c => c - mean);
 
-            document.getElementById("coordW").value = wxyz[0].toFixed(4);
-            document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-            document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-            document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+            document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+            document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+            document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+            document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
 
             // Clear snap state
             clearSnapPreviewMarker();
@@ -3597,10 +3601,10 @@ function startARTexplorer(
               const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
               wxyz = wxyz.map(c => c - mean);
 
-              document.getElementById("coordW").value = wxyz[0].toFixed(4);
-              document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-              document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-              document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+              document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+              document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+              document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+              document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
 
               // Update editing basis position after snapping
               if (editingBasis) {
@@ -3738,10 +3742,10 @@ function startARTexplorer(
               const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
               wxyz = wxyz.map(c => c - mean);
 
-              document.getElementById("coordW").value = wxyz[0].toFixed(4);
-              document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-              document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-              document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+              document.getElementById("coordQW").value = wxyz[0].toFixed(4);
+              document.getElementById("coordQX").value = wxyz[1].toFixed(4);
+              document.getElementById("coordQY").value = wxyz[2].toFixed(4);
+              document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
             }
           } else {
             console.log(

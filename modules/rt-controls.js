@@ -972,19 +972,19 @@ export const RTControls = {
     document.getElementById("coordY").value = position.y.toFixed(4);
     document.getElementById("coordZ").value = position.z.toFixed(4);
 
-    // Convert to WXYZ and update
+    // Convert to QWXYZ and update
     const basisVectors = this.Quadray.basisVectors;
-    let wxyz = [0, 0, 0, 0];
+    let qwxyz = [0, 0, 0, 0];
     for (let i = 0; i < 4; i++) {
-      wxyz[i] = position.dot(basisVectors[i]);
+      qwxyz[i] = position.dot(basisVectors[i]);
     }
-    const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
-    wxyz = wxyz.map(c => c - mean);
+    const mean = (qwxyz[0] + qwxyz[1] + qwxyz[2] + qwxyz[3]) / 4;
+    qwxyz = qwxyz.map(c => c - mean);
 
-    document.getElementById("coordW").value = wxyz[0].toFixed(4);
-    document.getElementById("coordX2").value = wxyz[1].toFixed(4);
-    document.getElementById("coordY2").value = wxyz[2].toFixed(4);
-    document.getElementById("coordZ2").value = wxyz[3].toFixed(4);
+    document.getElementById("coordQW").value = qwxyz[0].toFixed(4);
+    document.getElementById("coordQX").value = qwxyz[1].toFixed(4);
+    document.getElementById("coordQY").value = qwxyz[2].toFixed(4);
+    document.getElementById("coordQZ").value = qwxyz[3].toFixed(4);
   },
 
   // ========================================================================

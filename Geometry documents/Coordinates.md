@@ -41,7 +41,7 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 **🔧 IN PROGRESS / TODO:**
 1. [x] **StateManager persistence** - Transforms now saved after gumball operations (commit `4c1021f`)
 2. [x] **XYZ rotation display from StateManager** - Works correctly for Cartesian coordinates
-3. [ ] **WXYZ rotation display from StateManager** - Need same fix for Quadray rotation fields
+3. [ ] **WXYZ rotation display from StateManager** - See design question below
 4. [ ] **Relative mode implementation** - Currently shows same as Absolute (see below)
 5. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
 6. [ ] **Bi-directional input handlers** - Typing in coordinate fields moves objects
@@ -137,6 +137,38 @@ Group Centre is NOT persisted - it's calculated each time from selected objects.
 | Rotation displayed | World (StateManager) | 0° → delta | N/A |
 | Persisted | Yes | No (tool mode) | No (calculated) |
 | Input behavior | Set absolute value | Add to current | N/A |
+
+---
+
+## ⚠️ DESIGN QUESTION: WXYZ Rotation Display
+
+### The Problem
+
+StateManager stores rotation as **Euler XYZ** (radians). When you rotate using a Quadray axis (W, X, Y, Z quadray), the rotation is converted to Euler and stored.
+
+**Current behavior**:
+- XYZ rotation fields: Now correctly show Euler values from StateManager ✅
+- WXYZ rotation fields: Only update DURING Quadray drag (show delta), blank on selection
+
+**The question**: What should WXYZ rotation fields show when an object is selected?
+
+### Options
+
+| Option | WXYZ Display Shows | Pros | Cons |
+|--------|-------------------|------|------|
+| **A: Euler→Quadray decomposition** | Decompose Euler into 4 tetrahedral axis components | "True" Quadray representation | Complex math, may not have unique decomposition |
+| **B: Last Quadray operation** | Store which Quadray axis was used and show that | Simple, shows what user did | Loses info if mixed operations |
+| **C: Zeros on selection** | Show 0,0,0,0 until user drags | Consistent with "tool mode" behavior | Loses rotation info |
+| **D: Mirror XYZ** | Copy XYZ values to first 3 WXYZ fields | Quick fix | Mathematically incorrect |
+
+### Recommendation
+
+Option **B** or **C** seems most practical. True Quadray rotation representation (Option A) would require:
+1. Decomposing Euler rotation into 4 axis-angle components
+2. This decomposition may not be unique or meaningful
+3. Mixed Cartesian + Quadray rotations don't cleanly separate
+
+**Suggest**: For now, WXYZ fields show zeros on selection (Option C), and only update during Quadray drag operations. This is consistent with them being a "tool mode" display rather than a state representation.
 
 ---
 
@@ -659,11 +691,17 @@ setupInputHandlers(callbacks) {
 ## Coordinate Display Fields
 
 ```
-Position (XYZ):    coordX, coordY, coordZ
-Position (WXYZ):   coordW, coordX2, coordY2, coordZ2
-Rotation (XYZ):    rotXDegrees, rotYDegrees, rotZDegrees (+ spread)
-Rotation (WXYZ):   rotWDegrees, rotXQDegrees, rotYQDegrees, rotZQDegrees (+ spread)
+Position (XYZ):     coordX, coordY, coordZ
+Position (QWXYZ):   coordQW, coordQX, coordQY, coordQZ
+Rotation (XYZ):     rotXDegrees, rotYDegrees, rotZDegrees (+ spread)
+Rotation (QWXYZ):   rotQWDegrees, rotQXDegrees, rotQYDegrees, rotQZDegrees (+ spread)
 ```
+
+**Naming Convention (Jan 31, 2026)**: Quadray fields use `Q` prefix for consistency:
+- `QW` = Quadray W axis (Yellow)
+- `QX` = Quadray X axis (Red)
+- `QY` = Quadray Y axis (Blue)
+- `QZ` = Quadray Z axis (Green)
 
 ---
 

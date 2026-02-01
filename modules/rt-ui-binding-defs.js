@@ -480,22 +480,22 @@ export const viewControlBindings = [
         id: "viewAxo",
         onClick: renderingAPI => renderingAPI.setCameraPreset("Axo"),
       },
-      // Quadray views
+      // QWXYZ Quadray views (QW=Yellow, QX=Red, QY=Blue, QZ=Green)
       {
-        id: "viewQuadW",
-        onClick: renderingAPI => renderingAPI.setCameraPreset("QuadW"),
+        id: "viewQuadQW",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("quadqw"),
       },
       {
-        id: "viewQuadX",
-        onClick: renderingAPI => renderingAPI.setCameraPreset("QuadX"),
+        id: "viewQuadQX",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("quadqx"),
       },
       {
-        id: "viewQuadY",
-        onClick: renderingAPI => renderingAPI.setCameraPreset("QuadY"),
+        id: "viewQuadQY",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("quadqy"),
       },
       {
-        id: "viewQuadZ",
-        onClick: renderingAPI => renderingAPI.setCameraPreset("QuadZ"),
+        id: "viewQuadQZ",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("quadqz"),
       },
     ],
   },

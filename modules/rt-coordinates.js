@@ -53,11 +53,11 @@ export const RTCoordinates = {
       coordX: document.getElementById('coordX'),
       coordY: document.getElementById('coordY'),
       coordZ: document.getElementById('coordZ'),
-      // Position WXYZ (Quadray)
-      coordW: document.getElementById('coordW'),
-      coordX2: document.getElementById('coordX2'),
-      coordY2: document.getElementById('coordY2'),
-      coordZ2: document.getElementById('coordZ2'),
+      // Position QWXYZ (Quadray)
+      coordQW: document.getElementById('coordQW'),
+      coordQX: document.getElementById('coordQX'),
+      coordQY: document.getElementById('coordQY'),
+      coordQZ: document.getElementById('coordQZ'),
       // Rotation XYZ (degrees)
       rotXDegrees: document.getElementById('rotXDegrees'),
       rotYDegrees: document.getElementById('rotYDegrees'),
@@ -66,16 +66,16 @@ export const RTCoordinates = {
       rotXSpread: document.getElementById('rotXSpread'),
       rotYSpread: document.getElementById('rotYSpread'),
       rotZSpread: document.getElementById('rotZSpread'),
-      // Rotation WXYZ (degrees) - Quadray rotation
-      rotWDegrees: document.getElementById('rotWDegrees'),
-      rotXQDegrees: document.getElementById('rotXQDegrees'),
-      rotYQDegrees: document.getElementById('rotYQDegrees'),
-      rotZQDegrees: document.getElementById('rotZQDegrees'),
-      // Rotation WXYZ (spread)
-      rotWSpread: document.getElementById('rotWSpread'),
-      rotXQSpread: document.getElementById('rotXQSpread'),
-      rotYQSpread: document.getElementById('rotYQSpread'),
-      rotZQSpread: document.getElementById('rotZQSpread'),
+      // Rotation QWXYZ (degrees) - Quadray rotation
+      rotQWDegrees: document.getElementById('rotQWDegrees'),
+      rotQXDegrees: document.getElementById('rotQXDegrees'),
+      rotQYDegrees: document.getElementById('rotQYDegrees'),
+      rotQZDegrees: document.getElementById('rotQZDegrees'),
+      // Rotation QWXYZ (spread)
+      rotQWSpread: document.getElementById('rotQWSpread'),
+      rotQXSpread: document.getElementById('rotQXSpread'),
+      rotQYSpread: document.getElementById('rotQYSpread'),
+      rotQZSpread: document.getElementById('rotQZSpread'),
     };
 
     // Verify critical elements exist
@@ -108,10 +108,10 @@ export const RTCoordinates = {
       this.elements.coordX.value = '0.0000';
       this.elements.coordY.value = '0.0000';
       this.elements.coordZ.value = '0.0000';
-      this.elements.coordW.value = '0.0000';
-      this.elements.coordX2.value = '0.0000';
-      this.elements.coordY2.value = '0.0000';
-      this.elements.coordZ2.value = '0.0000';
+      this.elements.coordQW.value = '0.0000';
+      this.elements.coordQX.value = '0.0000';
+      this.elements.coordQY.value = '0.0000';
+      this.elements.coordQZ.value = '0.0000';
       return;
     }
 
@@ -120,21 +120,21 @@ export const RTCoordinates = {
     this.elements.coordY.value = pos.y.toFixed(4);
     this.elements.coordZ.value = pos.z.toFixed(4);
 
-    // Convert to WXYZ (Quadray coordinates)
+    // Convert to QWXYZ (Quadray coordinates)
     if (this.deps?.Quadray?.basisVectors) {
       const basisVectors = this.deps.Quadray.basisVectors;
-      let wxyz = [0, 0, 0, 0];
+      let qwxyz = [0, 0, 0, 0];
       for (let i = 0; i < 4; i++) {
-        wxyz[i] = pos.dot(basisVectors[i]);
+        qwxyz[i] = pos.dot(basisVectors[i]);
       }
       // Apply zero-sum normalization
-      const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
-      wxyz = wxyz.map(c => c - mean);
+      const mean = (qwxyz[0] + qwxyz[1] + qwxyz[2] + qwxyz[3]) / 4;
+      qwxyz = qwxyz.map(c => c - mean);
 
-      this.elements.coordW.value = wxyz[0].toFixed(4);
-      this.elements.coordX2.value = wxyz[1].toFixed(4);
-      this.elements.coordY2.value = wxyz[2].toFixed(4);
-      this.elements.coordZ2.value = wxyz[3].toFixed(4);
+      this.elements.coordQW.value = qwxyz[0].toFixed(4);
+      this.elements.coordQX.value = qwxyz[1].toFixed(4);
+      this.elements.coordQY.value = qwxyz[2].toFixed(4);
+      this.elements.coordQZ.value = qwxyz[3].toFixed(4);
     }
   },
 
