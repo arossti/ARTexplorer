@@ -1111,13 +1111,13 @@ function startARTexplorer(
    */
   function setupMoveQuadrayInputs() {
     const coordInputs = [
-      { id: "coordQW", index: 0, name: "W" },
-      { id: "coordQX", index: 1, name: "X" },
-      { id: "coordQY", index: 2, name: "Y" },
-      { id: "coordQZ", index: 3, name: "Z" },
+      { id: "coordQW", axisKey: "qw", name: "QW" },
+      { id: "coordQX", axisKey: "qx", name: "QX" },
+      { id: "coordQY", axisKey: "qy", name: "QY" },
+      { id: "coordQZ", axisKey: "qz", name: "QZ" },
     ];
 
-    coordInputs.forEach(({ id }) => {
+    coordInputs.forEach(({ id, axisKey, name }) => {
       const input = document.getElementById(id);
       if (!input) return;
 
@@ -1132,38 +1132,69 @@ function startARTexplorer(
             return;
           }
 
-          // Get all QWXYZ values from UI fields
-          const qwValue = parseFloat(document.getElementById("coordQW").value);
-          const qxValue = parseFloat(document.getElementById("coordQX").value);
-          const qyValue = parseFloat(document.getElementById("coordQY").value);
-          const qzValue = parseFloat(document.getElementById("coordQZ").value);
+          // Check coordinate mode: Absolute vs Relative
+          const coordMode = RTCoordinates.getMode();
 
-          // Build array in basisVector order (A=0, B=1, C=2, D=3) using AXIS_INDEX
-          // AXIS_INDEX: { qw: 3, qx: 0, qy: 2, qz: 1 }
-          // toCartesian expects (a, b, c, d) = basisVector indices (0, 1, 2, 3)
-          let basisOrderQuadray = [0, 0, 0, 0];
-          basisOrderQuadray[Quadray.AXIS_INDEX.qw] = qwValue;  // D = index 3
-          basisOrderQuadray[Quadray.AXIS_INDEX.qx] = qxValue;  // A = index 0
-          basisOrderQuadray[Quadray.AXIS_INDEX.qy] = qyValue;  // C = index 2
-          basisOrderQuadray[Quadray.AXIS_INDEX.qz] = qzValue;  // B = index 1
+          if (coordMode === "relative") {
+            // ================================================================
+            // RELATIVE MODE: Treat input as delta movement along single axis
+            // ================================================================
+            // The entered value is a delta - move along this specific Quadray axis
+            const delta = value;
 
-          // Convert to Cartesian using basisVector-ordered array
-          const newPos = Quadray.toCartesian(
-            basisOrderQuadray[0],
-            basisOrderQuadray[1],
-            basisOrderQuadray[2],
-            basisOrderQuadray[3],
-            THREE
-          );
+            // Get the basis vector for this Quadray axis
+            const basisIndex = Quadray.AXIS_INDEX[axisKey];
+            const basisVector = Quadray.basisVectors[basisIndex];
 
-          // Apply position and persist to StateManager
-          selected.forEach(poly => {
-            poly.position.copy(newPos);
-            console.log(
-              `📍 QWXYZ position set: QW=${qwValue.toFixed(4)}, QX=${qxValue.toFixed(4)}, QY=${qyValue.toFixed(4)}, QZ=${qzValue.toFixed(4)}`
+            // Calculate Cartesian delta from Quadray delta
+            // Movement = delta * basisVector direction
+            const cartesianDelta = basisVector.clone().multiplyScalar(delta);
+
+            selected.forEach(poly => {
+              // Add delta to current position
+              poly.position.add(cartesianDelta);
+              console.log(
+                `📍 RELATIVE ${name} move: delta=${delta.toFixed(4)} → new pos (${poly.position.x.toFixed(4)}, ${poly.position.y.toFixed(4)}, ${poly.position.z.toFixed(4)})`
+              );
+              persistTransformToState(poly);
+            });
+          } else {
+            // ================================================================
+            // ABSOLUTE MODE: Use all four values as zero-sum position
+            // ================================================================
+            // Get all QWXYZ values from UI fields
+            const qwValue = parseFloat(document.getElementById("coordQW").value);
+            const qxValue = parseFloat(document.getElementById("coordQX").value);
+            const qyValue = parseFloat(document.getElementById("coordQY").value);
+            const qzValue = parseFloat(document.getElementById("coordQZ").value);
+
+            // Build array in basisVector order (A=0, B=1, C=2, D=3) using AXIS_INDEX
+            // AXIS_INDEX: { qw: 3, qx: 0, qy: 2, qz: 1 }
+            // toCartesian expects (a, b, c, d) = basisVector indices (0, 1, 2, 3)
+            let basisOrderQuadray = [0, 0, 0, 0];
+            basisOrderQuadray[Quadray.AXIS_INDEX.qw] = qwValue;  // D = index 3
+            basisOrderQuadray[Quadray.AXIS_INDEX.qx] = qxValue;  // A = index 0
+            basisOrderQuadray[Quadray.AXIS_INDEX.qy] = qyValue;  // C = index 2
+            basisOrderQuadray[Quadray.AXIS_INDEX.qz] = qzValue;  // B = index 1
+
+            // Convert to Cartesian using basisVector-ordered array
+            const newPos = Quadray.toCartesian(
+              basisOrderQuadray[0],
+              basisOrderQuadray[1],
+              basisOrderQuadray[2],
+              basisOrderQuadray[3],
+              THREE
             );
-            persistTransformToState(poly);
-          });
+
+            // Apply position and persist to StateManager
+            selected.forEach(poly => {
+              poly.position.copy(newPos);
+              console.log(
+                `📍 ABSOLUTE QWXYZ position set: QW=${qwValue.toFixed(4)}, QX=${qxValue.toFixed(4)}, QY=${qyValue.toFixed(4)}, QZ=${qzValue.toFixed(4)}`
+              );
+              persistTransformToState(poly);
+            });
+          }
 
           // Update footer coordinate display via module
           if (USE_COORDINATE_MODULE && selected.length > 0) {

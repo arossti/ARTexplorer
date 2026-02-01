@@ -2,8 +2,8 @@
 
 ## Quick Start for New Agent
 
-**Branch**: `FOOTER-COORDINATES`
-**Status**: Module extracted, Group Centre complete, Relative mode and bi-directional input next
+**Branch**: `QUADRAY-COORDINATION` (continued from `FOOTER-COORDINATES`)
+**Status**: ✅ Core coordinate system complete - Absolute/Relative/Group Centre modes working
 **Goal**: Complete coordinate display system with Absolute/Relative/Group Centre modes
 
 ### TL;DR - What This Document Covers
@@ -41,18 +41,16 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 - [x] **Quadray label consistency** - Renamed W/X/Y/Z → QW/QX/QY/QZ in footer (Feb 1)
 - [x] **Scale input field** - Added Scale display with real-time gumball updates (Feb 1)
 - [x] **Scale input handler** - Type scale factor + Enter in Scale mode applies scale (Feb 1)
+- [x] **Relative mode position input** - Single-axis delta movement for Quadray (Feb 1, commit `8b9c2b7`)
+- [x] **AXIS_INDEX fix** - Corrected QW/QX/QY/QZ mapping to basisVector indices (PR #62)
+- [x] **Code consolidation** - Added `Quadray.fromCartesian()` and `persistTransformToState()` helpers (PR #62)
 
-**🔧 IN PROGRESS / TODO:**
-1. [x] **StateManager persistence** - Transforms now saved after gumball operations (commit `4c1021f`)
-2. [x] **XYZ rotation display from StateManager** - Works correctly for Cartesian coordinates
-3. [x] **Rotation input persistence** - Numerical rotation inputs now persist to StateManager (Feb 1 fix)
-4. [x] **Position input persistence** - XYZ and QWXYZ position inputs now persist to StateManager (Feb 1)
-5. [ ] **QWXYZ rotation storage** - Add `quadrayRotation` field to StateManager (decision made Feb 1)
-6. [ ] **QWXYZ rotation display** - Absolute=cumulative, Relative=tool mode (decision made Feb 1)
-7. [ ] **Relative mode implementation** - Currently shows same as Absolute (see below)
-8. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
-9. [ ] **Node-based coordinate display** - Show node position when vertex selected
-10. [ ] **Remove legacy coordinate code from rt-init.js** - Full switchover cleanup
+**🔧 FUTURE ENHANCEMENTS (Lower Priority):**
+1. [ ] **QWXYZ rotation storage** - Add `quadrayRotation` field to StateManager (decision made Feb 1)
+2. [ ] **QWXYZ rotation display** - Absolute=cumulative, Relative=tool mode (decision made Feb 1)
+3. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
+4. [ ] **Node-based coordinate display** - Show node position when vertex selected
+5. [ ] **Remove legacy coordinate code from rt-init.js** - Full switchover cleanup
 
 ### Files Modified
 
@@ -353,11 +351,14 @@ This aligns with existing Absolute/Relative semantics:
 - Absolute = "Where am I?" (full state)
 - Relative = "How much am I moving?" (delta operation)
 
-### TODO
+### ✅ RESOLVED (Feb 1, 2026)
 
-- [ ] Decide on solution approach
-- [ ] Implement chosen solution
-- [ ] Test: Object at origin → move 2 QW → enter 0 QW → should return to origin
+Solution **E (Hybrid Mode)** was implemented in commit `8b9c2b7`:
+
+- **Absolute mode**: All four QWXYZ values used as zero-sum position (unchanged)
+- **Relative mode**: Input treated as delta movement along single Quadray axis
+
+**Test verified**: Object at origin → move 2 QW (Absolute) → switch to Relative → enter -2 QW → returns to origin ✅
 
 ---
 
