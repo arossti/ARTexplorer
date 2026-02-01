@@ -1287,40 +1287,54 @@ export const RTStateManager = {
   // These methods encapsulate validation logic that was previously in rt-init.js
 
   /**
-   * Connect two selected Point instances with a Line
+   * Connect selected Point instances with Lines
+   * - 2 Points: Creates 1 line (A↔B)
+   * - 3 Points: Creates 3 lines forming a triangle (A↔B, B↔C, C↔A)
    * Validates selection before calling connectPoints()
-   * @param {THREE.Scene} scene - Scene to add Line to
-   * @returns {Object|null} Created Line instance, or null on validation failure
+   * @param {THREE.Scene} scene - Scene to add Line(s) to
+   * @returns {Object|Object[]|null} Created Line instance(s), or null on validation failure
    */
   connectFromSelection(scene) {
     const selected = this.getSelectedObjects();
 
-    // Validate selection count
-    if (selected.length !== 2) {
-      console.warn("⚠️ Connect requires exactly 2 selected Points");
+    // Validate selection count (2 or 3 points)
+    if (selected.length < 2 || selected.length > 3) {
+      console.warn("⚠️ Connect requires 2 or 3 selected Points");
       return null;
     }
 
-    // Get instance IDs
-    const idA = selected[0].userData.instanceId;
-    const idB = selected[1].userData.instanceId;
-
-    if (!idA || !idB) {
-      console.warn("⚠️ Connect requires 2 deposited Point instances");
-      return null;
+    // Get instance IDs and validate all are deposited Points
+    const pointIds = [];
+    for (const obj of selected) {
+      const id = obj.userData.instanceId;
+      if (!id) {
+        console.warn("⚠️ Connect requires deposited Point instances");
+        return null;
+      }
+      const inst = this.getInstance(id);
+      if (!inst || inst.type !== "point") {
+        console.warn("⚠️ Connect requires Point instances (not other types)");
+        return null;
+      }
+      pointIds.push(id);
     }
 
-    // Verify both are Points
-    const instA = this.getInstance(idA);
-    const instB = this.getInstance(idB);
-
-    if (!instA || instA.type !== "point" || !instB || instB.type !== "point") {
-      console.warn("⚠️ Connect requires 2 Point instances (not other types)");
-      return null;
+    // 2 Points: single line
+    if (pointIds.length === 2) {
+      return this.connectPoints(pointIds[0], pointIds[1], scene);
     }
 
-    // Delegate to existing connectPoints method
-    return this.connectPoints(idA, idB, scene);
+    // 3 Points: triangle (3 lines)
+    const lines = [];
+    const lineAB = this.connectPoints(pointIds[0], pointIds[1], scene);
+    if (lineAB) lines.push(lineAB);
+    const lineBC = this.connectPoints(pointIds[1], pointIds[2], scene);
+    if (lineBC) lines.push(lineBC);
+    const lineCA = this.connectPoints(pointIds[2], pointIds[0], scene);
+    if (lineCA) lines.push(lineCA);
+
+    console.log(`✅ Created triangle from 3 Points (${lines.length} lines)`);
+    return lines.length > 0 ? lines : null;
   },
 
   /**
