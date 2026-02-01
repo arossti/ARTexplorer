@@ -1064,26 +1064,25 @@ function startARTexplorer(
             return;
           }
 
-          // Apply position change
+          // Apply position change and persist to StateManager
           selected.forEach(poly => {
             poly.position[axis] = value;
+            console.log(`📍 Moved ${axis.toUpperCase()} to ${value.toFixed(4)}`);
+
+            // Persist position to StateManager (instances only)
+            if (poly.userData?.instanceId) {
+              const newTransform = {
+                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            }
           });
 
-          // Update WXYZ coordinates
-          if (selected.length > 0) {
-            const pos = selected[0].position;
-            const basisVectors = Quadray.basisVectors;
-            let wxyz = [0, 0, 0, 0];
-            for (let i = 0; i < 4; i++) {
-              wxyz[i] = pos.dot(basisVectors[i]);
-            }
-            const mean = (wxyz[0] + wxyz[1] + wxyz[2] + wxyz[3]) / 4;
-            wxyz = wxyz.map(c => c - mean);
-
-            document.getElementById("coordQW").value = wxyz[0].toFixed(4);
-            document.getElementById("coordQX").value = wxyz[1].toFixed(4);
-            document.getElementById("coordQY").value = wxyz[2].toFixed(4);
-            document.getElementById("coordQZ").value = wxyz[3].toFixed(4);
+          // Update footer coordinate display via module
+          if (USE_COORDINATE_MODULE && selected.length > 0) {
+            RTCoordinates.updatePositionDisplay(selected[0].position);
           }
 
           // Update editing basis position if it exists
@@ -1141,18 +1140,28 @@ function startARTexplorer(
             THREE
           );
 
-          // Apply position
+          // Apply position and persist to StateManager
           selected.forEach(poly => {
             poly.position.copy(newPos);
             console.log(
-              `📍 WXYZ position set: (${wxyz[0].toFixed(4)}, ${wxyz[1].toFixed(4)}, ${wxyz[2].toFixed(4)}, ${wxyz[3].toFixed(4)})`
+              `📍 QWXYZ position set: (${wxyz[0].toFixed(4)}, ${wxyz[1].toFixed(4)}, ${wxyz[2].toFixed(4)}, ${wxyz[3].toFixed(4)})`
             );
+
+            // Persist position to StateManager (instances only)
+            if (poly.userData?.instanceId) {
+              const newTransform = {
+                position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
+                rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
+                scale: { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+              };
+              RTStateManager.updateInstance(poly.userData.instanceId, newTransform);
+            }
           });
 
-          // Update XYZ coordinates
-          document.getElementById("coordX").value = newPos.x.toFixed(4);
-          document.getElementById("coordY").value = newPos.y.toFixed(4);
-          document.getElementById("coordZ").value = newPos.z.toFixed(4);
+          // Update footer coordinate display via module
+          if (USE_COORDINATE_MODULE && selected.length > 0) {
+            RTCoordinates.updatePositionDisplay(selected[0].position);
+          }
 
           // Update editing basis position if it exists
           if (editingBasis && selected.length > 0) {
