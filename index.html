@@ -180,7 +180,7 @@
       <div id="canvas-container">
         <!-- Bottom Coordinates Panel -->
         <div id="coordinates-panel">
-          <!-- XYZ Position -->
+          <!-- XYZ Position + Mode Buttons + Scale -->
           <div class="coords-group">
             <div class="coords-row">
               <i class="bi bi-arrows-move coords-icon" title="XYZ Position"></i>
@@ -212,6 +212,46 @@
                 />
               </div>
             </div>
+            <!-- Coordinate Mode Toggle + Scale -->
+            <div class="coords-row coords-mode-row">
+              <div class="coords-mode-group toggle-btn-group">
+                <button
+                  id="coordModeAbsolute"
+                  class="toggle-btn variant-objsnap active"
+                  data-coord-mode="absolute"
+                  title="Coordinates relative to world origin (Alpha)"
+                >
+                  Absolute
+                </button>
+                <button
+                  id="coordModeRelative"
+                  class="toggle-btn variant-objsnap"
+                  data-coord-mode="relative"
+                  title="Coordinates relative to selected object (local transform)"
+                >
+                  Relative
+                </button>
+                <button
+                  id="coordModeGroupCentre"
+                  class="toggle-btn variant-objsnap"
+                  data-coord-mode="group-centre"
+                  disabled
+                  title="Coordinates relative to group centroid (requires 2+ selected)"
+                >
+                  Group
+                </button>
+              </div>
+              <div class="coord-container scale-container">
+                <label class="label-axis label-axis-scale">Scale:</label>
+                <input
+                  type="text"
+                  id="coordScale"
+                  class="coord-input axis-scale"
+                  value="1.0000"
+                  title="Uniform scale factor"
+                />
+              </div>
+            </div>
           </div>
 
           <!-- WXYZ Position -->
@@ -222,7 +262,7 @@
                 title="WXYZ Position"
               ></i>
               <div class="coord-container">
-                <label class="label-axis label-axis-qw">W:</label>
+                <label class="label-axis label-axis-qw">QW:</label>
                 <input
                   type="text"
                   id="coordQW"
@@ -231,7 +271,7 @@
                 />
               </div>
               <div class="coord-container">
-                <label class="label-axis label-axis-qx">X:</label>
+                <label class="label-axis label-axis-qx">QX:</label>
                 <input
                   type="text"
                   id="coordQX"
@@ -240,7 +280,7 @@
                 />
               </div>
               <div class="coord-container">
-                <label class="label-axis label-axis-qy">Y:</label>
+                <label class="label-axis label-axis-qy">QY:</label>
                 <input
                   type="text"
                   id="coordQY"
@@ -249,7 +289,7 @@
                 />
               </div>
               <div class="coord-container">
-                <label class="label-axis label-axis-qz">Z:</label>
+                <label class="label-axis label-axis-qz">QZ:</label>
                 <input
                   type="text"
                   id="coordQZ"
@@ -342,7 +382,7 @@
               ></i>
               <span class="coords-unit-label">degrees°</span>
               <div class="coord-container">
-                <label class="label-axis label-axis-qw">W:</label>
+                <label class="label-axis label-axis-qw">QW:</label>
                 <input
                   type="text"
                   id="rotQWDegrees"
@@ -351,7 +391,7 @@
                 />
               </div>
               <div class="coord-container">
-                <label class="label-axis label-axis-qx">X:</label>
+                <label class="label-axis label-axis-qx">QX:</label>
                 <input
                   type="text"
                   id="rotQXDegrees"
@@ -360,7 +400,7 @@
                 />
               </div>
               <div class="coord-container">
-                <label class="label-axis label-axis-qy">Y:</label>
+                <label class="label-axis label-axis-qy">QY:</label>
                 <input
                   type="text"
                   id="rotQYDegrees"
@@ -369,7 +409,7 @@
                 />
               </div>
               <div class="coord-container">
-                <label class="label-axis label-axis-qz">Z:</label>
+                <label class="label-axis label-axis-qz">QZ:</label>
                 <input
                   type="text"
                   id="rotQZDegrees"
@@ -384,7 +424,7 @@
               ></i>
               <span class="coords-unit-label">spread (s)</span>
               <div class="coord-container">
-                <label class="label-axis label-axis-qw">W:</label>
+                <label class="label-axis label-axis-qw">QW:</label>
                 <input
                   type="text"
                   id="rotQWSpread"
@@ -393,7 +433,7 @@
                 />
               </div>
               <div class="coord-container">
-                <label class="label-axis label-axis-qx">X:</label>
+                <label class="label-axis label-axis-qx">QX:</label>
                 <input
                   type="text"
                   id="rotQXSpread"
@@ -402,7 +442,7 @@
                 />
               </div>
               <div class="coord-container">
-                <label class="label-axis label-axis-qy">Y:</label>
+                <label class="label-axis label-axis-qy">QY:</label>
                 <input
                   type="text"
                   id="rotQYSpread"
@@ -411,7 +451,7 @@
                 />
               </div>
               <div class="coord-container">
-                <label class="label-axis label-axis-qz">Z:</label>
+                <label class="label-axis label-axis-qz">QZ:</label>
                 <input
                   type="text"
                   id="rotQZSpread"
@@ -420,35 +460,6 @@
                 />
               </div>
             </div>
-          </div>
-
-          <!-- Coordinate Mode Toggle (Absolute/Relative/Group Centre) - far right -->
-          <div class="coords-mode-group toggle-btn-group">
-            <button
-              id="coordModeAbsolute"
-              class="toggle-btn variant-objsnap active"
-              data-coord-mode="absolute"
-              title="Coordinates relative to world origin (Alpha)"
-            >
-              Absolute
-            </button>
-            <button
-              id="coordModeRelative"
-              class="toggle-btn variant-objsnap"
-              data-coord-mode="relative"
-              title="Coordinates relative to selected object (local transform)"
-            >
-              Relative
-            </button>
-            <button
-              id="coordModeGroupCentre"
-              class="toggle-btn variant-objsnap"
-              data-coord-mode="group-centre"
-              disabled
-              title="Coordinates relative to group centroid (requires 2+ selected)"
-            >
-              Group
-            </button>
           </div>
         </div>
       </div>
