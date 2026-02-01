@@ -269,14 +269,30 @@ const Q_apex_distance = (2/3) * Q_edge;
 const apexDistance = Math.sqrt(Q_apex_distance);
 ```
 
-### Torus Closure at ~112 Tetrahedra
+### Torus Near-Closure
 
-The tetrahelix approaches closure into a torus at approximately 112 tetrahedra, with a small gap. This can be explored by:
-1. Setting count slider to 112
-2. Observing the near-alignment of the first and last tetrahedra
-3. Measuring the gap to understand the mathematical relationship
+#### Observed: 48 Tetrahedra (Left-Handed)
 
-**Research question:** What is the exact relationship between the tetrahedral dihedral angle (arccos(1/3) ≈ 70.5288°) and the number of tetrahedra required for near-closure?
+**Finding (Feb 1, 2026):** With left-handed chirality, the tetrahelix approaches closure into a torus at **48 tetrahedra** with a small visible gap near the origin.
+
+- 48 = 16 × 3 (exactly 16 complete face cycles, since we cycle through 3 exit faces)
+- The helix returns nearly to its starting position
+- RT validation passes with excellent precision (max error ~8e-15)
+- Stats at N=48: 51 vertices, 147 edges, 192 faces
+
+This suggests the effective rotation per face cycle is approximately 360°/16 = 22.5°.
+
+#### Theoretical: ~112 Tetrahedra
+
+The classical Boerdijk-Coxeter helix literature suggests near-closure at approximately 112 tetrahedra. The discrepancy with our observed 48 may be due to:
+1. Different face selection patterns (our 0→1→2→0 cycling vs. other conventions)
+2. The specific definition of "closure" (returning to origin vs. closing along helix axis)
+3. Chirality effects (left vs. right-handed)
+
+**Research questions:**
+- What is the exact relationship between the tetrahedral dihedral angle (arccos(1/3) ≈ 70.5288°) and the number of tetrahedra for near-closure?
+- How does the face cycling pattern (0→1→2 vs other sequences) affect the torus period?
+- Does right-handed chirality produce the same 48-tetrahedra near-closure?
 
 ---
 
