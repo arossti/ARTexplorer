@@ -139,32 +139,54 @@ export const RTCoordinates = {
   },
 
   /**
-   * Update rotation display (Euler → degrees + spread)
-   * @param {THREE.Euler} rotation - Rotation to display
+   * Update rotation display (Euler → degrees + spread, and Quadray if provided)
+   * @param {THREE.Euler} rotation - Euler rotation to display
+   * @param {Object} quadrayRotation - Optional Quadray rotation { qw, qx, qy, qz } in degrees
    */
-  updateRotationDisplay(rotation) {
-    if (!this.elements?.rotXDegrees || !rotation) return;
+  updateRotationDisplay(rotation, quadrayRotation = null) {
+    if (!this.elements?.rotXDegrees) return;
 
     // Convert radians to degrees
     const radToDeg = rad => (rad * 180 / Math.PI);
+    const degToSpread = deg => {
+      const rad = deg * Math.PI / 180;
+      return Math.pow(Math.sin(rad), 2);
+    };
 
-    // Update XYZ rotation (degrees)
-    this.elements.rotXDegrees.value = radToDeg(rotation.x).toFixed(2);
-    this.elements.rotYDegrees.value = radToDeg(rotation.y).toFixed(2);
-    this.elements.rotZDegrees.value = radToDeg(rotation.z).toFixed(2);
+    // Update XYZ rotation (degrees) - only if rotation provided
+    if (rotation) {
+      this.elements.rotXDegrees.value = radToDeg(rotation.x).toFixed(2);
+      this.elements.rotYDegrees.value = radToDeg(rotation.y).toFixed(2);
+      this.elements.rotZDegrees.value = radToDeg(rotation.z).toFixed(2);
 
-    // Update XYZ spread (sin²θ)
-    if (this.elements.rotXSpread) {
-      const degToSpread = deg => {
-        const rad = deg * Math.PI / 180;
-        return Math.pow(Math.sin(rad), 2);
-      };
-      this.elements.rotXSpread.value = degToSpread(radToDeg(rotation.x)).toFixed(4);
-      this.elements.rotYSpread.value = degToSpread(radToDeg(rotation.y)).toFixed(4);
-      this.elements.rotZSpread.value = degToSpread(radToDeg(rotation.z)).toFixed(4);
+      // Update XYZ spread (sin²θ)
+      if (this.elements.rotXSpread) {
+        this.elements.rotXSpread.value = degToSpread(radToDeg(rotation.x)).toFixed(4);
+        this.elements.rotYSpread.value = degToSpread(radToDeg(rotation.y)).toFixed(4);
+        this.elements.rotZSpread.value = degToSpread(radToDeg(rotation.z)).toFixed(4);
+      }
     }
 
-    // TODO: WXYZ rotation display (Quadray rotation representation)
+    // Update QWXYZ rotation (degrees) from stored Quadray rotation
+    if (this.elements.rotQWDegrees) {
+      const qw = quadrayRotation?.qw || 0;
+      const qx = quadrayRotation?.qx || 0;
+      const qy = quadrayRotation?.qy || 0;
+      const qz = quadrayRotation?.qz || 0;
+
+      this.elements.rotQWDegrees.value = qw.toFixed(2);
+      this.elements.rotQXDegrees.value = qx.toFixed(2);
+      this.elements.rotQYDegrees.value = qy.toFixed(2);
+      this.elements.rotQZDegrees.value = qz.toFixed(2);
+
+      // Update QWXYZ spread (sin²θ)
+      if (this.elements.rotQWSpread) {
+        this.elements.rotQWSpread.value = degToSpread(qw).toFixed(4);
+        this.elements.rotQXSpread.value = degToSpread(qx).toFixed(4);
+        this.elements.rotQYSpread.value = degToSpread(qy).toFixed(4);
+        this.elements.rotQZSpread.value = degToSpread(qz).toFixed(4);
+      }
+    }
   },
 
   /**
@@ -254,11 +276,11 @@ export const RTCoordinates = {
   /**
    * Get display values based on current mode (reads from StateManager)
    * @param {THREE.Object3D} object - Selected object
-   * @returns {Object} { position: Vector3, rotation: Euler/Quaternion }
+   * @returns {Object} { position: Vector3, rotation: Euler, quadrayRotation: Object }
    */
   getDisplayValues(object) {
     if (!object || !this.deps?.RTStateManager) {
-      return { position: null, rotation: null };
+      return { position: null, rotation: null, quadrayRotation: null };
     }
 
     const instanceId = object.userData?.instanceId;
@@ -266,7 +288,8 @@ export const RTCoordinates = {
       // Fallback to object's current transform
       return {
         position: object.position.clone(),
-        rotation: object.rotation.clone()
+        rotation: object.rotation.clone(),
+        quadrayRotation: null
       };
     }
 
@@ -275,13 +298,14 @@ export const RTCoordinates = {
       console.warn('⚠️ No StateManager record for object');
       return {
         position: object.position.clone(),
-        rotation: object.rotation.clone()
+        rotation: object.rotation.clone(),
+        quadrayRotation: null
       };
     }
 
     if (this.mode === 'absolute') {
       // Return world transforms from StateManager
-      // StateManager stores transforms in instance.transform.position/rotation/scale
+      // StateManager stores transforms in instance.transform.position/rotation/scale/quadrayRotation
       const transform = instance.transform;
       return {
         position: new this.deps.THREE.Vector3(
@@ -296,17 +320,21 @@ export const RTCoordinates = {
               transform.rotation.z || 0,
               transform.rotation.order || 'XYZ'
             )
-          : object.rotation.clone()
+          : object.rotation.clone(),
+        // Absolute mode: show cumulative Quadray rotations from StateManager
+        quadrayRotation: transform?.quadrayRotation || { qw: 0, qx: 0, qy: 0, qz: 0 }
       };
 
     } else if (this.mode === 'relative') {
       // Relative mode: object's own centre is the origin
       // Position is always 0,0,0 (you ARE the origin)
       // Rotation/scale show how transformed from Form's identity
-      // Since Forms start at identity, world rotation = local rotation
+      // Quadray rotation: tool mode - always show 0,0,0,0 (not cumulative)
       return {
         position: new this.deps.THREE.Vector3(0, 0, 0),
-        rotation: object.rotation.clone()
+        rotation: object.rotation.clone(),
+        // Relative mode: Quadray is tool mode, show zeros
+        quadrayRotation: { qw: 0, qx: 0, qy: 0, qz: 0 }
       };
 
     } else if (this.mode === 'group-centre') {
@@ -315,11 +343,12 @@ export const RTCoordinates = {
       const centroid = this.calculateGroupCentroid(selected);
       return {
         position: centroid || object.position.clone(),
-        rotation: null
+        rotation: null,
+        quadrayRotation: null
       };
     }
 
-    return { position: null, rotation: null };
+    return { position: null, rotation: null, quadrayRotation: null };
   },
 
   // ========================================================================
@@ -364,8 +393,8 @@ export const RTCoordinates = {
           if (selected.length > 0) {
             const displayValues = self.getDisplayValues(selected[0]);
             self.updatePositionDisplay(displayValues.position);
-            if (displayValues.rotation) {
-              self.updateRotationDisplay(displayValues.rotation);
+            if (displayValues.rotation || displayValues.quadrayRotation) {
+              self.updateRotationDisplay(displayValues.rotation, displayValues.quadrayRotation);
             }
           }
 
@@ -428,8 +457,8 @@ export const RTCoordinates = {
     if (count > 0) {
       const displayValues = this.getDisplayValues(selectedObjects[0]);
       this.updatePositionDisplay(displayValues.position);
-      if (displayValues.rotation) {
-        this.updateRotationDisplay(displayValues.rotation);
+      if (displayValues.rotation || displayValues.quadrayRotation) {
+        this.updateRotationDisplay(displayValues.rotation, displayValues.quadrayRotation);
       }
     } else {
       this.clearDisplay();
