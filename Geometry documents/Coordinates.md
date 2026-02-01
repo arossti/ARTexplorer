@@ -10,7 +10,7 @@
 
 This document specifies a **coordinate display system** for ARTexplorer that:
 
-1. **Shows object transforms** in the footer panel (XYZ + WXYZ position, rotation)
+1. **Shows object transforms** in the footer panel (XYZ + QWXYZ position, rotation)
 2. **Supports three modes**: Absolute (world), Relative (object-local), Group Centre (multi-select)
 3. **Reads from StateManager** - display is a window into persisted state, not transient
 4. **Extracted to** `rt-coordinates.js` module using shadow/switchover pattern
@@ -36,12 +36,12 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 - [x] **Group Centre gumball positioning** - Editing basis appears at centroid
 - [x] **Auto-switch on deselect** - Falls back to Absolute when selection drops below 2
 - [x] **DOM element caching** - All coordinate fields cached in module init
-- [x] **WXYZ conversion consolidated** - Single `updatePositionDisplay()` replaces 6 duplicate blocks
+- [x] **QWXYZ conversion consolidated** - Single `updatePositionDisplay()` replaces 6 duplicate blocks
 
 **🔧 IN PROGRESS / TODO:**
 1. [x] **StateManager persistence** - Transforms now saved after gumball operations (commit `4c1021f`)
 2. [x] **XYZ rotation display from StateManager** - Works correctly for Cartesian coordinates
-3. [ ] **WXYZ rotation display from StateManager** - See design question below
+3. [ ] **QWXYZ rotation display from StateManager** - See design question below
 4. [ ] **Relative mode implementation** - Currently shows same as Absolute (see below)
 5. [ ] **Add local transform fields to StateManager** - `localPosition`, `localRotation`, `localScale`
 6. [ ] **Bi-directional input handlers** - Typing in coordinate fields moves objects
@@ -140,26 +140,26 @@ Group Centre is NOT persisted - it's calculated each time from selected objects.
 
 ---
 
-## ⚠️ DESIGN QUESTION: WXYZ Rotation Display
+## ⚠️ DESIGN QUESTION: QWXYZ Rotation Display
 
 ### The Problem
 
-StateManager stores rotation as **Euler XYZ** (radians). When you rotate using a Quadray axis (W, X, Y, Z quadray), the rotation is converted to Euler and stored.
+StateManager stores rotation as **Euler XYZ** (radians). When you rotate using a Quadray axis (QW, QX, QY, QZ), the rotation is converted to Euler and stored.
 
 **Current behavior**:
 - XYZ rotation fields: Now correctly show Euler values from StateManager ✅
-- WXYZ rotation fields: Only update DURING Quadray drag (show delta), blank on selection
+- QWXYZ rotation fields: Only update DURING Quadray drag (show delta), blank on selection
 
-**The question**: What should WXYZ rotation fields show when an object is selected?
+**The question**: What should QWXYZ rotation fields show when an object is selected?
 
 ### Options
 
-| Option | WXYZ Display Shows | Pros | Cons |
+| Option | QWXYZ Display Shows | Pros | Cons |
 |--------|-------------------|------|------|
 | **A: Euler→Quadray decomposition** | Decompose Euler into 4 tetrahedral axis components | "True" Quadray representation | Complex math, may not have unique decomposition |
 | **B: Last Quadray operation** | Store which Quadray axis was used and show that | Simple, shows what user did | Loses info if mixed operations |
 | **C: Zeros on selection** | Show 0,0,0,0 until user drags | Consistent with "tool mode" behavior | Loses rotation info |
-| **D: Mirror XYZ** | Copy XYZ values to first 3 WXYZ fields | Quick fix | Mathematically incorrect |
+| **D: Mirror XYZ** | Copy XYZ values to first 3 QWXYZ fields | Quick fix | Mathematically incorrect |
 
 ### Recommendation
 
@@ -168,7 +168,7 @@ Option **B** or **C** seems most practical. True Quadray rotation representation
 2. This decomposition may not be unique or meaningful
 3. Mixed Cartesian + Quadray rotations don't cleanly separate
 
-**Suggest**: For now, WXYZ fields show zeros on selection (Option C), and only update during Quadray drag operations. This is consistent with them being a "tool mode" display rather than a state representation.
+**Suggest**: For now, QWXYZ fields show zeros on selection (Option C), and only update during Quadray drag operations. This is consistent with them being a "tool mode" display rather than a state representation.
 
 ---
 
@@ -382,7 +382,7 @@ When rotating a cube around a selected corner node:
 
 The **pivot point** (selected node) is the same in both modes. The difference is purely in **what the coordinate display means**.
 
-**Important**: The node just defines the pivot point, not the coordinate system. Gumball axes remain world-aligned (Cartesian X/Y/Z or Quadray W/X/Y/Z). Rotating around the Cartesian X axis with a corner node selected still rotates around world-X, just pivoting at that corner instead of the centroid.
+**Important**: The node just defines the pivot point, not the coordinate system. Gumball axes remain world-aligned (Cartesian X/Y/Z or Quadray QW/QX/QY/QZ). Rotating around the Cartesian X axis with a corner node selected still rotates around world-X, just pivoting at that corner instead of the centroid.
 
 ### Edge Case 3: World-Space vs Object-Space Transforms
 
@@ -479,7 +479,7 @@ Scale is stored per-object in `poly.userData.currentScale` and per-dimension if 
 | Create `rt-coordinates.js` module | ✅ Done | ~430 lines, full module |
 | Add `USE_COORDINATE_MODULE` flag | ✅ Done | Set to `true` |
 | Cache DOM elements | ✅ Done | All coord fields in `elements` object |
-| `updatePositionDisplay(pos)` | ✅ Done | XYZ + WXYZ conversion |
+| `updatePositionDisplay(pos)` | ✅ Done | XYZ + QWXYZ conversion |
 | `updateRotationDisplay(rotation)` | ✅ Done | Degrees + spread |
 | Mode toggle handlers | ✅ Done | Absolute/Relative/Group buttons |
 
@@ -526,7 +526,7 @@ Scale is stored per-object in `poly.userData.currentScale` and per-dimension if 
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Remove legacy coord code from rt-init.js | TODO | 6 duplicate WXYZ blocks |
+| Remove legacy coord code from rt-init.js | TODO | 6 duplicate QWXYZ blocks |
 | Remove `USE_COORDINATE_MODULE` flag | TODO | After full switchover verified |
 | Update all drag handlers to use module | TODO | Consistent display updates |
 
@@ -551,7 +551,7 @@ export const RTCoordinates = {
 
   // Core Functions (all implemented)
   init(dependencies),                    // Initialize with Quadray, RTStateManager, THREE, getSelectedPolyhedra
-  updatePositionDisplay(pos),            // Update XYZ + WXYZ fields
+  updatePositionDisplay(pos),            // Update XYZ + QWXYZ fields
   updateRotationDisplay(rotation),       // Update degrees + spread fields
   clearDisplay(),                        // Clear all coordinate fields
   setMode(newMode, selectedObjects),     // Change coordinate mode
@@ -744,7 +744,7 @@ Footer panel (left to right):
 |------|---------|
 | `index.html` | Toggle buttons (Absolute/Relative/Group), coordinate input fields |
 | `art.css` | Button styling, disabled state for Group Centre |
-| `modules/rt-math.js` | Quadray basis vectors for WXYZ conversion |
+| `modules/rt-math.js` | Quadray basis vectors for QWXYZ conversion |
 
 ---
 
@@ -765,6 +765,6 @@ Footer panel (left to right):
 
 ### Cleanup: Full Switchover
 10. [ ] Update all drag handlers in rt-init.js to call `RTCoordinates.updatePositionDisplay()`
-11. [ ] Remove duplicate WXYZ conversion blocks from rt-init.js
+11. [ ] Remove duplicate QWXYZ conversion blocks from rt-init.js
 12. [ ] Remove `USE_COORDINATE_MODULE` flag (keep module always active)
 13. [ ] Document final line count reduction

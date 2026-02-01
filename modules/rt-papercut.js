@@ -21,7 +21,7 @@ export const RTPapercut = {
     cutplaneEnabled: false,
     cutplaneValue: 0, // Current slider position
     cutplaneBasis: "cartesian", // 'cartesian' or 'tetrahedral'
-    cutplaneAxis: "z", // 'x', 'y', 'z' (Cartesian) or 'w', 'x', 'y', 'z' (Tetrahedral)
+    cutplaneAxis: "z", // 'x', 'y', 'z' (Cartesian) or 'qw', 'qx', 'qy', 'qz' (Tetrahedral/Quadray)
     cutplaneNormal: null, // THREE.Vector3
     invertCutPlane: false, // Invert normal (for ground plane mode)
     intervalSnapXYZEnabled: true, // XYZ: Snap to Cartesian grid intervals (step=1.0) vs fine control (step=0.1)
@@ -464,8 +464,9 @@ export const RTPapercut = {
         Quadray.init(THREE);
       }
 
-      // Map axis to Quadray basis vector
-      const axisMap = { w: 0, x: 1, y: 2, z: 3 };
+      // Map axis to Quadray basis vector with correct color mapping
+      // QW=Yellow(3), QX=Red(0), QY=Blue(2), QZ=Green(1)
+      const axisMap = { qw: 3, qx: 0, qy: 2, qz: 1 };
       const axisIndex = axisMap[RTPapercut.state.cutplaneAxis];
       const basisVector = Quadray.basisVectors[axisIndex];
 
@@ -1078,7 +1079,7 @@ export const RTPapercut = {
   /**
    * Set cutplane axis manually (called from UI axis selector buttons)
    * @param {string} basis - 'cartesian' or 'tetrahedral'
-   * @param {string} axis - 'x', 'y', 'z' (Cartesian) or 'w', 'x', 'y', 'z' (Tetrahedral)
+   * @param {string} axis - 'x', 'y', 'z' (Cartesian) or 'qw', 'qx', 'qy', 'qz' (Tetrahedral/Quadray)
    * @param {THREE.Scene} scene
    */
   setCutplaneAxis: function (basis, axis, scene) {

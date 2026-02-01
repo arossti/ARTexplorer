@@ -1264,9 +1264,9 @@ controls.addEventListener("change", () => {
 
 ---
 
-## 16. WXYZ Tetrahedral Basis Views Integration (2026-01-12)
+## 16. QWXYZ Tetrahedral Basis Views Integration (2026-01-12)
 
-### 16.1 Phase 1: WXYZ Camera Views ✅ COMPLETE
+### 16.1 Phase 1: QWXYZ Camera Views ✅ COMPLETE
 
 **Implementation Date**: 2026-01-12
 **Branch**: `WXYZ-Basis-Views`
@@ -1274,7 +1274,7 @@ controls.addEventListener("change", () => {
 
 **What Was Implemented**:
 
-1. **Four WXYZ View Buttons** - W View, X View, Y View, Z View added to View Options UI
+1. **Four QWXYZ View Buttons** - QW View, QX View, QY View, QZ View added to View Options UI
 2. **Camera Positioning Logic** - Camera placed at distance=10 along Quadray tetrahedral basis vectors
 3. **Orthographic Support** - Existing orthographic/perspective toggle works for all views
 4. **Event System Integration** - WXYZ views fully wired into existing view preset infrastructure
@@ -1319,7 +1319,7 @@ camera.lookAt(0, 0, 0);
 **The cutplane slider range dynamically matches the grid intervals:**
 
 - **XYZ Views** → Range follows "Grid Intervals" slider in Coordinate Systems (default ±10, scales to ±20, etc.)
-- **WXYZ Views** → Range follows "WXYZ Grid Intervals" slider (default ±10, same scaling behavior)
+- **QWXYZ Views** → Range follows "QWXYZ Grid Intervals" slider (default ±10, same scaling behavior)
 
 #### 16.2.2 UI Specification: Cutplane Axis Selector
 
@@ -1415,11 +1415,11 @@ const viewToCutplaneAxis = {
   left: { basis: "cartesian", axis: "x" },
   right: { basis: "cartesian", axis: "x" },
 
-  // Tetrahedral views → Quadray axes
-  w: { basis: "tetrahedral", axis: "w" },
-  x: { basis: "tetrahedral", axis: "qx" }, // 'qx' to distinguish from Cartesian 'x'
-  y: { basis: "tetrahedral", axis: "qy" },
-  z: { basis: "tetrahedral", axis: "qz" },
+  // Tetrahedral views → Quadray axes (QW, QX, QY, QZ)
+  quadqw: { basis: "tetrahedral", axis: "qw" },
+  quadqx: { basis: "tetrahedral", axis: "qx" },
+  quadqy: { basis: "tetrahedral", axis: "qy" },
+  quadqz: { basis: "tetrahedral", axis: "qz" },
 
   // Special views default to Cartesian Z
   axo: { basis: "cartesian", axis: "z" },
@@ -1527,7 +1527,9 @@ RTPapercut.updateCutplane = function (value, scene) {
       Quadray.init(THREE);
     }
 
-    const axisMap = { w: 0, qx: 1, qy: 2, qz: 3 };
+    // Map axis to Quadray basis vector with correct color mapping
+    // QW=Yellow(3), QX=Red(0), QY=Blue(2), QZ=Green(1)
+    const axisMap = { qw: 3, qx: 0, qy: 2, qz: 1 };
     const axisIndex = axisMap[RTPapercut.state.cutplaneAxis];
     normal.copy(Quadray.basisVectors[axisIndex]).multiplyScalar(invert);
   }
@@ -1574,7 +1576,7 @@ export const RTPapercut = {
 
     // NEW: Basis-aware cutplane properties
     cutplaneBasis: "cartesian", // 'cartesian' or 'tetrahedral'
-    cutplaneAxis: "z", // 'x'|'y'|'z' (cartesian) or 'w'|'qx'|'qy'|'qz' (tetrahedral)
+    cutplaneAxis: "z", // 'x'|'y'|'z' (cartesian) or 'qw'|'qx'|'qy'|'qz' (tetrahedral/Quadray)
     cutplaneNormal: null, // THREE.Vector3
 
     invertCutPlane: false,
@@ -1873,10 +1875,10 @@ The snap interval system integrates seamlessly with both XYZ and WXYZ camera vie
 
 **WXYZ Camera Views** (Tetrahedral basis):
 
-- W View - Look along W basis vector (0.577, 0.577, 0.577)
-- X View - Look along X basis vector (0.577, -0.577, -0.577)
-- Y View - Look along Y basis vector (-0.577, 0.577, -0.577)
-- Z View - Look along Z basis vector (-0.577, -0.577, 0.577)
+- QW View - Look along QW basis vector (0.577, 0.577, 0.577)
+- QX View - Look along QX basis vector (0.577, -0.577, -0.577)
+- QY View - Look along QY basis vector (-0.577, 0.577, -0.577)
+- QZ View - Look along QZ basis vector (-0.577, -0.577, 0.577)
 - When active: WXYZ Interval Snap locks cutplane to IVM grid positions (step = √6/4 ≈ 0.612372)
 
 The cutplane automatically switches coordinate basis when changing between XYZ and WXYZ views, maintaining snap alignment with the visible grid system.
@@ -1902,7 +1904,7 @@ The cutplane automatically switches coordinate basis when changing between XYZ a
 **Test Case 2**: WXYZ Interval Snap
 
 - Enable WXYZ Interval Snap
-- Select W View (tetrahedral W axis)
+- Select QW View (tetrahedral QW axis)
 - Drag cutplane slider: should lock at IVM grid intervals (0, ±0.612, ±1.225, ±1.837...)
 - Grid intersections align perfectly with snap positions ✅
 
@@ -1916,7 +1918,7 @@ The cutplane automatically switches coordinate basis when changing between XYZ a
 **Test Case 4**: Independent Operation
 
 - Enable both XYZ and WXYZ snap modes
-- Switch between Top View (XYZ) and W View (WXYZ)
+- Switch between Top View (XYZ) and QW View (QWXYZ)
 - Each maintains its own snap behavior ✅
 
 ##### Implementation Status
@@ -1938,11 +1940,11 @@ The cutplane automatically switches coordinate basis when changing between XYZ a
 
 ---
 
-### 16.3 Expected Workflow: WXYZ Views + Cutplane
+### 16.3 Expected Workflow: QWXYZ Views + Cutplane
 
 **Example User Session**:
 
-1. User clicks **"W View"** button
+1. User clicks **"QW View"** button
    - Camera moves to position along W-axis basis vector (0.577, 0.577, 0.577) at distance=10
    - Cutplane axis auto-selects **Tetrahedral: W**
    - Cutplane slider range updates to match WXYZ Grid Intervals (default ±10)
