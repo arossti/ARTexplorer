@@ -380,15 +380,9 @@ export const Helices = {
       currentVerts = [fv0, fv1, fv2, newApex];
       currentIndices = newTetIndices;
 
-      // Steering control at 3rd tet (seed=1st, face-bonded=2nd, steering=3rd)
-      // After that, resume linear pattern (always face 0)
-      if (i === 2) {
-        // This is the 3rd tet - use configured exit face for steering
-        exitFaceLocalIdx = exitFaces.A ?? 0;
-      } else {
-        // All other tets - use linear pattern (face 0)
-        exitFaceLocalIdx = 0;
-      }
+      // Use the configured exit face for the primary strand (A)
+      // Face 3 is entry (shared), so we pick from faces 0, 1, 2
+      exitFaceLocalIdx = exitFaces.A ?? 0;
     }
 
     // ========================================================================
@@ -517,15 +511,8 @@ export const Helices = {
             secCurrentVerts = [secFv0, secFv1, secFv2, secNewApex];
             secCurrentIndices = secNewTetIndices;
 
-            // Steering control at 3rd tet (seed=1st, face-bonded=2nd, steering=3rd)
-            // After that, resume linear pattern (always face 0)
-            if (i === 2) {
-              // This is the 3rd tet of secondary strand - use configured exit face
-              secExitFaceLocalIdx = exitFaces[strandLabel] ?? 0;
-            } else {
-              // All other tets - resume linear pattern
-              secExitFaceLocalIdx = 0;
-            }
+            // Use the configured exit face for this strand consistently
+            secExitFaceLocalIdx = exitFaces[strandLabel] ?? 0;
           }
         }
       }
