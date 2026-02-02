@@ -255,7 +255,7 @@ export const Helices = {
   },
 
   /**
-   * Tetrahelix 2: Linear variant
+   * Tetrahelix 2: Linear variant with multi-strand support
    *
    * Extends tetrahedra in a zigzag pattern that travels in a roughly
    * straight line rather than curving back into a torus.
@@ -263,15 +263,24 @@ export const Helices = {
    * Strategy: Always exit through face 0 (relative to new tet's local ordering).
    * This creates an alternating pattern that extends linearly.
    *
+   * Multi-strand: Each tetrahedron in the primary chain has exposed faces
+   * that can bond with parallel secondary strands. With strands=2, one
+   * secondary strand is bonded. With strands=3 or 4, additional strands
+   * are bonded to the remaining exposed faces ("3 around 1" configuration).
+   *
    * @param {number} halfSize - Half-size of base tetrahedron
    * @param {Object} options
-   * @param {number} options.count - Number of tetrahedra (default: 10, max: 144)
+   * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 96)
    * @param {string} options.startFace - Initial face: 'A', 'B', 'C', or 'D' (default: 'A')
+   * @param {number} options.strands - Number of parallel strands: 1-4 (default: 1)
+   * @param {string} options.bondMode - 'zipped' (radial spines) or 'unzipped' (parallel chains)
    * @returns {Object} { vertices, edges, faces, metadata }
    */
   tetrahelix2: (halfSize = 1, options = {}) => {
-    const count = Math.min(Math.max(options.count || 10, 1), 144);
+    const count = Math.min(Math.max(options.count || 10, 1), 96);
     const startFace = options.startFace || "A";
+    const strands = Math.min(Math.max(options.strands || 1, 1), 4);
+    const bondMode = options.bondMode || "zipped";
 
     // Generate seed tetrahedron
     const s = halfSize;
@@ -373,6 +382,136 @@ export const Helices = {
       exitFaceLocalIdx = 0;
     }
 
+    // ========================================================================
+    // MULTI-STRAND GENERATION
+    // ========================================================================
+    // Two bonding modes:
+    // - ZIPPED: Single tetrahedra radiate outward from each primary tet (spinal)
+    // - UNZIPPED: Secondary strands follow their own parallel chains (DNA-like)
+    // ========================================================================
+
+    if (strands >= 2) {
+      const primaryStrandLength = tetrahedra.length;
+
+      if (bondMode === "zipped") {
+        // ====================================================================
+        // ZIPPED MODE: Radial spines
+        // Each secondary strand is a single tetrahedron bonded to each primary
+        // ====================================================================
+        for (let tetIdx = 0; tetIdx < primaryStrandLength; tetIdx++) {
+          const tet = tetrahedra[tetIdx];
+          const tetVerts = tet.map(idx => allVertices[idx]);
+          const tetraCentroid = getTetraCentroid(tetVerts);
+
+          const bondingFaces = [];
+          if (strands >= 2) bondingFaces.push(1);
+          if (strands >= 3) bondingFaces.push(2);
+          if (strands >= 4 && tetIdx === 0) bondingFaces.push(3);
+
+          for (const faceIdx of bondingFaces) {
+            const faceVertIndices = [0, 1, 2, 3].filter(j => j !== faceIdx);
+            const fv0 = tetVerts[faceVertIndices[0]];
+            const fv1 = tetVerts[faceVertIndices[1]];
+            const fv2 = tetVerts[faceVertIndices[2]];
+
+            const faceCentroid = calculateCentroid(fv0, fv1, fv2);
+            const faceNormal = calculateFaceNormal(fv0, fv1, fv2, tetraCentroid);
+
+            const newApex = faceCentroid
+              .clone()
+              .add(faceNormal.multiplyScalar(apexDistance));
+            const newApexIndex = allVertices.length;
+            allVertices.push(newApex);
+
+            const sharedGlobalIndices = faceVertIndices.map(li => tet[li]);
+            const newTetIndices = [...sharedGlobalIndices, newApexIndex];
+            tetrahedra.push(newTetIndices);
+          }
+        }
+      } else {
+        // ====================================================================
+        // UNZIPPED MODE: Independent Strands from Seed Faces
+        // Each secondary strand starts from a different face of the seed
+        // tetrahedron and grows using the SAME algorithm as primary strand.
+        //
+        // The four faces of the seed point in tetrahedral directions
+        // (~109.47° apart), so strands naturally radiate outward.
+        // ====================================================================
+
+        const seedTet = tetrahedra[0];
+        const seedVerts = seedTet.map(idx => allVertices[idx]);
+        const seedTetraCentroid = getTetraCentroid(seedVerts);
+
+        // Determine which seed faces to start secondary strands from
+        // Face 0 is used by primary strand, so secondary strands use faces 1, 2, 3
+        const startingFaces = [];
+        if (strands >= 2) startingFaces.push(1);
+        if (strands >= 3) startingFaces.push(2);
+        if (strands >= 4) startingFaces.push(3);
+
+        for (const seedFaceIdx of startingFaces) {
+          // Get the face vertices (face N is opposite vertex N)
+          const seedFaceVertIndices = [0, 1, 2, 3].filter(j => j !== seedFaceIdx);
+
+          const sfv0 = seedVerts[seedFaceVertIndices[0]];
+          const sfv1 = seedVerts[seedFaceVertIndices[1]];
+          const sfv2 = seedVerts[seedFaceVertIndices[2]];
+
+          const seedFaceCentroid = calculateCentroid(sfv0, sfv1, sfv2);
+          const seedFaceNormal = calculateFaceNormal(sfv0, sfv1, sfv2, seedTetraCentroid);
+
+          // First tetrahedron of secondary strand
+          let secApex = seedFaceCentroid
+            .clone()
+            .add(seedFaceNormal.multiplyScalar(apexDistance));
+          let secApexIndex = allVertices.length;
+          allVertices.push(secApex);
+
+          const secSharedGlobalIndices = seedFaceVertIndices.map(li => seedTet[li]);
+          let secTetIndices = [...secSharedGlobalIndices, secApexIndex];
+          tetrahedra.push(secTetIndices);
+
+          // Current state for this secondary strand
+          let secCurrentVerts = [sfv0, sfv1, sfv2, secApex];
+          let secCurrentIndices = secTetIndices;
+          // Use the SAME exit pattern as primary: always exit face 0
+          let secExitFaceLocalIdx = 0;
+
+          // Continue the secondary chain for (count - 1) more tetrahedra
+          // Using identical algorithm to primary strand
+          for (let i = 1; i < count; i++) {
+            const secFaceLocalIndices = [0, 1, 2, 3].filter(j => j !== secExitFaceLocalIdx);
+
+            const secFv0 = secCurrentVerts[secFaceLocalIndices[0]];
+            const secFv1 = secCurrentVerts[secFaceLocalIndices[1]];
+            const secFv2 = secCurrentVerts[secFaceLocalIndices[2]];
+
+            const secTetraCentroid = getTetraCentroid(secCurrentVerts);
+            const secFaceCentroid = calculateCentroid(secFv0, secFv1, secFv2);
+            const secFaceNormal = calculateFaceNormal(secFv0, secFv1, secFv2, secTetraCentroid);
+
+            const secNewApex = secFaceCentroid
+              .clone()
+              .add(secFaceNormal.multiplyScalar(apexDistance));
+            const secNewApexIndex = allVertices.length;
+            allVertices.push(secNewApex);
+
+            const secNewSharedGlobalIndices = secFaceLocalIndices.map(
+              li => secCurrentIndices[li]
+            );
+            const secNewTetIndices = [...secNewSharedGlobalIndices, secNewApexIndex];
+            tetrahedra.push(secNewTetIndices);
+
+            secCurrentVerts = [secFv0, secFv1, secFv2, secNewApex];
+            secCurrentIndices = secNewTetIndices;
+
+            // Same linear pattern as primary: always exit face 0
+            secExitFaceLocalIdx = 0;
+          }
+        }
+      }
+    }
+
     // Build edges
     const edgeSet = new Set();
     const addEdge = (a, b) => {
@@ -433,7 +572,7 @@ export const Helices = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron();
 
-    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, halfSize=${halfSize}`);
+    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, strands=${strands}, bondMode=${bondMode}, halfSize=${halfSize}`);
     console.log(
       `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
     );
@@ -441,7 +580,8 @@ export const Helices = {
       `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
     );
     console.log(`  Pattern: Always exit face 0 (linear zigzag)`);
-    console.log(`  Start face: ${startFace}`);
+    console.log(`  Start face: ${startFace}, Strands: ${strands}, Mode: ${bondMode}`);
+    console.log(`  Total tetrahedra: ${tetrahedra.length}`);
 
     return {
       vertices: allVertices,
@@ -452,6 +592,8 @@ export const Helices = {
         variant: "tetrahelix2",
         count,
         startFace,
+        strands,
+        bondMode,
         tetrahedra: tetrahedra.length,
         expectedQ,
       },
