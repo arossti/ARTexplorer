@@ -281,6 +281,9 @@ export const RTFileHandler = {
         document.querySelector('input[name="tetrahelix2Strands"]:checked')
           ?.value || "1"
       ),
+      tetrahelix2BondMode:
+        document.querySelector('input[name="tetrahelix2BondMode"]:checked')
+          ?.value || "zipped",
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -659,6 +662,12 @@ export const RTFileHandler = {
         if (sliders.tetrahelix2Strands !== undefined) {
           const radio = document.querySelector(
             `input[name="tetrahelix2Strands"][value="${sliders.tetrahelix2Strands}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix2BondMode !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2BondMode"][value="${sliders.tetrahelix2BondMode}"]`
           );
           if (radio) radio.checked = true;
         }
