@@ -901,5 +901,143 @@ When adding any primitive:
 
 ---
 
-_Last updated: January 2026_
+## Declarative UI Bindings (Simplified Approach)
+
+As of January 2026, ARTexplorer uses a declarative binding system that significantly reduces boilerplate when adding new forms. Instead of writing individual event handlers in `rt-init.js`, you can declare bindings in `modules/rt-ui-binding-defs.js`.
+
+### Quick Comparison
+
+**Old approach** (manual event handlers in rt-init.js):
+```javascript
+const myCheckbox = document.getElementById("showMyForm");
+if (myCheckbox) {
+  myCheckbox.addEventListener("change", () => {
+    const controlsDiv = document.getElementById("myForm-controls");
+    if (controlsDiv) {
+      controlsDiv.style.display = myCheckbox.checked ? "flex" : "none";
+    }
+    updateGeometry();
+  });
+}
+
+const mySlider = document.getElementById("myFormSlider");
+if (mySlider) {
+  mySlider.addEventListener("input", () => {
+    document.getElementById("myFormDisplay").textContent = mySlider.value;
+    updateGeometry();
+  });
+}
+```
+
+**New approach** (declarative in rt-ui-binding-defs.js):
+```javascript
+// In checkboxWithControlsBindings array:
+{ id: "showMyForm", type: "checkbox-controls", controlsId: "myForm-controls" },
+
+// In sliderBindings array:
+{ id: "myFormSlider", type: "slider", valueId: "myFormDisplay" },
+
+// In geodesicProjectionBindings array (for radio groups):
+{ type: "radio-group", name: "myFormStartFace" },
+```
+
+### Binding Types
+
+| Type | Purpose | Parameters |
+|------|---------|------------|
+| `checkbox` | Toggle visibility, triggers updateGeometry | `id` |
+| `checkbox-controls` | Toggle + show/hide sub-controls panel | `id`, `controlsId` |
+| `slider` | Update display value, triggers updateGeometry | `id`, `valueId` (optional) |
+| `slider-linked` | Bidirectional conversion (e.g., Q ↔ L) | `primaryId`, `secondaryId`, conversion functions |
+| `radio-group` | Radio button group | `name` attribute |
+
+### Adding a New Form with Declarative Bindings
+
+**Step 1: HTML** (`index.html`)
+```html
+<div class="control-item">
+  <label class="checkbox-label">
+    <input type="checkbox" id="showMyForm" />
+    My Form
+  </label>
+  <div id="myForm-controls" class="geodesic-options" style="display: none">
+    <div class="matrix-control-item">
+      <label class="matrix-size-label">Count</label>
+      <div class="slider-container">
+        <input type="range" id="myFormCountSlider" min="1" max="100" value="10" />
+        <span class="slider-value" id="myFormCountDisplay">10</span>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+**Step 2: Bindings** (`modules/rt-ui-binding-defs.js`)
+```javascript
+// In checkboxWithControlsBindings:
+{ id: "showMyForm", type: "checkbox-controls", controlsId: "myForm-controls" },
+
+// In sliderBindings:
+{ id: "myFormCountSlider", type: "slider", valueId: "myFormCountDisplay" },
+```
+
+**Step 3: State Persistence** (`modules/rt-filehandler.js`)
+```javascript
+// In save state collection:
+showMyForm: document.getElementById("showMyForm")?.checked || false,
+myFormCount: parseInt(document.getElementById("myFormCountSlider")?.value || "10"),
+
+// In restore logic:
+if (sliders.myFormCount !== undefined) {
+  const slider = document.getElementById("myFormCountSlider");
+  const display = document.getElementById("myFormCountDisplay");
+  if (slider) slider.value = sliders.myFormCount;
+  if (display) display.textContent = sliders.myFormCount;
+}
+
+// Controls visibility:
+const myFormControls = document.getElementById("myForm-controls");
+if (myFormControls && checkboxes.showMyForm) {
+  myFormControls.style.display = "block";
+}
+```
+
+That's it! The binding system handles:
+- Event listeners (input, change)
+- Display value updates
+- Triggering updateGeometry()
+- Show/hide of control panels
+
+### Linked Sliders (Bidirectional Conversion)
+
+For RT-pure forms with Q ↔ L conversion:
+
+```javascript
+// In linkedSliderBindings:
+{
+  type: "slider-linked",
+  primaryId: "myFormQuadrance",
+  secondaryId: "myFormLength",
+  primaryToSecondary: Q => Math.sqrt(Q),  // Q → L = √Q
+  secondaryToPrimary: L => L * L,          // L → Q = L²
+},
+```
+
+### Files to Update (Simplified Checklist)
+
+| Step | File | What to Add |
+|------|------|-------------|
+| 1 | `modules/rt-polyhedra.js` (or `rt-helices.js`) | Geometry generator |
+| 2 | `modules/rt-rendering.js` | Color, group, rendering block, stats |
+| 3 | `index.html` | UI checkbox and controls |
+| 4 | `modules/rt-ui-binding-defs.js` | Declarative bindings |
+| 5 | `modules/rt-init.js` | Group variable, formGroups arrays (2 places), destructure |
+| 6 | `modules/rt-filehandler.js` | State save/restore |
+| 7 | `modules/rt-nodes.js` | Edge quadrance case (if applicable) |
+
+**Note:** Manual event handlers in `rt-init.js` are no longer needed for standard checkbox/slider/radio behavior.
+
+---
+
+_Last updated: February 2026_
 _Contributors: Andy & Claude_

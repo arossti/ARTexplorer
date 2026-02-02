@@ -290,15 +290,15 @@ We implement tetrahelices as numbered variants, each exploring different geometr
 - Stats at N=48: 51 vertices, 147 edges, 192 faces
 - Effective rotation per face cycle ≈ 360°/16 = 22.5°
 
-### Tetrahelix 2: Linear (Stub)
+### Tetrahelix 2: Linear
 
 **Goal:** Explore linear extension without toroidal closure
 
-- **Chirality:** TBD (experiment with both)
 - **Max Count:** 144 (extended range for linear exploration)
-- **Behavior:** Extends along helix axis rather than curving back
+- **Face cycling:** Always exits through face 0 (creates zigzag pattern)
+- **Behavior:** Extends in a roughly linear zigzag rather than curving back
 
-*Implementation pending - stub created for experimentation.*
+**Implementation (Feb 1, 2026):** By always exiting through face 0 (relative to the new tetrahedron's local ordering), the chain extends in a zigzag pattern rather than spiraling back into a torus. This creates an approximately linear structure.
 
 ### Future Variants
 

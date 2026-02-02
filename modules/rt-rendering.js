@@ -2106,14 +2106,27 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Start face: ${tetrahelix1StartFace}</div>`;
     }
 
-    // Tetrahelix 2 stats (linear stub)
+    // Tetrahelix 2 stats (linear)
     if (document.getElementById("showTetrahelix2")?.checked) {
       const tetrahelix2Count = parseInt(
         document.getElementById("tetrahelix2CountSlider")?.value || "10"
       );
-      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (STUB):</strong></div>`;
-      html += `<div>Count: ${tetrahelix2Count} (not implemented)</div>`;
-      html += `<div>Returns single tetrahedron</div>`;
+      const startFace2Radio = document.querySelector(
+        'input[name="tetrahelix2StartFace"]:checked'
+      );
+      const tetrahelix2StartFace = startFace2Radio ? startFace2Radio.value : "A";
+      const tetrahelix2Data = Helices.tetrahelix2(1, {
+        count: tetrahelix2Count,
+        startFace: tetrahelix2StartFace,
+      });
+      const V2 = tetrahelix2Data.vertices.length;
+      const E2 = tetrahelix2Data.edges.length;
+      const F2 = tetrahelix2Data.faces.length;
+      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (${tetrahelix2Count} tet):</strong></div>`;
+      html += `<div>V: ${V2}, E: ${E2}, F: ${F2}</div>`;
+      html += `<div>Euler: N/A (open chain)</div>`;
+      html += `<div>Pattern: Linear zigzag</div>`;
+      html += `<div>Start face: ${tetrahelix2StartFace}</div>`;
     }
 
     if (document.getElementById("showCube").checked) {
@@ -2958,7 +2971,7 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       case "tetrahelix2": {
-        // Tetrahelix 2: Linear (stub)
+        // Tetrahelix 2: Linear
         const tetrahelix2Count = options.count ?? 10;
         const tetrahelix2StartFace = options.startFace ?? "A";
         geometry = Helices.tetrahelix2(scale, {
@@ -2969,7 +2982,8 @@ export function initScene(THREE, OrbitControls, RT) {
         group.userData.parameters = {
           count: tetrahelix2Count,
           startFace: tetrahelix2StartFace,
-          stub: true,
+          tetrahedra: geometry.metadata.tetrahedra,
+          expectedQ: geometry.metadata.expectedQ,
         };
         renderPolyhedron(group, geometry, color, opacity);
         break;
