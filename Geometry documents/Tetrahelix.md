@@ -369,7 +369,7 @@ This is geometrically equivalent to building 4 independent tetrahelices that sha
 2. Use a different face-exit pattern for each strand based on its target direction
 3. Accept that tetrahelix geometry inherently spirals rather than extends linearly
 
-#### Chirality Experiment (Planned)
+#### Chirality Experiment (Feb 2, 2026)
 
 **Key Insight:** All strands currently use the same "always exit face 0" pattern, giving them identical twist/chirality. This causes them to spiral in the same direction regardless of starting face.
 
@@ -385,14 +385,37 @@ Face-exit patterns:
 
 **Hypothesis:** By giving each strand from a different seed face a *different* chirality/twist pattern, their spirals might counteract their initial angular offset, causing them to extend more linearly along their respective quadray basis directions.
 
-**Implementation idea:**
-- Map seed face index to a chirality pattern
-- Face 0 (primary) → Pattern A
-- Face 1 (strand 2) → Pattern B or C (opposite twist)
-- Face 2 (strand 3) → Pattern C or B
-- Face 3 (strand 4) → Pattern D (experimental)
+**Implementation Attempt (Feb 2, 2026):**
 
-This would be a good experiment to try with the existing unzipped mode infrastructure.
+Attempted implementation with per-strand "Twist" (linear/toroidal) and "Exit" (face 0/1/2) controls in a grid UI:
+
+```
+Face:    A  B  C  D     (which face starts primary strand)
+Strands: 1  2  3  4     (how many strands)
+Twist:   ↻↺ ↻↺ ↻↺ ↻↺   (per-strand linear/toroidal toggle)
+Exit:    012 012 012 012 (per-strand exit face selector)
+```
+
+**Findings:**
+1. When implementing per-strand chirality controls, a regression occurred where *all* helices became toroidal regardless of settings
+2. The issue was traced to having multiple radio buttons in a single `<label>` element causing incorrect default selection
+3. Even after fixing the HTML structure, the logic to switch between linear and toroidal modes didn't work as expected
+4. A bug was also found and fixed: secondary strands should exclude the primary's start face, not always exclude face 0
+
+**What we learned:**
+- The original "always exit face 0" linear pattern works because it's hardcoded, not computed
+- Parameterizing the exit face selection introduces complexity that's easy to get wrong
+- The relationship between face indices and actual geometric direction is non-obvious
+- Need to better understand: what exactly determines linear vs toroidal behavior?
+
+*Commit: 7d65056 - reverted, preserved for research reference*
+
+**Open Questions:**
+1. Is the "linear" behavior actually a special case of low-period toroidal?
+2. Would a completely different approach work better? (e.g., direction biasing rather than face selection)
+3. Should we focus on understanding the single-strand behavior deeply before attempting multi-strand control?
+
+**Recommendation:** Step back and study the mathematical relationship between face-exit patterns and the resulting geometric trajectory before adding more UI controls.
 
 #### Biological Analogies
 
