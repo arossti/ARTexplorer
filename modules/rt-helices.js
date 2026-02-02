@@ -430,20 +430,41 @@ export const Helices = {
         }
       } else {
         // ====================================================================
-        // UNZIPPED MODE: Parallel chains (DNA-like)
-        // Each secondary strand follows its own face-to-face chain
+        // UNZIPPED MODE: Quadray-Aligned Chains
+        // Each secondary strand grows along a quadray basis direction
         // ====================================================================
-        const seedTet = tetrahedra[0];
-        const seedVerts = seedTet.map(idx => allVertices[idx]);
+        // The seed tetrahedron vertices correspond to quadray basis vectors:
+        // V0 (-s,-s,-s) → QW direction
+        // V1 (s,s,-s)   → QX direction
+        // V2 (s,-s,s)   → QY direction
+        // V3 (-s,s,s)   → QZ direction
+        //
+        // Starting from face opposite vertex N means growing toward vertex N
+        // This creates strands radiating along the four tetrahedral axes
+        // ====================================================================
 
-        // Determine which faces to start secondary strands from
+        // Quadray basis directions (normalized)
+        const quadrayDirs = [
+          new THREE.Vector3(-1, -1, -1).normalize(), // QW toward V0
+          new THREE.Vector3(1, 1, -1).normalize(), // QX toward V1
+          new THREE.Vector3(1, -1, 1).normalize(), // QY toward V2
+          new THREE.Vector3(-1, 1, 1).normalize(), // QZ toward V3
+        ];
+
+        // Determine which faces/directions to use for secondary strands
+        // Face N is opposite vertex N, so strand from face N grows toward vertex N
         const startingFaces = [];
-        if (strands >= 2) startingFaces.push(1);
-        if (strands >= 3) startingFaces.push(2);
-        if (strands >= 4) startingFaces.push(3);
+        if (strands >= 2) startingFaces.push(1); // QX direction
+        if (strands >= 3) startingFaces.push(2); // QY direction
+        if (strands >= 4) startingFaces.push(3); // QZ direction
 
         for (const seedFaceIdx of startingFaces) {
+          // The target direction for this strand
+          const targetDir = quadrayDirs[seedFaceIdx];
+
           // Build this secondary strand as its own chain
+          const seedTet = tetrahedra[0];
+          const seedVerts = seedTet.map(idx => allVertices[idx]);
           const seedFaceVertIndices = [0, 1, 2, 3].filter(j => j !== seedFaceIdx);
           const seedTetraCentroid = getTetraCentroid(seedVerts);
 
@@ -468,18 +489,39 @@ export const Helices = {
           // Current state for this secondary strand
           let secCurrentVerts = [sfv0, sfv1, sfv2, secApex];
           let secCurrentIndices = secTetIndices;
-          // Start by exiting through face 0 (same linear pattern as primary)
-          let secExitFaceLocalIdx = 0;
 
           // Continue the secondary chain for (count - 1) more tetrahedra
           for (let i = 1; i < count; i++) {
-            const secFaceLocalIndices = [0, 1, 2, 3].filter(j => j !== secExitFaceLocalIdx);
+            const secTetraCentroid = getTetraCentroid(secCurrentVerts);
+
+            // Find the exit face whose normal best aligns with target direction
+            // (excluding the entry face which is face 3 - the apex)
+            let bestFaceIdx = 0;
+            let bestDot = -Infinity;
+
+            for (let faceIdx = 0; faceIdx < 3; faceIdx++) {
+              // Face faceIdx is opposite vertex faceIdx
+              const faceVertIndices = [0, 1, 2, 3].filter(j => j !== faceIdx);
+              const fv0 = secCurrentVerts[faceVertIndices[0]];
+              const fv1 = secCurrentVerts[faceVertIndices[1]];
+              const fv2 = secCurrentVerts[faceVertIndices[2]];
+
+              const faceNormal = calculateFaceNormal(fv0, fv1, fv2, secTetraCentroid);
+              const dot = faceNormal.dot(targetDir);
+
+              if (dot > bestDot) {
+                bestDot = dot;
+                bestFaceIdx = faceIdx;
+              }
+            }
+
+            // Exit through the best-aligned face
+            const secFaceLocalIndices = [0, 1, 2, 3].filter(j => j !== bestFaceIdx);
 
             const secFv0 = secCurrentVerts[secFaceLocalIndices[0]];
             const secFv1 = secCurrentVerts[secFaceLocalIndices[1]];
             const secFv2 = secCurrentVerts[secFaceLocalIndices[2]];
 
-            const secTetraCentroid = getTetraCentroid(secCurrentVerts);
             const secFaceCentroid = calculateCentroid(secFv0, secFv1, secFv2);
             const secFaceNormal = calculateFaceNormal(secFv0, secFv1, secFv2, secTetraCentroid);
 
@@ -497,9 +539,6 @@ export const Helices = {
 
             secCurrentVerts = [secFv0, secFv1, secFv2, secNewApex];
             secCurrentIndices = secNewTetIndices;
-
-            // Same linear pattern: always exit face 0
-            secExitFaceLocalIdx = 0;
           }
         }
       }
