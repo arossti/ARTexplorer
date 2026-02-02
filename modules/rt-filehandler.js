@@ -270,13 +270,17 @@ export const RTFileHandler = {
       tetrahelix1StartFace:
         document.querySelector('input[name="tetrahelix1StartFace"]:checked')
           ?.value || "A",
-      // Tetrahelix 2 parameters (linear stub)
+      // Tetrahelix 2 parameters (linear with multi-strand)
       tetrahelix2Count: parseInt(
         document.getElementById("tetrahelix2CountSlider")?.value || "10"
       ),
       tetrahelix2StartFace:
         document.querySelector('input[name="tetrahelix2StartFace"]:checked')
           ?.value || "A",
+      tetrahelix2Strands: parseInt(
+        document.querySelector('input[name="tetrahelix2Strands"]:checked')
+          ?.value || "1"
+      ),
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -649,6 +653,12 @@ export const RTFileHandler = {
         if (sliders.tetrahelix2StartFace !== undefined) {
           const radio = document.querySelector(
             `input[name="tetrahelix2StartFace"][value="${sliders.tetrahelix2StartFace}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix2Strands !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2Strands"][value="${sliders.tetrahelix2Strands}"]`
           );
           if (radio) radio.checked = true;
         }

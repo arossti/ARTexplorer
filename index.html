@@ -2082,7 +2082,7 @@
                 class="geodesic-options"
                 style="display: none"
               >
-                <!-- Count slider (1-144 for linear exploration) -->
+                <!-- Count slider (1-96 for linear exploration) -->
                 <div class="matrix-control-item">
                   <label class="matrix-size-label">Count</label>
                   <div class="slider-container">
@@ -2090,7 +2090,7 @@
                       type="range"
                       id="tetrahelix2CountSlider"
                       min="1"
-                      max="144"
+                      max="96"
                       step="1"
                       value="10"
                     />
@@ -2099,33 +2099,41 @@
                     >
                   </div>
                 </div>
-                <!-- Start face selection -->
-                <div class="matrix-control-item">
-                  <label class="matrix-size-label">Start Face</label>
-                  <label class="geodesic-projection-option">
-                    <input
-                      type="radio"
-                      name="tetrahelix2StartFace"
-                      value="A"
-                      checked
-                    />
-                    A
-                  </label>
-                  <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelix2StartFace" value="B" />
-                    B
-                  </label>
-                  <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelix2StartFace" value="C" />
-                    C
-                  </label>
-                  <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelix2StartFace" value="D" />
-                    D
-                  </label>
+                <!-- Start face and strand count on same row -->
+                <div class="matrix-control-item" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <label class="matrix-size-label" style="margin-right: 4px;">Face</label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2StartFace" value="A" checked /> A
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2StartFace" value="B" /> B
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2StartFace" value="C" /> C
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2StartFace" value="D" /> D
+                    </label>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <label class="matrix-size-label" style="margin-right: 4px;">Strands</label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2Strands" value="1" checked /> 1
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2Strands" value="2" /> 2
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2Strands" value="3" /> 3
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2Strands" value="4" /> 4
+                    </label>
+                  </div>
                 </div>
                 <p class="matrix-info-text">
-                  Linear zigzag extension (always exits face 0)
+                  Linear zigzag with parallel bonded strands
                 </p>
               </div>
             </div>
