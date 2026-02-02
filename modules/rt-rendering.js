@@ -1011,7 +1011,7 @@ export function initScene(THREE, OrbitControls, RT) {
       tetrahelix1Group.visible = false;
     }
 
-    // Tetrahelix 2: Linear (stub)
+    // Tetrahelix 2: Linear with multi-strand option
     if (document.getElementById("showTetrahelix2")?.checked) {
       const tetrahelix2Count = parseInt(
         document.getElementById("tetrahelix2CountSlider")?.value || "10"
@@ -1020,22 +1020,33 @@ export function initScene(THREE, OrbitControls, RT) {
         'input[name="tetrahelix2StartFace"]:checked'
       );
       const tetrahelix2StartFace = startFace2Radio ? startFace2Radio.value : "A";
+      const strandsRadio = document.querySelector(
+        'input[name="tetrahelix2Strands"]:checked'
+      );
+      const tetrahelix2Strands = strandsRadio ? parseInt(strandsRadio.value) : 1;
+      const bondModeRadio = document.querySelector(
+        'input[name="tetrahelix2BondMode"]:checked'
+      );
+      const tetrahelix2BondMode = bondModeRadio ? bondModeRadio.value : "zipped";
 
       const tetrahelix2Data = Helices.tetrahelix2(scale, {
         count: tetrahelix2Count,
         startFace: tetrahelix2StartFace,
+        strands: tetrahelix2Strands,
+        bondMode: tetrahelix2BondMode,
       });
       renderPolyhedron(
         tetrahelix2Group,
         tetrahelix2Data,
-        colorPalette.tetrahelix2 || 0x88ff88, // Light green for stub
+        colorPalette.tetrahelix2 || 0x88ff88, // Light green
         opacity
       );
       tetrahelix2Group.userData.type = "tetrahelix2";
       tetrahelix2Group.userData.parameters = {
         count: tetrahelix2Count,
         startFace: tetrahelix2StartFace,
-        stub: true,
+        strands: tetrahelix2Strands,
+        bondMode: tetrahelix2BondMode,
       };
       tetrahelix2Group.visible = true;
     } else {
@@ -2106,7 +2117,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Start face: ${tetrahelix1StartFace}</div>`;
     }
 
-    // Tetrahelix 2 stats (linear)
+    // Tetrahelix 2 stats (linear with strands)
     if (document.getElementById("showTetrahelix2")?.checked) {
       const tetrahelix2Count = parseInt(
         document.getElementById("tetrahelix2CountSlider")?.value || "10"
@@ -2115,14 +2126,26 @@ export function initScene(THREE, OrbitControls, RT) {
         'input[name="tetrahelix2StartFace"]:checked'
       );
       const tetrahelix2StartFace = startFace2Radio ? startFace2Radio.value : "A";
+      const strandsRadio = document.querySelector(
+        'input[name="tetrahelix2Strands"]:checked'
+      );
+      const tetrahelix2Strands = strandsRadio ? parseInt(strandsRadio.value) : 1;
+      const bondModeRadio2 = document.querySelector(
+        'input[name="tetrahelix2BondMode"]:checked'
+      );
+      const tetrahelix2BondMode = bondModeRadio2 ? bondModeRadio2.value : "zipped";
       const tetrahelix2Data = Helices.tetrahelix2(1, {
         count: tetrahelix2Count,
         startFace: tetrahelix2StartFace,
+        strands: tetrahelix2Strands,
+        bondMode: tetrahelix2BondMode,
       });
       const V2 = tetrahelix2Data.vertices.length;
       const E2 = tetrahelix2Data.edges.length;
       const F2 = tetrahelix2Data.faces.length;
-      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (${tetrahelix2Count} tet):</strong></div>`;
+      const strandLabel = tetrahelix2Strands === 1 ? "1 strand" : `${tetrahelix2Strands} strands`;
+      const modeLabel = tetrahelix2Strands > 1 ? `, ${tetrahelix2BondMode}` : "";
+      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (${tetrahelix2Count} tet, ${strandLabel}${modeLabel}):</strong></div>`;
       html += `<div>V: ${V2}, E: ${E2}, F: ${F2}</div>`;
       html += `<div>Euler: N/A (open chain)</div>`;
       html += `<div>Pattern: Linear zigzag</div>`;
