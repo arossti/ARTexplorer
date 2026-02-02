@@ -1029,11 +1029,24 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       const tetrahelix2BondMode = bondModeRadio ? bondModeRadio.value : "zipped";
 
+      // Read per-strand exit face settings
+      const getExitFace = label => {
+        const radio = document.querySelector(`input[name="tetrahelix2Exit${label}"]:checked`);
+        return radio ? parseInt(radio.value) : 0;
+      };
+      const tetrahelix2ExitFaces = {
+        A: getExitFace("A"),
+        B: getExitFace("B"),
+        C: getExitFace("C"),
+        D: getExitFace("D"),
+      };
+
       const tetrahelix2Data = Helices.tetrahelix2(scale, {
         count: tetrahelix2Count,
         startFace: tetrahelix2StartFace,
         strands: tetrahelix2Strands,
         bondMode: tetrahelix2BondMode,
+        exitFaces: tetrahelix2ExitFaces,
       });
       renderPolyhedron(
         tetrahelix2Group,
@@ -1047,6 +1060,7 @@ export function initScene(THREE, OrbitControls, RT) {
         startFace: tetrahelix2StartFace,
         strands: tetrahelix2Strands,
         bondMode: tetrahelix2BondMode,
+        exitFaces: tetrahelix2ExitFaces,
       };
       tetrahelix2Group.visible = true;
     } else {
@@ -2134,11 +2148,23 @@ export function initScene(THREE, OrbitControls, RT) {
         'input[name="tetrahelix2BondMode"]:checked'
       );
       const tetrahelix2BondMode = bondModeRadio2 ? bondModeRadio2.value : "zipped";
+      // Read per-strand exit faces for stats
+      const getExitFaceStats = label => {
+        const radio = document.querySelector(`input[name="tetrahelix2Exit${label}"]:checked`);
+        return radio ? parseInt(radio.value) : 0;
+      };
+      const tetrahelix2ExitFaces = {
+        A: getExitFaceStats("A"),
+        B: getExitFaceStats("B"),
+        C: getExitFaceStats("C"),
+        D: getExitFaceStats("D"),
+      };
       const tetrahelix2Data = Helices.tetrahelix2(1, {
         count: tetrahelix2Count,
         startFace: tetrahelix2StartFace,
         strands: tetrahelix2Strands,
         bondMode: tetrahelix2BondMode,
+        exitFaces: tetrahelix2ExitFaces,
       });
       const V2 = tetrahelix2Data.vertices.length;
       const E2 = tetrahelix2Data.edges.length;
@@ -2148,7 +2174,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (${tetrahelix2Count} tet, ${strandLabel}${modeLabel}):</strong></div>`;
       html += `<div>V: ${V2}, E: ${E2}, F: ${F2}</div>`;
       html += `<div>Euler: N/A (open chain)</div>`;
-      html += `<div>Pattern: Linear zigzag</div>`;
+      html += `<div>Pattern: Exit faces A=${tetrahelix2ExitFaces.A}, B=${tetrahelix2ExitFaces.B}, C=${tetrahelix2ExitFaces.C}, D=${tetrahelix2ExitFaces.D}</div>`;
       html += `<div>Start face: ${tetrahelix2StartFace}</div>`;
     }
 

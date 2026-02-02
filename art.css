@@ -423,7 +423,7 @@ button:active {
 .geodesic-options {
   margin-left: 20px;
   margin-top: 5px;
-  max-height: 180px;
+  max-height: 400px;
   overflow: hidden;
   transition: max-height 0.3s ease;
 }
