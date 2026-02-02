@@ -348,13 +348,17 @@ Initial implementation had secondary strands follow their own face-to-face chain
 
 *Commit: 93d6527 - preserved for future research reference*
 
-**"Unzipped" Mode - Quadray-Aligned (Feb 1, 2026):**
-Revised approach: align secondary strands with quadray basis vectors (QW, QX, QY, QZ):
-1. Primary strand follows its linear zigzag path
-2. Secondary strands are biased toward canonical tetrahedral directions
-3. Creates a "tetrahedral cross" pattern radiating from origin along IVM axes
+**"Unzipped" Mode - Quadray-Aligned Attempt (Feb 1, 2026):**
+Second attempt: bias exit face selection toward quadray basis vectors. Still produced curved strands due to over-correction logic.
 
-This leverages the natural tetrahedral symmetry of the quadray coordinate system rather than letting strands diverge arbitrarily.
+*Commit: e381987 - preserved for research reference*
+
+**"Unzipped" Mode - Independent Strands (Feb 1, 2026):**
+Simplest approach: each secondary strand starts from a different face of the **seed tetrahedron** and grows using the **identical algorithm** as the primary strand (always exit face 0).
+
+Since the four faces of a tetrahedron point in directions separated by the **tetrahedral angle (~109.47°)**, strands naturally radiate outward from the origin. No course-correction needed - just four straight tetrahelix spirals emerging from a shared seed.
+
+This is geometrically equivalent to building 4 independent tetrahelices that share a common origin tetrahedron.
 
 #### Biological Analogies
 
