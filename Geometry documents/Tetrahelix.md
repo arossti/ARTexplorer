@@ -417,6 +417,73 @@ Exit:    012 012 012 012 (per-strand exit face selector)
 
 **Recommendation:** Step back and study the mathematical relationship between face-exit patterns and the resulting geometric trajectory before adding more UI controls.
 
+#### Per-Strand Steering Controls (Feb 2, 2026)
+
+**Goal:** Add "Second Exit" controls to steer strands toward quadray basis vectors (QW, QX, QY, QZ) by allowing per-strand exit face selection at an early tetrahedron.
+
+**UI Implementation:**
+```
+Second Exit (per strand)
+     0   1   2
+A   (●) ( ) ( )
+B   (●) ( ) ( )
+C   (●) ( ) ( )
+D   (●) ( ) ( )
+```
+
+Each strand (A/B/C/D) can select exit face 0, 1, or 2 for steering. Face 3 is always the entry face (shared with previous tetrahedron).
+
+**Key Design Decision: When to Apply Steering**
+
+The question of *which* tetrahedron to steer at proved critical:
+
+1. **Seed tetrahedron (1st):** Cannot steer - this is the origin, all 4 faces are bonding points for strands
+2. **Face-bonded tetrahedron (2nd):** First tetrahedron of each strand - bonded to a seed face
+3. **Steering tetrahedron (3rd+):** Where exit face selection can redirect the strand
+
+**Experiment: 2nd vs 3rd Tetrahedron Steering**
+
+- **2nd tet steering (`i === 1`):** Applies exit face at the first non-seed tetrahedron. Found to provide closer-to-desired steering behavior.
+- **3rd tet steering (`i === 2`):** Delays steering by one step. Tested but reverted as 2nd tet was more effective.
+
+**Critical Finding: One-Time vs Continuous Steering**
+
+Initial implementation applied the exit face selection to ALL subsequent tetrahedra, causing strands to go toroidal and self-intersect. The fix was to make steering a ONE-TIME adjustment:
+
+```javascript
+// Steering at 2nd tet only - then resume linear pattern
+if (i === 1) {
+  exitFaceLocalIdx = exitFaces[strandLabel] ?? 0;
+} else {
+  exitFaceLocalIdx = 0;  // Resume "always face 0" linear pattern
+}
+```
+
+**Current Status (Feb 2, 2026):**
+- Per-strand exit face controls are implemented in the UI
+- Steering applies at the 2nd tetrahedron of each strand
+- After steering, strands resume the linear "always exit face 0" pattern
+- Controls are visible in Unzipped mode with 4 strands
+
+*Commits:*
+- *0b0e028 - WIP: Add per-strand exit face controls*
+- *eb4c1f8 - Fix: Apply steering at 3rd tet (reverted)*
+- *a363e3f - Revert to 2nd tet steering*
+
+**Known Parameters for Future Exploration:**
+
+The tetrahelix steering problem has these known variables:
+1. **Steering tetrahedron index** - which tet in the chain applies the steering (currently 2nd)
+2. **Exit face selection** - which of the 3 non-entry faces to exit (0, 1, or 2)
+3. **Post-steering pattern** - what happens after steering (currently: always face 0)
+4. **Per-strand configuration** - different strands can have different steering settings
+
+**Future Work:**
+- Experiment with different combinations of these parameters
+- Consider allowing steering at multiple points along the chain
+- Investigate whether certain combinations produce quadray-aligned trajectories
+- Study the mathematical relationship between exit face indices and geometric direction
+
 #### Biological Analogies
 
 - **2 strands (Double Helix):** Most similar to **DNA** structure - two antiparallel strands wound around a central axis. The "unzipped" mode would better represent this.
