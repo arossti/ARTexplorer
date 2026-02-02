@@ -455,6 +455,8 @@ export const geodesicProjectionBindings = [
   { type: "radio-group", name: "tetrahelix2StartFace" },
   // Helix strand count
   { type: "radio-group", name: "tetrahelix2Strands" },
+  // Helix bond mode (zipped vs unzipped)
+  { type: "radio-group", name: "tetrahelix2BondMode" },
 ];
 
 // ============================================================================

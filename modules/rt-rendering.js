@@ -1024,11 +1024,16 @@ export function initScene(THREE, OrbitControls, RT) {
         'input[name="tetrahelix2Strands"]:checked'
       );
       const tetrahelix2Strands = strandsRadio ? parseInt(strandsRadio.value) : 1;
+      const bondModeRadio = document.querySelector(
+        'input[name="tetrahelix2BondMode"]:checked'
+      );
+      const tetrahelix2BondMode = bondModeRadio ? bondModeRadio.value : "zipped";
 
       const tetrahelix2Data = Helices.tetrahelix2(scale, {
         count: tetrahelix2Count,
         startFace: tetrahelix2StartFace,
         strands: tetrahelix2Strands,
+        bondMode: tetrahelix2BondMode,
       });
       renderPolyhedron(
         tetrahelix2Group,
@@ -1041,6 +1046,7 @@ export function initScene(THREE, OrbitControls, RT) {
         count: tetrahelix2Count,
         startFace: tetrahelix2StartFace,
         strands: tetrahelix2Strands,
+        bondMode: tetrahelix2BondMode,
       };
       tetrahelix2Group.visible = true;
     } else {
@@ -2124,16 +2130,22 @@ export function initScene(THREE, OrbitControls, RT) {
         'input[name="tetrahelix2Strands"]:checked'
       );
       const tetrahelix2Strands = strandsRadio ? parseInt(strandsRadio.value) : 1;
+      const bondModeRadio2 = document.querySelector(
+        'input[name="tetrahelix2BondMode"]:checked'
+      );
+      const tetrahelix2BondMode = bondModeRadio2 ? bondModeRadio2.value : "zipped";
       const tetrahelix2Data = Helices.tetrahelix2(1, {
         count: tetrahelix2Count,
         startFace: tetrahelix2StartFace,
         strands: tetrahelix2Strands,
+        bondMode: tetrahelix2BondMode,
       });
       const V2 = tetrahelix2Data.vertices.length;
       const E2 = tetrahelix2Data.edges.length;
       const F2 = tetrahelix2Data.faces.length;
       const strandLabel = tetrahelix2Strands === 1 ? "1 strand" : `${tetrahelix2Strands} strands`;
-      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (${tetrahelix2Count} tet, ${strandLabel}):</strong></div>`;
+      const modeLabel = tetrahelix2Strands > 1 ? `, ${tetrahelix2BondMode}` : "";
+      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (${tetrahelix2Count} tet, ${strandLabel}${modeLabel}):</strong></div>`;
       html += `<div>V: ${V2}, E: ${E2}, F: ${F2}</div>`;
       html += `<div>Euler: N/A (open chain)</div>`;
       html += `<div>Pattern: Linear zigzag</div>`;

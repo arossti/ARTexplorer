@@ -2132,8 +2132,18 @@
                     </label>
                   </div>
                 </div>
+                <!-- Bonding mode: zipped (radial) vs unzipped (parallel chains) -->
+                <div class="matrix-control-item" style="display: flex; align-items: center; gap: 8px;">
+                  <label class="matrix-size-label" style="margin-right: 4px;">Mode</label>
+                  <label class="geodesic-projection-option">
+                    <input type="radio" name="tetrahelix2BondMode" value="zipped" checked /> Zipped
+                  </label>
+                  <label class="geodesic-projection-option">
+                    <input type="radio" name="tetrahelix2BondMode" value="unzipped" /> Unzipped
+                  </label>
+                </div>
                 <p class="matrix-info-text">
-                  Linear zigzag with parallel bonded strands
+                  Zipped: radial spines | Unzipped: parallel chains (DNA-like)
                 </p>
               </div>
             </div>
