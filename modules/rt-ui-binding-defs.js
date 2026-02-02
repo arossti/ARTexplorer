@@ -457,6 +457,11 @@ export const geodesicProjectionBindings = [
   { type: "radio-group", name: "tetrahelix2Strands" },
   // Helix bond mode (zipped vs unzipped)
   { type: "radio-group", name: "tetrahelix2BondMode" },
+  // Helix per-strand exit face selection
+  { type: "radio-group", name: "tetrahelix2ExitA" },
+  { type: "radio-group", name: "tetrahelix2ExitB" },
+  { type: "radio-group", name: "tetrahelix2ExitC" },
+  { type: "radio-group", name: "tetrahelix2ExitD" },
 ];
 
 // ============================================================================

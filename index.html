@@ -2145,6 +2145,40 @@
                 <p class="matrix-info-text">
                   Zipped: radial spines | Unzipped: parallel chains (DNA-like)
                 </p>
+                <!-- Second Exit Face per strand (controls direction after first tet) -->
+                <div class="matrix-control-item" style="margin-top: 8px;">
+                  <label class="matrix-size-label" style="margin-bottom: 4px;">Second Exit (per strand)</label>
+                  <div style="display: grid; grid-template-columns: 30px repeat(3, 1fr); gap: 2px; font-size: 11px;">
+                    <!-- Header row -->
+                    <div></div>
+                    <div style="text-align: center;">0</div>
+                    <div style="text-align: center;">1</div>
+                    <div style="text-align: center;">2</div>
+                    <!-- Strand A -->
+                    <div style="font-weight: bold;">A</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitA" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitA" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitA" value="2" /></label>
+                    <!-- Strand B -->
+                    <div style="font-weight: bold;">B</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitB" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitB" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitB" value="2" /></label>
+                    <!-- Strand C -->
+                    <div style="font-weight: bold;">C</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitC" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitC" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitC" value="2" /></label>
+                    <!-- Strand D -->
+                    <div style="font-weight: bold;">D</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitD" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitD" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitD" value="2" /></label>
+                  </div>
+                  <p class="matrix-info-text" style="margin-top: 4px;">
+                    Exit face used after first tetrahedron (affects strand direction)
+                  </p>
+                </div>
               </div>
             </div>
 

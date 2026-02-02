@@ -284,6 +284,23 @@ export const RTFileHandler = {
       tetrahelix2BondMode:
         document.querySelector('input[name="tetrahelix2BondMode"]:checked')
           ?.value || "zipped",
+      // Per-strand exit face selection
+      tetrahelix2ExitA: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitA"]:checked')
+          ?.value || "0"
+      ),
+      tetrahelix2ExitB: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitB"]:checked')
+          ?.value || "0"
+      ),
+      tetrahelix2ExitC: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitC"]:checked')
+          ?.value || "0"
+      ),
+      tetrahelix2ExitD: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitD"]:checked')
+          ?.value || "0"
+      ),
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -668,6 +685,31 @@ export const RTFileHandler = {
         if (sliders.tetrahelix2BondMode !== undefined) {
           const radio = document.querySelector(
             `input[name="tetrahelix2BondMode"][value="${sliders.tetrahelix2BondMode}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        // Per-strand exit face selection
+        if (sliders.tetrahelix2ExitA !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2ExitA"][value="${sliders.tetrahelix2ExitA}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix2ExitB !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2ExitB"][value="${sliders.tetrahelix2ExitB}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix2ExitC !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2ExitC"][value="${sliders.tetrahelix2ExitC}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix2ExitD !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2ExitD"][value="${sliders.tetrahelix2ExitD}"]`
           );
           if (radio) radio.checked = true;
         }
