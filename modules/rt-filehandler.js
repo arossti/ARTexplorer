@@ -123,8 +123,10 @@ export const RTFileHandler = {
       showPrism: document.getElementById("showPrism")?.checked || false,
       showCone: document.getElementById("showCone")?.checked || false,
       // Helices
-      showTetrahelix:
-        document.getElementById("showTetrahelix")?.checked || false,
+      showTetrahelix1:
+        document.getElementById("showTetrahelix1")?.checked || false,
+      showTetrahelix2:
+        document.getElementById("showTetrahelix2")?.checked || false,
       // Regular polyhedra
       showCube: document.getElementById("showCube")?.checked || false,
       showTetrahedron:
@@ -261,15 +263,20 @@ export const RTFileHandler = {
       ),
       coneShowFaces:
         document.getElementById("coneShowFaces")?.checked !== false,
-      // Tetrahelix parameters
-      tetrahelixCount: parseInt(
-        document.getElementById("tetrahelixCountSlider")?.value || "10"
+      // Tetrahelix 1 parameters (toroidal, left-handed)
+      tetrahelix1Count: parseInt(
+        document.getElementById("tetrahelix1CountSlider")?.value || "10"
       ),
-      tetrahelixStartFace:
-        document.querySelector('input[name="tetrahelixStartFace"]:checked')
+      tetrahelix1StartFace:
+        document.querySelector('input[name="tetrahelix1StartFace"]:checked')
           ?.value || "A",
-      tetrahelixLeftHanded:
-        document.getElementById("tetrahelixLeftHanded")?.checked || false,
+      // Tetrahelix 2 parameters (linear stub)
+      tetrahelix2Count: parseInt(
+        document.getElementById("tetrahelix2CountSlider")?.value || "10"
+      ),
+      tetrahelix2StartFace:
+        document.querySelector('input[name="tetrahelix2StartFace"]:checked')
+          ?.value || "A",
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -619,22 +626,31 @@ export const RTFileHandler = {
           const el = document.getElementById("coneShowFaces");
           if (el) el.checked = sliders.coneShowFaces;
         }
-        // Tetrahelix parameters
-        if (sliders.tetrahelixCount !== undefined) {
-          const slider = document.getElementById("tetrahelixCountSlider");
-          const display = document.getElementById("tetrahelixCountDisplay");
-          if (slider) slider.value = sliders.tetrahelixCount;
-          if (display) display.textContent = sliders.tetrahelixCount;
+        // Tetrahelix 1 parameters
+        if (sliders.tetrahelix1Count !== undefined) {
+          const slider = document.getElementById("tetrahelix1CountSlider");
+          const display = document.getElementById("tetrahelix1CountDisplay");
+          if (slider) slider.value = sliders.tetrahelix1Count;
+          if (display) display.textContent = sliders.tetrahelix1Count;
         }
-        if (sliders.tetrahelixStartFace !== undefined) {
+        if (sliders.tetrahelix1StartFace !== undefined) {
           const radio = document.querySelector(
-            `input[name="tetrahelixStartFace"][value="${sliders.tetrahelixStartFace}"]`
+            `input[name="tetrahelix1StartFace"][value="${sliders.tetrahelix1StartFace}"]`
           );
           if (radio) radio.checked = true;
         }
-        if (sliders.tetrahelixLeftHanded !== undefined) {
-          const el = document.getElementById("tetrahelixLeftHanded");
-          if (el) el.checked = sliders.tetrahelixLeftHanded;
+        // Tetrahelix 2 parameters
+        if (sliders.tetrahelix2Count !== undefined) {
+          const slider = document.getElementById("tetrahelix2CountSlider");
+          const display = document.getElementById("tetrahelix2CountDisplay");
+          if (slider) slider.value = sliders.tetrahelix2Count;
+          if (display) display.textContent = sliders.tetrahelix2Count;
+        }
+        if (sliders.tetrahelix2StartFace !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2StartFace"][value="${sliders.tetrahelix2StartFace}"]`
+          );
+          if (radio) radio.checked = true;
         }
         // Planar matrix size sliders
         if (sliders.cubeMatrixSizeSlider !== undefined) {
@@ -779,12 +795,20 @@ export const RTFileHandler = {
           coneControls.style.display = "block";
         }
 
-        // Show/hide Tetrahelix controls based on checkbox state
-        const tetrahelixControls = document.getElementById(
-          "tetrahelix-controls"
+        // Show/hide Tetrahelix 1 controls based on checkbox state
+        const tetrahelix1Controls = document.getElementById(
+          "tetrahelix1-controls"
         );
-        if (tetrahelixControls && checkboxes.showTetrahelix) {
-          tetrahelixControls.style.display = "block";
+        if (tetrahelix1Controls && checkboxes.showTetrahelix1) {
+          tetrahelix1Controls.style.display = "block";
+        }
+
+        // Show/hide Tetrahelix 2 controls based on checkbox state
+        const tetrahelix2Controls = document.getElementById(
+          "tetrahelix2-controls"
+        );
+        if (tetrahelix2Controls && checkboxes.showTetrahelix2) {
+          tetrahelix2Controls.style.display = "block";
         }
 
         // Trigger updateGeometry to render the restored forms

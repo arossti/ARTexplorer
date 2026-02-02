@@ -65,7 +65,8 @@ const colorPalette = {
   prism: 0x00aaff, // Sky blue - 3D primitive (distinct from polygon green)
   cone: 0xffaa00, // Orange - 3D primitive (distinct from prism blue)
   // Helices
-  tetrahelix: 0xffaa00, // Orange - chain/sequence metaphor
+  tetrahelix: 0xffaa00, // Orange - Tetrahelix 1 (toroidal)
+  tetrahelix2: 0x88ff88, // Light green - Tetrahelix 2 (linear stub)
 };
 
 /**
@@ -98,7 +99,8 @@ export function initScene(THREE, OrbitControls, RT) {
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
   let prismGroup; // Prism primitive (3D solid with N-gon caps)
   let coneGroup; // Cone primitive (3D solid with N-gon base and apex)
-  let tetrahelixGroup; // Tetrahelix (chain of face-sharing tetrahedra)
+  let tetrahelix1Group; // Tetrahelix 1: Toroidal (left-handed)
+  let tetrahelix2Group; // Tetrahelix 2: Linear (stub)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -177,9 +179,13 @@ export function initScene(THREE, OrbitControls, RT) {
     coneGroup.userData.type = "cone";
     // Cone allows all tools (Move, Scale, Rotate)
 
-    tetrahelixGroup = new THREE.Group();
-    tetrahelixGroup.userData.type = "tetrahelix";
-    // Tetrahelix allows all tools (Move, Scale, Rotate)
+    tetrahelix1Group = new THREE.Group();
+    tetrahelix1Group.userData.type = "tetrahelix1";
+    // Tetrahelix 1 allows all tools (Move, Scale, Rotate)
+
+    tetrahelix2Group = new THREE.Group();
+    tetrahelix2Group.userData.type = "tetrahelix2";
+    // Tetrahelix 2 allows all tools (Move, Scale, Rotate)
 
     cubeGroup = new THREE.Group();
     cubeGroup.userData.type = "cube";
@@ -281,7 +287,8 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(polygonGroup);
     scene.add(prismGroup);
     scene.add(coneGroup);
-    scene.add(tetrahelixGroup);
+    scene.add(tetrahelix1Group);
+    scene.add(tetrahelix2Group);
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -972,43 +979,67 @@ export function initScene(THREE, OrbitControls, RT) {
       coneGroup.visible = false;
     }
 
-    // Tetrahelix (chain of face-sharing tetrahedra)
-    if (document.getElementById("showTetrahelix")?.checked) {
-      // Get count from slider (default 10)
-      const tetrahelixCount = parseInt(
-        document.getElementById("tetrahelixCountSlider")?.value || "10"
+    // Tetrahelix 1: Toroidal (left-handed, max 48)
+    if (document.getElementById("showTetrahelix1")?.checked) {
+      const tetrahelix1Count = parseInt(
+        document.getElementById("tetrahelix1CountSlider")?.value || "10"
       );
-      // Get start face from radio buttons (default 'A')
-      const startFaceRadio = document.querySelector(
-        'input[name="tetrahelixStartFace"]:checked'
+      const startFace1Radio = document.querySelector(
+        'input[name="tetrahelix1StartFace"]:checked'
       );
-      const tetrahelixStartFace = startFaceRadio ? startFaceRadio.value : "A";
-      // Get chirality (default right-handed)
-      const tetrahelixLeftHanded =
-        document.getElementById("tetrahelixLeftHanded")?.checked || false;
+      const tetrahelix1StartFace = startFace1Radio ? startFace1Radio.value : "A";
 
-      const tetrahelixData = Helices.tetrahelix(scale, {
-        count: tetrahelixCount,
-        startFace: tetrahelixStartFace,
-        leftHanded: tetrahelixLeftHanded,
+      const tetrahelix1Data = Helices.tetrahelix1(scale, {
+        count: tetrahelix1Count,
+        startFace: tetrahelix1StartFace,
       });
       renderPolyhedron(
-        tetrahelixGroup,
-        tetrahelixData,
+        tetrahelix1Group,
+        tetrahelix1Data,
         colorPalette.tetrahelix,
         opacity
       );
-      tetrahelixGroup.userData.type = "tetrahelix";
-      tetrahelixGroup.userData.parameters = {
-        count: tetrahelixCount,
-        startFace: tetrahelixStartFace,
-        leftHanded: tetrahelixLeftHanded,
-        tetrahedra: tetrahelixData.metadata.tetrahedra,
-        expectedQ: tetrahelixData.metadata.expectedQ,
+      tetrahelix1Group.userData.type = "tetrahelix1";
+      tetrahelix1Group.userData.parameters = {
+        count: tetrahelix1Count,
+        startFace: tetrahelix1StartFace,
+        tetrahedra: tetrahelix1Data.metadata.tetrahedra,
+        expectedQ: tetrahelix1Data.metadata.expectedQ,
       };
-      tetrahelixGroup.visible = true;
+      tetrahelix1Group.visible = true;
     } else {
-      tetrahelixGroup.visible = false;
+      tetrahelix1Group.visible = false;
+    }
+
+    // Tetrahelix 2: Linear (stub)
+    if (document.getElementById("showTetrahelix2")?.checked) {
+      const tetrahelix2Count = parseInt(
+        document.getElementById("tetrahelix2CountSlider")?.value || "10"
+      );
+      const startFace2Radio = document.querySelector(
+        'input[name="tetrahelix2StartFace"]:checked'
+      );
+      const tetrahelix2StartFace = startFace2Radio ? startFace2Radio.value : "A";
+
+      const tetrahelix2Data = Helices.tetrahelix2(scale, {
+        count: tetrahelix2Count,
+        startFace: tetrahelix2StartFace,
+      });
+      renderPolyhedron(
+        tetrahelix2Group,
+        tetrahelix2Data,
+        colorPalette.tetrahelix2 || 0x88ff88, // Light green for stub
+        opacity
+      );
+      tetrahelix2Group.userData.type = "tetrahelix2";
+      tetrahelix2Group.userData.parameters = {
+        count: tetrahelix2Count,
+        startFace: tetrahelix2StartFace,
+        stub: true,
+      };
+      tetrahelix2Group.visible = true;
+    } else {
+      tetrahelix2Group.visible = false;
     }
 
     // Cube (Blue)
@@ -2052,31 +2083,37 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Q_slant: ${coneSlantQ.toFixed(4)}</div>`;
     }
 
-    // Tetrahelix stats
-    if (document.getElementById("showTetrahelix")?.checked) {
-      const tetrahelixCount = parseInt(
-        document.getElementById("tetrahelixCountSlider")?.value || "10"
+    // Tetrahelix 1 stats (toroidal)
+    if (document.getElementById("showTetrahelix1")?.checked) {
+      const tetrahelix1Count = parseInt(
+        document.getElementById("tetrahelix1CountSlider")?.value || "10"
       );
-      const startFaceRadio = document.querySelector(
-        'input[name="tetrahelixStartFace"]:checked'
+      const startFace1Radio = document.querySelector(
+        'input[name="tetrahelix1StartFace"]:checked'
       );
-      const tetrahelixStartFace = startFaceRadio ? startFaceRadio.value : "A";
-      const tetrahelixLeftHanded =
-        document.getElementById("tetrahelixLeftHanded")?.checked || false;
-      const tetrahelixData = Helices.tetrahelix(1, {
-        count: tetrahelixCount,
-        startFace: tetrahelixStartFace,
-        leftHanded: tetrahelixLeftHanded,
+      const tetrahelix1StartFace = startFace1Radio ? startFace1Radio.value : "A";
+      const tetrahelix1Data = Helices.tetrahelix1(1, {
+        count: tetrahelix1Count,
+        startFace: tetrahelix1StartFace,
       });
-      const V = tetrahelixData.vertices.length;
-      const E = tetrahelixData.edges.length;
-      const F = tetrahelixData.faces.length;
-      // Note: Euler doesn't hold for open chains
-      html += `<div style="margin-top: 10px;"><strong>Tetrahelix (${tetrahelixCount} tet):</strong></div>`;
+      const V = tetrahelix1Data.vertices.length;
+      const E = tetrahelix1Data.edges.length;
+      const F = tetrahelix1Data.faces.length;
+      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 1 (${tetrahelix1Count} tet):</strong></div>`;
       html += `<div>V: ${V}, E: ${E}, F: ${F}</div>`;
       html += `<div>Euler: N/A (open chain)</div>`;
-      html += `<div>Chirality: ${tetrahelixLeftHanded ? "left" : "right"}-handed</div>`;
-      html += `<div>Start face: ${tetrahelixStartFace}</div>`;
+      html += `<div>Chirality: left-handed (fixed)</div>`;
+      html += `<div>Start face: ${tetrahelix1StartFace}</div>`;
+    }
+
+    // Tetrahelix 2 stats (linear stub)
+    if (document.getElementById("showTetrahelix2")?.checked) {
+      const tetrahelix2Count = parseInt(
+        document.getElementById("tetrahelix2CountSlider")?.value || "10"
+      );
+      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (STUB):</strong></div>`;
+      html += `<div>Count: ${tetrahelix2Count} (not implemented)</div>`;
+      html += `<div>Returns single tetrahedron</div>`;
     }
 
     if (document.getElementById("showCube").checked) {
@@ -2658,7 +2695,8 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
       quadrayCuboctahedronGroup,
-      tetrahelixGroup,
+      tetrahelix1Group,
+      tetrahelix2Group,
     };
   }
 
@@ -2900,23 +2938,38 @@ export function initScene(THREE, OrbitControls, RT) {
         break;
       }
 
-      case "tetrahelix": {
-        // Tetrahelix uses count, startFace, and leftHanded options
-        const tetrahelixCount = options.count ?? 10;
-        const tetrahelixStartFace = options.startFace ?? "A";
-        const tetrahelixLeftHanded = options.leftHanded ?? false;
-        geometry = Helices.tetrahelix(scale, {
-          count: tetrahelixCount,
-          startFace: tetrahelixStartFace,
-          leftHanded: tetrahelixLeftHanded,
+      case "tetrahelix1": {
+        // Tetrahelix 1: Toroidal (left-handed only)
+        const tetrahelix1Count = options.count ?? 10;
+        const tetrahelix1StartFace = options.startFace ?? "A";
+        geometry = Helices.tetrahelix1(scale, {
+          count: tetrahelix1Count,
+          startFace: tetrahelix1StartFace,
         });
-        group.userData.type = "tetrahelix";
+        group.userData.type = "tetrahelix1";
         group.userData.parameters = {
-          count: tetrahelixCount,
-          startFace: tetrahelixStartFace,
-          leftHanded: tetrahelixLeftHanded,
+          count: tetrahelix1Count,
+          startFace: tetrahelix1StartFace,
           tetrahedra: geometry.metadata.tetrahedra,
           expectedQ: geometry.metadata.expectedQ,
+        };
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+      }
+
+      case "tetrahelix2": {
+        // Tetrahelix 2: Linear (stub)
+        const tetrahelix2Count = options.count ?? 10;
+        const tetrahelix2StartFace = options.startFace ?? "A";
+        geometry = Helices.tetrahelix2(scale, {
+          count: tetrahelix2Count,
+          startFace: tetrahelix2StartFace,
+        });
+        group.userData.type = "tetrahelix2";
+        group.userData.parameters = {
+          count: tetrahelix2Count,
+          startFace: tetrahelix2StartFace,
+          stub: true,
         };
         renderPolyhedron(group, geometry, color, opacity);
         break;

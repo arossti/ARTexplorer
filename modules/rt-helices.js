@@ -5,6 +5,10 @@
  * Generates helical chains of polyhedra using face-sharing algorithms.
  * RT-Pure: Uses quadrance and spread throughout.
  *
+ * Variants:
+ * - tetrahelix1: Toroidal (left-handed, max 48, approaches torus closure)
+ * - tetrahelix2: Linear (stub - for experimentation with non-toroidal extension)
+ *
  * See: Geometry documents/Tetrahelix.md for specification
  *
  * @requires THREE.js
@@ -21,26 +25,27 @@ import { RT } from "./rt-math.js";
  */
 export const Helices = {
   /**
-   * Generate a tetrahelix (chain of face-sharing tetrahedra)
+   * Tetrahelix 1: Toroidal variant (left-handed)
    *
-   * Uses face-normal driven generation: the outward normal of the chosen face
-   * points to the apex of the next tetrahedron, while the 3 face vertices are shared.
+   * Uses face-normal driven generation with left-handed chirality.
+   * Approaches torus closure at 48 tetrahedra with small gap.
    *
-   * The tetrahelix spirals because of the tetrahedral dihedral angle (~70.53°).
-   * Each new tetrahedron shares one face with the previous, and the exit face
-   * cycles through the three non-shared faces (those containing the apex).
+   * Note: Right-handed variant self-intersects at step 12, so only
+   * left-handed is implemented. Chirality toggle commented out for
+   * potential reuse in future variants.
    *
-   * @param {number} halfSize - Half-size of base tetrahedron (same as Polyhedra.tetrahedron)
+   * @param {number} halfSize - Half-size of base tetrahedron
    * @param {Object} options
-   * @param {number} options.count - Number of tetrahedra in chain (default: 10, max: 144)
-   * @param {string} options.startFace - Initial face to grow from: 'A', 'B', 'C', or 'D' (default: 'A')
-   * @param {boolean} options.leftHanded - Chirality (default: false = right-handed)
+   * @param {number} options.count - Number of tetrahedra (default: 10, max: 48)
+   * @param {string} options.startFace - Initial face: 'A', 'B', 'C', or 'D' (default: 'A')
    * @returns {Object} { vertices, edges, faces, metadata }
    */
-  tetrahelix: (halfSize = 1, options = {}) => {
-    const count = Math.min(Math.max(options.count || 10, 1), 144);
+  tetrahelix1: (halfSize = 1, options = {}) => {
+    // Cap at 48 for torus near-closure (right-handed self-intersects at 12)
+    const count = Math.min(Math.max(options.count || 10, 1), 48);
     const startFace = options.startFace || "A";
-    const leftHanded = options.leftHanded || false;
+    // Left-handed only for this variant (right-handed self-intersects)
+    const leftHanded = true;
 
     // Generate seed tetrahedron (same as Polyhedra.tetrahedron)
     const s = halfSize;
@@ -61,7 +66,6 @@ export const Helices = {
     const expectedQ = 8 * halfSize * halfSize;
 
     // Distance from face centroid to apex for regular tetrahedron
-    // For equilateral triangle face with edge L, centroid-to-apex = L * sqrt(2/3)
     // Q_apex = (2/3) * Q_edge
     const apexDistanceQ = (2 / 3) * expectedQ;
     const apexDistance = Math.sqrt(apexDistanceQ);
@@ -85,7 +89,6 @@ export const Helices = {
       const edge2 = new THREE.Vector3().subVectors(v2, v0);
       const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize();
 
-      // Ensure normal points outward (away from tetrahedron centroid)
       const faceCentroid = calculateCentroid(v0, v1, v2);
       const outwardDir = new THREE.Vector3().subVectors(
         faceCentroid,
@@ -124,82 +127,48 @@ export const Helices = {
       );
     };
 
-    // Face definitions for seed tetrahedron (opposite vertex index)
-    // Face 0 (opposite V0): vertices [1, 2, 3]
-    // Face 1 (opposite V1): vertices [0, 2, 3]
-    // Face 2 (opposite V2): vertices [0, 1, 3]
-    // Face 3 (opposite V3): vertices [0, 1, 2]
-    const SEED_FACES = [
-      [1, 2, 3], // Face 0 (A) - opposite V0
-      [0, 2, 3], // Face 1 (B) - opposite V1
-      [0, 1, 3], // Face 2 (C) - opposite V2
-      [0, 1, 2], // Face 3 (D) - opposite V3
-    ];
-
     // Map user-facing labels to face indices
     const FACE_LABEL_TO_INDEX = { A: 0, B: 1, C: 2, D: 3 };
 
-    // Current state: track the 4 vertices of current tetrahedron and which face to exit
-    let currentVerts = [...seedVertices]; // The 4 Vector3 positions
-    let currentIndices = [0, 1, 2, 3]; // Global vertex indices
-
-    // Determine initial exit face from startFace parameter
+    // Current state
+    let currentVerts = [...seedVertices];
+    let currentIndices = [0, 1, 2, 3];
     let exitFaceLocalIdx = FACE_LABEL_TO_INDEX[startFace] ?? 0;
 
     // Generate chain
     for (let i = 1; i < count; i++) {
-      // Get the 3 vertex indices (local 0-3) of the exit face
-      // Exit face is opposite vertex exitFaceLocalIdx
       const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFaceLocalIdx);
 
-      // Get actual vertex positions for the exit face
       const fv0 = currentVerts[faceLocalIndices[0]];
       const fv1 = currentVerts[faceLocalIndices[1]];
       const fv2 = currentVerts[faceLocalIndices[2]];
 
-      // Calculate face centroid and outward normal
       const tetraCentroid = getTetraCentroid(currentVerts);
       const faceCentroid = calculateCentroid(fv0, fv1, fv2);
       const faceNormal = calculateFaceNormal(fv0, fv1, fv2, tetraCentroid);
 
-      // New apex position: centroid + normal * apexDistance
       const newApex = faceCentroid
         .clone()
         .add(faceNormal.multiplyScalar(apexDistance));
       const newApexIndex = allVertices.length;
       allVertices.push(newApex);
 
-      // Global indices of shared vertices
       const sharedGlobalIndices = faceLocalIndices.map(
         li => currentIndices[li]
       );
 
-      // Create new tetrahedron
-      // Order: [shared0, shared1, shared2, newApex] where newApex is at local index 3
       const newTetIndices = [...sharedGlobalIndices, newApexIndex];
       tetrahedra.push(newTetIndices);
 
-      // Update current state for next iteration
-      // The new tetrahedron's vertices in local order [0,1,2,3]
       currentVerts = [fv0, fv1, fv2, newApex];
       currentIndices = newTetIndices;
 
-      // Determine next exit face
-      // The entry face (shared with previous) is face 3 (opposite apex at local index 3)
-      // We must exit through one of faces 0, 1, or 2 (the faces containing the apex)
-      // Cycle through 0 -> 1 -> 2 -> 0 for right-handed helix
-      // Cycle through 0 -> 2 -> 1 -> 0 for left-handed helix
-      if (leftHanded) {
-        // 0 -> 2 -> 1 -> 0
-        exitFaceLocalIdx =
-          exitFaceLocalIdx === 0 ? 2 : exitFaceLocalIdx === 2 ? 1 : 0;
-      } else {
-        // 0 -> 1 -> 2 -> 0
-        exitFaceLocalIdx = (exitFaceLocalIdx + 1) % 3;
-      }
+      // Left-handed face cycling: 0 -> 2 -> 1 -> 0
+      exitFaceLocalIdx =
+        exitFaceLocalIdx === 0 ? 2 : exitFaceLocalIdx === 2 ? 1 : 0;
     }
 
-    // Build edges (6 per tetrahedron, but shared edges only counted once)
+    // Build edges
     const edgeSet = new Set();
     const addEdge = (a, b) => {
       const key = a < b ? `${a}-${b}` : `${b}-${a}`;
@@ -207,7 +176,6 @@ export const Helices = {
     };
 
     tetrahedra.forEach(tet => {
-      // All 6 edges of tetrahedron
       addEdge(tet[0], tet[1]);
       addEdge(tet[0], tet[2]);
       addEdge(tet[0], tet[3]);
@@ -221,19 +189,16 @@ export const Helices = {
       return [a, b];
     });
 
-    // Build external faces (4 per tetrahedron minus internal shared faces)
-    // For now, include all faces and let rendering handle visibility
+    // Build faces
     const allFaces = [];
-    tetrahedra.forEach((tet, tetIdx) => {
-      // 4 faces per tetrahedron
+    tetrahedra.forEach(tet => {
       const faces = [
-        [tet[1], tet[2], tet[3]], // Face A (opposite tet[0])
-        [tet[0], tet[2], tet[3]], // Face B (opposite tet[1])
-        [tet[0], tet[1], tet[3]], // Face C (opposite tet[2])
-        [tet[0], tet[1], tet[2]], // Face D (opposite tet[3])
+        [tet[1], tet[2], tet[3]],
+        [tet[0], tet[2], tet[3]],
+        [tet[0], tet[1], tet[3]],
+        [tet[0], tet[1], tet[2]],
       ];
 
-      // Fix winding for outward normals
       const tetraCentroid = getTetraCentroidByIndices(tet);
       faces.forEach(face => {
         const v0 = allVertices[face[0]];
@@ -249,7 +214,6 @@ export const Helices = {
         );
 
         if (normal.dot(outwardDir) < 0) {
-          // Reverse winding
           const tmp = face[1];
           face[1] = face[2];
           face[2] = tmp;
@@ -262,16 +226,16 @@ export const Helices = {
     // RT Validation
     const validation = RT.validateEdges(allVertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
-    const faceSpread = RT.FaceSpreads.tetrahedron(); // S = 8/9
+    const faceSpread = RT.FaceSpreads.tetrahedron();
 
-    console.log(`[RT] Tetrahelix: count=${count}, halfSize=${halfSize}`);
+    console.log(`[RT] Tetrahelix1 (Toroidal): count=${count}, halfSize=${halfSize}`);
     console.log(
       `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
     );
     console.log(
       `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
     );
-    console.log(`  Chirality: ${leftHanded ? "left" : "right"}-handed`);
+    console.log(`  Chirality: left-handed (fixed)`);
     console.log(`  Start face: ${startFace}`);
 
     return {
@@ -280,12 +244,92 @@ export const Helices = {
       faces: allFaces,
       faceSpread,
       metadata: {
+        variant: "tetrahelix1",
         count,
         startFace,
-        leftHanded,
+        leftHanded: true,
         tetrahedra: tetrahedra.length,
         expectedQ,
       },
     };
   },
+
+  /**
+   * Tetrahelix 2: Linear variant (STUB)
+   *
+   * Experimental variant for exploring linear extension without
+   * toroidal closure. Different face selection pattern TBD.
+   *
+   * @param {number} halfSize - Half-size of base tetrahedron
+   * @param {Object} options
+   * @param {number} options.count - Number of tetrahedra (default: 10, max: 144)
+   * @param {string} options.startFace - Initial face: 'A', 'B', 'C', or 'D' (default: 'A')
+   * @returns {Object} { vertices, edges, faces, metadata }
+   */
+  tetrahelix2: (halfSize = 1, options = {}) => {
+    // Extended range for linear exploration
+    const count = Math.min(Math.max(options.count || 10, 1), 144);
+    const startFace = options.startFace || "A";
+
+    // STUB: For now, just generate a single tetrahedron as placeholder
+    // TODO: Implement different face selection pattern for linear extension
+    const s = halfSize;
+    const vertices = [
+      new THREE.Vector3(-s, -s, -s),
+      new THREE.Vector3(s, s, -s),
+      new THREE.Vector3(s, -s, s),
+      new THREE.Vector3(-s, s, s),
+    ];
+
+    const edges = [
+      [0, 1], [0, 2], [0, 3],
+      [1, 2], [1, 3], [2, 3],
+    ];
+
+    const faces = [
+      [1, 2, 3],
+      [0, 3, 2],
+      [0, 1, 3],
+      [0, 2, 1],
+    ];
+
+    const expectedQ = 8 * halfSize * halfSize;
+    const faceSpread = RT.FaceSpreads.tetrahedron();
+
+    console.log(`[RT] Tetrahelix2 (Linear STUB): count=${count}, halfSize=${halfSize}`);
+    console.log(`  STUB: Returns single tetrahedron - implementation pending`);
+
+    return {
+      vertices,
+      edges,
+      faces,
+      faceSpread,
+      metadata: {
+        variant: "tetrahelix2",
+        count,
+        startFace,
+        stub: true,
+        tetrahedra: 1,
+        expectedQ,
+      },
+    };
+  },
+
+  // ========================================================================
+  // CHIRALITY TOGGLE (commented out for reuse in future variants)
+  // ========================================================================
+  // To enable chirality selection, uncomment and add to options:
+  //
+  // const leftHanded = options.leftHanded || false;
+  //
+  // Then in the face cycling section:
+  // if (leftHanded) {
+  //   // 0 -> 2 -> 1 -> 0
+  //   exitFaceLocalIdx =
+  //     exitFaceLocalIdx === 0 ? 2 : exitFaceLocalIdx === 2 ? 1 : 0;
+  // } else {
+  //   // 0 -> 1 -> 2 -> 0 (self-intersects at step 12!)
+  //   exitFaceLocalIdx = (exitFaceLocalIdx + 1) % 3;
+  // }
+  // ========================================================================
 };

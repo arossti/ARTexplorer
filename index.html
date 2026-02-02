@@ -2006,30 +2006,30 @@
             Helices
           </h3>
           <div id="helices-section" class="section-content collapsed">
-            <!-- Tetrahelix -->
+            <!-- Tetrahelix 1: Toroidal (left-handed) -->
             <div class="control-item">
               <label class="checkbox-label">
-                <input type="checkbox" id="showTetrahelix" />
-                Tetrahelix
+                <input type="checkbox" id="showTetrahelix1" />
+                Tetrahelix 1 (Toroidal)
               </label>
               <div
-                id="tetrahelix-controls"
+                id="tetrahelix1-controls"
                 class="geodesic-options"
                 style="display: none"
               >
-                <!-- Count slider (1-144 for torus exploration) -->
+                <!-- Count slider (1-48 for torus near-closure) -->
                 <div class="matrix-control-item">
                   <label class="matrix-size-label">Count</label>
                   <div class="slider-container">
                     <input
                       type="range"
-                      id="tetrahelixCountSlider"
+                      id="tetrahelix1CountSlider"
                       min="1"
-                      max="144"
+                      max="48"
                       step="1"
                       value="10"
                     />
-                    <span class="slider-value" id="tetrahelixCountDisplay"
+                    <span class="slider-value" id="tetrahelix1CountDisplay"
                       >10</span
                     >
                   </div>
@@ -2040,37 +2040,97 @@
                   <label class="geodesic-projection-option">
                     <input
                       type="radio"
-                      name="tetrahelixStartFace"
+                      name="tetrahelix1StartFace"
                       value="A"
                       checked
                     />
                     A
                   </label>
                   <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelixStartFace" value="B" />
+                    <input type="radio" name="tetrahelix1StartFace" value="B" />
                     B
                   </label>
                   <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelixStartFace" value="C" />
+                    <input type="radio" name="tetrahelix1StartFace" value="C" />
                     C
                   </label>
                   <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelixStartFace" value="D" />
+                    <input type="radio" name="tetrahelix1StartFace" value="D" />
                     D
                   </label>
                 </div>
-                <!-- Chirality -->
+                <!-- Chirality toggle commented out - left-handed only
                 <label class="checkbox-label matrix-checkbox-label">
-                  <input type="checkbox" id="tetrahelixLeftHanded" />
+                  <input type="checkbox" id="tetrahelix1LeftHanded" />
                   Left-handed (mirror)
                 </label>
+                -->
                 <p class="matrix-info-text">
-                  Boerdijk-Coxeter helix (~112 for torus near-closure)
+                  Left-handed only (48 = torus near-closure)
                 </p>
               </div>
             </div>
 
-            <!-- Future: Other helix types -->
+            <!-- Tetrahelix 2: Linear (stub) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showTetrahelix2" />
+                Tetrahelix 2 (Linear) <em style="opacity: 0.6">[stub]</em>
+              </label>
+              <div
+                id="tetrahelix2-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <!-- Count slider (1-144 for linear exploration) -->
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Count</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="tetrahelix2CountSlider"
+                      min="1"
+                      max="144"
+                      step="1"
+                      value="10"
+                    />
+                    <span class="slider-value" id="tetrahelix2CountDisplay"
+                      >10</span
+                    >
+                  </div>
+                </div>
+                <!-- Start face selection -->
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Start Face</label>
+                  <label class="geodesic-projection-option">
+                    <input
+                      type="radio"
+                      name="tetrahelix2StartFace"
+                      value="A"
+                      checked
+                    />
+                    A
+                  </label>
+                  <label class="geodesic-projection-option">
+                    <input type="radio" name="tetrahelix2StartFace" value="B" />
+                    B
+                  </label>
+                  <label class="geodesic-projection-option">
+                    <input type="radio" name="tetrahelix2StartFace" value="C" />
+                    C
+                  </label>
+                  <label class="geodesic-projection-option">
+                    <input type="radio" name="tetrahelix2StartFace" value="D" />
+                    D
+                  </label>
+                </div>
+                <p class="matrix-info-text">
+                  Stub: Linear extension experiment (TBD)
+                </p>
+              </div>
+            </div>
+
+            <!-- Future: Tetrahelix 3, 4, etc. for multi-strand variants -->
           </div>
         </div>
         <!-- END SECTION 3E: HELICES -->
