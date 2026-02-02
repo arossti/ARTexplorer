@@ -369,6 +369,31 @@ This is geometrically equivalent to building 4 independent tetrahelices that sha
 2. Use a different face-exit pattern for each strand based on its target direction
 3. Accept that tetrahelix geometry inherently spirals rather than extends linearly
 
+#### Chirality Experiment (Planned)
+
+**Key Insight:** All strands currently use the same "always exit face 0" pattern, giving them identical twist/chirality. This causes them to spiral in the same direction regardless of starting face.
+
+**Proposed Experiment:** Add a per-strand chirality toggle (A/B/C/D) that assigns different face-exit patterns:
+
+```
+Face-exit patterns:
+- Pattern A: Always exit face 0 (current "linear" pattern)
+- Pattern B: Cycle 0 → 1 → 2 → 0 (right-handed spiral)
+- Pattern C: Cycle 0 → 2 → 1 → 0 (left-handed spiral, toroidal)
+- Pattern D: Always exit face 1 or 2 (alternative linear?)
+```
+
+**Hypothesis:** By giving each strand from a different seed face a *different* chirality/twist pattern, their spirals might counteract their initial angular offset, causing them to extend more linearly along their respective quadray basis directions.
+
+**Implementation idea:**
+- Map seed face index to a chirality pattern
+- Face 0 (primary) → Pattern A
+- Face 1 (strand 2) → Pattern B or C (opposite twist)
+- Face 2 (strand 3) → Pattern C or B
+- Face 3 (strand 4) → Pattern D (experimental)
+
+This would be a good experiment to try with the existing unzipped mode infrastructure.
+
 #### Biological Analogies
 
 - **2 strands (Double Helix):** Most similar to **DNA** structure - two antiparallel strands wound around a central axis. The "unzipped" mode would better represent this.
