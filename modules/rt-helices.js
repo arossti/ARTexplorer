@@ -1,0 +1,478 @@
+/**
+ * rt-helices.js
+ * Helical Geometry Generators for ARTexplorer
+ *
+ * Generates helical chains of polyhedra using face-sharing algorithms.
+ * RT-Pure: Uses quadrance and spread throughout.
+ *
+ * Variants:
+ * - tetrahelix1: Toroidal (left-handed, max 48, approaches torus closure)
+ * - tetrahelix2: Linear (stub - for experimentation with non-toroidal extension)
+ *
+ * See: Geometry documents/Tetrahelix.md for specification
+ *
+ * @requires THREE.js
+ * @requires rt-math.js
+ */
+
+import { RT } from "./rt-math.js";
+
+// Access THREE.js from global scope (set by main HTML)
+
+/**
+ * Helices generator functions
+ * @namespace Helices
+ */
+export const Helices = {
+  /**
+   * Tetrahelix 1: Toroidal variant (left-handed)
+   *
+   * Uses face-normal driven generation with left-handed chirality.
+   * Approaches torus closure at 48 tetrahedra with small gap.
+   *
+   * Note: Right-handed variant self-intersects at step 12, so only
+   * left-handed is implemented. Chirality toggle commented out for
+   * potential reuse in future variants.
+   *
+   * @param {number} halfSize - Half-size of base tetrahedron
+   * @param {Object} options
+   * @param {number} options.count - Number of tetrahedra (default: 10, max: 48)
+   * @param {string} options.startFace - Initial face: 'A', 'B', 'C', or 'D' (default: 'A')
+   * @returns {Object} { vertices, edges, faces, metadata }
+   */
+  tetrahelix1: (halfSize = 1, options = {}) => {
+    // Cap at 48 for torus near-closure (right-handed self-intersects at 12)
+    const count = Math.min(Math.max(options.count || 10, 1), 48);
+    const startFace = options.startFace || "A";
+    // Left-handed only for this variant (right-handed self-intersects)
+    const leftHanded = true;
+
+    // Generate seed tetrahedron (same as Polyhedra.tetrahedron)
+    const s = halfSize;
+    const seedVertices = [
+      new THREE.Vector3(-s, -s, -s), // V0
+      new THREE.Vector3(s, s, -s), // V1
+      new THREE.Vector3(s, -s, s), // V2
+      new THREE.Vector3(-s, s, s), // V3
+    ];
+
+    // All vertices in the chain (start with seed)
+    const allVertices = [...seedVertices];
+
+    // Track tetrahedra as arrays of 4 vertex indices
+    const tetrahedra = [[0, 1, 2, 3]];
+
+    // Edge quadrance for regular tetrahedron: Q = 8s²
+    const expectedQ = 8 * halfSize * halfSize;
+
+    // Distance from face centroid to apex for regular tetrahedron
+    // Q_apex = (2/3) * Q_edge
+    const apexDistanceQ = (2 / 3) * expectedQ;
+    const apexDistance = Math.sqrt(apexDistanceQ);
+
+    /**
+     * Calculate centroid of a triangular face
+     */
+    const calculateCentroid = (v0, v1, v2) => {
+      return new THREE.Vector3(
+        (v0.x + v1.x + v2.x) / 3,
+        (v0.y + v1.y + v2.y) / 3,
+        (v0.z + v1.z + v2.z) / 3
+      );
+    };
+
+    /**
+     * Calculate outward-pointing normal for a face
+     */
+    const calculateFaceNormal = (v0, v1, v2, tetraCentroid) => {
+      const edge1 = new THREE.Vector3().subVectors(v1, v0);
+      const edge2 = new THREE.Vector3().subVectors(v2, v0);
+      const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize();
+
+      const faceCentroid = calculateCentroid(v0, v1, v2);
+      const outwardDir = new THREE.Vector3().subVectors(
+        faceCentroid,
+        tetraCentroid
+      );
+      if (normal.dot(outwardDir) < 0) {
+        normal.negate();
+      }
+
+      return normal;
+    };
+
+    /**
+     * Get tetrahedron centroid from 4 vertices (Vector3 array)
+     */
+    const getTetraCentroid = verts => {
+      return new THREE.Vector3(
+        (verts[0].x + verts[1].x + verts[2].x + verts[3].x) / 4,
+        (verts[0].y + verts[1].y + verts[2].y + verts[3].y) / 4,
+        (verts[0].z + verts[1].z + verts[2].z + verts[3].z) / 4
+      );
+    };
+
+    /**
+     * Get tetrahedron centroid from 4 vertex indices
+     */
+    const getTetraCentroidByIndices = tetIndices => {
+      const v0 = allVertices[tetIndices[0]];
+      const v1 = allVertices[tetIndices[1]];
+      const v2 = allVertices[tetIndices[2]];
+      const v3 = allVertices[tetIndices[3]];
+      return new THREE.Vector3(
+        (v0.x + v1.x + v2.x + v3.x) / 4,
+        (v0.y + v1.y + v2.y + v3.y) / 4,
+        (v0.z + v1.z + v2.z + v3.z) / 4
+      );
+    };
+
+    // Map user-facing labels to face indices
+    const FACE_LABEL_TO_INDEX = { A: 0, B: 1, C: 2, D: 3 };
+
+    // Current state
+    let currentVerts = [...seedVertices];
+    let currentIndices = [0, 1, 2, 3];
+    let exitFaceLocalIdx = FACE_LABEL_TO_INDEX[startFace] ?? 0;
+
+    // Generate chain
+    for (let i = 1; i < count; i++) {
+      const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFaceLocalIdx);
+
+      const fv0 = currentVerts[faceLocalIndices[0]];
+      const fv1 = currentVerts[faceLocalIndices[1]];
+      const fv2 = currentVerts[faceLocalIndices[2]];
+
+      const tetraCentroid = getTetraCentroid(currentVerts);
+      const faceCentroid = calculateCentroid(fv0, fv1, fv2);
+      const faceNormal = calculateFaceNormal(fv0, fv1, fv2, tetraCentroid);
+
+      const newApex = faceCentroid
+        .clone()
+        .add(faceNormal.multiplyScalar(apexDistance));
+      const newApexIndex = allVertices.length;
+      allVertices.push(newApex);
+
+      const sharedGlobalIndices = faceLocalIndices.map(
+        li => currentIndices[li]
+      );
+
+      const newTetIndices = [...sharedGlobalIndices, newApexIndex];
+      tetrahedra.push(newTetIndices);
+
+      currentVerts = [fv0, fv1, fv2, newApex];
+      currentIndices = newTetIndices;
+
+      // Left-handed face cycling: 0 -> 2 -> 1 -> 0
+      exitFaceLocalIdx =
+        exitFaceLocalIdx === 0 ? 2 : exitFaceLocalIdx === 2 ? 1 : 0;
+    }
+
+    // Build edges
+    const edgeSet = new Set();
+    const addEdge = (a, b) => {
+      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+      edgeSet.add(key);
+    };
+
+    tetrahedra.forEach(tet => {
+      addEdge(tet[0], tet[1]);
+      addEdge(tet[0], tet[2]);
+      addEdge(tet[0], tet[3]);
+      addEdge(tet[1], tet[2]);
+      addEdge(tet[1], tet[3]);
+      addEdge(tet[2], tet[3]);
+    });
+
+    const edges = Array.from(edgeSet).map(key => {
+      const [a, b] = key.split("-").map(Number);
+      return [a, b];
+    });
+
+    // Build faces
+    const allFaces = [];
+    tetrahedra.forEach(tet => {
+      const faces = [
+        [tet[1], tet[2], tet[3]],
+        [tet[0], tet[2], tet[3]],
+        [tet[0], tet[1], tet[3]],
+        [tet[0], tet[1], tet[2]],
+      ];
+
+      const tetraCentroid = getTetraCentroidByIndices(tet);
+      faces.forEach(face => {
+        const v0 = allVertices[face[0]];
+        const v1 = allVertices[face[1]];
+        const v2 = allVertices[face[2]];
+        const faceCentroid = calculateCentroid(v0, v1, v2);
+        const edge1 = new THREE.Vector3().subVectors(v1, v0);
+        const edge2 = new THREE.Vector3().subVectors(v2, v0);
+        const normal = new THREE.Vector3().crossVectors(edge1, edge2);
+        const outwardDir = new THREE.Vector3().subVectors(
+          faceCentroid,
+          tetraCentroid
+        );
+
+        if (normal.dot(outwardDir) < 0) {
+          const tmp = face[1];
+          face[1] = face[2];
+          face[2] = tmp;
+        }
+
+        allFaces.push(face);
+      });
+    });
+
+    // RT Validation
+    const validation = RT.validateEdges(allVertices, edges, expectedQ);
+    const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+    const faceSpread = RT.FaceSpreads.tetrahedron();
+
+    console.log(`[RT] Tetrahelix1 (Toroidal): count=${count}, halfSize=${halfSize}`);
+    console.log(
+      `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
+    );
+    console.log(
+      `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
+    );
+    console.log(`  Chirality: left-handed (fixed)`);
+    console.log(`  Start face: ${startFace}`);
+
+    return {
+      vertices: allVertices,
+      edges,
+      faces: allFaces,
+      faceSpread,
+      metadata: {
+        variant: "tetrahelix1",
+        count,
+        startFace,
+        leftHanded: true,
+        tetrahedra: tetrahedra.length,
+        expectedQ,
+      },
+    };
+  },
+
+  /**
+   * Tetrahelix 2: Linear variant
+   *
+   * Extends tetrahedra in a zigzag pattern that travels in a roughly
+   * straight line rather than curving back into a torus.
+   *
+   * Strategy: Always exit through face 0 (relative to new tet's local ordering).
+   * This creates an alternating pattern that extends linearly.
+   *
+   * @param {number} halfSize - Half-size of base tetrahedron
+   * @param {Object} options
+   * @param {number} options.count - Number of tetrahedra (default: 10, max: 144)
+   * @param {string} options.startFace - Initial face: 'A', 'B', 'C', or 'D' (default: 'A')
+   * @returns {Object} { vertices, edges, faces, metadata }
+   */
+  tetrahelix2: (halfSize = 1, options = {}) => {
+    const count = Math.min(Math.max(options.count || 10, 1), 144);
+    const startFace = options.startFace || "A";
+
+    // Generate seed tetrahedron
+    const s = halfSize;
+    const seedVertices = [
+      new THREE.Vector3(-s, -s, -s), // V0
+      new THREE.Vector3(s, s, -s), // V1
+      new THREE.Vector3(s, -s, s), // V2
+      new THREE.Vector3(-s, s, s), // V3
+    ];
+
+    const allVertices = [...seedVertices];
+    const tetrahedra = [[0, 1, 2, 3]];
+
+    const expectedQ = 8 * halfSize * halfSize;
+    const apexDistanceQ = (2 / 3) * expectedQ;
+    const apexDistance = Math.sqrt(apexDistanceQ);
+
+    const calculateCentroid = (v0, v1, v2) => {
+      return new THREE.Vector3(
+        (v0.x + v1.x + v2.x) / 3,
+        (v0.y + v1.y + v2.y) / 3,
+        (v0.z + v1.z + v2.z) / 3
+      );
+    };
+
+    const calculateFaceNormal = (v0, v1, v2, tetraCentroid) => {
+      const edge1 = new THREE.Vector3().subVectors(v1, v0);
+      const edge2 = new THREE.Vector3().subVectors(v2, v0);
+      const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize();
+
+      const faceCentroid = calculateCentroid(v0, v1, v2);
+      const outwardDir = new THREE.Vector3().subVectors(
+        faceCentroid,
+        tetraCentroid
+      );
+      if (normal.dot(outwardDir) < 0) {
+        normal.negate();
+      }
+      return normal;
+    };
+
+    const getTetraCentroid = verts => {
+      return new THREE.Vector3(
+        (verts[0].x + verts[1].x + verts[2].x + verts[3].x) / 4,
+        (verts[0].y + verts[1].y + verts[2].y + verts[3].y) / 4,
+        (verts[0].z + verts[1].z + verts[2].z + verts[3].z) / 4
+      );
+    };
+
+    const getTetraCentroidByIndices = tetIndices => {
+      const v0 = allVertices[tetIndices[0]];
+      const v1 = allVertices[tetIndices[1]];
+      const v2 = allVertices[tetIndices[2]];
+      const v3 = allVertices[tetIndices[3]];
+      return new THREE.Vector3(
+        (v0.x + v1.x + v2.x + v3.x) / 4,
+        (v0.y + v1.y + v2.y + v3.y) / 4,
+        (v0.z + v1.z + v2.z + v3.z) / 4
+      );
+    };
+
+    const FACE_LABEL_TO_INDEX = { A: 0, B: 1, C: 2, D: 3 };
+
+    let currentVerts = [...seedVertices];
+    let currentIndices = [0, 1, 2, 3];
+    let exitFaceLocalIdx = FACE_LABEL_TO_INDEX[startFace] ?? 0;
+
+    // Generate chain - LINEAR pattern
+    // Always exit through face 0 to create zigzag linear extension
+    for (let i = 1; i < count; i++) {
+      const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFaceLocalIdx);
+
+      const fv0 = currentVerts[faceLocalIndices[0]];
+      const fv1 = currentVerts[faceLocalIndices[1]];
+      const fv2 = currentVerts[faceLocalIndices[2]];
+
+      const tetraCentroid = getTetraCentroid(currentVerts);
+      const faceCentroid = calculateCentroid(fv0, fv1, fv2);
+      const faceNormal = calculateFaceNormal(fv0, fv1, fv2, tetraCentroid);
+
+      const newApex = faceCentroid
+        .clone()
+        .add(faceNormal.multiplyScalar(apexDistance));
+      const newApexIndex = allVertices.length;
+      allVertices.push(newApex);
+
+      const sharedGlobalIndices = faceLocalIndices.map(
+        li => currentIndices[li]
+      );
+
+      const newTetIndices = [...sharedGlobalIndices, newApexIndex];
+      tetrahedra.push(newTetIndices);
+
+      currentVerts = [fv0, fv1, fv2, newApex];
+      currentIndices = newTetIndices;
+
+      // LINEAR: Always exit through face 0 (creates zigzag extending pattern)
+      // Face 3 is entry (shared), so we pick face 0 consistently
+      exitFaceLocalIdx = 0;
+    }
+
+    // Build edges
+    const edgeSet = new Set();
+    const addEdge = (a, b) => {
+      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+      edgeSet.add(key);
+    };
+
+    tetrahedra.forEach(tet => {
+      addEdge(tet[0], tet[1]);
+      addEdge(tet[0], tet[2]);
+      addEdge(tet[0], tet[3]);
+      addEdge(tet[1], tet[2]);
+      addEdge(tet[1], tet[3]);
+      addEdge(tet[2], tet[3]);
+    });
+
+    const edges = Array.from(edgeSet).map(key => {
+      const [a, b] = key.split("-").map(Number);
+      return [a, b];
+    });
+
+    // Build faces
+    const allFaces = [];
+    tetrahedra.forEach(tet => {
+      const faces = [
+        [tet[1], tet[2], tet[3]],
+        [tet[0], tet[2], tet[3]],
+        [tet[0], tet[1], tet[3]],
+        [tet[0], tet[1], tet[2]],
+      ];
+
+      const tetraCentroid = getTetraCentroidByIndices(tet);
+      faces.forEach(face => {
+        const v0 = allVertices[face[0]];
+        const v1 = allVertices[face[1]];
+        const v2 = allVertices[face[2]];
+        const faceCentroid = calculateCentroid(v0, v1, v2);
+        const edge1 = new THREE.Vector3().subVectors(v1, v0);
+        const edge2 = new THREE.Vector3().subVectors(v2, v0);
+        const normal = new THREE.Vector3().crossVectors(edge1, edge2);
+        const outwardDir = new THREE.Vector3().subVectors(
+          faceCentroid,
+          tetraCentroid
+        );
+
+        if (normal.dot(outwardDir) < 0) {
+          const tmp = face[1];
+          face[1] = face[2];
+          face[2] = tmp;
+        }
+
+        allFaces.push(face);
+      });
+    });
+
+    // RT Validation
+    const validation = RT.validateEdges(allVertices, edges, expectedQ);
+    const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+    const faceSpread = RT.FaceSpreads.tetrahedron();
+
+    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, halfSize=${halfSize}`);
+    console.log(
+      `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
+    );
+    console.log(
+      `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
+    );
+    console.log(`  Pattern: Always exit face 0 (linear zigzag)`);
+    console.log(`  Start face: ${startFace}`);
+
+    return {
+      vertices: allVertices,
+      edges,
+      faces: allFaces,
+      faceSpread,
+      metadata: {
+        variant: "tetrahelix2",
+        count,
+        startFace,
+        tetrahedra: tetrahedra.length,
+        expectedQ,
+      },
+    };
+  },
+
+  // ========================================================================
+  // CHIRALITY TOGGLE (commented out for reuse in future variants)
+  // ========================================================================
+  // To enable chirality selection, uncomment and add to options:
+  //
+  // const leftHanded = options.leftHanded || false;
+  //
+  // Then in the face cycling section:
+  // if (leftHanded) {
+  //   // 0 -> 2 -> 1 -> 0
+  //   exitFaceLocalIdx =
+  //     exitFaceLocalIdx === 0 ? 2 : exitFaceLocalIdx === 2 ? 1 : 0;
+  // } else {
+  //   // 0 -> 1 -> 2 -> 0 (self-intersects at step 12!)
+  //   exitFaceLocalIdx = (exitFaceLocalIdx + 1) % 3;
+  // }
+  // ========================================================================
+};
