@@ -134,6 +134,8 @@ function startARTexplorer(
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
   let prismGroup; // Prism primitive (3D solid with N-gon caps)
   let coneGroup; // Cone primitive (3D solid with N-gon base and apex)
+  let tetrahelix1Group; // Tetrahelix 1: Toroidal (left-handed)
+  let tetrahelix2Group; // Tetrahelix 2: Linear (stub)
   let cubeGroup, tetrahedronGroup, dualTetrahedronGroup, octahedronGroup;
   let icosahedronGroup, dodecahedronGroup, dualIcosahedronGroup;
   let cuboctahedronGroup, rhombicDodecahedronGroup;
@@ -2295,6 +2297,8 @@ function startARTexplorer(
       polygonGroup,
       prismGroup,
       coneGroup,
+      tetrahelix1Group,
+      tetrahelix2Group,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -2558,6 +2562,8 @@ function startARTexplorer(
       polygonGroup,
       prismGroup,
       coneGroup,
+      tetrahelix1Group,
+      tetrahelix2Group,
       cubeGroup,
       tetrahedronGroup,
       dualTetrahedronGroup,
@@ -3988,6 +3994,8 @@ function startARTexplorer(
     polygonGroup,
     prismGroup,
     coneGroup,
+    tetrahelix1Group,
+      tetrahelix2Group,
     cubeGroup,
     tetrahedronGroup,
     dualTetrahedronGroup,
