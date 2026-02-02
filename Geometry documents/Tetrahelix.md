@@ -369,7 +369,7 @@ This is geometrically equivalent to building 4 independent tetrahelices that sha
 2. Use a different face-exit pattern for each strand based on its target direction
 3. Accept that tetrahelix geometry inherently spirals rather than extends linearly
 
-#### Chirality Experiment (Planned)
+#### Chirality Experiment (Feb 2, 2026)
 
 **Key Insight:** All strands currently use the same "always exit face 0" pattern, giving them identical twist/chirality. This causes them to spiral in the same direction regardless of starting face.
 
@@ -385,14 +385,104 @@ Face-exit patterns:
 
 **Hypothesis:** By giving each strand from a different seed face a *different* chirality/twist pattern, their spirals might counteract their initial angular offset, causing them to extend more linearly along their respective quadray basis directions.
 
-**Implementation idea:**
-- Map seed face index to a chirality pattern
-- Face 0 (primary) → Pattern A
-- Face 1 (strand 2) → Pattern B or C (opposite twist)
-- Face 2 (strand 3) → Pattern C or B
-- Face 3 (strand 4) → Pattern D (experimental)
+**Implementation Attempt (Feb 2, 2026):**
 
-This would be a good experiment to try with the existing unzipped mode infrastructure.
+Attempted implementation with per-strand "Twist" (linear/toroidal) and "Exit" (face 0/1/2) controls in a grid UI:
+
+```
+Face:    A  B  C  D     (which face starts primary strand)
+Strands: 1  2  3  4     (how many strands)
+Twist:   ↻↺ ↻↺ ↻↺ ↻↺   (per-strand linear/toroidal toggle)
+Exit:    012 012 012 012 (per-strand exit face selector)
+```
+
+**Findings:**
+1. When implementing per-strand chirality controls, a regression occurred where *all* helices became toroidal regardless of settings
+2. The issue was traced to having multiple radio buttons in a single `<label>` element causing incorrect default selection
+3. Even after fixing the HTML structure, the logic to switch between linear and toroidal modes didn't work as expected
+4. A bug was also found and fixed: secondary strands should exclude the primary's start face, not always exclude face 0
+
+**What we learned:**
+- The original "always exit face 0" linear pattern works because it's hardcoded, not computed
+- Parameterizing the exit face selection introduces complexity that's easy to get wrong
+- The relationship between face indices and actual geometric direction is non-obvious
+- Need to better understand: what exactly determines linear vs toroidal behavior?
+
+*Commit: 7d65056 - reverted, preserved for research reference*
+
+**Open Questions:**
+1. Is the "linear" behavior actually a special case of low-period toroidal?
+2. Would a completely different approach work better? (e.g., direction biasing rather than face selection)
+3. Should we focus on understanding the single-strand behavior deeply before attempting multi-strand control?
+
+**Recommendation:** Step back and study the mathematical relationship between face-exit patterns and the resulting geometric trajectory before adding more UI controls.
+
+#### Per-Strand Steering Controls (Feb 2, 2026)
+
+**Goal:** Add "Second Exit" controls to steer strands toward quadray basis vectors (QW, QX, QY, QZ) by allowing per-strand exit face selection at an early tetrahedron.
+
+**UI Implementation:**
+```
+Second Exit (per strand)
+     0   1   2
+A   (●) ( ) ( )
+B   (●) ( ) ( )
+C   (●) ( ) ( )
+D   (●) ( ) ( )
+```
+
+Each strand (A/B/C/D) can select exit face 0, 1, or 2 for steering. Face 3 is always the entry face (shared with previous tetrahedron).
+
+**Key Design Decision: When to Apply Steering**
+
+The question of *which* tetrahedron to steer at proved critical:
+
+1. **Seed tetrahedron (1st):** Cannot steer - this is the origin, all 4 faces are bonding points for strands
+2. **Face-bonded tetrahedron (2nd):** First tetrahedron of each strand - bonded to a seed face
+3. **Steering tetrahedron (3rd+):** Where exit face selection can redirect the strand
+
+**Experiment: 2nd vs 3rd Tetrahedron Steering**
+
+- **2nd tet steering (`i === 1`):** Applies exit face at the first non-seed tetrahedron. Found to provide closer-to-desired steering behavior.
+- **3rd tet steering (`i === 2`):** Delays steering by one step. Tested but reverted as 2nd tet was more effective.
+
+**Critical Finding: One-Time vs Continuous Steering**
+
+Initial implementation applied the exit face selection to ALL subsequent tetrahedra, causing strands to go toroidal and self-intersect. The fix was to make steering a ONE-TIME adjustment:
+
+```javascript
+// Steering at 2nd tet only - then resume linear pattern
+if (i === 1) {
+  exitFaceLocalIdx = exitFaces[strandLabel] ?? 0;
+} else {
+  exitFaceLocalIdx = 0;  // Resume "always face 0" linear pattern
+}
+```
+
+**Current Status (Feb 2, 2026):**
+- Per-strand exit face controls are implemented in the UI
+- Steering applies at the 2nd tetrahedron of each strand
+- After steering, strands resume the linear "always exit face 0" pattern
+- Controls are visible in Unzipped mode with 4 strands
+
+*Commits:*
+- *0b0e028 - WIP: Add per-strand exit face controls*
+- *eb4c1f8 - Fix: Apply steering at 3rd tet (reverted)*
+- *a363e3f - Revert to 2nd tet steering*
+
+**Known Parameters for Future Exploration:**
+
+The tetrahelix steering problem has these known variables:
+1. **Steering tetrahedron index** - which tet in the chain applies the steering (currently 2nd)
+2. **Exit face selection** - which of the 3 non-entry faces to exit (0, 1, or 2)
+3. **Post-steering pattern** - what happens after steering (currently: always face 0)
+4. **Per-strand configuration** - different strands can have different steering settings
+
+**Future Work:**
+- Experiment with different combinations of these parameters
+- Consider allowing steering at multiple points along the chain
+- Investigate whether certain combinations produce quadray-aligned trajectories
+- Study the mathematical relationship between exit face indices and geometric direction
 
 #### Biological Analogies
 

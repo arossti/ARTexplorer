@@ -274,6 +274,7 @@ export const Helices = {
    * @param {string} options.startFace - Initial face: 'A', 'B', 'C', or 'D' (default: 'A')
    * @param {number} options.strands - Number of parallel strands: 1-4 (default: 1)
    * @param {string} options.bondMode - 'zipped' (radial spines) or 'unzipped' (parallel chains)
+   * @param {Object} options.exitFaces - Per-strand exit face after first tet: { A: 0-2, B: 0-2, C: 0-2, D: 0-2 }
    * @returns {Object} { vertices, edges, faces, metadata }
    */
   tetrahelix2: (halfSize = 1, options = {}) => {
@@ -281,6 +282,8 @@ export const Helices = {
     const startFace = options.startFace || "A";
     const strands = Math.min(Math.max(options.strands || 1, 1), 4);
     const bondMode = options.bondMode || "zipped";
+    // Per-strand exit face selection (0, 1, or 2 - face 3 is always entry)
+    const exitFaces = options.exitFaces || { A: 0, B: 0, C: 0, D: 0 };
 
     // Generate seed tetrahedron
     const s = halfSize;
@@ -377,9 +380,9 @@ export const Helices = {
       currentVerts = [fv0, fv1, fv2, newApex];
       currentIndices = newTetIndices;
 
-      // LINEAR: Always exit through face 0 (creates zigzag extending pattern)
-      // Face 3 is entry (shared), so we pick face 0 consistently
-      exitFaceLocalIdx = 0;
+      // Use the configured exit face for the primary strand (A)
+      // Face 3 is entry (shared), so we pick from faces 0, 1, 2
+      exitFaceLocalIdx = exitFaces.A ?? 0;
     }
 
     // ========================================================================
@@ -444,12 +447,15 @@ export const Helices = {
 
         // Determine which seed faces to start secondary strands from
         // Face 0 is used by primary strand, so secondary strands use faces 1, 2, 3
+        // Map seed face index to strand label for exitFaces lookup
+        const SEED_FACE_TO_STRAND = { 1: "B", 2: "C", 3: "D" };
         const startingFaces = [];
         if (strands >= 2) startingFaces.push(1);
         if (strands >= 3) startingFaces.push(2);
         if (strands >= 4) startingFaces.push(3);
 
         for (const seedFaceIdx of startingFaces) {
+          const strandLabel = SEED_FACE_TO_STRAND[seedFaceIdx];
           // Get the face vertices (face N is opposite vertex N)
           const seedFaceVertIndices = [0, 1, 2, 3].filter(j => j !== seedFaceIdx);
 
@@ -474,8 +480,8 @@ export const Helices = {
           // Current state for this secondary strand
           let secCurrentVerts = [sfv0, sfv1, sfv2, secApex];
           let secCurrentIndices = secTetIndices;
-          // Use the SAME exit pattern as primary: always exit face 0
-          let secExitFaceLocalIdx = 0;
+          // Use the configured exit face for this strand (B, C, or D)
+          let secExitFaceLocalIdx = exitFaces[strandLabel] ?? 0;
 
           // Continue the secondary chain for (count - 1) more tetrahedra
           // Using identical algorithm to primary strand
@@ -505,8 +511,8 @@ export const Helices = {
             secCurrentVerts = [secFv0, secFv1, secFv2, secNewApex];
             secCurrentIndices = secNewTetIndices;
 
-            // Same linear pattern as primary: always exit face 0
-            secExitFaceLocalIdx = 0;
+            // Use the configured exit face for this strand consistently
+            secExitFaceLocalIdx = exitFaces[strandLabel] ?? 0;
           }
         }
       }
