@@ -255,7 +255,7 @@ export const Helices = {
   },
 
   /**
-   * Tetrahelix 2: Linear variant
+   * Tetrahelix 2: Linear variant with multi-strand support
    *
    * Extends tetrahedra in a zigzag pattern that travels in a roughly
    * straight line rather than curving back into a torus.
@@ -263,15 +263,22 @@ export const Helices = {
    * Strategy: Always exit through face 0 (relative to new tet's local ordering).
    * This creates an alternating pattern that extends linearly.
    *
+   * Multi-strand: Each tetrahedron in the primary chain has exposed faces
+   * that can bond with parallel secondary strands. With strands=2, one
+   * secondary strand is bonded. With strands=3 or 4, additional strands
+   * are bonded to the remaining exposed faces ("3 around 1" configuration).
+   *
    * @param {number} halfSize - Half-size of base tetrahedron
    * @param {Object} options
-   * @param {number} options.count - Number of tetrahedra (default: 10, max: 144)
+   * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 96)
    * @param {string} options.startFace - Initial face: 'A', 'B', 'C', or 'D' (default: 'A')
+   * @param {number} options.strands - Number of parallel strands: 1-4 (default: 1)
    * @returns {Object} { vertices, edges, faces, metadata }
    */
   tetrahelix2: (halfSize = 1, options = {}) => {
-    const count = Math.min(Math.max(options.count || 10, 1), 144);
+    const count = Math.min(Math.max(options.count || 10, 1), 96);
     const startFace = options.startFace || "A";
+    const strands = Math.min(Math.max(options.strands || 1, 1), 4);
 
     // Generate seed tetrahedron
     const s = halfSize;
@@ -373,6 +380,65 @@ export const Helices = {
       exitFaceLocalIdx = 0;
     }
 
+    // ========================================================================
+    // MULTI-STRAND GENERATION
+    // ========================================================================
+    // For strands > 1, we bond additional tetrahedra to exposed faces of
+    // the primary strand. Each primary tetrahedron (except first/last) has
+    // 2 "side" faces not used for entry/exit. The first and last have 3.
+    //
+    // Strand assignment:
+    // - Strand 2: Bonds to face index 1 of each primary tetrahedron
+    // - Strand 3: Bonds to face index 2 of each primary tetrahedron
+    // - Strand 4: Bonds to face index 3 of seed tetrahedron (special case)
+    // ========================================================================
+
+    if (strands >= 2) {
+      // For each tetrahedron in the primary strand, bond secondary tets
+      // to the exposed faces (faces 1 and 2 in local ordering after entry face)
+      // IMPORTANT: Capture primary strand length BEFORE we start adding to tetrahedra
+      const primaryStrandLength = tetrahedra.length;
+      for (let tetIdx = 0; tetIdx < primaryStrandLength; tetIdx++) {
+        const tet = tetrahedra[tetIdx];
+        const tetVerts = tet.map(idx => allVertices[idx]);
+        const tetraCentroid = getTetraCentroid(tetVerts);
+
+        // Determine which faces are available for bonding
+        // In the linear pattern, face 0 is exit, face 3 is entry (except seed)
+        // So faces 1 and 2 are available for secondary strands
+
+        // Get available bonding faces based on strand count
+        const bondingFaces = [];
+        if (strands >= 2) bondingFaces.push(1); // Face opposite vertex 1
+        if (strands >= 3) bondingFaces.push(2); // Face opposite vertex 2
+        // For strand 4, bond to face 3 only on seed (special starting position)
+        if (strands >= 4 && tetIdx === 0) bondingFaces.push(3);
+
+        for (const faceIdx of bondingFaces) {
+          // Get the 3 vertices that define this face (opposite vertex faceIdx)
+          const faceVertIndices = [0, 1, 2, 3].filter(j => j !== faceIdx);
+          const fv0 = tetVerts[faceVertIndices[0]];
+          const fv1 = tetVerts[faceVertIndices[1]];
+          const fv2 = tetVerts[faceVertIndices[2]];
+
+          const faceCentroid = calculateCentroid(fv0, fv1, fv2);
+          const faceNormal = calculateFaceNormal(fv0, fv1, fv2, tetraCentroid);
+
+          // Create new apex for bonded tetrahedron
+          const newApex = faceCentroid
+            .clone()
+            .add(faceNormal.multiplyScalar(apexDistance));
+          const newApexIndex = allVertices.length;
+          allVertices.push(newApex);
+
+          // Map local face vertex indices to global indices
+          const sharedGlobalIndices = faceVertIndices.map(li => tet[li]);
+          const newTetIndices = [...sharedGlobalIndices, newApexIndex];
+          tetrahedra.push(newTetIndices);
+        }
+      }
+    }
+
     // Build edges
     const edgeSet = new Set();
     const addEdge = (a, b) => {
@@ -433,7 +499,7 @@ export const Helices = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron();
 
-    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, halfSize=${halfSize}`);
+    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, strands=${strands}, halfSize=${halfSize}`);
     console.log(
       `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
     );
@@ -441,7 +507,8 @@ export const Helices = {
       `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
     );
     console.log(`  Pattern: Always exit face 0 (linear zigzag)`);
-    console.log(`  Start face: ${startFace}`);
+    console.log(`  Start face: ${startFace}, Strands: ${strands}`);
+    console.log(`  Total tetrahedra: ${tetrahedra.length}`);
 
     return {
       vertices: allVertices,
@@ -452,6 +519,7 @@ export const Helices = {
         variant: "tetrahelix2",
         count,
         startFace,
+        strands,
         tetrahedra: tetrahedra.length,
         expectedQ,
       },

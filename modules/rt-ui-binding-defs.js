@@ -453,6 +453,8 @@ export const geodesicProjectionBindings = [
   // Helix start face selection
   { type: "radio-group", name: "tetrahelix1StartFace" },
   { type: "radio-group", name: "tetrahelix2StartFace" },
+  // Helix strand count
+  { type: "radio-group", name: "tetrahelix2Strands" },
 ];
 
 // ============================================================================
