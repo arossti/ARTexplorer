@@ -360,6 +360,15 @@ Since the four faces of a tetrahedron point in directions separated by the **tet
 
 This is geometrically equivalent to building 4 independent tetrahelices that share a common origin tetrahedron.
 
+**Finding (Feb 1, 2026):** Visual testing shows strands diverge but do NOT follow quadray basis vector directions as initially expected. The "always exit face 0" algorithm produces a consistent zigzag pattern, but starting from different seed faces doesn't preserve the initial tetrahedral direction - each strand curves away in its own trajectory determined by its local face ordering, not the global coordinate system.
+
+*Commit: 1ac2738 - preserved for research reference*
+
+**Open Question:** To achieve true quadray-aligned strands, would need to either:
+1. Bias face selection toward maintaining the initial direction (attempted in e381987, over-corrected)
+2. Use a different face-exit pattern for each strand based on its target direction
+3. Accept that tetrahelix geometry inherently spirals rather than extends linearly
+
 #### Biological Analogies
 
 - **2 strands (Double Helix):** Most similar to **DNA** structure - two antiparallel strands wound around a central axis. The "unzipped" mode would better represent this.
