@@ -1177,11 +1177,75 @@ These faces share edge `[1, 2]` but are different triangular faces of the seed.
 | Opposite face (A↔D) | Used different face normal direction | Different axis, not inverse |
 | Negated normal | Flipped apex to other side of SAME face | Changed chirality, created dogleg |
 | Different exit face idx | Changed rotation pattern | Not computing true predecessor |
-| Reflection approach | **Not yet tried** | Should work - true mathematical inverse |
+| **Reflection approach** | **2 × centroid - apex** | **SUCCESS!** |
 
-### Next Step
+---
 
-Implement the reflection-based backward generation and test whether it produces a straight javelin through origin.
+## SUCCESS: Reflection-Based Backward Generation (Feb 3, 2026)
+
+### It Works!
+
+The reflection formula produces a perfectly straight javelin through origin:
+
+```
+predApex = 2 × entryCentroid - currentApex
+```
+
+This is the **exact mathematical inverse** of the forward apex calculation. Like running a bouncing ball's trajectory backwards - if the forward physics produces a straight path, the inverse physics must also.
+
+### Implementation (commit caf0a1c)
+
+```javascript
+const generateBackwardChain = (startVerts, startIndices, numTets) => {
+  let currentVerts = [...startVerts]; // [v0, v1, v2, apex]
+  let currentIndices = [...startIndices];
+
+  for (let i = 0; i < numTets; i++) {
+    const v0 = currentVerts[0];
+    const v1 = currentVerts[1];
+    const v2 = currentVerts[2];
+    const apex = currentVerts[3];
+
+    // REFLECTION: predecessor apex = 2 × entryCentroid - apex
+    const entryCentroid = calculateCentroid(v0, v1, v2);
+    const predApex = new THREE.Vector3(
+      2 * entryCentroid.x - apex.x,
+      2 * entryCentroid.y - apex.y,
+      2 * entryCentroid.z - apex.z
+    );
+
+    // Predecessor tet: [predApex, v0, v1, v2]
+    // Next iteration: entry face becomes [predApex, v0, v1], apex becomes v2
+    currentVerts = [predApex, v0, v1, v2];
+  }
+};
+```
+
+### Key Insight: Entry Face vs Exit Face
+
+For the seed tetrahedron with + direction exiting through `startFace = [1, 2, 3]`:
+- **+ direction** exits through face A = `[1, 2, 3]` (opposite V0)
+- **- direction** uses entry face `[0, 1, 2]` (opposite V3)
+
+These are **different faces** of the seed! The backward chain uses the face that the forward chain would have entered through, not the face it exits through.
+
+### Why It Works
+
+1. **Mathematical consistency**: Reflection is the exact inverse of apex placement
+2. **Chain continuity**: Each predecessor shares exactly 3 vertices with its successor
+3. **Chirality preservation**: We're computing what was already there, not flipping anything
+4. **Straight line**: Both directions are part of the same infinite helix
+
+### Current Behavior
+
+- **Axis toggles (QW, QX, QY, QZ)**: Change javelin direction while keeping seed fixed at origin
+- **+/- switches**: Currently both directions always generated (needs wiring to show/hide halves)
+- **Count slider**: Extends javelin symmetrically in both directions from center
+
+### Remaining UI Decisions
+
+1. **+/- switches**: Wire to show/hide positive/negative halves (default: both on)
+2. **Exit face matrix (0/1/2 per strand)**: This would introduce bends - keep as demonstrator or remove?
 
 ---
 
