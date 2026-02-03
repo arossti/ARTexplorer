@@ -703,6 +703,60 @@ provide a rational, gimbal-lock-free alternative to both Euler angles and quater
 - [ ] Export rotation as QuadrayRotor constructor call
 - [ ] Side-by-side Euler vs Quadray visualization (split view)
 
+### Phase 6: Native F,G,H Tetrahedral Rotation 🎯 TARGET
+
+**Goal**: Replace Hamilton product scaffolding with Tom Ace's native Quadray rotation algebra.
+
+**Mathematical Foundation** (from `4D-COORDINATES.md` §10.5):
+
+Tom Ace's rotation coefficients for rotation about a Quadray basis axis:
+```
+F = (2·cos(θ) + 1) / 3
+G = (2·cos(θ - 120°) + 1) / 3
+H = (2·cos(θ + 120°) + 1) / 3
+```
+
+The 4×4 rotation matrix (about W-axis) has **circulant structure**:
+```
+R_W = | 1  0  0  0 |
+      | 0  F  H  G |
+      | 0  G  F  H |
+      | 0  H  G  F |
+```
+
+**RT-Pure Implementation**:
+
+- [ ] `rotationCoeffsFromSpread(s)` - Calculate F,G,H from spread (not angle)
+- [ ] `rotateAboutW(spread)`, `rotateAboutX(spread)`, etc. - Single-axis rotations
+- [ ] `compose(r1, r2)` - Rotation composition via 4×4 matrix multiplication
+- [ ] Verify output matches current Hamilton-based implementation exactly
+- [ ] Remove quaternion scaffolding from `multiply()` method
+- [ ] Update `toMatrix3()` to use native F,G,H calculation
+
+**Validation Tests**:
+
+- [ ] Compare Hamilton vs F,G,H output for common angles (30°, 45°, 60°, 90°, 120°)
+- [ ] Verify rotation composition produces identical results
+- [ ] Test edge cases: identity (s=0), quarter-turn (s=1), Janus flip (180°)
+- [ ] Performance comparison: Hamilton product vs 4×4 matrix multiply
+
+**Why This Matters**:
+
+This phase removes the last vestiges of quaternion math, replacing it with native tetrahedral algebra. The rotation will be **genuinely different** from quaternions:
+- Basis geometry: 109.47° (tetrahedral) vs 90° (orthogonal)
+- Operation: Circulant matrix multiplication vs Hamilton product
+- Structure: Reflects three-fold face symmetry of tetrahedron
+
+**Note on Normalization** (from *Geometric Janus Inversion*, Thomson 2026):
+
+The zero-sum constraint ($W + X + Y + Z = k$) is for **XYZ parity** — it projects 4D Quadray onto 3D Cartesian space. In native 4D Quadray rotation, we can operate **without** this constraint:
+
+- The fourth coordinate carries real geometric information (see: deformed tetrahedron)
+- Operating in full ℝ⁴ avoids the topological obstructions that cause gimbal lock
+- No normalization required — this is not a limitation, it's a feature
+
+The tetrahedron naturally inhabits 4D space; the zero-sum constraint artificially flattens it to 3D for Cartesian compatibility. Native Quadray rotation preserves the full dimensional richness.
+
 ---
 
 ## 12. Comparison Mode: Quaternion vs Quadray Rotors
