@@ -1063,44 +1063,39 @@ export function initScene(THREE, OrbitControls, RT) {
         D: getExitFace("QZ"),  // QZ → face D (3021 Rule)
       };
 
-      // Build list of directions to render
-      const directions = [];
-      if (showPlus) directions.push("+");
-      if (showMinus) directions.push("-");
-
-      if (directions.length === 0) {
+      // Javelin model: single call with dirPlus/dirMinus flags
+      if (!showPlus && !showMinus) {
         tetrahelix2Group.visible = false;
       } else {
-        // Clear existing geometry and render for each direction
+        // Clear existing geometry
         while (tetrahelix2Group.children.length > 0) {
           tetrahelix2Group.remove(tetrahelix2Group.children[0]);
         }
 
-        directions.forEach(dir => {
-          const tetrahelix2Data = Helices.tetrahelix2(scale, {
-            count: tetrahelix2Count,
-            startFace: tetrahelix2StartFace,
-            direction: dir,
-            strands: tetrahelix2Strands,
-            bondMode: tetrahelix2BondMode,
-            exitFaces: tetrahelix2ExitFaces,
-          });
-          const dirGroup = new THREE.Group();
-          dirGroup.userData.direction = dir;
-          renderPolyhedron(
-            dirGroup,
-            tetrahelix2Data,
-            colorPalette.tetrahelix2 || 0x88ff88,
-            opacity
-          );
-          tetrahelix2Group.add(dirGroup);
+        // Single call with both direction flags
+        const tetrahelix2Data = Helices.tetrahelix2(scale, {
+          count: tetrahelix2Count,
+          startFace: tetrahelix2StartFace,
+          dirPlus: showPlus,
+          dirMinus: showMinus,
+          strands: tetrahelix2Strands,
+          bondMode: tetrahelix2BondMode,
+          exitFaces: tetrahelix2ExitFaces,
         });
+
+        renderPolyhedron(
+          tetrahelix2Group,
+          tetrahelix2Data,
+          colorPalette.tetrahelix2 || 0x88ff88,
+          opacity
+        );
 
         tetrahelix2Group.userData.type = "tetrahelix2";
         tetrahelix2Group.userData.parameters = {
           count: tetrahelix2Count,
           axis: tetrahelix2Axis,
-          directions: directions,
+          dirPlus: showPlus,
+          dirMinus: showMinus,
           strands: tetrahelix2Strands,
           bondMode: tetrahelix2BondMode,
           exitFaces: tetrahelix2ExitFaces,
@@ -2235,11 +2230,10 @@ export function initScene(THREE, OrbitControls, RT) {
       const axisRadio = document.querySelector(
         'input[name="tetrahelix2Axis"]:checked'
       );
-      const directionRadio = document.querySelector(
-        'input[name="tetrahelix2Direction"]:checked'
-      );
       const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
-      const tetrahelix2Direction = directionRadio ? directionRadio.value : "+";
+      // Read direction checkboxes (javelin model)
+      const showPlus = document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
+      const showMinus = document.getElementById("tetrahelix2DirMinus")?.checked ?? true;
       // 3021 Rule mapping
       const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
       const tetrahelix2StartFace = axisToFace[tetrahelix2Axis] || "B";
@@ -2266,7 +2260,8 @@ export function initScene(THREE, OrbitControls, RT) {
       const tetrahelix2Data = Helices.tetrahelix2(1, {
         count: tetrahelix2Count,
         startFace: tetrahelix2StartFace,
-        direction: tetrahelix2Direction,
+        dirPlus: showPlus,
+        dirMinus: showMinus,
         strands: tetrahelix2Strands,
         bondMode: tetrahelix2BondMode,
         exitFaces: tetrahelix2ExitFaces,
@@ -2276,10 +2271,11 @@ export function initScene(THREE, OrbitControls, RT) {
       const F2 = tetrahelix2Data.faces.length;
       const strandLabel = tetrahelix2Strands === 1 ? "1 strand" : `${tetrahelix2Strands} strands`;
       const modeLabel = tetrahelix2Strands > 1 ? `, ${tetrahelix2BondMode}` : "";
+      const dirLabel = (showPlus ? "+" : "") + (showMinus ? "-" : "");
       html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (${tetrahelix2Count} tet, ${strandLabel}${modeLabel}):</strong></div>`;
       html += `<div>V: ${V2}, E: ${E2}, F: ${F2}</div>`;
       html += `<div>Euler: N/A (open chain)</div>`;
-      html += `<div>Axis: ${tetrahelix2Axis}${tetrahelix2Direction}</div>`;
+      html += `<div>Axis: ${tetrahelix2Axis} ${dirLabel}</div>`;
     }
 
     // Tetrahelix 3 stats (octahedral seed)
@@ -3169,17 +3165,32 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       case "tetrahelix2": {
-        // Tetrahelix 2: Linear (tetrahedral seed)
+        // Tetrahelix 2: Linear (tetrahedral seed) - Javelin model
         const tetrahelix2Count = options.count ?? 10;
         const tetrahelix2StartFace = options.startFace ?? "A";
+        const tetrahelix2DirPlus = options.dirPlus ?? true;
+        const tetrahelix2DirMinus = options.dirMinus ?? true;
+        const tetrahelix2Strands = options.strands ?? 1;
+        const tetrahelix2BondMode = options.bondMode ?? "zipped";
+        const tetrahelix2ExitFaces = options.exitFaces ?? { A: 0, B: 0, C: 0, D: 0 };
         geometry = Helices.tetrahelix2(scale, {
           count: tetrahelix2Count,
           startFace: tetrahelix2StartFace,
+          dirPlus: tetrahelix2DirPlus,
+          dirMinus: tetrahelix2DirMinus,
+          strands: tetrahelix2Strands,
+          bondMode: tetrahelix2BondMode,
+          exitFaces: tetrahelix2ExitFaces,
         });
         group.userData.type = "tetrahelix2";
         group.userData.parameters = {
           count: tetrahelix2Count,
           startFace: tetrahelix2StartFace,
+          dirPlus: tetrahelix2DirPlus,
+          dirMinus: tetrahelix2DirMinus,
+          strands: tetrahelix2Strands,
+          bondMode: tetrahelix2BondMode,
+          exitFaces: tetrahelix2ExitFaces,
           tetrahedra: geometry.metadata.tetrahedra,
           expectedQ: geometry.metadata.expectedQ,
         };

@@ -431,7 +431,9 @@ export const Helices = {
   tetrahelix2: (halfSize = 1, options = {}) => {
     const count = Math.min(Math.max(options.count || 10, 1), 96);
     const startFace = options.startFace || "A";
-    const direction = options.direction || "+"; // "+" = positive, "-" = negative
+    // Direction flags for javelin model - both default to true for full javelin
+    const dirPlus = options.dirPlus !== undefined ? options.dirPlus : true;
+    const dirMinus = options.dirMinus !== undefined ? options.dirMinus : true;
     const strands = Math.min(Math.max(options.strands || 1, 1), 4);
     const bondMode = options.bondMode || "zipped";
     const exitFaces = options.exitFaces || { A: 0, B: 0, C: 0, D: 0 };
@@ -618,7 +620,7 @@ export const Helices = {
     // ========================================================================
     // The + direction exits through startFace (e.g., face A = [1,2,3])
     // Each new tetrahedron shares this face with the previous one
-    if (plusCount > 0) {
+    if (dirPlus && plusCount > 0) {
       const plusFaceCentroid = calculateCentroid(plusFv0, plusFv1, plusFv2);
       const plusFaceNormal = calculateFaceNormal(plusFv0, plusFv1, plusFv2, seedCentroid);
 
@@ -708,7 +710,7 @@ export const Helices = {
       return chainTets;
     };
 
-    if (minusCount > 0) {
+    if (dirMinus && minusCount > 0) {
       // For backward generation, the seed's local chain ordering is [V0, V1, V2, V3]
       // where startFace = [V1, V2, V3] is the exit face (to + direction)
       // The entry face (from predecessor) is [V0, V1, V2]
@@ -924,7 +926,8 @@ export const Helices = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron();
 
-    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, strands=${strands}, bondMode=${bondMode}, direction=${direction}, halfSize=${halfSize}`);
+    const directionLabel = (dirPlus ? "+" : "") + (dirMinus ? "-" : "") || "none";
+    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, strands=${strands}, bondMode=${bondMode}, directions=${directionLabel}, halfSize=${halfSize}`);
     console.log(
       `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
     );
@@ -932,7 +935,7 @@ export const Helices = {
       `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
     );
     console.log(`  Pattern: Javelin (axis-aligned exit face selection)`);
-    console.log(`  Start face: ${startFace}, Direction: ${direction}, Strands: ${strands}, Mode: ${bondMode}`);
+    console.log(`  Start face: ${startFace}, Directions: ${directionLabel}, Strands: ${strands}, Mode: ${bondMode}`);
     console.log(`  Total tetrahedra: ${tetrahedra.length}`);
 
     return {
@@ -944,7 +947,8 @@ export const Helices = {
         variant: "tetrahelix2",
         count,
         startFace,
-        direction,
+        dirPlus,
+        dirMinus,
         strands,
         bondMode,
         tetrahedra: tetrahedra.length,
