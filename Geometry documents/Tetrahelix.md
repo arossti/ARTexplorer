@@ -878,8 +878,70 @@ For QW axis (Yellow):
 | Translate seed to origin | Counterposed triangles, no shared face |
 | Generate from origin face | Kink at origin, spiral discontinuity |
 | Exit face selection (all 3 options) | Cannot fix discontinuity without bridging structure |
+| Same face + negated normal | Dogleg at origin (both linear but bent) |
+| Opposite faces (A↔D, B↔C) | Divergent lines (both linear but not colinear) |
+| Opposite faces + first-exit rotation | Still divergent (rotation helps but wrong axis) |
 
 The fundamental issue: **a shared face alone is not enough**. The spiraling edges need a **shared tetrahedron** to maintain continuity.
+
+---
+
+## Javelin Alignment Analysis (Feb 3, 2026)
+
+### The Core Problem
+
+We want a "javelin through origin" - a straight tetrahelix passing through the origin in both + and - directions. After extensive testing, we've identified why this is geometrically challenging:
+
+**Approach 1: Same face, opposite apex placement (negated normal)**
+- Both + and - chains start from the same seed face
+- + direction: apex placed outward from face
+- - direction: apex placed inward (via negated normal)
+- **Result:** Both chains are individually linear, but they meet at a "dogleg" angle at the origin
+
+**Approach 2: Opposite faces of the dual tetrahedron**
+- + direction exits through face A (opposite V0)
+- - direction exits through face D (opposite V3)
+- **Result:** Both chains are linear and extend in different directions, but they DIVERGE rather than being colinear
+
+### Why Neither Works
+
+The dual tetrahedron has vertices along the four Quadray axes:
+- V0 → QX axis (+,+,+)
+- V1 → QZ axis (+,-,-)
+- V2 → QY axis (-,+,-)
+- V3 → QW axis (-,-,+)
+
+**Face A** (opposite V0) has its normal pointing toward -QX direction.
+**Face D** (opposite V3) has its normal pointing toward -QW direction.
+
+These are NOT opposite directions - they're different axes! So using "opposite faces" doesn't produce a straight line through origin.
+
+### The Geometric Reality
+
+A tetrahelix chain naturally follows a helical path due to the tetrahedral dihedral angle (arccos(1/3) ≈ 70.5288°). Each tetrahedron rotates ~131.81° relative to the previous one around the chain axis.
+
+For a truly straight javelin, we would need the + and - chains to:
+1. Exit from the SAME face of the seed
+2. Have their apex placed on opposite sides
+3. BUT also have matching spiral phases so the helical paths align
+
+The problem: when you negate the normal to place the - apex on the opposite side, you also flip the spiral chirality, creating a "kink" where the two opposite-handed spirals meet.
+
+### Potential Solutions to Investigate
+
+1. **Winding reversal for - direction**: Instead of negating the normal, reverse the vertex winding order of the starting face for - direction. This might preserve the spiral phase while placing the apex on the opposite side.
+
+2. **Different exit face for first chain tet only**: Use a different exit face index for the FIRST tetrahedron after the seed (to rotate the spiral phase), then continue with the same pattern.
+
+3. **Regular tetrahedron instead of dual**: The dual tetrahedron vertices point along Quadray axes, but a regular tetrahedron has FACES perpendicular to the axes. This might provide better alignment.
+
+4. **Accept the dogleg**: The dogleg might be geometrically inevitable. If so, document this as expected behavior and focus on making the spiral patterns continuous through the seed.
+
+### Current Status (Feb 3, 2026 evening)
+
+Approach #2 (different first exit face) was attempted but the result is still divergent rather than colinear. The rotation helps prevent the spinning behavior but doesn't achieve alignment.
+
+Next attempt: Try reversing the vertex winding order for - direction.
 
 ### Future Research
 

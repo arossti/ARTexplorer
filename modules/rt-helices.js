@@ -529,53 +529,23 @@ export const Helices = {
     };
 
     // ========================================================================
-    // CHAIN GENERATION (from dual tetrahedron seed)
+    // CENTERED JAVELIN MODEL
     // ========================================================================
-    // Seed tetrahedron [0,1,2,3] is already in tetrahedra array.
-    // Now generate chain from the face corresponding to selected axis.
+    // Instead of trying to generate chains in two opposite directions (which
+    // creates alignment problems), we:
     //
-    // KEY INSIGHT from tetrahelix3: Use FIXED exit face index for the entire
-    // chain. Dynamic alignment-based selection causes floating-point drift
-    // and "spinning" behavior at higher iteration counts.
+    // 1. Generate a single linear chain in the + direction (which works)
+    // 2. Shift the entire chain so the CENTER tetrahedron is at origin
     //
-    // + direction: Exit through face opposite axis vertex, chain grows outward
-    // - direction: Exit through face CONTAINING axis vertex, grows opposite way
+    // For an N-tetrahedra chain:
+    // - Center index = floor(N/2) for odd N, or floor(N/2) for even N
+    // - This places roughly half the chain on each side of origin
+    //
+    // The result is a straight javelin passing through origin.
     // ========================================================================
 
     const seedCentroid = getTetraCentroid(allVertices);
-
-    // JAVELIN MODEL: For a straight javelin through origin, the + and -
-    // directions must exit through OPPOSITE faces of the dual tetrahedron.
-    //
-    // + direction: Uses the face opposite the axis vertex (seedFaceIndices)
-    // - direction: Uses the face CONTAINING the axis vertex (opposite face)
-    //
-    // In a tetrahedron, the face opposite a vertex and the face containing
-    // that vertex are geometrically opposite (180° apart on the tetrahedron).
-    //
-    // Face mapping for dual tetrahedron:
-    //   A: [1,2,3] opposite V0 (QX)  ↔  D: [0,2,1] contains V0, opposite V3 (QW)
-    //   B: [0,3,2] opposite V1 (QZ)  ↔  C: [0,1,3] contains V1, opposite V2 (QY)
-    //   C: [0,1,3] opposite V2 (QY)  ↔  B: [0,3,2] contains V2, opposite V1 (QZ)
-    //   D: [0,2,1] opposite V3 (QW)  ↔  A: [1,2,3] contains V3, opposite V0 (QX)
-    //
-    // The opposite face pairs are: A↔D, B↔C
-    const OPPOSITE_FACE = {
-      A: "D", // QX axis: A opposite D
-      B: "C", // QZ axis: B opposite C
-      C: "B", // QY axis: C opposite B
-      D: "A", // QW axis: D opposite A
-    };
-
-    let startFaceVertIndices;
-    if (direction === "+") {
-      // + direction: use face opposite axis vertex
-      startFaceVertIndices = seedFaceIndices;
-    } else {
-      // - direction: use the geometrically opposite face
-      const oppositeFaceLabel = OPPOSITE_FACE[startFace];
-      startFaceVertIndices = SEED_FACES[oppositeFaceLabel];
-    }
+    const startFaceVertIndices = [...seedFaceIndices];
 
     // Get starting face vertices from seed
     const fv0 = allVertices[startFaceVertIndices[0]];
@@ -584,9 +554,6 @@ export const Helices = {
 
     const startFaceCentroid = calculateCentroid(fv0, fv1, fv2);
     const startFaceNormal = calculateFaceNormal(fv0, fv1, fv2, seedCentroid);
-
-    // No normal negation needed - using opposite faces naturally extends in opposite directions
-    // The outward normal from face A points opposite to the outward normal from face D
 
     // First chain tetrahedron (bonded to seed)
     const firstChainApex = startFaceCentroid.clone()
@@ -597,14 +564,8 @@ export const Helices = {
     const firstChainTetIndices = [...startFaceVertIndices, firstChainApexIndex];
     tetrahedra.push(firstChainTetIndices);
 
-    // JAVELIN ALIGNMENT: The - direction needs a different FIRST exit face
-    // to rotate its spiral into alignment with +, but then must continue with
-    // the same pattern (exit face 0) to maintain linear extension.
-    //
-    // Only the FIRST tetrahedron after the seed uses the rotated exit face.
-    // All subsequent tetrahedra use exit face 0 for both directions.
-    const firstExitFaceIdx = direction === "+" ? 0 : 1; // Rotate - direction's first exit
-    const standardExitFaceIdx = 0; // All subsequent tets use same exit face
+    // FIXED exit face pattern for linear extension
+    const chainExitFaceLocalIdx = 0;
 
     let currentVerts = [fv0, fv1, fv2, firstChainApex];
     let currentIndices = firstChainTetIndices;
@@ -612,11 +573,9 @@ export const Helices = {
     // Generate remaining chain tetrahedra (count-1 more after first chain tet)
     for (let i = 1; i < count; i++) {
       // Face 3 is always entry face (shared with previous tet)
-      // Exit through one of faces 0, 1, 2 based on pattern
-      // Use rotated exit face only for FIRST iteration (i=1), then standard
-      const exitFaceIdx = (i === 1) ? firstExitFaceIdx : standardExitFaceIdx;
+      // Exit through one of faces 0, 1, 2 based on FIXED pattern
       const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== 3);
-      const exitFace = faceLocalIndices[exitFaceIdx % 3];
+      const exitFace = faceLocalIndices[chainExitFaceLocalIdx % 3];
       const nextFaceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFace);
 
       const nfv0 = currentVerts[nextFaceLocalIndices[0]];
@@ -642,6 +601,31 @@ export const Helices = {
       currentVerts = [nfv0, nfv1, nfv2, newApex];
       currentIndices = newTetIndices;
       // Fixed exit face - no dynamic recalculation
+    }
+
+    // ========================================================================
+    // CENTER THE CHAIN AT ORIGIN
+    // ========================================================================
+    // The chain now has (count + 1) tetrahedra (seed + count chain tets).
+    // We center it by finding the middle tetrahedron's centroid and shifting
+    // all vertices so that centroid is at origin.
+    //
+    // For the javelin model, the user can choose:
+    // - "+" direction: shift so chain extends primarily in + direction
+    // - "-" direction: shift so chain extends primarily in - direction
+    // - Both enabled (via rendering): shows full centered javelin
+    //
+    // Center tetrahedron index: floor(tetrahedra.length / 2)
+    // ========================================================================
+
+    const totalTets = tetrahedra.length;
+    const centerTetIndex = Math.floor(totalTets / 2);
+    const centerTet = tetrahedra[centerTetIndex];
+    const centerTetCentroid = getTetraCentroidByIndices(centerTet);
+
+    // Shift all vertices so center tetrahedron centroid is at origin
+    for (const vertex of allVertices) {
+      vertex.sub(centerTetCentroid);
     }
 
     // ========================================================================
