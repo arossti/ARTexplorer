@@ -565,8 +565,17 @@ export const Helices = {
     // CHAIN GENERATION
     // ========================================================================
     // First tetrahedron already exists (indices [0,1,2,3]).
-    // Continue chain by exiting through one of the three non-origin faces.
-    // Face 3 (apex side) is the "exit" face for linear extension.
+    // Origin face = [0,1,2], apex = [3]
+    //
+    // For JAVELIN MODEL: We need to find the exit face that continues
+    // along the axis direction. The three candidate faces are:
+    //   Face opposite vertex 0: [1,2,3]
+    //   Face opposite vertex 1: [0,2,3]
+    //   Face opposite vertex 2: [0,1,3]
+    //
+    // We select the face whose centroid-to-tetraCentroid direction aligns
+    // BEST with the axis direction (for straight javelin continuation).
+    // ========================================================================
 
     // Current tetrahedron state
     let currentVerts = [
@@ -577,11 +586,38 @@ export const Helices = {
     ];
     let currentIndices = [0, 1, 2, 3];
 
-    // For linear tetrahelix, always exit through the face opposite the entry
-    // Entry was through origin face (verts 0,1,2), so exit through face
-    // containing apex (vert 3). We use exitFaceLocalIdx = 0 which means
-    // exit through face opposite vertex 0, i.e., face [1,2,3].
-    let exitFaceLocalIdx = exitFaces.A ?? 0;
+    // Find the best exit face for linear continuation along axis
+    // Entry face is face 3 (opposite apex, i.e., origin face [0,1,2])
+    // We choose from faces 0, 1, 2 (each contains the apex vertex)
+    const tetraCentroid = getTetraCentroid(currentVerts);
+    const scaledAxis = axisVector.clone().multiplyScalar(sign); // direction of javelin
+
+    let bestExitFaceIdx = 0;
+    let bestAlignment = -Infinity;
+
+    for (const candidateIdx of [0, 1, 2]) {
+      // Face opposite vertex candidateIdx
+      const faceVertIndices = [0, 1, 2, 3].filter(j => j !== candidateIdx);
+      const fv0 = currentVerts[faceVertIndices[0]];
+      const fv1 = currentVerts[faceVertIndices[1]];
+      const fv2 = currentVerts[faceVertIndices[2]];
+      const faceCentroid = calculateCentroid(fv0, fv1, fv2);
+
+      // Direction from tetra centroid to face centroid (outward)
+      const outwardDir = new THREE.Vector3()
+        .subVectors(faceCentroid, tetraCentroid)
+        .normalize();
+
+      // Alignment with axis direction (higher = better for javelin)
+      const alignment = outwardDir.dot(scaledAxis);
+
+      if (alignment > bestAlignment) {
+        bestAlignment = alignment;
+        bestExitFaceIdx = candidateIdx;
+      }
+    }
+
+    let exitFaceLocalIdx = bestExitFaceIdx;
 
     // Generate remaining tetrahedra (count-1 more, since first already exists)
     for (let i = 1; i < count; i++) {
@@ -591,9 +627,9 @@ export const Helices = {
       const fv1 = currentVerts[faceLocalIndices[1]];
       const fv2 = currentVerts[faceLocalIndices[2]];
 
-      const tetraCentroid = getTetraCentroid(currentVerts);
+      const tetCentroid = getTetraCentroid(currentVerts);
       const faceCentroid = calculateCentroid(fv0, fv1, fv2);
-      const faceNormal = calculateFaceNormal(fv0, fv1, fv2, tetraCentroid);
+      const faceNormal = calculateFaceNormal(fv0, fv1, fv2, tetCentroid);
 
       const newApex = faceCentroid
         .clone()
@@ -611,9 +647,32 @@ export const Helices = {
       currentVerts = [fv0, fv1, fv2, newApex];
       currentIndices = newTetIndices;
 
-      // Use the configured exit face for the primary strand (A)
-      // Face 3 is entry (shared), so we pick from faces 0, 1, 2
-      exitFaceLocalIdx = exitFaces.A ?? 0;
+      // For JAVELIN MODEL: Find the best exit face for linear continuation
+      // Entry face is face 3 (the shared face from previous tet)
+      // Vertex 3 in currentVerts is the new apex
+      const newTetCentroid = getTetraCentroid(currentVerts);
+      let nextBestExitIdx = 0;
+      let nextBestAlign = -Infinity;
+
+      for (const candIdx of [0, 1, 2]) {
+        const candFaceVerts = [0, 1, 2, 3].filter(j => j !== candIdx);
+        const cfv0 = currentVerts[candFaceVerts[0]];
+        const cfv1 = currentVerts[candFaceVerts[1]];
+        const cfv2 = currentVerts[candFaceVerts[2]];
+        const candCentroid = calculateCentroid(cfv0, cfv1, cfv2);
+
+        const outDir = new THREE.Vector3()
+          .subVectors(candCentroid, newTetCentroid)
+          .normalize();
+        const align = outDir.dot(scaledAxis);
+
+        if (align > nextBestAlign) {
+          nextBestAlign = align;
+          nextBestExitIdx = candIdx;
+        }
+      }
+
+      exitFaceLocalIdx = nextBestExitIdx;
     }
 
     // ========================================================================
@@ -816,7 +875,7 @@ export const Helices = {
     console.log(
       `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
     );
-    console.log(`  Pattern: Always exit face 0 (linear zigzag)`);
+    console.log(`  Pattern: Javelin (axis-aligned exit face selection)`);
     console.log(`  Start face: ${startFace}, Direction: ${direction}, Strands: ${strands}, Mode: ${bondMode}`);
     console.log(`  Total tetrahedra: ${tetrahedra.length}`);
 
