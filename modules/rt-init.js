@@ -622,7 +622,7 @@ function startARTexplorer(
   document.getElementById("open-rotor-demo").addEventListener("click", e => {
     e.preventDefault();
     if (!rotorDemo) {
-      rotorDemo = getRotorDemo(scene, THREE);
+      rotorDemo = getRotorDemo(scene, THREE, camera, controls);
     }
     const isEnabled = rotorDemo.toggle();
     const link = e.target;

@@ -3,7 +3,7 @@
 **Version**: 1.1
 **Date**: February 2026
 **Author**: Andy & Claude
-**Status**: Implementation Phase 1 Complete
+**Status**: Implementation Phase 4 Complete
 
 ---
 
@@ -674,12 +674,22 @@ provide a rational, gimbal-lock-free alternative to both Euler angles and quater
 - [x] Scene state save/restore on demo enable/disable
 - [x] Control buttons (Reset, Spin, Stop, Close)
 
-### Phase 3: Comparison Mode 🔄 IN PROGRESS
+### Phase 3: Interactive Axis Handle & Comparison ✅ COMPLETE (v1)
 
-- [ ] "Compare: Quaternion vs Quadray" button
-- [ ] Rigorous console logging showing both calculation paths
-- [ ] Side-by-side numerical output demonstrating equivalence
-- [ ] Honest documentation of current simplifications
+- [x] Nudge buttons (+X, +Y Lock, +Z) for axis adjustment
+- [x] Euler XYZ vs Quadray Rotor mode toggle
+- [x] Gimbal lock jitter simulation in Euler mode
+- [x] Console logging of axis changes and proximity warnings
+
+### Phase 4: Draggable Axis Handle ✅ COMPLETE
+
+- [x] Draggable sphere handle at top of spin axis
+- [x] Real-time axis adjustment by pulling/dragging handle
+- [x] Visual warning system (handle and axis change color green→yellow→orange→red)
+- [x] Axis line color changes based on gimbal lock proximity
+- [x] Pulsing effect when in danger zone (proximity > 60%)
+- [x] Remove nudge buttons (replaced by continuous handle interaction)
+- [x] Hover feedback (cursor changes, handle scales up)
 
 ---
 
@@ -830,5 +840,119 @@ This requires developing:
 
 ---
 
-*Workplan updated February 2026. Phase 1-2 complete, Phase 3 in progress.*
+*Workplan updated February 2026. Phase 1-4 complete (including draggable axis handle with color feedback).*
 *"Use the crutches while building, then throw them away when ready!" - Andy*
+
+---
+
+## 15. Draggable Axis Handle (Phase 4)
+
+### 15.1 Concept
+
+Replace discrete nudge buttons with a **draggable sphere handle** at the tip of the spin axis.
+Users can click and drag to continuously adjust the axis direction, providing immediate
+visual feedback about gimbal lock proximity.
+
+### 15.2 Visual Design
+
+```
+                    ┌───────┐
+                    │ Handle│ ← Draggable sphere (changes color)
+                    │  (●)  │   - Green: Safe zone
+                    └───┬───┘   - Yellow: Warning (approaching lock)
+                        │       - Orange: Danger (near lock)
+                        │       - Red + Pulse: Critical (at lock)
+                        │ ← Axis line (also changes color)
+                        │
+                   ─────┼─────
+                  /     │     \
+                 /      │      \  ← Spinning geodesic octahedron
+                /       │       \
+               ─────────┼─────────
+                        │
+                        │
+                    ┌───┴───┐
+                    │  (●)  │ ← Optional: Second handle at bottom
+                    └───────┘
+```
+
+### 15.3 Interaction Model
+
+**Drag Behavior**:
+- Click on handle sphere to initiate drag
+- Mouse movement in screen space maps to axis tilt
+- Axis remains normalized (always unit length)
+- Handle position tracks axis tip
+
+**Visual Feedback**:
+| Gimbal Lock Proximity | Handle Color | Axis Color | Additional Effect |
+|----------------------|--------------|------------|-------------------|
+| 0% - 30% (Safe)      | Green #0f0   | Yellow     | None              |
+| 30% - 60% (Warning)  | Yellow #ff0  | Orange     | Subtle glow       |
+| 60% - 85% (Danger)   | Orange #f80  | Red        | Pulsing glow      |
+| 85% - 100% (Lock)    | Red #f00     | Red        | Rapid pulse + jitter (Euler mode) |
+
+**Mode Interaction**:
+- In **Quadray Rotor** mode: Visual warnings show, but rotation stays smooth
+- In **Euler XYZ** mode: Rotation becomes unstable as proximity increases
+
+### 15.4 Implementation Plan
+
+```javascript
+// Handle creation
+createAxisHandle() {
+  const handleGeom = new THREE.SphereGeometry(0.15, 16, 16);
+  const handleMat = new THREE.MeshBasicMaterial({
+    color: 0x00ff00,  // Start green (safe)
+    transparent: true,
+    opacity: 0.9
+  });
+  this.axisHandle = new THREE.Mesh(handleGeom, handleMat);
+  this.axisHandle.userData.isDraggable = true;
+  this.axisHandle.userData.isAxisHandle = true;
+}
+
+// Drag handler
+handleAxisDrag(mouseEvent) {
+  // Project mouse position to 3D space
+  // Calculate new axis direction from origin to mouse intersection
+  // Normalize and apply to rotorState.axis
+  // Update handle position and color based on proximity
+}
+
+// Color update based on proximity
+updateHandleColor(proximity) {
+  const hue = (1 - proximity) * 120;  // 120=green, 60=yellow, 0=red
+  this.axisHandle.material.color.setHSL(hue / 360, 1, 0.5);
+
+  // Pulsing effect at high proximity
+  if (proximity > 0.6) {
+    const pulse = Math.sin(Date.now() * 0.01) * 0.3 + 0.7;
+    this.axisHandle.material.opacity = pulse;
+  }
+}
+```
+
+### 15.5 Raycasting for Handle Interaction
+
+The handle needs to be selectable via mouse raycasting:
+
+```javascript
+// In animation loop or mouse handler
+const raycaster = new THREE.Raycaster();
+raycaster.setFromCamera(mouseNDC, camera);
+
+const intersects = raycaster.intersectObject(this.axisHandle);
+if (intersects.length > 0) {
+  // Handle hover/click state
+  document.body.style.cursor = 'grab';
+}
+```
+
+### 15.6 Benefits Over Nudge Buttons
+
+1. **Continuous feedback**: See proximity change in real-time as you drag
+2. **Intuitive**: Pull the top of the axis like a joystick
+3. **Explorable**: Users naturally discover the danger zones
+4. **Visual learning**: Color changes teach where gimbal lock occurs
+5. **Direct manipulation**: No button → console → observe cycle
