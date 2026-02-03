@@ -421,7 +421,7 @@ export const Helices = {
    *
    * @param {number} halfSize - Half-size of base tetrahedron
    * @param {Object} options
-   * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 96)
+   * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 145)
    * @param {string} options.startFace - Initial face: 'A', 'B', 'C', or 'D' (default: 'A')
    * @param {number} options.strands - Number of parallel strands: 1-4 (default: 1)
    * @param {string} options.bondMode - 'zipped' (radial spines) or 'unzipped' (parallel chains)
@@ -429,7 +429,7 @@ export const Helices = {
    * @returns {Object} { vertices, edges, faces, metadata }
    */
   tetrahelix2: (halfSize = 1, options = {}) => {
-    const count = Math.min(Math.max(options.count || 10, 1), 96);
+    const count = Math.min(Math.max(options.count || 10, 1), 145);
     const startFace = options.startFace || "A";
     // Direction flags for javelin model - both default to true for full javelin
     const dirPlus = options.dirPlus !== undefined ? options.dirPlus : true;
@@ -984,13 +984,13 @@ export const Helices = {
    *
    * @param {number} halfSize - Half-size of base octahedron
    * @param {Object} options
-   * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 96)
+   * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 145)
    * @param {Object} options.enabledStrands - Which faces have strands: { A: true/false, B: true/false, ... H: true/false }
    * @param {Object} options.strandChirality - Chirality per strand: { A: true/false, ... H: true/false } (true=RH, false=LH)
    * @returns {Object} { vertices, edges, faces, metadata }
    */
   tetrahelix3: (halfSize = 1, options = {}) => {
-    const count = Math.min(Math.max(options.count || 10, 1), 96);
+    const count = Math.min(Math.max(options.count || 10, 1), 145);
     // Default: only strand A enabled
     const enabledStrands = options.enabledStrands || { A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false };
     // Default: all strands right-handed (true = RH, false = LH)
