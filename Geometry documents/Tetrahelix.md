@@ -593,6 +593,35 @@ rt-rendering.js:
 - Or is it the handedness of the screw (like thread direction)?
 - Study Fuller's original tetrahelix descriptions for clarity
 
+#### Fuller's Insight: Chirality Lives at the Entrance, Not the Exit
+
+*"The tetrahelix is not twisted — it IS a twist."*
+
+When tetrahedra bond face-to-face, the tetrahedral dihedral angle (≈70.53°) creates inherent rotational progression. This is geometric destiny, not a choice. Each successive tetrahedron MUST rotate relative to its predecessor.
+
+**Key hypothesis for tomorrow:**
+
+1. **Don't APPLY chirality — DISCOVER where it already lives.** The first bonded tetrahedron's vertex ordering relative to the seed face determines EVERYTHING that follows.
+
+2. **The three edge-spirals encode chirality.** In a tetrahelix, three edges form continuous helical paths. Watch which way they spiral! To reverse chirality, reverse the winding of the base triangle.
+
+3. **Practical experiment:** For "left-handed" strands, try swapping the vertex order of the octahedral face from `[v0, v1, v2]` to `[v0, v2, v1]`. This mirrors the initial tetrahedron, and ALL subsequent geometry should follow the opposite spiral.
+
+**The key insight:** We've been choosing which face to EXIT through. But chirality is determined by which way we ENTER — specifically, the handedness of the first tetrahedron's orientation relative to its base triangle.
+
+```javascript
+// Current (all same chirality):
+const faceVertIndices = OCTA_FACES[faceLabel];  // e.g., [0, 2, 4]
+
+// Proposed for LH strands (mirror the base triangle):
+const isRightHanded = strandChirality[faceLabel] !== false;
+const faceVertIndices = isRightHanded
+  ? OCTA_FACES[faceLabel]                           // [v0, v1, v2] - RH
+  : [OCTA_FACES[faceLabel][0], OCTA_FACES[faceLabel][2], OCTA_FACES[faceLabel][1]]; // [v0, v2, v1] - LH
+```
+
+This swaps v1 and v2, reversing the winding direction of the base triangle, which should produce the mirror-image tetrahelix.
+
 ### Future Research
 
 **Research questions:**
