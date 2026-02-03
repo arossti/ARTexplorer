@@ -94,9 +94,23 @@ export class RotorDemo {
     this.enabled = true;
     this.createDemoObjects();
     this.createInfoPanel();
+
+    // Start the top spinning automatically!
+    this.startSpinning();
+
     this.startAnimation();
 
-    console.log("✅ Spread-Quadray Rotor Demo enabled");
+    console.log("✅ Spread-Quadray Rotor Demo enabled - Top is spinning!");
+  }
+
+  /**
+   * Start the gyroscope spinning at default RPM
+   */
+  startSpinning() {
+    const rpm = DEMO_CONFIG.defaultSpinRPM;
+    const radiansPerSecond = (rpm * 2 * Math.PI) / 60;
+    this.rotorState.setVelocity(radiansPerSecond, DEMO_CONFIG.defaultSpinAxis);
+    console.log(`🔄 Spinning at ${rpm} RPM around Z-axis`);
   }
 
   /**
@@ -490,8 +504,62 @@ export class RotorDemo {
         #rotor-info-panel .status-safe { color: #0f0; }
         #rotor-info-panel .status-caution { color: #ff0; }
         #rotor-info-panel .status-danger { color: #f00; }
+        #rotor-info-panel .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+          border-bottom: 1px solid #444;
+          padding-bottom: 5px;
+        }
+        #rotor-info-panel .header h3 {
+          margin: 0;
+          border: none;
+          padding: 0;
+        }
+        #rotor-info-panel .close-btn {
+          background: #f44;
+          color: #fff;
+          border: none;
+          border-radius: 4px;
+          padding: 4px 10px;
+          cursor: pointer;
+          font-size: 11px;
+          font-weight: bold;
+        }
+        #rotor-info-panel .close-btn:hover {
+          background: #f66;
+        }
+        #rotor-info-panel .controls {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        #rotor-info-panel .ctrl-btn {
+          flex: 1;
+          background: #333;
+          color: #0ff;
+          border: 1px solid #0ff;
+          border-radius: 4px;
+          padding: 6px;
+          cursor: pointer;
+          font-size: 10px;
+        }
+        #rotor-info-panel .ctrl-btn:hover {
+          background: #0ff;
+          color: #000;
+        }
       </style>
-      <h3>SPREAD-QUADRAY ROTOR</h3>
+      <div class="header">
+        <h3>SPREAD-QUADRAY ROTOR</h3>
+        <button class="close-btn" id="rp-close">✕ Close</button>
+      </div>
+
+      <div class="controls">
+        <button class="ctrl-btn" id="rp-reset">Reset</button>
+        <button class="ctrl-btn" id="rp-spin">Spin 60 RPM</button>
+        <button class="ctrl-btn" id="rp-stop">Stop</button>
+      </div>
 
       <div class="section">
         <div class="section-title">Angular Velocity</div>
@@ -537,6 +605,30 @@ export class RotorDemo {
 
     document.body.appendChild(panel);
     this.infoPanel = panel;
+
+    // Wire up button event listeners
+    document.getElementById('rp-close').addEventListener('click', () => {
+      this.disable();
+      // Also update the link in Math Demos
+      const link = document.getElementById('open-rotor-demo');
+      if (link) {
+        link.style.color = '#7ab8ff';
+        link.textContent = 'Spread-Quadray Rotors';
+      }
+    });
+
+    document.getElementById('rp-reset').addEventListener('click', () => {
+      this.reset();
+      this.startSpinning();
+    });
+
+    document.getElementById('rp-spin').addEventListener('click', () => {
+      this.startSpinning();
+    });
+
+    document.getElementById('rp-stop').addEventListener('click', () => {
+      this.rotorState.setVelocity(0, { x: 0, y: 0, z: 1 });
+    });
   }
 
   /**
@@ -636,24 +728,26 @@ export class RotorDemo {
     if (!this.gyroscope || !this.enabled) return;
 
     const THREE = this.THREE;
-    const matrix = this.rotorState.orientation.toMatrix4(THREE);
 
-    // Apply to gyroscope (excluding outer ring which stays fixed)
+    // Get rotation quaternion from our rotor
+    const rotor = this.rotorState.orientation.normalize();
+    const quat = new THREE.Quaternion(rotor.x, rotor.y, rotor.z, rotor.w);
+
+    // Apply rotation to inner parts (not outer ring which stays fixed as reference)
     this.gyroscope.children.forEach(child => {
-      if (child.name !== 'OuterRing') {
-        child.matrix.copy(matrix);
-        child.matrixAutoUpdate = false;
+      if (child.name !== 'OuterRing' && child.name !== 'AxisIndicator') {
+        child.quaternion.copy(quat);
       }
     });
 
-    // Update axis indicator to show current rotation axis
-    const { axis } = this.rotorState.orientation.getAxisSpread();
+    // Update axis indicator to show SPIN axis (not orientation axis)
     const axisLine = this.gyroscope.getObjectByName('AxisIndicator');
     if (axisLine) {
+      const spinAxis = this.rotorState.axis;
       const length = DEMO_CONFIG.gyroscopeRadius * 1.2;
       const positions = axisLine.geometry.attributes.position;
-      positions.setXYZ(0, -axis.x * length, -axis.y * length, -axis.z * length);
-      positions.setXYZ(1, axis.x * length, axis.y * length, axis.z * length);
+      positions.setXYZ(0, -spinAxis.x * length, -spinAxis.y * length, -spinAxis.z * length);
+      positions.setXYZ(1, spinAxis.x * length, spinAxis.y * length, spinAxis.z * length);
       positions.needsUpdate = true;
     }
   }
