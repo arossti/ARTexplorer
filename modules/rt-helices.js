@@ -529,103 +529,159 @@ export const Helices = {
     };
 
     // ========================================================================
-    // CENTERED JAVELIN MODEL
+    // IN-PLACE JAVELIN MODEL (Bi-directional from Center)
     // ========================================================================
-    // Instead of trying to generate chains in two opposite directions (which
-    // creates alignment problems), we:
+    // Generate the center tetrahedron at origin, then spiral outward in both
+    // + and - directions simultaneously. This eliminates the visual jumping
+    // that occurs with the "generate-then-shift" approach.
     //
-    // 1. Generate a single linear chain in the + direction (which works)
-    // 2. Shift the entire chain so the CENTER tetrahedron is at origin
+    // Key insight: Both directions use the SAME spiral chirality (same exit
+    // face pattern). The - direction calculates "predecessors" by working
+    // backwards from the center tetrahedron.
     //
-    // For an N-tetrahedra chain:
-    // - Center index = floor(N/2) for odd N, or floor(N/2) for even N
-    // - This places roughly half the chain on each side of origin
-    //
-    // The result is a straight javelin passing through origin.
+    // For count=N tetrahedra total:
+    // - Plus direction: floor(N/2) tetrahedra extending in + direction
+    // - Minus direction: ceil(N/2) tetrahedra extending in - direction
+    // - The center tetrahedron is shared (counted once)
     // ========================================================================
 
-    const seedCentroid = getTetraCentroid(allVertices);
-    const startFaceVertIndices = [...seedFaceIndices];
+    // Helper: Generate chain in + direction (forward - apex calculation)
+    const generateForwardChain = (startVerts, startIndices, numTets, exitFaceIdx) => {
+      const chainTets = [];
+      let currentVerts = [...startVerts];
+      let currentIndices = [...startIndices];
 
-    // Get starting face vertices from seed
-    const fv0 = allVertices[startFaceVertIndices[0]];
-    const fv1 = allVertices[startFaceVertIndices[1]];
-    const fv2 = allVertices[startFaceVertIndices[2]];
+      for (let i = 0; i < numTets; i++) {
+        // Face 3 is always entry face (shared with previous tet)
+        // Exit through face 0, 1, or 2 based on exit face pattern
+        const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== 3);
+        const exitFace = faceLocalIndices[exitFaceIdx % 3];
+        const nextFaceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFace);
 
-    const startFaceCentroid = calculateCentroid(fv0, fv1, fv2);
-    const startFaceNormal = calculateFaceNormal(fv0, fv1, fv2, seedCentroid);
+        const nfv0 = currentVerts[nextFaceLocalIndices[0]];
+        const nfv1 = currentVerts[nextFaceLocalIndices[1]];
+        const nfv2 = currentVerts[nextFaceLocalIndices[2]];
 
-    // First chain tetrahedron (bonded to seed)
-    const firstChainApex = startFaceCentroid.clone()
-      .add(startFaceNormal.multiplyScalar(apexDistance));
-    const firstChainApexIndex = allVertices.length;
-    allVertices.push(firstChainApex);
+        const tetCentroid = getTetraCentroid(currentVerts);
+        const nextFaceCentroid = calculateCentroid(nfv0, nfv1, nfv2);
+        const nextFaceNormal = calculateFaceNormal(nfv0, nfv1, nfv2, tetCentroid);
 
-    const firstChainTetIndices = [...startFaceVertIndices, firstChainApexIndex];
-    tetrahedra.push(firstChainTetIndices);
+        const newApex = nextFaceCentroid.clone()
+          .add(nextFaceNormal.multiplyScalar(apexDistance));
+        const newApexIndex = allVertices.length;
+        allVertices.push(newApex);
+
+        const sharedGlobalIndices = nextFaceLocalIndices.map(
+          li => currentIndices[li]
+        );
+
+        const newTetIndices = [...sharedGlobalIndices, newApexIndex];
+        tetrahedra.push(newTetIndices);
+        chainTets.push(newTetIndices);
+
+        currentVerts = [nfv0, nfv1, nfv2, newApex];
+        currentIndices = newTetIndices;
+      }
+
+      return chainTets;
+    };
 
     // FIXED exit face pattern for linear extension
     const chainExitFaceLocalIdx = 0;
 
-    let currentVerts = [fv0, fv1, fv2, firstChainApex];
-    let currentIndices = firstChainTetIndices;
+    // Calculate how many tetrahedra in each direction
+    // count is the number of tetrahedra in each arm (not including center)
+    // So total tetrahedra = 2*count + 1 (center + count on each side)
+    // But we want total tetrahedra to match count, so:
+    // - plusCount = floor((count-1)/2)
+    // - minusCount = ceil((count-1)/2)
+    // This gives count total tetrahedra with center at origin
+    const plusCount = Math.floor((count - 1) / 2);
+    const minusCount = Math.ceil((count - 1) / 2);
 
-    // Generate remaining chain tetrahedra (count-1 more after first chain tet)
-    for (let i = 1; i < count; i++) {
-      // Face 3 is always entry face (shared with previous tet)
-      // Exit through one of faces 0, 1, 2 based on FIXED pattern
-      const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== 3);
-      const exitFace = faceLocalIndices[chainExitFaceLocalIdx % 3];
-      const nextFaceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFace);
+    // ========================================================================
+    // STEP 1: Position seed tetrahedron at origin
+    // ========================================================================
+    // The seed is already at origin (vertices at ±s). We use the seed as the
+    // center tetrahedron of our javelin.
 
-      const nfv0 = currentVerts[nextFaceLocalIndices[0]];
-      const nfv1 = currentVerts[nextFaceLocalIndices[1]];
-      const nfv2 = currentVerts[nextFaceLocalIndices[2]];
+    const seedCentroid = getTetraCentroid(allVertices);
+    const startFaceVertIndices = [...seedFaceIndices];
 
-      const tetCentroid = getTetraCentroid(currentVerts);
-      const nextFaceCentroid = calculateCentroid(nfv0, nfv1, nfv2);
-      const nextFaceNormal = calculateFaceNormal(nfv0, nfv1, nfv2, tetCentroid);
+    // Get the + direction face (startFace) for forward chain
+    const plusFv0 = allVertices[startFaceVertIndices[0]];
+    const plusFv1 = allVertices[startFaceVertIndices[1]];
+    const plusFv2 = allVertices[startFaceVertIndices[2]];
 
-      const newApex = nextFaceCentroid.clone()
-        .add(nextFaceNormal.multiplyScalar(apexDistance));
-      const newApexIndex = allVertices.length;
-      allVertices.push(newApex);
+    // Get the - direction face (opposite face) for backward chain
+    // The opposite face is the one that shares no vertices with startFace
+    // For face A=[1,2,3], opposite is D=[0,2,1] (vertex 0 is opposite)
+    // For face B=[0,3,2], opposite is C=[0,1,3] (vertex 1 is opposite)
+    // Actually, opposite face contains the vertex that startFace excludes
+    const OPPOSITE_FACES = {
+      A: "D", // A excludes V0, D contains V0
+      B: "C",
+      C: "B",
+      D: "A",
+    };
+    const oppositeFaceLabel = OPPOSITE_FACES[startFace] || "D";
+    const oppositeFaceIndices = SEED_FACES[oppositeFaceLabel];
+    const minusFv0 = allVertices[oppositeFaceIndices[0]];
+    const minusFv1 = allVertices[oppositeFaceIndices[1]];
+    const minusFv2 = allVertices[oppositeFaceIndices[2]];
 
-      const sharedGlobalIndices = nextFaceLocalIndices.map(
-        li => currentIndices[li]
-      );
+    // ========================================================================
+    // STEP 2: Generate + direction chain (forward from seed)
+    // ========================================================================
+    if (plusCount > 0) {
+      const plusFaceCentroid = calculateCentroid(plusFv0, plusFv1, plusFv2);
+      const plusFaceNormal = calculateFaceNormal(plusFv0, plusFv1, plusFv2, seedCentroid);
 
-      const newTetIndices = [...sharedGlobalIndices, newApexIndex];
-      tetrahedra.push(newTetIndices);
+      // First tetrahedron in + direction
+      const firstPlusApex = plusFaceCentroid.clone()
+        .add(plusFaceNormal.multiplyScalar(apexDistance));
+      const firstPlusApexIndex = allVertices.length;
+      allVertices.push(firstPlusApex);
 
-      currentVerts = [nfv0, nfv1, nfv2, newApex];
-      currentIndices = newTetIndices;
-      // Fixed exit face - no dynamic recalculation
+      const firstPlusTetIndices = [...startFaceVertIndices, firstPlusApexIndex];
+      tetrahedra.push(firstPlusTetIndices);
+
+      // Continue + chain if more tetrahedra needed
+      if (plusCount > 1) {
+        generateForwardChain(
+          [plusFv0, plusFv1, plusFv2, firstPlusApex],
+          firstPlusTetIndices,
+          plusCount - 1,
+          chainExitFaceLocalIdx
+        );
+      }
     }
 
     // ========================================================================
-    // CENTER THE CHAIN AT ORIGIN
+    // STEP 3: Generate - direction chain (backward from seed)
     // ========================================================================
-    // The chain now has (count + 1) tetrahedra (seed + count chain tets).
-    // We center it by finding the middle tetrahedron's centroid and shifting
-    // all vertices so that centroid is at origin.
-    //
-    // For the javelin model, the user can choose:
-    // - "+" direction: shift so chain extends primarily in + direction
-    // - "-" direction: shift so chain extends primarily in - direction
-    // - Both enabled (via rendering): shows full centered javelin
-    //
-    // Center tetrahedron index: floor(tetrahedra.length / 2)
-    // ========================================================================
+    if (minusCount > 0) {
+      const minusFaceCentroid = calculateCentroid(minusFv0, minusFv1, minusFv2);
+      const minusFaceNormal = calculateFaceNormal(minusFv0, minusFv1, minusFv2, seedCentroid);
 
-    const totalTets = tetrahedra.length;
-    const centerTetIndex = Math.floor(totalTets / 2);
-    const centerTet = tetrahedra[centerTetIndex];
-    const centerTetCentroid = getTetraCentroidByIndices(centerTet);
+      // First tetrahedron in - direction (extends from opposite face)
+      const firstMinusApex = minusFaceCentroid.clone()
+        .add(minusFaceNormal.multiplyScalar(apexDistance));
+      const firstMinusApexIndex = allVertices.length;
+      allVertices.push(firstMinusApex);
 
-    // Shift all vertices so center tetrahedron centroid is at origin
-    for (const vertex of allVertices) {
-      vertex.sub(centerTetCentroid);
+      const firstMinusTetIndices = [...oppositeFaceIndices, firstMinusApexIndex];
+      tetrahedra.push(firstMinusTetIndices);
+
+      // Continue - chain if more tetrahedra needed
+      if (minusCount > 1) {
+        generateForwardChain(
+          [minusFv0, minusFv1, minusFv2, firstMinusApex],
+          firstMinusTetIndices,
+          minusCount - 1,
+          chainExitFaceLocalIdx
+        );
+      }
     }
 
     // ========================================================================
