@@ -941,7 +941,80 @@ The problem: when you negate the normal to place the - apex on the opposite side
 
 Approach #2 (different first exit face) was attempted but the result is still divergent rather than colinear. The rotation helps prevent the spinning behavior but doesn't achieve alignment.
 
-Next attempt: Try reversing the vertex winding order for - direction.
+---
+
+## BREAKTHROUGH: Centered Chain Model (Feb 3, 2026 late evening)
+
+### The Insight
+
+After 24+ hours of attempting to generate chains in two opposite directions, the user proposed a radically simpler approach:
+
+**"What if instead of generating a fresh tetrahelix in some negative direction, we simply shift the already correct tetrahelix along its axis to half of its total length?"**
+
+This is brilliant because:
+1. The + direction generation **already works perfectly** - produces a straight linear chain
+2. We don't need to solve the complex geometry of bi-directional generation
+3. We simply reposition what we already have
+
+### The Algorithm
+
+```javascript
+// 1. Generate a single linear chain in + direction (this works!)
+// 2. Find the center tetrahedron: index = floor(totalTets / 2)
+// 3. Calculate its centroid
+// 4. Shift ALL vertices so that centroid is at origin
+```
+
+For an 11-tetrahedra chain:
+- Total tets = 12 (1 seed + 11 chain)
+- Center index = 6
+- Tets 0-5 extend in one direction, tets 7-11 in the other
+- Center tet (#6) straddles the origin
+
+### Result
+
+**IT WORKS!** The tetrahelix now passes straight through the origin like a javelin.
+
+### Refinements Needed
+
+1. **In-place generation**: Currently we generate then shift, causing visual "jumping" as the chain length changes. Need to generate centered from the start.
+
+2. **Alignment with basis**: The chain could be aligned with:
+   - The dual tetrahedron at center (purple)
+   - The regular tetrahedron
+   - The Quadray basis vectors
+
+3. **+/- direction semantics**: With the centered model, what do + and - mean?
+   - Option A: Generate simultaneously in both directions
+   - Option B: Abandon +/- entirely (just extend from center)
+   - Option C: Use +/- to control which "half" is shown
+
+4. **Starting condition**: Count=1 currently generates 2 tetrahedra. Should probably start with 1.
+
+### Why This Approach Succeeds
+
+The fundamental problem with bi-directional generation was that:
+- The tetrahedral geometry creates inherent chirality
+- Generating in opposite directions creates opposite chiralities
+- These opposite chiralities meet at a "dogleg" angle
+
+By generating in ONE direction and repositioning, we preserve uniform chirality throughout the entire chain. The javelin is straight because it's a single continuous spiral, not two spirals meeting in the middle.
+
+### Implementation (commit 516d480)
+
+```javascript
+// After generating the full chain...
+
+const totalTets = tetrahedra.length;
+const centerTetIndex = Math.floor(totalTets / 2);
+const centerTet = tetrahedra[centerTetIndex];
+const centerTetCentroid = getTetraCentroidByIndices(centerTet);
+
+// Shift all vertices so center tetrahedron centroid is at origin
+for (const vertex of allVertices) {
+  vertex.sub(centerTetCentroid);
+}
+```
 
 ### Future Research
 
