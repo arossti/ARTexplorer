@@ -1027,6 +1027,164 @@ for (const vertex of allVertices) {
 
 ---
 
+## TRUE BACKWARD GENERATION: Mathematical Analysis (Feb 3, 2026)
+
+### The Bouncing Ball Analogy
+
+The user's insight: **"Just as the formula for a bouncing ball works in the forward march of time, it can be reversed."**
+
+If the forward algorithm produces a straight chain, the inverse algorithm must also produce a straight chain. We've been trying various heuristics (opposite face, negated normal, different exit face index) when we should be computing the **exact inverse** of the forward step.
+
+### Forward Generation Step (What We Know Works)
+
+Given current tetrahedron with local ordering `[fv0, fv1, fv2, apex]`:
+
+1. **Entry face** (from previous tet): `[fv0, fv1, fv2]` at local indices `[0, 1, 2]`
+2. **Exit face** (to next tet): `[fv1, fv2, apex]` at local indices `[1, 2, 3]` (excluding `fv0`)
+3. **New apex calculation**:
+   ```
+   exitCentroid = centroid(fv1, fv2, apex)
+   outwardNormal = normal pointing away from current tet's centroid
+   newApex = exitCentroid + outwardNormal × apexDistance
+   ```
+4. **New tetrahedron**: `[fv1, fv2, apex, newApex]`
+
+The chain: `..., [A,B,C,D], [B,C,D,E], [C,D,E,F], ...`
+
+Each consecutive pair shares exactly 3 vertices.
+
+### The Inverse Step: Finding the Predecessor
+
+**Question**: Given tetrahedron T[0], what was T[-1] that generated it?
+
+**Analysis from the last tetrahedron's perspective**:
+
+If T[0] = `[fv0, fv1, fv2, apex]`, then T[-1] generated T[0] by:
+- T[-1]'s exit face = T[0]'s entry face = `[fv0, fv1, fv2]`
+- T[-1]'s apex = `fv2` (became part of exit face)
+- T[-1]'s other vertex (its `fv0`) is what we need to find
+
+T[-1] had local ordering `[pred_fv0, fv0, fv1, fv2]` where:
+- `pred_fv1 = fv0`, `pred_fv2 = fv1`, `pred_apex = fv2`
+- `pred_fv0` is the unknown predecessor vertex
+
+### The Key Geometric Relationship
+
+When T[-1] generated T[0]:
+```
+apex (of T[0]) = exitCentroid + outwardNormal × apexDistance
+```
+
+Where `exitCentroid = centroid(fv0, fv1, fv2)`.
+
+The apex of T[0] is at distance `apexDistance` from `exitCentroid`, on one side.
+The `pred_fv0` of T[-1] is at distance `apexDistance` from `exitCentroid`, on the OTHER side.
+
+**Therefore**:
+```
+pred_fv0 = 2 × centroid(fv0, fv1, fv2) - apex
+```
+
+This is the **REFLECTION** of the apex through the entry face centroid!
+
+### Proof by Geometry
+
+For a regular tetrahedron with edge length L:
+- Distance from face centroid to apex: `h = L × √(2/3)`
+- This is exactly `apexDistance`
+
+If apex A is at position `C + n̂ × h` (where C is face centroid, n̂ is unit normal, h is apex distance), then the point at `C - n̂ × h` is the reflection of A through C:
+
+```
+P = C - n̂ × h = C - (A - C) = 2C - A
+```
+
+This is the standard point reflection formula!
+
+### Backward Generation Algorithm
+
+```javascript
+const generateBackwardChain = (startVerts, startIndices, numTets) => {
+  let currentVerts = [...startVerts]; // [v0, v1, v2, apex]
+  let currentIndices = [...startIndices];
+
+  for (let i = 0; i < numTets; i++) {
+    // Entry face is [v0, v1, v2] at local indices [0, 1, 2]
+    const v0 = currentVerts[0];
+    const v1 = currentVerts[1];
+    const v2 = currentVerts[2];
+    const apex = currentVerts[3];
+
+    // Calculate entry face centroid
+    const entryCentroid = centroid(v0, v1, v2);
+
+    // REFLECTION: predecessor apex = 2 × entryCentroid - apex
+    const predApex = new THREE.Vector3(
+      2 * entryCentroid.x - apex.x,
+      2 * entryCentroid.y - apex.y,
+      2 * entryCentroid.z - apex.z
+    );
+
+    // Add predecessor apex to vertex list
+    const predApexIndex = allVertices.length;
+    allVertices.push(predApex);
+
+    // Predecessor tet: [predApex, v0, v1, v2]
+    const predTetIndices = [predApexIndex, currentIndices[0], currentIndices[1], currentIndices[2]];
+    tetrahedra.push(predTetIndices);
+
+    // Update for next iteration
+    // Predecessor's local ordering: [predApex, v0, v1, v2]
+    // Its entry face: [predApex, v0, v1] = local [0, 1, 2]
+    // Its apex: v2 = local [3]
+    currentVerts = [predApex, v0, v1, v2];
+    currentIndices = predTetIndices;
+  }
+};
+```
+
+### Why This Should Work
+
+1. **Mathematical consistency**: The reflection formula is the exact inverse of the apex calculation
+2. **Chain continuity**: Each predecessor shares exactly 3 vertices with its successor
+3. **Same chirality**: We're not flipping anything - we're computing what was already there
+4. **Straight line preservation**: If T[0] → T[1] → T[2] is straight, then T[-2] → T[-1] → T[0] must also be straight because they're all part of the same infinite helix
+
+### Critical Implementation Detail
+
+For the seed tetrahedron at origin with + exiting through `startFace = [1, 2, 3]`:
+
+- Seed's local ordering for chain purposes: `[0, 1, 2, 3]`
+  - Exit face `[1, 2, 3]` = local `[1, 2, 3]`
+  - Entry face `[0, 1, 2]` = local `[0, 1, 2]`
+- First backward step:
+  - Entry face vertices: `[V0, V1, V2]`
+  - Current apex: `V3`
+  - Predecessor apex P = `2 × centroid(V0, V1, V2) - V3`
+  - T[-1] = `[P, V0, V1, V2]`
+
+**Key insight**: The entry face for backward generation is NOT the same as the exit face for forward generation. They are **different faces** of the seed!
+
+- + direction exits through face A = `[1, 2, 3]` (opposite V0)
+- - direction enters through face `[0, 1, 2]` (opposite V3)
+
+These faces share edge `[1, 2]` but are different triangular faces of the seed.
+
+### Why Previous Approaches Failed (Updated Understanding)
+
+| Approach | What We Did | Why It Failed |
+|----------|-------------|---------------|
+| Opposite face (A↔D) | Used different face normal direction | Different axis, not inverse |
+| Negated normal | Flipped apex to other side of SAME face | Changed chirality, created dogleg |
+| Different exit face idx | Changed rotation pattern | Not computing true predecessor |
+| Reflection approach | **Not yet tried** | Should work - true mathematical inverse |
+
+### Next Step
+
+Implement the reflection-based backward generation and test whether it produces a straight javelin through origin.
+
+---
+
 ## Implementation Checklist
 
 Following the pattern from `Add-Polyhedra-Guide.md`:
