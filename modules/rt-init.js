@@ -218,19 +218,18 @@ function startARTexplorer(
   // - Geodesic projection radio buttons
   // - View controls, demo modals, data I/O (handled after line 1311)
 
-  // Plane iOS-style toggle switches (Cartesian XYZ + Quadray WXYZ)
-  // NOT in declarative - always run (complex DOM queries)
-  document
-    .querySelectorAll(".plane-toggle-switch[data-plane]")
-    .forEach(toggleSwitch => {
-      toggleSwitch.addEventListener("click", function () {
-        // Toggle active state
-        this.classList.toggle("active");
+  // ========================================================================
+  // Plane checkbox toggles (Cartesian XYZ + Central Angle IVM)
+  // ========================================================================
+  // Cartesian plane checkboxes
+  ["planeXY", "planeXZ", "planeYZ"].forEach(id => {
+    const checkbox = document.getElementById(id);
+    if (checkbox) {
+      checkbox.addEventListener("change", function () {
+        const plane = id.replace("plane", ""); // "XY", "XZ", "YZ"
+        const isActive = this.checked;
 
-        const plane = this.dataset.plane;
-        const isActive = this.classList.contains("active");
-
-        // Update Cartesian grid visibility
+        // Update individual grid visibility
         if (plane === "XY" && window.gridXY) {
           window.gridXY.visible = isActive;
         } else if (plane === "XZ" && window.gridXZ) {
@@ -238,13 +237,29 @@ function startARTexplorer(
         } else if (plane === "YZ" && window.gridYZ) {
           window.gridYZ.visible = isActive;
         }
-        // IVM Grids (Future Implementation) - placeholders, no action yet
-        else if (plane.startsWith("quadray")) {
-          // These toggles are placeholders for future TRUE IVM implementation
-          // No action taken yet
+
+        // Update cartesianGrid group visibility
+        const anyCartesianActive =
+          document.getElementById("planeXY")?.checked ||
+          document.getElementById("planeXZ")?.checked ||
+          document.getElementById("planeYZ")?.checked;
+        if (cartesianGrid) {
+          cartesianGrid.visible = anyCartesianActive;
         }
-        // Update Central Angle Grid visibility (corrected implementation, 6 planes)
-        else if (plane === "ivmWX" && window.ivmWX) {
+      });
+    }
+  });
+
+  // Central Angle (IVM) plane checkboxes
+  ["planeIvmWX", "planeIvmWY", "planeIvmWZ", "planeIvmXY", "planeIvmXZ", "planeIvmYZ"].forEach(id => {
+    const checkbox = document.getElementById(id);
+    if (checkbox) {
+      checkbox.addEventListener("change", function () {
+        const plane = id.replace("planeIvm", "ivm"); // "ivmWX", etc.
+        const isActive = this.checked;
+
+        // Update individual grid visibility
+        if (plane === "ivmWX" && window.ivmWX) {
           window.ivmWX.visible = isActive;
         } else if (plane === "ivmWY" && window.ivmWY) {
           window.ivmWY.visible = isActive;
@@ -258,32 +273,20 @@ function startARTexplorer(
           window.ivmYZ.visible = isActive;
         }
 
-        // Show/hide cartesianGrid group if any Cartesian plane is active
-        const anyCartesianActive = Array.from(
-          document.querySelectorAll(".plane-toggle-switch[data-plane]")
-        ).some(
-          sw =>
-            !sw.dataset.plane.startsWith("quadray") &&
-            !sw.dataset.plane.startsWith("ivm") &&
-            sw.classList.contains("active")
-        );
-        if (cartesianGrid) {
-          cartesianGrid.visible = anyCartesianActive;
-        }
-
-        // Show/hide ivmPlanes group if any IVM plane is active
-        const anyIVMActive = Array.from(
-          document.querySelectorAll(".plane-toggle-switch[data-plane]")
-        ).some(
-          sw =>
-            sw.dataset.plane.startsWith("ivm") &&
-            sw.classList.contains("active")
-        );
+        // Update ivmPlanes group visibility
+        const anyIVMActive =
+          document.getElementById("planeIvmWX")?.checked ||
+          document.getElementById("planeIvmWY")?.checked ||
+          document.getElementById("planeIvmWZ")?.checked ||
+          document.getElementById("planeIvmXY")?.checked ||
+          document.getElementById("planeIvmXZ")?.checked ||
+          document.getElementById("planeIvmYZ")?.checked;
         if (ivmPlanes) {
           ivmPlanes.visible = anyIVMActive;
         }
       });
-    });
+    }
+  });
 
   // ========================================================================
   // HANDLERS NOT IN DECLARATIVE - Must always run
@@ -392,50 +395,8 @@ function startARTexplorer(
     updateGeometry();
   });
 
-  // Quadray Grid Tessellation Slider
-  document.getElementById("quadrayTessSlider").addEventListener("input", e => {
-    const tessValue = parseInt(e.target.value);
-    document.getElementById("quadrayTessValue").textContent = tessValue;
-
-    // Collect current visibility state
-    const visibilityState = {};
-    document.querySelectorAll('[data-plane^="ivm"]').forEach(toggle => {
-      const planeName = toggle.dataset.plane;
-      visibilityState[planeName] = toggle.classList.contains("active");
-    });
-
-    // Rebuild grids using rendering API
-    renderingAPI.rebuildQuadrayGrids(tessValue, visibilityState);
-  });
-
-  // Cartesian Grid Tessellation Slider
-  document
-    .getElementById("cartesianTessSlider")
-    .addEventListener("input", e => {
-      const tessValue = parseInt(e.target.value);
-      document.getElementById("cartesianTessValue").textContent = tessValue;
-
-      // Collect current visibility state
-      const visibilityState = {
-        gridXY:
-          document
-            .querySelector('[data-plane="XY"]')
-            ?.classList.contains("active") ?? false,
-        gridXZ:
-          document
-            .querySelector('[data-plane="XZ"]')
-            ?.classList.contains("active") ?? false,
-        gridYZ:
-          document
-            .querySelector('[data-plane="YZ"]')
-            ?.classList.contains("active") ?? false,
-        cartesianBasis:
-          document.getElementById("showCartesianBasis")?.checked ?? false,
-      };
-
-      // Rebuild grids using rendering API
-      renderingAPI.rebuildCartesianGrids(tessValue, visibilityState);
-    });
+  // NOTE: Tessellation slider handlers are now in rt-ui-binding-defs.js
+  // (quadrayTessSlider and cartesianTessSlider use new checkbox IDs)
 
   // ========================================================================
   // VIEW CONTROLS - Camera Presets

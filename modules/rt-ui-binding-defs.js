@@ -248,12 +248,15 @@ export const simpleSliderBindings = [
     type: "slider",
     valueId: "quadrayTessValue",
     onInput: (value, renderingAPI) => {
-      // Collect current visibility state
-      const visibilityState = {};
-      document.querySelectorAll('[data-plane^="ivm"]').forEach(toggle => {
-        const planeName = toggle.dataset.plane;
-        visibilityState[planeName] = toggle.classList.contains("active");
-      });
+      // Collect visibility state from NEW checkbox IDs (Phase 3)
+      const visibilityState = {
+        ivmWX: document.getElementById("planeIvmWX")?.checked ?? true,
+        ivmWY: document.getElementById("planeIvmWY")?.checked ?? true,
+        ivmWZ: document.getElementById("planeIvmWZ")?.checked ?? true,
+        ivmXY: document.getElementById("planeIvmXY")?.checked ?? true,
+        ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
+        ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
+      };
       renderingAPI.rebuildQuadrayGrids(parseInt(value), visibilityState);
     },
     updateGeometry: false, // Handled by rebuildQuadrayGrids
@@ -263,19 +266,11 @@ export const simpleSliderBindings = [
     type: "slider",
     valueId: "cartesianTessValue",
     onInput: (value, renderingAPI) => {
+      // Collect visibility state from NEW checkbox IDs (Phase 3)
       const visibilityState = {
-        gridXY:
-          document
-            .querySelector('[data-plane="XY"]')
-            ?.classList.contains("active") ?? false,
-        gridXZ:
-          document
-            .querySelector('[data-plane="XZ"]')
-            ?.classList.contains("active") ?? false,
-        gridYZ:
-          document
-            .querySelector('[data-plane="YZ"]')
-            ?.classList.contains("active") ?? false,
+        gridXY: document.getElementById("planeXY")?.checked ?? false,
+        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
+        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
         cartesianBasis:
           document.getElementById("showCartesianBasis")?.checked ?? false,
       };
