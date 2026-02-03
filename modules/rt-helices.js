@@ -597,9 +597,14 @@ export const Helices = {
     const firstChainTetIndices = [...startFaceVertIndices, firstChainApexIndex];
     tetrahedra.push(firstChainTetIndices);
 
-    // FIXED exit face pattern - SAME for both directions for linear extension
-    // The direction difference comes from using opposite faces of the dual tetrahedron
-    const chainExitFaceLocalIdx = 0; // Both use exit face 0
+    // JAVELIN ALIGNMENT: The - direction needs a different FIRST exit face
+    // to rotate its spiral into alignment with +, but then must continue with
+    // the same pattern (exit face 0) to maintain linear extension.
+    //
+    // Only the FIRST tetrahedron after the seed uses the rotated exit face.
+    // All subsequent tetrahedra use exit face 0 for both directions.
+    const firstExitFaceIdx = direction === "+" ? 0 : 1; // Rotate - direction's first exit
+    const standardExitFaceIdx = 0; // All subsequent tets use same exit face
 
     let currentVerts = [fv0, fv1, fv2, firstChainApex];
     let currentIndices = firstChainTetIndices;
@@ -607,9 +612,11 @@ export const Helices = {
     // Generate remaining chain tetrahedra (count-1 more after first chain tet)
     for (let i = 1; i < count; i++) {
       // Face 3 is always entry face (shared with previous tet)
-      // Exit through one of faces 0, 1, 2 based on FIXED pattern
+      // Exit through one of faces 0, 1, 2 based on pattern
+      // Use rotated exit face only for FIRST iteration (i=1), then standard
+      const exitFaceIdx = (i === 1) ? firstExitFaceIdx : standardExitFaceIdx;
       const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== 3);
-      const exitFace = faceLocalIndices[chainExitFaceLocalIdx % 3];
+      const exitFace = faceLocalIndices[exitFaceIdx % 3];
       const nextFaceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFace);
 
       const nfv0 = currentVerts[nextFaceLocalIndices[0]];
