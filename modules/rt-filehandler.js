@@ -301,6 +301,20 @@ export const RTFileHandler = {
         document.querySelector('input[name="tetrahelix2ExitD"]:checked')
           ?.value || "0"
       ),
+      // Tetrahelix 3 parameters (octahedral seed)
+      tetrahelix3Count: parseInt(
+        document.getElementById("tetrahelix3CountSlider")?.value || "10"
+      ),
+      tetrahelix3StartFace:
+        document.querySelector('input[name="tetrahelix3StartFace"]:checked')
+          ?.value || "A",
+      tetrahelix3Strands: parseInt(
+        document.querySelector('input[name="tetrahelix3Strands"]:checked')
+          ?.value || "1"
+      ),
+      tetrahelix3BondMode:
+        document.querySelector('input[name="tetrahelix3BondMode"]:checked')
+          ?.value || "zipped",
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -713,6 +727,31 @@ export const RTFileHandler = {
           );
           if (radio) radio.checked = true;
         }
+        // Tetrahelix 3 parameters
+        if (sliders.tetrahelix3Count !== undefined) {
+          const slider = document.getElementById("tetrahelix3CountSlider");
+          const display = document.getElementById("tetrahelix3CountDisplay");
+          if (slider) slider.value = sliders.tetrahelix3Count;
+          if (display) display.textContent = sliders.tetrahelix3Count;
+        }
+        if (sliders.tetrahelix3StartFace !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix3StartFace"][value="${sliders.tetrahelix3StartFace}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix3Strands !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix3Strands"][value="${sliders.tetrahelix3Strands}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix3BondMode !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix3BondMode"][value="${sliders.tetrahelix3BondMode}"]`
+          );
+          if (radio) radio.checked = true;
+        }
         // Planar matrix size sliders
         if (sliders.cubeMatrixSizeSlider !== undefined) {
           const el = document.getElementById("cubeMatrixSizeSlider");
@@ -870,6 +909,14 @@ export const RTFileHandler = {
         );
         if (tetrahelix2Controls && checkboxes.showTetrahelix2) {
           tetrahelix2Controls.style.display = "block";
+        }
+
+        // Show/hide Tetrahelix 3 controls based on checkbox state
+        const tetrahelix3Controls = document.getElementById(
+          "tetrahelix3-controls"
+        );
+        if (tetrahelix3Controls && checkboxes.showTetrahelix3) {
+          tetrahelix3Controls.style.display = "block";
         }
 
         // Trigger updateGeometry to render the restored forms
