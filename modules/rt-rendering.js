@@ -1079,24 +1079,21 @@ export function initScene(THREE, OrbitControls, RT) {
       const tetrahelix3Count = parseInt(
         document.getElementById("tetrahelix3CountSlider")?.value || "10"
       );
-      const startFace3Radio = document.querySelector(
-        'input[name="tetrahelix3StartFace"]:checked'
-      );
-      const tetrahelix3StartFace = startFace3Radio ? startFace3Radio.value : "A";
-      const strands3Radio = document.querySelector(
-        'input[name="tetrahelix3Strands"]:checked'
-      );
-      const tetrahelix3Strands = strands3Radio ? parseInt(strands3Radio.value) : 1;
-      const bondMode3Radio = document.querySelector(
-        'input[name="tetrahelix3BondMode"]:checked'
-      );
-      const tetrahelix3BondMode = bondMode3Radio ? bondMode3Radio.value : "zipped";
+      // Read individual strand checkboxes A-H
+      const enabledStrands = {
+        A: document.getElementById("tetrahelix3StrandA")?.checked || false,
+        B: document.getElementById("tetrahelix3StrandB")?.checked || false,
+        C: document.getElementById("tetrahelix3StrandC")?.checked || false,
+        D: document.getElementById("tetrahelix3StrandD")?.checked || false,
+        E: document.getElementById("tetrahelix3StrandE")?.checked || false,
+        F: document.getElementById("tetrahelix3StrandF")?.checked || false,
+        G: document.getElementById("tetrahelix3StrandG")?.checked || false,
+        H: document.getElementById("tetrahelix3StrandH")?.checked || false,
+      };
 
       const tetrahelix3Data = Helices.tetrahelix3(scale, {
         count: tetrahelix3Count,
-        startFace: tetrahelix3StartFace,
-        strands: tetrahelix3Strands,
-        bondMode: tetrahelix3BondMode,
+        enabledStrands,
       });
       renderPolyhedron(
         tetrahelix3Group,
@@ -1107,9 +1104,7 @@ export function initScene(THREE, OrbitControls, RT) {
       tetrahelix3Group.userData.type = "tetrahelix3";
       tetrahelix3Group.userData.parameters = {
         count: tetrahelix3Count,
-        startFace: tetrahelix3StartFace,
-        strands: tetrahelix3Strands,
-        bondMode: tetrahelix3BondMode,
+        enabledStrands,
       };
       tetrahelix3Group.visible = true;
     } else {
@@ -2232,34 +2227,31 @@ export function initScene(THREE, OrbitControls, RT) {
       const tetrahelix3Count = parseInt(
         document.getElementById("tetrahelix3CountSlider")?.value || "10"
       );
-      const startFace3Radio = document.querySelector(
-        'input[name="tetrahelix3StartFace"]:checked'
-      );
-      const tetrahelix3StartFace = startFace3Radio ? startFace3Radio.value : "A";
-      const strands3Radio = document.querySelector(
-        'input[name="tetrahelix3Strands"]:checked'
-      );
-      const tetrahelix3Strands = strands3Radio ? parseInt(strands3Radio.value) : 1;
-      const bondMode3Radio = document.querySelector(
-        'input[name="tetrahelix3BondMode"]:checked'
-      );
-      const tetrahelix3BondMode = bondMode3Radio ? bondMode3Radio.value : "zipped";
+      // Read individual strand checkboxes A-H
+      const enabledStrands = {
+        A: document.getElementById("tetrahelix3StrandA")?.checked || false,
+        B: document.getElementById("tetrahelix3StrandB")?.checked || false,
+        C: document.getElementById("tetrahelix3StrandC")?.checked || false,
+        D: document.getElementById("tetrahelix3StrandD")?.checked || false,
+        E: document.getElementById("tetrahelix3StrandE")?.checked || false,
+        F: document.getElementById("tetrahelix3StrandF")?.checked || false,
+        G: document.getElementById("tetrahelix3StrandG")?.checked || false,
+        H: document.getElementById("tetrahelix3StrandH")?.checked || false,
+      };
       const tetrahelix3Data = Helices.tetrahelix3(1, {
         count: tetrahelix3Count,
-        startFace: tetrahelix3StartFace,
-        strands: tetrahelix3Strands,
-        bondMode: tetrahelix3BondMode,
+        enabledStrands,
       });
       const V3 = tetrahelix3Data.vertices.length;
       const E3 = tetrahelix3Data.edges.length;
       const F3 = tetrahelix3Data.faces.length;
-      const strandLabel3 = tetrahelix3Strands === 1 ? "1 strand" : `${tetrahelix3Strands} strands`;
-      const modeLabel3 = tetrahelix3Strands > 1 ? `, ${tetrahelix3BondMode}` : "";
-      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 3 (${tetrahelix3Count} tet, ${strandLabel3}${modeLabel3}):</strong></div>`;
+      const activeStrands = tetrahelix3Data.metadata.activeStrands || [];
+      const strandLabel3 = activeStrands.length === 1 ? "1 strand" : `${activeStrands.length} strands`;
+      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 3 (${tetrahelix3Count} tet, ${strandLabel3}):</strong></div>`;
       html += `<div>V: ${V3}, E: ${E3}, F: ${F3}</div>`;
       html += `<div>Euler: N/A (open chain)</div>`;
       html += `<div>Seed: Octahedron (8 faces)</div>`;
-      html += `<div>Start face: ${tetrahelix3StartFace}</div>`;
+      html += `<div>Strands: ${activeStrands.join(", ") || "none"}</div>`;
     }
 
     if (document.getElementById("showCube").checked) {
@@ -3126,21 +3118,15 @@ export function initScene(THREE, OrbitControls, RT) {
       case "tetrahelix3": {
         // Tetrahelix 3: Linear (octahedral seed)
         const tetrahelix3Count = options.count ?? 10;
-        const tetrahelix3StartFace = options.startFace ?? "A";
-        const tetrahelix3Strands = options.strands ?? 1;
-        const tetrahelix3BondMode = options.bondMode ?? "zipped";
+        const enabledStrands = options.enabledStrands ?? { A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false };
         geometry = Helices.tetrahelix3(scale, {
           count: tetrahelix3Count,
-          startFace: tetrahelix3StartFace,
-          strands: tetrahelix3Strands,
-          bondMode: tetrahelix3BondMode,
+          enabledStrands,
         });
         group.userData.type = "tetrahelix3";
         group.userData.parameters = {
           count: tetrahelix3Count,
-          startFace: tetrahelix3StartFace,
-          strands: tetrahelix3Strands,
-          bondMode: tetrahelix3BondMode,
+          enabledStrands,
           tetrahedra: geometry.metadata.tetrahedra,
           expectedQ: geometry.metadata.expectedQ,
         };

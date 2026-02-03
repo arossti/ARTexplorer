@@ -2210,70 +2210,38 @@
                     >
                   </div>
                 </div>
-                <!-- Start face and strand count on same row -->
-                <div class="matrix-control-item" style="display: flex; gap: 20px; flex-wrap: wrap;">
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <label class="matrix-size-label" style="margin-right: 4px;">Face</label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3StartFace" value="A" checked /> A
+                <!-- Strands: checkboxes for each octahedral face A-H -->
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Strands</label>
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <label class="checkbox-label" style="font-size: 0.85em;">
+                      <input type="checkbox" id="tetrahelix3StrandA" checked /> A
                     </label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3StartFace" value="B" /> B
+                    <label class="checkbox-label" style="font-size: 0.85em;">
+                      <input type="checkbox" id="tetrahelix3StrandB" /> B
                     </label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3StartFace" value="C" /> C
+                    <label class="checkbox-label" style="font-size: 0.85em;">
+                      <input type="checkbox" id="tetrahelix3StrandC" /> C
                     </label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3StartFace" value="D" /> D
+                    <label class="checkbox-label" style="font-size: 0.85em;">
+                      <input type="checkbox" id="tetrahelix3StrandD" /> D
                     </label>
-                  </div>
-                </div>
-                <div class="matrix-control-item" style="display: flex; gap: 20px; flex-wrap: wrap;">
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <label class="matrix-size-label" style="margin-right: 4px;"></label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3StartFace" value="E" /> E
+                    <label class="checkbox-label" style="font-size: 0.85em;">
+                      <input type="checkbox" id="tetrahelix3StrandE" /> E
                     </label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3StartFace" value="F" /> F
+                    <label class="checkbox-label" style="font-size: 0.85em;">
+                      <input type="checkbox" id="tetrahelix3StrandF" /> F
                     </label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3StartFace" value="G" /> G
+                    <label class="checkbox-label" style="font-size: 0.85em;">
+                      <input type="checkbox" id="tetrahelix3StrandG" /> G
                     </label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3StartFace" value="H" /> H
+                    <label class="checkbox-label" style="font-size: 0.85em;">
+                      <input type="checkbox" id="tetrahelix3StrandH" /> H
                     </label>
                   </div>
-                </div>
-                <div class="matrix-control-item" style="display: flex; gap: 20px; flex-wrap: wrap;">
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <label class="matrix-size-label" style="margin-right: 4px;">Strands</label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3Strands" value="1" checked /> 1
-                    </label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3Strands" value="2" /> 2
-                    </label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3Strands" value="4" /> 4
-                    </label>
-                    <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix3Strands" value="8" /> 8
-                    </label>
-                  </div>
-                </div>
-                <!-- Bonding mode: zipped (radial) vs unzipped (parallel chains) -->
-                <div class="matrix-control-item" style="display: flex; align-items: center; gap: 8px;">
-                  <label class="matrix-size-label" style="margin-right: 4px;">Mode</label>
-                  <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelix3BondMode" value="zipped" checked /> Zipped
-                  </label>
-                  <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelix3BondMode" value="unzipped" /> Unzipped
-                  </label>
                 </div>
                 <p class="matrix-info-text">
-                  Octahedral seed with 8 faces (A-H). Strands radiate from center.
+                  Octahedral seed with 8 faces. Each checked strand bonds a tetrahelix to that face.
                 </p>
               </div>
             </div>

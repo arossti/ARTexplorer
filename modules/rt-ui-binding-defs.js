@@ -55,6 +55,16 @@ export const simpleCheckboxBindings = [
   // Helix options (chirality commented out for tetrahelix1 - left-handed only)
   // { id: "tetrahelix1LeftHanded", type: "checkbox" },
 
+  // Tetrahelix 3 strand checkboxes (A-H for octahedral faces)
+  { id: "tetrahelix3StrandA", type: "checkbox" },
+  { id: "tetrahelix3StrandB", type: "checkbox" },
+  { id: "tetrahelix3StrandC", type: "checkbox" },
+  { id: "tetrahelix3StrandD", type: "checkbox" },
+  { id: "tetrahelix3StrandE", type: "checkbox" },
+  { id: "tetrahelix3StrandF", type: "checkbox" },
+  { id: "tetrahelix3StrandG", type: "checkbox" },
+  { id: "tetrahelix3StrandH", type: "checkbox" },
+
   // Node shading
   { id: "nodeFlatShading", type: "checkbox" },
 ];
@@ -459,14 +469,11 @@ export const geodesicProjectionBindings = [
   // Helix start face selection
   { type: "radio-group", name: "tetrahelix1StartFace" },
   { type: "radio-group", name: "tetrahelix2StartFace" },
-  { type: "radio-group", name: "tetrahelix3StartFace" },
-  // Helix strand count
+  // Helix strand count (tetrahelix2 only)
   { type: "radio-group", name: "tetrahelix2Strands" },
-  { type: "radio-group", name: "tetrahelix3Strands" },
-  // Helix bond mode (zipped vs unzipped)
+  // Helix bond mode (tetrahelix2 only)
   { type: "radio-group", name: "tetrahelix2BondMode" },
-  { type: "radio-group", name: "tetrahelix3BondMode" },
-  // Helix per-strand exit face selection
+  // Helix per-strand exit face selection (tetrahelix2 only)
   { type: "radio-group", name: "tetrahelix2ExitA" },
   { type: "radio-group", name: "tetrahelix2ExitB" },
   { type: "radio-group", name: "tetrahelix2ExitC" },
