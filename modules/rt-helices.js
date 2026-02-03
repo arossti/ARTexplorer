@@ -778,25 +778,20 @@ export const Helices = {
   /**
    * Tetrahelix 3: Linear variant with octahedral seed
    *
-   * Same algorithm as tetrahelix2, but starts from an octahedron instead of
-   * a tetrahedron. The octahedron has 8 triangular faces, providing 8 possible
-   * strand directions in a "starburst" configuration.
+   * Starts from an octahedron instead of a tetrahedron. The octahedron has
+   * 8 triangular faces (A-H), and each enabled strand bonds a tetrahelix
+   * chain to that face, radiating outward.
    *
    * @param {number} halfSize - Half-size of base octahedron
    * @param {Object} options
    * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 96)
-   * @param {string} options.startFace - Initial face: 'A'-'H' (default: 'A')
-   * @param {number} options.strands - Number of parallel strands: 1-8 (default: 1)
-   * @param {string} options.bondMode - 'zipped' (radial spines) or 'unzipped' (parallel chains)
-   * @param {Object} options.exitFaces - Per-strand exit face: { A: 0-2, B: 0-2, ... H: 0-2 }
+   * @param {Object} options.enabledStrands - Which faces have strands: { A: true/false, B: true/false, ... H: true/false }
    * @returns {Object} { vertices, edges, faces, metadata }
    */
   tetrahelix3: (halfSize = 1, options = {}) => {
     const count = Math.min(Math.max(options.count || 10, 1), 96);
-    const startFace = options.startFace || "A";
-    const strands = Math.min(Math.max(options.strands || 1, 1), 8);
-    const bondMode = options.bondMode || "zipped";
-    const exitFaces = options.exitFaces || { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, G: 0, H: 0 };
+    // Default: only strand A enabled
+    const enabledStrands = options.enabledStrands || { A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false };
 
     // Generate seed octahedron (6 vertices at ±s on each axis)
     const s = halfSize;
@@ -836,26 +831,11 @@ export const Helices = {
 
     const octaCentroid = HelixHelpers.getOctaCentroid(seedOctaVertices);
 
-    // Map face label to index
-    const FACE_LABEL_TO_INDEX = {};
-    FACE_LABELS.forEach((label, idx) => {
-      FACE_LABEL_TO_INDEX[label] = idx;
-    });
+    // Build list of enabled strands from the enabledStrands object
+    const activeStrands = FACE_LABELS.filter(label => enabledStrands[label]);
 
-    // Determine which faces to grow strands from
-    const primaryFaceIdx = FACE_LABEL_TO_INDEX[startFace] ?? 0;
-    const strandFaces = [primaryFaceIdx];
-
-    // Add additional strand starting faces (skip the primary)
-    for (let i = 1; i < strands && strandFaces.length < 8; i++) {
-      const nextFaceIdx = (primaryFaceIdx + i) % 8;
-      strandFaces.push(nextFaceIdx);
-    }
-
-    // Generate strands
-    for (let strandIdx = 0; strandIdx < strandFaces.length; strandIdx++) {
-      const faceIdx = strandFaces[strandIdx];
-      const faceLabel = FACE_LABELS[faceIdx];
+    // Generate strands for each enabled face
+    for (const faceLabel of activeStrands) {
       const faceVertIndices = OCTA_FACES[faceLabel];
 
       const fv0 = seedOctaVertices[faceVertIndices[0]];
@@ -874,15 +854,11 @@ export const Helices = {
       const firstTetIndices = [...faceVertIndices, firstApexIndex];
       tetrahedra.push(firstTetIndices);
 
-      if (bondMode === "zipped") {
-        // ZIPPED: Just one tetrahedron per face, no chain continuation
-        continue;
-      }
-
-      // UNZIPPED: Continue the chain for (count - 1) more tetrahedra
+      // Continue the chain for (count - 1) more tetrahedra
       let currentVerts = [fv0, fv1, fv2, firstApex];
       let currentIndices = firstTetIndices;
-      let exitFaceLocalIdx = exitFaces[faceLabel] ?? 0;
+      // Use a fixed exit pattern (0) for consistent helix direction
+      const exitFaceLocalIdx = 0;
 
       for (let i = 1; i < count; i++) {
         // Face 3 is always the entry face (shared with previous tet)
@@ -910,9 +886,6 @@ export const Helices = {
 
         currentVerts = [nfv0, nfv1, nfv2, newApex];
         currentIndices = newTetIndices;
-
-        // Continue using the same exit face pattern
-        exitFaceLocalIdx = exitFaces[faceLabel] ?? 0;
       }
     }
 
@@ -939,10 +912,10 @@ export const Helices = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron();
 
-    console.log(`[RT] Tetrahelix3 (Octahedral): count=${count}, strands=${strands}, bondMode=${bondMode}, halfSize=${halfSize}`);
+    console.log(`[RT] Tetrahelix3 (Octahedral): count=${count}, halfSize=${halfSize}`);
     console.log(`  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`);
     console.log(`  Edge Q: ${octaEdgeQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`);
-    console.log(`  Start face: ${startFace}, Strands: ${strands}, Mode: ${bondMode}`);
+    console.log(`  Enabled strands: ${activeStrands.join(", ") || "none"}`);
     console.log(`  Total tetrahedra: ${tetrahedra.length}`);
 
     return {
@@ -953,9 +926,8 @@ export const Helices = {
       metadata: {
         variant: "tetrahelix3",
         count,
-        startFace,
-        strands,
-        bondMode,
+        enabledStrands,
+        activeStrands,
         tetrahedra: tetrahedra.length,
         expectedQ: octaEdgeQ,
       },
