@@ -492,12 +492,77 @@ The tetrahelix steering problem has these known variables:
 
 **Note:** Current "zipped" implementation creates divergent geometry (like ribs off a spine), not the wrapping/intertwined structure of biological helices. The "unzipped" mode would be needed for true helical parallel strands.
 
-### Tetrahelix 3: Future Toroidal Multi-Strand
+### Tetrahelix 3: Octahedral Seed
 
-**Goal:** Explore toroidal closure with face-bonded multi-strand configurations
+**Goal:** Explore tetrahelix chains grown from an octahedral seed instead of a tetrahedral seed
 
-- Reserved for experimentation with multiple strands wrapping in torus formation
-- May reveal interesting topological properties at closure
+An **octahedron** has 8 triangular faces (vs tetrahedron's 4), providing 8 possible starting directions for helix strands. This creates a richer "starburst" configuration where strands radiate outward from a central octahedral origin.
+
+#### Architecture Decision (Feb 2, 2026)
+
+**Question:** Should this be a seed selection option in Tetrahelix 2, or a separate Tetrahelix 3 section?
+
+**Decision:** Implement as **separate Tetrahelix 3 UI section** with shared core code.
+
+**Rationale:**
+1. **Conceptual clarity:** Tetrahelix 2 is "tetrahedra bonded to tetrahedra." An octahedral seed creates a fundamentally different structure—"tetrahedra bonded to an octahedron."
+2. **UI complexity:** Adding seed selection to Tetrahelix 2 would require conditional UI (8 start faces vs 4, different multi-strand logic). A separate section keeps UI focused.
+3. **Code reuse is straightforward:** Helper functions are extracted to `HelixHelpers` within rt-helices.js:
+   ```javascript
+   const HelixHelpers = {
+     calculateCentroid,
+     calculateFaceNormal,
+     getTetraCentroid,
+     buildEdges,
+     buildFaces,
+     apexDistanceFromQ,
+   };
+   ```
+4. **Independent evolution:** Octahedral seeding may lead to different exploration paths (different optimal count limits, strand configurations, closure behaviors).
+
+#### Geometric Properties
+
+| Property | Tetrahedron Seed | Octahedron Seed |
+|----------|------------------|-----------------|
+| **Seed faces** | 4 | 8 |
+| **Max strands** | 4 (one per face) | 8 (one per face) |
+| **Face arrangement** | Tetrahedral (~109.47° apart) | Octahedral (~109.47° opposite pairs) |
+| **Vertex count (seed)** | 4 | 6 |
+| **Edge count (seed)** | 6 | 12 |
+
+#### Implementation Plan
+
+**File changes:**
+
+```
+rt-helices.js:
+├── HelixHelpers (extracted shared utilities)
+├── tetrahelix1 (unchanged)
+├── tetrahelix2 (refactored to use HelixHelpers)
+└── tetrahelix3 (new, octahedral seed, uses HelixHelpers)
+
+index.html:
+└── New "Tetrahelix 3 (Octahedral)" section after Tetrahelix 2
+
+rt-rendering.js:
+└── Add tetrahelix3Group handling (follows existing pattern)
+```
+
+**UI Controls (planned):**
+- Count slider (1-96)
+- Start face selection (8 faces: A-H)
+- Strands selector (1-8)
+- Bond mode (Zipped/Unzipped)
+- Per-strand exit face controls (expanded grid)
+
+#### Open Questions
+
+1. **Face labeling:** How to intuitively label 8 octahedral faces? (A-H? Numbered? Directional?)
+2. **Opposite pairs:** Octahedron faces come in 4 pairs of parallel opposites. Should strands from opposite faces interact differently?
+3. **Closure behavior:** Will octahedral-seeded helices exhibit different torus-closure properties?
+4. **Edge sharing:** When multiple strands are bonded, how do their shared edges interact geometrically?
+
+*Status: Design complete, implementation pending*
 
 ### Future Research
 
