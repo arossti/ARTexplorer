@@ -707,9 +707,13 @@ provide a rational, gimbal-lock-free alternative to both Euler angles and quater
 
 **Goal**: Replace Hamilton product scaffolding with Tom Ace's native Quadray rotation algebra.
 
-**Mathematical Foundation** (from `4D-COORDINATES.md` §10.5):
+---
 
-Tom Ace's rotation coefficients for rotation about a Quadray basis axis:
+#### 6.1 Mathematical Foundation
+
+**Tom Ace's Rotation Coefficients** (from `4D-COORDINATES.md` §10.5):
+
+For rotation by angle θ about one of the four Quadray basis axes:
 ```
 F = (2·cos(θ) + 1) / 3
 G = (2·cos(θ - 120°) + 1) / 3
@@ -724,38 +728,315 @@ R_W = | 1  0  0  0 |
       | 0  H  G  F |
 ```
 
-**RT-Pure Implementation**:
+---
 
-- [ ] `rotationCoeffsFromSpread(s)` - Calculate F,G,H from spread (not angle)
-- [ ] `rotateAboutW(spread)`, `rotateAboutX(spread)`, etc. - Single-axis rotations
-- [ ] `compose(r1, r2)` - Rotation composition via 4×4 matrix multiplication
-- [ ] Verify output matches current Hamilton-based implementation exactly
-- [ ] Remove quaternion scaffolding from `multiply()` method
-- [ ] Update `toMatrix3()` to use native F,G,H calculation
+#### 6.2 Critical Question: Quadray Axes vs Cartesian Axes
 
-**Validation Tests**:
+**The fundamental distinction that must be resolved:**
 
-- [ ] Compare Hamilton vs F,G,H output for common angles (30°, 45°, 60°, 90°, 120°)
-- [ ] Verify rotation composition produces identical results
-- [ ] Test edge cases: identity (s=0), quarter-turn (s=1), Janus flip (180°)
-- [ ] Performance comparison: Hamilton product vs 4×4 matrix multiply
+| Axis Type | Direction (Cartesian) | Angle Between | Native To |
+|-----------|----------------------|---------------|-----------|
+| Cartesian X | (1, 0, 0) | 90° | Quaternions |
+| Cartesian Y | (0, 1, 0) | 90° | Quaternions |
+| Cartesian Z | (0, 0, 1) | 90° | Quaternions |
+| **Quadray W** | (1, 1, 1)/√3 | **109.47°** | F,G,H |
+| **Quadray X** | (1, -1, -1)/√3 | **109.47°** | F,G,H |
+| **Quadray Y** | (-1, 1, -1)/√3 | **109.47°** | F,G,H |
+| **Quadray Z** | (-1, -1, 1)/√3 | **109.47°** | F,G,H |
 
-**Why This Matters**:
+**Tom Ace's F,G,H formula rotates about QUADRAY basis axes (tetrahedral vertices), NOT Cartesian axes!**
 
-This phase removes the last vestiges of quaternion math, replacing it with native tetrahedral algebra. The rotation will be **genuinely different** from quaternions:
-- Basis geometry: 109.47° (tetrahedral) vs 90° (orthogonal)
-- Operation: Circulant matrix multiplication vs Hamilton product
-- Structure: Reflects three-fold face symmetry of tetrahedron
+This is a genuinely different rotation system:
+- The four Quadray axes point to the corners of a regular tetrahedron
+- The central angle between any two Quadray axes is 109.47° (arccos(-1/3))
+- Rotation about W affects X, Y, Z symmetrically (three-fold symmetry)
 
-**Note on Normalization** (from *Geometric Janus Inversion*, Thomson 2026):
+---
 
-The zero-sum constraint ($W + X + Y + Z = k$) is for **XYZ parity** — it projects 4D Quadray onto 3D Cartesian space. In native 4D Quadray rotation, we can operate **without** this constraint:
+#### 6.3 The Arbitrary Axis Problem
+
+**Challenge**: The current demo allows rotation about any Cartesian axis (e.g., (0.577, 0.577, 0.577)). Tom Ace's formula only handles the four basis axes.
+
+**Possible Approaches**:
+
+**Approach A: Decomposition** (Tetrahedral Euler-like)
+- Express arbitrary rotation as composition of W, X, Y, Z basis rotations
+- Like Euler XYZ but with 4 tetrahedral axes instead of 3 orthogonal
+- Risk: May introduce "tetrahedral gimbal lock" at certain configurations
+
+**Approach B: Conjugation**
+- Transform the arbitrary axis into a basis direction
+- Apply basis rotation
+- Transform back
+- Complex: requires understanding axis-to-axis transformations in Quadray
+
+**Approach C: Generalized F,G,H Formula**
+- Derive coefficients for rotation about *any* axis, not just basis axes
+- The circulant structure may not hold for arbitrary axes
+- Most mathematically elegant but requires new derivation
+
+**Approach D: Accept the Tetrahedral Constraint**
+- Embrace that native Quadray rotation works in "tetrahedral space"
+- Offer W/X/Y/Z axis rotation buttons (like the current Euler XYZ)
+- This is philosophically consistent: tetrahedral geometry, tetrahedral rotations
+- But: changes user interaction model from "any axis" to "basis axes only"
+
+**Recommended**: Start with **Approach D** (pure tetrahedral) for Phase 6.1, then explore **Approach A** (composition) for Phase 6.2. This maintains mathematical purity while providing a path to arbitrary rotations.
+
+---
+
+#### 6.4 Sign Ambiguity and Janus Polarity
+
+**The Problem**: Spread s = sin²(θ) doesn't distinguish direction.
+```
+cos(θ) = ±√(1 - s)  // Which sign?
+sin(θ) = ±√(s)      // Which sign?
+```
+
+For θ = 60° and θ = 120°, spread is the same (3/4), but rotations differ!
+
+**Solution: Janus Polarity Determines Sign**
+
+| Polarity | cos(θ) | Rotation Range | Meaning |
+|----------|--------|----------------|---------|
+| +1 | +√(1-s) | 0° to 90° | "Forward" rotation |
+| -1 | -√(1-s) | 90° to 180° | "Backward" rotation |
+
+The Janus polarity flag we already have in QuadrayRotor encodes this:
+```javascript
+// RT-Pure with polarity
+function rotationCoeffsFromSpread(s, polarity = +1) {
+  const cosTheta = polarity * Math.sqrt(1 - s);  // Sign from polarity!
+  const sinTheta = Math.sqrt(s);  // Always positive (quadrant handled by cos sign)
+
+  // ... rest of F,G,H calculation
+}
+```
+
+**Key Insight**: The Janus polarity isn't just about double-cover—it resolves the spread sign ambiguity!
+
+---
+
+#### 6.5 Composition: Matrix Multiplication vs Hamilton Product
+
+**Question**: Does composing two F,G,H matrices (4×4 multiply) give the same result as Hamilton product?
+
+**Analysis**:
+
+For rotations about the **same** basis axis:
+- R_W(θ₁) × R_W(θ₂) = R_W(θ₁ + θ₂) ✓
+- Both methods give the same result (rotation angles add)
+
+For rotations about **different** basis axes:
+- R_W(θ₁) × R_X(θ₂) = ??? (need to verify)
+- Hamilton product: q₁ × q₂ (non-commutative, well-defined)
+- Matrix product: 4×4 × 4×4 = 4×4 (also non-commutative)
+
+**Key Verification Needed**:
+Does `R_W(θ₁) × R_X(θ₂)` produce the same 3D rotation as the equivalent quaternion composition?
+
+If yes: We can use 4×4 matrix multiplication as our native "product" operation
+If no: We need to understand the discrepancy (perhaps they're rotations in different spaces!)
+
+---
+
+#### 6.6 Implementation Phases
+
+**Phase 6.0: Verification Protocol (GATEWAY)** 🚦
+
+Before writing production code, run a console-based mathematical verification:
+
+```javascript
+// verification-test.js - Run in browser console with THREE.js loaded
+
+// === SETUP: Quadray basis axes in Cartesian ===
+const QUADRAY_AXES = {
+  W: new THREE.Vector3(1, 1, 1).normalize(),     // (1,1,1)/√3
+  X: new THREE.Vector3(1, -1, -1).normalize(),   // (1,-1,-1)/√3
+  Y: new THREE.Vector3(-1, 1, -1).normalize(),   // (-1,1,-1)/√3
+  Z: new THREE.Vector3(-1, -1, 1).normalize()    // (-1,-1,1)/√3
+};
+
+// === F,G,H Coefficient Calculation ===
+function fghCoeffs(theta) {
+  const cos120 = -0.5;
+  const sin120 = Math.sqrt(0.75);
+  const cosT = Math.cos(theta);
+  const sinT = Math.sin(theta);
+
+  return {
+    F: (2 * cosT + 1) / 3,
+    G: (2 * (cosT * cos120 + sinT * sin120) + 1) / 3,
+    H: (2 * (cosT * cos120 - sinT * sin120) + 1) / 3
+  };
+}
+
+// === F,G,H 4×4 Matrix (about W-axis) ===
+function matrixAboutW(theta) {
+  const { F, G, H } = fghCoeffs(theta);
+  // Row-major for readability, transpose for THREE.js
+  return new THREE.Matrix4().set(
+    1, 0, 0, 0,
+    0, F, H, G,
+    0, G, F, H,
+    0, H, G, F
+  );
+}
+
+// === Quaternion for rotation about W-axis ===
+function quatAboutW(theta) {
+  const axis = QUADRAY_AXES.W;
+  const q = new THREE.Quaternion();
+  q.setFromAxisAngle(axis, theta);
+  return q;
+}
+
+// === TEST 1: Single axis rotation ===
+function testSingleAxis(theta) {
+  // Apply F,G,H matrix to Quadray point
+  const pQuadray = new THREE.Vector4(1, 0.5, 0.3, 0.2);  // Arbitrary Quadray point
+
+  // Convert to Cartesian, rotate with quaternion, compare
+  // ... (full implementation needed)
+
+  console.log(`θ = ${(theta * 180 / Math.PI).toFixed(1)}°`);
+  console.log(`F,G,H: F=${fghCoeffs(theta).F.toFixed(6)}`);
+  // Log comparison results
+}
+
+// === TEST 2: Composition ===
+function testComposition() {
+  const theta1 = Math.PI / 4;  // 45°
+  const theta2 = Math.PI / 4;  // 45°
+
+  // F,G,H path: R_W(45°) × R_W(45°)
+  const M1 = matrixAboutW(theta1);
+  const M2 = matrixAboutW(theta2);
+  const Mcomposed = M1.clone().multiply(M2);
+
+  // Quaternion path: q_W(45°) × q_W(45°)
+  const q1 = quatAboutW(theta1);
+  const q2 = quatAboutW(theta2);
+  const qComposed = q1.clone().multiply(q2);
+
+  // Extract effective rotation angle from composed quaternion
+  const composedAngle = 2 * Math.acos(qComposed.w);
+  console.log(`Composed angle: ${(composedAngle * 180 / Math.PI).toFixed(1)}°`);
+  // Should be 90° for W(45°) × W(45°)
+}
+
+// Run tests
+testSingleAxis(Math.PI / 4);  // 45°
+testComposition();
+```
+
+**Gateway Criteria**:
+- ✅ PASS: F,G,H single-axis matches quaternion (proceed to 6.1)
+- ✅ PASS: Same-axis composition matches (proceed to 6.2)
+- ⚠️ INVESTIGATE: Different-axis composition differs (document & decide)
+- ❌ FAIL: Single-axis doesn't match (re-examine formulas)
+
+---
+
+**Phase 6.1: Basis Axis Rotations (Pure Tetrahedral)**
+
+- [ ] Implement `rotationCoeffsFromSpread(s, polarity)`
+- [ ] Implement `matrixAboutW(s, p)`, `matrixAboutX(s, p)`, etc.
+- [ ] Add UI buttons for W/X/Y/Z axis selection (tetrahedral mode)
+- [ ] Verify single-axis rotations match current quaternion output
+- [ ] Document the "tetrahedral rotation" user experience
+
+**Phase 6.2: Composition Verification**
+
+- [ ] Test: R_W(45°) × R_W(45°) = R_W(90°)?
+- [ ] Test: R_W(45°) × R_X(45°) vs quaternion equivalent
+- [ ] Determine if 4×4 matrix multiply is mathematically equivalent
+- [ ] If not, document the difference (different rotation spaces!)
+
+**Phase 6.3: Arbitrary Axis (if feasible)**
+
+- [ ] Attempt decomposition: arbitrary axis → W,X,Y,Z composition
+- [ ] Test for "tetrahedral gimbal lock" configurations
+- [ ] Compare with Hamilton product for same intended rotation
+- [ ] Decide: keep as alternative mode, or replace Hamilton entirely
+
+---
+
+#### 6.7 Validation Test Suite
+
+```javascript
+// Test cases comparing Hamilton vs F,G,H for basis axis rotations
+const tests = [
+  // W-axis rotations (Quadray basis)
+  { axis: 'W', spread: 0,    expected: 'identity' },
+  { axis: 'W', spread: 0.25, expected: '30°' },
+  { axis: 'W', spread: 0.5,  expected: '45°' },
+  { axis: 'W', spread: 0.75, expected: '60°' },
+  { axis: 'W', spread: 1,    expected: '90°' },
+
+  // X, Y, Z axis rotations
+  { axis: 'X', spread: 0.5, expected: '45° about X' },
+  { axis: 'Y', spread: 0.5, expected: '45° about Y' },
+  { axis: 'Z', spread: 0.5, expected: '45° about Z' },
+
+  // Composition tests
+  { compose: ['W:0.5', 'W:0.5'], expected: 'W:90°' },
+  { compose: ['W:0.5', 'X:0.5'], expected: '???' },  // Key test!
+];
+```
+
+**Success Criteria**:
+- Single-axis rotations produce identical 3D transformations
+- Composed rotations either match Hamilton product OR we document the difference
+
+---
+
+#### 6.8 Why This Matters (Expanded)
+
+This phase explores whether native tetrahedral rotation algebra is:
+
+1. **Equivalent** to quaternions (same rotations, different notation)
+2. **Different** (genuinely distinct rotation behavior in 4D)
+3. **Both** (equivalent for basis axes, different for compositions)
+
+The answer determines ARTexplorer's claim:
+- If (1): "F,G,H is an alternative notation for the same math"
+- If (2): "Native Quadray rotation is a new rotation system"
+- If (3): "Basis rotations match, but composition reveals tetrahedral structure"
+
+**Hypothesis**: Option (1) is most likely. Tom Ace derived F,G,H specifically to produce correct rotations about the tetrahedral axes. Since rotation about axis $\vec{a}$ by angle $\theta$ is a well-defined SO(3) operation, F,G,H should produce the same result as quaternions—just expressed natively in Quadray coordinates.
+
+**What we learn either way**:
+- If (1): Native Quadray rotation is a valid coordinate-native representation. The algebraic structure (circulant matrices) is different from Hamilton product, but produces identical rotations.
+- If (2) or (3): There's something unexpected in the 4D structure that we haven't accounted for—potentially interesting for research.
+
+---
+
+#### 6.9 Note on Normalization (from *Geometric Janus Inversion*, Thomson 2026)
+
+The zero-sum constraint (W + X + Y + Z = k) is for **XYZ parity** — it projects 4D Quadray onto 3D Cartesian space. In native 4D Quadray rotation, we can operate **without** this constraint:
 
 - The fourth coordinate carries real geometric information (see: deformed tetrahedron)
 - Operating in full ℝ⁴ avoids the topological obstructions that cause gimbal lock
 - No normalization required — this is not a limitation, it's a feature
 
 The tetrahedron naturally inhabits 4D space; the zero-sum constraint artificially flattens it to 3D for Cartesian compatibility. Native Quadray rotation preserves the full dimensional richness.
+
+---
+
+#### 6.10 Open Questions for Phase 6
+
+1. **Is R_W × R_X = quaternion(W-axis, θ₁) × quaternion(X-axis, θ₂)?**
+   The Quadray W-axis is (1,1,1)/√3 in Cartesian. Do they compose the same?
+
+2. **What is the "tetrahedral gimbal lock" configuration, if any?**
+   Euler has lock at ±90° Y. Does tetrahedral decomposition have an equivalent?
+
+3. **Can we derive a generalized F,G,H for arbitrary axes?**
+   The three-fold symmetry suggests the formula is specific to basis axes.
+
+4. **What physical/visual meaning does "rotation about the W-axis" have?**
+   It's rotation about the (1,1,1) direction—the body diagonal of a cube.
 
 ---
 

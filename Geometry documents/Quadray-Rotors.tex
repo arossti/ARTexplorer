@@ -734,19 +734,158 @@ ARTexplorer includes an interactive demo (\texttt{rt-rotor-demo.js}) that visual
 The demo is available at: \url{https://arossti.github.io/ARTexplorer/}
 
 %==============================================================================
+\section{Quadray Basis Axes vs Cartesian Axes}
+%==============================================================================
+
+A critical distinction for understanding native Quadray rotation:
+
+\subsection{The Tetrahedral Basis Directions}
+
+The four Quadray basis vectors, expressed in Cartesian coordinates:
+\begin{align}
+\hat{W} &= \frac{1}{\sqrt{3}}(1, 1, 1)\\
+\hat{X} &= \frac{1}{\sqrt{3}}(1, -1, -1)\\
+\hat{Y} &= \frac{1}{\sqrt{3}}(-1, 1, -1)\\
+\hat{Z} &= \frac{1}{\sqrt{3}}(-1, -1, 1)
+\end{align}
+
+These point to the vertices of a regular tetrahedron inscribed in the unit sphere. The angle between any two basis vectors is $\cos^{-1}(-1/3) \approx 109.47°$---the tetrahedral central angle.
+
+\subsection{F,G,H Rotates About Quadray Axes, Not Cartesian}
+
+Tom Ace's F,G,H formula rotates about these tetrahedral directions, NOT the Cartesian $\hat{x}, \hat{y}, \hat{z}$:
+
+\begin{itemize}
+    \item $R_W(\theta)$: Rotation about $(1,1,1)/\sqrt{3}$ (body diagonal of cube)
+    \item $R_X(\theta)$: Rotation about $(1,-1,-1)/\sqrt{3}$
+    \item $R_Y(\theta)$: Rotation about $(-1,1,-1)/\sqrt{3}$
+    \item $R_Z(\theta)$: Rotation about $(-1,-1,1)/\sqrt{3}$
+\end{itemize}
+
+This is the native tetrahedral rotation system---fundamentally different from Cartesian XYZ.
+
+\subsection{Equivalence Hypothesis}
+
+We hypothesize that $R_W(\theta)$ applied to a point $P$ in Quadray coordinates produces the same 3D result as a quaternion rotation about $\hat{W} = (1,1,1)/\sqrt{3}$ by angle $\theta$:
+
+\begin{equation}
+\text{CartesianToQuadray}^{-1}(R_W(\theta) \cdot P) = q_{\hat{W},\theta} \cdot \text{CartesianToQuadray}^{-1}(P) \cdot q_{\hat{W},\theta}^{-1}
+\end{equation}
+
+If true, then F,G,H is an alternative notation for quaternion rotation about tetrahedral axes---not a new rotation system, but a coordinate-native expression of the same rotations.
+
+%==============================================================================
+\section{The Sign Ambiguity and Janus Resolution}
+%==============================================================================
+
+\subsection{Spread Doesn't Distinguish Direction}
+
+Given spread $s = \sin^2(\theta)$:
+\begin{align}
+\cos(\theta) &= \pm\sqrt{1 - s}\\
+\sin(\theta) &= \pm\sqrt{s}
+\end{align}
+
+For $\theta = 60°$ and $\theta = 120°$, the spread is identical ($s = 3/4$), yet the rotations differ!
+
+\subsection{Janus Polarity Resolves the Ambiguity}
+
+The explicit polarity flag $p \in \{+1, -1\}$ determines the sign of $\cos(\theta)$:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cccl}
+\toprule
+\textbf{Polarity} $p$ & $\cos(\theta)$ & \textbf{Effective Range} & \textbf{Meaning}\\
+\midrule
+$+1$ & $+\sqrt{1-s}$ & $0° \leq \theta \leq 90°$ & ``Forward'' rotation\\
+$-1$ & $-\sqrt{1-s}$ & $90° < \theta \leq 180°$ & ``Backward'' rotation\\
+\bottomrule
+\end{tabular}
+\caption{Janus polarity resolves spread sign ambiguity}
+\end{table}
+
+\begin{observation}[Dual Purpose of Janus Polarity]
+The polarity flag serves two functions:
+\begin{enumerate}
+    \item Explicit double-cover (replacing quaternion's implicit $q \equiv -q$)
+    \item Sign disambiguation for spread-based calculations
+\end{enumerate}
+Both are necessary for RT-pure rotation to be well-defined.
+\end{observation}
+
+The RT-pure coefficient formula becomes:
+\begin{verbatim}
+function rotationCoeffsFromSpread(s, polarity = +1) {
+  const cosTheta = polarity * Math.sqrt(1 - s);  // Sign from polarity
+  const sinTheta = Math.sqrt(s);  // Always positive
+
+  const cos120 = -0.5;
+  const sin120 = Math.sqrt(0.75);
+
+  const F = (2 * cosTheta + 1) / 3;
+  const G = (2 * (cosTheta * cos120 + sinTheta * sin120) + 1) / 3;
+  const H = (2 * (cosTheta * cos120 - sinTheta * sin120) + 1) / 3;
+
+  return { F, G, H };
+}
+\end{verbatim}
+
+%==============================================================================
+\section{Composition: Matrix Product vs Hamilton Product}
+%==============================================================================
+
+\subsection{The Verification Question}
+
+Does 4×4 matrix multiplication of F,G,H rotation matrices produce the same rotation as Hamilton product of the corresponding quaternions?
+
+For \textbf{same-axis} composition:
+\begin{equation}
+R_W(\theta_1) \times R_W(\theta_2) \stackrel{?}{=} R_W(\theta_1 + \theta_2)
+\end{equation}
+
+This should hold because both methods simply add rotation angles about the same axis.
+
+For \textbf{different-axis} composition:
+\begin{equation}
+R_W(\theta_1) \times R_X(\theta_2) \stackrel{?}{=} q_{\hat{W},\theta_1} \cdot q_{\hat{X},\theta_2} \text{ (converted to matrix)}
+\end{equation}
+
+This is the critical test. The 4×4 matrix product is well-defined, as is the Hamilton product. Do they agree?
+
+\subsection{Three Possible Outcomes}
+
+\begin{enumerate}
+    \item \textbf{Identical}: F,G,H matrix multiplication $\equiv$ Hamilton product for all compositions.\\
+    \emph{Implication}: Native Quadray rotation is quaternions in different coordinates---elegant but not novel.
+
+    \item \textbf{Different}: The compositions produce different 3D rotations.\\
+    \emph{Implication}: Native Quadray rotation is a genuinely different rotation system---novel but potentially problematic for matching expected behavior.
+
+    \item \textbf{Partial}: Same for single-axis, different for composition.\\
+    \emph{Implication}: The tetrahedral geometry introduces composition effects not present in quaternions---interesting hybrid.
+\end{enumerate}
+
+\begin{tcolorbox}[colback=yellow!10, colframe=yellow!50!black, title=\textbf{Phase 6 Research Task}]
+Numerically verify which outcome holds. Test compositions of $R_W(45°) \times R_X(45°)$ vs the quaternion equivalent and measure any discrepancy.
+\end{tcolorbox}
+
+%==============================================================================
 \section{Open Questions}
 %==============================================================================
 
 \begin{enumerate}
-    \item \textbf{Composition algebra:} The F,G,H matrix approach provides native Quadray rotation. Can we derive a closed-form ``product'' rule analogous to Hamilton's, or is matrix multiplication the natural operation?
+    \item \textbf{Equivalence verification:} Does $R_W(\theta) \times R_X(\phi)$ produce the same 3D rotation as $q_{\hat{W},\theta} \cdot q_{\hat{X},\phi}$? This determines whether native Quadray rotation is novel or notational.
 
-    \item \textbf{Normalization trade-offs:} Operating without zero-sum normalization preserves 4 DOF and avoids gimbal lock. Are there numerical stability concerns that would require some form of constraint?
+    \item \textbf{Arbitrary axis rotation:} The F,G,H formula only handles basis axes. Can we decompose arbitrary axis rotation into W,X,Y,Z compositions? Does this introduce ``tetrahedral gimbal lock''?
 
-    \item \textbf{Optimal interpolation:} Is linear interpolation in $\mathbb{R}^4$ truly sufficient, or does the tetrahedral geometry suggest a more natural interpolation path?
+    \item \textbf{Normalization trade-offs:} Operating without zero-sum normalization preserves 4 DOF. Are there numerical stability concerns?
 
-    \item \textbf{Physical interpretation:} What does a ``rotation by spread $3/4$'' mean geometrically in tetrahedral terms? The spread corresponds to $60°$ or $120°$---both significant angles in tetrahedral symmetry.
+    \item \textbf{Physical interpretation:} What does rotation about the W-axis $(1,1,1)/\sqrt{3}$ feel like visually? It's the body diagonal of a cube---perhaps useful for isometric projections.
 
-    \item \textbf{Performance:} Can F,G,H rotations be made GPU-efficient, or is conversion to quaternions at the rendering boundary always necessary?
+    \item \textbf{Closed-form product rule:} Can we derive explicit formulas for $F_{12}, G_{12}, H_{12}$ from the composition $R(\theta_1) \times R(\theta_2)$, analogous to Hamilton's product formula?
+
+    \item \textbf{GPU efficiency:} Can F,G,H 4×4 matrices be sent directly to shaders, or is quaternion conversion at the boundary necessary?
 \end{enumerate}
 
 %==============================================================================
