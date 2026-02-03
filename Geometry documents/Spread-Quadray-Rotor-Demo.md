@@ -690,6 +690,18 @@ provide a rational, gimbal-lock-free alternative to both Euler angles and quater
 - [x] Pulsing effect when in danger zone (proximity > 60%)
 - [x] Remove nudge buttons (replaced by continuous handle interaction)
 - [x] Hover feedback (cursor changes, handle scales up)
+- [x] Disable orbit controls during handle drag (prevent camera fighting)
+- [x] Mode-aware warnings: Quadray always green, Euler shows proximity
+- [x] Gimbal lock zones dimmed in Quadray mode (irrelevant to 4D rotors)
+
+### Phase 5: Polish & Future Enhancements 🔮 PLANNED
+
+- [ ] Touch/mobile support for handle dragging
+- [ ] Keyboard shortcuts (R to reset, Q/E to toggle modes)
+- [ ] Option to show/hide gimbal lock zones entirely
+- [ ] Record and playback rotation sequences
+- [ ] Export rotation as QuadrayRotor constructor call
+- [ ] Side-by-side Euler vs Quadray visualization (split view)
 
 ---
 
@@ -840,7 +852,7 @@ This requires developing:
 
 ---
 
-*Workplan updated February 2026. Phase 1-4 complete (including draggable axis handle with color feedback).*
+*Workplan updated February 2026. Phase 1-4 complete (including draggable axis handle with orbit control fix).*
 *"Use the crutches while building, then throw them away when ready!" - Andy*
 
 ---
