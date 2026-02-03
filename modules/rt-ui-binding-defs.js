@@ -474,7 +474,8 @@ export const geodesicProjectionBindings = [
   // Helix axis/face selection - Quadray axis notation (QW, QX, QY, QZ)
   { type: "radio-group", name: "tetrahelix1Axis" },
   { type: "radio-group", name: "tetrahelix2Axis" },
-  { type: "radio-group", name: "tetrahelix2Direction" },
+  // tetrahelix2 direction is now checkboxes (tetrahelix2DirPlus, tetrahelix2DirMinus)
+  // for javelin model - both can be enabled simultaneously
   // Helix strand count (tetrahelix2 only)
   { type: "radio-group", name: "tetrahelix2Strands" },
   // Helix bond mode (tetrahelix2 only)

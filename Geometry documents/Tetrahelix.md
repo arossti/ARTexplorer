@@ -682,6 +682,108 @@ The key insight: **threading is clockwise when moving away from origin in the po
 
 This means chirality isn't something we impose — it's a consequence of which way we're traveling along the axis. A strand at QW+ and a strand at QW- are geometric mirror images because they're traveling in opposite directions along the same axis.
 
+---
+
+## Implementation: Origin-First Generation Algorithm
+
+### The Problem with Seed-Based Generation
+
+The original algorithm:
+1. Generate a seed tetrahedron centered elsewhere
+2. Translate it so some vertex/face is at origin
+3. Apply sign to flip for negative direction
+
+This creates **counterposed triangles** at origin - two separate faces that should be one shared face.
+
+### The Elegant Solution: Generate FROM Origin
+
+**Don't generate a seed tetrahedron. Generate from the origin face directly.**
+
+The algorithm should be:
+
+```
+1. Define the ORIGIN FACE: an equilateral triangle centered at origin,
+   perpendicular to the selected Quadray axis (QW, QX, QY, QZ)
+
+2. For + direction:
+   - Calculate apex position in + direction from origin face
+   - This apex + origin face = first tetrahedron
+   - Continue generating chain from there
+
+3. For - direction:
+   - Calculate apex position in - direction from SAME origin face
+   - This apex + origin face = first tetrahedron (growing opposite way)
+   - Continue generating chain from there
+
+4. Both directions SHARE the origin face vertices
+```
+
+### Key Geometric Relationships
+
+For an equilateral triangle with circumradius R centered at origin:
+- Three vertices at distance R from origin, 120° apart
+- Triangle lies in plane perpendicular to axis
+- Apex of tetrahedron is at distance `h` along axis from origin
+
+For a regular tetrahedron with edge length L:
+- Circumradius of base triangle: `R = L / √3`
+- Height from base to apex: `h = L × √(2/3)`
+- Distance from base centroid to apex: `h = L × √(2/3)`
+
+### Axis Orientation
+
+Each Quadray axis defines the javelin direction:
+- **QW axis**: D direction = (-1, -1, +1)/√3
+- **QX axis**: A direction = (+1, +1, +1)/√3
+- **QY axis**: C direction = (-1, +1, -1)/√3
+- **QZ axis**: B direction = (+1, -1, -1)/√3
+
+The origin face is perpendicular to this axis, with its centroid at origin.
+
+### Pseudocode
+
+```javascript
+function generateJavelinTetrahelix(axis, direction, count, edgeLength) {
+  // 1. Get unit vector for selected Quadray axis
+  const axisVector = getQuadrayAxisVector(axis); // normalized
+
+  // 2. Generate origin face: equilateral triangle perpendicular to axis
+  //    Centroid at origin, vertices at circumradius R = L/√3
+  const R = edgeLength / Math.sqrt(3);
+  const originFaceVerts = generateEquilateralTriangle(axisVector, R);
+  // Returns 3 vertices forming triangle perpendicular to axisVector
+
+  // 3. Calculate first apex position
+  const h = edgeLength * Math.sqrt(2/3); // height from base to apex
+  const sign = (direction === "+") ? 1 : -1;
+  const firstApex = axisVector.clone().multiplyScalar(sign * h);
+
+  // 4. First tetrahedron uses origin face + first apex
+  const tetrahedra = [];
+  const allVertices = [...originFaceVerts, firstApex];
+  tetrahedra.push([0, 1, 2, 3]); // origin face verts + apex
+
+  // 5. Continue chain generation from first tetrahedron
+  //    Each subsequent tet shares 3 verts with previous, adds new apex
+  let currentFaceVerts = originFaceVerts;
+  let currentApex = firstApex;
+
+  for (let i = 1; i < count; i++) {
+    // Calculate next apex by reflecting through shared face
+    // ... standard tetrahelix chain logic ...
+  }
+
+  return { vertices: allVertices, tetrahedra };
+}
+```
+
+### Benefits
+
+1. **Single shared origin face** - both directions use identical vertices
+2. **No translation/manipulation** - geometry is correct from the start
+3. **Cleaner code** - no "fix-up" steps needed
+4. **Conceptually pure** - matches the javelin mental model exactly
+
 ### Future Research
 
 **Research questions:**
