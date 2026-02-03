@@ -1065,6 +1065,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
       // Javelin model: single call with dirPlus/dirMinus flags
       if (!showPlus && !showMinus) {
+        console.log("[RT] Tetrahelix2: No direction selected (+ or -). Enable at least one to render.");
         tetrahelix2Group.visible = false;
       } else {
         // Clear existing geometry

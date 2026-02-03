@@ -55,6 +55,10 @@ export const simpleCheckboxBindings = [
   // Helix options (chirality commented out for tetrahelix1 - left-handed only)
   // { id: "tetrahelix1LeftHanded", type: "checkbox" },
 
+  // Tetrahelix 2 direction checkboxes (javelin model - both can be enabled)
+  { id: "tetrahelix2DirPlus", type: "checkbox" },
+  { id: "tetrahelix2DirMinus", type: "checkbox" },
+
   // Tetrahelix 3 strand checkboxes (A-H for octahedral faces)
   { id: "tetrahelix3StrandA", type: "checkbox" },
   { id: "tetrahelix3StrandB", type: "checkbox" },
@@ -474,8 +478,8 @@ export const geodesicProjectionBindings = [
   // Helix axis/face selection - Quadray axis notation (QW, QX, QY, QZ)
   { type: "radio-group", name: "tetrahelix1Axis" },
   { type: "radio-group", name: "tetrahelix2Axis" },
-  // tetrahelix2 direction is now checkboxes (tetrahelix2DirPlus, tetrahelix2DirMinus)
-  // for javelin model - both can be enabled simultaneously
+  // tetrahelix2 direction checkboxes moved to simpleCheckboxBindings
+  // (tetrahelix2DirPlus, tetrahelix2DirMinus) - javelin model allows both enabled
   // Helix strand count (tetrahelix2 only)
   { type: "radio-group", name: "tetrahelix2Strands" },
   // Helix bond mode (tetrahelix2 only)
