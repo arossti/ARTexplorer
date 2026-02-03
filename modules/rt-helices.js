@@ -21,6 +21,50 @@ import { RT } from "./rt-math.js";
 // Access THREE.js from global scope (set by main HTML)
 
 // ============================================================================
+// RT-PURE CONSTANTS FOR TETRAHEDRAL GEOMETRY
+// ============================================================================
+// These constants are derived algebraically without classical trigonometry.
+// See Tetrahelix.md "RT-Pure Representation" for derivations.
+//
+// Key insight: The dihedral angle θ satisfies cos(θ) = 1/3, giving us
+// spread s = sin²(θ) = 1 - cos²(θ) = 1 - 1/9 = 8/9
+// ============================================================================
+
+const RT_CONSTANTS = {
+  // Spread values (s = sin²θ, algebraically derived)
+  DIHEDRAL_SPREAD: 8 / 9,        // Tetrahedral dihedral angle: arccos(1/3) ≈ 70.53°
+  TETRAHEDRAL_SPREAD: 8 / 9,     // Tetrahedral angle: arccos(-1/3) ≈ 109.47° (supplement)
+  FACE_SPREAD: 3 / 4,            // Equilateral triangle interior: sin²(60°) = 3/4
+
+  // Quadrance ratios (algebraic relationships)
+  APEX_Q_RATIO: 2 / 3,           // Q_apex / Q_edge for regular tetrahedron
+  FACE_CENTROID_Q_RATIO: 1 / 3,  // Q_centroid_to_vertex / Q_edge for equilateral △
+
+  // Golden ratio constants (for icosahedral applications)
+  // φ = (1 + √5) / 2 ≈ 1.618033988749895
+  // Use identities: φ² = φ + 1, 1/φ = φ - 1, φ³ = 2φ + 1
+  PHI: (1 + Math.sqrt(5)) / 2,
+  PHI_SQUARED: (1 + Math.sqrt(5)) / 2 + 1,    // φ² = φ + 1 (identity, not multiplication)
+  INV_PHI: (1 + Math.sqrt(5)) / 2 - 1,        // 1/φ = φ - 1 (identity, not division)
+
+  // Derived: Edge quadrance for standard tetrahedron with halfSize s
+  // Dual tetrahedron: Q = 8s² (vertices at ±s)
+  // Standard tetrahedron: Q = 8s² (same)
+  edgeQuadrance: (halfSize) => 8 * halfSize * halfSize,
+
+  // Derived: Apex distance quadrance from edge quadrance
+  // Q_apex = (2/3) × Q_edge
+  apexQuadrance: (edgeQ) => (2 / 3) * edgeQ,
+
+  // Derived: Apex distance (√ deferred to final vertex creation)
+  // Only call this at THREE.Vector3 boundary
+  apexDistance: (edgeQ) => Math.sqrt((2 / 3) * edgeQ),
+};
+
+// Export for use in other modules (e.g., future icosahedral tetrahelix)
+export { RT_CONSTANTS };
+
+// ============================================================================
 // SHARED HELPER FUNCTIONS
 // ============================================================================
 // These utilities are used by all tetrahelix variants for geometry calculations.
@@ -160,13 +204,25 @@ const HelixHelpers = {
   },
 
   /**
-   * Calculate apex distance from edge quadrance
-   * For regular tetrahedron: Q_apex = (2/3) * Q_edge
+   * Calculate apex distance from edge quadrance (RT-pure)
+   * Uses RT_CONSTANTS.APEX_Q_RATIO = 2/3
+   * For regular tetrahedron: Q_apex = (2/3) × Q_edge
+   * √ is deferred to this boundary function for THREE.js vertex creation
    * @param {number} edgeQ - Edge quadrance
    * @returns {number} Distance from face centroid to apex
    */
   apexDistanceFromQ: edgeQ => {
-    return Math.sqrt((2 / 3) * edgeQ);
+    return Math.sqrt(RT_CONSTANTS.APEX_Q_RATIO * edgeQ);
+  },
+
+  /**
+   * Calculate apex quadrance from edge quadrance (RT-pure, no √)
+   * Keeps calculation in quadrance space for maximum algebraic precision
+   * @param {number} edgeQ - Edge quadrance
+   * @returns {number} Quadrance from face centroid to apex
+   */
+  apexQuadranceFromQ: edgeQ => {
+    return RT_CONSTANTS.APEX_Q_RATIO * edgeQ;
   },
 };
 
@@ -192,7 +248,7 @@ export const Helices = {
    * @returns {Object} { vertices, edges, faces, metadata }
    */
   tetrahelix1: (halfSize = 1, options = {}) => {
-    // Cap at 48 for torus near-closure (right-handed self-intersects at 12)
+    // Cap at 48 cycles for torus near-closure (right-handed self-intersects at 12 cycles)
     const count = Math.min(Math.max(options.count || 10, 1), 48);
     const startFace = options.startFace || "A";
     // Left-handed only for this variant (right-handed self-intersects)
@@ -409,7 +465,7 @@ export const Helices = {
    * Tetrahelix 2: Linear variant with multi-strand support
    *
    * Extends tetrahedra in a zigzag pattern that travels in a roughly
-   * straight line rather than curving back into a torus.
+   * straight line (javellin through origin analogy) rather than curving back into a torus.
    *
    * Strategy: Always exit through face 0 (relative to new tet's local ordering).
    * This creates an alternating pattern that extends linearly.
