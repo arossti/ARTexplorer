@@ -313,6 +313,15 @@ export const RTFileHandler = {
       tetrahelix3StrandF: document.getElementById("tetrahelix3StrandF")?.checked || false,
       tetrahelix3StrandG: document.getElementById("tetrahelix3StrandG")?.checked || false,
       tetrahelix3StrandH: document.getElementById("tetrahelix3StrandH")?.checked || false,
+      // Tetrahelix 3 chirality (checked = RH, unchecked = LH)
+      tetrahelix3ChiralA: document.getElementById("tetrahelix3ChiralA")?.checked !== false,
+      tetrahelix3ChiralB: document.getElementById("tetrahelix3ChiralB")?.checked !== false,
+      tetrahelix3ChiralC: document.getElementById("tetrahelix3ChiralC")?.checked !== false,
+      tetrahelix3ChiralD: document.getElementById("tetrahelix3ChiralD")?.checked !== false,
+      tetrahelix3ChiralE: document.getElementById("tetrahelix3ChiralE")?.checked !== false,
+      tetrahelix3ChiralF: document.getElementById("tetrahelix3ChiralF")?.checked !== false,
+      tetrahelix3ChiralG: document.getElementById("tetrahelix3ChiralG")?.checked !== false,
+      tetrahelix3ChiralH: document.getElementById("tetrahelix3ChiralH")?.checked !== false,
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -732,13 +741,20 @@ export const RTFileHandler = {
           if (slider) slider.value = sliders.tetrahelix3Count;
           if (display) display.textContent = sliders.tetrahelix3Count;
         }
-        // Restore individual strand checkboxes
+        // Restore individual strand checkboxes and chirality checkboxes
         const strandLabels = ["A", "B", "C", "D", "E", "F", "G", "H"];
         for (const label of strandLabels) {
-          const key = `tetrahelix3Strand${label}`;
-          if (sliders[key] !== undefined) {
-            const checkbox = document.getElementById(key);
-            if (checkbox) checkbox.checked = sliders[key];
+          // Strand enabled checkbox
+          const strandKey = `tetrahelix3Strand${label}`;
+          if (sliders[strandKey] !== undefined) {
+            const checkbox = document.getElementById(strandKey);
+            if (checkbox) checkbox.checked = sliders[strandKey];
+          }
+          // Chirality checkbox
+          const chiralKey = `tetrahelix3Chiral${label}`;
+          if (sliders[chiralKey] !== undefined) {
+            const checkbox = document.getElementById(chiralKey);
+            if (checkbox) checkbox.checked = sliders[chiralKey];
           }
         }
         // Planar matrix size sliders

@@ -65,6 +65,16 @@ export const simpleCheckboxBindings = [
   { id: "tetrahelix3StrandG", type: "checkbox" },
   { id: "tetrahelix3StrandH", type: "checkbox" },
 
+  // Tetrahelix 3 chirality checkboxes (A-H: checked=RH, unchecked=LH)
+  { id: "tetrahelix3ChiralA", type: "checkbox" },
+  { id: "tetrahelix3ChiralB", type: "checkbox" },
+  { id: "tetrahelix3ChiralC", type: "checkbox" },
+  { id: "tetrahelix3ChiralD", type: "checkbox" },
+  { id: "tetrahelix3ChiralE", type: "checkbox" },
+  { id: "tetrahelix3ChiralF", type: "checkbox" },
+  { id: "tetrahelix3ChiralG", type: "checkbox" },
+  { id: "tetrahelix3ChiralH", type: "checkbox" },
+
   // Node shading
   { id: "nodeFlatShading", type: "checkbox" },
 ];
