@@ -66,7 +66,8 @@ const colorPalette = {
   cone: 0xffaa00, // Orange - 3D primitive (distinct from prism blue)
   // Helices
   tetrahelix: 0xffaa00, // Orange - Tetrahelix 1 (toroidal)
-  tetrahelix2: 0x88ff88, // Light green - Tetrahelix 2 (linear stub)
+  tetrahelix2: 0x88ff88, // Light green - Tetrahelix 2 (linear, tetrahedral seed)
+  tetrahelix3: 0xff88ff, // Light magenta - Tetrahelix 3 (linear, octahedral seed)
 };
 
 /**
@@ -100,7 +101,8 @@ export function initScene(THREE, OrbitControls, RT) {
   let prismGroup; // Prism primitive (3D solid with N-gon caps)
   let coneGroup; // Cone primitive (3D solid with N-gon base and apex)
   let tetrahelix1Group; // Tetrahelix 1: Toroidal (left-handed)
-  let tetrahelix2Group; // Tetrahelix 2: Linear (stub)
+  let tetrahelix2Group; // Tetrahelix 2: Linear (tetrahedral seed)
+  let tetrahelix3Group; // Tetrahelix 3: Linear (octahedral seed)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -186,6 +188,10 @@ export function initScene(THREE, OrbitControls, RT) {
     tetrahelix2Group = new THREE.Group();
     tetrahelix2Group.userData.type = "tetrahelix2";
     // Tetrahelix 2 allows all tools (Move, Scale, Rotate)
+
+    tetrahelix3Group = new THREE.Group();
+    tetrahelix3Group.userData.type = "tetrahelix3";
+    // Tetrahelix 3 allows all tools (Move, Scale, Rotate)
 
     cubeGroup = new THREE.Group();
     cubeGroup.userData.type = "cube";
@@ -289,6 +295,7 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(coneGroup);
     scene.add(tetrahelix1Group);
     scene.add(tetrahelix2Group);
+    scene.add(tetrahelix3Group);
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -979,15 +986,20 @@ export function initScene(THREE, OrbitControls, RT) {
       coneGroup.visible = false;
     }
 
-    // Tetrahelix 1: Toroidal (left-handed, max 48)
+    // Tetrahelix 1: Toroidal - uses Quadray axis notation (QW, QX, QY, QZ)
     if (document.getElementById("showTetrahelix1")?.checked) {
       const tetrahelix1Count = parseInt(
         document.getElementById("tetrahelix1CountSlider")?.value || "10"
       );
-      const startFace1Radio = document.querySelector(
-        'input[name="tetrahelix1StartFace"]:checked'
+      // Read Quadray axis (QW, QX, QY, QZ) - maps to old A, B, C, D faces
+      const axisRadio = document.querySelector(
+        'input[name="tetrahelix1Axis"]:checked'
       );
-      const tetrahelix1StartFace = startFace1Radio ? startFace1Radio.value : "A";
+      const tetrahelix1Axis = axisRadio ? axisRadio.value : "QW";
+      // Map Quadray axes to face indices (empirically verified)
+      // QW and QX are swapped relative to naive A,B,C,D ordering
+      const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
+      const tetrahelix1StartFace = axisToFace[tetrahelix1Axis] || "B";
 
       const tetrahelix1Data = Helices.tetrahelix1(scale, {
         count: tetrahelix1Count,
@@ -1002,7 +1014,7 @@ export function initScene(THREE, OrbitControls, RT) {
       tetrahelix1Group.userData.type = "tetrahelix1";
       tetrahelix1Group.userData.parameters = {
         count: tetrahelix1Count,
-        startFace: tetrahelix1StartFace,
+        axis: tetrahelix1Axis,
         tetrahedra: tetrahelix1Data.metadata.tetrahedra,
         expectedQ: tetrahelix1Data.metadata.expectedQ,
       };
@@ -1011,15 +1023,24 @@ export function initScene(THREE, OrbitControls, RT) {
       tetrahelix1Group.visible = false;
     }
 
-    // Tetrahelix 2: Linear with multi-strand option
+    // Tetrahelix 2: Linear - Javelin model with both + and - directions
     if (document.getElementById("showTetrahelix2")?.checked) {
       const tetrahelix2Count = parseInt(
         document.getElementById("tetrahelix2CountSlider")?.value || "10"
       );
-      const startFace2Radio = document.querySelector(
-        'input[name="tetrahelix2StartFace"]:checked'
+      // Read Quadray axis (QW, QX, QY, QZ)
+      const axisRadio = document.querySelector(
+        'input[name="tetrahelix2Axis"]:checked'
       );
-      const tetrahelix2StartFace = startFace2Radio ? startFace2Radio.value : "A";
+      const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
+      // Read direction checkboxes - javelin can show both + and -
+      const showPlus = document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
+      const showMinus = document.getElementById("tetrahelix2DirMinus")?.checked ?? false;
+
+      // 3021 Rule: Map QW→B, QX→A, QY→C, QZ→D for generator compatibility
+      const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
+      const tetrahelix2StartFace = axisToFace[tetrahelix2Axis] || "B";
+
       const strandsRadio = document.querySelector(
         'input[name="tetrahelix2Strands"]:checked'
       );
@@ -1029,42 +1050,111 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       const tetrahelix2BondMode = bondModeRadio ? bondModeRadio.value : "zipped";
 
-      // Read per-strand exit face settings
-      const getExitFace = label => {
-        const radio = document.querySelector(`input[name="tetrahelix2Exit${label}"]:checked`);
+      // Read per-strand exit face settings (using Quadray axis names)
+      const getExitFace = qAxis => {
+        const radio = document.querySelector(`input[name="tetrahelix2Exit${qAxis}"]:checked`);
         return radio ? parseInt(radio.value) : 0;
       };
+      // Map UI Quadray names to internal face labels using 3021 Rule
       const tetrahelix2ExitFaces = {
-        A: getExitFace("A"),
-        B: getExitFace("B"),
-        C: getExitFace("C"),
-        D: getExitFace("D"),
+        A: getExitFace("QX"),  // QX → face A (3021 Rule)
+        B: getExitFace("QW"),  // QW → face B (3021 Rule)
+        C: getExitFace("QY"),  // QY → face C (3021 Rule)
+        D: getExitFace("QZ"),  // QZ → face D (3021 Rule)
       };
 
-      const tetrahelix2Data = Helices.tetrahelix2(scale, {
-        count: tetrahelix2Count,
-        startFace: tetrahelix2StartFace,
-        strands: tetrahelix2Strands,
-        bondMode: tetrahelix2BondMode,
-        exitFaces: tetrahelix2ExitFaces,
-      });
-      renderPolyhedron(
-        tetrahelix2Group,
-        tetrahelix2Data,
-        colorPalette.tetrahelix2 || 0x88ff88, // Light green
-        opacity
-      );
-      tetrahelix2Group.userData.type = "tetrahelix2";
-      tetrahelix2Group.userData.parameters = {
-        count: tetrahelix2Count,
-        startFace: tetrahelix2StartFace,
-        strands: tetrahelix2Strands,
-        bondMode: tetrahelix2BondMode,
-        exitFaces: tetrahelix2ExitFaces,
-      };
-      tetrahelix2Group.visible = true;
+      // Javelin model: single call with dirPlus/dirMinus flags
+      if (!showPlus && !showMinus) {
+        console.log("[RT] Tetrahelix2: No direction selected (+ or -). Enable at least one to render.");
+        tetrahelix2Group.visible = false;
+      } else {
+        // Clear existing geometry
+        while (tetrahelix2Group.children.length > 0) {
+          tetrahelix2Group.remove(tetrahelix2Group.children[0]);
+        }
+
+        // Single call with both direction flags
+        const tetrahelix2Data = Helices.tetrahelix2(scale, {
+          count: tetrahelix2Count,
+          startFace: tetrahelix2StartFace,
+          dirPlus: showPlus,
+          dirMinus: showMinus,
+          strands: tetrahelix2Strands,
+          bondMode: tetrahelix2BondMode,
+          exitFaces: tetrahelix2ExitFaces,
+        });
+
+        renderPolyhedron(
+          tetrahelix2Group,
+          tetrahelix2Data,
+          colorPalette.tetrahelix2 || 0x88ff88,
+          opacity
+        );
+
+        tetrahelix2Group.userData.type = "tetrahelix2";
+        tetrahelix2Group.userData.parameters = {
+          count: tetrahelix2Count,
+          axis: tetrahelix2Axis,
+          dirPlus: showPlus,
+          dirMinus: showMinus,
+          strands: tetrahelix2Strands,
+          bondMode: tetrahelix2BondMode,
+          exitFaces: tetrahelix2ExitFaces,
+        };
+        tetrahelix2Group.visible = true;
+      }
     } else {
       tetrahelix2Group.visible = false;
+    }
+
+    // Tetrahelix 3: Linear with octahedral seed
+    if (document.getElementById("showTetrahelix3")?.checked) {
+      const tetrahelix3Count = parseInt(
+        document.getElementById("tetrahelix3CountSlider")?.value || "10"
+      );
+      // Read individual strand checkboxes A-H
+      const enabledStrands = {
+        A: document.getElementById("tetrahelix3StrandA")?.checked || false,
+        B: document.getElementById("tetrahelix3StrandB")?.checked || false,
+        C: document.getElementById("tetrahelix3StrandC")?.checked || false,
+        D: document.getElementById("tetrahelix3StrandD")?.checked || false,
+        E: document.getElementById("tetrahelix3StrandE")?.checked || false,
+        F: document.getElementById("tetrahelix3StrandF")?.checked || false,
+        G: document.getElementById("tetrahelix3StrandG")?.checked || false,
+        H: document.getElementById("tetrahelix3StrandH")?.checked || false,
+      };
+      // Read chirality checkboxes A-H (checked = RH, unchecked = LH)
+      const strandChirality = {
+        A: document.getElementById("tetrahelix3ChiralA")?.checked !== false,
+        B: document.getElementById("tetrahelix3ChiralB")?.checked !== false,
+        C: document.getElementById("tetrahelix3ChiralC")?.checked !== false,
+        D: document.getElementById("tetrahelix3ChiralD")?.checked !== false,
+        E: document.getElementById("tetrahelix3ChiralE")?.checked !== false,
+        F: document.getElementById("tetrahelix3ChiralF")?.checked !== false,
+        G: document.getElementById("tetrahelix3ChiralG")?.checked !== false,
+        H: document.getElementById("tetrahelix3ChiralH")?.checked !== false,
+      };
+
+      const tetrahelix3Data = Helices.tetrahelix3(scale, {
+        count: tetrahelix3Count,
+        enabledStrands,
+        strandChirality,
+      });
+      renderPolyhedron(
+        tetrahelix3Group,
+        tetrahelix3Data,
+        colorPalette.tetrahelix3 || 0xff88ff, // Light magenta
+        opacity
+      );
+      tetrahelix3Group.userData.type = "tetrahelix3";
+      tetrahelix3Group.userData.parameters = {
+        count: tetrahelix3Count,
+        enabledStrands,
+        strandChirality,
+      };
+      tetrahelix3Group.visible = true;
+    } else {
+      tetrahelix3Group.visible = false;
     }
 
     // Cube (Blue)
@@ -2113,10 +2203,12 @@ export function initScene(THREE, OrbitControls, RT) {
       const tetrahelix1Count = parseInt(
         document.getElementById("tetrahelix1CountSlider")?.value || "10"
       );
-      const startFace1Radio = document.querySelector(
-        'input[name="tetrahelix1StartFace"]:checked'
+      const axisRadio = document.querySelector(
+        'input[name="tetrahelix1Axis"]:checked'
       );
-      const tetrahelix1StartFace = startFace1Radio ? startFace1Radio.value : "A";
+      const tetrahelix1Axis = axisRadio ? axisRadio.value : "QW";
+      const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
+      const tetrahelix1StartFace = axisToFace[tetrahelix1Axis] || "B";
       const tetrahelix1Data = Helices.tetrahelix1(1, {
         count: tetrahelix1Count,
         startFace: tetrahelix1StartFace,
@@ -2128,18 +2220,25 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>V: ${V}, E: ${E}, F: ${F}</div>`;
       html += `<div>Euler: N/A (open chain)</div>`;
       html += `<div>Chirality: left-handed (fixed)</div>`;
-      html += `<div>Start face: ${tetrahelix1StartFace}</div>`;
+      html += `<div>Axis: ${tetrahelix1Axis}</div>`;
     }
 
-    // Tetrahelix 2 stats (linear with strands)
+    // Tetrahelix 2 stats (linear with strands) - uses Quadray axis notation
     if (document.getElementById("showTetrahelix2")?.checked) {
       const tetrahelix2Count = parseInt(
         document.getElementById("tetrahelix2CountSlider")?.value || "10"
       );
-      const startFace2Radio = document.querySelector(
-        'input[name="tetrahelix2StartFace"]:checked'
+      const axisRadio = document.querySelector(
+        'input[name="tetrahelix2Axis"]:checked'
       );
-      const tetrahelix2StartFace = startFace2Radio ? startFace2Radio.value : "A";
+      const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
+      // Read direction checkboxes (javelin model)
+      const showPlus = document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
+      const showMinus = document.getElementById("tetrahelix2DirMinus")?.checked ?? true;
+      // 3021 Rule mapping
+      const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
+      const tetrahelix2StartFace = axisToFace[tetrahelix2Axis] || "B";
+
       const strandsRadio = document.querySelector(
         'input[name="tetrahelix2Strands"]:checked'
       );
@@ -2148,20 +2247,22 @@ export function initScene(THREE, OrbitControls, RT) {
         'input[name="tetrahelix2BondMode"]:checked'
       );
       const tetrahelix2BondMode = bondModeRadio2 ? bondModeRadio2.value : "zipped";
-      // Read per-strand exit faces for stats
-      const getExitFaceStats = label => {
-        const radio = document.querySelector(`input[name="tetrahelix2Exit${label}"]:checked`);
+      // Read per-strand exit faces for stats (using Quadray axis names)
+      const getExitFaceStats = qAxis => {
+        const radio = document.querySelector(`input[name="tetrahelix2Exit${qAxis}"]:checked`);
         return radio ? parseInt(radio.value) : 0;
       };
       const tetrahelix2ExitFaces = {
-        A: getExitFaceStats("A"),
-        B: getExitFaceStats("B"),
-        C: getExitFaceStats("C"),
-        D: getExitFaceStats("D"),
+        A: getExitFaceStats("QX"),
+        B: getExitFaceStats("QW"),
+        C: getExitFaceStats("QY"),
+        D: getExitFaceStats("QZ"),
       };
       const tetrahelix2Data = Helices.tetrahelix2(1, {
         count: tetrahelix2Count,
         startFace: tetrahelix2StartFace,
+        dirPlus: showPlus,
+        dirMinus: showMinus,
         strands: tetrahelix2Strands,
         bondMode: tetrahelix2BondMode,
         exitFaces: tetrahelix2ExitFaces,
@@ -2171,11 +2272,55 @@ export function initScene(THREE, OrbitControls, RT) {
       const F2 = tetrahelix2Data.faces.length;
       const strandLabel = tetrahelix2Strands === 1 ? "1 strand" : `${tetrahelix2Strands} strands`;
       const modeLabel = tetrahelix2Strands > 1 ? `, ${tetrahelix2BondMode}` : "";
+      const dirLabel = (showPlus ? "+" : "") + (showMinus ? "-" : "");
       html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (${tetrahelix2Count} tet, ${strandLabel}${modeLabel}):</strong></div>`;
       html += `<div>V: ${V2}, E: ${E2}, F: ${F2}</div>`;
       html += `<div>Euler: N/A (open chain)</div>`;
-      html += `<div>Pattern: Exit faces A=${tetrahelix2ExitFaces.A}, B=${tetrahelix2ExitFaces.B}, C=${tetrahelix2ExitFaces.C}, D=${tetrahelix2ExitFaces.D}</div>`;
-      html += `<div>Start face: ${tetrahelix2StartFace}</div>`;
+      html += `<div>Axis: ${tetrahelix2Axis} ${dirLabel}</div>`;
+    }
+
+    // Tetrahelix 3 stats (octahedral seed)
+    if (document.getElementById("showTetrahelix3")?.checked) {
+      const tetrahelix3Count = parseInt(
+        document.getElementById("tetrahelix3CountSlider")?.value || "10"
+      );
+      // Read individual strand checkboxes A-H
+      const enabledStrands = {
+        A: document.getElementById("tetrahelix3StrandA")?.checked || false,
+        B: document.getElementById("tetrahelix3StrandB")?.checked || false,
+        C: document.getElementById("tetrahelix3StrandC")?.checked || false,
+        D: document.getElementById("tetrahelix3StrandD")?.checked || false,
+        E: document.getElementById("tetrahelix3StrandE")?.checked || false,
+        F: document.getElementById("tetrahelix3StrandF")?.checked || false,
+        G: document.getElementById("tetrahelix3StrandG")?.checked || false,
+        H: document.getElementById("tetrahelix3StrandH")?.checked || false,
+      };
+      // Read chirality checkboxes A-H
+      const strandChirality = {
+        A: document.getElementById("tetrahelix3ChiralA")?.checked !== false,
+        B: document.getElementById("tetrahelix3ChiralB")?.checked !== false,
+        C: document.getElementById("tetrahelix3ChiralC")?.checked !== false,
+        D: document.getElementById("tetrahelix3ChiralD")?.checked !== false,
+        E: document.getElementById("tetrahelix3ChiralE")?.checked !== false,
+        F: document.getElementById("tetrahelix3ChiralF")?.checked !== false,
+        G: document.getElementById("tetrahelix3ChiralG")?.checked !== false,
+        H: document.getElementById("tetrahelix3ChiralH")?.checked !== false,
+      };
+      const tetrahelix3Data = Helices.tetrahelix3(1, {
+        count: tetrahelix3Count,
+        enabledStrands,
+        strandChirality,
+      });
+      const V3 = tetrahelix3Data.vertices.length;
+      const E3 = tetrahelix3Data.edges.length;
+      const F3 = tetrahelix3Data.faces.length;
+      const activeStrands = tetrahelix3Data.metadata.activeStrands || [];
+      const strandLabel3 = activeStrands.length === 1 ? "1 strand" : `${activeStrands.length} strands`;
+      html += `<div style="margin-top: 10px;"><strong>Tetrahelix 3 (${tetrahelix3Count} tet, ${strandLabel3}):</strong></div>`;
+      html += `<div>V: ${V3}, E: ${E3}, F: ${F3}</div>`;
+      html += `<div>Euler: N/A (open chain)</div>`;
+      html += `<div>Seed: Octahedron (8 faces)</div>`;
+      html += `<div>Strands: ${activeStrands.join(", ") || "none"}</div>`;
     }
 
     if (document.getElementById("showCube").checked) {
@@ -2759,6 +2904,7 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayCuboctahedronGroup,
       tetrahelix1Group,
       tetrahelix2Group,
+      tetrahelix3Group,
     };
   }
 
@@ -3020,17 +3166,54 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       case "tetrahelix2": {
-        // Tetrahelix 2: Linear
+        // Tetrahelix 2: Linear (tetrahedral seed) - Javelin model
         const tetrahelix2Count = options.count ?? 10;
         const tetrahelix2StartFace = options.startFace ?? "A";
+        const tetrahelix2DirPlus = options.dirPlus ?? true;
+        const tetrahelix2DirMinus = options.dirMinus ?? true;
+        const tetrahelix2Strands = options.strands ?? 1;
+        const tetrahelix2BondMode = options.bondMode ?? "zipped";
+        const tetrahelix2ExitFaces = options.exitFaces ?? { A: 0, B: 0, C: 0, D: 0 };
         geometry = Helices.tetrahelix2(scale, {
           count: tetrahelix2Count,
           startFace: tetrahelix2StartFace,
+          dirPlus: tetrahelix2DirPlus,
+          dirMinus: tetrahelix2DirMinus,
+          strands: tetrahelix2Strands,
+          bondMode: tetrahelix2BondMode,
+          exitFaces: tetrahelix2ExitFaces,
         });
         group.userData.type = "tetrahelix2";
         group.userData.parameters = {
           count: tetrahelix2Count,
           startFace: tetrahelix2StartFace,
+          dirPlus: tetrahelix2DirPlus,
+          dirMinus: tetrahelix2DirMinus,
+          strands: tetrahelix2Strands,
+          bondMode: tetrahelix2BondMode,
+          exitFaces: tetrahelix2ExitFaces,
+          tetrahedra: geometry.metadata.tetrahedra,
+          expectedQ: geometry.metadata.expectedQ,
+        };
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+      }
+
+      case "tetrahelix3": {
+        // Tetrahelix 3: Linear (octahedral seed)
+        const tetrahelix3Count = options.count ?? 10;
+        const enabledStrands = options.enabledStrands ?? { A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false };
+        const strandChirality = options.strandChirality ?? { A: true, B: true, C: true, D: true, E: true, F: true, G: true, H: true };
+        geometry = Helices.tetrahelix3(scale, {
+          count: tetrahelix3Count,
+          enabledStrands,
+          strandChirality,
+        });
+        group.userData.type = "tetrahelix3";
+        group.userData.parameters = {
+          count: tetrahelix3Count,
+          enabledStrands,
+          strandChirality,
           tetrahedra: geometry.metadata.tetrahedra,
           expectedQ: geometry.metadata.expectedQ,
         };

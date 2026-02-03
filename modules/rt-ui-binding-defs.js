@@ -55,6 +55,30 @@ export const simpleCheckboxBindings = [
   // Helix options (chirality commented out for tetrahelix1 - left-handed only)
   // { id: "tetrahelix1LeftHanded", type: "checkbox" },
 
+  // Tetrahelix 2 direction checkboxes (javelin model - both can be enabled)
+  { id: "tetrahelix2DirPlus", type: "checkbox" },
+  { id: "tetrahelix2DirMinus", type: "checkbox" },
+
+  // Tetrahelix 3 strand checkboxes (A-H for octahedral faces)
+  { id: "tetrahelix3StrandA", type: "checkbox" },
+  { id: "tetrahelix3StrandB", type: "checkbox" },
+  { id: "tetrahelix3StrandC", type: "checkbox" },
+  { id: "tetrahelix3StrandD", type: "checkbox" },
+  { id: "tetrahelix3StrandE", type: "checkbox" },
+  { id: "tetrahelix3StrandF", type: "checkbox" },
+  { id: "tetrahelix3StrandG", type: "checkbox" },
+  { id: "tetrahelix3StrandH", type: "checkbox" },
+
+  // Tetrahelix 3 chirality checkboxes (A-H: checked=RH, unchecked=LH)
+  { id: "tetrahelix3ChiralA", type: "checkbox" },
+  { id: "tetrahelix3ChiralB", type: "checkbox" },
+  { id: "tetrahelix3ChiralC", type: "checkbox" },
+  { id: "tetrahelix3ChiralD", type: "checkbox" },
+  { id: "tetrahelix3ChiralE", type: "checkbox" },
+  { id: "tetrahelix3ChiralF", type: "checkbox" },
+  { id: "tetrahelix3ChiralG", type: "checkbox" },
+  { id: "tetrahelix3ChiralH", type: "checkbox" },
+
   // Node shading
   { id: "nodeFlatShading", type: "checkbox" },
 ];
@@ -94,6 +118,11 @@ export const checkboxWithControlsBindings = [
     id: "showTetrahelix2",
     type: "checkbox-controls",
     controlsId: "tetrahelix2-controls",
+  },
+  {
+    id: "showTetrahelix3",
+    type: "checkbox-controls",
+    controlsId: "tetrahelix3-controls",
   },
 
   // Polyhedra with geodesic controls (complex: sibling checkbox keeps controls visible)
@@ -223,12 +252,15 @@ export const simpleSliderBindings = [
     type: "slider",
     valueId: "quadrayTessValue",
     onInput: (value, renderingAPI) => {
-      // Collect current visibility state
-      const visibilityState = {};
-      document.querySelectorAll('[data-plane^="ivm"]').forEach(toggle => {
-        const planeName = toggle.dataset.plane;
-        visibilityState[planeName] = toggle.classList.contains("active");
-      });
+      // Collect visibility state from NEW checkbox IDs (Phase 3)
+      const visibilityState = {
+        ivmWX: document.getElementById("planeIvmWX")?.checked ?? true,
+        ivmWY: document.getElementById("planeIvmWY")?.checked ?? true,
+        ivmWZ: document.getElementById("planeIvmWZ")?.checked ?? true,
+        ivmXY: document.getElementById("planeIvmXY")?.checked ?? true,
+        ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
+        ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
+      };
       renderingAPI.rebuildQuadrayGrids(parseInt(value), visibilityState);
     },
     updateGeometry: false, // Handled by rebuildQuadrayGrids
@@ -238,19 +270,11 @@ export const simpleSliderBindings = [
     type: "slider",
     valueId: "cartesianTessValue",
     onInput: (value, renderingAPI) => {
+      // Collect visibility state from NEW checkbox IDs (Phase 3)
       const visibilityState = {
-        gridXY:
-          document
-            .querySelector('[data-plane="XY"]')
-            ?.classList.contains("active") ?? false,
-        gridXZ:
-          document
-            .querySelector('[data-plane="XZ"]')
-            ?.classList.contains("active") ?? false,
-        gridYZ:
-          document
-            .querySelector('[data-plane="YZ"]')
-            ?.classList.contains("active") ?? false,
+        gridXY: document.getElementById("planeXY")?.checked ?? false,
+        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
+        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
         cartesianBasis:
           document.getElementById("showCartesianBasis")?.checked ?? false,
       };
@@ -365,6 +389,7 @@ export const simpleSliderBindings = [
   // Helix controls
   { id: "tetrahelix1CountSlider", type: "slider", valueId: "tetrahelix1CountDisplay" },
   { id: "tetrahelix2CountSlider", type: "slider", valueId: "tetrahelix2CountDisplay" },
+  { id: "tetrahelix3CountSlider", type: "slider", valueId: "tetrahelix3CountDisplay" },
 ];
 
 // ============================================================================
@@ -450,18 +475,20 @@ export const geodesicProjectionBindings = [
   { type: "radio-group", name: "geodesicOctaProjection" },
   { type: "radio-group", name: "geodesicIcosaProjection" },
   { type: "radio-group", name: "geodesicDualIcosaProjection" },
-  // Helix start face selection
-  { type: "radio-group", name: "tetrahelix1StartFace" },
-  { type: "radio-group", name: "tetrahelix2StartFace" },
-  // Helix strand count
+  // Helix axis/face selection - Quadray axis notation (QW, QX, QY, QZ)
+  { type: "radio-group", name: "tetrahelix1Axis" },
+  { type: "radio-group", name: "tetrahelix2Axis" },
+  // tetrahelix2 direction checkboxes moved to simpleCheckboxBindings
+  // (tetrahelix2DirPlus, tetrahelix2DirMinus) - javelin model allows both enabled
+  // Helix strand count (tetrahelix2 only)
   { type: "radio-group", name: "tetrahelix2Strands" },
-  // Helix bond mode (zipped vs unzipped)
+  // Helix bond mode (tetrahelix2 only)
   { type: "radio-group", name: "tetrahelix2BondMode" },
-  // Helix per-strand exit face selection
-  { type: "radio-group", name: "tetrahelix2ExitA" },
-  { type: "radio-group", name: "tetrahelix2ExitB" },
-  { type: "radio-group", name: "tetrahelix2ExitC" },
-  { type: "radio-group", name: "tetrahelix2ExitD" },
+  // Helix per-strand exit face selection (tetrahelix2 only) - Quadray axis names
+  { type: "radio-group", name: "tetrahelix2ExitQW" },
+  { type: "radio-group", name: "tetrahelix2ExitQX" },
+  { type: "radio-group", name: "tetrahelix2ExitQY" },
+  { type: "radio-group", name: "tetrahelix2ExitQZ" },
 ];
 
 // ============================================================================

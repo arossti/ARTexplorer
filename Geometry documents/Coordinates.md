@@ -74,9 +74,11 @@ This document specifies a **coordinate display system** for ARTexplorer that:
 
 ---
 
-## Quadray Axis Index Mapping: Why `{qw: 3, qx: 0, qy: 2, qz: 1}`?
+## Quadray Axis Index Mapping: The "3021 Rule"
 
-The seemingly arbitrary index mapping `{qw: 3, qx: 0, qy: 2, qz: 1}` (defined in `Quadray.AXIS_INDEX` in `rt-math.js`) arises from two independent conventions colliding:
+The seemingly arbitrary index mapping `{qw: 3, qx: 0, qy: 2, qz: 1}` (defined in `Quadray.AXIS_INDEX` in `rt-math.js`) arises from two independent conventions colliding. We call this the **"3021 Rule"** because the indices read: **3, 0, 2, 1** for QW, QX, QY, QZ respectively.
+
+**Mnemonic:** When mapping user-facing Quadray names (QW, QX, QY, QZ) to internal array indices, remember **3-0-2-1**. This comes up frequently when debugging axis-related bugs - if two axes appear swapped, check that the 3021 mapping is being applied correctly.
 
 ### 1. The `basisVectors` Array Order (Geometric)
 
@@ -116,9 +118,9 @@ The Q-names were assigned based on **color**, not array index, to create a memor
 | **QY** | Blue   | 2           | C: (-1,+1,-1)/√3 |
 | **QZ** | Green  | 1           | B: (+1,-1,-1)/√3 |
 
-### Result: The 3, 0, 2, 1 Mapping
+### Result: The 3021 Rule
 
-The mapping `{qw: 3, qx: 0, qy: 2, qz: 1}` translates **user-visible color-based names** to **geometry-based array indices**:
+The **3021 Rule** — mapping `{qw: 3, qx: 0, qy: 2, qz: 1}` — translates **user-visible color-based names** to **geometry-based array indices**:
 
 - **QW (Yellow)** → index 3 because Yellow was assigned to the 4th vector (D)
 - **QX (Red)** → index 0 because Red was assigned to the 1st vector (A)
