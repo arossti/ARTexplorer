@@ -583,25 +583,16 @@
                 Cartesian Planes
               </label>
               <div id="cartesian-planes" class="geodesic-options collapsed">
-                <div class="plane-toggle-container">
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">XY</span>
-                    <div class="plane-toggle-switch" data-plane="XY">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">XZ</span>
-                    <div class="plane-toggle-switch" data-plane="XZ">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">YZ</span>
-                    <div class="plane-toggle-switch" data-plane="YZ">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
+                <div id="cartesian-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeXY" /> XY
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeXZ" /> XZ
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeYZ" /> YZ
+                  </label>
                 </div>
                 <div class="spacing-top-large">
                   <label class="label-subsection">Grid Intervals</label>
@@ -628,43 +619,25 @@
                 IVM Grids (Future Implementation)
               </label>
               <div id="ivm-grids" class="geodesic-options collapsed">
-                <div class="plane-toggle-container">
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">WX</span>
-                    <div class="plane-toggle-switch" data-plane="quadrayWX">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">WY</span>
-                    <div class="plane-toggle-switch" data-plane="quadrayWY">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">WZ</span>
-                    <div class="plane-toggle-switch" data-plane="quadrayWZ">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">XY</span>
-                    <div class="plane-toggle-switch" data-plane="quadrayXY">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">XZ</span>
-                    <div class="plane-toggle-switch" data-plane="quadrayXZ">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">YZ</span>
-                    <div class="plane-toggle-switch" data-plane="quadrayYZ">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
+                <div id="quadray-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeQuadrayWX" /> WX
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeQuadrayWY" /> WY
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeQuadrayWZ" /> WZ
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeQuadrayXY" /> XY
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeQuadrayXZ" /> XZ
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeQuadrayYZ" /> YZ
+                  </label>
                 </div>
                 <p class="info-text" style="font-size: 10px; margin-top: 5px">
                   IVM: Placeholder for TRUE IVM implementation - coplanar
@@ -681,43 +654,25 @@
                 Central Angle Grids (Corrected Tessellation)
               </label>
               <div id="central-angle-grids" class="geodesic-options">
-                <div class="plane-toggle-container">
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">WX</span>
-                    <div class="plane-toggle-switch active" data-plane="ivmWX">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">WY</span>
-                    <div class="plane-toggle-switch active" data-plane="ivmWY">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">WZ</span>
-                    <div class="plane-toggle-switch active" data-plane="ivmWZ">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">XY</span>
-                    <div class="plane-toggle-switch active" data-plane="ivmXY">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">XZ</span>
-                    <div class="plane-toggle-switch active" data-plane="ivmXZ">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
-                  <div class="plane-toggle-item">
-                    <span class="plane-toggle-label">YZ</span>
-                    <div class="plane-toggle-switch active" data-plane="ivmYZ">
-                      <div class="plane-toggle-slider"></div>
-                    </div>
-                  </div>
+                <div id="ivm-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeIvmWX" checked /> WX
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeIvmWY" checked /> WY
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeIvmWZ" checked /> WZ
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeIvmXY" checked /> XY
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeIvmXZ" checked /> XZ
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em;">
+                    <input type="checkbox" id="planeIvmYZ" checked /> YZ
+                  </label>
                 </div>
                 <div class="spacing-top-large">
                   <label class="label-subsection">Grid Intervals</label>
@@ -726,7 +681,7 @@
                       type="range"
                       id="quadrayTessSlider"
                       min="12"
-                      max="120"
+                      max="144"
                       step="12"
                       value="12"
                     />
