@@ -622,6 +622,66 @@ const faceVertIndices = isRightHanded
 
 This swaps v1 and v2, reversing the winding direction of the base triangle, which should produce the mirror-image tetrahelix.
 
+---
+
+## Paradigm Shift: Origin-Centric Javelin Model (Feb 3, 2026)
+
+### The Insight
+
+**The tetrahelix is not generated from a face — it passes through the origin like a javelin.**
+
+Previous thinking: Start at a face, grow outward. This led to confusion about chirality and face labeling.
+
+New model: The tetrahelix is a **javelin through origin**. The four faces of the seed tetrahedron correspond to the **four Quadray basis vectors** (W, X, Y, Z or equivalently Kirby Urner's A, B, C, D vectors). Each axis has a **positive** and **negative** direction.
+
+### Quadray Axis Model
+
+**Tetrahelix 1 (Tetrahedral seed):**
+- 4 Quadray axes: QW, QX, QY, QZ
+- 8 domains: QW+, QW-, QX+, QX-, QY+, QY-, QZ+, QZ-
+- Threading direction determines chirality:
+  - **Positive direction (away from origin):** Clockwise threading
+  - **Negative direction (away from origin):** Counter-clockwise threading
+
+**Tetrahelix 3 (Octahedral seed):**
+- Same 4 Quadray axes, but rotated 90° relative to tetrahedral seed
+- 8 domains with same +/- chirality relationship
+- The octahedron's 8 faces naturally align with the 8 octants
+
+### Why This Matters
+
+1. **Unified notation:** A, B, C, D faces → QW, QX, QY, QZ axes (consistent with rt-math.js Quadray system)
+2. **Chirality is directional:** Not a toggle, but inherent in +/- direction from origin
+3. **Bilateral symmetry:** Strands in opposite directions (QW+ and QW-) are natural mirror pairs
+4. **Conceptual clarity:** The helix doesn't "start" anywhere — it exists as a continuous structure that happens to pass through origin
+
+### UI Implications for Tetrahelix 1
+
+Replace face labels A/B/C/D with Quadray axis labels:
+
+**Old UI:**
+```
+Start Face:  (A) (B) (C) (D)
+```
+
+**New UI:**
+```
+Axis:  (QW) (QX) (QY) (QZ)
+Direction: (+) (-)
+```
+
+Or using Kirby Urner's notation:
+```
+Axis:  (A) (B) (C) (D)    [Quadray basis vectors]
+Direction: (+) (-)
+```
+
+### Chirality Emerges from Direction
+
+The key insight: **threading is clockwise when moving away from origin in the positive direction, and counter-clockwise when moving away from origin in the negative direction.**
+
+This means chirality isn't something we impose — it's a consequence of which way we're traveling along the axis. A strand at QW+ and a strand at QW- are geometric mirror images because they're traveling in opposite directions along the same axis.
+
 ### Future Research
 
 **Research questions:**

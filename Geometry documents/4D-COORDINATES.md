@@ -53,12 +53,14 @@ Quadray coordinates (also called WXYZ or tetrahedral coordinates) are a 4-dimens
 
 The four Quadray basis vectors point from the origin to the vertices of a regular tetrahedron inscribed in a cube. Using a Z-up convention:
 
-| Basis | Quadray      | Cartesian Direction | Description       |
-| ----- | ------------ | ------------------- | ----------------- |
-| **W** | (1, 0, 0, 0) | (+1, +1, +1)/√3     | Top-front-right   |
-| **X** | (0, 1, 0, 0) | (+1, -1, -1)/√3     | Bottom-back-right |
-| **Y** | (0, 0, 1, 0) | (-1, +1, -1)/√3     | Bottom-front-left |
-| **Z** | (0, 0, 0, 1) | (-1, -1, +1)/√3     | Top-back-left     |
+| Basis | Quadray      | Cartesian Direction | Description       | Array Index |
+| ----- | ------------ | ------------------- | ----------------- | ----------- |
+| **W** | (1, 0, 0, 0) | (+1, +1, +1)/√3     | Top-front-right   | 3 (Yellow)  |
+| **X** | (0, 1, 0, 0) | (+1, -1, -1)/√3     | Bottom-back-right | 0 (Red)     |
+| **Y** | (0, 0, 1, 0) | (-1, +1, -1)/√3     | Bottom-front-left | 2 (Blue)    |
+| **Z** | (0, 0, 0, 1) | (-1, -1, +1)/√3     | Top-back-left     | 1 (Green)   |
+
+**The 3021 Rule:** The array indices (3, 0, 2, 1 for W, X, Y, Z) follow the **3021 Rule** — a mnemonic for the mapping between user-facing Quadray axis names (QW, QX, QY, QZ) and internal `basisVectors[]` array indices. This mapping arises from color assignment conventions meeting geometric ordering. See `Coordinates.md` for detailed explanation. When debugging axis-related bugs where two axes appear swapped, verify the 3021 mapping is applied correctly.
 
 **Geometric Relationships:**
 
