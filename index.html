@@ -2003,37 +2003,31 @@
                     >
                   </div>
                 </div>
-                <!-- Start face selection (A, B, C, D) - Radio buttons -->
+                <!-- Quadray Axis selection (QW, QX, QY, QZ) - Radio buttons -->
                 <div class="matrix-control-item">
-                  <label class="matrix-size-label">Start Face</label>
+                  <label class="matrix-size-label">Axis</label>
                   <label class="geodesic-projection-option">
                     <input
                       type="radio"
-                      name="tetrahelix1StartFace"
-                      value="A"
+                      name="tetrahelix1Axis"
+                      value="QW"
                       checked
                     />
-                    A
+                    QW
                   </label>
                   <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelix1StartFace" value="B" />
-                    B
+                    <input type="radio" name="tetrahelix1Axis" value="QX" />
+                    QX
                   </label>
                   <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelix1StartFace" value="C" />
-                    C
+                    <input type="radio" name="tetrahelix1Axis" value="QY" />
+                    QY
                   </label>
                   <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelix1StartFace" value="D" />
-                    D
+                    <input type="radio" name="tetrahelix1Axis" value="QZ" />
+                    QZ
                   </label>
                 </div>
-                <!-- Chirality toggle commented out - left-handed only
-                <label class="checkbox-label matrix-checkbox-label">
-                  <input type="checkbox" id="tetrahelix1LeftHanded" />
-                  Left-handed (mirror)
-                </label>
-                -->
                 <p class="matrix-info-text">
                   Left-handed only (48 = torus near-closure)
                 </p>
@@ -2068,21 +2062,30 @@
                     >
                   </div>
                 </div>
-                <!-- Start face and strand count on same row -->
-                <div class="matrix-control-item" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <!-- Axis, Direction, and Strands on same row -->
+                <div class="matrix-control-item" style="display: flex; gap: 16px; flex-wrap: wrap;">
                   <div style="display: flex; align-items: center; gap: 4px;">
-                    <label class="matrix-size-label" style="margin-right: 4px;">Face</label>
+                    <label class="matrix-size-label" style="margin-right: 4px;">Axis</label>
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2StartFace" value="A" checked /> A
+                      <input type="radio" name="tetrahelix2Axis" value="QW" checked /> QW
                     </label>
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2StartFace" value="B" /> B
+                      <input type="radio" name="tetrahelix2Axis" value="QX" /> QX
                     </label>
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2StartFace" value="C" /> C
+                      <input type="radio" name="tetrahelix2Axis" value="QY" /> QY
                     </label>
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2StartFace" value="D" /> D
+                      <input type="radio" name="tetrahelix2Axis" value="QZ" /> QZ
+                    </label>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <label class="matrix-size-label" style="margin-right: 4px;">Dir</label>
+                    <label class="checkbox-label" style="font-size: 0.85em;">
+                      <input type="checkbox" id="tetrahelix2DirPlus" checked /> +
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em;">
+                      <input type="checkbox" id="tetrahelix2DirMinus" /> -
                     </label>
                   </div>
                   <div style="display: flex; align-items: center; gap: 4px;">
@@ -2123,26 +2126,26 @@
                     <div style="text-align: center;">0</div>
                     <div style="text-align: center;">1</div>
                     <div style="text-align: center;">2</div>
-                    <!-- Strand A -->
-                    <div style="font-weight: bold;">A</div>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitA" value="0" checked /></label>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitA" value="1" /></label>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitA" value="2" /></label>
-                    <!-- Strand B -->
-                    <div style="font-weight: bold;">B</div>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitB" value="0" checked /></label>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitB" value="1" /></label>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitB" value="2" /></label>
-                    <!-- Strand C -->
-                    <div style="font-weight: bold;">C</div>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitC" value="0" checked /></label>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitC" value="1" /></label>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitC" value="2" /></label>
-                    <!-- Strand D -->
-                    <div style="font-weight: bold;">D</div>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitD" value="0" checked /></label>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitD" value="1" /></label>
-                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitD" value="2" /></label>
+                    <!-- Strand QW -->
+                    <div style="font-weight: bold;">QW</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQW" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQW" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQW" value="2" /></label>
+                    <!-- Strand QX -->
+                    <div style="font-weight: bold;">QX</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQX" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQX" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQX" value="2" /></label>
+                    <!-- Strand QY -->
+                    <div style="font-weight: bold;">QY</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQY" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQY" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQY" value="2" /></label>
+                    <!-- Strand QZ -->
+                    <div style="font-weight: bold;">QZ</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQZ" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQZ" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQZ" value="2" /></label>
                   </div>
                   <p class="matrix-info-text" style="margin-top: 4px;">
                     Exit face used after first tetrahedron (affects strand direction)

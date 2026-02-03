@@ -471,18 +471,19 @@ export const geodesicProjectionBindings = [
   { type: "radio-group", name: "geodesicOctaProjection" },
   { type: "radio-group", name: "geodesicIcosaProjection" },
   { type: "radio-group", name: "geodesicDualIcosaProjection" },
-  // Helix start face selection
-  { type: "radio-group", name: "tetrahelix1StartFace" },
-  { type: "radio-group", name: "tetrahelix2StartFace" },
+  // Helix axis/face selection - Quadray axis notation (QW, QX, QY, QZ)
+  { type: "radio-group", name: "tetrahelix1Axis" },
+  { type: "radio-group", name: "tetrahelix2Axis" },
+  { type: "radio-group", name: "tetrahelix2Direction" },
   // Helix strand count (tetrahelix2 only)
   { type: "radio-group", name: "tetrahelix2Strands" },
   // Helix bond mode (tetrahelix2 only)
   { type: "radio-group", name: "tetrahelix2BondMode" },
-  // Helix per-strand exit face selection (tetrahelix2 only)
-  { type: "radio-group", name: "tetrahelix2ExitA" },
-  { type: "radio-group", name: "tetrahelix2ExitB" },
-  { type: "radio-group", name: "tetrahelix2ExitC" },
-  { type: "radio-group", name: "tetrahelix2ExitD" },
+  // Helix per-strand exit face selection (tetrahelix2 only) - Quadray axis names
+  { type: "radio-group", name: "tetrahelix2ExitQW" },
+  { type: "radio-group", name: "tetrahelix2ExitQX" },
+  { type: "radio-group", name: "tetrahelix2ExitQY" },
+  { type: "radio-group", name: "tetrahelix2ExitQZ" },
 ];
 
 // ============================================================================

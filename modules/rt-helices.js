@@ -431,22 +431,71 @@ export const Helices = {
   tetrahelix2: (halfSize = 1, options = {}) => {
     const count = Math.min(Math.max(options.count || 10, 1), 96);
     const startFace = options.startFace || "A";
+    const direction = options.direction || "+"; // "+" = positive (CW), "-" = negative (CCW)
     const strands = Math.min(Math.max(options.strands || 1, 1), 4);
     const bondMode = options.bondMode || "zipped";
     // Per-strand exit face selection (0, 1, or 2 - face 3 is always entry)
     const exitFaces = options.exitFaces || { A: 0, B: 0, C: 0, D: 0 };
 
-    // Generate seed tetrahedron
+    // Generate seed tetrahedron - JAVELIN MODEL
+    // The tetrahelix is generated FROM the origin, not centered on it.
+    // We start with the standard tetrahedron, then TRANSLATE it so that
+    // the "entrance vertex" (opposite the exit face) is at origin.
+    //
+    // Face definitions (face N is opposite vertex N):
+    //   Face A (idx 0) opposite V0: [V1, V2, V3]
+    //   Face B (idx 1) opposite V1: [V0, V2, V3]
+    //   Face C (idx 2) opposite V2: [V0, V1, V3]
+    //   Face D (idx 3) opposite V3: [V0, V1, V2]
+    //
+    // For the javelin: the entrance vertex goes at origin, the exit face
+    // extends outward. For - direction, we negate the translation to grow
+    // in the opposite direction from the same origin point.
+
     const s = halfSize;
-    const seedVertices = [
+    const sign = direction === "-" ? -1 : 1;
+
+    // Standard tetrahedron vertices (before translation)
+    const baseVertices = [
       new THREE.Vector3(-s, -s, -s), // V0
-      new THREE.Vector3(s, s, -s), // V1
-      new THREE.Vector3(s, -s, s), // V2
-      new THREE.Vector3(-s, s, s), // V3
+      new THREE.Vector3(s, s, -s),   // V1
+      new THREE.Vector3(s, -s, s),   // V2
+      new THREE.Vector3(-s, s, s),   // V3
     ];
 
+    // Determine which vertex is opposite the start face (entrance vertex)
+    // The exit face contains the other 3 vertices
+    const FACE_TO_OPPOSITE_VERTEX = { A: 0, B: 1, C: 2, D: 3 };
+    const entranceVertexIdx = FACE_TO_OPPOSITE_VERTEX[startFace] ?? 0;
+
+    // Get the exit face vertices (all except entrance vertex)
+    const exitFaceVertexIndices = [0, 1, 2, 3].filter(i => i !== entranceVertexIdx);
+    const exitFaceVertices = exitFaceVertexIndices.map(i => baseVertices[i]);
+
+    // Calculate centroid of exit face - THIS is where the javelin passes through origin
+    const exitFaceCentroid = new THREE.Vector3(
+      (exitFaceVertices[0].x + exitFaceVertices[1].x + exitFaceVertices[2].x) / 3,
+      (exitFaceVertices[0].y + exitFaceVertices[1].y + exitFaceVertices[2].y) / 3,
+      (exitFaceVertices[0].z + exitFaceVertices[1].z + exitFaceVertices[2].z) / 3
+    );
+
+    // Translate so exit face centroid is at origin, with direction sign
+    // Both + and - directions will share this origin point
+    const seedVertices = baseVertices.map(v => {
+      return new THREE.Vector3(
+        sign * (v.x - exitFaceCentroid.x),
+        sign * (v.y - exitFaceCentroid.y),
+        sign * (v.z - exitFaceCentroid.z)
+      );
+    });
+
     const allVertices = [...seedVertices];
-    const tetrahedra = [[0, 1, 2, 3]];
+    // JAVELIN MODEL: Don't include the seed tetrahedron in output.
+    // The seed is used only for generation; we start rendering from
+    // the second tetrahedron onward. This way, + and - directions
+    // share the origin face and meet seamlessly.
+    const tetrahedra = []; // Start empty - seed is generation-only
+    const seedTetraIndices = [0, 1, 2, 3]; // Keep for generation logic
 
     const expectedQ = 8 * halfSize * halfSize;
     const apexDistanceQ = (2 / 3) * expectedQ;
@@ -499,12 +548,13 @@ export const Helices = {
     const FACE_LABEL_TO_INDEX = { A: 0, B: 1, C: 2, D: 3 };
 
     let currentVerts = [...seedVertices];
-    let currentIndices = [0, 1, 2, 3];
+    let currentIndices = seedTetraIndices; // Use seed indices for generation
     let exitFaceLocalIdx = FACE_LABEL_TO_INDEX[startFace] ?? 0;
 
-    // Generate chain - LINEAR pattern
-    // Always exit through face 0 to create zigzag linear extension
-    for (let i = 1; i < count; i++) {
+    // Generate chain - LINEAR pattern (JAVELIN MODEL)
+    // We generate count tetrahedra starting from the seed, but the seed
+    // itself is not rendered - so we loop count times (not count-1).
+    for (let i = 0; i < count; i++) {
       const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFaceLocalIdx);
 
       const fv0 = currentVerts[faceLocalIndices[0]];
@@ -729,7 +779,7 @@ export const Helices = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron();
 
-    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, strands=${strands}, bondMode=${bondMode}, halfSize=${halfSize}`);
+    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, strands=${strands}, bondMode=${bondMode}, direction=${direction}, halfSize=${halfSize}`);
     console.log(
       `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
     );
@@ -737,7 +787,7 @@ export const Helices = {
       `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
     );
     console.log(`  Pattern: Always exit face 0 (linear zigzag)`);
-    console.log(`  Start face: ${startFace}, Strands: ${strands}, Mode: ${bondMode}`);
+    console.log(`  Start face: ${startFace}, Direction: ${direction}, Strands: ${strands}, Mode: ${bondMode}`);
     console.log(`  Total tetrahedra: ${tetrahedra.length}`);
 
     return {
@@ -749,6 +799,7 @@ export const Helices = {
         variant: "tetrahelix2",
         count,
         startFace,
+        direction,
         strands,
         bondMode,
         tetrahedra: tetrahedra.length,
