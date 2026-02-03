@@ -618,6 +618,20 @@
                 ></span>
                 IVM Grids (Future Implementation)
               </label>
+              <!--
+                FUTURE DEV NOTE: When implementing TRUE IVM grids, consider creating
+                a centralized grid state module (e.g., rt-grid-state.js) instead of
+                querying DOM checkboxes directly. Current pattern has multiple locations
+                (rt-init.js, rt-ui-binding-defs.js) independently querying the same
+                checkbox elements. A single state object would be cleaner:
+
+                  const gridState = { ivmWX: true, ivmWY: true, ... };
+                  function setGridVisibility(plane, visible) { ... }
+                  function getGridVisibility(plane) { ... }
+
+                See commit c3c8d0c for context on the checkbox migration that exposed
+                this coupling issue. - Feb 2026
+              -->
               <div id="ivm-grids" class="geodesic-options collapsed">
                 <div id="quadray-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
                   <label class="checkbox-label" style="font-size: 0.85em;">
