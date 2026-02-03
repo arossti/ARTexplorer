@@ -544,20 +544,38 @@ export const Helices = {
 
     const seedCentroid = getTetraCentroid(allVertices);
 
-    // ENTRANCE INSIGHT: Both + and - use the SAME starting face
-    // (the face opposite the axis vertex). The difference is:
+    // JAVELIN MODEL: For a straight javelin through origin, the + and -
+    // directions must exit through OPPOSITE faces of the dual tetrahedron.
     //
-    // + direction: First apex placed OUTWARD from face (away from seed center)
-    //              Chain extends away from axis vertex
+    // + direction: Uses the face opposite the axis vertex (seedFaceIndices)
+    // - direction: Uses the face CONTAINING the axis vertex (opposite face)
     //
-    // - direction: First apex placed INWARD (toward axis vertex)
-    //              But since that's inside the seed, we negate the normal
-    //              so the apex is placed on the OPPOSITE side of the face
-    //              Chain extends toward axis vertex direction
+    // In a tetrahedron, the face opposite a vertex and the face containing
+    // that vertex are geometrically opposite (180° apart on the tetrahedron).
     //
-    // Both use same exit face pattern (0) for consistent linear extension.
-    // The chirality difference comes from the reversed normal direction.
-    const startFaceVertIndices = seedFaceIndices; // Same face for both directions
+    // Face mapping for dual tetrahedron:
+    //   A: [1,2,3] opposite V0 (QX)  ↔  D: [0,2,1] contains V0, opposite V3 (QW)
+    //   B: [0,3,2] opposite V1 (QZ)  ↔  C: [0,1,3] contains V1, opposite V2 (QY)
+    //   C: [0,1,3] opposite V2 (QY)  ↔  B: [0,3,2] contains V2, opposite V1 (QZ)
+    //   D: [0,2,1] opposite V3 (QW)  ↔  A: [1,2,3] contains V3, opposite V0 (QX)
+    //
+    // The opposite face pairs are: A↔D, B↔C
+    const OPPOSITE_FACE = {
+      A: "D", // QX axis: A opposite D
+      B: "C", // QZ axis: B opposite C
+      C: "B", // QY axis: C opposite B
+      D: "A", // QW axis: D opposite A
+    };
+
+    let startFaceVertIndices;
+    if (direction === "+") {
+      // + direction: use face opposite axis vertex
+      startFaceVertIndices = seedFaceIndices;
+    } else {
+      // - direction: use the geometrically opposite face
+      const oppositeFaceLabel = OPPOSITE_FACE[startFace];
+      startFaceVertIndices = SEED_FACES[oppositeFaceLabel];
+    }
 
     // Get starting face vertices from seed
     const fv0 = allVertices[startFaceVertIndices[0]];
@@ -565,13 +583,10 @@ export const Helices = {
     const fv2 = allVertices[startFaceVertIndices[2]];
 
     const startFaceCentroid = calculateCentroid(fv0, fv1, fv2);
-    let startFaceNormal = calculateFaceNormal(fv0, fv1, fv2, seedCentroid);
+    const startFaceNormal = calculateFaceNormal(fv0, fv1, fv2, seedCentroid);
 
-    // For - direction: negate the normal so apex is placed on opposite side
-    // This makes the chain extend in the opposite direction along the axis
-    if (direction === "-") {
-      startFaceNormal.negate();
-    }
+    // No normal negation needed - using opposite faces naturally extends in opposite directions
+    // The outward normal from face A points opposite to the outward normal from face D
 
     // First chain tetrahedron (bonded to seed)
     const firstChainApex = startFaceCentroid.clone()
@@ -583,7 +598,7 @@ export const Helices = {
     tetrahedra.push(firstChainTetIndices);
 
     // FIXED exit face pattern - SAME for both directions for linear extension
-    // The direction difference comes from the negated normal above
+    // The direction difference comes from using opposite faces of the dual tetrahedron
     const chainExitFaceLocalIdx = 0; // Both use exit face 0
 
     let currentVerts = [fv0, fv1, fv2, firstChainApex];
