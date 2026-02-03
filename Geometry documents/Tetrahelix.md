@@ -562,7 +562,36 @@ rt-rendering.js:
 3. **Closure behavior:** Will octahedral-seeded helices exhibit different torus-closure properties?
 4. **Edge sharing:** When multiple strands are bonded, how do their shared edges interact geometrically?
 
-*Status: Design complete, implementation pending*
+*Status: Implemented with known issues (see below)*
+
+### Known Issue: LH/RH Twist Not Working as Expected (Feb 2, 2026)
+
+**Problem:** The current LH/RH twist toggle (exit face 0 vs 2) does not produce the expected clockwise vs counterclockwise helical twist. Instead:
+
+1. **Exit face 2 (LH position)** produces tight curls that spiral back toward the origin
+2. **Exit face 0 (RH position)** produces linear extension, but ALL 8 strands twist in the same direction (clockwise when viewed from origin outward)
+
+**Expected behavior:**
+- A true RH/LH twist should produce helices that extend linearly outward but with opposite spiral directions
+- A tetrahelix has three edges forming continuous stepped spirals that are parallel (or antiparallel)
+- The twist direction should be visible as clockwise vs counterclockwise rotation of those edge spirals
+
+**Observations:**
+- All 8 strands currently exit with the same twist direction
+- This is NOT the key to bilateral/radial symmetry
+- The tight curl behavior is related to exit face selection, not twist direction
+
+**Next steps:**
+1. Study Tetrahelix 1 (simpler toroidal generator) to understand the geometry of twist
+2. Investigate how face cycling pattern affects spiral direction
+3. The key may be in vertex ordering within the first bonded tetrahedron, not the exit face selection
+4. Consider that true chirality may require reflecting/mirroring vertex positions, not just changing exit face
+
+**Research needed:**
+- What exactly makes a tetrahelix "left-handed" vs "right-handed"?
+- Is it the direction of rotation around the helix axis?
+- Or is it the handedness of the screw (like thread direction)?
+- Study Fuller's original tetrahelix descriptions for clarity
 
 ### Future Research
 

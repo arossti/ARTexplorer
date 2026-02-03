@@ -1090,10 +1090,22 @@ export function initScene(THREE, OrbitControls, RT) {
         G: document.getElementById("tetrahelix3StrandG")?.checked || false,
         H: document.getElementById("tetrahelix3StrandH")?.checked || false,
       };
+      // Read chirality checkboxes A-H (checked = RH, unchecked = LH)
+      const strandChirality = {
+        A: document.getElementById("tetrahelix3ChiralA")?.checked !== false,
+        B: document.getElementById("tetrahelix3ChiralB")?.checked !== false,
+        C: document.getElementById("tetrahelix3ChiralC")?.checked !== false,
+        D: document.getElementById("tetrahelix3ChiralD")?.checked !== false,
+        E: document.getElementById("tetrahelix3ChiralE")?.checked !== false,
+        F: document.getElementById("tetrahelix3ChiralF")?.checked !== false,
+        G: document.getElementById("tetrahelix3ChiralG")?.checked !== false,
+        H: document.getElementById("tetrahelix3ChiralH")?.checked !== false,
+      };
 
       const tetrahelix3Data = Helices.tetrahelix3(scale, {
         count: tetrahelix3Count,
         enabledStrands,
+        strandChirality,
       });
       renderPolyhedron(
         tetrahelix3Group,
@@ -1105,6 +1117,7 @@ export function initScene(THREE, OrbitControls, RT) {
       tetrahelix3Group.userData.parameters = {
         count: tetrahelix3Count,
         enabledStrands,
+        strandChirality,
       };
       tetrahelix3Group.visible = true;
     } else {
@@ -2238,9 +2251,21 @@ export function initScene(THREE, OrbitControls, RT) {
         G: document.getElementById("tetrahelix3StrandG")?.checked || false,
         H: document.getElementById("tetrahelix3StrandH")?.checked || false,
       };
+      // Read chirality checkboxes A-H
+      const strandChirality = {
+        A: document.getElementById("tetrahelix3ChiralA")?.checked !== false,
+        B: document.getElementById("tetrahelix3ChiralB")?.checked !== false,
+        C: document.getElementById("tetrahelix3ChiralC")?.checked !== false,
+        D: document.getElementById("tetrahelix3ChiralD")?.checked !== false,
+        E: document.getElementById("tetrahelix3ChiralE")?.checked !== false,
+        F: document.getElementById("tetrahelix3ChiralF")?.checked !== false,
+        G: document.getElementById("tetrahelix3ChiralG")?.checked !== false,
+        H: document.getElementById("tetrahelix3ChiralH")?.checked !== false,
+      };
       const tetrahelix3Data = Helices.tetrahelix3(1, {
         count: tetrahelix3Count,
         enabledStrands,
+        strandChirality,
       });
       const V3 = tetrahelix3Data.vertices.length;
       const E3 = tetrahelix3Data.edges.length;
@@ -3119,14 +3144,17 @@ export function initScene(THREE, OrbitControls, RT) {
         // Tetrahelix 3: Linear (octahedral seed)
         const tetrahelix3Count = options.count ?? 10;
         const enabledStrands = options.enabledStrands ?? { A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false };
+        const strandChirality = options.strandChirality ?? { A: true, B: true, C: true, D: true, E: true, F: true, G: true, H: true };
         geometry = Helices.tetrahelix3(scale, {
           count: tetrahelix3Count,
           enabledStrands,
+          strandChirality,
         });
         group.userData.type = "tetrahelix3";
         group.userData.parameters = {
           count: tetrahelix3Count,
           enabledStrands,
+          strandChirality,
           tetrahedra: geometry.metadata.tetrahedra,
           expectedQ: geometry.metadata.expectedQ,
         };

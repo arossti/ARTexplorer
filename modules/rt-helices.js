@@ -786,12 +786,15 @@ export const Helices = {
    * @param {Object} options
    * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 96)
    * @param {Object} options.enabledStrands - Which faces have strands: { A: true/false, B: true/false, ... H: true/false }
+   * @param {Object} options.strandChirality - Chirality per strand: { A: true/false, ... H: true/false } (true=RH, false=LH)
    * @returns {Object} { vertices, edges, faces, metadata }
    */
   tetrahelix3: (halfSize = 1, options = {}) => {
     const count = Math.min(Math.max(options.count || 10, 1), 96);
     // Default: only strand A enabled
     const enabledStrands = options.enabledStrands || { A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false };
+    // Default: all strands right-handed (true = RH, false = LH)
+    const strandChirality = options.strandChirality || { A: true, B: true, C: true, D: true, E: true, F: true, G: true, H: true };
 
     // Generate seed octahedron (6 vertices at ±s on each axis)
     const s = halfSize;
@@ -857,8 +860,11 @@ export const Helices = {
       // Continue the chain for (count - 1) more tetrahedra
       let currentVerts = [fv0, fv1, fv2, firstApex];
       let currentIndices = firstTetIndices;
-      // Use a fixed exit pattern (0) for consistent helix direction
-      const exitFaceLocalIdx = 0;
+
+      // LH/RH twist controls which exit face is used for chain continuation
+      // Exit face 0 = RH twist, Exit face 2 = LH twist
+      const isRightHanded = strandChirality[faceLabel] !== false;
+      const exitFaceLocalIdx = isRightHanded ? 0 : 2;
 
       for (let i = 1; i < count; i++) {
         // Face 3 is always the entry face (shared with previous tet)
@@ -912,10 +918,16 @@ export const Helices = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron();
 
+    // Build chirality summary for active strands
+    const chiralitySummary = activeStrands.map(label =>
+      `${label}:${strandChirality[label] !== false ? "RH" : "LH"}`
+    ).join(", ");
+
     console.log(`[RT] Tetrahelix3 (Octahedral): count=${count}, halfSize=${halfSize}`);
     console.log(`  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`);
     console.log(`  Edge Q: ${octaEdgeQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`);
     console.log(`  Enabled strands: ${activeStrands.join(", ") || "none"}`);
+    console.log(`  Chirality: ${chiralitySummary || "none"}`);
     console.log(`  Total tetrahedra: ${tetrahedra.length}`);
 
     return {
@@ -927,6 +939,7 @@ export const Helices = {
         variant: "tetrahelix3",
         count,
         enabledStrands,
+        strandChirality,
         activeStrands,
         tetrahedra: tetrahedra.length,
         expectedQ: octaEdgeQ,
