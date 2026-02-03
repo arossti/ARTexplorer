@@ -72,7 +72,7 @@ export class RotorDemo {
 
     // 3D objects
     this.demoGroup = null;
-    this.gyroscope = null;
+    this.spinningObject = null;  // The geodesic octahedron
     this.gimbalLockZones = null;
     this.handles = null;
 
@@ -83,6 +83,96 @@ export class RotorDemo {
     this.isDragging = false;
     this.activeHandle = null;
     this.lastMousePos = null;
+
+    // Saved scene state (to restore on exit)
+    this.savedSceneState = null;
+  }
+
+  /**
+   * Save current scene state before demo takes over
+   */
+  saveSceneState() {
+    this.savedSceneState = {
+      // Checkbox states
+      showCube: document.getElementById('showCube')?.checked,
+      showDualTetrahedron: document.getElementById('showDualTetrahedron')?.checked,
+      showGeodesicOctahedron: document.getElementById('showGeodesicOctahedron')?.checked,
+      geodesicOctaFrequency: document.getElementById('geodesicOctaFrequency')?.value,
+      showCartesianBasis: document.getElementById('showCartesianBasis')?.checked,
+      showQuadray: document.getElementById('showQuadray')?.checked,
+      showCartesianGrid: document.getElementById('showCartesianGrid')?.checked,
+    };
+    console.log('📦 Saved scene state for demo');
+  }
+
+  /**
+   * Restore scene state after demo ends
+   */
+  restoreSceneState() {
+    if (!this.savedSceneState) return;
+
+    const state = this.savedSceneState;
+
+    // Restore checkbox states and trigger change events
+    const restore = (id, value) => {
+      const el = document.getElementById(id);
+      if (el && value !== undefined) {
+        if (el.type === 'checkbox') {
+          el.checked = value;
+        } else {
+          el.value = value;
+        }
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
+    restore('showCube', state.showCube);
+    restore('showDualTetrahedron', state.showDualTetrahedron);
+    restore('showGeodesicOctahedron', state.showGeodesicOctahedron);
+    restore('geodesicOctaFrequency', state.geodesicOctaFrequency);
+    restore('showCartesianBasis', state.showCartesianBasis);
+    restore('showQuadray', state.showQuadray);
+    restore('showCartesianGrid', state.showCartesianGrid);
+
+    console.log('📦 Restored scene state after demo');
+    this.savedSceneState = null;
+  }
+
+  /**
+   * Configure scene for demo (hide distractions, show demo object)
+   */
+  configureSceneForDemo() {
+    // Helper to set checkbox and trigger change
+    const setCheckbox = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.checked = value;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
+    const setValue = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    };
+
+    // Hide default geometry
+    setCheckbox('showCube', false);
+    setCheckbox('showDualTetrahedron', false);
+
+    // Hide grids for cleaner view
+    setCheckbox('showCartesianBasis', false);
+    setCheckbox('showQuadray', false);
+    setCheckbox('showCartesianGrid', false);
+
+    // Show Geodesic Octahedron 3F as the spinning object
+    setCheckbox('showGeodesicOctahedron', true);
+    setValue('geodesicOctaFrequency', '3');
+
+    console.log('🎬 Configured scene for rotor demo');
   }
 
   /**
@@ -92,8 +182,19 @@ export class RotorDemo {
     if (this.enabled) return;
 
     this.enabled = true;
+
+    // Save current scene state before modifying
+    this.saveSceneState();
+
+    // Configure scene for demo (hide distractions, show geodesic)
+    this.configureSceneForDemo();
+
+    // Create demo overlays (lock zones, handles, etc.)
     this.createDemoObjects();
     this.createInfoPanel();
+
+    // Find the geodesic octahedron group to rotate
+    this.findSpinningObject();
 
     // Start the top spinning automatically!
     this.startSpinning();
@@ -101,6 +202,46 @@ export class RotorDemo {
     this.startAnimation();
 
     console.log("✅ Spread-Quadray Rotor Demo enabled - Top is spinning!");
+  }
+
+  /**
+   * Find the geodesic octahedron in the scene to use as spinning object
+   * Called from animation loop to handle async scene updates
+   */
+  findSpinningObject() {
+    // Already found?
+    if (this.spinningObject) return;
+
+    // Look for geodesic octahedron by userData.type (as set in rt-rendering.js)
+    this.scene.traverse((obj) => {
+      if (obj.userData?.type === 'geodesicOctahedron') {
+        // Only use it if it has children (geometry has been generated)
+        if (obj.children && obj.children.length > 0) {
+          this.spinningObject = obj;
+          console.log('🎯 Found geodesic octahedron for spinning! Children:', obj.children.length);
+        }
+      }
+    });
+
+    // Debug: if still not found, log what groups exist
+    if (!this.spinningObject) {
+      let foundGroups = [];
+      this.scene.traverse((obj) => {
+        if (obj.type === 'Group' && obj.children.length > 0) {
+          foundGroups.push({
+            name: obj.name || 'unnamed',
+            type: obj.userData?.type || 'no-type',
+            children: obj.children.length,
+            visible: obj.visible
+          });
+        }
+      });
+      // Only log once per second to avoid spam
+      if (!this._lastDebugLog || Date.now() - this._lastDebugLog > 1000) {
+        console.log('🔍 Looking for spinning object. Available groups:', foundGroups.slice(0, 10));
+        this._lastDebugLog = Date.now();
+      }
+    }
   }
 
   /**
@@ -120,8 +261,21 @@ export class RotorDemo {
     if (!this.enabled) return;
 
     this.enabled = false;
+
+    // Reset spinning object rotation before restoring scene
+    if (this.spinningObject) {
+      this.spinningObject.quaternion.identity();
+      this.spinningObject = null;
+    }
+
     this.removeDemoObjects();
     this.removeInfoPanel();
+
+    // Restore the scene to its previous state
+    this.restoreSceneState();
+
+    // Reset rotor state for next time
+    this.rotorState = new QuadrayRotorState();
 
     console.log("❌ Spread-Quadray Rotor Demo disabled");
   }
@@ -147,17 +301,26 @@ export class RotorDemo {
     this.demoGroup = new THREE.Group();
     this.demoGroup.name = "RotorDemo";
 
-    // Create gyroscope visualization
-    this.gyroscope = this.createGyroscope();
-    this.demoGroup.add(this.gyroscope);
+    // Create axis indicator (yellow line showing spin axis)
+    const axisGeom = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, -4),
+      new THREE.Vector3(0, 0, 4)
+    ]);
+    const axisMat = new THREE.LineBasicMaterial({
+      color: DEMO_CONFIG.colors.axisIndicator,
+      linewidth: 2
+    });
+    const axisLine = new THREE.Line(axisGeom, axisMat);
+    axisLine.name = "AxisIndicator";
+    this.demoGroup.add(axisLine);
 
     // Create gimbal lock zone visualization
     this.gimbalLockZones = this.createGimbalLockZones();
     this.demoGroup.add(this.gimbalLockZones);
 
-    // Create rotation handles
-    this.handles = this.createRotationHandles();
-    this.demoGroup.add(this.handles);
+    // Note: We're NOT creating rotation handles yet - using existing gumball
+    // this.handles = this.createRotationHandles();
+    // this.demoGroup.add(this.handles);
 
     this.scene.add(this.demoGroup);
   }
@@ -722,10 +885,10 @@ export class RotorDemo {
   }
 
   /**
-   * Apply rotation to gyroscope based on current rotor state
+   * Apply rotation to spinning object based on current rotor state
    */
   updateGyroscope() {
-    if (!this.gyroscope || !this.enabled) return;
+    if (!this.enabled) return;
 
     const THREE = this.THREE;
 
@@ -733,22 +896,22 @@ export class RotorDemo {
     const rotor = this.rotorState.orientation.normalize();
     const quat = new THREE.Quaternion(rotor.x, rotor.y, rotor.z, rotor.w);
 
-    // Apply rotation to inner parts (not outer ring which stays fixed as reference)
-    this.gyroscope.children.forEach(child => {
-      if (child.name !== 'OuterRing' && child.name !== 'AxisIndicator') {
-        child.quaternion.copy(quat);
-      }
-    });
+    // Apply rotation to the spinning object (geodesic octahedron)
+    if (this.spinningObject) {
+      this.spinningObject.quaternion.copy(quat);
+    }
 
-    // Update axis indicator to show SPIN axis (not orientation axis)
-    const axisLine = this.gyroscope.getObjectByName('AxisIndicator');
-    if (axisLine) {
-      const spinAxis = this.rotorState.axis;
-      const length = DEMO_CONFIG.gyroscopeRadius * 1.2;
-      const positions = axisLine.geometry.attributes.position;
-      positions.setXYZ(0, -spinAxis.x * length, -spinAxis.y * length, -spinAxis.z * length);
-      positions.setXYZ(1, spinAxis.x * length, spinAxis.y * length, spinAxis.z * length);
-      positions.needsUpdate = true;
+    // Also update the axis indicator in the demo group if present
+    if (this.demoGroup) {
+      const axisLine = this.demoGroup.getObjectByName('AxisIndicator');
+      if (axisLine) {
+        const spinAxis = this.rotorState.axis;
+        const length = DEMO_CONFIG.gyroscopeRadius * 1.2;
+        const positions = axisLine.geometry.attributes.position;
+        positions.setXYZ(0, -spinAxis.x * length, -spinAxis.y * length, -spinAxis.z * length);
+        positions.setXYZ(1, spinAxis.x * length, spinAxis.y * length, spinAxis.z * length);
+        positions.needsUpdate = true;
+      }
     }
   }
 
@@ -758,6 +921,12 @@ export class RotorDemo {
   startAnimation() {
     const animate = (time) => {
       if (!this.enabled) return;
+
+      // Keep trying to find spinning object until we get it
+      // (handles async scene updates from checkbox changes)
+      if (!this.spinningObject) {
+        this.findSpinningObject();
+      }
 
       this.rotorState.update(time);
       this.updateGyroscope();
