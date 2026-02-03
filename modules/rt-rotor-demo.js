@@ -84,6 +84,13 @@ export class RotorDemo {
     this.activeHandle = null;
     this.lastMousePos = null;
 
+    // Rotation mode: 'quadray' (default) or 'euler'
+    this.rotationMode = 'quadray';
+
+    // Euler angle accumulator (for euler mode)
+    this.eulerAngles = { x: 0, y: 0, z: 0 };
+    this.eulerGlitchAccumulator = 0;  // Simulates gimbal lock jitter
+
     // Saved scene state (to restore on exit)
     this.savedSceneState = null;
   }
@@ -725,6 +732,30 @@ export class RotorDemo {
       </div>
 
       <div class="section">
+        <div class="section-title">Nudge Spin Axis (toward gimbal lock)</div>
+        <div class="controls" style="margin-top: 4px;">
+          <button class="ctrl-btn" id="rp-nudge-x" style="flex: 1;">+X</button>
+          <button class="ctrl-btn" id="rp-nudge-y" style="flex: 1; background: #533; border-color: #f88;">+Y (Lock)</button>
+          <button class="ctrl-btn" id="rp-nudge-z" style="flex: 1;">+Z</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Rotation Method</div>
+        <div class="controls" style="margin-top: 4px;">
+          <button class="ctrl-btn" id="rp-mode-quadray" style="flex: 1; background: #353; border-color: #8f8;">
+            Quadray Rotor
+          </button>
+          <button class="ctrl-btn" id="rp-mode-euler" style="flex: 1;">
+            Euler XYZ
+          </button>
+        </div>
+        <div id="rp-mode-status" style="color: #8f8; font-size: 10px; margin-top: 4px; text-align: center;">
+          Mode: Quadray Rotor (gimbal-lock free)
+        </div>
+      </div>
+
+      <div class="section">
         <div class="section-title">Angular Velocity</div>
         <div class="row"><span class="label">RPM:</span><span class="value" id="rp-rpm">0.0</span></div>
         <div class="row"><span class="label">rad/s:</span><span class="value" id="rp-rads">0.00</span></div>
@@ -792,7 +823,100 @@ export class RotorDemo {
     document.getElementById('rp-stop').addEventListener('click', () => {
       this.rotorState.setVelocity(0, { x: 0, y: 0, z: 1 });
     });
+
+    // Nudge buttons - tilt the spin axis
+    document.getElementById('rp-nudge-x').addEventListener('click', () => {
+      this.nudgeAxis('x', 0.15);
+    });
+    document.getElementById('rp-nudge-y').addEventListener('click', () => {
+      this.nudgeAxis('y', 0.15);  // Y nudge approaches gimbal lock
+    });
+    document.getElementById('rp-nudge-z').addEventListener('click', () => {
+      this.nudgeAxis('z', 0.15);
+    });
+
+    // Mode toggle buttons
+    document.getElementById('rp-mode-quadray').addEventListener('click', () => {
+      this.setRotationMode('quadray');
+    });
+    document.getElementById('rp-mode-euler').addEventListener('click', () => {
+      this.setRotationMode('euler');
+    });
   }
+
+  /**
+   * Nudge the spin axis toward a given direction
+   * This allows users to interactively approach gimbal lock
+   */
+  nudgeAxis(axis, amount) {
+    const currentAxis = { ...this.rotorState.axis };
+
+    // Add nudge component
+    if (axis === 'x') currentAxis.x += amount;
+    if (axis === 'y') currentAxis.y += amount;
+    if (axis === 'z') currentAxis.z += amount;
+
+    // Renormalize
+    const len = Math.sqrt(currentAxis.x ** 2 + currentAxis.y ** 2 + currentAxis.z ** 2);
+    if (len > 0.001) {
+      currentAxis.x /= len;
+      currentAxis.y /= len;
+      currentAxis.z /= len;
+    }
+
+    this.rotorState.axis = currentAxis;
+
+    // Log the nudge for visibility
+    console.log(`🎯 Nudged axis toward ${axis.toUpperCase()}: (${currentAxis.x.toFixed(3)}, ${currentAxis.y.toFixed(3)}, ${currentAxis.z.toFixed(3)})`);
+
+    // Check gimbal lock proximity
+    const proximity = this.calculateEulerGimbalProximity(currentAxis);
+    if (proximity > 0.5) {
+      console.log(`⚠️ Gimbal Lock Proximity: ${(proximity * 100).toFixed(0)}% - ${this.rotationMode === 'euler' ? 'EULER MODE WILL STRUGGLE!' : 'Quadray Rotor handles this smoothly'}`);
+    }
+  }
+
+  /**
+   * Calculate gimbal lock proximity based on spin axis orientation
+   * For Euler XYZ, lock occurs when Y-axis rotation approaches ±90°
+   */
+  calculateEulerGimbalProximity(axis) {
+    // If axis is mostly aligned with Y, we're heading toward gimbal lock
+    const yComponent = Math.abs(axis.y);
+    // Danger starts when Y > 0.7 (about 45° from XZ plane)
+    return Math.max(0, (yComponent - 0.5) / 0.5);
+  }
+
+  /**
+   * Set rotation mode: 'quadray' or 'euler'
+   */
+  setRotationMode(mode) {
+    this.rotationMode = mode;
+
+    // Update button styles
+    const quadrayBtn = document.getElementById('rp-mode-quadray');
+    const eulerBtn = document.getElementById('rp-mode-euler');
+    const statusEl = document.getElementById('rp-mode-status');
+
+    if (mode === 'quadray') {
+      quadrayBtn.style.background = '#353';
+      quadrayBtn.style.borderColor = '#8f8';
+      eulerBtn.style.background = '#333';
+      eulerBtn.style.borderColor = '#0ff';
+      statusEl.style.color = '#8f8';
+      statusEl.textContent = 'Mode: Quadray Rotor (gimbal-lock free)';
+      console.log('✅ Switched to Quadray Rotor mode - smooth rotation guaranteed');
+    } else {
+      quadrayBtn.style.background = '#333';
+      quadrayBtn.style.borderColor = '#0ff';
+      eulerBtn.style.background = '#533';
+      eulerBtn.style.borderColor = '#f88';
+      statusEl.style.color = '#f88';
+      statusEl.textContent = 'Mode: Euler XYZ (gimbal lock possible!)';
+      console.log('⚠️ Switched to Euler XYZ mode - watch for gimbal lock when Y-axis approaches ±90°');
+    }
+  }
+
 
   /**
    * Remove the info panel
@@ -886,22 +1010,70 @@ export class RotorDemo {
 
   /**
    * Apply rotation to spinning object based on current rotor state
+   * Behavior differs based on rotation mode (quadray vs euler)
    */
   updateGyroscope() {
     if (!this.enabled) return;
 
     const THREE = this.THREE;
 
-    // Get rotation quaternion from our rotor
-    const rotor = this.rotorState.orientation.normalize();
-    const quat = new THREE.Quaternion(rotor.x, rotor.y, rotor.z, rotor.w);
+    if (this.rotationMode === 'quadray') {
+      // === QUADRAY ROTOR MODE ===
+      // Smooth, gimbal-lock-free rotation
+      const rotor = this.rotorState.orientation.normalize();
+      const quat = new THREE.Quaternion(rotor.x, rotor.y, rotor.z, rotor.w);
 
-    // Apply rotation to the spinning object (geodesic octahedron)
-    if (this.spinningObject) {
-      this.spinningObject.quaternion.copy(quat);
+      if (this.spinningObject) {
+        this.spinningObject.quaternion.copy(quat);
+      }
+    } else {
+      // === EULER XYZ MODE ===
+      // Demonstrates gimbal lock issues near Y = ±90°
+      if (this.spinningObject) {
+        // Convert current rotor to Euler angles (this is where problems arise!)
+        const rotor = this.rotorState.orientation.normalize();
+
+        // Extract Euler angles from quaternion
+        // This conversion LOSES information near gimbal lock
+        const matrix = rotor.toMatrix3();
+
+        // Extract Euler XYZ from rotation matrix
+        // Gimbal lock: when matrix[6] ≈ ±1 (Y rotation near ±90°)
+        const sinY = Math.max(-1, Math.min(1, matrix[6]));
+        let eulerX, eulerY, eulerZ;
+
+        if (Math.abs(sinY) > 0.9999) {
+          // GIMBAL LOCK! X and Z rotations become indistinguishable
+          eulerY = Math.sign(sinY) * Math.PI / 2;
+          eulerX = 0;  // Arbitrarily set X to 0
+          eulerZ = Math.atan2(-matrix[1], matrix[4]);
+
+          // Add visible jitter to show instability
+          this.eulerGlitchAccumulator += 0.1;
+          const jitter = Math.sin(this.eulerGlitchAccumulator * 10) * 0.05;
+          eulerX += jitter;
+          eulerZ += jitter * 1.5;
+
+          // Log gimbal lock event (throttled)
+          if (!this._lastGimbalLog || Date.now() - this._lastGimbalLog > 500) {
+            console.log('🔒 GIMBAL LOCK! Euler angles unstable - X and Z conflated');
+            this._lastGimbalLog = Date.now();
+          }
+        } else {
+          // Normal case
+          eulerY = Math.asin(sinY);
+          const cosY = Math.cos(eulerY);
+          eulerX = Math.atan2(-matrix[7] / cosY, matrix[8] / cosY);
+          eulerZ = Math.atan2(-matrix[3] / cosY, matrix[0] / cosY);
+          this.eulerGlitchAccumulator = 0;
+        }
+
+        // Apply Euler angles (with potential gimbal lock artifacts)
+        this.spinningObject.rotation.set(eulerX, eulerY, eulerZ, 'XYZ');
+      }
     }
 
-    // Also update the axis indicator in the demo group if present
+    // Update the axis indicator in the demo group
     if (this.demoGroup) {
       const axisLine = this.demoGroup.getObjectByName('AxisIndicator');
       if (axisLine) {

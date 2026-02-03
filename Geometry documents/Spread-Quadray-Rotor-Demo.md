@@ -1,9 +1,9 @@
 # Spread-Quadray Rotor Demo Workplan
 
-**Version**: 1.0 Draft
+**Version**: 1.1
 **Date**: February 2026
 **Author**: Andy & Claude
-**Status**: Planning
+**Status**: Implementation Phase 1 Complete
 
 ---
 
@@ -651,3 +651,184 @@ intuitive angle-based thinking.
 
 *This workplan establishes the framework for demonstrating how Spread-Quadray Rotors
 provide a rational, gimbal-lock-free alternative to both Euler angles and quaternions.*
+
+---
+
+## 11. Implementation Progress
+
+### Phase 1: Core Infrastructure ✅ COMPLETE
+
+- [x] `rt-quadray-rotor.js` - QuadrayRotor class implementation
+- [x] `fromSpreadAxis()` - RT-pure entry point constructor
+- [x] `toMatrix3()`, `toMatrix4()` - THREE.js rendering output
+- [x] `getAngularVelocity()`, `getGimbalLockProximity()` - metrics
+- [x] `QuadrayRotorState` class for animation state management
+- [x] `CommonSpreads` utility for RT-pure angle constants
+
+### Phase 2: Demo Visualization ✅ COMPLETE
+
+- [x] `rt-rotor-demo.js` - Interactive demo controller
+- [x] Gyroscope spinning with geodesic octahedron 3F
+- [x] Gimbal lock zone visualization (red danger disks, warning rings)
+- [x] HUD info panel with RPM, rad/s, deg/s display
+- [x] Scene state save/restore on demo enable/disable
+- [x] Control buttons (Reset, Spin, Stop, Close)
+
+### Phase 3: Comparison Mode 🔄 IN PROGRESS
+
+- [ ] "Compare: Quaternion vs Quadray" button
+- [ ] Rigorous console logging showing both calculation paths
+- [ ] Side-by-side numerical output demonstrating equivalence
+- [ ] Honest documentation of current simplifications
+
+---
+
+## 12. Comparison Mode: Quaternion vs Quadray Rotors
+
+### 12.1 Purpose
+
+Provide testable, rigorous console output demonstrating:
+1. **What's the same**: Both systems produce identical 3D rotations
+2. **What's different**: Entry points, representation, and future potential
+3. **Honest disclosure**: Current implementation details and simplifications
+
+### 12.2 Technical Honesty
+
+> **IMPORTANT DISCLOSURE**: The current `QuadrayRotor` implementation uses Hamilton
+> product (quaternion multiplication) internally. The structural difference is the
+> explicit Janus polarity flag (±1) and RT-pure entry via spread rather than angle.
+>
+> The demonstration shows *how* we intend the system to work, with the underlying
+> math currently leveraging well-tested quaternion algebra. This is a pragmatic
+> "scaffolding" approach - we use quaternion math as a crutch while developing the
+> full RT-pure algebraic solution.
+
+### 12.3 Comparison Button Behavior
+
+When user clicks "Compare" button:
+
+```
+═══════════════════════════════════════════════════════════════════════════
+  QUATERNION vs QUADRAY ROTOR COMPARISON TEST
+═══════════════════════════════════════════════════════════════════════════
+
+Test: 45° rotation around axis (0.577, 0.577, 0.577)
+
+─── INPUT (RT-Pure) ────────────────────────────────────────────────────────
+  Spread s = sin²(45°) = 0.5  (exact rational: 1/2)
+  Cross  c = cos²(45°) = 0.5  (exact rational: 1/2)
+  Axis WXYZ: (1, 1, 1, 1) normalized
+
+─── CLASSIC QUATERNION PATH ─────────────────────────────────────────────────
+  q = cos(θ/2) + sin(θ/2)(xi + yj + zk)
+  θ/2 = 22.5° = 0.3927 rad
+  cos(22.5°) = 0.92388
+  sin(22.5°) = 0.38268
+  q = (0.9239, 0.2209, 0.2209, 0.2209)
+  |q| = 1.0000 (unit quaternion ✓)
+
+─── QUADRAY ROTOR PATH ──────────────────────────────────────────────────────
+  R = (w, x, y, z, polarity) ∈ ℝ⁴ × Z₂
+  Entry: fromSpreadAxis(0.5, {x:1, y:1, z:1}/√3, +1)
+
+  Half-spread calculation (RT-pure where possible):
+    cosθ = polarity × √(cross) = +1 × √0.5 = 0.7071
+    spread_half = (1 - cosθ)/2 = 0.1464
+    cross_half = (1 + cosθ)/2 = 0.8536
+
+  √ deferred to final step:
+    sinHalf = √(0.1464) = 0.3827
+    cosHalf = √(0.8536) = 0.9239
+
+  R = (0.9239, 0.2209, 0.2209, 0.2209, +1)
+
+─── MULTIPLICATION (Hamilton Product) ───────────────────────────────────────
+  NOTE: Current implementation uses Hamilton product:
+    (a₁ + b₁i + c₁j + d₁k)(a₂ + b₂i + c₂j + d₂k)
+
+  This is IDENTICAL to quaternion multiplication.
+  Future RT-pure implementation would use spread/cross algebra.
+
+─── OUTPUT COMPARISON ───────────────────────────────────────────────────────
+  Quaternion → Matrix3:  [[0.805, -0.311, 0.506], [0.506, 0.805, -0.311], ...]
+  QuadrayRotor → Matrix3: [[0.805, -0.311, 0.506], [0.506, 0.805, -0.311], ...]
+
+  Max difference: 0.0000e+0 ✓ IDENTICAL
+
+─── WHAT'S DIFFERENT ────────────────────────────────────────────────────────
+  1. ENTRY: Quaternion uses angle θ; Quadray uses spread s = sin²θ
+  2. POLARITY: Quaternion implicitly handles double-cover; Quadray explicit ±1
+  3. FUTURE: RT-pure path avoids ALL √ until final rendering step
+
+═══════════════════════════════════════════════════════════════════════════
+```
+
+### 12.4 Test Cases
+
+The comparison mode runs through several test rotations:
+
+1. **Identity**: 0° rotation (spread = 0)
+2. **Small angle**: 30° around Z (spread = 0.25)
+3. **Medium angle**: 45° around (1,1,1) (spread = 0.5)
+4. **Large angle**: 90° around X (spread = 1.0)
+5. **Gimbal-lock approach**: 85° around Y (high spread_Y)
+
+### 12.5 Console Output Format
+
+```javascript
+console.group('═══ QUATERNION vs QUADRAY COMPARISON ═══');
+console.log('Test:', description);
+console.group('Input (RT-Pure)');
+console.log(`Spread: ${spread} = sin²(${degrees}°)`);
+console.log(`Axis: (${ax}, ${ay}, ${az})`);
+console.groupEnd();
+// ... detailed steps ...
+console.groupEnd();
+```
+
+---
+
+## 13. Honest Documentation of Current Simplifications
+
+### 13.1 Where We Use THREE.js Quaternions
+
+| Operation | Current | Future RT-Pure |
+|-----------|---------|----------------|
+| Final rendering | `object.quaternion.copy(quat)` | Same (GPU requires floats) |
+| Matrix generation | `toMatrix3()` uses standard formula | Spread-based matrix formula |
+| Composition | Hamilton product | Geometric algebra bivector product |
+
+### 13.2 Why This Is Acceptable (Scaffolding Approach)
+
+1. **Correctness first**: The math produces correct results
+2. **Structure established**: QuadrayRotor API separates concerns
+3. **Incremental refinement**: Can swap internals without API changes
+4. **Honest display**: Demo shows BOTH paths with clear labeling
+
+### 13.3 Future Work: True RT-Pure Implementation
+
+The full RT-pure implementation would:
+- Use Weierstrass parametrization for all trigonometric operations
+- Employ spread polynomial algebra (avoiding transcendental functions)
+- Only compute √ at the absolute final step (GPU projection)
+
+This requires developing:
+- Spread-based rotation matrix formulas
+- RT-pure bivector multiplication rules
+- Symbolic coefficient tracking
+
+---
+
+## 14. References (Updated)
+
+1. `Geometry documents/4D-Gimbal-Lock-Avoidance.md` - Theoretical foundations
+2. `Geometry documents/Quadray-Rotors.tex` - Formal mathematical treatment
+3. `Geometry documents/4D-COORDINATES.md` - Tom Ace rotation formulas
+4. `modules/rt-quadray-rotor.js` - Current implementation ✅
+5. `modules/rt-rotor-demo.js` - Demo controller ✅
+6. `modules/rt-init.js` - Integration with main app ✅
+
+---
+
+*Workplan updated February 2026. Phase 1-2 complete, Phase 3 in progress.*
+*"Use the crutches while building, then throw them away when ready!" - Andy*

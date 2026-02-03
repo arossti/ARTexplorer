@@ -10,9 +10,40 @@
  * Avoids gimbal lock by operating in 4D space, similar to quaternions
  * but using rational trigonometry principles where possible.
  *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * HONEST DISCLOSURE - SCAFFOLDING APPROACH
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * This implementation uses QUATERNION MATH internally (Hamilton product) while
+ * establishing the STRUCTURE and API for a true RT-pure rotation system.
+ *
+ * What's RT-Pure NOW:
+ * - Entry point via spread (s = sin²θ) instead of angle
+ * - Explicit Janus polarity (±1) rather than implicit double-cover
+ * - Half-angle calculation using spread/cross algebra
+ * - √ operations deferred until final steps
+ *
+ * What STILL uses standard quaternion math:
+ * - multiply() uses Hamilton product (identical to quaternion multiplication)
+ * - toMatrix3() uses standard quaternion-to-matrix formula
+ * - rotateVector() uses q·v·q⁻¹ conjugation
+ *
+ * Why this is acceptable (scaffolding approach):
+ * 1. The math produces CORRECT rotations
+ * 2. The API/structure supports future RT-pure implementation
+ * 3. We can swap internals without changing external interface
+ * 4. "Use the crutches while building, then throw them away when ready!"
+ *
+ * Future RT-Pure work would replace Hamilton product with:
+ * - Spread polynomial multiplication rules
+ * - Geometric algebra bivector operations
+ * - Full Weierstrass parametrization throughout
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
  * @requires rt-math.js - RT namespace for spread/cross calculations
  * @see Geometry documents/Quadray-Rotors.tex - Mathematical foundations
  * @see Geometry documents/4D-Gimbal-Lock-Avoidance.md - Theory
+ * @see Geometry documents/Spread-Quadray-Rotor-Demo.md - Implementation workplan
  */
 
 import { RT, Quadray } from "./rt-math.js";
@@ -58,6 +89,12 @@ export class QuadrayRotor {
    *
    * Given spread s = sin²(θ) and rotation axis, constructs rotor
    * representing rotation by angle θ around that axis.
+   *
+   * RT-PURE ANALYSIS:
+   * - Input: spread (rational for many common angles: 0, 1/4, 1/2, 3/4, 1)
+   * - Half-angle calculation uses spread/cross algebra (lines 93-95)
+   * - √ is deferred to the final step (lines 98-99) - this is the ONLY
+   *   transcendental operation, and it's at the boundary of RT-pure space
    *
    * @param {number} spread - Spread value (0 to 1), where s = sin²(θ)
    * @param {Object} axis - Rotation axis {x, y, z} (will be normalized)
@@ -199,17 +236,27 @@ export class QuadrayRotor {
    * Multiply two rotors (Hamilton product)
    * This composes the rotations: result = this * other
    *
+   * SCAFFOLDING NOTE: This currently uses the Hamilton product formula,
+   * which is identical to quaternion multiplication:
+   *   (a₁ + b₁i + c₁j + d₁k)(a₂ + b₂i + c₂j + d₂k)
+   *
+   * A future RT-pure implementation would use spread/cross polynomial
+   * algebra or geometric algebra bivector operations to avoid any
+   * implicit trigonometric functions.
+   *
    * @param {QuadrayRotor} other - Rotor to multiply with
    * @returns {QuadrayRotor} Composed rotor
    */
   multiply(other) {
-    // Hamilton product for quaternions
+    // SCAFFOLDING: Hamilton product (same as quaternion multiplication)
+    // Future: Replace with RT-pure spread polynomial multiplication
     const w = this.w * other.w - this.x * other.x - this.y * other.y - this.z * other.z;
     const x = this.w * other.x + this.x * other.w + this.y * other.z - this.z * other.y;
     const y = this.w * other.y - this.x * other.z + this.y * other.w + this.z * other.x;
     const z = this.w * other.z + this.x * other.y - this.y * other.x + this.z * other.w;
 
-    // Polarity: XOR-like behavior
+    // Polarity: XOR-like behavior (this IS different from quaternions)
+    // Quaternions handle double-cover implicitly; we make it explicit
     const polarity = this.polarity * other.polarity;
 
     return new QuadrayRotor(w, x, y, z, polarity);
@@ -235,6 +282,13 @@ export class QuadrayRotor {
    * Convert to 3x3 rotation matrix
    * For rendering to THREE.js
    *
+   * SCAFFOLDING NOTE: This uses the standard quaternion-to-matrix formula.
+   * The formula itself is algebraically correct and produces exact results
+   * from the rotor components - no transcendental functions are called here.
+   *
+   * The matrix elements are quadratic in (w,x,y,z), which means this step
+   * IS actually RT-compatible - it's pure polynomial algebra.
+   *
    * @returns {Array<number>} 9-element array in column-major order
    */
   toMatrix3() {
@@ -242,12 +296,14 @@ export class QuadrayRotor {
     const n = this.normalize();
     const { w, x, y, z } = n;
 
-    // Pre-compute products
+    // Pre-compute products (all polynomial - RT-pure!)
     const xx = x * x, yy = y * y, zz = z * z;
     const xy = x * y, xz = x * z, yz = y * z;
     const wx = w * x, wy = w * y, wz = w * z;
 
-    // Rotation matrix from quaternion
+    // Rotation matrix from rotor components
+    // This formula is IDENTICAL to quaternion-to-matrix, but that's okay:
+    // the formula is purely algebraic (no trig functions)
     // Column-major order for THREE.js Matrix3
     return [
       1 - 2 * (yy + zz), 2 * (xy + wz), 2 * (xz - wy),     // Column 0
