@@ -613,26 +613,11 @@ export const Helices = {
     const plusFv1 = allVertices[startFaceVertIndices[1]];
     const plusFv2 = allVertices[startFaceVertIndices[2]];
 
-    // Get the - direction face (opposite face) for backward chain
-    // The opposite face is the one that shares no vertices with startFace
-    // For face A=[1,2,3], opposite is D=[0,2,1] (vertex 0 is opposite)
-    // For face B=[0,3,2], opposite is C=[0,1,3] (vertex 1 is opposite)
-    // Actually, opposite face contains the vertex that startFace excludes
-    const OPPOSITE_FACES = {
-      A: "D", // A excludes V0, D contains V0
-      B: "C",
-      C: "B",
-      D: "A",
-    };
-    const oppositeFaceLabel = OPPOSITE_FACES[startFace] || "D";
-    const oppositeFaceIndices = SEED_FACES[oppositeFaceLabel];
-    const minusFv0 = allVertices[oppositeFaceIndices[0]];
-    const minusFv1 = allVertices[oppositeFaceIndices[1]];
-    const minusFv2 = allVertices[oppositeFaceIndices[2]];
-
     // ========================================================================
     // STEP 2: Generate + direction chain (forward from seed)
     // ========================================================================
+    // The + direction exits through startFace (e.g., face A = [1,2,3])
+    // Each new tetrahedron shares this face with the previous one
     if (plusCount > 0) {
       const plusFaceCentroid = calculateCentroid(plusFv0, plusFv1, plusFv2);
       const plusFaceNormal = calculateFaceNormal(plusFv0, plusFv1, plusFv2, seedCentroid);
@@ -658,30 +643,92 @@ export const Helices = {
     }
 
     // ========================================================================
-    // STEP 3: Generate - direction chain (backward from seed)
+    // STEP 3: Generate - direction chain (REFLECTION-BASED BACKWARD GENERATION)
     // ========================================================================
-    if (minusCount > 0) {
-      const minusFaceCentroid = calculateCentroid(minusFv0, minusFv1, minusFv2);
-      const minusFaceNormal = calculateFaceNormal(minusFv0, minusFv1, minusFv2, seedCentroid);
+    // Mathematical insight: The predecessor tetrahedron can be found by
+    // REFLECTING the apex through the entry face centroid.
+    //
+    // In forward generation:
+    //   newApex = faceCentroid + outwardNormal × apexDistance
+    //
+    // The predecessor's unique vertex is at:
+    //   predApex = faceCentroid - outwardNormal × apexDistance
+    //            = 2 × faceCentroid - currentApex  (reflection formula)
+    //
+    // This is the exact mathematical inverse of the forward step!
+    //
+    // For the seed tetrahedron [0, 1, 2, 3] with exit through startFace:
+    // - Seed's local chain ordering: [V0, V1, V2, V3] where exit [V1,V2,V3] = startFace
+    // - Entry face (from predecessor): [V0, V1, V2] = local indices [0, 1, 2]
+    // - Current "apex" in chain sense: V3
+    // - Predecessor apex: 2 × centroid(V0, V1, V2) - V3
+    //
+    // See Tetrahelix.md "TRUE BACKWARD GENERATION" section for full derivation.
+    // ========================================================================
 
-      // First tetrahedron in - direction (extends from opposite face)
-      const firstMinusApex = minusFaceCentroid.clone()
-        .add(minusFaceNormal.multiplyScalar(apexDistance));
-      const firstMinusApexIndex = allVertices.length;
-      allVertices.push(firstMinusApex);
+    // Helper: Generate backward chain using reflection
+    const generateBackwardChain = (startVerts, startIndices, numTets) => {
+      const chainTets = [];
+      let currentVerts = [...startVerts]; // [v0, v1, v2, apex]
+      let currentIndices = [...startIndices];
 
-      const firstMinusTetIndices = [...oppositeFaceIndices, firstMinusApexIndex];
-      tetrahedra.push(firstMinusTetIndices);
+      for (let i = 0; i < numTets; i++) {
+        // Entry face is [v0, v1, v2] at local indices [0, 1, 2]
+        const v0 = currentVerts[0];
+        const v1 = currentVerts[1];
+        const v2 = currentVerts[2];
+        const apex = currentVerts[3];
 
-      // Continue - chain if more tetrahedra needed
-      if (minusCount > 1) {
-        generateForwardChain(
-          [minusFv0, minusFv1, minusFv2, firstMinusApex],
-          firstMinusTetIndices,
-          minusCount - 1,
-          chainExitFaceLocalIdx
+        // Calculate entry face centroid
+        const entryCentroid = calculateCentroid(v0, v1, v2);
+
+        // REFLECTION: predecessor apex = 2 × entryCentroid - apex
+        const predApex = new THREE.Vector3(
+          2 * entryCentroid.x - apex.x,
+          2 * entryCentroid.y - apex.y,
+          2 * entryCentroid.z - apex.z
         );
+
+        const predApexIndex = allVertices.length;
+        allVertices.push(predApex);
+
+        // Predecessor tet: [predApex, v0, v1, v2]
+        // This ordering makes [predApex, v0, v1] the new entry face
+        const predTetIndices = [predApexIndex, currentIndices[0], currentIndices[1], currentIndices[2]];
+        tetrahedra.push(predTetIndices);
+        chainTets.push(predTetIndices);
+
+        // Update for next iteration
+        // Predecessor's entry face: [predApex, v0, v1] = local [0, 1, 2]
+        // Predecessor's apex: v2 = local [3]
+        currentVerts = [predApex, v0, v1, v2];
+        currentIndices = predTetIndices;
       }
+
+      return chainTets;
+    };
+
+    if (minusCount > 0) {
+      // For backward generation, the seed's local chain ordering is [V0, V1, V2, V3]
+      // where startFace = [V1, V2, V3] is the exit face (to + direction)
+      // The entry face (from predecessor) is [V0, V1, V2]
+      //
+      // startFace indices are [1, 2, 3] for face A, so:
+      // - V0 is vertex 0 (the one NOT in startFace)
+      // - Entry face [V0, V1, V2] = [0, startFace[0], startFace[1]] = [0, 1, 2]
+      //
+      // The "apex" in chain context is V3 = startFace[2]
+
+      // Determine which vertex is NOT in startFace (that's the "local v0")
+      const allVertIndices = [0, 1, 2, 3];
+      const notInStartFace = allVertIndices.find(i => !startFaceVertIndices.includes(i));
+
+      // Seed's chain-local ordering: [notInStartFace, startFace[0], startFace[1], startFace[2]]
+      const seedLocalOrdering = [notInStartFace, startFaceVertIndices[0], startFaceVertIndices[1], startFaceVertIndices[2]];
+      const seedLocalVerts = seedLocalOrdering.map(i => allVertices[i]);
+
+      // Generate backward chain from seed
+      generateBackwardChain(seedLocalVerts, seedLocalOrdering, minusCount);
     }
 
     // ========================================================================
