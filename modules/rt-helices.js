@@ -544,24 +544,20 @@ export const Helices = {
 
     const seedCentroid = getTetraCentroid(allVertices);
 
-    // For + direction: use face opposite axis vertex (perpendicular to axis)
-    // For - direction: use a face containing the axis vertex
+    // ENTRANCE INSIGHT: Both + and - use the SAME starting face
+    // (the face opposite the axis vertex). The difference is:
     //
-    // Faces containing each vertex:
-    //   V0 in: B[0,3,2], C[0,1,3], D[0,2,1]
-    //   V1 in: A[1,2,3], C[0,1,3], D[0,2,1]
-    //   V2 in: A[1,2,3], B[0,3,2], D[0,2,1]
-    //   V3 in: A[1,2,3], B[0,3,2], C[0,1,3]
-    const MINUS_FACE = {
-      A: [0, 3, 2], // V0 axis: use face B (contains V0)
-      B: [0, 2, 1], // V1 axis: use face D (contains V1)
-      C: [1, 2, 3], // V2 axis: use face A (contains V2)
-      D: [0, 1, 3], // V3 axis: use face C (contains V3)
-    };
-
-    const startFaceVertIndices = direction === "+"
-      ? seedFaceIndices
-      : MINUS_FACE[startFace];
+    // + direction: First apex placed OUTWARD from face (away from seed center)
+    //              Chain extends away from axis vertex
+    //
+    // - direction: First apex placed INWARD (toward axis vertex)
+    //              But since that's inside the seed, we negate the normal
+    //              so the apex is placed on the OPPOSITE side of the face
+    //              Chain extends toward axis vertex direction
+    //
+    // Both use same exit face pattern (0) for consistent linear extension.
+    // The chirality difference comes from the reversed normal direction.
+    const startFaceVertIndices = seedFaceIndices; // Same face for both directions
 
     // Get starting face vertices from seed
     const fv0 = allVertices[startFaceVertIndices[0]];
@@ -569,7 +565,13 @@ export const Helices = {
     const fv2 = allVertices[startFaceVertIndices[2]];
 
     const startFaceCentroid = calculateCentroid(fv0, fv1, fv2);
-    const startFaceNormal = calculateFaceNormal(fv0, fv1, fv2, seedCentroid);
+    let startFaceNormal = calculateFaceNormal(fv0, fv1, fv2, seedCentroid);
+
+    // For - direction: negate the normal so apex is placed on opposite side
+    // This makes the chain extend in the opposite direction along the axis
+    if (direction === "-") {
+      startFaceNormal.negate();
+    }
 
     // First chain tetrahedron (bonded to seed)
     const firstChainApex = startFaceCentroid.clone()
@@ -580,10 +582,9 @@ export const Helices = {
     const firstChainTetIndices = [...startFaceVertIndices, firstChainApexIndex];
     tetrahedra.push(firstChainTetIndices);
 
-    // FIXED exit face pattern (like tetrahelix3)
-    // Exit face 0 = RH chirality, Exit face 2 = LH chirality
-    // Use opposite chiralities for + and - to create mirror-image spirals
-    const chainExitFaceLocalIdx = direction === "+" ? 0 : 2;
+    // FIXED exit face pattern - SAME for both directions for linear extension
+    // The direction difference comes from the negated normal above
+    const chainExitFaceLocalIdx = 0; // Both use exit face 0
 
     let currentVerts = [fv0, fv1, fv2, firstChainApex];
     let currentIndices = firstChainTetIndices;
