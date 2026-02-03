@@ -263,20 +263,25 @@ export const RTFileHandler = {
       ),
       coneShowFaces:
         document.getElementById("coneShowFaces")?.checked !== false,
-      // Tetrahelix 1 parameters (toroidal, left-handed)
+      // Tetrahelix 1 parameters (toroidal, left-handed) - uses Quadray axis notation
       tetrahelix1Count: parseInt(
         document.getElementById("tetrahelix1CountSlider")?.value || "10"
       ),
-      tetrahelix1StartFace:
-        document.querySelector('input[name="tetrahelix1StartFace"]:checked')
-          ?.value || "A",
-      // Tetrahelix 2 parameters (linear with multi-strand)
+      tetrahelix1Axis:
+        document.querySelector('input[name="tetrahelix1Axis"]:checked')
+          ?.value || "QW",
+      // Tetrahelix 2 parameters (linear with multi-strand) - uses Quadray axis notation
       tetrahelix2Count: parseInt(
         document.getElementById("tetrahelix2CountSlider")?.value || "10"
       ),
-      tetrahelix2StartFace:
-        document.querySelector('input[name="tetrahelix2StartFace"]:checked')
-          ?.value || "A",
+      tetrahelix2Axis:
+        document.querySelector('input[name="tetrahelix2Axis"]:checked')
+          ?.value || "QW",
+      // Javelin model: independent + and - direction checkboxes
+      tetrahelix2DirPlus:
+        document.getElementById("tetrahelix2DirPlus")?.checked ?? true,
+      tetrahelix2DirMinus:
+        document.getElementById("tetrahelix2DirMinus")?.checked ?? false,
       tetrahelix2Strands: parseInt(
         document.querySelector('input[name="tetrahelix2Strands"]:checked')
           ?.value || "1"
@@ -284,23 +289,44 @@ export const RTFileHandler = {
       tetrahelix2BondMode:
         document.querySelector('input[name="tetrahelix2BondMode"]:checked')
           ?.value || "zipped",
-      // Per-strand exit face selection
-      tetrahelix2ExitA: parseInt(
-        document.querySelector('input[name="tetrahelix2ExitA"]:checked')
+      // Per-strand exit face selection (Quadray axis names)
+      tetrahelix2ExitQW: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitQW"]:checked')
           ?.value || "0"
       ),
-      tetrahelix2ExitB: parseInt(
-        document.querySelector('input[name="tetrahelix2ExitB"]:checked')
+      tetrahelix2ExitQX: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitQX"]:checked')
           ?.value || "0"
       ),
-      tetrahelix2ExitC: parseInt(
-        document.querySelector('input[name="tetrahelix2ExitC"]:checked')
+      tetrahelix2ExitQY: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitQY"]:checked')
           ?.value || "0"
       ),
-      tetrahelix2ExitD: parseInt(
-        document.querySelector('input[name="tetrahelix2ExitD"]:checked')
+      tetrahelix2ExitQZ: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitQZ"]:checked')
           ?.value || "0"
       ),
+      // Tetrahelix 3 parameters (octahedral seed) - individual strand checkboxes
+      tetrahelix3Count: parseInt(
+        document.getElementById("tetrahelix3CountSlider")?.value || "10"
+      ),
+      tetrahelix3StrandA: document.getElementById("tetrahelix3StrandA")?.checked || false,
+      tetrahelix3StrandB: document.getElementById("tetrahelix3StrandB")?.checked || false,
+      tetrahelix3StrandC: document.getElementById("tetrahelix3StrandC")?.checked || false,
+      tetrahelix3StrandD: document.getElementById("tetrahelix3StrandD")?.checked || false,
+      tetrahelix3StrandE: document.getElementById("tetrahelix3StrandE")?.checked || false,
+      tetrahelix3StrandF: document.getElementById("tetrahelix3StrandF")?.checked || false,
+      tetrahelix3StrandG: document.getElementById("tetrahelix3StrandG")?.checked || false,
+      tetrahelix3StrandH: document.getElementById("tetrahelix3StrandH")?.checked || false,
+      // Tetrahelix 3 chirality (checked = RH, unchecked = LH)
+      tetrahelix3ChiralA: document.getElementById("tetrahelix3ChiralA")?.checked !== false,
+      tetrahelix3ChiralB: document.getElementById("tetrahelix3ChiralB")?.checked !== false,
+      tetrahelix3ChiralC: document.getElementById("tetrahelix3ChiralC")?.checked !== false,
+      tetrahelix3ChiralD: document.getElementById("tetrahelix3ChiralD")?.checked !== false,
+      tetrahelix3ChiralE: document.getElementById("tetrahelix3ChiralE")?.checked !== false,
+      tetrahelix3ChiralF: document.getElementById("tetrahelix3ChiralF")?.checked !== false,
+      tetrahelix3ChiralG: document.getElementById("tetrahelix3ChiralG")?.checked !== false,
+      tetrahelix3ChiralH: document.getElementById("tetrahelix3ChiralH")?.checked !== false,
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -650,31 +676,48 @@ export const RTFileHandler = {
           const el = document.getElementById("coneShowFaces");
           if (el) el.checked = sliders.coneShowFaces;
         }
-        // Tetrahelix 1 parameters
+        // Tetrahelix 1 parameters - uses Quadray axis notation
         if (sliders.tetrahelix1Count !== undefined) {
           const slider = document.getElementById("tetrahelix1CountSlider");
           const display = document.getElementById("tetrahelix1CountDisplay");
           if (slider) slider.value = sliders.tetrahelix1Count;
           if (display) display.textContent = sliders.tetrahelix1Count;
         }
-        if (sliders.tetrahelix1StartFace !== undefined) {
+        if (sliders.tetrahelix1Axis !== undefined) {
           const radio = document.querySelector(
-            `input[name="tetrahelix1StartFace"][value="${sliders.tetrahelix1StartFace}"]`
+            `input[name="tetrahelix1Axis"][value="${sliders.tetrahelix1Axis}"]`
           );
           if (radio) radio.checked = true;
         }
-        // Tetrahelix 2 parameters
+        // Tetrahelix 2 parameters - uses Quadray axis notation
         if (sliders.tetrahelix2Count !== undefined) {
           const slider = document.getElementById("tetrahelix2CountSlider");
           const display = document.getElementById("tetrahelix2CountDisplay");
           if (slider) slider.value = sliders.tetrahelix2Count;
           if (display) display.textContent = sliders.tetrahelix2Count;
         }
-        if (sliders.tetrahelix2StartFace !== undefined) {
+        if (sliders.tetrahelix2Axis !== undefined) {
           const radio = document.querySelector(
-            `input[name="tetrahelix2StartFace"][value="${sliders.tetrahelix2StartFace}"]`
+            `input[name="tetrahelix2Axis"][value="${sliders.tetrahelix2Axis}"]`
           );
           if (radio) radio.checked = true;
+        }
+        // Javelin model: independent + and - direction checkboxes
+        if (sliders.tetrahelix2DirPlus !== undefined) {
+          const checkbox = document.getElementById("tetrahelix2DirPlus");
+          if (checkbox) checkbox.checked = sliders.tetrahelix2DirPlus;
+        }
+        if (sliders.tetrahelix2DirMinus !== undefined) {
+          const checkbox = document.getElementById("tetrahelix2DirMinus");
+          if (checkbox) checkbox.checked = sliders.tetrahelix2DirMinus;
+        }
+        // Legacy: handle old tetrahelix2Direction radio format during import
+        if (sliders.tetrahelix2Direction !== undefined &&
+            sliders.tetrahelix2DirPlus === undefined) {
+          const plusCheckbox = document.getElementById("tetrahelix2DirPlus");
+          const minusCheckbox = document.getElementById("tetrahelix2DirMinus");
+          if (plusCheckbox) plusCheckbox.checked = sliders.tetrahelix2Direction === "+";
+          if (minusCheckbox) minusCheckbox.checked = sliders.tetrahelix2Direction === "-";
         }
         if (sliders.tetrahelix2Strands !== undefined) {
           const radio = document.querySelector(
@@ -688,30 +731,53 @@ export const RTFileHandler = {
           );
           if (radio) radio.checked = true;
         }
-        // Per-strand exit face selection
-        if (sliders.tetrahelix2ExitA !== undefined) {
+        // Per-strand exit face selection (Quadray axis names)
+        if (sliders.tetrahelix2ExitQW !== undefined) {
           const radio = document.querySelector(
-            `input[name="tetrahelix2ExitA"][value="${sliders.tetrahelix2ExitA}"]`
+            `input[name="tetrahelix2ExitQW"][value="${sliders.tetrahelix2ExitQW}"]`
           );
           if (radio) radio.checked = true;
         }
-        if (sliders.tetrahelix2ExitB !== undefined) {
+        if (sliders.tetrahelix2ExitQX !== undefined) {
           const radio = document.querySelector(
-            `input[name="tetrahelix2ExitB"][value="${sliders.tetrahelix2ExitB}"]`
+            `input[name="tetrahelix2ExitQX"][value="${sliders.tetrahelix2ExitQX}"]`
           );
           if (radio) radio.checked = true;
         }
-        if (sliders.tetrahelix2ExitC !== undefined) {
+        if (sliders.tetrahelix2ExitQY !== undefined) {
           const radio = document.querySelector(
-            `input[name="tetrahelix2ExitC"][value="${sliders.tetrahelix2ExitC}"]`
+            `input[name="tetrahelix2ExitQY"][value="${sliders.tetrahelix2ExitQY}"]`
           );
           if (radio) radio.checked = true;
         }
-        if (sliders.tetrahelix2ExitD !== undefined) {
+        if (sliders.tetrahelix2ExitQZ !== undefined) {
           const radio = document.querySelector(
-            `input[name="tetrahelix2ExitD"][value="${sliders.tetrahelix2ExitD}"]`
+            `input[name="tetrahelix2ExitQZ"][value="${sliders.tetrahelix2ExitQZ}"]`
           );
           if (radio) radio.checked = true;
+        }
+        // Tetrahelix 3 parameters (count slider + strand checkboxes A-H)
+        if (sliders.tetrahelix3Count !== undefined) {
+          const slider = document.getElementById("tetrahelix3CountSlider");
+          const display = document.getElementById("tetrahelix3CountDisplay");
+          if (slider) slider.value = sliders.tetrahelix3Count;
+          if (display) display.textContent = sliders.tetrahelix3Count;
+        }
+        // Restore individual strand checkboxes and chirality checkboxes
+        const strandLabels = ["A", "B", "C", "D", "E", "F", "G", "H"];
+        for (const label of strandLabels) {
+          // Strand enabled checkbox
+          const strandKey = `tetrahelix3Strand${label}`;
+          if (sliders[strandKey] !== undefined) {
+            const checkbox = document.getElementById(strandKey);
+            if (checkbox) checkbox.checked = sliders[strandKey];
+          }
+          // Chirality checkbox
+          const chiralKey = `tetrahelix3Chiral${label}`;
+          if (sliders[chiralKey] !== undefined) {
+            const checkbox = document.getElementById(chiralKey);
+            if (checkbox) checkbox.checked = sliders[chiralKey];
+          }
         }
         // Planar matrix size sliders
         if (sliders.cubeMatrixSizeSlider !== undefined) {
@@ -870,6 +936,14 @@ export const RTFileHandler = {
         );
         if (tetrahelix2Controls && checkboxes.showTetrahelix2) {
           tetrahelix2Controls.style.display = "block";
+        }
+
+        // Show/hide Tetrahelix 3 controls based on checkbox state
+        const tetrahelix3Controls = document.getElementById(
+          "tetrahelix3-controls"
+        );
+        if (tetrahelix3Controls && checkboxes.showTetrahelix3) {
+          tetrahelix3Controls.style.display = "block";
         }
 
         // Trigger updateGeometry to render the restored forms

@@ -7,7 +7,8 @@
  *
  * Variants:
  * - tetrahelix1: Toroidal (left-handed, max 48, approaches torus closure)
- * - tetrahelix2: Linear (stub - for experimentation with non-toroidal extension)
+ * - tetrahelix2: Linear with multi-strand (tetrahedral seed)
+ * - tetrahelix3: Linear with multi-strand (octahedral seed)
  *
  * See: Geometry documents/Tetrahelix.md for specification
  *
@@ -18,6 +19,156 @@
 import { RT } from "./rt-math.js";
 
 // Access THREE.js from global scope (set by main HTML)
+
+// ============================================================================
+// SHARED HELPER FUNCTIONS
+// ============================================================================
+// These utilities are used by all tetrahelix variants for geometry calculations.
+// ============================================================================
+
+const HelixHelpers = {
+  /**
+   * Calculate centroid of a triangular face
+   * @param {THREE.Vector3} v0
+   * @param {THREE.Vector3} v1
+   * @param {THREE.Vector3} v2
+   * @returns {THREE.Vector3}
+   */
+  calculateCentroid: (v0, v1, v2) => {
+    return new THREE.Vector3(
+      (v0.x + v1.x + v2.x) / 3,
+      (v0.y + v1.y + v2.y) / 3,
+      (v0.z + v1.z + v2.z) / 3
+    );
+  },
+
+  /**
+   * Calculate outward-pointing normal for a triangular face
+   * @param {THREE.Vector3} v0
+   * @param {THREE.Vector3} v1
+   * @param {THREE.Vector3} v2
+   * @param {THREE.Vector3} solidCentroid - Centroid of the solid (to determine outward direction)
+   * @returns {THREE.Vector3}
+   */
+  calculateFaceNormal: (v0, v1, v2, solidCentroid) => {
+    const edge1 = new THREE.Vector3().subVectors(v1, v0);
+    const edge2 = new THREE.Vector3().subVectors(v2, v0);
+    const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize();
+
+    const faceCentroid = HelixHelpers.calculateCentroid(v0, v1, v2);
+    const outwardDir = new THREE.Vector3().subVectors(faceCentroid, solidCentroid);
+    if (normal.dot(outwardDir) < 0) {
+      normal.negate();
+    }
+    return normal;
+  },
+
+  /**
+   * Get centroid of a tetrahedron from 4 vertices (Vector3 array)
+   * @param {THREE.Vector3[]} verts - Array of 4 vertices
+   * @returns {THREE.Vector3}
+   */
+  getTetraCentroid: verts => {
+    return new THREE.Vector3(
+      (verts[0].x + verts[1].x + verts[2].x + verts[3].x) / 4,
+      (verts[0].y + verts[1].y + verts[2].y + verts[3].y) / 4,
+      (verts[0].z + verts[1].z + verts[2].z + verts[3].z) / 4
+    );
+  },
+
+  /**
+   * Get centroid of an octahedron from 6 vertices (Vector3 array)
+   * @param {THREE.Vector3[]} verts - Array of 6 vertices
+   * @returns {THREE.Vector3}
+   */
+  getOctaCentroid: verts => {
+    return new THREE.Vector3(
+      (verts[0].x + verts[1].x + verts[2].x + verts[3].x + verts[4].x + verts[5].x) / 6,
+      (verts[0].y + verts[1].y + verts[2].y + verts[3].y + verts[4].y + verts[5].y) / 6,
+      (verts[0].z + verts[1].z + verts[2].z + verts[3].z + verts[4].z + verts[5].z) / 6
+    );
+  },
+
+  /**
+   * Build deduplicated edge list from tetrahedra array
+   * @param {number[][]} tetrahedra - Array of 4-vertex-index arrays
+   * @returns {number[][]} Array of [v1, v2] edge pairs
+   */
+  buildEdges: tetrahedra => {
+    const edgeSet = new Set();
+    const addEdge = (a, b) => {
+      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+      edgeSet.add(key);
+    };
+
+    tetrahedra.forEach(tet => {
+      addEdge(tet[0], tet[1]);
+      addEdge(tet[0], tet[2]);
+      addEdge(tet[0], tet[3]);
+      addEdge(tet[1], tet[2]);
+      addEdge(tet[1], tet[3]);
+      addEdge(tet[2], tet[3]);
+    });
+
+    return Array.from(edgeSet).map(key => {
+      const [a, b] = key.split("-").map(Number);
+      return [a, b];
+    });
+  },
+
+  /**
+   * Build face list from tetrahedra with correct winding (outward normals)
+   * @param {number[][]} tetrahedra - Array of 4-vertex-index arrays
+   * @param {THREE.Vector3[]} allVertices - All vertices
+   * @returns {number[][]} Array of [v0, v1, v2] face triples
+   */
+  buildFaces: (tetrahedra, allVertices) => {
+    const allFaces = [];
+
+    tetrahedra.forEach(tet => {
+      const faces = [
+        [tet[1], tet[2], tet[3]],
+        [tet[0], tet[2], tet[3]],
+        [tet[0], tet[1], tet[3]],
+        [tet[0], tet[1], tet[2]],
+      ];
+
+      const tetVerts = tet.map(idx => allVertices[idx]);
+      const tetraCentroid = HelixHelpers.getTetraCentroid(tetVerts);
+
+      faces.forEach(face => {
+        const v0 = allVertices[face[0]];
+        const v1 = allVertices[face[1]];
+        const v2 = allVertices[face[2]];
+        const faceCentroid = HelixHelpers.calculateCentroid(v0, v1, v2);
+        const edge1 = new THREE.Vector3().subVectors(v1, v0);
+        const edge2 = new THREE.Vector3().subVectors(v2, v0);
+        const normal = new THREE.Vector3().crossVectors(edge1, edge2);
+        const outwardDir = new THREE.Vector3().subVectors(faceCentroid, tetraCentroid);
+
+        if (normal.dot(outwardDir) < 0) {
+          const tmp = face[1];
+          face[1] = face[2];
+          face[2] = tmp;
+        }
+
+        allFaces.push(face);
+      });
+    });
+
+    return allFaces;
+  },
+
+  /**
+   * Calculate apex distance from edge quadrance
+   * For regular tetrahedron: Q_apex = (2/3) * Q_edge
+   * @param {number} edgeQ - Edge quadrance
+   * @returns {number} Distance from face centroid to apex
+   */
+  apexDistanceFromQ: edgeQ => {
+    return Math.sqrt((2 / 3) * edgeQ);
+  },
+};
 
 /**
  * Helices generator functions
@@ -270,7 +421,7 @@ export const Helices = {
    *
    * @param {number} halfSize - Half-size of base tetrahedron
    * @param {Object} options
-   * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 96)
+   * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 145)
    * @param {string} options.startFace - Initial face: 'A', 'B', 'C', or 'D' (default: 'A')
    * @param {number} options.strands - Number of parallel strands: 1-4 (default: 1)
    * @param {string} options.bondMode - 'zipped' (radial spines) or 'unzipped' (parallel chains)
@@ -278,28 +429,62 @@ export const Helices = {
    * @returns {Object} { vertices, edges, faces, metadata }
    */
   tetrahelix2: (halfSize = 1, options = {}) => {
-    const count = Math.min(Math.max(options.count || 10, 1), 96);
+    const count = Math.min(Math.max(options.count || 10, 1), 145);
     const startFace = options.startFace || "A";
+    // Direction flags for javelin model - both default to true for full javelin
+    const dirPlus = options.dirPlus !== undefined ? options.dirPlus : true;
+    const dirMinus = options.dirMinus !== undefined ? options.dirMinus : true;
     const strands = Math.min(Math.max(options.strands || 1, 1), 4);
     const bondMode = options.bondMode || "zipped";
-    // Per-strand exit face selection (0, 1, or 2 - face 3 is always entry)
     const exitFaces = options.exitFaces || { A: 0, B: 0, C: 0, D: 0 };
 
-    // Generate seed tetrahedron
+    // ========================================================================
+    // DUAL TETRAHEDRON SEED MODEL
+    // ========================================================================
+    // Use dual tetrahedron at origin as the "hub" from which tetrahelix
+    // chains grow in both + and - directions.
+    //
+    // Dual tetrahedron vertices point along Quadray axes:
+    //   V0: (+s, +s, +s)  → QX axis (Red/A)
+    //   V1: (+s, -s, -s)  → QZ axis (Green/B)
+    //   V2: (-s, +s, -s)  → QY axis (Blue/C)
+    //   V3: (-s, -s, +s)  → QW axis (Yellow/D)
+    //
+    // Each face is opposite one vertex, perpendicular to that axis.
+    // ========================================================================
+
     const s = halfSize;
+
+    // Dual tetrahedron vertices
     const seedVertices = [
-      new THREE.Vector3(-s, -s, -s), // V0
-      new THREE.Vector3(s, s, -s), // V1
-      new THREE.Vector3(s, -s, s), // V2
-      new THREE.Vector3(-s, s, s), // V3
+      new THREE.Vector3(s, s, s),     // V0: QX direction
+      new THREE.Vector3(s, -s, -s),   // V1: QZ direction
+      new THREE.Vector3(-s, s, -s),   // V2: QY direction
+      new THREE.Vector3(-s, -s, s),   // V3: QW direction
     ];
 
-    const allVertices = [...seedVertices];
-    const tetrahedra = [[0, 1, 2, 3]];
+    // Face definitions (CCW winding, outward normals)
+    // Each face is opposite one vertex
+    const SEED_FACES = {
+      A: [1, 2, 3], // Opposite V0 (QX)
+      B: [0, 3, 2], // Opposite V1 (QZ)
+      C: [0, 1, 3], // Opposite V2 (QY)
+      D: [0, 2, 1], // Opposite V3 (QW)
+    };
 
-    const expectedQ = 8 * halfSize * halfSize;
-    const apexDistanceQ = (2 / 3) * expectedQ;
-    const apexDistance = Math.sqrt(apexDistanceQ);
+    // Map startFace to seed face indices
+    const seedFaceIndices = SEED_FACES[startFace] || SEED_FACES.A;
+
+    // Edge length and expected quadrance (dual tet edge = 2√2·s)
+    const edgeLength = 2 * Math.sqrt(2) * halfSize;
+    const expectedQ = edgeLength * edgeLength;
+
+    // Apex distance for chain generation: h = L × √(2/3)
+    const apexDistance = edgeLength * Math.sqrt(2 / 3);
+
+    // Initialize with seed tetrahedron
+    const allVertices = seedVertices.map(v => v.clone());
+    const tetrahedra = [[0, 1, 2, 3]]; // Seed tetrahedron
 
     const calculateCentroid = (v0, v1, v2) => {
       return new THREE.Vector3(
@@ -345,44 +530,207 @@ export const Helices = {
       );
     };
 
-    const FACE_LABEL_TO_INDEX = { A: 0, B: 1, C: 2, D: 3 };
+    // ========================================================================
+    // IN-PLACE JAVELIN MODEL (Bi-directional from Center)
+    // ========================================================================
+    // Generate the center tetrahedron at origin, then spiral outward in both
+    // + and - directions simultaneously. This eliminates the visual jumping
+    // that occurs with the "generate-then-shift" approach.
+    //
+    // Key insight: Both directions use the SAME spiral chirality (same exit
+    // face pattern). The - direction calculates "predecessors" by working
+    // backwards from the center tetrahedron.
+    //
+    // For count=N tetrahedra total:
+    // - Plus direction: floor(N/2) tetrahedra extending in + direction
+    // - Minus direction: ceil(N/2) tetrahedra extending in - direction
+    // - The center tetrahedron is shared (counted once)
+    // ========================================================================
 
-    let currentVerts = [...seedVertices];
-    let currentIndices = [0, 1, 2, 3];
-    let exitFaceLocalIdx = FACE_LABEL_TO_INDEX[startFace] ?? 0;
+    // Helper: Generate chain in + direction (forward - apex calculation)
+    const generateForwardChain = (startVerts, startIndices, numTets, exitFaceIdx) => {
+      const chainTets = [];
+      let currentVerts = [...startVerts];
+      let currentIndices = [...startIndices];
 
-    // Generate chain - LINEAR pattern
-    // Always exit through face 0 to create zigzag linear extension
-    for (let i = 1; i < count; i++) {
-      const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFaceLocalIdx);
+      for (let i = 0; i < numTets; i++) {
+        // Face 3 is always entry face (shared with previous tet)
+        // Exit through face 0, 1, or 2 based on exit face pattern
+        const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== 3);
+        const exitFace = faceLocalIndices[exitFaceIdx % 3];
+        const nextFaceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFace);
 
-      const fv0 = currentVerts[faceLocalIndices[0]];
-      const fv1 = currentVerts[faceLocalIndices[1]];
-      const fv2 = currentVerts[faceLocalIndices[2]];
+        const nfv0 = currentVerts[nextFaceLocalIndices[0]];
+        const nfv1 = currentVerts[nextFaceLocalIndices[1]];
+        const nfv2 = currentVerts[nextFaceLocalIndices[2]];
 
-      const tetraCentroid = getTetraCentroid(currentVerts);
-      const faceCentroid = calculateCentroid(fv0, fv1, fv2);
-      const faceNormal = calculateFaceNormal(fv0, fv1, fv2, tetraCentroid);
+        const tetCentroid = getTetraCentroid(currentVerts);
+        const nextFaceCentroid = calculateCentroid(nfv0, nfv1, nfv2);
+        const nextFaceNormal = calculateFaceNormal(nfv0, nfv1, nfv2, tetCentroid);
 
-      const newApex = faceCentroid
-        .clone()
-        .add(faceNormal.multiplyScalar(apexDistance));
-      const newApexIndex = allVertices.length;
-      allVertices.push(newApex);
+        const newApex = nextFaceCentroid.clone()
+          .add(nextFaceNormal.multiplyScalar(apexDistance));
+        const newApexIndex = allVertices.length;
+        allVertices.push(newApex);
 
-      const sharedGlobalIndices = faceLocalIndices.map(
-        li => currentIndices[li]
-      );
+        const sharedGlobalIndices = nextFaceLocalIndices.map(
+          li => currentIndices[li]
+        );
 
-      const newTetIndices = [...sharedGlobalIndices, newApexIndex];
-      tetrahedra.push(newTetIndices);
+        const newTetIndices = [...sharedGlobalIndices, newApexIndex];
+        tetrahedra.push(newTetIndices);
+        chainTets.push(newTetIndices);
 
-      currentVerts = [fv0, fv1, fv2, newApex];
-      currentIndices = newTetIndices;
+        currentVerts = [nfv0, nfv1, nfv2, newApex];
+        currentIndices = newTetIndices;
+      }
 
-      // Use the configured exit face for the primary strand (A)
-      // Face 3 is entry (shared), so we pick from faces 0, 1, 2
-      exitFaceLocalIdx = exitFaces.A ?? 0;
+      return chainTets;
+    };
+
+    // FIXED exit face pattern for linear extension
+    const chainExitFaceLocalIdx = 0;
+
+    // Calculate how many tetrahedra in each direction
+    // count is the number of tetrahedra in each arm (not including center)
+    // So total tetrahedra = 2*count + 1 (center + count on each side)
+    // But we want total tetrahedra to match count, so:
+    // - plusCount = floor((count-1)/2)
+    // - minusCount = ceil((count-1)/2)
+    // This gives count total tetrahedra with center at origin
+    const plusCount = Math.floor((count - 1) / 2);
+    const minusCount = Math.ceil((count - 1) / 2);
+
+    // ========================================================================
+    // STEP 1: Position seed tetrahedron at origin
+    // ========================================================================
+    // The seed is already at origin (vertices at ±s). We use the seed as the
+    // center tetrahedron of our javelin.
+
+    const seedCentroid = getTetraCentroid(allVertices);
+    const startFaceVertIndices = [...seedFaceIndices];
+
+    // Get the + direction face (startFace) for forward chain
+    const plusFv0 = allVertices[startFaceVertIndices[0]];
+    const plusFv1 = allVertices[startFaceVertIndices[1]];
+    const plusFv2 = allVertices[startFaceVertIndices[2]];
+
+    // ========================================================================
+    // STEP 2: Generate + direction chain (forward from seed)
+    // ========================================================================
+    // The + direction exits through startFace (e.g., face A = [1,2,3])
+    // Each new tetrahedron shares this face with the previous one
+    if (dirPlus && plusCount > 0) {
+      const plusFaceCentroid = calculateCentroid(plusFv0, plusFv1, plusFv2);
+      const plusFaceNormal = calculateFaceNormal(plusFv0, plusFv1, plusFv2, seedCentroid);
+
+      // First tetrahedron in + direction
+      const firstPlusApex = plusFaceCentroid.clone()
+        .add(plusFaceNormal.multiplyScalar(apexDistance));
+      const firstPlusApexIndex = allVertices.length;
+      allVertices.push(firstPlusApex);
+
+      const firstPlusTetIndices = [...startFaceVertIndices, firstPlusApexIndex];
+      tetrahedra.push(firstPlusTetIndices);
+
+      // Continue + chain if more tetrahedra needed
+      if (plusCount > 1) {
+        generateForwardChain(
+          [plusFv0, plusFv1, plusFv2, firstPlusApex],
+          firstPlusTetIndices,
+          plusCount - 1,
+          chainExitFaceLocalIdx
+        );
+      }
+    }
+
+    // ========================================================================
+    // STEP 3: Generate - direction chain (REFLECTION-BASED BACKWARD GENERATION)
+    // ========================================================================
+    // Mathematical insight: The predecessor tetrahedron can be found by
+    // REFLECTING the apex through the entry face centroid.
+    //
+    // In forward generation:
+    //   newApex = faceCentroid + outwardNormal × apexDistance
+    //
+    // The predecessor's unique vertex is at:
+    //   predApex = faceCentroid - outwardNormal × apexDistance
+    //            = 2 × faceCentroid - currentApex  (reflection formula)
+    //
+    // This is the exact mathematical inverse of the forward step!
+    //
+    // For the seed tetrahedron [0, 1, 2, 3] with exit through startFace:
+    // - Seed's local chain ordering: [V0, V1, V2, V3] where exit [V1,V2,V3] = startFace
+    // - Entry face (from predecessor): [V0, V1, V2] = local indices [0, 1, 2]
+    // - Current "apex" in chain sense: V3
+    // - Predecessor apex: 2 × centroid(V0, V1, V2) - V3
+    //
+    // See Tetrahelix.md "TRUE BACKWARD GENERATION" section for full derivation.
+    // ========================================================================
+
+    // Helper: Generate backward chain using reflection
+    const generateBackwardChain = (startVerts, startIndices, numTets) => {
+      const chainTets = [];
+      let currentVerts = [...startVerts]; // [v0, v1, v2, apex]
+      let currentIndices = [...startIndices];
+
+      for (let i = 0; i < numTets; i++) {
+        // Entry face is [v0, v1, v2] at local indices [0, 1, 2]
+        const v0 = currentVerts[0];
+        const v1 = currentVerts[1];
+        const v2 = currentVerts[2];
+        const apex = currentVerts[3];
+
+        // Calculate entry face centroid
+        const entryCentroid = calculateCentroid(v0, v1, v2);
+
+        // REFLECTION: predecessor apex = 2 × entryCentroid - apex
+        const predApex = new THREE.Vector3(
+          2 * entryCentroid.x - apex.x,
+          2 * entryCentroid.y - apex.y,
+          2 * entryCentroid.z - apex.z
+        );
+
+        const predApexIndex = allVertices.length;
+        allVertices.push(predApex);
+
+        // Predecessor tet: [predApex, v0, v1, v2]
+        // This ordering makes [predApex, v0, v1] the new entry face
+        const predTetIndices = [predApexIndex, currentIndices[0], currentIndices[1], currentIndices[2]];
+        tetrahedra.push(predTetIndices);
+        chainTets.push(predTetIndices);
+
+        // Update for next iteration
+        // Predecessor's entry face: [predApex, v0, v1] = local [0, 1, 2]
+        // Predecessor's apex: v2 = local [3]
+        currentVerts = [predApex, v0, v1, v2];
+        currentIndices = predTetIndices;
+      }
+
+      return chainTets;
+    };
+
+    if (dirMinus && minusCount > 0) {
+      // For backward generation, the seed's local chain ordering is [V0, V1, V2, V3]
+      // where startFace = [V1, V2, V3] is the exit face (to + direction)
+      // The entry face (from predecessor) is [V0, V1, V2]
+      //
+      // startFace indices are [1, 2, 3] for face A, so:
+      // - V0 is vertex 0 (the one NOT in startFace)
+      // - Entry face [V0, V1, V2] = [0, startFace[0], startFace[1]] = [0, 1, 2]
+      //
+      // The "apex" in chain context is V3 = startFace[2]
+
+      // Determine which vertex is NOT in startFace (that's the "local v0")
+      const allVertIndices = [0, 1, 2, 3];
+      const notInStartFace = allVertIndices.find(i => !startFaceVertIndices.includes(i));
+
+      // Seed's chain-local ordering: [notInStartFace, startFace[0], startFace[1], startFace[2]]
+      const seedLocalOrdering = [notInStartFace, startFaceVertIndices[0], startFaceVertIndices[1], startFaceVertIndices[2]];
+      const seedLocalVerts = seedLocalOrdering.map(i => allVertices[i]);
+
+      // Generate backward chain from seed
+      generateBackwardChain(seedLocalVerts, seedLocalOrdering, minusCount);
     }
 
     // ========================================================================
@@ -578,15 +926,16 @@ export const Helices = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron();
 
-    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, strands=${strands}, bondMode=${bondMode}, halfSize=${halfSize}`);
+    const directionLabel = (dirPlus ? "+" : "") + (dirMinus ? "-" : "") || "none";
+    console.log(`[RT] Tetrahelix2 (Linear): count=${count}, strands=${strands}, bondMode=${bondMode}, directions=${directionLabel}, halfSize=${halfSize}`);
     console.log(
       `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
     );
     console.log(
       `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
     );
-    console.log(`  Pattern: Always exit face 0 (linear zigzag)`);
-    console.log(`  Start face: ${startFace}, Strands: ${strands}, Mode: ${bondMode}`);
+    console.log(`  Pattern: Javelin (axis-aligned exit face selection)`);
+    console.log(`  Start face: ${startFace}, Directions: ${directionLabel}, Strands: ${strands}, Mode: ${bondMode}`);
     console.log(`  Total tetrahedra: ${tetrahedra.length}`);
 
     return {
@@ -598,6 +947,8 @@ export const Helices = {
         variant: "tetrahelix2",
         count,
         startFace,
+        dirPlus,
+        dirMinus,
         strands,
         bondMode,
         tetrahedra: tetrahedra.length,
@@ -623,4 +974,176 @@ export const Helices = {
   //   exitFaceLocalIdx = (exitFaceLocalIdx + 1) % 3;
   // }
   // ========================================================================
+
+  /**
+   * Tetrahelix 3: Linear variant with octahedral seed
+   *
+   * Starts from an octahedron instead of a tetrahedron. The octahedron has
+   * 8 triangular faces (A-H), and each enabled strand bonds a tetrahelix
+   * chain to that face, radiating outward.
+   *
+   * @param {number} halfSize - Half-size of base octahedron
+   * @param {Object} options
+   * @param {number} options.count - Number of tetrahedra per strand (default: 10, max: 145)
+   * @param {Object} options.enabledStrands - Which faces have strands: { A: true/false, B: true/false, ... H: true/false }
+   * @param {Object} options.strandChirality - Chirality per strand: { A: true/false, ... H: true/false } (true=RH, false=LH)
+   * @returns {Object} { vertices, edges, faces, metadata }
+   */
+  tetrahelix3: (halfSize = 1, options = {}) => {
+    const count = Math.min(Math.max(options.count || 10, 1), 145);
+    // Default: only strand A enabled
+    const enabledStrands = options.enabledStrands || { A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false };
+    // Default: all strands right-handed (true = RH, false = LH)
+    const strandChirality = options.strandChirality || { A: true, B: true, C: true, D: true, E: true, F: true, G: true, H: true };
+
+    // Generate seed octahedron (6 vertices at ±s on each axis)
+    const s = halfSize;
+    const seedOctaVertices = [
+      new THREE.Vector3(s, 0, 0),   // V0: +X
+      new THREE.Vector3(-s, 0, 0),  // V1: -X
+      new THREE.Vector3(0, s, 0),   // V2: +Y
+      new THREE.Vector3(0, -s, 0),  // V3: -Y
+      new THREE.Vector3(0, 0, s),   // V4: +Z
+      new THREE.Vector3(0, 0, -s),  // V5: -Z
+    ];
+
+    // Octahedron has 8 triangular faces (each face is 3 vertices)
+    // Face labeling: A-H, arranged as 4 upper hemisphere + 4 lower hemisphere
+    // Upper hemisphere (+Y): faces sharing V2
+    // Lower hemisphere (-Y): faces sharing V3
+    const OCTA_FACES = {
+      A: [0, 2, 4],  // +X, +Y, +Z
+      B: [4, 2, 1],  // +Z, +Y, -X
+      C: [1, 2, 5],  // -X, +Y, -Z
+      D: [5, 2, 0],  // -Z, +Y, +X
+      E: [0, 4, 3],  // +X, +Z, -Y
+      F: [4, 1, 3],  // +Z, -X, -Y
+      G: [1, 5, 3],  // -X, -Z, -Y
+      H: [5, 0, 3],  // -Z, +X, -Y
+    };
+
+    const FACE_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+
+    const allVertices = [...seedOctaVertices];
+    const tetrahedra = [];
+
+    // Edge quadrance for octahedron with halfSize s: Q = 2s² (axis-aligned vertices)
+    // But tetrahedra bonded to faces will have edge Q = 2s² (octahedron edge length)
+    const octaEdgeQ = 2 * halfSize * halfSize;
+    const apexDistance = HelixHelpers.apexDistanceFromQ(octaEdgeQ);
+
+    const octaCentroid = HelixHelpers.getOctaCentroid(seedOctaVertices);
+
+    // Build list of enabled strands from the enabledStrands object
+    const activeStrands = FACE_LABELS.filter(label => enabledStrands[label]);
+
+    // Generate strands for each enabled face
+    for (const faceLabel of activeStrands) {
+      const faceVertIndices = OCTA_FACES[faceLabel];
+
+      const fv0 = seedOctaVertices[faceVertIndices[0]];
+      const fv1 = seedOctaVertices[faceVertIndices[1]];
+      const fv2 = seedOctaVertices[faceVertIndices[2]];
+
+      const faceCentroid = HelixHelpers.calculateCentroid(fv0, fv1, fv2);
+      const faceNormal = HelixHelpers.calculateFaceNormal(fv0, fv1, fv2, octaCentroid);
+
+      // First tetrahedron of this strand (bonded to octahedron face)
+      const firstApex = faceCentroid.clone().add(faceNormal.multiplyScalar(apexDistance));
+      const firstApexIndex = allVertices.length;
+      allVertices.push(firstApex);
+
+      // The first tetrahedron shares the 3 octahedron face vertices + new apex
+      const firstTetIndices = [...faceVertIndices, firstApexIndex];
+      tetrahedra.push(firstTetIndices);
+
+      // Continue the chain for (count - 1) more tetrahedra
+      let currentVerts = [fv0, fv1, fv2, firstApex];
+      let currentIndices = firstTetIndices;
+
+      // LH/RH twist controls which exit face is used for chain continuation
+      // Exit face 0 = RH twist, Exit face 2 = LH twist
+      const isRightHanded = strandChirality[faceLabel] !== false;
+      const exitFaceLocalIdx = isRightHanded ? 0 : 2;
+
+      for (let i = 1; i < count; i++) {
+        // Face 3 is always the entry face (shared with previous tet)
+        // So we exit through one of faces 0, 1, 2
+        const faceLocalIndices = [0, 1, 2, 3].filter(j => j !== 3);
+        // Select exit face from available (exclude entry face which is index 3)
+        const exitFace = faceLocalIndices[exitFaceLocalIdx % 3];
+        const nextFaceLocalIndices = [0, 1, 2, 3].filter(j => j !== exitFace);
+
+        const nfv0 = currentVerts[nextFaceLocalIndices[0]];
+        const nfv1 = currentVerts[nextFaceLocalIndices[1]];
+        const nfv2 = currentVerts[nextFaceLocalIndices[2]];
+
+        const tetraCentroid = HelixHelpers.getTetraCentroid(currentVerts);
+        const nextFaceCentroid = HelixHelpers.calculateCentroid(nfv0, nfv1, nfv2);
+        const nextFaceNormal = HelixHelpers.calculateFaceNormal(nfv0, nfv1, nfv2, tetraCentroid);
+
+        const newApex = nextFaceCentroid.clone().add(nextFaceNormal.multiplyScalar(apexDistance));
+        const newApexIndex = allVertices.length;
+        allVertices.push(newApex);
+
+        const sharedGlobalIndices = nextFaceLocalIndices.map(li => currentIndices[li]);
+        const newTetIndices = [...sharedGlobalIndices, newApexIndex];
+        tetrahedra.push(newTetIndices);
+
+        currentVerts = [nfv0, nfv1, nfv2, newApex];
+        currentIndices = newTetIndices;
+      }
+    }
+
+    // Build edges and faces
+    const edges = HelixHelpers.buildEdges(tetrahedra);
+    const allFaces = HelixHelpers.buildFaces(tetrahedra, allVertices);
+
+    // Add octahedron edges (not part of tetrahedra)
+    const octaEdges = [
+      [0, 2], [0, 3], [0, 4], [0, 5],
+      [1, 2], [1, 3], [1, 4], [1, 5],
+      [2, 4], [2, 5], [3, 4], [3, 5],
+    ];
+    const edgeSet = new Set(edges.map(e => e[0] < e[1] ? `${e[0]}-${e[1]}` : `${e[1]}-${e[0]}`));
+    octaEdges.forEach(e => {
+      const key = e[0] < e[1] ? `${e[0]}-${e[1]}` : `${e[1]}-${e[0]}`;
+      if (!edgeSet.has(key)) {
+        edges.push(e);
+      }
+    });
+
+    // RT Validation
+    const validation = RT.validateEdges(allVertices, edges, octaEdgeQ);
+    const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+    const faceSpread = RT.FaceSpreads.tetrahedron();
+
+    // Build chirality summary for active strands
+    const chiralitySummary = activeStrands.map(label =>
+      `${label}:${strandChirality[label] !== false ? "RH" : "LH"}`
+    ).join(", ");
+
+    console.log(`[RT] Tetrahelix3 (Octahedral): count=${count}, halfSize=${halfSize}`);
+    console.log(`  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`);
+    console.log(`  Edge Q: ${octaEdgeQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`);
+    console.log(`  Enabled strands: ${activeStrands.join(", ") || "none"}`);
+    console.log(`  Chirality: ${chiralitySummary || "none"}`);
+    console.log(`  Total tetrahedra: ${tetrahedra.length}`);
+
+    return {
+      vertices: allVertices,
+      edges,
+      faces: allFaces,
+      faceSpread,
+      metadata: {
+        variant: "tetrahelix3",
+        count,
+        enabledStrands,
+        strandChirality,
+        activeStrands,
+        tetrahedra: tetrahedra.length,
+        expectedQ: octaEdgeQ,
+      },
+    };
+  },
 };
