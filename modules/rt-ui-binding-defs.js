@@ -95,6 +95,11 @@ export const checkboxWithControlsBindings = [
     type: "checkbox-controls",
     controlsId: "tetrahelix2-controls",
   },
+  {
+    id: "showTetrahelix3",
+    type: "checkbox-controls",
+    controlsId: "tetrahelix3-controls",
+  },
 
   // Polyhedra with geodesic controls (complex: sibling checkbox keeps controls visible)
   {
@@ -365,6 +370,7 @@ export const simpleSliderBindings = [
   // Helix controls
   { id: "tetrahelix1CountSlider", type: "slider", valueId: "tetrahelix1CountDisplay" },
   { id: "tetrahelix2CountSlider", type: "slider", valueId: "tetrahelix2CountDisplay" },
+  { id: "tetrahelix3CountSlider", type: "slider", valueId: "tetrahelix3CountDisplay" },
 ];
 
 // ============================================================================
@@ -453,10 +459,13 @@ export const geodesicProjectionBindings = [
   // Helix start face selection
   { type: "radio-group", name: "tetrahelix1StartFace" },
   { type: "radio-group", name: "tetrahelix2StartFace" },
+  { type: "radio-group", name: "tetrahelix3StartFace" },
   // Helix strand count
   { type: "radio-group", name: "tetrahelix2Strands" },
+  { type: "radio-group", name: "tetrahelix3Strands" },
   // Helix bond mode (zipped vs unzipped)
   { type: "radio-group", name: "tetrahelix2BondMode" },
+  { type: "radio-group", name: "tetrahelix3BondMode" },
   // Helix per-strand exit face selection
   { type: "radio-group", name: "tetrahelix2ExitA" },
   { type: "radio-group", name: "tetrahelix2ExitB" },

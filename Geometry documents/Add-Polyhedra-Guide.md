@@ -4,15 +4,17 @@ This guide documents all the files and code sections that need modification when
 
 ## Quick Checklist
 
-When adding a new polyhedron (e.g., `newPolyhedron`), update these files:
+When adding a new form (e.g., `newForm`), update these files:
 
-| Step | File                      | What to Add                                   |
-| ---- | ------------------------- | --------------------------------------------- |
-| 1    | `modules/rt-polyhedra.js` | Geometry generator function                   |
-| 2    | `modules/rt-rendering.js` | Color, group variable, rendering block, stats |
-| 3    | `index.html`              | UI checkbox and controls                      |
-| 4    | `modules/rt-init.js`      | Event handlers, selection arrays              |
-| 5    | Test                      | Verify in browser                             |
+| Step | File                           | What to Add                                        |
+| ---- | ------------------------------ | -------------------------------------------------- |
+| 1    | `modules/rt-polyhedra.js`      | Geometry generator (or `rt-helices.js` for helices)|
+| 2    | `modules/rt-rendering.js`      | Color, group variable, rendering block, stats, getAllFormGroups, createPolyhedronByType |
+| 3    | `index.html`                   | UI checkbox and controls                           |
+| 4    | `modules/rt-ui-binding-defs.js`| Declarative bindings for checkbox, sliders, radios |
+| 5    | `modules/rt-init.js`           | Group variable, formGroups arrays (3 locations)    |
+| 6    | `modules/rt-filehandler.js`    | State save/restore for all parameters              |
+| 7    | Test                           | Verify in browser                                  |
 
 ---
 
