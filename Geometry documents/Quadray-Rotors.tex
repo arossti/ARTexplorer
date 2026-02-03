@@ -536,19 +536,217 @@ Native geometry & Orthogonal & Orthogonal & \textbf{Tetrahedral}\\
 \end{table}
 
 %==============================================================================
+\section{Native Quadray Rotation: The F,G,H Coefficients}
+%==============================================================================
+
+\subsection{Tom Ace's Tetrahedral Rotation Formula}
+
+Tom Ace derived rotation coefficients that operate \emph{directly} on Quadray coordinates without conversion to Cartesian space. For rotation by angle $\theta$ about one of the four basis axes:
+
+\begin{align}
+F &= \frac{2\cos(\theta) + 1}{3}\\
+G &= \frac{2\cos(\theta - 120°) + 1}{3}\\
+H &= \frac{2\cos(\theta + 120°) + 1}{3}
+\end{align}
+
+These coefficients arise from the tetrahedral geometry: the $120°$ phase shifts reflect the three-fold symmetry of the face opposite each vertex.
+
+\subsection{RT-Pure Form Using Spread}
+
+We rationalize Ace's formula using spread $s = \sin^2(\theta)$ and cross $c = \cos^2(\theta) = 1 - s$:
+
+\begin{verbatim}
+function rotationCoeffsFromSpread(s) {
+  const cosTheta = Math.sqrt(1 - s);  // Deferred √ until needed
+  const sinTheta = Math.sqrt(s);
+
+  const cos120 = -0.5;              // Exact rational: -1/2
+  const sin120 = Math.sqrt(0.75);   // √(3/4) - deferred
+
+  const F = (2 * cosTheta + 1) / 3;
+  const G = (2 * (cosTheta * cos120 + sinTheta * sin120) + 1) / 3;
+  const H = (2 * (cosTheta * cos120 - sinTheta * sin120) + 1) / 3;
+
+  return { F, G, H };
+}
+\end{verbatim}
+
+\subsection{The Native 4×4 Rotation Matrix}
+
+Rotation about the $W$-axis applies F, G, H in a \textbf{circulant} pattern to the other three coordinates:
+
+\begin{equation}
+R_W = \begin{pmatrix}
+1 & 0 & 0 & 0\\
+0 & F & H & G\\
+0 & G & F & H\\
+0 & H & G & F
+\end{pmatrix}
+\end{equation}
+
+\begin{observation}[Circulant Structure]
+The $3 \times 3$ submatrix acting on $(X, Y, Z)$ is \textbf{circulant}---each row is a cyclic permutation of the previous. This reflects the tetrahedral symmetry where all non-axis coordinates are treated equivalently around the rotation axis.
+\end{observation}
+
+For rotation about other axes, the matrix structure permutes accordingly:
+\begin{itemize}
+    \item $R_X$: row/column 1 fixed, circulant on $(W, Y, Z)$
+    \item $R_Y$: row/column 2 fixed, circulant on $(W, X, Z)$
+    \item $R_Z$: row/column 3 fixed, circulant on $(W, X, Y)$
+\end{itemize}
+
+\subsection{Why This Differs from Quaternions}
+
+This is \textbf{not} ``quaternions in disguise.'' The key differences:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Quaternion Rotation} & \textbf{Native Quadray Rotation}\\
+\midrule
+Basis geometry & Orthogonal ($90°$) & Tetrahedral ($109.47°$)\\
+Multiplication & Hamilton product & F,G,H matrix multiplication\\
+Structure & $ij = k$ relations & Circulant matrix patterns\\
+Axis representation & Unit vector in $\mathbb{R}^3$ & One of four basis directions\\
+Constraint & $\|q\| = 1$ required & No norm constraint\\
+\bottomrule
+\end{tabular}
+\caption{Structural differences between quaternion and native Quadray rotation}
+\end{table}
+
+The F,G,H coefficients emerge from the tetrahedral central angle ($109.47°$) and its three-fold face symmetry---algebraic structures that have no quaternion equivalent.
+
+%==============================================================================
+\section{On Normalization: XYZ Parity vs Native 4D}
+%==============================================================================
+
+\subsection{The Zero-Sum Constraint Revisited}
+
+Standard Quadray implementations enforce $W + X + Y + Z = k$ (zero-sum normalization), which projects 4D coordinates onto 3D Cartesian space. This is a \textbf{compatibility constraint}, not an intrinsic property of tetrahedral geometry.
+
+\begin{observation}[The Fourth Coordinate Carries Information]
+Consider the Quadray positions $(1, 1, 1, 1)$ and $(1, 1, 1, 6)$. With zero-sum normalization, these project to equivalent 3D positions. But they describe fundamentally different tetrahedral configurations---the second represents a \textbf{deformed tetrahedron} stretched along the Z-axis.
+\end{observation}
+
+This is demonstrated in ARTexplorer's ``Quadray Tetrahedron (Deformed)'' polyhedron, which renders with \texttt{normalize: false} to preserve the stretched geometry.
+
+\subsection{Implications for Rotation}
+
+For rotation representation, we have two choices:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lp{5cm}p{5cm}}
+\toprule
+\textbf{Approach} & \textbf{With Normalization} & \textbf{Without Normalization}\\
+\midrule
+DOF & 3 (XYZ-equivalent) & 4 (native Quadray)\\
+Gimbal lock & Possible (if reduced to $SO(3)$) & Avoided (remains in $\mathbb{R}^4$)\\
+Constraint & $W + X + Y + Z = k$ & None\\
+Interpolation & Must respect constraint & Simple linear in $\mathbb{R}^4$\\
+Physical meaning & ``Ordinary'' 3D space & Full tetrahedral 4D space\\
+\bottomrule
+\end{tabular}
+\caption{Normalized vs.\ native Quadray for rotation}
+\end{table}
+
+\subsection{Connection to Janus Geometry}
+
+As documented in the companion paper \emph{Geometric Janus Inversion} (Thomson, 2026), the zero-sum constraint is specifically for maintaining XYZ parity---it allows Quadray to serve as an isomorphic substitute for Cartesian coordinates.
+
+When we operate in \textbf{native 4D Quadray space} (without the zero-sum constraint), the fourth coordinate carries independent geometric information. The space becomes $\mathbb{R}^4$ rather than a projection onto $\mathbb{R}^3$, and the topological obstructions that cause gimbal lock in 3-parameter systems no longer apply.
+
+This is the deeper reason why Quadray rotors can avoid gimbal lock: they operate in the full 4D space that the tetrahedron naturally inhabits, not in a 3D projection constrained for Cartesian compatibility.
+
+%==============================================================================
+\section{Implementation Status}
+%==============================================================================
+
+\subsection{Current State (ARTexplorer, February 2026)}
+
+The Spread-Quadray Rotor system is implemented with the following components:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Component} & \textbf{Status} & \textbf{RT-Pure?}\\
+\midrule
+\texttt{QuadrayRotor} class & Implemented & Partial\\
+\texttt{fromSpreadAxis()} entry point & Implemented & \textbf{Yes}\\
+Explicit Janus polarity ($\pm 1$) & Implemented & \textbf{Yes}\\
+Half-angle via spread/cross & Implemented & \textbf{Yes}\\
+\texttt{multiply()} composition & Implemented & No (Hamilton product)\\
+\texttt{toMatrix3()} output & Implemented & \textbf{Yes} (polynomial)\\
+F,G,H native rotation & \textbf{Not yet} & Target\\
+\bottomrule
+\end{tabular}
+\caption{Implementation status of Quadray rotor components}
+\end{table}
+
+\subsection{The Scaffolding Approach}
+
+The current implementation uses Hamilton product (quaternion multiplication) internally while establishing the RT-pure API structure. This is a deliberate ``scaffolding'' approach:
+
+\begin{enumerate}
+    \item The \textbf{entry point} is RT-pure: spread $s$ instead of angle $\theta$
+    \item The \textbf{structure} supports future RT-pure internals
+    \item The \textbf{output} (matrix elements) is polynomial---no transcendentals
+    \item The \textbf{composition algebra} currently uses Hamilton product as a crutch
+\end{enumerate}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!40, title=\textbf{Honest Disclosure}]
+``Use the crutches while building, then throw them away when ready!''
+
+The Hamilton product produces \emph{correct} rotations. The goal is not to replace it with something that produces different results, but to express the same rotations using native tetrahedral algebra (F,G,H matrices) rather than orthogonal quaternion algebra.
+\end{tcolorbox}
+
+\subsection{Next Steps: Native Tetrahedral Rotation}
+
+The path to fully RT-pure Quadray rotation:
+
+\begin{enumerate}
+    \item Implement F,G,H coefficient calculation from spread
+    \item Replace \texttt{multiply()} with 4×4 matrix multiplication
+    \item Verify output matches current Hamilton-based implementation
+    \item Remove quaternion scaffolding entirely
+\end{enumerate}
+
+The mathematics already exists (Tom Ace's formulas, rationalized to RT-pure form). What remains is implementation and verification.
+
+%==============================================================================
+\section{Interactive Demonstration}
+%==============================================================================
+
+ARTexplorer includes an interactive demo (\texttt{rt-rotor-demo.js}) that visualizes:
+
+\begin{itemize}
+    \item A spinning geodesic octahedron controlled by the Quadray rotor
+    \item Draggable axis handle to adjust spin direction in real-time
+    \item Gimbal lock zones (red warning disks at $\pm 90°$ Y)
+    \item Color-coded proximity feedback (green $\to$ yellow $\to$ orange $\to$ red)
+    \item Mode toggle between Euler XYZ and Quadray Rotor
+\end{itemize}
+
+\textbf{Key demonstration:} In Euler mode, approaching the gimbal lock zones causes visible rotation instability (simulated jitter). In Quadray mode, the same axis orientations produce smooth, continuous rotation---the zones are ``irrelevant'' because the 4D representation has no singularities.
+
+The demo is available at: \url{https://arossti.github.io/ARTexplorer/}
+
+%==============================================================================
 \section{Open Questions}
 %==============================================================================
 
 \begin{enumerate}
-    \item \textbf{Composition algebra:} Is there a ``Hamilton-like'' product for Quadray rotors, or must we use matrix multiplication?
+    \item \textbf{Composition algebra:} The F,G,H matrix approach provides native Quadray rotation. Can we derive a closed-form ``product'' rule analogous to Hamilton's, or is matrix multiplication the natural operation?
 
-    \item \textbf{Normalization:} Should we impose any constraint (analogous to unit quaternions) for numerical stability?
+    \item \textbf{Normalization trade-offs:} Operating without zero-sum normalization preserves 4 DOF and avoids gimbal lock. Are there numerical stability concerns that would require some form of constraint?
 
-    \item \textbf{Optimal interpolation:} Is linear interpolation in $\mathbb{R}^4$ truly sufficient, or do we need something more sophisticated?
+    \item \textbf{Optimal interpolation:} Is linear interpolation in $\mathbb{R}^4$ truly sufficient, or does the tetrahedral geometry suggest a more natural interpolation path?
 
-    \item \textbf{Physical interpretation:} What does a ``rotation by spread $3/4$'' mean geometrically in tetrahedral terms?
+    \item \textbf{Physical interpretation:} What does a ``rotation by spread $3/4$'' mean geometrically in tetrahedral terms? The spread corresponds to $60°$ or $120°$---both significant angles in tetrahedral symmetry.
 
-    \item \textbf{Performance:} Can RT-pure rotations be made GPU-efficient, or is conversion to quaternions at the boundary always necessary?
+    \item \textbf{Performance:} Can F,G,H rotations be made GPU-efficient, or is conversion to quaternions at the rendering boundary always necessary?
 \end{enumerate}
 
 %==============================================================================
@@ -600,6 +798,7 @@ Developed in collaboration with AI assistance (Claude/Anthropic) for mathematica
     \item Urner, K. ``Quadray Coordinates: A Logical Alternative.'' \url{http://www.grunch.net/synergetics/quadintro.html}
     \item Ace, T. ``Quadray Coordinates.'' \url{http://minortriad.com/quadray.html}
     \item Thomson, A. (2026). \emph{ARTexplorer: Interactive Tetrahedral Geometry Visualization}. \url{https://arossti.github.io/ARTexplorer/}
+    \item Thomson, A. (2026). ``Geometric Janus Inversion: Extending the Janus Point from Temporal to Spatial Geometry via Tetrahedral (Quadray) Coordinates.'' Open Building / ARTexplorer Project. (Companion paper on 4D$^\pm$ Quadray space and the zero-sum normalization constraint.)
 \end{enumerate}
 
 \vfill
