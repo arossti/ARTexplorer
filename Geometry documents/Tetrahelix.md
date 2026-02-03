@@ -784,6 +784,103 @@ function generateJavelinTetrahelix(axis, direction, count, edgeLength) {
 3. **Cleaner code** - no "fix-up" steps needed
 4. **Conceptually pure** - matches the javelin mental model exactly
 
+---
+
+## Revised Solution: Dual Tetrahedron Seed at Origin (Feb 3, 2026)
+
+### The Problem with Origin-First Generation
+
+After extensive iterative testing of the origin-first approach (generating from a shared origin face), we discovered that:
+
+1. **Exit face selection alone cannot solve spiral continuity** - We tested all three possible exit faces for the - direction (best-aligned, second-best, and least-aligned). None produced smooth spiral continuity through origin.
+
+2. **The "kink" at origin persists** - The spiraling exterior edge pattern gets interrupted at origin regardless of exit face choice.
+
+3. **A "missing tetrahedron" is needed** - Visual inspection revealed that the spiraling edge strands would connect smoothly if there were an additional tetrahedron at origin bridging the + and - directions.
+
+### The Insight: Dual Tetrahedron as Seed
+
+Looking at the geometry, the missing structure is exactly the **Dual Tetrahedron** already in our polyhedra library:
+
+```
+Dual Tetrahedron vertices (from rt-polyhedra.js):
+  V0: (+s, +s, +s)  → points along QX axis (Red/A)
+  V1: (+s, -s, -s)  → points along QZ axis (Green/B)
+  V2: (-s, +s, -s)  → points along QY axis (Blue/C)
+  V3: (-s, -s, +s)  → points along QW axis (Yellow/D)
+```
+
+These four vertices point exactly along the four Quadray basis vectors! The dual tetrahedron is the natural **hub** from which all eight tetrahelix directions (QW±, QX±, QY±, QZ±) can emanate.
+
+### Why This Works
+
+1. **Vertices align with Quadray axes** - Each dual tet vertex points along a basis vector direction
+2. **Four faces available** - Each face is perpendicular to one axis, perfect for starting a tetrahelix in that direction
+3. **Spiral continuity preserved** - The seed tetrahedron's edges naturally connect the spiraling strands from both directions
+4. **Conceptually elegant** - The "javelin" passes through the seed tetrahedron, not through empty space
+
+### Revised Algorithm
+
+```
+1. Place DUAL TETRAHEDRON at origin as the seed
+   - Vertices at (±s, ±s, ±s) pattern, pointing along Quadray axes
+   - This is the "hub" of all tetrahelix directions
+
+2. For each enabled direction (+/-) on selected axis:
+   a. Identify the face perpendicular to that axis
+   b. Generate tetrahelix chain outward from that face
+   c. The seed tetrahedron is INCLUDED in both directions
+
+3. When both + and - are enabled:
+   - Seed tetrahedron appears once (shared)
+   - + direction chain grows from one face
+   - - direction chain grows from opposite face
+   - Spiral edge strands connect through seed's edges
+```
+
+### Face-to-Axis Mapping for Dual Tetrahedron
+
+The dual tetrahedron has four faces, each opposite one vertex:
+
+| Face | Opposite Vertex | Axis Direction | Quadray |
+|------|-----------------|----------------|---------|
+| A    | V0 (+,+,+)      | QX axis        | Red     |
+| B    | V1 (+,-,-)      | QZ axis        | Green   |
+| C    | V2 (-,+,-)      | QY axis        | Blue    |
+| D    | V3 (-,-,+)      | QW axis        | Yellow  |
+
+For QW axis (Yellow):
+- Face D (opposite V3) is the exit face for + direction
+- Face D is also the entry face for - direction (chain grows from same face, opposite direction)
+
+### Implementation Plan
+
+1. **Modify tetrahelix2 generator:**
+   - Start with dual tetrahedron vertices at origin (use existing `Polyhedra.dualTetrahedron()` or inline)
+   - Map selected Quadray axis to the appropriate face
+   - Include seed tetrahedron in output (don't skip it)
+   - Generate + chain from selected face outward
+   - Generate - chain from same face, opposite direction
+
+2. **Key change from current approach:**
+   - Current: Generate origin face from scratch, first tet has apex along axis
+   - New: Use dual tet as seed, first tet of chain shares face with seed
+
+3. **Rendering consideration:**
+   - When both directions enabled, seed appears once
+   - Total tetrahedra = 1 (seed) + (count-1 for +) + (count-1 for -)
+   - Or alternatively: seed + count for each direction (seed shared visually)
+
+### Why Previous Approaches Failed
+
+| Approach | Problem |
+|----------|---------|
+| Translate seed to origin | Counterposed triangles, no shared face |
+| Generate from origin face | Kink at origin, spiral discontinuity |
+| Exit face selection (all 3 options) | Cannot fix discontinuity without bridging structure |
+
+The fundamental issue: **a shared face alone is not enough**. The spiraling edges need a **shared tetrahedron** to maintain continuity.
+
 ### Future Research
 
 **Research questions:**

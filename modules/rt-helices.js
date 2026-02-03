@@ -592,9 +592,8 @@ export const Helices = {
     const tetraCentroid = getTetraCentroid(currentVerts);
     const scaledAxis = axisVector.clone().multiplyScalar(sign); // direction of javelin
 
-    let bestExitFaceIdx = 0;
-    let bestAlignment = -Infinity;
-
+    // Collect all face alignments for selection
+    const faceAlignments = [];
     for (const candidateIdx of [0, 1, 2]) {
       // Face opposite vertex candidateIdx
       const faceVertIndices = [0, 1, 2, 3].filter(j => j !== candidateIdx);
@@ -608,16 +607,23 @@ export const Helices = {
         .subVectors(faceCentroid, tetraCentroid)
         .normalize();
 
-      // Alignment with axis direction (higher = better for javelin)
+      // Alignment with axis direction (higher = better for + direction)
       const alignment = outwardDir.dot(scaledAxis);
-
-      if (alignment > bestAlignment) {
-        bestAlignment = alignment;
-        bestExitFaceIdx = candidateIdx;
-      }
+      faceAlignments.push({ idx: candidateIdx, alignment });
     }
 
-    let exitFaceLocalIdx = bestExitFaceIdx;
+    // Sort by alignment (highest first)
+    faceAlignments.sort((a, b) => b.alignment - a.alignment);
+
+    // For + direction: use best aligned face (index 0 in sorted array)
+    // For - direction: try third option (least aligned, index 2) for spiral continuity
+    let exitFaceLocalIdx;
+    if (direction === "+") {
+      exitFaceLocalIdx = faceAlignments[0].idx;
+    } else {
+      // Try least aligned face (index 2) for - direction
+      exitFaceLocalIdx = faceAlignments[2].idx;
+    }
 
     // Generate remaining tetrahedra (count-1 more, since first already exists)
     for (let i = 1; i < count; i++) {
