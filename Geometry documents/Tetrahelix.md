@@ -1239,13 +1239,15 @@ These are **different faces** of the seed! The backward chain uses the face that
 ### Current Behavior
 
 - **Axis toggles (QW, QX, QY, QZ)**: Change javelin direction while keeping seed fixed at origin
-- **+/- switches**: Currently both directions always generated (needs wiring to show/hide halves)
-- **Count slider**: Extends javelin symmetrically in both directions from center
+- **+/- checkboxes**: Show/hide positive and negative halves independently (both default ON)
+- **Count slider**: Extends javelin symmetrically in both directions (max: 145 = 72 per side)
+- **Console feedback**: Logs helpful message when neither direction is selected
 
-### Remaining UI Decisions
+### UI Implementation Complete (Feb 3, 2026)
 
-1. **+/- switches**: Wire to show/hide positive/negative halves (default: both on)
-2. **Exit face matrix (0/1/2 per strand)**: This would introduce bends - keep as demonstrator or remove?
+1. **+/- checkboxes wired**: `tetrahelix2DirPlus` and `tetrahelix2DirMinus` registered in `simpleCheckboxBindings` for immediate re-render on toggle
+2. **Exit face matrix**: Commented out in UI (code preserved for future use) - would introduce bends if enabled
+3. **Max count extended**: 96 → 145 to allow 72 tetrahedra per direction
 
 ---
 
