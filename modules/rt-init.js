@@ -11,6 +11,7 @@ import { colorTheoryModal } from "./color-theory-modal.js";
 import { initScene as createRenderingAPI } from "./rt-rendering.js";
 import { initInfoModal } from "./rt-info-modal.js";
 import * as RTJanus from "./rt-janus.js";
+import { getRotorDemo, destroyRotorDemo } from "./rt-rotor-demo.js";
 import {
   getPolyhedronVertices as getVertices,
   getPolyhedronEdgeMidpoints as getEdgeMidpoints,
@@ -615,6 +616,27 @@ function startARTexplorer(
       e.preventDefault();
       colorTheoryModal.open();
     });
+
+  // Spread-Quadray Rotor Demo - In-scene 3D demo (not modal)
+  let rotorDemo = null;
+  document.getElementById("open-rotor-demo").addEventListener("click", e => {
+    e.preventDefault();
+    if (!rotorDemo) {
+      rotorDemo = getRotorDemo(scene, THREE, camera, controls);
+    }
+    const isEnabled = rotorDemo.toggle();
+    const link = e.target;
+    if (isEnabled) {
+      link.style.color = "#0f0";
+      link.textContent = "Spread-Quadray Rotors ✓";
+    } else {
+      link.style.color = "#7ab8ff";
+      link.textContent = "Spread-Quadray Rotors";
+    }
+  });
+
+  // Make rotorDemo globally accessible for debugging
+  window.getRotorDemo = () => rotorDemo;
 
   // ========================================================================
   // GUMBALL TOOL FUNCTIONALITY

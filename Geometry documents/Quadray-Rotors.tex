@@ -1,0 +1,810 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{parskip}  % Adds vertical space between paragraphs
+\usepackage{tcolorbox}  % For framed boxes
+\usepackage{endnotes}   % For endnotes instead of footnotes
+
+\geometry{margin=1in}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{definition}{Definition}
+\newtheorem{observation}{Observation}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+
+\title{Spread-Quadray Rotors -- v1.0 (Feb 2026)\\
+\large A Tetrahedral Alternative to Quaternions\\
+for Gimbal-Lock-Free Rotation Representation}
+
+\author{Andrew Thomson\\
+\small Open Building / ARTexplorer Project\\
+\small \href{mailto:andy@openbuilding.ca}{andy@openbuilding.ca}}
+
+\date{February 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document proposes a novel approach to 3D rotation representation: \textbf{Spread-Quadray Rotors}. By combining full 4D Quadray coordinates (without zero-sum constraint), Rational Trigonometry (spread/cross instead of sin/cos), Weierstrass parametrization, and explicit Janus polarity, we arrive at a rotation system that is gimbal-lock free, algebraically exact for many useful rotations, and geometrically native to tetrahedral structures.
+
+The \textbf{Hairy Ball Theorem} (Brouwer, 1912) establishes that any continuous tangent vector field on a sphere must have at least one singularity---you cannot ``comb a hairy ball flat without creating a cowlick.'' This topological obstruction is why 3-parameter rotation representations (Euler angles, zero-sum Quadray) inevitably suffer gimbal lock. Quaternions escape this by lifting to the 4-dimensional hypersphere $S^3$; we propose an alternative lift to $\mathbb{R}^4 \times \mathbb{Z}_2$ via tetrahedral coordinates, yielding a fundamentally different algebraic structure that preserves exact rational values throughout rotation calculations.
+
+This is not merely ``quaternions in different clothing'' but a genuinely distinct representation arising from tetrahedral geometry and Wildberger's Rational Trigonometry.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%==============================================================================
+\section{Introduction}
+%==============================================================================
+
+\subsection{The Problem: Gimbal Lock}
+
+Gimbal lock occurs when two rotation axes align, causing a loss of one degree of freedom. In Euler angle representation (pitch, yaw, roll), this happens at $\pm 90°$ pitch---the system loses the ability to distinguish yaw from roll.
+
+\textbf{Physical analogy:} A camera gimbal with three nested rings. When the middle ring rotates $90°$, the inner and outer rings become parallel---you can no longer independently control two of the three rotations.
+
+\textbf{Why it matters:}
+\begin{itemize}
+    \item \textbf{Animation:} Interpolating between orientations near gimbal lock produces erratic motion
+    \item \textbf{Robotics:} Control systems can become unstable
+    \item \textbf{Aerospace:} Apollo 11's guidance computer nearly encountered gimbal lock
+    \item \textbf{3D Graphics:} SLERP requires quaternions to avoid interpolation artifacts
+\end{itemize}
+
+\subsection{The Standard Solution: Quaternions}
+
+Quaternions avoid gimbal lock by using 4 parameters constrained to a 3-sphere ($S^3$):
+\begin{equation}
+q = q_0 + q_1 i + q_2 j + q_3 k \quad \text{where} \quad q_0^2 + q_1^2 + q_2^2 + q_3^2 = 1
+\end{equation}
+
+This works because $S^3$ is \emph{simply connected}---any two orientations can be connected by a continuous path without passing through a singularity.
+
+\textbf{But quaternions have limitations:}
+\begin{itemize}
+    \item Require transcendental functions (sin, cos) for most angle values
+    \item The unit norm constraint requires renormalization after composition
+    \item The double-cover ($q$ and $-q$ represent the same rotation) is implicit, not explicit
+\end{itemize}
+
+\subsection{Our Proposal: Spread-Quadray Rotors}
+
+We propose an alternative 4-parameter rotation representation based on:
+\begin{enumerate}
+    \item \textbf{Full 4D Quadray coordinates}---without zero-sum constraint
+    \item \textbf{Spread/Cross measures}---from Wildberger's Rational Trigonometry
+    \item \textbf{Weierstrass parametrization}---for exact rational circle points
+    \item \textbf{Janus polarity}---explicit discrete state for double-cover
+\end{enumerate}
+
+%==============================================================================
+\section{Topological Foundations}
+%==============================================================================
+
+\subsection{The Hairy Ball Theorem}
+
+\begin{theorem}[Hairy Ball Theorem --- Brouwer, 1912]
+There is no nonvanishing continuous tangent vector field on even-dimensional $n$-spheres. In particular, on $S^2$, any continuous tangent vector field must have at least one point where the vector vanishes.
+\end{theorem}
+
+\textbf{Colloquial version:} ``You cannot comb a hairy ball flat without creating at least one cowlick.''
+
+\textbf{Implications:}
+\begin{itemize}
+    \item There is always at least one point on Earth with zero wind (a cyclone eye or calm spot)
+    \item You cannot texture-map a sphere without at least one singularity
+    \item \textbf{Gimbal lock is unavoidable with 3-parameter rotation systems}
+\end{itemize}
+
+\subsection{Why 3 Parameters Are Not Enough}
+
+The space of 3D rotations is $SO(3)$---a 3-dimensional manifold that is \emph{not simply connected}. Topologically, $SO(3)$ is equivalent to $\mathbb{RP}^3$ (real projective 3-space), which has a ``twist'' that prevents global singularity-free parameterization with only 3 numbers.
+
+\begin{observation}[Topological Obstruction]
+You cannot parameterize $SO(3)$ with 3 continuous parameters without creating at least one singularity. This is a direct consequence of the Hairy Ball Theorem applied to rotation space.
+\end{observation}
+
+\subsection{The Lift to 4D}
+
+The solution is to \textbf{lift} from $SO(3)$ to a higher-dimensional space:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cccc}
+\toprule
+\textbf{Space} & \textbf{Dimension} & \textbf{Topology} & \textbf{Singularities}\\
+\midrule
+$SO(3)$ & 3 & $\mathbb{RP}^3$ (twisted) & Unavoidable\\
+$S^3$ (Quaternions) & 3-sphere in $\mathbb{R}^4$ & Simply connected & None\\
+$\mathbb{R}^4$ (Full Quadray) & 4D Euclidean & Simply connected & None\\
+\bottomrule
+\end{tabular}
+\caption{Topological comparison of rotation representation spaces}
+\end{table}
+
+Both $S^3$ (quaternions) and $\mathbb{R}^4$ (full Quadray) provide this lift, but with different geometric structures.
+
+%==============================================================================
+\section{Quadray vs Quaternion Topology}
+%==============================================================================
+
+\subsection{Comparison of Representations}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Representation} & \textbf{Scalars} & \textbf{Constraint} & \textbf{Manifold} & \textbf{Lift} & \textbf{Gimbal Lock}\\
+\midrule
+Euler angles & 3 & None & $SO(3)$ chart & None & \textbf{Yes}\\
+Quadray (zero-sum) & $4 \to 3$ & $w+x+y+z = k$ & $SO(3)$ chart & None & \textbf{Yes}\\
+\textbf{Quadray (full 4D)} & 4 & None & $\mathbb{R}^4$ & Implicit $\mathbb{R}^4$ & \textbf{No}$^*$\\
+Quaternions & 4 & $\|q\| = 1$ & $S^3$ & Explicit Spin(3) & \textbf{No}\\
+\bottomrule
+\end{tabular}
+\caption{Comparison of rotation representations. $^*$Gimbal lock avoided provided the 4 scalars parameterize orientation directly and are not reduced to a 3-parameter $SO(3)$ chart.}
+\end{table}
+
+\subsection{The Zero-Sum Trap}
+
+\begin{observation}[Critical Distinction]
+When we enforce $W + X + Y + Z = \text{constant}$, we \textbf{project} 4D Quadray back to 3D. This projection reintroduces the $SO(3)$ topology and its inherent singularities.
+\end{observation}
+
+\begin{equation}
+\text{Full Quadray } (\mathbb{R}^4) \xrightarrow{\text{zero-sum constraint}} \text{Projected Quadray } (\mathbb{R}^3) \cong SO(3)
+\end{equation}
+
+\textbf{The zero-sum constraint is a projection, not a necessity.} To avoid gimbal lock, we must work in the full 4D space.
+
+\subsection{Why Full Quadray Differs from Quaternions}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Quaternions} & \textbf{Full Quadray}\\
+\midrule
+Basis geometry & Orthogonal ($90°$ between $i, j, k$) & Tetrahedral ($109.47°$ between $W, X, Y, Z$)\\
+Constraint & Unit norm (forces onto $S^3$) & None (free in $\mathbb{R}^4$)\\
+Double-cover & Implicit ($q \equiv -q$) & Explicit (Janus polarity bit)\\
+Composition & Hamilton product & Tetrahedral rotation matrices\\
+Interpolation & SLERP on $S^3$ & Linear in $\mathbb{R}^4$ (simpler!)\\
+\bottomrule
+\end{tabular}
+\caption{Structural differences between quaternions and full Quadray}
+\end{table}
+
+%==============================================================================
+\section{Spread-Quadray Rotors: Definition}
+%==============================================================================
+
+\subsection{The Core Concept}
+
+Instead of using angle $\theta$ with sin/cos, we use:
+\begin{itemize}
+    \item \textbf{Spread} $s = \sin^2(\theta)$---a rational value for many useful angles
+    \item \textbf{Cross} $c = \cos^2(\theta) = 1 - s$---the complementary measure
+    \item \textbf{Weierstrass parameter} $t$---generates exact rational sin/cos values
+\end{itemize}
+
+\begin{definition}[Spread-Quadray Rotor]
+A \textbf{Spread-Quadray Rotor} $R$ is defined as:
+\begin{equation}
+R = (W, X, Y, Z, \pm) \in \mathbb{R}^4 \times \mathbb{Z}_2
+\end{equation}
+where:
+\begin{itemize}
+    \item $(W, X, Y, Z)$ are four independent scalars (no zero-sum constraint)
+    \item $\pm$ is the \textbf{Janus polarity} (discrete: positive or negative dimensional space)
+\end{itemize}
+\end{definition}
+
+\subsection{Rotor Parameters from Spread}
+
+Given spread $s$ and Weierstrass parameter $t$:
+\begin{align}
+t &= \sqrt{\frac{s}{1-s}} \quad \text{(parameter from spread)}\\
+\cos(\theta) &= \frac{1 - t^2}{1 + t^2} \quad \text{(algebraic, no transcendentals!)}\\
+\sin(\theta) &= \frac{2t}{1 + t^2} \quad \text{(algebraic, no transcendentals!)}
+\end{align}
+
+\subsection{Why ``Rotor'' Not ``Quaternion''}
+
+We deliberately avoid calling these ``Quadray quaternions'' because:
+\begin{enumerate}
+    \item \textbf{Different algebra:} Quaternions use Hamilton multiplication ($ij = k$, etc.). Quadray rotors use tetrahedral rotation matrices.
+    \item \textbf{Different constraint:} Quaternions require $\|q\| = 1$. Quadray rotors have no norm constraint.
+    \item \textbf{Different topology:} Quaternions live on $S^3$. Quadray rotors live in $\mathbb{R}^4 \times \mathbb{Z}_2$.
+    \item \textbf{Different exactness:} Quaternions require transcendentals for most angles. Quadray rotors can be exact rational for many useful rotations.
+\end{enumerate}
+
+%==============================================================================
+\section{RT-Pure Rotation Mathematics}
+%==============================================================================
+
+\subsection{Spread and Cross}
+
+From Wildberger's Rational Trigonometry:
+\begin{align}
+\text{Spread:} \quad s &= \sin^2(\theta) \quad \text{(measures ``perpendicularity'': 0 = parallel, 1 = perpendicular)}\\
+\text{Cross:} \quad c &= \cos^2(\theta) \quad \text{(complementary measure)}\\
+\text{Identity:} \quad s + c &= 1
+\end{align}
+
+\begin{observation}[Rational Spreads]
+Spread is often a \textbf{rational number} even when $\sin(\theta)$ is irrational.
+\end{observation}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccccc}
+\toprule
+\textbf{Angle} $\theta$ & $\sin(\theta)$ & $\cos(\theta)$ & \textbf{Spread} $s$ & \textbf{Cross} $c$\\
+\midrule
+$0°$ & 0 & 1 & 0 & 1\\
+$30°$ & $1/2$ & $\sqrt{3}/2$ & \textbf{1/4} & \textbf{3/4}\\
+$45°$ & $\sqrt{2}/2$ & $\sqrt{2}/2$ & \textbf{1/2} & \textbf{1/2}\\
+$60°$ & $\sqrt{3}/2$ & $1/2$ & \textbf{3/4} & \textbf{1/4}\\
+$90°$ & 1 & 0 & \textbf{1} & \textbf{0}\\
+\bottomrule
+\end{tabular}
+\caption{Spread and cross values for common angles---note that all spreads are exact rationals}
+\end{table}
+
+\subsection{Weierstrass Parametrization}
+
+The Weierstrass substitution provides \textbf{algebraic} circle points:
+\begin{align}
+t &= \tan(\theta/2) \quad \text{(the parameter)}\\
+\cos(\theta) &= \frac{1 - t^2}{1 + t^2}\\
+\sin(\theta) &= \frac{2t}{1 + t^2}
+\end{align}
+
+\begin{theorem}[RT-Pure Benefit]
+For any \textbf{rational} $t$, both $\cos(\theta)$ and $\sin(\theta)$ are \textbf{exact rational values}.
+\end{theorem}
+
+This is implemented in ARTexplorer's \texttt{rt-math.js}:
+\begin{verbatim}
+RT.circleParam = t => {
+  const tSquared = t * t;
+  const denominator = 1 + tSquared;
+  return {
+    x: (1 - tSquared) / denominator,  // cos(theta) -- algebraic!
+    y: (2 * t) / denominator,         // sin(theta) -- algebraic!
+  };
+};
+\end{verbatim}
+
+\subsection{From Spread to Weierstrass Parameter}
+
+Given spread $s$, find parameter $t$:
+\begin{align}
+s &= \sin^2(\theta) = \left[\frac{2t}{1+t^2}\right]^2 = \frac{4t^2}{(1+t^2)^2}\\
+\text{Solving:} \quad s(1 + t^2)^2 &= 4t^2\\
+s \cdot t^4 + (2s - 4)t^2 + s &= 0
+\end{align}
+
+Using the quadratic formula with $u = t^2$:
+\begin{align}
+u &= \frac{4 - 2s \pm \sqrt{16 - 16s}}{2s} = \frac{2 - s \pm 2\sqrt{1-s}}{s}\\
+t &= \sqrt{u} = \sqrt{\frac{2 - s + 2\sqrt{1-s}}{s}} \quad \text{(taking positive root)}
+\end{align}
+
+For exact rational spreads, this often simplifies beautifully.
+
+%==============================================================================
+\section{The Tetrahedral Rotation Matrix}
+%==============================================================================
+
+\subsection{Tom Ace's Quadray Rotation Formula}
+
+Rotation about a Quadray axis uses coefficients $F$, $G$, $H$:
+\begin{align}
+F &= \frac{2\cos(\theta) + 1}{3}\\
+G &= \frac{2\cos(\theta - 120°) + 1}{3}\\
+H &= \frac{2\cos(\theta + 120°) + 1}{3}
+\end{align}
+
+\subsection{RT-Pure Form (Using Spread)}
+
+\begin{verbatim}
+function rotationCoeffsFromSpread(s) {
+  const c = 1 - s;              // cross = cos^2(theta)
+  const cosTheta = Math.sqrt(c);  // Deferred sqrt until needed
+  const sinTheta = Math.sqrt(s);
+
+  const cos120 = -0.5;           // -1/2 exactly
+  const sin120 = Math.sqrt(0.75); // sqrt(3/4)
+
+  const F = (2 * cosTheta + 1) / 3;
+  const G = (2 * (cosTheta * cos120 + sinTheta * sin120) + 1) / 3;
+  const H = (2 * (cosTheta * cos120 - sinTheta * sin120) + 1) / 3;
+
+  return { F, G, H };
+}
+\end{verbatim}
+
+\subsection{The 4×4 Rotation Matrix}
+
+Rotation about the $W$-axis by spread $s$:
+\begin{equation}
+R = \begin{pmatrix}
+1 & 0 & 0 & 0\\
+0 & F & H & G\\
+0 & G & F & H\\
+0 & H & G & F
+\end{pmatrix}
+\end{equation}
+
+\begin{observation}[Circulant Structure]
+Note the \textbf{circulant structure} of the $3 \times 3$ submatrix---this reflects the tetrahedral symmetry where all non-axis coordinates are treated equivalently.
+\end{observation}
+
+%==============================================================================
+\section{Exact Rational Rotations}
+%==============================================================================
+
+\subsection{The Gold Standard}
+
+For certain angles, spread and cross are \textbf{exact rationals}, enabling algebraically exact rotation:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccccccl}
+\toprule
+\textbf{Rotation} & \textbf{Spread} $s$ & \textbf{Cross} $c$ & $F$ & $G$ & $H$ & \textbf{Notes}\\
+\midrule
+$0°$ & 0 & 1 & 1 & 0 & 0 & Identity\\
+$30°$ & $1/4$ & $3/4$ & $(\sqrt{3}+1)/3$ & ... & ... & ---\\
+$45°$ & $1/2$ & $1/2$ & $(\sqrt{2}+1)/3$ & ... & ... & Exact spread!\\
+$60°$ & $3/4$ & $1/4$ & $2/3$ & $(\sqrt{3}+1)/6$ & $(1-\sqrt{3})/6$ & Tetrahedral\\
+$90°$ & 1 & 0 & $1/3$ & $(\sqrt{3}+1)/3$ & $(1-\sqrt{3})/3$ & Quarter turn\\
+$120°$ & $3/4$ & $1/4$ & 0 & $1/3$ & $1/3$ & \textbf{All rational!}\\
+$180°$ & 0 & 1 & $-1/3$ & $2/3$ & $2/3$ & \textbf{All rational!}\\
+\bottomrule
+\end{tabular}
+\caption{Rotation coefficients for common angles}
+\end{table}
+
+\subsection{Special Case: 120° Rotation (Tetrahedral Symmetry)}
+
+At $120°$, the rotation coefficients become beautifully simple:
+\begin{equation}
+F = 0, \quad G = \frac{1}{3}, \quad H = \frac{1}{3}
+\end{equation}
+
+The rotation matrix becomes:
+\begin{equation}
+R_{120°} = \begin{pmatrix}
+1 & 0 & 0 & 0\\
+0 & 0 & 1/3 & 1/3\\
+0 & 1/3 & 0 & 1/3\\
+0 & 1/3 & 1/3 & 0
+\end{pmatrix}
+\end{equation}
+
+This is a \textbf{cyclic permutation} of the non-axis coordinates---pure tetrahedral symmetry!
+
+\subsection{Special Case: 180° Rotation (Janus Inversion)}
+
+At $180°$, we get another exact rational matrix:
+\begin{equation}
+F = -\frac{1}{3}, \quad G = \frac{2}{3}, \quad H = \frac{2}{3}
+\end{equation}
+
+This represents the \textbf{Janus Point passage}---inversion through the origin from $4D^+$ to $4D^-$ space.
+
+%==============================================================================
+\section{The Janus Polarity Extension}
+%==============================================================================
+
+\subsection{Beyond Continuous Parameters}
+
+Quaternions have an implicit double-cover: both $q$ and $-q$ represent the same rotation. This is mathematically elegant but can cause confusion (interpolation taking the ``long way around'').
+
+Quadray rotors make this \textbf{explicit} with a discrete polarity bit:
+\begin{equation}
+\text{Full specification:} \quad (W, X, Y, Z, \pm)
+\end{equation}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccc}
+\toprule
+\textbf{Polarity} & \textbf{Dimensional Space} & \textbf{Interpretation}\\
+\midrule
+$+$ & $4D^+$ & ``Positive'' dimensional space (outward from origin)\\
+$-$ & $4D^-$ & ``Negative'' dimensional space (through origin, inverted)\\
+\bottomrule
+\end{tabular}
+\caption{Janus polarity states}
+\end{table}
+
+The Janus Point (origin) is the \textbf{transition} between these spaces---passing through it flips the polarity.
+
+\subsection{Advantages of Explicit Polarity}
+
+\begin{enumerate}
+    \item \textbf{Unambiguous interpolation:} Always know which ``sheet'' you're on
+    \item \textbf{Cleaner animation:} No sudden flips when $q$ crosses $-q$ boundary
+    \item \textbf{Physical meaning:} Connects to Fuller's ``inside-outing'' and cosmological Janus Point theories
+    \item \textbf{Explicit topology:} The $\mathbb{Z}_2$ factor makes the double-cover visible
+\end{enumerate}
+
+%==============================================================================
+\section{Implementation Roadmap}
+%==============================================================================
+
+\subsection{Current State (rt-math.js)}
+
+ARTexplorer already implements key building blocks:
+\begin{itemize}
+    \item \texttt{RT.spread(v1, v2)}---Spread between vectors
+    \item \texttt{RT.circleParam(t)}---Weierstrass parametrization
+    \item \texttt{RT.spreadToParam(s)}---Convert spread to Weierstrass $t$
+    \item \texttt{Quadray.toCartesian()}---Conversion (but uses zero-sum)
+    \item \texttt{Quadray.fromCartesian()}---Reverse conversion
+\end{itemize}
+
+\subsection{Phase 1: Full 4D Quadray Storage}
+
+\begin{verbatim}
+class QuadrayRotor {
+  constructor(w, x, y, z, polarity = '+') {
+    this.w = w;
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.polarity = polarity;  // '+' or '-'
+  }
+}
+\end{verbatim}
+
+\subsection{Phase 2: RT-Pure Rotation}
+
+\begin{verbatim}
+QuadrayRotor.prototype.rotateAboutW = function(spread) {
+  const { F, G, H } = RT.rotationCoeffsFromSpread(spread);
+  return new QuadrayRotor(
+    this.w,
+    F * this.x + H * this.y + G * this.z,
+    G * this.x + F * this.y + H * this.z,
+    H * this.x + G * this.y + F * this.z,
+    this.polarity
+  );
+};
+\end{verbatim}
+
+\subsection{Phase 3: Composition and Interpolation}
+
+\begin{verbatim}
+// Linear interpolation in R^4 (simpler than SLERP!)
+QuadrayRotor.lerp = function(r1, r2, t) {
+  return new QuadrayRotor(
+    r1.w + t * (r2.w - r1.w),
+    r1.x + t * (r2.x - r1.x),
+    r1.y + t * (r2.y - r1.y),
+    r1.z + t * (r2.z - r1.z),
+    t < 0.5 ? r1.polarity : r2.polarity
+  );
+};
+\end{verbatim}
+
+%==============================================================================
+\section{Summary Comparison}
+%==============================================================================
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Feature} & \textbf{Euler Angles} & \textbf{Quaternions} & \textbf{Quadray Rotors}\\
+\midrule
+Parameters & 3 & 4 (constrained) & 4 + 1 discrete\\
+Manifold & $SO(3)$ & $S^3$ & $\mathbb{R}^4 \times \mathbb{Z}_2$\\
+Gimbal lock & Yes & No & No\\
+Exact rationals & Rarely & Rarely & Often\\
+Transcendentals & Always & Usually & Deferred\\
+Interpolation & Problematic & SLERP & Linear\\
+Double-cover & N/A & Implicit & Explicit\\
+Native geometry & Orthogonal & Orthogonal & \textbf{Tetrahedral}\\
+\bottomrule
+\end{tabular}
+\caption{Summary comparison of rotation representations}
+\end{table}
+
+%==============================================================================
+\section{Native Quadray Rotation: The F,G,H Coefficients}
+%==============================================================================
+
+\subsection{Tom Ace's Tetrahedral Rotation Formula}
+
+Tom Ace derived rotation coefficients that operate \emph{directly} on Quadray coordinates without conversion to Cartesian space. For rotation by angle $\theta$ about one of the four basis axes:
+
+\begin{align}
+F &= \frac{2\cos(\theta) + 1}{3}\\
+G &= \frac{2\cos(\theta - 120°) + 1}{3}\\
+H &= \frac{2\cos(\theta + 120°) + 1}{3}
+\end{align}
+
+These coefficients arise from the tetrahedral geometry: the $120°$ phase shifts reflect the three-fold symmetry of the face opposite each vertex.
+
+\subsection{RT-Pure Form Using Spread}
+
+We rationalize Ace's formula using spread $s = \sin^2(\theta)$ and cross $c = \cos^2(\theta) = 1 - s$:
+
+\begin{verbatim}
+function rotationCoeffsFromSpread(s) {
+  const cosTheta = Math.sqrt(1 - s);  // Deferred √ until needed
+  const sinTheta = Math.sqrt(s);
+
+  const cos120 = -0.5;              // Exact rational: -1/2
+  const sin120 = Math.sqrt(0.75);   // √(3/4) - deferred
+
+  const F = (2 * cosTheta + 1) / 3;
+  const G = (2 * (cosTheta * cos120 + sinTheta * sin120) + 1) / 3;
+  const H = (2 * (cosTheta * cos120 - sinTheta * sin120) + 1) / 3;
+
+  return { F, G, H };
+}
+\end{verbatim}
+
+\subsection{The Native 4×4 Rotation Matrix}
+
+Rotation about the $W$-axis applies F, G, H in a \textbf{circulant} pattern to the other three coordinates:
+
+\begin{equation}
+R_W = \begin{pmatrix}
+1 & 0 & 0 & 0\\
+0 & F & H & G\\
+0 & G & F & H\\
+0 & H & G & F
+\end{pmatrix}
+\end{equation}
+
+\begin{observation}[Circulant Structure]
+The $3 \times 3$ submatrix acting on $(X, Y, Z)$ is \textbf{circulant}---each row is a cyclic permutation of the previous. This reflects the tetrahedral symmetry where all non-axis coordinates are treated equivalently around the rotation axis.
+\end{observation}
+
+For rotation about other axes, the matrix structure permutes accordingly:
+\begin{itemize}
+    \item $R_X$: row/column 1 fixed, circulant on $(W, Y, Z)$
+    \item $R_Y$: row/column 2 fixed, circulant on $(W, X, Z)$
+    \item $R_Z$: row/column 3 fixed, circulant on $(W, X, Y)$
+\end{itemize}
+
+\subsection{Why This Differs from Quaternions}
+
+This is \textbf{not} ``quaternions in disguise.'' The key differences:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Quaternion Rotation} & \textbf{Native Quadray Rotation}\\
+\midrule
+Basis geometry & Orthogonal ($90°$) & Tetrahedral ($109.47°$)\\
+Multiplication & Hamilton product & F,G,H matrix multiplication\\
+Structure & $ij = k$ relations & Circulant matrix patterns\\
+Axis representation & Unit vector in $\mathbb{R}^3$ & One of four basis directions\\
+Constraint & $\|q\| = 1$ required & No norm constraint\\
+\bottomrule
+\end{tabular}
+\caption{Structural differences between quaternion and native Quadray rotation}
+\end{table}
+
+The F,G,H coefficients emerge from the tetrahedral central angle ($109.47°$) and its three-fold face symmetry---algebraic structures that have no quaternion equivalent.
+
+%==============================================================================
+\section{On Normalization: XYZ Parity vs Native 4D}
+%==============================================================================
+
+\subsection{The Zero-Sum Constraint Revisited}
+
+Standard Quadray implementations enforce $W + X + Y + Z = k$ (zero-sum normalization), which projects 4D coordinates onto 3D Cartesian space. This is a \textbf{compatibility constraint}, not an intrinsic property of tetrahedral geometry.
+
+\begin{observation}[The Fourth Coordinate Carries Information]
+Consider the Quadray positions $(1, 1, 1, 1)$ and $(1, 1, 1, 6)$. With zero-sum normalization, these project to equivalent 3D positions. But they describe fundamentally different tetrahedral configurations---the second represents a \textbf{deformed tetrahedron} stretched along the Z-axis.
+\end{observation}
+
+This is demonstrated in ARTexplorer's ``Quadray Tetrahedron (Deformed)'' polyhedron, which renders with \texttt{normalize: false} to preserve the stretched geometry.
+
+\subsection{Implications for Rotation}
+
+For rotation representation, we have two choices:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lp{5cm}p{5cm}}
+\toprule
+\textbf{Approach} & \textbf{With Normalization} & \textbf{Without Normalization}\\
+\midrule
+DOF & 3 (XYZ-equivalent) & 4 (native Quadray)\\
+Gimbal lock & Possible (if reduced to $SO(3)$) & Avoided (remains in $\mathbb{R}^4$)\\
+Constraint & $W + X + Y + Z = k$ & None\\
+Interpolation & Must respect constraint & Simple linear in $\mathbb{R}^4$\\
+Physical meaning & ``Ordinary'' 3D space & Full tetrahedral 4D space\\
+\bottomrule
+\end{tabular}
+\caption{Normalized vs.\ native Quadray for rotation}
+\end{table}
+
+\subsection{Connection to Janus Geometry}
+
+As documented in the companion paper \emph{Geometric Janus Inversion} (Thomson, 2026), the zero-sum constraint is specifically for maintaining XYZ parity---it allows Quadray to serve as an isomorphic substitute for Cartesian coordinates.
+
+When we operate in \textbf{native 4D Quadray space} (without the zero-sum constraint), the fourth coordinate carries independent geometric information. The space becomes $\mathbb{R}^4$ rather than a projection onto $\mathbb{R}^3$, and the topological obstructions that cause gimbal lock in 3-parameter systems no longer apply.
+
+This is the deeper reason why Quadray rotors can avoid gimbal lock: they operate in the full 4D space that the tetrahedron naturally inhabits, not in a 3D projection constrained for Cartesian compatibility.
+
+%==============================================================================
+\section{Implementation Status}
+%==============================================================================
+
+\subsection{Current State (ARTexplorer, February 2026)}
+
+The Spread-Quadray Rotor system is implemented with the following components:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Component} & \textbf{Status} & \textbf{RT-Pure?}\\
+\midrule
+\texttt{QuadrayRotor} class & Implemented & Partial\\
+\texttt{fromSpreadAxis()} entry point & Implemented & \textbf{Yes}\\
+Explicit Janus polarity ($\pm 1$) & Implemented & \textbf{Yes}\\
+Half-angle via spread/cross & Implemented & \textbf{Yes}\\
+\texttt{multiply()} composition & Implemented & No (Hamilton product)\\
+\texttt{toMatrix3()} output & Implemented & \textbf{Yes} (polynomial)\\
+F,G,H native rotation & \textbf{Not yet} & Target\\
+\bottomrule
+\end{tabular}
+\caption{Implementation status of Quadray rotor components}
+\end{table}
+
+\subsection{The Scaffolding Approach}
+
+The current implementation uses Hamilton product (quaternion multiplication) internally while establishing the RT-pure API structure. This is a deliberate ``scaffolding'' approach:
+
+\begin{enumerate}
+    \item The \textbf{entry point} is RT-pure: spread $s$ instead of angle $\theta$
+    \item The \textbf{structure} supports future RT-pure internals
+    \item The \textbf{output} (matrix elements) is polynomial---no transcendentals
+    \item The \textbf{composition algebra} currently uses Hamilton product as a crutch
+\end{enumerate}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!40, title=\textbf{Honest Disclosure}]
+``Use the crutches while building, then throw them away when ready!''
+
+The Hamilton product produces \emph{correct} rotations. The goal is not to replace it with something that produces different results, but to express the same rotations using native tetrahedral algebra (F,G,H matrices) rather than orthogonal quaternion algebra.
+\end{tcolorbox}
+
+\subsection{Next Steps: Native Tetrahedral Rotation}
+
+The path to fully RT-pure Quadray rotation:
+
+\begin{enumerate}
+    \item Implement F,G,H coefficient calculation from spread
+    \item Replace \texttt{multiply()} with 4×4 matrix multiplication
+    \item Verify output matches current Hamilton-based implementation
+    \item Remove quaternion scaffolding entirely
+\end{enumerate}
+
+The mathematics already exists (Tom Ace's formulas, rationalized to RT-pure form). What remains is implementation and verification.
+
+%==============================================================================
+\section{Interactive Demonstration}
+%==============================================================================
+
+ARTexplorer includes an interactive demo (\texttt{rt-rotor-demo.js}) that visualizes:
+
+\begin{itemize}
+    \item A spinning geodesic octahedron controlled by the Quadray rotor
+    \item Draggable axis handle to adjust spin direction in real-time
+    \item Gimbal lock zones (red warning disks at $\pm 90°$ Y)
+    \item Color-coded proximity feedback (green $\to$ yellow $\to$ orange $\to$ red)
+    \item Mode toggle between Euler XYZ and Quadray Rotor
+\end{itemize}
+
+\textbf{Key demonstration:} In Euler mode, approaching the gimbal lock zones causes visible rotation instability (simulated jitter). In Quadray mode, the same axis orientations produce smooth, continuous rotation---the zones are ``irrelevant'' because the 4D representation has no singularities.
+
+The demo is available at: \url{https://arossti.github.io/ARTexplorer/}
+
+%==============================================================================
+\section{Open Questions}
+%==============================================================================
+
+\begin{enumerate}
+    \item \textbf{Composition algebra:} The F,G,H matrix approach provides native Quadray rotation. Can we derive a closed-form ``product'' rule analogous to Hamilton's, or is matrix multiplication the natural operation?
+
+    \item \textbf{Normalization trade-offs:} Operating without zero-sum normalization preserves 4 DOF and avoids gimbal lock. Are there numerical stability concerns that would require some form of constraint?
+
+    \item \textbf{Optimal interpolation:} Is linear interpolation in $\mathbb{R}^4$ truly sufficient, or does the tetrahedral geometry suggest a more natural interpolation path?
+
+    \item \textbf{Physical interpretation:} What does a ``rotation by spread $3/4$'' mean geometrically in tetrahedral terms? The spread corresponds to $60°$ or $120°$---both significant angles in tetrahedral symmetry.
+
+    \item \textbf{Performance:} Can F,G,H rotations be made GPU-efficient, or is conversion to quaternions at the rendering boundary always necessary?
+\end{enumerate}
+
+%==============================================================================
+\section{Conclusion}
+%==============================================================================
+
+We have presented Spread-Quadray Rotors as a novel alternative to quaternions for gimbal-lock-free rotation representation. The key innovations are:
+
+\begin{enumerate}
+    \item \textbf{Tetrahedral basis geometry}---$109.47°$ angles rather than orthogonal $90°$
+    \item \textbf{Spread/cross measures}---rational values for many useful rotations
+    \item \textbf{No norm constraint}---freedom in $\mathbb{R}^4$ rather than confinement to $S^3$
+    \item \textbf{Explicit Janus polarity}---discrete double-cover rather than implicit $q \equiv -q$
+    \item \textbf{Algebraic exactness}---transcendentals deferred until GPU boundary
+\end{enumerate}
+
+The Hairy Ball Theorem guarantees that any 3-parameter rotation system will have singularities. Quaternions escape via the hypersphere $S^3$; Quadray rotors escape via $\mathbb{R}^4 \times \mathbb{Z}_2$. Both are valid lifts from the twisted topology of $SO(3)$, but they produce fundamentally different algebraic structures.
+
+Whether Quadray rotors offer practical advantages over quaternions in specific applications remains to be determined through implementation and testing. The theoretical framework, however, is complete and internally consistent.
+
+%==============================================================================
+\section*{Acknowledgments}
+%==============================================================================
+
+This work draws on:
+\begin{itemize}
+    \item N.J.\ Wildberger's Rational Trigonometry
+    \item Kirby Urner's Quadray coordinate system
+    \item Tom Ace's Quadray rotation formulas
+    \item R.\ Buckminster Fuller's synergetic geometry
+    \item Julian Barbour's Janus Point concept
+\end{itemize}
+
+Developed in collaboration with AI assistance (Claude/Anthropic) for mathematical formalization and documentation.
+
+\theendnotes
+
+%==============================================================================
+\section*{References}
+%==============================================================================
+
+\begin{enumerate}
+    \item Brouwer, L.E.J. (1912). ``Über Abbildung von Mannigfaltigkeiten.'' \emph{Mathematische Annalen}.
+    \item Wildberger, N.J. (2005). \emph{Divine Proportions: Rational Trigonometry to Universal Geometry}. Wild Egg Books.
+    \item Shoemake, K. (1985). ``Animating Rotation with Quaternion Curves.'' \emph{SIGGRAPH}.
+    \item Hanson, A.J. (2006). \emph{Visualizing Quaternions}. Morgan Kaufmann.
+    \item Fuller, R.B. (1975). \emph{Synergetics: Explorations in the Geometry of Thinking}. Macmillan.
+    \item Barbour, J. (2020). \emph{The Janus Point: A New Theory of Time}. Basic Books.
+    \item Urner, K. ``Quadray Coordinates: A Logical Alternative.'' \url{http://www.grunch.net/synergetics/quadintro.html}
+    \item Ace, T. ``Quadray Coordinates.'' \url{http://minortriad.com/quadray.html}
+    \item Thomson, A. (2026). \emph{ARTexplorer: Interactive Tetrahedral Geometry Visualization}. \url{https://arossti.github.io/ARTexplorer/}
+    \item Thomson, A. (2026). ``Geometric Janus Inversion: Extending the Janus Point from Temporal to Spatial Geometry via Tetrahedral (Quadray) Coordinates.'' Open Building / ARTexplorer Project. (Companion paper on 4D$^\pm$ Quadray space and the zero-sum normalization constraint.)
+\end{enumerate}
+
+\vfill
+\begin{center}
+\textit{``You cannot comb a hairy ball flat without creating a cowlick.''\\[0.5em]
+--- L.E.J.\ Brouwer (1912), as applied to rotation space}
+\end{center}
+
+\end{document}
