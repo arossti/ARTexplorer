@@ -127,6 +127,14 @@ The cowlick exists because hair must lie flat \emph{on} the 2D spherical surface
 In the ARTexplorer demo, the four colored rings (W, X, Y, Z) represent rotation \emph{about} each tetrahedral axis---gumball-style handles that let you spin the orientation around any of the four basis directions. The smooth motion, even where Euler angles would fail, demonstrates the absence of singularities in tetrahedral 4D space.
 \end{tcolorbox}
 
+\begin{tcolorbox}[colback=yellow!5, colframe=yellow!50!black, title=\textbf{Did You Know? Fuller's Precession and Gimbal Lock}]
+R.\ Buckminster Fuller described \textbf{precession} as the 90° offset between applied force and resulting motion---the way a spinning gyroscope ``walks'' perpendicular to a push. Fuller saw precession as fundamental to how Universe operates: effects manifest at right angles to causes.
+
+At gimbal lock, two rotation axes \emph{align}---they become parallel rather than maintaining their angular offset. The ``precessional pathway'' is blocked; there's no perpendicular direction left to precess into.
+
+With Quadray's $109.47°$ tetrahedral angles, the basis vectors are \emph{more obtuse} than orthogonal $90°$. They never align through any continuous motion in 4D space. The tetrahedron's geometry is \textbf{precessionally complete}---it maintains angular ``room to maneuver'' that Cartesian systems lose at their singularities. Where Euler angles hit a precessional speedbump, tetrahedral rotations glide through on more obtuse angular transitions.
+\end{tcolorbox}
+
 \subsection{Why 3 Parameters Are Not Enough}
 
 The space of 3D rotations is $SO(3)$---a 3-dimensional manifold that is \emph{not simply connected}. Topologically, $SO(3)$ is equivalent to $\mathbb{RP}^3$ (real projective 3-space), which has a ``twist'' that prevents global singularity-free parameterization with only 3 numbers.
@@ -765,11 +773,11 @@ ARTexplorer includes an interactive demo (\texttt{rt-rotor-demo.js}) that visual
     \item Mode toggle between Euler XYZ and Quadray Rotor
 \end{itemize}
 
-\begin{figure}[h]
+\begin{figure}
     \centering
-    \includegraphics[width=0.8\linewidth]{Whitepaper Images/Euler-Catastrophe.png}
-    \caption{XYZ Euler Gimbal Lock Failure is represented in the demo by warning regions and pulsing zones of failure. Interactive orbit handles allow the user to drag the primary axis of rotation, with a handle at the top of the axis also.}
-    \label{fig:euler-catastrophe}
+    \includegraphics[width=0.8\linewidth]{Euler-Catastrophe.png}
+    \caption{XYZ Euler Gimbal Lock Failure is represented in the demo by warning regions and pulsing zones of failure. Interactive orbit handles allow the user to drag the primary axis of rotation, with a handle at the top of the axis also}
+    \label{fig:placeholder}
 \end{figure}
 \textbf{
 Key demonstration:} In Euler mode, approaching the gimbal lock zones causes visible rotation instability (simulated jitter). In Quadray mode, the same axis orientations produce smooth, continuous rotation---the zones are ``irrelevant'' because the 4D representation has no singularities.
@@ -782,11 +790,11 @@ Key demonstration:} In Euler mode, approaching the gimbal lock zones causes visi
 \end{itemize}
 A future enhancement could map a cube in 3D space with gimbal lock zones on each face, allowing users to select different Euler orders and see the corresponding singularity locations.
 
-\begin{figure}[h]
+\begin{figure}
     \centering
-    \includegraphics[width=0.8\linewidth]{Whitepaper Images/Quadray-Pass.png}
+    \includegraphics[width=0.8\linewidth]{Quadray-Pass.png}
     \caption{In Quadray Rotor mode of the same demo, the user can see no gimbal lock failure in the same regions.}
-    \label{fig:quadray-pass}
+    \label{fig:placeholder}
 \end{figure}
 
 The demo is available at: \url{https://arossti.github.io/ARTexplorer/}
