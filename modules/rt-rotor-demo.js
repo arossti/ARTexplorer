@@ -44,12 +44,17 @@ const DEMO_CONFIG = {
   handleHoverScale: 1.3,   // Scale when hovering
   pulseSpeed: 4,           // Pulse frequency when in danger zone
 
+  // Gumball rotation handle settings (Phase 6.5)
+  gumballRadius: 2.8,         // Radius of rotation tori
+  gumballThickness: 0.06,     // Thickness of torus tubes
+  gumballHitThickness: 0.12,  // Hit zone thickness (larger for easier clicking)
+
   // Colors
   colors: {
     outerRing: 0x888888,
     middleRing: 0x00ff00,
     innerDisk: 0x4488ff,
-    axisIndicator: 0xffff00,
+    axisIndicator: 0x00ffff,  // Bright cyan for visibility
     lockZoneDanger: 0xff0000,
     warningRings: [0xffff00, 0xff8800, 0xff4400],
     quadrayHandles: [0xff0000, 0x00ff00, 0x0000ff, 0xffff00],
@@ -358,6 +363,9 @@ export class RotorDemo {
     // Create draggable axis handle at the tip
     this.createAxisHandle();
 
+    // Create mode-aware gumball rotation handles (Phase 6.5)
+    this.createRotationGumball();
+
     // Create gimbal lock zone visualization
     this.gimbalLockZones = this.createGimbalLockZones();
     this.demoGroup.add(this.gimbalLockZones);
@@ -424,6 +432,144 @@ export class RotorDemo {
     this.demoGroup.add(this.axisHandleNeg);
 
     console.log('🎯 Created draggable axis handle - drag to change spin axis!');
+  }
+
+  /**
+   * Create mode-aware gumball rotation handles (Phase 6.5)
+   *
+   * Creates two sets of rotation tori:
+   * - WXYZ (Quadray): 4 tetrahedral handles at 109.47° apart
+   * - XYZ (Cartesian): 3 orthogonal handles
+   *
+   * The visible set switches based on rotationMode.
+   */
+  createRotationGumball() {
+    const THREE = this.THREE;
+    const radius = DEMO_CONFIG.gumballRadius;
+    const thickness = DEMO_CONFIG.gumballThickness;
+    const hitThickness = DEMO_CONFIG.gumballHitThickness;
+
+    // Create parent groups for each handle set
+    this.quadrayHandles = new THREE.Group();
+    this.quadrayHandles.name = "QuadrayHandles";
+
+    this.cartesianHandles = new THREE.Group();
+    this.cartesianHandles.name = "CartesianHandles";
+
+    // === QUADRAY HANDLES (WXYZ) ===
+    // Tetrahedral axes: W=(1,1,1), X=(1,-1,-1), Y=(-1,1,-1), Z=(-1,-1,1)
+    const sqrt3 = Math.sqrt(3);
+    const quadrayAxes = [
+      { name: 'QW', axis: new THREE.Vector3(1/sqrt3, 1/sqrt3, 1/sqrt3), color: 0xffff00 },   // Yellow
+      { name: 'QX', axis: new THREE.Vector3(1/sqrt3, -1/sqrt3, -1/sqrt3), color: 0xff4444 }, // Red
+      { name: 'QY', axis: new THREE.Vector3(-1/sqrt3, 1/sqrt3, -1/sqrt3), color: 0x4444ff }, // Blue
+      { name: 'QZ', axis: new THREE.Vector3(-1/sqrt3, -1/sqrt3, 1/sqrt3), color: 0x44ff44 }  // Green
+    ];
+
+    quadrayAxes.forEach((axisInfo) => {
+      // Visual torus (thin, visible)
+      const torusGeom = new THREE.TorusGeometry(radius, thickness, 16, 64);
+      const torusMat = new THREE.MeshBasicMaterial({
+        color: axisInfo.color,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.DoubleSide
+      });
+      const torus = new THREE.Mesh(torusGeom, torusMat);
+      torus.name = `${axisInfo.name}_Ring`;
+
+      // Orient torus perpendicular to the axis
+      torus.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 0, 1),
+        axisInfo.axis
+      );
+
+      // Hit zone torus (thicker, invisible for clicking)
+      const hitGeom = new THREE.TorusGeometry(radius, hitThickness, 8, 32);
+      const hitMat = new THREE.MeshBasicMaterial({
+        visible: false
+      });
+      const hitZone = new THREE.Mesh(hitGeom, hitMat);
+      hitZone.name = `${axisInfo.name}_Hit`;
+      hitZone.quaternion.copy(torus.quaternion);
+      hitZone.userData = {
+        isGumballHandle: true,
+        isRotationHandle: true,
+        handleType: 'quadray',
+        axisName: axisInfo.name.substring(1), // 'W', 'X', 'Y', 'Z'
+        basisAxis: axisInfo.axis.clone(),
+        visualRing: torus
+      };
+
+      this.quadrayHandles.add(torus);
+      this.quadrayHandles.add(hitZone);
+    });
+
+    // === CARTESIAN HANDLES (XYZ) ===
+    const cartesianAxes = [
+      { name: 'X', axis: new THREE.Vector3(1, 0, 0), color: 0xff5555 }, // Red
+      { name: 'Y', axis: new THREE.Vector3(0, 1, 0), color: 0x55ff55 }, // Green
+      { name: 'Z', axis: new THREE.Vector3(0, 0, 1), color: 0x5555ff }  // Blue
+    ];
+
+    cartesianAxes.forEach((axisInfo) => {
+      // Visual torus
+      const torusGeom = new THREE.TorusGeometry(radius, thickness, 16, 64);
+      const torusMat = new THREE.MeshBasicMaterial({
+        color: axisInfo.color,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.DoubleSide
+      });
+      const torus = new THREE.Mesh(torusGeom, torusMat);
+      torus.name = `Cartesian${axisInfo.name}_Ring`;
+
+      // Orient torus perpendicular to the axis
+      torus.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 0, 1),
+        axisInfo.axis
+      );
+
+      // Hit zone torus
+      const hitGeom = new THREE.TorusGeometry(radius, hitThickness, 8, 32);
+      const hitMat = new THREE.MeshBasicMaterial({
+        visible: false
+      });
+      const hitZone = new THREE.Mesh(hitGeom, hitMat);
+      hitZone.name = `Cartesian${axisInfo.name}_Hit`;
+      hitZone.quaternion.copy(torus.quaternion);
+      hitZone.userData = {
+        isGumballHandle: true,
+        isRotationHandle: true,
+        handleType: 'cartesian',
+        axisName: axisInfo.name,
+        basisAxis: axisInfo.axis.clone(),
+        visualRing: torus
+      };
+
+      this.cartesianHandles.add(torus);
+      this.cartesianHandles.add(hitZone);
+    });
+
+    // Add both to demo group
+    this.demoGroup.add(this.quadrayHandles);
+    this.demoGroup.add(this.cartesianHandles);
+
+    // Set initial visibility based on current mode
+    this.updateGumballVisibility();
+
+    console.log('🔄 Created mode-aware gumball rotation handles (WXYZ/XYZ)');
+  }
+
+  /**
+   * Update gumball visibility based on rotation mode
+   */
+  updateGumballVisibility() {
+    if (!this.quadrayHandles || !this.cartesianHandles) return;
+
+    const isQuadrayMode = this.rotationMode === 'quadray';
+    this.quadrayHandles.visible = isQuadrayMode;
+    this.cartesianHandles.visible = !isQuadrayMode;
   }
 
   /**
@@ -499,37 +645,79 @@ export class RotorDemo {
   }
 
   /**
-   * Check if mouse is hovering over the axis handle
+   * Check if mouse is hovering over handles (axis handle or gumball rings)
    */
   checkHandleHover() {
-    if (!this.axisHandle || !this.raycaster) return;
+    if (!this.raycaster) return;
 
-    // Need camera reference - get from this.camera or scene
     const camera = this.camera;
     if (!camera) return;
 
     this.raycaster.setFromCamera(this.mouse, camera);
-    const intersects = this.raycaster.intersectObject(this.axisHandle);
+
+    // Collect all hit targets: axis handle + gumball handles
+    const hitTargets = [];
+    if (this.axisHandle) hitTargets.push(this.axisHandle);
+
+    // Add visible gumball handles
+    const activeHandles = this.rotationMode === 'quadray' ? this.quadrayHandles : this.cartesianHandles;
+    if (activeHandles) {
+      activeHandles.traverse((obj) => {
+        if (obj.userData && obj.userData.isGumballHandle) {
+          hitTargets.push(obj);
+        }
+      });
+    }
+
+    const intersects = this.raycaster.intersectObjects(hitTargets, false);
+
+    // Clear previous hover state
+    if (this.hoveredGumballHandle && this.hoveredGumballHandle.userData.visualRing) {
+      this.hoveredGumballHandle.userData.visualRing.material.opacity = 0.7;
+    }
+    this.hoveredGumballHandle = null;
 
     if (intersects.length > 0) {
-      if (!this.handleHovered) {
-        this.handleHovered = true;
-        this.axisHandle.scale.setScalar(DEMO_CONFIG.handleHoverScale);
-        this._canvas.style.cursor = 'grab';
+      const hit = intersects[0].object;
+
+      if (hit.userData.isAxisHandle) {
+        // Axis handle hover
+        if (!this.handleHovered) {
+          this.handleHovered = true;
+          this.axisHandle.scale.setScalar(DEMO_CONFIG.handleHoverScale);
+          this._canvas.style.cursor = 'grab';
+        }
+      } else if (hit.userData.isGumballHandle) {
+        // Gumball handle hover
+        this.hoveredGumballHandle = hit;
+        if (hit.userData.visualRing) {
+          hit.userData.visualRing.material.opacity = 1.0; // Brighten on hover
+        }
+        this._canvas.style.cursor = 'pointer';
+        this.handleHovered = false; // Clear axis hover
+        if (this.axisHandle) this.axisHandle.scale.setScalar(1);
       }
     } else {
+      // No hit - clear all hover states
       if (this.handleHovered) {
         this.handleHovered = false;
-        this.axisHandle.scale.setScalar(1);
-        this._canvas.style.cursor = 'default';
+        if (this.axisHandle) this.axisHandle.scale.setScalar(1);
       }
+      this._canvas.style.cursor = 'default';
     }
   }
 
   /**
-   * Handle mouse down - start dragging if on handle
+   * Handle mouse down - start dragging or apply rotation
    */
   handleMouseDown(event) {
+    // Check for gumball handle click first (Phase 6.5)
+    if (this.hoveredGumballHandle) {
+      this.applyGumballRotation(this.hoveredGumballHandle);
+      return;
+    }
+
+    // Original axis handle drag behavior
     if (!this.handleHovered) return;
 
     this.isDraggingHandle = true;
@@ -551,6 +739,25 @@ export class RotorDemo {
     }
 
     console.log('🖱️ Started dragging axis handle (orbit disabled)');
+  }
+
+  /**
+   * Apply rotation when a gumball handle is clicked (Phase 6.5)
+   * @param {THREE.Mesh} handle - The clicked gumball handle
+   */
+  applyGumballRotation(handle) {
+    const userData = handle.userData;
+
+    if (userData.handleType === 'quadray') {
+      // Use native F,G,H rotation for Quadray handles
+      this.applyNativeQuadrayRotation(userData.axisName);
+    } else {
+      // Use standard quaternion rotation for Cartesian handles
+      const axis = userData.basisAxis;
+      const rotor = QuadrayRotor.fromDegreesAxis(30, axis);
+      this.rotorState.orientation = this.rotorState.orientation.multiply(rotor);
+      console.log(`🔄 Cartesian rotation: ${userData.axisName}-axis @ 30°`);
+    }
   }
 
   /**
@@ -1255,6 +1462,9 @@ export class RotorDemo {
       statusEl.textContent = 'Mode: Euler XYZ (gimbal lock possible!)';
       console.log('⚠️ Switched to Euler XYZ mode - watch for gimbal lock when Y-axis approaches ±90°');
     }
+
+    // Update gumball handle visibility (Phase 6.5)
+    this.updateGumballVisibility();
   }
 
 
