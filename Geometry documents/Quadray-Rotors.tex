@@ -1075,6 +1075,95 @@ Based on verification results:
 \end{enumerate}
 
 %==============================================================================
+\section{Response to Anticipated Objections}
+%==============================================================================
+
+This section addresses common skeptical responses from mathematicians familiar with conventional rotation representations.
+
+\subsection{``Isn't this just quaternions in different clothing?''}
+
+\textbf{Short answer:} The rotations are isomorphic; the algebraic structure is different.
+
+Phase 6.2 verification confirms that F,G,H rotation produces \emph{identical} 3D results to quaternion rotation, to machine precision ($10^{-16}$). We do not claim to have discovered a new rotation group---$SO(3)$ is $SO(3)$. What we offer is:
+
+\begin{itemize}
+    \item A \textbf{coordinate system native to tetrahedral geometry}, where basis vectors are $(1,0,0,0)$, $(0,1,0,0)$, etc.\ rather than requiring $\sqrt{3}$ normalization
+    \item \textbf{RT-pure algebra} where spread/cross measures yield exact rationals for many useful angles
+    \item \textbf{Explicit Janus polarity} ($\mathbb{Z}_2$) making the double-cover visible rather than implicit
+\end{itemize}
+
+The relationship is analogous to Cartesian vs.\ polar coordinates: both describe the same plane, but certain problems are more natural in one system. Tetrahedral structures (crystallography, molecular geometry, Fuller's synergetics) may benefit from tetrahedral-native computation.
+
+\subsection{``Where are the proofs of group properties?''}
+
+The group properties follow from the verified equivalence:
+
+\begin{enumerate}
+    \item \textbf{Closure}: Verified empirically---composition of F,G,H rotations produces valid rotations (matches quaternion composition to $10^{-16}$)
+    \item \textbf{Identity}: $R(0°)$ with $F=1, G=0, H=0$ is the identity matrix
+    \item \textbf{Inverse}: $R(-\theta)$ inverts $R(\theta)$, verified in test suite
+    \item \textbf{Associativity}: Inherited from matrix multiplication
+\end{enumerate}
+
+The mathematical interpretation (Section~\ref{sec:verification}) establishes:
+\begin{equation}
+\text{Quadray}^{-1}\bigl(R_W(\theta) \cdot \text{Quadray}(P)\bigr) = q_{\hat{W},\theta} \cdot P \cdot q_{\hat{W},\theta}^{-1}
+\end{equation}
+
+This is not a claim of novelty in group theory---it is a claim of \textbf{representational advantage} for certain applications.
+
+\subsection{``What's the practical benefit over quaternions?''}
+
+We do not claim universal superiority. Quaternions are compact, efficient, and deeply integrated into graphics pipelines. Quadray rotors offer:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lp{5cm}p{5cm}}
+\toprule
+\textbf{Property} & \textbf{Quaternion} & \textbf{Quadray Rotor}\\
+\midrule
+Algebraic exactness & Requires transcendentals for most angles & Exact rationals for 30°, 45°, 60°, 90°, 120°, 180°\\
+Double-cover & Implicit ($q \equiv -q$) & Explicit (Janus polarity bit)\\
+Native geometry & Orthogonal (90°) & Tetrahedral (109.47°)\\
+Interpolation & SLERP (spherical) & Linear in $\mathbb{R}^4$ possible\\
+Normalization & Required ($\|q\|=1$) & Optional\\
+\bottomrule
+\end{tabular}
+\caption{Practical trade-offs between representations}
+\end{table}
+
+For applications requiring algebraic exactness (symbolic computation, exact geometric predicates) or native tetrahedral structure (molecular modeling, crystallography), Quadray rotors may offer advantages.
+
+\subsection{``The topology argument seems like repackaging''}
+
+Correct---both quaternions ($S^3$) and full Quadray ($\mathbb{R}^4$) escape gimbal lock by lifting from the 3-parameter $SO(3)$ manifold. This is not a novel topological insight; it is the \emph{known reason} why 4-parameter representations avoid singularities.
+
+Our contribution is not ``discovering'' this lift but \textbf{implementing it in tetrahedral coordinates with RT-pure algebra}. The Hairy Ball Theorem explanation in Section 2 is pedagogical context, not a claim of mathematical novelty.
+
+\subsection{``This needs peer review before acceptance''}
+
+Agreed. This document is a working paper with:
+\begin{itemize}
+    \item A functional implementation (ARTexplorer demo, open source)
+    \item Empirical verification against quaternions ($10^{-16}$ precision)
+    \item Clear documentation of what is claimed vs.\ what is conjectured
+\end{itemize}
+
+We welcome rigorous review. The open questions in Section 19 explicitly identify areas requiring further theoretical development, particularly the closed-form F,G,H composition rule.
+
+\subsection{``Why change what already works?''}
+
+This objection reflects a valid engineering conservatism but misses the exploratory purpose of this work. We are not proposing to \emph{replace} quaternions in production graphics engines. We are:
+
+\begin{enumerate}
+    \item \textbf{Exploring Fuller's synergetics computationally}---demonstrating that tetrahedral geometry can serve as a complete computational foundation
+    \item \textbf{Investigating RT-pure computation}---Wildberger's Rational Trigonometry applied to rotation representation
+    \item \textbf{Making the double-cover explicit}---a pedagogical and semantic improvement for certain applications
+\end{enumerate}
+
+The question ``why would we change anything?'' assumes the goal is industrial replacement. The actual goal is mathematical exploration and potential niche applications where tetrahedral-native or algebraically exact computation matters.
+
+%==============================================================================
 \section{Conclusion}
 %==============================================================================
 
