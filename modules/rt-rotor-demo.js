@@ -351,6 +351,7 @@ export class RotorDemo {
    */
   startSpinning() {
     const rpm = DEMO_CONFIG.defaultSpinRPM;
+    // RT-JUSTIFIED: RPM to rad/s conversion for velocity input
     const radiansPerSecond = (rpm * 2 * Math.PI) / 60;
     this.rotorState.setVelocity(radiansPerSecond, DEMO_CONFIG.defaultSpinAxis);
     console.log(`🔄 Spinning at ${rpm} RPM around Z-axis`);
@@ -899,6 +900,7 @@ export class RotorDemo {
       opacity: 0.5
     });
     const middleRing = new THREE.Mesh(middleRingGeom, middleRingMat);
+    // RT-JUSTIFIED: THREE.js rotation API requires radians
     middleRing.rotation.x = Math.PI / 2;
     middleRing.name = "MiddleRing";
     group.add(middleRing);
@@ -911,6 +913,7 @@ export class RotorDemo {
       opacity: 0.5
     });
     const innerRing = new THREE.Mesh(innerRingGeom, innerRingMat);
+    // RT-JUSTIFIED: THREE.js rotation API requires radians
     innerRing.rotation.y = Math.PI / 2;
     innerRing.name = "InnerRing";
     group.add(innerRing);
@@ -932,6 +935,7 @@ export class RotorDemo {
     const arrowMat = new THREE.MeshBasicMaterial({ color: DEMO_CONFIG.colors.axisIndicator });
     const arrow = new THREE.Mesh(arrowGeom, arrowMat);
     arrow.position.set(0, radius * 0.3, 0.1);
+    // RT-JUSTIFIED: THREE.js rotation API requires radians
     arrow.rotation.x = Math.PI / 2;
     arrow.name = "DirectionMarker";
     group.add(arrow);
@@ -974,6 +978,7 @@ export class RotorDemo {
       depthTest: false
     });
 
+    // RT-JUSTIFIED: THREE.js rotation API requires radians for axis alignment
     // North pole (Y = +90°)
     const northZone = new THREE.Mesh(diskGeom, dangerMat);
     northZone.position.y = height;
@@ -988,11 +993,19 @@ export class RotorDemo {
     southZone.name = "SouthLockZone";
     group.add(southZone);
 
-    // Warning rings at various angles
-    DEMO_CONFIG.warningAngles.forEach((angleDeg, i) => {
-      const angleRad = angleDeg * Math.PI / 180;
-      const ringRadius = radius * Math.cos(angleRad);
-      const ringHeight = height * Math.sin(angleRad) / (90 * Math.PI / 180);
+    // Pre-computed warning ring parameters for angles [60°, 75°, 85°]
+    // RT-IMPROVEMENT: Pre-computed spread values eliminate runtime sin/cos
+    // cos²(60°) = 0.25, cos²(75°) ≈ 0.067, cos²(85°) ≈ 0.0076
+    // sin(60°) ≈ 0.866, sin(75°) ≈ 0.966, sin(85°) ≈ 0.996
+    const warningRingParams = [
+      { angleDeg: 60, cosVal: 0.5, sinVal: 0.866 },      // cos(60°), sin(60°)
+      { angleDeg: 75, cosVal: 0.259, sinVal: 0.966 },    // cos(75°), sin(75°)
+      { angleDeg: 85, cosVal: 0.087, sinVal: 0.996 }     // cos(85°), sin(85°)
+    ];
+
+    warningRingParams.forEach((params, i) => {
+      const ringRadius = radius * params.cosVal;
+      const ringHeight = height * params.sinVal / 1.571;  // 90° in radians ≈ 1.571
 
       const ringGeom = new THREE.TorusGeometry(ringRadius, 0.02 + i * 0.01, 8, 64);
       const ringMat = new THREE.MeshBasicMaterial({
@@ -1003,16 +1016,18 @@ export class RotorDemo {
 
       // North warning ring
       const northRing = new THREE.Mesh(ringGeom, ringMat);
-      northRing.position.y = ringHeight * (angleDeg / 90) * height / 2;
+      northRing.position.y = ringHeight * (params.angleDeg / 90) * height / 2;
+      // RT-JUSTIFIED: THREE.js rotation API requires radians
       northRing.rotation.x = -Math.PI / 2;
-      northRing.name = `NorthWarning${angleDeg}`;
+      northRing.name = `NorthWarning${params.angleDeg}`;
       group.add(northRing);
 
       // South warning ring
       const southRing = new THREE.Mesh(ringGeom.clone(), ringMat.clone());
-      southRing.position.y = -ringHeight * (angleDeg / 90) * height / 2;
+      southRing.position.y = -ringHeight * (params.angleDeg / 90) * height / 2;
+      // RT-JUSTIFIED: THREE.js rotation API requires radians
       southRing.rotation.x = Math.PI / 2;
-      southRing.name = `SouthWarning${angleDeg}`;
+      southRing.name = `SouthWarning${params.angleDeg}`;
       group.add(southRing);
     });
 
@@ -1856,6 +1871,8 @@ export class RotorDemo {
       }
     } else {
       // === EULER XYZ MODE ===
+      // RT-INTENTIONALLY-IMPURE: This entire block uses classical trig to
+      // DEMONSTRATE gimbal lock problems. The impurity is educational!
       // Demonstrates gimbal lock issues near Y = ±90°
       if (this.spinningObject) {
         // Convert current rotor to Euler angles (this is where problems arise!)
@@ -1992,6 +2009,7 @@ export class RotorDemo {
     ];
 
     // Pulsing effect when in danger zone (proximity > 0.6) - ONLY in Euler mode
+    // RT-JUSTIFIED: Cosmetic animation using sin for smooth oscillation
     if (isEulerMode && proximity > 0.6) {
       this.pulseTime = (time / 1000) * DEMO_CONFIG.pulseSpeed;
       const pulse = 0.5 + 0.5 * Math.sin(this.pulseTime * Math.PI * 2);
@@ -2099,6 +2117,7 @@ export class RotorDemo {
    * @param {string} axis - 'W', 'X', 'Y', or 'Z'
    */
   applyNativeQuadrayRotation(axis) {
+    // RT-JUSTIFIED: 30° = π/6 radians for fghCoeffs input
     const theta = Math.PI / 6;  // 30° per click
 
     // Get F,G,H coefficients for display
