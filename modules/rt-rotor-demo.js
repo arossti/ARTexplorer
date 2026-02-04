@@ -121,6 +121,7 @@ export class RotorDemo {
     // Rotation handle state (Phase 6.5)
     this.hoveredRotorHandle = null;
     this.activeRotorHandle = null;  // Currently dragged rotation handle
+    this.dragStarted = false;  // Prevents axis jump on initial click
   }
 
   /**
@@ -573,6 +574,7 @@ export class RotorDemo {
     // Check for rotation handle drag (Phase 6.5 - drags spin axis)
     if (this.hoveredRotorHandle) {
       this.isDraggingHandle = true;
+      this.dragStarted = false;  // Don't move axis until first mousemove
       this.activeRotorHandle = this.hoveredRotorHandle;
       this._canvas.style.cursor = 'grabbing';
 
@@ -598,6 +600,7 @@ export class RotorDemo {
     if (!this.handleHovered) return;
 
     this.isDraggingHandle = true;
+    this.dragStarted = false;  // Don't move axis until first mousemove
     this.activeRotorHandle = null;  // Using axis handle, not rotation handle
     this._canvas.style.cursor = 'grabbing';
 
@@ -643,6 +646,13 @@ export class RotorDemo {
   dragAxisHandle(event) {
     const camera = this.camera;
     if (!camera || !this.raycaster || !this.dragPlane) return;
+
+    // Skip the first mousemove after mousedown to prevent axis jump
+    // The click itself shouldn't move the axis - only subsequent drags
+    if (!this.dragStarted) {
+      this.dragStarted = true;
+      return;
+    }
 
     const THREE = this.THREE;
 
