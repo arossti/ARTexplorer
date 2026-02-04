@@ -938,6 +938,38 @@ testComposition();
 
 ---
 
+#### 6.6a Phase 6.0 Results ✅ COMPLETE (February 2026)
+
+**Test executed**: `modules/fgh-verification-test.js`
+
+| Test | Result | Max Error |
+|------|--------|-----------|
+| W-axis 30° | ✅ PASS | 1.1×10⁻¹⁶ |
+| W-axis 45° | ✅ PASS | 2.2×10⁻¹⁶ |
+| W-axis 60° | ✅ PASS | 2.2×10⁻¹⁶ |
+| W-axis 90° | ✅ PASS | 1.7×10⁻¹⁶ |
+| W-axis 120° | ✅ PASS | 5.6×10⁻¹⁷ |
+| W-axis composition | ✅ PASS | 5.6×10⁻¹⁷ |
+| Y-axis (all angles) | ✅ PASS | ~10⁻¹⁶ |
+| X-axis (all angles) | ❌ FAIL | ~1.0 |
+| Z-axis (all angles) | ❌ FAIL | ~1.0 |
+
+**Key Findings**:
+
+1. **W-axis F,G,H VERIFIED** - Tom Ace's formula produces identical rotations to quaternion rotation about (1,1,1)/√3
+
+2. **Y-axis also works** - Same circulant pattern applies
+
+3. **X,Z-axis matrices need derivation** - Naive extension of the circulant pattern fails. The matrix structure for X and Z axes requires:
+   - Either deriving axis-specific F,G,H patterns
+   - Or using conjugation: transform so target axis → W, apply R_W, transform back
+
+4. **Composition works** - R_W(45°) × R_W(45°) = R_W(90°) exactly
+
+**Conclusion**: Tom Ace's formula is mathematically correct. Proceed with W-axis implementation for Phase 6.1, research X/Z axis matrices for Phase 6.2.
+
+---
+
 **Phase 6.1: Basis Axis Rotations (Pure Tetrahedral)**
 
 - [ ] Implement `rotationCoeffsFromSpread(s, polarity)`
