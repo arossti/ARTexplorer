@@ -1357,6 +1357,170 @@ export const RT = {
   },
 
   /**
+   * Native Quadray Rotation using F,G,H Coefficients (Phase 6.1)
+   * Tom Ace's tetrahedral rotation formula - verified Feb 2026
+   *
+   * For rotation by angle θ about a Quadray basis axis:
+   *   F = (2·cos(θ) + 1) / 3
+   *   G = (2·cos(θ - 120°) + 1) / 3
+   *   H = (2·cos(θ + 120°) + 1) / 3
+   *
+   * The 4×4 rotation matrix for W-axis has circulant structure:
+   *   | 1  0  0  0 |
+   *   | 0  F  H  G |
+   *   | 0  G  F  H |
+   *   | 0  H  G  F |
+   *
+   * Verification: W-axis and Y-axis match quaternions to machine precision (10^-16).
+   * See: fgh-verification-test.js
+   *
+   * @namespace QuadrayRotation
+   */
+  QuadrayRotation: {
+    /**
+     * Cached trigonometric constants for 120° offsets
+     * cos(120°) = -1/2 (exact rational)
+     * sin(120°) = √(3/4) = √3/2
+     */
+    COS_120: -0.5,
+    SIN_120: Math.sqrt(0.75),
+
+    /**
+     * Calculate F,G,H rotation coefficients from angle θ
+     *
+     * @param {number} theta - Rotation angle in radians
+     * @returns {Object} { F, G, H } - Rotation coefficients
+     *
+     * @example
+     * const { F, G, H } = RT.QuadrayRotation.fghCoeffs(Math.PI / 3); // 60°
+     */
+    fghCoeffs(theta) {
+      const cosT = Math.cos(theta);
+      const sinT = Math.sin(theta);
+
+      return {
+        F: (2 * cosT + 1) / 3,
+        G: (2 * (cosT * this.COS_120 + sinT * this.SIN_120) + 1) / 3,
+        H: (2 * (cosT * this.COS_120 - sinT * this.SIN_120) + 1) / 3,
+      };
+    },
+
+    /**
+     * Calculate F,G,H rotation coefficients from spread (RT-Pure)
+     *
+     * Given spread s = sin²(θ), derives F,G,H without using angle θ directly.
+     * The polarity parameter resolves the sign ambiguity in √(1-s).
+     *
+     * @param {number} spread - Spread value (0 to 1), where s = sin²(θ)
+     * @param {number} polarity - Sign of cos(θ): +1 for 0°≤θ≤90°, -1 for 90°<θ≤180°
+     * @returns {Object} { F, G, H } - Rotation coefficients
+     *
+     * @example
+     * // 60° rotation: spread = 3/4, polarity = +1
+     * const { F, G, H } = RT.QuadrayRotation.fghCoeffsFromSpread(0.75, 1);
+     *
+     * // 120° rotation: spread = 3/4, polarity = -1
+     * const { F, G, H } = RT.QuadrayRotation.fghCoeffsFromSpread(0.75, -1);
+     */
+    fghCoeffsFromSpread(spread, polarity = 1) {
+      const cosTheta = polarity * Math.sqrt(1 - spread);
+      const sinTheta = Math.sqrt(spread);
+
+      return {
+        F: (2 * cosTheta + 1) / 3,
+        G: (2 * (cosTheta * this.COS_120 + sinTheta * this.SIN_120) + 1) / 3,
+        H: (2 * (cosTheta * this.COS_120 - sinTheta * this.SIN_120) + 1) / 3,
+      };
+    },
+
+    /**
+     * Apply rotation about W-axis to a Quadray point
+     * W-axis direction in Cartesian: (1,1,1)/√3
+     *
+     * The W coordinate remains unchanged; X,Y,Z transform via circulant matrix.
+     *
+     * @param {Object} qPoint - Quadray point { w, x, y, z }
+     * @param {number} theta - Rotation angle in radians
+     * @returns {Object} Rotated Quadray point { w, x, y, z }
+     *
+     * @example
+     * const rotated = RT.QuadrayRotation.rotateAboutW({ w: 0, x: 1, y: 0, z: 0 }, Math.PI/4);
+     */
+    rotateAboutW(qPoint, theta) {
+      const { F, G, H } = this.fghCoeffs(theta);
+
+      return {
+        w: qPoint.w, // W unchanged (rotation axis)
+        x: F * qPoint.x + H * qPoint.y + G * qPoint.z,
+        y: G * qPoint.x + F * qPoint.y + H * qPoint.z,
+        z: H * qPoint.x + G * qPoint.y + F * qPoint.z,
+      };
+    },
+
+    /**
+     * Apply rotation about W-axis using spread (RT-Pure)
+     *
+     * @param {Object} qPoint - Quadray point { w, x, y, z }
+     * @param {number} spread - Spread value (0 to 1)
+     * @param {number} polarity - Sign of cos(θ): +1 or -1
+     * @returns {Object} Rotated Quadray point { w, x, y, z }
+     *
+     * @example
+     * // 45° rotation (spread = 0.5, polarity = +1)
+     * const rotated = RT.QuadrayRotation.rotateAboutWBySpread(point, 0.5, 1);
+     */
+    rotateAboutWBySpread(qPoint, spread, polarity = 1) {
+      const { F, G, H } = this.fghCoeffsFromSpread(spread, polarity);
+
+      return {
+        w: qPoint.w,
+        x: F * qPoint.x + H * qPoint.y + G * qPoint.z,
+        y: G * qPoint.x + F * qPoint.y + H * qPoint.z,
+        z: H * qPoint.x + G * qPoint.y + F * qPoint.z,
+      };
+    },
+
+    /**
+     * Apply rotation about Y-axis to a Quadray point
+     * Y-axis direction in Cartesian: (-1,1,-1)/√3
+     *
+     * Verified to match quaternions (Phase 6.0 testing).
+     *
+     * @param {Object} qPoint - Quadray point { w, x, y, z }
+     * @param {number} theta - Rotation angle in radians
+     * @returns {Object} Rotated Quadray point { w, x, y, z }
+     */
+    rotateAboutY(qPoint, theta) {
+      const { F, G, H } = this.fghCoeffs(theta);
+
+      return {
+        w: F * qPoint.w + H * qPoint.x + G * qPoint.z,
+        x: G * qPoint.w + F * qPoint.x + H * qPoint.z,
+        y: qPoint.y, // Y unchanged (rotation axis)
+        z: H * qPoint.w + G * qPoint.x + F * qPoint.z,
+      };
+    },
+
+    /**
+     * Common rotation spreads (exact rationals where possible)
+     *
+     * Maps angle names to { spread, polarity } pairs for RT-pure rotation.
+     * Spread s = sin²(θ) is often a rational number even when sin(θ) is irrational.
+     */
+    SPREADS: {
+      DEG_0: { spread: 0, polarity: 1 }, // Identity
+      DEG_30: { spread: 0.25, polarity: 1 }, // 1/4
+      DEG_45: { spread: 0.5, polarity: 1 }, // 1/2
+      DEG_60: { spread: 0.75, polarity: 1 }, // 3/4
+      DEG_90: { spread: 1, polarity: 1 }, // 1 (quarter turn)
+      DEG_120: { spread: 0.75, polarity: -1 }, // 3/4 (tetrahedral symmetry)
+      DEG_135: { spread: 0.5, polarity: -1 }, // 1/2
+      DEG_150: { spread: 0.25, polarity: -1 }, // 1/4
+      DEG_180: { spread: 0, polarity: -1 }, // Half turn (Janus inversion)
+    },
+  },
+
+  /**
    * Tetrahedron Quadrance Relationships
    * From "Divine Proportions" Chapter 26, Exercises 26.1-26.2
    *
