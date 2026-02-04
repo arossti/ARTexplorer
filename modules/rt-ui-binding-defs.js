@@ -287,26 +287,31 @@ export const simpleSliderBindings = [
   {
     id: "geodesicIcosaFrequency",
     type: "slider",
+    valueId: "geodesicIcosaFreqValue",
     formatValue: v => v,
   },
   {
     id: "geodesicTetraFrequency",
     type: "slider",
+    valueId: "geodesicTetraFreqValue",
     formatValue: v => v,
   },
   {
     id: "geodesicOctaFrequency",
     type: "slider",
+    valueId: "geodesicOctaFreqValue",
     formatValue: v => v,
   },
   {
     id: "geodesicDualTetraFrequency",
     type: "slider",
+    valueId: "geodesicDualTetraFreqValue",
     formatValue: v => v,
   },
   {
     id: "geodesicDualIcosaFrequency",
     type: "slider",
+    valueId: "geodesicDualIcosaFreqValue",
     formatValue: v => v,
   },
 
