@@ -765,7 +765,14 @@ ARTexplorer includes an interactive demo (\texttt{rt-rotor-demo.js}) that visual
     \item Mode toggle between Euler XYZ and Quadray Rotor
 \end{itemize}
 
-\textbf{Key demonstration:} In Euler mode, approaching the gimbal lock zones causes visible rotation instability (simulated jitter). In Quadray mode, the same axis orientations produce smooth, continuous rotation---the zones are ``irrelevant'' because the 4D representation has no singularities.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Whitepaper Images/Euler-Catastrophe.png}
+    \caption{XYZ Euler Gimbal Lock Failure is represented in the demo by warning regions and pulsing zones of failure. Interactive orbit handles allow the user to drag the primary axis of rotation, with a handle at the top of the axis also.}
+    \label{fig:euler-catastrophe}
+\end{figure}
+\textbf{
+Key demonstration:} In Euler mode, approaching the gimbal lock zones causes visible rotation instability (simulated jitter). In Quadray mode, the same axis orientations produce smooth, continuous rotation---the zones are ``irrelevant'' because the 4D representation has no singularities.
 
 \textbf{Note on gimbal lock zone visualization:} The current demo displays gimbal lock zones at the Y-axis poles ($\pm 90°$), which is correct for Euler XYZ rotation order specifically. In general, gimbal lock occurs when the \emph{middle axis} of any Euler rotation order reaches $\pm 90°$. A complete visualization would show six singularity regions---one at each face center of an inscribed cube:
 \begin{itemize}
@@ -774,6 +781,13 @@ ARTexplorer includes an interactive demo (\texttt{rt-rotor-demo.js}) that visual
     \item $\pm$Z poles: XZY and YZX orders
 \end{itemize}
 A future enhancement could map a cube in 3D space with gimbal lock zones on each face, allowing users to select different Euler orders and see the corresponding singularity locations.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Whitepaper Images/Quadray-Pass.png}
+    \caption{In Quadray Rotor mode of the same demo, the user can see no gimbal lock failure in the same regions.}
+    \label{fig:quadray-pass}
+\end{figure}
 
 The demo is available at: \url{https://arossti.github.io/ARTexplorer/}
 
