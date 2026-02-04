@@ -655,7 +655,9 @@ export class RotorDemo {
 
   /**
    * Drag the axis handle to a new position, updating spin axis
-   * Uses delta-based movement for smooth, jump-free dragging
+   * Two modes:
+   * - Rotation ring handles: rotate axis about that ring's basis vector (like standard gumball)
+   * - Axis sphere handles: free rotation using camera-relative screen-space movement
    */
   dragAxisHandle(event) {
     const camera = this.camera;
@@ -678,28 +680,48 @@ export class RotorDemo {
     // Skip if no significant movement
     if (Math.abs(deltaX) < 0.001 && Math.abs(deltaY) < 0.001) return;
 
-    // Get camera's right and up vectors for screen-space rotation
-    const cameraRight = new THREE.Vector3();
-    const cameraUp = new THREE.Vector3();
-    camera.matrixWorld.extractBasis(cameraRight, cameraUp, new THREE.Vector3());
-
     // Current axis as Vector3
     const axis = this.rotorState.axis;
-    const axisVec = new THREE.Vector3(axis.x, axis.y, axis.z);
+    let axisVec = new THREE.Vector3(axis.x, axis.y, axis.z);
 
-    // Rotate axis based on mouse delta
-    // Horizontal mouse movement rotates around camera's up vector
-    // Vertical mouse movement rotates around camera's right vector
-    const sensitivity = 2.0;  // Adjust for feel
+    // Check if we're dragging a rotation ring handle (has basisAxis)
+    if (this.activeRotorHandle && this.activeRotorHandle.userData.basisAxis) {
+      // ================================================================
+      // ROTATION RING: Rotate spin axis ABOUT this handle's basis vector
+      // This is how standard gumball controls work
+      // ================================================================
+      const basisAxis = this.activeRotorHandle.userData.basisAxis;
 
-    if (Math.abs(deltaX) > 0.0001) {
-      const rotX = new THREE.Quaternion().setFromAxisAngle(cameraUp, -deltaX * sensitivity);
-      axisVec.applyQuaternion(rotX);
-    }
+      // Calculate rotation amount from combined mouse delta
+      // Use tangential movement (perpendicular to view direction)
+      const sensitivity = 3.0;
+      const angleRadians = (deltaX - deltaY) * sensitivity;
 
-    if (Math.abs(deltaY) > 0.0001) {
-      const rotY = new THREE.Quaternion().setFromAxisAngle(cameraRight, deltaY * sensitivity);
-      axisVec.applyQuaternion(rotY);
+      // Create rotation quaternion around the handle's basis axis
+      const rotationQuat = new THREE.Quaternion().setFromAxisAngle(basisAxis, angleRadians);
+
+      // Apply rotation to the spin axis
+      axisVec.applyQuaternion(rotationQuat);
+
+    } else {
+      // ================================================================
+      // SPHERE HANDLE: Free rotation using camera-relative movement
+      // ================================================================
+      const cameraRight = new THREE.Vector3();
+      const cameraUp = new THREE.Vector3();
+      camera.matrixWorld.extractBasis(cameraRight, cameraUp, new THREE.Vector3());
+
+      const sensitivity = 2.0;
+
+      if (Math.abs(deltaX) > 0.0001) {
+        const rotX = new THREE.Quaternion().setFromAxisAngle(cameraUp, -deltaX * sensitivity);
+        axisVec.applyQuaternion(rotX);
+      }
+
+      if (Math.abs(deltaY) > 0.0001) {
+        const rotY = new THREE.Quaternion().setFromAxisAngle(cameraRight, deltaY * sensitivity);
+        axisVec.applyQuaternion(rotY);
+      }
     }
 
     // Normalize and update
