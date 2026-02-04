@@ -101,6 +101,9 @@ export class RotorDemo {
     // Rotation mode: 'quadray' (default) or 'euler'
     this.rotationMode = 'quadray';
 
+    // Spinning shape: 'tetrahedron' (default) or 'octahedron'
+    this.spinningShape = 'tetrahedron';
+
     // Euler angle accumulator (for euler mode)
     this.eulerAngles = { x: 0, y: 0, z: 0 };
     this.eulerGlitchAccumulator = 0;  // Simulates gimbal lock jitter
@@ -142,9 +145,14 @@ export class RotorDemo {
       // Checkbox states
       showCube: document.getElementById('showCube')?.checked,
       showDualTetrahedron: document.getElementById('showDualTetrahedron')?.checked,
+      // Geodesic Tetrahedron
       showGeodesicTetrahedron: document.getElementById('showGeodesicTetrahedron')?.checked,
       geodesicTetraFrequency: document.getElementById('geodesicTetraFrequency')?.value,
       geodesicTetraProjection: savedProjection,
+      // Geodesic Octahedron
+      showGeodesicOctahedron: document.getElementById('showGeodesicOctahedron')?.checked,
+      geodesicOctaFrequency: document.getElementById('geodesicOctaFrequency')?.value,
+      // Other settings
       showCartesianBasis: document.getElementById('showCartesianBasis')?.checked,
       showQuadray: document.getElementById('showQuadray')?.checked,
       showCartesianGrid: document.getElementById('showCartesianGrid')?.checked,
@@ -182,9 +190,10 @@ export class RotorDemo {
 
     restore('showCube', state.showCube);
     restore('showDualTetrahedron', state.showDualTetrahedron);
+    // Geodesic Tetrahedron
     restore('showGeodesicTetrahedron', state.showGeodesicTetrahedron);
     restore('geodesicTetraFrequency', state.geodesicTetraFrequency);
-    // Restore projection radio button
+    // Restore tetra projection radio button
     if (state.geodesicTetraProjection) {
       const radio = document.querySelector(`input[name="geodesicTetraProjection"][value="${state.geodesicTetraProjection}"]`);
       if (radio) {
@@ -192,6 +201,10 @@ export class RotorDemo {
         radio.dispatchEvent(new Event('change', { bubbles: true }));
       }
     }
+    // Geodesic Octahedron
+    restore('showGeodesicOctahedron', state.showGeodesicOctahedron);
+    restore('geodesicOctaFrequency', state.geodesicOctaFrequency);
+    // Other settings
     restore('showCartesianBasis', state.showCartesianBasis);
     restore('showQuadray', state.showQuadray);
     restore('showCartesianGrid', state.showCartesianGrid);
@@ -291,20 +304,23 @@ export class RotorDemo {
   }
 
   /**
-   * Find the geodesic tetrahedron in the scene to use as spinning object
+   * Find the spinning object in the scene based on current shape setting
    * Called from animation loop to handle async scene updates
    */
   findSpinningObject() {
     // Already found?
     if (this.spinningObject) return;
 
-    // Look for geodesic tetrahedron by userData.type (as set in rt-rendering.js)
+    // Look for the appropriate geodesic shape by userData.type (as set in rt-rendering.js)
+    const targetType = this.spinningShape === 'octahedron' ? 'geodesicOctahedron' : 'geodesicTetrahedron';
+    const shapeName = this.spinningShape === 'octahedron' ? 'octahedron' : 'tetrahedron';
+
     this.scene.traverse((obj) => {
-      if (obj.userData?.type === 'geodesicTetrahedron') {
+      if (obj.userData?.type === targetType) {
         // Only use it if it has children (geometry has been generated)
         if (obj.children && obj.children.length > 0) {
           this.spinningObject = obj;
-          console.log('🎯 Found geodesic tetrahedron for spinning! Children:', obj.children.length);
+          console.log(`🎯 Found geodesic ${shapeName} for spinning! Children:`, obj.children.length);
         }
       }
     });
@@ -1291,6 +1307,21 @@ export class RotorDemo {
       </div>
 
       <div class="section">
+        <div class="section-title">Spinning Object</div>
+        <div class="controls" style="margin-top: 4px;">
+          <button class="ctrl-btn" id="rp-shape-tetra" style="flex: 1; background: #353; border-color: #8f8;">
+            Tetrahedron
+          </button>
+          <button class="ctrl-btn" id="rp-shape-octa" style="flex: 1;">
+            Octahedron
+          </button>
+        </div>
+        <div id="rp-shape-status" style="font-size: 9px; color: #888; margin-top: 4px; text-align: center;">
+          Tetrahedron: vertices align with WXYZ handles
+        </div>
+      </div>
+
+      <div class="section">
         <div class="section-title">Axis Control</div>
         <div style="color: #aaa; font-size: 11px; margin-top: 4px; line-height: 1.4;">
           🎯 <b>Drag the sphere</b> at the axis tip to change spin direction.<br>
@@ -1415,6 +1446,14 @@ export class RotorDemo {
     });
     document.getElementById('rp-mode-euler').addEventListener('click', () => {
       this.setRotationMode('euler');
+    });
+
+    // Shape toggle buttons
+    document.getElementById('rp-shape-tetra').addEventListener('click', () => {
+      this.setSpinningShape('tetrahedron');
+    });
+    document.getElementById('rp-shape-octa').addEventListener('click', () => {
+      this.setSpinningShape('octahedron');
     });
 
     // Native F,G,H rotation buttons (Phase 6.2)
@@ -1567,6 +1606,85 @@ export class RotorDemo {
     this.updateRotationHandleVisibility();
   }
 
+  /**
+   * Set the spinning shape: 'tetrahedron' or 'octahedron'
+   * Tetrahedron vertices align with WXYZ handles (shows 4D structure)
+   * Octahedron is more spherical (shows smooth rotation)
+   */
+  setSpinningShape(shape) {
+    this.spinningShape = shape;
+
+    // Save current rotation before switching
+    const currentQuat = this.spinningObject?.quaternion.clone();
+
+    // Helper functions
+    const setCheckbox = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.checked = value;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
+    const setValue = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    };
+
+    const setRadio = (name, value) => {
+      const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
+    // Clear current spinning object reference so findSpinningObject will search again
+    this.spinningObject = null;
+
+    // Update button styles
+    const tetraBtn = document.getElementById('rp-shape-tetra');
+    const octaBtn = document.getElementById('rp-shape-octa');
+    const statusEl = document.getElementById('rp-shape-status');
+
+    if (shape === 'tetrahedron') {
+      // Show Tetrahedron, hide Octahedron
+      setCheckbox('showGeodesicOctahedron', false);
+      setCheckbox('showGeodesicTetrahedron', true);
+      setValue('geodesicTetraFrequency', '3');
+      setRadio('geodesicTetraProjection', 'off');  // flat projection
+
+      tetraBtn.style.background = '#353';
+      tetraBtn.style.borderColor = '#8f8';
+      octaBtn.style.background = '#333';
+      octaBtn.style.borderColor = '#0ff';
+      statusEl.textContent = 'Tetrahedron: vertices align with WXYZ handles';
+      console.log('🔺 Switched to Geodesic Tetrahedron 3F (flat)');
+    } else {
+      // Show Octahedron, hide Tetrahedron
+      setCheckbox('showGeodesicTetrahedron', false);
+      setCheckbox('showGeodesicOctahedron', true);
+      setValue('geodesicOctaFrequency', '3');
+
+      tetraBtn.style.background = '#333';
+      tetraBtn.style.borderColor = '#0ff';
+      octaBtn.style.background = '#353';
+      octaBtn.style.borderColor = '#8f8';
+      statusEl.textContent = 'Octahedron: more spherical appearance';
+      console.log('🔷 Switched to Geodesic Octahedron 3F');
+    }
+
+    // Wait a frame for the new object to be created, then restore rotation
+    requestAnimationFrame(() => {
+      this.findSpinningObject();
+      if (this.spinningObject && currentQuat) {
+        this.spinningObject.quaternion.copy(currentQuat);
+      }
+    });
+  }
 
   /**
    * Remove the info panel
