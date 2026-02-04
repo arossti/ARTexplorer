@@ -365,6 +365,18 @@ const sinTheta = (2 * t) / denom;      // Algebraic!
 
 \textbf{Benefit:} For rational $t$, all intermediate values remain exact rationals---no $\sqrt{}$ operations required. This would complete the RT-pure vision for the subset of rotations expressible with rational Weierstrass parameters.
 
+\begin{tcolorbox}[colback=gray!5, colframe=gray!50!black, title=\textbf{Note: Full Angular Coverage in the Demo}]
+The ARTexplorer demo achieves \textbf{full angular coverage}---any orientation in 3D space---while maintaining RT-purity where it matters most. The strategy:
+
+\begin{itemize}
+    \item \textbf{Boundary conversions} (degrees $\to$ spread, animation timing) use classical trig at the human interface layer---these are \texttt{RT-JUSTIFIED} as necessary for practical usability.
+    \item \textbf{Core rotation algebra} (Hamilton product composition, \texttt{toMatrix3()} output) is \textbf{RT-pure}: polynomial multiplication with no transcendental functions.
+    \item \textbf{For rational spreads} (30°, 45°, 60°, 90°, 120°, 180°), the internal calculations could be fully algebraic.
+\end{itemize}
+
+The Weierstrass direction extends this: if rotation input were accepted as parameter $t$ instead of angle, the \emph{entire pipeline} would be algebraic for rational $t$. But that's a research direction, not a practical UI---nobody thinks in ``rotate by $t = 0.577$'' instead of ``rotate by 60°.''
+\end{tcolorbox}
+
 %==============================================================================
 \section{The Tetrahedral Rotation Matrix}
 %==============================================================================
@@ -809,13 +821,25 @@ A critical distinction for understanding native Quadray rotation:
 
 \subsection{The Tetrahedral Basis Directions}
 
-The four Quadray basis vectors, expressed in Cartesian coordinates:
+The four Quadray basis vectors can be expressed in two equivalent ways:
+
+\textbf{In Cartesian coordinates} (requires $\sqrt{3}$ normalization):
 \begin{align}
 \hat{W} &= \frac{1}{\sqrt{3}}(1, 1, 1)\\
 \hat{X} &= \frac{1}{\sqrt{3}}(1, -1, -1)\\
 \hat{Y} &= \frac{1}{\sqrt{3}}(-1, 1, -1)\\
 \hat{Z} &= \frac{1}{\sqrt{3}}(-1, -1, 1)
 \end{align}
+
+\textbf{In native Quadray coordinates} (no $\sqrt{}$ needed):
+\begin{align}
+\hat{W} &= (1, 0, 0, 0)\\
+\hat{X} &= (0, 1, 0, 0)\\
+\hat{Y} &= (0, 0, 1, 0)\\
+\hat{Z} &= (0, 0, 0, 1)
+\end{align}
+
+The native Quadray representation is algebraically simpler---each basis direction is a unit vector along one coordinate axis. The $\sqrt{3}$ normalization factor only appears when converting to Cartesian coordinates, where the tetrahedral directions must be expressed relative to orthogonal axes.
 
 These point to the vertices of a regular tetrahedron inscribed in the unit sphere. The angle between any two basis vectors is $\cos^{-1}(-1/3) \approx 109.47°$---the tetrahedral central angle.
 
