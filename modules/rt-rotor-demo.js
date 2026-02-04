@@ -517,10 +517,10 @@ export class RotorDemo {
     const hitTargets = [];
     if (this.axisHandle) hitTargets.push(this.axisHandle);
 
-    // Add rotation handles (the existing torus rings)
+    // Add visible rotation handles only
     if (this.rotationHandles) {
       this.rotationHandles.traverse((obj) => {
-        if (obj.userData && obj.userData.isRotorHandle) {
+        if (obj.userData && obj.userData.isRotorHandle && obj.visible) {
           hitTargets.push(obj);
         }
       });
@@ -568,7 +568,15 @@ export class RotorDemo {
   handleMouseDown(event) {
     // Check for rotation handle click first (Phase 6.5)
     if (this.hoveredRotorHandle) {
+      // Disable orbit controls to prevent camera rotation
+      if (this.controls) {
+        this.controls.enabled = false;
+      }
       this.applyRotorHandleClick(this.hoveredRotorHandle);
+      // Re-enable orbit controls after applying rotation
+      if (this.controls) {
+        this.controls.enabled = true;
+      }
       return;
     }
 
@@ -894,8 +902,9 @@ export class RotorDemo {
     const group = new THREE.Group();
     group.name = "RotationHandles";
 
-    const handleRadius = DEMO_CONFIG.gyroscopeRadius * 1.3;
-    const tubeRadius = 0.08;
+    // Size handles to fit inside the gyroscope (Phase 6.5 fix)
+    const handleRadius = DEMO_CONFIG.gyroscopeRadius * 0.85;
+    const tubeRadius = 0.06;
 
     // Initialize Quadray basis vectors if needed
     if (!Quadray.basisVectors) {
@@ -928,8 +937,8 @@ export class RotorDemo {
     cartesianAxes.forEach((vec, i) => {
       const handle = this.createTorusHandle(
         vec,
-        handleRadius * 1.1,
-        tubeRadius * 0.8,
+        handleRadius,  // Same size as Quadray handles
+        tubeRadius,
         DEMO_CONFIG.colors.cartesianHandles[i],
         {
           basisType: 'cartesian',
@@ -940,7 +949,30 @@ export class RotorDemo {
       group.add(handle);
     });
 
+    // Set initial visibility based on current mode
+    this.updateRotationHandleVisibility(group);
+
     return group;
+  }
+
+  /**
+   * Update rotation handle visibility based on current mode
+   * Shows Quadray handles in Quadray mode, Cartesian in Euler mode
+   */
+  updateRotationHandleVisibility(handles = this.rotationHandles) {
+    if (!handles) return;
+
+    const isQuadrayMode = this.rotationMode === 'quadray';
+
+    handles.traverse((obj) => {
+      if (obj.userData && obj.userData.isRotorHandle) {
+        if (obj.userData.basisType === 'quadray') {
+          obj.visible = isQuadrayMode;
+        } else if (obj.userData.basisType === 'cartesian') {
+          obj.visible = !isQuadrayMode;
+        }
+      }
+    });
   }
 
   /**
@@ -1319,6 +1351,9 @@ export class RotorDemo {
       statusEl.textContent = 'Mode: Euler XYZ (gimbal lock possible!)';
       console.log('⚠️ Switched to Euler XYZ mode - watch for gimbal lock when Y-axis approaches ±90°');
     }
+
+    // Update rotation handle visibility (Phase 6.5)
+    this.updateRotationHandleVisibility();
   }
 
 
