@@ -108,11 +108,13 @@ export class RotorDemo {
     // Saved scene state (to restore on exit)
     this.savedSceneState = null;
 
-    // Axis handle (draggable sphere)
+    // Axis handle (draggable sphere - both ends)
     this.axisHandle = null;
     this.axisHandleMaterial = null;
+    this.axisHandleNegMaterial = null;
     this.isDraggingHandle = false;
     this.handleHovered = false;
+    this.hoveredAxisHandle = null;  // Which axis handle is hovered
     this.dragPlane = null;  // Plane for constraining drag
     this.raycaster = null;
     this.mouse = new THREE.Vector2();
@@ -417,15 +419,19 @@ export class RotorDemo {
 
     this.demoGroup.add(this.axisHandle);
 
-    // Also create the opposite handle (at negative axis)
-    const handleGeom2 = new THREE.SphereGeometry(radius * 0.6, 16, 16);
-    const handleMat2 = new THREE.MeshBasicMaterial({
-      color: 0x888888,
+    // Also create the opposite handle (at negative axis) - same size and interactive
+    const handleGeom2 = new THREE.SphereGeometry(radius, 24, 24);
+    this.axisHandleNegMaterial = new THREE.MeshBasicMaterial({
+      color: DEMO_CONFIG.colors.handleSafe,  // Same color as main handle
       transparent: true,
-      opacity: 0.5
+      opacity: 0.9
     });
-    this.axisHandleNeg = new THREE.Mesh(handleGeom2, handleMat2);
+    this.axisHandleNeg = new THREE.Mesh(handleGeom2, this.axisHandleNegMaterial);
     this.axisHandleNeg.name = "AxisHandleNeg";
+    this.axisHandleNeg.userData = {
+      isDraggable: true,
+      isAxisHandle: true  // Same flag so it responds to hover/drag
+    };
     this.axisHandleNeg.position.set(
       -axis.x * distance,
       -axis.y * distance,
@@ -433,7 +439,7 @@ export class RotorDemo {
     );
     this.demoGroup.add(this.axisHandleNeg);
 
-    console.log('🎯 Created draggable axis handle - drag to change spin axis!');
+    console.log('🎯 Created draggable axis handles (both ends) - drag to change spin axis!');
   }
 
   /**
@@ -519,9 +525,10 @@ export class RotorDemo {
 
     this.raycaster.setFromCamera(this.mouse, camera);
 
-    // Collect all hit targets: axis handle + rotation handles
+    // Collect all hit targets: axis handles (both ends) + rotation handles
     const hitTargets = [];
     if (this.axisHandle) hitTargets.push(this.axisHandle);
+    if (this.axisHandleNeg) hitTargets.push(this.axisHandleNeg);
 
     // Add visible rotation handles only
     if (this.rotationHandles) {
@@ -544,10 +551,11 @@ export class RotorDemo {
       const hit = intersects[0].object;
 
       if (hit.userData.isAxisHandle) {
-        // Axis handle hover
+        // Axis handle hover (either end)
         if (!this.handleHovered) {
           this.handleHovered = true;
-          this.axisHandle.scale.setScalar(DEMO_CONFIG.handleHoverScale);
+          this.hoveredAxisHandle = hit;  // Track which one
+          hit.scale.setScalar(DEMO_CONFIG.handleHoverScale);
           this._canvas.style.cursor = 'grab';
         }
       } else if (hit.userData.isRotorHandle) {
@@ -556,13 +564,17 @@ export class RotorDemo {
         hit.material.opacity = 0.9;
         this._canvas.style.cursor = 'pointer';
         this.handleHovered = false;
+        this.hoveredAxisHandle = null;
         if (this.axisHandle) this.axisHandle.scale.setScalar(1);
+        if (this.axisHandleNeg) this.axisHandleNeg.scale.setScalar(1);
       }
     } else {
       // No hit - clear all hover states
       if (this.handleHovered) {
         this.handleHovered = false;
+        this.hoveredAxisHandle = null;
         if (this.axisHandle) this.axisHandle.scale.setScalar(1);
+        if (this.axisHandleNeg) this.axisHandleNeg.scale.setScalar(1);
       }
       this._canvas.style.cursor = 'default';
     }
@@ -734,6 +746,11 @@ export class RotorDemo {
     const color = new this.THREE.Color();
     color.setHSL(hue / 360, 0.9, 0.5);
     this.axisHandleMaterial.color.copy(color);
+
+    // Update negative handle color too
+    if (this.axisHandleNegMaterial) {
+      this.axisHandleNegMaterial.color.copy(color);
+    }
 
     // Also update the axis line color
     const axisLine = this.demoGroup?.getObjectByName('AxisIndicator');
@@ -1121,11 +1138,24 @@ export class RotorDemo {
           margin-bottom: 10px;
           border-bottom: 1px solid #444;
           padding-bottom: 5px;
+          cursor: move;
+          user-select: none;
+        }
+        #rotor-info-panel .header:hover {
+          background: rgba(255, 255, 255, 0.05);
+          margin: -5px -5px 10px -5px;
+          padding: 5px 5px 10px 5px;
+          border-radius: 4px 4px 0 0;
         }
         #rotor-info-panel .header h3 {
           margin: 0;
           border: none;
           padding: 0;
+        }
+        #rotor-info-panel .header h3::before {
+          content: '⋮⋮ ';
+          color: #666;
+          margin-right: 4px;
         }
         #rotor-info-panel .close-btn {
           background: #f44;
@@ -1308,6 +1338,65 @@ export class RotorDemo {
     document.getElementById('rp-fgh-z').addEventListener('click', () => {
       this.applyNativeQuadrayRotation('Z');
     });
+
+    // Make panel draggable by header
+    this.setupPanelDrag(panel);
+  }
+
+  /**
+   * Setup drag functionality for the info panel
+   */
+  setupPanelDrag(panel) {
+    const header = panel.querySelector('.header');
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    const onMouseDown = (e) => {
+      // Don't drag if clicking the close button
+      if (e.target.classList.contains('close-btn')) return;
+
+      isDragging = true;
+      const rect = panel.getBoundingClientRect();
+      dragOffsetX = e.clientX - rect.left;
+      dragOffsetY = e.clientY - rect.top;
+
+      // Switch from right/top to left/top positioning for drag
+      panel.style.left = rect.left + 'px';
+      panel.style.top = rect.top + 'px';
+      panel.style.right = 'auto';
+
+      e.preventDefault();
+    };
+
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+
+      const newX = e.clientX - dragOffsetX;
+      const newY = e.clientY - dragOffsetY;
+
+      // Constrain to viewport
+      const maxX = window.innerWidth - panel.offsetWidth;
+      const maxY = window.innerHeight - panel.offsetHeight;
+
+      panel.style.left = Math.max(0, Math.min(newX, maxX)) + 'px';
+      panel.style.top = Math.max(0, Math.min(newY, maxY)) + 'px';
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+    };
+
+    header.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    // Store cleanup function
+    this._panelDragCleanup = () => {
+      header.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
   }
 
   /**
