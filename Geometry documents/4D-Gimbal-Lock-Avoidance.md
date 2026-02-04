@@ -58,6 +58,18 @@ Gimbal lock occurs when two rotation axes align, causing a **loss of one degree 
 - **Aerospace:** Apollo 11's guidance computer nearly encountered gimbal lock
 - **3D Graphics:** SLERP (spherical linear interpolation) requires quaternions to avoid artifacts
 
+### 2.3 Gimbal Lock Depends on Rotation Order
+
+Gimbal lock occurs when the **middle axis** of a rotation order reaches ±90°. Different Euler angle conventions have singularities at different locations:
+
+| Rotation Order | Lock Occurs When | Singularity Location |
+|---------------|------------------|---------------------|
+| XYZ, ZYX | Y = ±90° | ±Y poles |
+| YXZ, ZXY | X = ±90° | ±X poles |
+| XZY, YZX | Z = ±90° | ±Z poles |
+
+A complete visualization of all Euler singularities would show **six regions**—one at each face center of an inscribed cube. The current ARTexplorer demo shows Y-axis poles (XYZ order), but a future enhancement could display all six zones with selectable rotation orders.
+
 ### 2.3 The Standard Solution: Quaternions
 
 Quaternions avoid gimbal lock by using **4 parameters** constrained to a **3-sphere** (S³):
@@ -544,6 +556,37 @@ QuadrayRotor.prototype.toThreeMatrix4 = function() {
 4. **Physical interpretation:** What does a "rotation by spread 3/4" mean geometrically in tetrahedral terms?
 
 5. **Performance:** Can RT-pure rotations be made GPU-efficient, or is conversion to quaternions at the boundary always necessary?
+
+---
+
+## Appendix C: Future Visualization Enhancements
+
+### C.1 Full Gimbal Lock Zone Visualization
+
+The current demo displays gimbal lock zones for Euler XYZ order only (Y-axis poles). A more complete visualization would show all six potential singularity regions:
+
+```
+          +Y (XYZ, ZYX)
+             ↑
+             │
+   +X ←──────┼──────→ -X (YXZ, ZXY)
+  (YXZ)      │       (YXZ)
+             │
+             ↓
+          -Y (XYZ, ZYX)
+
+   +Z, -Z (XZY, YZX) perpendicular to this view
+```
+
+**Proposed Implementation:**
+
+1. Render an inscribed cube with semi-transparent faces
+2. Each face pair represents one gimbal lock singularity region
+3. Color-code by Euler order: Red=XYZ/ZYX, Green=YXZ/ZXY, Blue=XZY/YZX
+4. Add dropdown to select active Euler order (highlights corresponding faces)
+5. Warning rings radiate from the appropriate poles based on selected order
+
+This would demonstrate that gimbal lock is not a property of 3D rotation itself, but of the specific 3-parameter representation chosen.
 
 ---
 
