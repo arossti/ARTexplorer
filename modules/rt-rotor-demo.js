@@ -86,7 +86,7 @@ export class RotorDemo {
 
     // 3D objects
     this.demoGroup = null;
-    this.spinningObject = null;  // The geodesic octahedron
+    this.spinningObject = null;  // The geodesic tetrahedron (flat projection)
     this.gimbalLockZones = null;
     this.handles = null;
 
@@ -131,12 +131,20 @@ export class RotorDemo {
    * Save current scene state before demo takes over
    */
   saveSceneState() {
+    // Save geodesic tetrahedron projection radio button state
+    const projectionRadios = document.querySelectorAll('input[name="geodesicTetraProjection"]');
+    let savedProjection = 'spherical';  // default
+    projectionRadios.forEach(radio => {
+      if (radio.checked) savedProjection = radio.value;
+    });
+
     this.savedSceneState = {
       // Checkbox states
       showCube: document.getElementById('showCube')?.checked,
       showDualTetrahedron: document.getElementById('showDualTetrahedron')?.checked,
-      showGeodesicOctahedron: document.getElementById('showGeodesicOctahedron')?.checked,
-      geodesicOctaFrequency: document.getElementById('geodesicOctaFrequency')?.value,
+      showGeodesicTetrahedron: document.getElementById('showGeodesicTetrahedron')?.checked,
+      geodesicTetraFrequency: document.getElementById('geodesicTetraFrequency')?.value,
+      geodesicTetraProjection: savedProjection,
       showCartesianBasis: document.getElementById('showCartesianBasis')?.checked,
       showQuadray: document.getElementById('showQuadray')?.checked,
       showCartesianGrid: document.getElementById('showCartesianGrid')?.checked,
@@ -174,8 +182,16 @@ export class RotorDemo {
 
     restore('showCube', state.showCube);
     restore('showDualTetrahedron', state.showDualTetrahedron);
-    restore('showGeodesicOctahedron', state.showGeodesicOctahedron);
-    restore('geodesicOctaFrequency', state.geodesicOctaFrequency);
+    restore('showGeodesicTetrahedron', state.showGeodesicTetrahedron);
+    restore('geodesicTetraFrequency', state.geodesicTetraFrequency);
+    // Restore projection radio button
+    if (state.geodesicTetraProjection) {
+      const radio = document.querySelector(`input[name="geodesicTetraProjection"][value="${state.geodesicTetraProjection}"]`);
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
     restore('showCartesianBasis', state.showCartesianBasis);
     restore('showQuadray', state.showQuadray);
     restore('showCartesianGrid', state.showCartesianGrid);
@@ -212,6 +228,14 @@ export class RotorDemo {
       }
     };
 
+    const setRadio = (name, value) => {
+      const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
     // Hide default geometry
     setCheckbox('showCube', false);
     setCheckbox('showDualTetrahedron', false);
@@ -228,11 +252,13 @@ export class RotorDemo {
     setCheckbox('planeIvmXZ', false);
     setCheckbox('planeIvmYZ', false);
 
-    // Show Geodesic Octahedron 3F as the spinning object
-    setCheckbox('showGeodesicOctahedron', true);
-    setValue('geodesicOctaFrequency', '3');
+    // Show Geodesic Tetrahedron 3F with flat projection as the spinning object
+    // (Flat projection lets users correlate spinning object with WXYZ handles)
+    setCheckbox('showGeodesicTetrahedron', true);
+    setValue('geodesicTetraFrequency', '3');
+    setRadio('geodesicTetraProjection', 'off');  // 'off' = flat (no spherical projection)
 
-    console.log('🎬 Configured scene for rotor demo');
+    console.log('🎬 Configured scene for rotor demo (Geodesic Tetrahedron 3F flat)');
   }
 
   /**
@@ -265,20 +291,20 @@ export class RotorDemo {
   }
 
   /**
-   * Find the geodesic octahedron in the scene to use as spinning object
+   * Find the geodesic tetrahedron in the scene to use as spinning object
    * Called from animation loop to handle async scene updates
    */
   findSpinningObject() {
     // Already found?
     if (this.spinningObject) return;
 
-    // Look for geodesic octahedron by userData.type (as set in rt-rendering.js)
+    // Look for geodesic tetrahedron by userData.type (as set in rt-rendering.js)
     this.scene.traverse((obj) => {
-      if (obj.userData?.type === 'geodesicOctahedron') {
+      if (obj.userData?.type === 'geodesicTetrahedron') {
         // Only use it if it has children (geometry has been generated)
         if (obj.children && obj.children.length > 0) {
           this.spinningObject = obj;
-          console.log('🎯 Found geodesic octahedron for spinning! Children:', obj.children.length);
+          console.log('🎯 Found geodesic tetrahedron for spinning! Children:', obj.children.length);
         }
       }
     });
