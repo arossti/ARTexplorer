@@ -54,6 +54,201 @@ Reidun Twarock's research shows:
 
 ---
 
+## 4D Quadray Approach: Native Icosahedral Mapping
+
+### The Insight: 4D±  Space for Seamless Tiling
+
+Traditional Penrose-to-sphere mapping treats icosahedral faces as 2D patches that must be "cut and stitched" together. This creates the **edge continuity problem**: tiles crossing face boundaries must be explicitly matched.
+
+ARTexplorer's **4D Quadray framework** (see [Janus-Inversion.tex](./Janus-Inversion.tex), [Quadray-Rotors.tex](./Quadray-Rotors.tex), [4D-COORDINATES.md](./4D-COORDINATES.md)) offers a fundamentally different approach where edge matching becomes **automatic and topologically enforced**.
+
+### Why 4D Quadray Advantages Penrose Mapping
+
+| Challenge | Traditional 3D Approach | 4D Quadray Approach |
+|-----------|------------------------|---------------------|
+| Edge continuity | Half-tiles, explicit matching rules | **Janus inversion** through edge |
+| Face rotations | sin/cos chains, error accumulation | **RT-pure spread rotors** (no gimbal lock) |
+| 5-fold symmetry | Imposed externally on XYZ | **Native** to φ-based tetrahedral coordinates |
+| Matching rules | 2D arrow decorations | **4D vector complementarity** |
+| Double-cover | Implicit (quaternion ambiguity) | **Explicit Janus polarity bit** |
+
+### Janus Inversion for Edge Continuity
+
+From [Janus-Inversion.tex](./Janus-Inversion.tex), the **Janus Point** is the dimensional transition at origin where forms pass from 4D+ (positive dimensional space) to 4D− (negative/complementary dimensional space).
+
+**Key insight for Penrose mapping**: When two icosahedral faces meet at an edge, treat one face as being in 4D+ and its neighbor as being in 4D−. The **edge itself becomes the Janus Point** — the dimensional transition boundary.
+
+```
+Face A (4D+)          Edge (Janus Point)          Face B (4D−)
+     /\                      |                      /\
+    /  \                     |                     /  \
+   / T₁ \    ← tile crosses →|← and emerges →    / T₁' \
+  /______\                   |                  /______\
+
+T₁ in 4D+: (w, x, y, z, +)
+T₁' in 4D−: (-w, -x, -y, -z, −)   ← Janus inversion preserves topology!
+```
+
+**Why this works**: Janus inversion is not a "cut" — it's a **continuous topological transformation** (inside-outing through a higher-dimensional embedding). The tile doesn't get clipped; it **inverts** through the edge and emerges whole on the adjacent face. Matching is automatic because inversion preserves all geometric relationships.
+
+### RT-Pure Face Rotations with Spread-Quadray Rotors
+
+From [Quadray-Rotors.tex](./Quadray-Rotors.tex), **Spread-Quadray Rotors** provide gimbal-lock-free rotations using:
+- **Spread** (s = sin²θ) instead of angles
+- **4 independent coordinates** (no zero-sum constraint)
+- **Explicit Janus polarity** for double-cover
+
+For Penrose icosahedral mapping, the critical rotations are **multiples of 72°** (between adjacent faces at 5-fold vertices). These map directly to our pentagon spread constants:
+
+```javascript
+// RT-pure face rotation using spread β (72°)
+const beta = RT.PurePhi.pentagon.beta();  // (5+√5)/8 ≈ 0.9045
+
+// Rotor for 72° rotation about tetrahedral axis
+const rotor72 = {
+  W: cos(36°),  // half-angle: RT.PurePhi.pentagon.cos36()
+  X: sin(36°) * axisX,
+  Y: sin(36°) * axisY,
+  Z: sin(36°) * axisZ,
+  polarity: '+'  // Explicit Janus state
+};
+```
+
+**Algebraic exactness**: Unlike quaternion sin/cos chains that accumulate floating-point errors, Spread-Quadray rotors use **cached RT-pure values** from `RT.PurePhi.pentagon`. After 5 consecutive 72° rotations (full 360°), we return to **exact** starting position.
+
+### 4D Matching Rules (No Arrow Decorations)
+
+Traditional Penrose matching uses **2D arrow decorations** on tile edges — each edge has a direction that must match its neighbor. This requires explicit validation.
+
+In 4D Quadray space, matching becomes **implicit**:
+
+```
+Standard Penrose (2D):
+  Edge E on Tile A: → (arrow pointing right)
+  Edge E on Tile B: ← (arrow pointing left)
+  Match if: arrows oppose (explicit rule check)
+
+4D Quadray (implicit matching):
+  Edge E on Tile A: (w, x, y, z, +)
+  Edge E on Tile B: (-w, -x, -y, -z, −)
+  Match if: B = Janus(A)  (automatic from inversion)
+```
+
+Two edges match **if and only if one is the Janus inversion of the other**. This is a single comparison, not a rule lookup.
+
+### Icosahedral Vertices: Native 5-Fold Symmetry
+
+The icosahedron has **12 vertices**, each with **5-fold rotational symmetry**. In Cartesian coordinates, these involve awkward combinations of φ.
+
+In Quadray coordinates, the icosahedral vertices relate naturally to the **Stella Octangula** (interpenetrating tetrahedra) documented in [4D-COORDINATES.md](./4D-COORDINATES.md):
+
+| Vertex Type | Cartesian | Quadray |
+|-------------|-----------|---------|
+| Icosahedron 5-fold vertex | (0, ±1, ±φ) | Linear combo of W, X, Y, Z with φ coefficients |
+| Stella Octangula vertex | (+1, +1, +1) | (1, 0, 0, 0) + permutations |
+
+The **φ-based Quadray relationships** mean Penrose's golden ratio geometry aligns natively with icosahedral structure. No coordinate transformation needed.
+
+### Implementation Strategy: 4D Penrose Net
+
+Instead of generating flat tilings and projecting to sphere, we work **natively in 4D Quadray space**:
+
+```
+Phase 1: Seed at Icosahedral Vertex (4D+)
+  - Place 5-fold Penrose seed (Star or Sun) at one icosahedral vertex
+  - Vertex is naturally a 5-fold Quadray position
+
+Phase 2: Deflate in 4D
+  - Each deflation step subdivides tiles
+  - Tiles naturally extend toward adjacent vertices
+  - Edge crossings trigger Janus inversion (automatic matching)
+
+Phase 3: Spherical Projection (GPU Boundary)
+  - Only at final render: convert Quadray → Cartesian → THREE.Vector3
+  - Single sqrt expansion at the very end
+  - All preceding algebra is RT-pure
+```
+
+### Data Structures: 4D Tiles
+
+```javascript
+/**
+ * 4D Penrose Tile (Quadray representation)
+ *
+ * Vertices stored as Quadray coordinates (W, X, Y, Z)
+ * with explicit Janus polarity for each tile
+ */
+const Tile4D = {
+  type: 'thick-rhombus',
+
+  // Vertices in Quadray coordinates (no zero-sum constraint)
+  vertices: [
+    { w: 1.0, x: 0.0, y: 0.618, z: 0.0 },  // V0
+    { w: 0.618, x: 1.0, y: 0.0, z: 0.0 },  // V1
+    { w: 0.0, x: 0.618, y: 1.0, z: 0.0 },  // V2
+    { w: 0.618, x: 0.0, y: 0.0, z: 1.0 },  // V3
+  ],
+
+  // Janus polarity: '+' = 4D+, '−' = 4D−
+  polarity: '+',
+
+  // Edge matching: stores adjacent tile IDs after inversion
+  neighbors: {
+    edge01: { tileId: 'T42', janusInverted: true },
+    edge12: { tileId: 'T17', janusInverted: false },
+    // ...
+  },
+
+  // Quadrance-based metrics (RT-pure)
+  metadata: {
+    diagonalQuadranceShort: 1.0,
+    diagonalQuadranceLong: 2.618, // φ²
+    rtPure: true,
+  }
+};
+```
+
+### Conversion to THREE.js (GPU Boundary)
+
+```javascript
+/**
+ * Convert 4D Quadray tile to THREE.js geometry
+ * This is the ONLY place sqrt is expanded
+ */
+function tile4DToThreeJS(tile4D) {
+  const vertices = tile4D.vertices.map(q => {
+    // Quadray → Cartesian conversion (from rt-math.js)
+    const cartesian = RT.Quadray.toCartesian(q.w, q.x, q.y, q.z);
+
+    // GPU boundary: create THREE.Vector3
+    return new THREE.Vector3(cartesian.x, cartesian.y, cartesian.z);
+  });
+
+  return {
+    vertices,
+    edges: tile4D.edges,
+    faces: tile4D.faces,
+    metadata: {
+      ...tile4D.metadata,
+      janusPolarity: tile4D.polarity,
+    }
+  };
+}
+```
+
+### Summary: 4D Quadray Benefits
+
+1. **Edge continuity is automatic** — Janus inversion replaces explicit matching rules
+2. **No gimbal lock** — Spread-Quadray rotors for face transitions
+3. **Native φ geometry** — Penrose golden ratios align with Quadray structure
+4. **RT-pure throughout** — sqrt expansion only at GPU boundary
+5. **Explicit double-cover** — Janus polarity bit (no quaternion ambiguity)
+6. **Topological correctness** — Inversion preserves tile integrity (no clipping)
+
+This approach transforms Penrose-to-icosahedron from a "cut and stitch" problem into a **native 4D tiling** problem where matching is enforced by the coordinate system itself.
+
+---
+
 ## Implementation Architecture
 
 ### New Module: `modules/rt-penrose.js`
@@ -770,13 +965,25 @@ geodesicPenrose: {
 - [ ] Add to `getAllFormGroups()`
 - [ ] Add to `createPolyhedronByType()`
 
-### Phase 7: Testing
+### Phase 7: 4D Quadray Implementation
+- [ ] Implement `Tile4D` data structure (Quadray vertices + Janus polarity)
+- [ ] Implement `RT.Quadray.toCartesian()` conversion (if not already present)
+- [ ] Implement Janus inversion for tile edges: `janusInvert(tile4D)`
+- [ ] Implement 4D deflation that respects Janus boundaries
+- [ ] Implement Spread-Quadray rotor for 72° face transitions
+- [ ] Implement icosahedral vertex seeding in Quadray coordinates
+- [ ] Implement automatic matching validation via Janus complementarity
+- [ ] Add `tile4DToThreeJS()` GPU boundary conversion
+
+### Phase 8: Testing
 - [ ] Visual verification of tile shapes
 - [ ] RT-purity validation (console logs)
-- [ ] Matching rule enforcement
+- [ ] Matching rule enforcement (traditional 2D arrows)
+- [ ] 4D Janus matching validation (automatic complementarity)
 - [ ] Geodesic wrapping visual check
 - [ ] State save/load roundtrip
 - [ ] Performance with high generation counts
+- [ ] Verify algebraic exactness after 5×72° rotations
 
 ---
 
@@ -811,11 +1018,23 @@ Following ARTexplorer conventions:
 
 ## Research References
 
+### ARTexplorer Foundational Documents
+
+- **[Janus-Inversion.tex](./Janus-Inversion.tex)** — Geometric Janus Inversion: Extending the Janus Point from temporal to spatial geometry via Quadray coordinates. Establishes the 4D± framework where origin serves as dimensional transition point.
+
+- **[Quadray-Rotors.tex](./Quadray-Rotors.tex)** — Spread-Quadray Rotors: A tetrahedral alternative to quaternions for gimbal-lock-free rotation. Combines full 4D Quadray, Rational Trigonometry spread/cross, and explicit Janus polarity.
+
+- **[4D-COORDINATES.md](./4D-COORDINATES.md)** — Comprehensive Quadray (WXYZ) coordinate system reference. Covers native 4 DOF, the Stella Octangula, negative dimensionality, and all polyhedra in Quadray space.
+
+### External References
+
 - **Penrose Tilings**: Wikipedia, Wolfram MathWorld
 - **Viral Capsid Tilings**: Reidun Twarock (York), "Structures of Spherical Viral Capsids as Quasicrystalline Tilings"
 - **Spherical Penrose**: Bridges 2018 "A Class of Spherical Penrose-Like Tilings"
 - **Matching Rules**: de Bruijn's pentagrid method, substitution rules
 - **RT Foundation**: Wildberger "Divine Proportions" Chapter 14 (pentagon spreads α, β)
+- **Fuller Synergetics**: R. Buckminster Fuller, "Synergetics: Explorations in the Geometry of Thinking"
+- **Barbour Janus Point**: Julian Barbour, "The Janus Point: A New Theory of Time" (2020)
 
 ---
 
