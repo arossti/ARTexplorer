@@ -42,7 +42,7 @@ for Gimbal-Lock-Free Rotation Representation}
 \maketitle
 
 \begin{abstract}
-This document proposes a novel approach to 3D rotation representation: \textbf{Spread-Quadray Rotors}. By combining full 4D Quadray coordinates (without zero-sum constraint), Rational Trigonometry (spread/cross instead of sin/cos), Weierstrass parametrization, and explicit Janus polarity, we arrive at a rotation system that is gimbal-lock free, algebraically exact for many useful rotations, and geometrically native to tetrahedral structures.
+This document proposes a novel approach to 3D rotation representation: \textbf{Spread-Quadray Rotors}. By combining full 4D Quadray coordinates (without zero-sum constraint), Rational Trigonometry (spread/cross instead of sin/cos), half-angle algebra, and explicit Janus polarity, we arrive at a rotation system that is gimbal-lock free, algebraically exact for many useful rotations, and geometrically native to tetrahedral structures.
 
 The \textbf{Hairy Ball Theorem} (Brouwer, 1912) establishes that any continuous tangent vector field on a sphere must have at least one singularity---you cannot ``comb a hairy ball flat without creating a cowlick.'' This topological obstruction is why 3-parameter rotation representations (Euler angles, zero-sum Quadray) inevitably suffer gimbal lock. Quaternions escape this by lifting to the 4-dimensional hypersphere $S^3$; we propose an alternative lift to $\mathbb{R}^4 \times \mathbb{Z}_2$ via tetrahedral coordinates, yielding a fundamentally different (and arguably easier to understand) algebraic structure that preserves exact rational values throughout rotation calculations.
 
@@ -92,9 +92,11 @@ We propose an alternative 4-parameter rotation representation based on:
 \begin{enumerate}
     \item \textbf{Full 4D Quadray coordinates}---without zero-sum constraint
     \item \textbf{Spread/Cross measures}---from Wildberger's Rational Trigonometry
-    \item \textbf{Weierstrass parametrization}---for exact rational circle points
+    \item \textbf{Half-angle algebra}---$\sin^2(\theta/2) = (1 - \cos\theta)/2$ for rotor construction
     \item \textbf{Janus polarity}---explicit discrete state for double-cover
 \end{enumerate}
+
+\textbf{Research direction:} Weierstrass parametrization ($t = \tan(\theta/2)$) offers fully algebraic circle points for rational $t$. A future enhancement could construct rotors directly from Weierstrass parameters, eliminating all $\sqrt{}$ operations for rational inputs. See Section~\ref{sec:weierstrass} for the mathematical foundation.
 
 %==============================================================================
 \section{Topological Foundations}
@@ -283,6 +285,7 @@ $90°$ & 1 & 0 & \textbf{1} & \textbf{0}\\
 \end{table}
 
 \subsection{Weierstrass Parametrization}
+\label{sec:weierstrass}
 
 The Weierstrass substitution provides \textbf{algebraic} circle points:
 \begin{align}
@@ -323,6 +326,34 @@ t &= \sqrt{u} = \sqrt{\frac{2 - s + 2\sqrt{1-s}}{s}} \quad \text{(taking positiv
 \end{align}
 
 For exact rational spreads, this often simplifies beautifully.
+
+\subsection{Research Direction: Weierstrass-Based Rotor Construction}
+
+The current implementation uses half-angle identities to construct rotors from spread:
+\begin{verbatim}
+// Current approach (half-angle algebra)
+const cosTheta = polarity * Math.sqrt(c);    // c = 1 - s (cross)
+const spreadHalf = (1 - cosTheta) / 2;       // sin²(θ/2)
+const crossHalf = (1 + cosTheta) / 2;        // cos²(θ/2)
+const sinHalf = Math.sqrt(spreadHalf);
+const cosHalf = Math.sqrt(crossHalf);
+\end{verbatim}
+
+A future enhancement could construct rotors directly from Weierstrass parameter $t$:
+\begin{verbatim}
+// Research direction (Weierstrass-based)
+// Input: t = tan(θ/2) instead of spread s
+const tSq = t * t;
+const denom = 1 + tSq;
+const cosTheta = (1 - tSq) / denom;    // Algebraic!
+const sinTheta = (2 * t) / denom;      // Algebraic!
+
+// For rotor: need cos(θ/2), sin(θ/2)
+// Using half-angle of half-angle: t' = tan(θ/4)
+// This remains algebraic for rational t
+\end{verbatim}
+
+\textbf{Benefit:} For rational $t$, all intermediate values remain exact rationals---no $\sqrt{}$ operations required. This would complete the RT-pure vision for the subset of rotations expressible with rational Weierstrass parameters.
 
 %==============================================================================
 \section{The Tetrahedral Rotation Matrix}
@@ -995,6 +1026,9 @@ Based on verification results:
 
     \item \textbf{[ANSWERED]} \emph{GPU efficiency:} Can F,G,H 4×4 matrices be sent directly to shaders, or is quaternion conversion at the boundary necessary?\\
     \textbf{Quaternion-to-matrix conversion at boundary.} The current implementation converts QuadrayRotor to THREE.js Quaternion for rendering. The \texttt{toMatrix3()} method produces RT-pure polynomial output (no transcendentals). Direct 4×4 matrix shaders remain a future optimization.
+
+    \item \textbf{Weierstrass-based rotor construction:} Can rotors be constructed directly from Weierstrass parameter $t = \tan(\theta/2)$ instead of spread?\\
+    \emph{Research direction.} The current \texttt{fromSpreadAxis()} uses half-angle identities with $\sqrt{}$ operations. For rational $t$, Weierstrass gives algebraic $\cos\theta$ and $\sin\theta$. Extending this to $\cos(\theta/2)$, $\sin(\theta/2)$ for rotor construction could eliminate all $\sqrt{}$ for a subset of useful rotations. See Section~\ref{sec:weierstrass}.
 \end{enumerate}
 
 %==============================================================================
