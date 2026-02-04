@@ -1078,10 +1078,10 @@ export class RotorDemo {
           Tetrahedral basis axis rotation using Tom Ace's formula
         </div>
         <div class="controls" style="margin-top: 4px; gap: 3px;">
-          <button class="ctrl-btn" id="rp-fgh-w" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about W-axis (1,1,1)/√3">W</button>
-          <button class="ctrl-btn" id="rp-fgh-x" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about X-axis (1,-1,-1)/√3">X</button>
-          <button class="ctrl-btn" id="rp-fgh-y" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about Y-axis (-1,1,-1)/√3">Y</button>
-          <button class="ctrl-btn" id="rp-fgh-z" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about Z-axis (-1,-1,1)/√3">Z</button>
+          <button class="ctrl-btn" id="rp-fgh-w" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about QW-axis (1,1,1)/√3">QW</button>
+          <button class="ctrl-btn" id="rp-fgh-x" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about QX-axis (1,-1,-1)/√3">QX</button>
+          <button class="ctrl-btn" id="rp-fgh-y" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about QY-axis (-1,1,-1)/√3">QY</button>
+          <button class="ctrl-btn" id="rp-fgh-z" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about QZ-axis (-1,-1,1)/√3">QZ</button>
         </div>
         <div class="row" style="margin-top: 6px;">
           <span class="label">F,G,H:</span>
@@ -1641,15 +1641,12 @@ export class RotorDemo {
     // Get the Cartesian axis for the selected Quadray basis
     const cartesianAxis = quadrayAxes[axis];
 
-    // Stop current rotation
-    this.rotorState.setVelocity(0, { x: 0, y: 0, z: 1 });
-
-    // Apply 30° rotation about the Quadray basis axis
+    // Apply 30° rotation about the Quadray basis axis (keeps spinning)
     const rotor = QuadrayRotor.fromDegreesAxis(30, cartesianAxis);
     this.rotorState.orientation = this.rotorState.orientation.multiply(rotor);
 
     // Log the rotation with F,G,H values
-    console.log(`🔄 Native F,G,H rotation: ${axis}-axis @ 30°`);
+    console.log(`🔄 Native F,G,H rotation: Q${axis}-axis @ 30°`);
     console.log(`   F=${F.toFixed(6)}, G=${G.toFixed(6)}, H=${H.toFixed(6)}`);
     console.log(`   Pattern: ${axis === 'W' || axis === 'Y' ? 'Right-circulant' : 'Left-circulant'}`);
   }
