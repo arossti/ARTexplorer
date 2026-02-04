@@ -1123,7 +1123,8 @@ export class RotorDemo {
           font-size: 12px;
           padding: 15px;
           border-radius: 8px;
-          min-width: 320px;
+          min-width: 280px;
+          max-width: 300px;
           z-index: 1000;
           border: 1px solid #444;
         }
@@ -1218,11 +1219,16 @@ export class RotorDemo {
           background: #f44;
           color: #fff;
           border: none;
-          border-radius: 4px;
-          padding: 4px 10px;
+          border-radius: 3px;
+          width: 20px;
+          height: 20px;
+          padding: 0;
           cursor: pointer;
-          font-size: 11px;
+          font-size: 12px;
           font-weight: bold;
+          line-height: 20px;
+          text-align: center;
+          flex-shrink: 0;
         }
         #rotor-info-panel .close-btn:hover {
           background: #f66;
@@ -1248,8 +1254,8 @@ export class RotorDemo {
         }
       </style>
       <div class="header">
-        <h3>SPREAD-QUADRAY ROTOR</h3>
-        <button class="close-btn" id="rp-close">✕ Close</button>
+        <h3>SPREAD-QUADRAY ROTOR DEMO</h3>
+        <button class="close-btn" id="rp-close">✕</button>
       </div>
 
       <div class="controls">
