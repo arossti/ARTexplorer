@@ -117,6 +117,10 @@ export class RotorDemo {
     this.raycaster = null;
     this.mouse = new THREE.Vector2();
     this.pulseTime = 0;  // For pulsing effect
+
+    // Rotation handle state (Phase 6.5)
+    this.hoveredRotorHandle = null;
+    this.activeRotorHandle = null;  // Currently dragged rotation handle
   }
 
   /**
@@ -563,20 +567,30 @@ export class RotorDemo {
   }
 
   /**
-   * Handle mouse down - start dragging or apply rotation
+   * Handle mouse down - start dragging axis (from any handle)
    */
   handleMouseDown(event) {
-    // Check for rotation handle click first (Phase 6.5)
+    // Check for rotation handle drag (Phase 6.5 - drags spin axis)
     if (this.hoveredRotorHandle) {
-      // Disable orbit controls to prevent camera rotation
+      this.isDraggingHandle = true;
+      this.activeRotorHandle = this.hoveredRotorHandle;
+      this._canvas.style.cursor = 'grabbing';
+
+      // CRITICAL: Disable orbit controls during drag
       if (this.controls) {
         this.controls.enabled = false;
       }
-      this.applyRotorHandleClick(this.hoveredRotorHandle);
-      // Re-enable orbit controls after applying rotation
-      if (this.controls) {
-        this.controls.enabled = true;
+
+      // Create drag plane perpendicular to camera
+      const camera = this.camera;
+      if (camera) {
+        const THREE = this.THREE;
+        const cameraDir = new THREE.Vector3();
+        camera.getWorldDirection(cameraDir);
+        this.dragPlane = new THREE.Plane(cameraDir.negate(), 0);
       }
+
+      console.log('🖱️ Started dragging rotation handle (orbit disabled)');
       return;
     }
 
@@ -584,6 +598,7 @@ export class RotorDemo {
     if (!this.handleHovered) return;
 
     this.isDraggingHandle = true;
+    this.activeRotorHandle = null;  // Using axis handle, not rotation handle
     this._canvas.style.cursor = 'grabbing';
 
     // CRITICAL: Disable orbit controls during drag
@@ -605,40 +620,20 @@ export class RotorDemo {
   }
 
   /**
-   * Apply rotation when a rotation handle is clicked (Phase 6.5)
-   * @param {THREE.Mesh} handle - The clicked rotation handle
-   */
-  applyRotorHandleClick(handle) {
-    const userData = handle.userData;
-    const basisName = userData.basisName;
-
-    if (userData.basisType === 'quadray') {
-      // Map QW/QX/QY/QZ to W/X/Y/Z for applyNativeQuadrayRotation
-      const axisLetter = basisName.replace('Q', '');
-      this.applyNativeQuadrayRotation(axisLetter);
-    } else {
-      // Cartesian handle - use standard quaternion rotation
-      const axis = userData.basisAxis;
-      const rotor = QuadrayRotor.fromDegreesAxis(30, axis);
-      this.rotorState.orientation = this.rotorState.orientation.multiply(rotor);
-      console.log(`🔄 Cartesian rotation: ${basisName}-axis @ 30°`);
-    }
-  }
-
-  /**
    * Handle mouse up - stop dragging
    */
   handleMouseUp(event) {
     if (this.isDraggingHandle) {
       this.isDraggingHandle = false;
-      this._canvas.style.cursor = this.handleHovered ? 'grab' : 'default';
+      this.activeRotorHandle = null;
+      this._canvas.style.cursor = this.handleHovered || this.hoveredRotorHandle ? 'grab' : 'default';
 
       // Re-enable orbit controls when done dragging
       if (this.controls) {
         this.controls.enabled = true;
       }
 
-      console.log('🖱️ Stopped dragging axis handle (orbit re-enabled)');
+      console.log('🖱️ Stopped dragging handle (orbit re-enabled)');
     }
   }
 
@@ -902,9 +897,10 @@ export class RotorDemo {
     const group = new THREE.Group();
     group.name = "RotationHandles";
 
-    // Size handles to fit inside the gyroscope (Phase 6.5 fix)
-    const handleRadius = DEMO_CONFIG.gyroscopeRadius * 0.85;
-    const tubeRadius = 0.06;
+    // Size handles to match the spinning octahedron (scale ~1.0)
+    // Small enough to be close to the object, easy to grab for axis dragging
+    const handleRadius = 1.2;  // Slightly larger than octahedron scale=1
+    const tubeRadius = 0.04;
 
     // Initialize Quadray basis vectors if needed
     if (!Quadray.basisVectors) {
@@ -963,16 +959,21 @@ export class RotorDemo {
     if (!handles) return;
 
     const isQuadrayMode = this.rotationMode === 'quadray';
+    let quadrayCount = 0, cartesianCount = 0;
 
     handles.traverse((obj) => {
       if (obj.userData && obj.userData.isRotorHandle) {
         if (obj.userData.basisType === 'quadray') {
           obj.visible = isQuadrayMode;
+          quadrayCount++;
         } else if (obj.userData.basisType === 'cartesian') {
           obj.visible = !isQuadrayMode;
+          cartesianCount++;
         }
       }
     });
+
+    console.log(`🔄 Handle visibility: ${isQuadrayMode ? 'Quadray' : 'Euler'} mode - showing ${isQuadrayMode ? quadrayCount : cartesianCount} handles`);
   }
 
   /**
