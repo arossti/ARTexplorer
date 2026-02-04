@@ -572,11 +572,191 @@ export const RT = {
       })(),
 
       /**
+       * cos(36°) = (1 + √5)/4 = φ/2
+       * Algebraic identity - no trig function needed
+       * Used in Penrose tiles (36° is the fundamental Penrose angle)
+       */
+      cos36: (() => {
+        const cached = (1 + Math.sqrt(5)) / 4;
+        return () => cached;
+      })(),
+
+      /**
+       * sin(36°) = √(10 - 2√5)/4
+       * Same as sin(144°) since sin(180° - θ) = sin(θ)
+       * Nested radical, computed once and cached
+       */
+      sin36: (() => {
+        const cached = Math.sqrt(10 - 2 * Math.sqrt(5)) / 4;
+        return () => cached;
+      })(),
+
+      /**
        * Edge-to-diagonal ratio = φ (golden ratio)
        * In a regular pentagon: diagonal/edge = φ
        * @returns {number} φ ≈ 1.618033988749895
        */
       edgeToDiagonalRatio: () => RT.PurePhi.value(),
+    },
+
+    /**
+     * Penrose-specific constants and identities
+     * All Penrose angles are multiples of 36° (π/5)
+     *
+     * Angular hierarchy (all derived from 36°):
+     *   36° = π/5  (fundamental Penrose angle)
+     *   72° = 2×36°
+     *  108° = 3×36° = 180° - 72° (supplementary to 72°)
+     *  144° = 4×36° = 180° - 36° (supplementary to 36°)
+     *
+     * Spread relationships:
+     *   spread(36°) = spread(144°) = α = (5-√5)/8
+     *   spread(72°) = spread(108°) = β = (5+√5)/8
+     *
+     * Key identity: β/α = φ² (golden ratio squared!)
+     *
+     * @namespace penrose
+     * @memberof RT.PurePhi
+     */
+    penrose: {
+      /**
+       * All Penrose trigonometric values (complete reference)
+       * Returns object with all cached cos/sin values for Penrose angles
+       *
+       * RT-pure: All values computed once from algebraic identities
+       * @returns {Object} {cos36, sin36, cos72, sin72, cos108, sin108, cos144, sin144}
+       */
+      get trig() {
+        return {
+          cos36: RT.PurePhi.pentagon.cos36(), // (1+√5)/4 = φ/2
+          sin36: RT.PurePhi.pentagon.sin36(), // √(10-2√5)/4
+          cos72: RT.PurePhi.pentagon.cos72(), // (√5-1)/4 = 1/(2φ)
+          sin72: RT.PurePhi.pentagon.sin72(), // √(10+2√5)/4
+          cos108: -RT.PurePhi.pentagon.cos72(), // -cos(72°)
+          sin108: RT.PurePhi.pentagon.sin72(), // sin(72°)
+          cos144: RT.PurePhi.pentagon.cos144(), // -(1+√5)/4 = -φ/2
+          sin144: RT.PurePhi.pentagon.sin144(), // √(10-2√5)/4 = sin(36°)
+        };
+      },
+
+      /**
+       * Symbolic rotation by 36° (RT-pure)
+       * Applies rotation using exact algebraic cos/sin values
+       * Defers sqrt expansion until toVector3() call
+       *
+       * @param {number} x - X coordinate
+       * @param {number} y - Y coordinate
+       * @returns {Object} {x, y} rotated point
+       */
+      rotate36: (x, y) => {
+        const c = RT.PurePhi.pentagon.cos36();
+        const s = RT.PurePhi.pentagon.sin36();
+        return {
+          x: x * c - y * s,
+          y: x * s + y * c,
+        };
+      },
+
+      /**
+       * Symbolic rotation by 72° (RT-pure)
+       * @param {number} x - X coordinate
+       * @param {number} y - Y coordinate
+       * @returns {Object} {x, y} rotated point
+       */
+      rotate72: (x, y) => {
+        const c = RT.PurePhi.pentagon.cos72();
+        const s = RT.PurePhi.pentagon.sin72();
+        return {
+          x: x * c - y * s,
+          y: x * s + y * c,
+        };
+      },
+
+      /**
+       * Symbolic rotation by n×36° (RT-pure)
+       * For n = 0..9 covers full circle in Penrose-compatible steps
+       *
+       * @param {number} x - X coordinate
+       * @param {number} y - Y coordinate
+       * @param {number} n - Multiplier (0-9 for full rotation)
+       * @returns {Object} {x, y} rotated point
+       */
+      rotateN36: (x, y, n) => {
+        // Normalize n to 0-9 range (360° = 10×36°)
+        n = ((n % 10) + 10) % 10;
+        let rx = x,
+          ry = y;
+        for (let i = 0; i < n; i++) {
+          const result = RT.PurePhi.penrose.rotate36(rx, ry);
+          rx = result.x;
+          ry = result.y;
+        }
+        return { x: rx, y: ry };
+      },
+
+      /**
+       * Robinson triangle leg ratios (symbolic)
+       *
+       * BL (Large): base:leg = 1:φ (legs are φ times longer than base)
+       * BS (Small): base:leg = 1:ψ = 1:(φ-1) = 1:(1/φ) (legs are shorter)
+       *
+       * These ratios are exact algebraic values - no sqrt needed for ratios
+       */
+      get robinsonRatios() {
+        return {
+          // BL triangle: legs are φ times the base
+          largeLegRatio: RT.PurePhi.value(), // φ
+          largeLegQuadranceRatio: RT.PurePhi.squared(), // φ² = φ + 1
+
+          // BS triangle: legs are 1/φ times the base
+          smallLegRatio: RT.PurePhi.inverse(), // 1/φ = φ - 1
+          smallLegQuadranceRatio: (() => {
+            const inv = RT.PurePhi.inverse();
+            return inv * inv; // (1/φ)² = (φ-1)² = φ² - 2φ + 1 = 3 - φ
+          })(),
+        };
+      },
+
+      /**
+       * Rhombus diagonal ratios (symbolic)
+       *
+       * Thick rhombus (72°/108°): short:long diagonal = 1:φ
+       * Thin rhombus (36°/144°): short:long diagonal = 1:φ²
+       */
+      get rhombusDiagonalRatios() {
+        return {
+          thick: RT.PurePhi.value(), // φ
+          thickQuadrance: RT.PurePhi.squared(), // φ²
+          thin: RT.PurePhi.squared(), // φ²
+          thinQuadrance: RT.PurePhi.fourthPower(), // φ⁴
+        };
+      },
+
+      /**
+       * Deflation scale (symbolic)
+       * Each deflation iteration scales by 1/φ = φ - 1
+       * After n deflations: scale = (1/φ)ⁿ
+       *
+       * @param {number} n - Number of deflation iterations
+       * @returns {number} Scale factor
+       */
+      deflationScale: n => {
+        const invPhi = RT.PurePhi.inverse();
+        return Math.pow(invPhi, n);
+      },
+
+      /**
+       * Inflation scale (symbolic)
+       * Each inflation iteration scales by φ
+       * After n inflations: scale = φⁿ
+       *
+       * @param {number} n - Number of inflation iterations
+       * @returns {number} Scale factor
+       */
+      inflationScale: n => {
+        const phi = RT.PurePhi.value();
+        return Math.pow(phi, n);
+      },
     },
   },
 

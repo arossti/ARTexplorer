@@ -716,3 +716,5 @@ See the [LICENSE](LICENSE) file for complete terms and conditions.
 **Live Application:** [https://arossti.github.io/ARTexplorer/](https://arossti.github.io/ARTexplorer/)
 
 **Repository:** [https://github.com/arossti/ARTexplorer](https://github.com/arossti/ARTexplorer)
+
+- Future work on Tetravolumes courtesy Tom Ace, Kirby Urner: https://github.com/4dsolutions/School_of_Tomorrow/blob/master/Qvolume.ipynb
