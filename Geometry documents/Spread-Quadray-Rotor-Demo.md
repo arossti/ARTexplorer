@@ -970,27 +970,137 @@ testComposition();
 
 ---
 
-**Phase 6.1: Basis Axis Rotations (Pure Tetrahedral)**
+**Phase 6.1: Basis Axis Rotations (Pure Tetrahedral)** ✅ COMPLETE
 
-- [ ] Implement `rotationCoeffsFromSpread(s, polarity)`
-- [ ] Implement `matrixAboutW(s, p)`, `matrixAboutX(s, p)`, etc.
-- [ ] Add UI buttons for W/X/Y/Z axis selection (tetrahedral mode)
-- [ ] Verify single-axis rotations match current quaternion output
-- [ ] Document the "tetrahedral rotation" user experience
+- [x] Implement `fghCoeffsFromSpread(s, polarity)` → `RT.QuadrayRotation.fghCoeffsFromSpread()`
+- [x] Implement `rotateAboutW(qPoint, theta)` → `RT.QuadrayRotation.rotateAboutW()`
+- [x] Implement `rotateAboutY(qPoint, theta)` → `RT.QuadrayRotation.rotateAboutY()` (verified working)
+- [x] Add `SPREADS` constant with common angles (0°, 30°, 45°, 60°, 90°, 120°, 180°)
+- [ ] Add UI buttons for W/X/Y/Z axis selection (tetrahedral mode) — *deferred to Phase 6.3*
+- [ ] Document the "tetrahedral rotation" user experience — *deferred to demo integration*
 
-**Phase 6.2: Composition Verification**
+#### 6.1a Implementation Deployed (February 2026)
 
-- [ ] Test: R_W(45°) × R_W(45°) = R_W(90°)?
-- [ ] Test: R_W(45°) × R_X(45°) vs quaternion equivalent
-- [ ] Determine if 4×4 matrix multiply is mathematically equivalent
-- [ ] If not, document the difference (different rotation spaces!)
+**Location**: `modules/rt-math.js` → `RT.QuadrayRotation` namespace
 
-**Phase 6.3: Arbitrary Axis (if feasible)**
+```javascript
+// === DEPLOYED CODE: RT.QuadrayRotation ===
 
-- [ ] Attempt decomposition: arbitrary axis → W,X,Y,Z composition
+RT.QuadrayRotation = {
+  // Cached constants
+  COS_120: -0.5,                    // Exact rational: -1/2
+  SIN_120: Math.sqrt(0.75),         // √(3/4) = √3/2
+
+  // F,G,H from angle (Tom Ace's formula)
+  fghCoeffs(theta) {
+    const cosT = Math.cos(theta);
+    const sinT = Math.sin(theta);
+    return {
+      F: (2 * cosT + 1) / 3,
+      G: (2 * (cosT * this.COS_120 + sinT * this.SIN_120) + 1) / 3,
+      H: (2 * (cosT * this.COS_120 - sinT * this.SIN_120) + 1) / 3,
+    };
+  },
+
+  // F,G,H from spread (RT-Pure) — polarity resolves cos(θ) sign ambiguity
+  fghCoeffsFromSpread(spread, polarity = 1) {
+    const cosTheta = polarity * Math.sqrt(1 - spread);
+    const sinTheta = Math.sqrt(spread);
+    return {
+      F: (2 * cosTheta + 1) / 3,
+      G: (2 * (cosTheta * this.COS_120 + sinTheta * this.SIN_120) + 1) / 3,
+      H: (2 * (cosTheta * this.COS_120 - sinTheta * this.SIN_120) + 1) / 3,
+    };
+  },
+
+  // W-axis rotation: circulant matrix on X,Y,Z (W unchanged)
+  rotateAboutW(qPoint, theta) {
+    const { F, G, H } = this.fghCoeffs(theta);
+    return {
+      w: qPoint.w,  // Axis unchanged
+      x: F * qPoint.x + H * qPoint.y + G * qPoint.z,
+      y: G * qPoint.x + F * qPoint.y + H * qPoint.z,
+      z: H * qPoint.x + G * qPoint.y + F * qPoint.z,
+    };
+  },
+
+  // W-axis rotation from spread (RT-Pure entry point)
+  rotateAboutWBySpread(qPoint, spread, polarity = 1) {
+    const { F, G, H } = this.fghCoeffsFromSpread(spread, polarity);
+    return { /* same circulant pattern */ };
+  },
+
+  // Y-axis rotation (verified working in Phase 6.0)
+  rotateAboutY(qPoint, theta) {
+    const { F, G, H } = this.fghCoeffs(theta);
+    return {
+      w: F * qPoint.w + H * qPoint.x + G * qPoint.z,
+      x: G * qPoint.w + F * qPoint.x + H * qPoint.z,
+      y: qPoint.y,  // Axis unchanged
+      z: H * qPoint.w + G * qPoint.x + F * qPoint.z,
+    };
+  },
+
+  // Common spreads for RT-pure rotation
+  SPREADS: {
+    DEG_0:   { spread: 0,    polarity:  1 },  // Identity
+    DEG_30:  { spread: 0.25, polarity:  1 },  // 1/4
+    DEG_45:  { spread: 0.5,  polarity:  1 },  // 1/2
+    DEG_60:  { spread: 0.75, polarity:  1 },  // 3/4
+    DEG_90:  { spread: 1,    polarity:  1 },  // Quarter turn
+    DEG_120: { spread: 0.75, polarity: -1 },  // Tetrahedral symmetry
+    DEG_180: { spread: 0,    polarity: -1 },  // Janus inversion
+  },
+};
+```
+
+**Status**: W and Y axes verified to 10⁻¹⁶ precision. X and Z axes require Phase 6.2.
+
+---
+
+**Phase 6.2: X/Z Axis Rotation via Conjugation** ← CURRENT
+
+The naive circulant extension fails for X and Z axes. Solution: **conjugation approach**.
+
+**Principle**: To rotate about X-axis, transform coordinates so X→W, apply R_W, transform back.
+
+```
+R_X(θ) = T_XW⁻¹ · R_W(θ) · T_XW
+```
+
+Where T_XW is the coordinate transformation that maps X-basis to W-basis position.
+
+**Tasks**:
+- [ ] Derive T_XW transformation matrix (X→W coordinate alignment)
+- [ ] Derive T_ZW transformation matrix (Z→W coordinate alignment)
+- [ ] Implement `rotateAboutX(qPoint, theta)` via conjugation
+- [ ] Implement `rotateAboutZ(qPoint, theta)` via conjugation
+- [ ] Verify X,Z rotations match quaternions to machine precision
+- [ ] Add to verification test suite
+
+**Mathematical approach**:
+
+The Quadray basis vectors in Cartesian:
+- W = (1, 1, 1)/√3
+- X = (1, -1, -1)/√3
+- Y = (-1, 1, -1)/√3
+- Z = (-1, -1, 1)/√3
+
+To rotate about X, we need a Quadray-space transformation T such that:
+- T maps the X-axis direction to the W-axis direction
+- T⁻¹ maps it back
+
+This is a permutation/reflection in Quadray space, likely involving coordinate swaps.
+
+---
+
+**Phase 6.3: Arbitrary Axis & Demo Integration**
+
+- [ ] Implement arbitrary axis rotation via basis decomposition or conjugation
 - [ ] Test for "tetrahedral gimbal lock" configurations
-- [ ] Compare with Hamilton product for same intended rotation
-- [ ] Decide: keep as alternative mode, or replace Hamilton entirely
+- [ ] Integrate `RT.QuadrayRotation` into `rt-rotor-demo.js`
+- [ ] Replace Hamilton scaffolding in `rt-quadray-rotor.js` (optional)
+- [ ] Compare performance: native F,G,H vs quaternion path
 
 ---
 
