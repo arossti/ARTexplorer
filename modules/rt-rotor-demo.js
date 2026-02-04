@@ -140,6 +140,13 @@ export class RotorDemo {
       showCartesianBasis: document.getElementById('showCartesianBasis')?.checked,
       showQuadray: document.getElementById('showQuadray')?.checked,
       showCartesianGrid: document.getElementById('showCartesianGrid')?.checked,
+      // Central Angle Grid planes (IVM)
+      planeIvmWX: document.getElementById('planeIvmWX')?.checked,
+      planeIvmWY: document.getElementById('planeIvmWY')?.checked,
+      planeIvmWZ: document.getElementById('planeIvmWZ')?.checked,
+      planeIvmXY: document.getElementById('planeIvmXY')?.checked,
+      planeIvmXZ: document.getElementById('planeIvmXZ')?.checked,
+      planeIvmYZ: document.getElementById('planeIvmYZ')?.checked,
     };
     console.log('📦 Saved scene state for demo');
   }
@@ -172,6 +179,13 @@ export class RotorDemo {
     restore('showCartesianBasis', state.showCartesianBasis);
     restore('showQuadray', state.showQuadray);
     restore('showCartesianGrid', state.showCartesianGrid);
+    // Central Angle Grid planes (IVM)
+    restore('planeIvmWX', state.planeIvmWX);
+    restore('planeIvmWY', state.planeIvmWY);
+    restore('planeIvmWZ', state.planeIvmWZ);
+    restore('planeIvmXY', state.planeIvmXY);
+    restore('planeIvmXZ', state.planeIvmXZ);
+    restore('planeIvmYZ', state.planeIvmYZ);
 
     console.log('📦 Restored scene state after demo');
     this.savedSceneState = null;
@@ -206,6 +220,13 @@ export class RotorDemo {
     setCheckbox('showCartesianBasis', false);
     setCheckbox('showQuadray', false);
     setCheckbox('showCartesianGrid', false);
+    // Hide Central Angle Grid planes (IVM)
+    setCheckbox('planeIvmWX', false);
+    setCheckbox('planeIvmWY', false);
+    setCheckbox('planeIvmWZ', false);
+    setCheckbox('planeIvmXY', false);
+    setCheckbox('planeIvmXZ', false);
+    setCheckbox('planeIvmYZ', false);
 
     // Show Geodesic Octahedron 3F as the spinning object
     setCheckbox('showGeodesicOctahedron', true);
@@ -1095,7 +1116,7 @@ export class RotorDemo {
         #rotor-info-panel {
           position: fixed;
           top: 10px;
-          right: 10px;
+          left: 10px;
           background: rgba(0, 0, 0, 0.85);
           color: #fff;
           font-family: 'Courier New', monospace;
@@ -1153,6 +1174,20 @@ export class RotorDemo {
         #rotor-info-panel .status-safe { color: #0f0; }
         #rotor-info-panel .status-caution { color: #ff0; }
         #rotor-info-panel .status-danger { color: #f00; }
+        @keyframes flash-caution {
+          0%, 100% { color: #ff0; opacity: 1; }
+          50% { color: #ff0; opacity: 0.4; }
+        }
+        @keyframes flash-danger {
+          0%, 100% { color: #f00; opacity: 1; }
+          50% { color: #f00; opacity: 0.4; }
+        }
+        #rotor-info-panel .gimbal-text-flash-caution {
+          animation: flash-caution 0.8s ease-in-out infinite;
+        }
+        #rotor-info-panel .gimbal-text-flash-danger {
+          animation: flash-danger 0.5s ease-in-out infinite;
+        }
         #rotor-info-panel .header {
           display: flex;
           justify-content: space-between;
@@ -1300,7 +1335,10 @@ export class RotorDemo {
       </div>
 
       <div class="section">
-        <div class="section-title">Gimbal Lock Proximity (Euler Reference)</div>
+        <div class="section-title" id="rp-gimbal-title">Gimbal Lock Proximity (Euler Reference)</div>
+        <div id="rp-gimbal-message" style="font-size: 10px; margin-bottom: 6px; color: #888;">
+          Quadray mode: no gimbal lock possible
+        </div>
         <div class="row">
           <span class="label">Status:</span>
           <span class="value status-safe" id="rp-lock-status">SAFE</span>
@@ -1566,6 +1604,9 @@ export class RotorDemo {
       statusEl.className = 'value status-danger';
     }
 
+    // Update gimbal message text based on mode and proximity
+    this.updateGimbalMessage(proximity);
+
     // Update gimbal lock zone visibility
     this.updateLockZoneVisuals(proximity);
   }
@@ -1604,6 +1645,45 @@ export class RotorDemo {
         }
       }
     });
+  }
+
+  /**
+   * Update the gimbal lock message text based on mode and proximity
+   * In Quadray mode: reassuring message (no gimbal lock)
+   * In Euler mode: warning text that flashes yellow/red based on proximity
+   */
+  updateGimbalMessage(proximity) {
+    const messageEl = document.getElementById('rp-gimbal-message');
+    if (!messageEl) return;
+
+    const isEulerMode = this.rotationMode === 'euler';
+
+    if (!isEulerMode) {
+      // Quadray mode - always safe, show encouraging message
+      if (proximity > 0.3) {
+        messageEl.textContent = 'Euler would struggle here — Quadray handles it smoothly!';
+        messageEl.style.color = '#8f8';
+      } else {
+        messageEl.textContent = 'Quadray mode: no gimbal lock possible';
+        messageEl.style.color = '#888';
+      }
+      messageEl.className = '';  // Remove flash animations
+    } else {
+      // Euler mode - show warnings based on proximity
+      if (proximity < 0.3) {
+        messageEl.textContent = 'Euler XYZ: Safe zone';
+        messageEl.style.color = '#888';
+        messageEl.className = '';
+      } else if (proximity < 0.7) {
+        messageEl.textContent = '⚠️ Approaching gimbal lock zone!';
+        messageEl.style.color = '#ff0';
+        messageEl.className = 'gimbal-text-flash-caution';
+      } else {
+        messageEl.textContent = '🔒 GIMBAL LOCK DANGER — Euler angles unstable!';
+        messageEl.style.color = '#f00';
+        messageEl.className = 'gimbal-text-flash-danger';
+      }
+    }
   }
 
   /**
@@ -1711,6 +1791,7 @@ export class RotorDemo {
 
   /**
    * Update axis handle animation (position, color, pulsing)
+   * Both positive and negative handles share identical behavior
    */
   updateAxisHandleAnimation(time) {
     if (!this.axisHandle) return;
@@ -1718,7 +1799,7 @@ export class RotorDemo {
     const axis = this.rotorState.axis;
     const distance = DEMO_CONFIG.axisHandleDistance;
 
-    // Update handle position to follow current axis
+    // Update handle positions to follow current axis
     if (!this.isDraggingHandle) {
       this.axisHandle.position.set(
         axis.x * distance,
@@ -1748,37 +1829,47 @@ export class RotorDemo {
     const color = new this.THREE.Color();
     color.setHSL(hue / 360, 0.9, 0.5);
 
-    if (this.axisHandleMaterial) {
-      this.axisHandleMaterial.color.copy(color);
-    }
-
     // Also update the axis line color
     const axisLine = this.demoGroup?.getObjectByName('AxisIndicator');
     if (axisLine && axisLine.material) {
       axisLine.material.color.copy(color);
     }
 
+    // Apply animation to both handles using helper function
+    const handles = [
+      { mesh: this.axisHandle, material: this.axisHandleMaterial },
+      { mesh: this.axisHandleNeg, material: this.axisHandleNegMaterial }
+    ];
+
     // Pulsing effect when in danger zone (proximity > 0.6) - ONLY in Euler mode
-    if (isEulerMode && proximity > 0.6 && this.axisHandleMaterial) {
+    if (isEulerMode && proximity > 0.6) {
       this.pulseTime = (time / 1000) * DEMO_CONFIG.pulseSpeed;
       const pulse = 0.5 + 0.5 * Math.sin(this.pulseTime * Math.PI * 2);
+      const pulseOpacity = 0.7 + 0.3 * pulse;
+      const pulseScale = 1 + 0.2 * pulse * proximity;
 
-      // Pulse opacity and scale
-      this.axisHandleMaterial.opacity = 0.7 + 0.3 * pulse;
-
-      if (!this.isDraggingHandle && !this.handleHovered) {
-        const baseScale = 1;
-        const pulseScale = baseScale + 0.2 * pulse * proximity;
-        this.axisHandle.scale.setScalar(pulseScale);
-      }
+      handles.forEach(({ mesh, material }) => {
+        if (material) {
+          material.color.copy(color);
+          material.opacity = pulseOpacity;
+        }
+        // Only pulse scale if not being hovered or dragged
+        if (mesh && !this.isDraggingHandle && this.hoveredAxisHandle !== mesh) {
+          mesh.scale.setScalar(pulseScale);
+        }
+      });
     } else {
       // Reset to normal when safe
-      if (this.axisHandleMaterial) {
-        this.axisHandleMaterial.opacity = 0.9;
-      }
-      if (!this.handleHovered && !this.isDraggingHandle) {
-        this.axisHandle.scale.setScalar(1);
-      }
+      handles.forEach(({ mesh, material }) => {
+        if (material) {
+          material.color.copy(color);
+          material.opacity = 0.9;
+        }
+        // Only reset scale if not being hovered or dragged
+        if (mesh && !this.isDraggingHandle && this.hoveredAxisHandle !== mesh) {
+          mesh.scale.setScalar(1);
+        }
+      });
     }
   }
 
