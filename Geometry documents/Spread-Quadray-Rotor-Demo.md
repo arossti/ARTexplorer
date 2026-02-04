@@ -1105,12 +1105,40 @@ rotateAboutZ(qPoint, theta) {
 
 ---
 
-**Phase 6.3: Arbitrary Axis & Demo Integration**
+**Phase 6.3: Demo Integration** ← CURRENT
 
-- [ ] Implement arbitrary axis rotation via basis decomposition or conjugation
+Integration of native F,G,H Quadray rotation into the interactive demo.
+
+**Completed Tasks**:
+- [x] Add W/X/Y/Z tetrahedral axis buttons to demo UI
+- [x] Wire buttons to `RT.QuadrayRotation.rotateAbout{W,X,Y,Z}` functions
+- [x] Display F,G,H coefficients in info panel during rotation
+- [x] Add visual indicator for current Quadray axis mode
+
+**Implementation Details**:
+
+```javascript
+// Button click handler for W-axis rotation (30° increment)
+onQuadrayAxisButton(axis) {
+  const theta = Math.PI / 6;  // 30° per click
+  const qPoint = this.currentQuadrayPoint();  // Get current orientation as Quadray
+
+  let rotated;
+  switch(axis) {
+    case 'W': rotated = RT.QuadrayRotation.rotateAboutW(qPoint, theta); break;
+    case 'X': rotated = RT.QuadrayRotation.rotateAboutX(qPoint, theta); break;
+    case 'Y': rotated = RT.QuadrayRotation.rotateAboutY(qPoint, theta); break;
+    case 'Z': rotated = RT.QuadrayRotation.rotateAboutZ(qPoint, theta); break;
+  }
+
+  this.applyQuadrayRotation(rotated);
+}
+```
+
+**Future Tasks** (Phase 6.4):
+- [ ] Implement arbitrary axis rotation via basis decomposition
 - [ ] Test for "tetrahedral gimbal lock" configurations
-- [ ] Integrate `RT.QuadrayRotation` into `rt-rotor-demo.js`
-- [ ] Replace Hamilton scaffolding in `rt-quadray-rotor.js` (optional)
+- [ ] Replace Hamilton scaffolding in `rt-quadray-rotor.js` with native F,G,H
 - [ ] Compare performance: native F,G,H vs quaternion path
 
 ---
