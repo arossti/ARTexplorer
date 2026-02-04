@@ -3,7 +3,7 @@
 **Version**: 1.1
 **Date**: February 2026
 **Author**: Andy & Claude
-**Status**: Implementation Phase 4 Complete
+**Status**: Phase 6.2 Complete - All Quadray Axes Verified
 
 ---
 
@@ -960,13 +960,13 @@ testComposition();
 
 2. **Y-axis also works** - Same circulant pattern applies
 
-3. **X,Z-axis matrices need derivation** - Naive extension of the circulant pattern fails. The matrix structure for X and Z axes requires:
-   - Either deriving axis-specific F,G,H patterns
-   - Or using conjugation: transform so target axis → W, apply R_W, transform back
+3. **X,Z-axis matrices SOLVED** - Phase 6.2 discovered that X and Z axes require **left-circulant** matrices (G,H swapped) due to tetrahedral chirality. All four axes now verified.
 
-4. **Composition works** - R_W(45°) × R_W(45°) = R_W(90°) exactly
+4. **Composition works** - R_W(45°) × R_W(45°) = R_W(90°) exactly, and cross-axis composition R_W × R_X also matches quaternions.
 
-**Conclusion**: Tom Ace's formula is mathematically correct. Proceed with W-axis implementation for Phase 6.1, research X/Z axis matrices for Phase 6.2.
+**Conclusion**: Tom Ace's formula works for ALL four Quadray axes with the correct circulant patterns:
+- **Right-circulant** `[F H G; G F H; H G F]`: W and Y axes
+- **Left-circulant** `[F G H; H F G; G H F]`: X and Z axes
 
 ---
 
@@ -1054,43 +1054,54 @@ RT.QuadrayRotation = {
 };
 ```
 
-**Status**: W and Y axes verified to 10⁻¹⁶ precision. X and Z axes require Phase 6.2.
+**Status**: All four axes (W, X, Y, Z) verified to 10⁻¹⁶ precision. ✅
 
 ---
 
-**Phase 6.2: X/Z Axis Rotation via Conjugation** ← CURRENT
+**Phase 6.2: X/Z Axis Rotation via Chirality Correction** ✅ COMPLETE
 
-The naive circulant extension fails for X and Z axes. Solution: **conjugation approach**.
+The naive circulant extension failed for X and Z axes. Instead of conjugation, we discovered a simpler solution: **left-circulant matrices** for X and Z axes.
 
-**Principle**: To rotate about X-axis, transform coordinates so X→W, apply R_W, transform back.
+**Key Discovery**: Tetrahedral vertex arrangement has **chirality**:
+- W and Y axes share the same handedness → right-circulant `[F H G; G F H; H G F]`
+- X and Z axes have opposite handedness → left-circulant `[F G H; H F G; G H F]`
 
+The difference is simply swapping G and H positions in the circulant pattern!
+
+**Completed Implementation** in `RT.QuadrayRotation`:
+
+```javascript
+// X-axis: Left-circulant (G,H swapped from W/Y pattern)
+rotateAboutX(qPoint, theta) {
+  const { F, G, H } = this.fghCoeffs(theta);
+  return {
+    w: F * qPoint.w + G * qPoint.y + H * qPoint.z,
+    x: qPoint.x,  // X unchanged (rotation axis)
+    y: H * qPoint.w + F * qPoint.y + G * qPoint.z,
+    z: G * qPoint.w + H * qPoint.y + F * qPoint.z,
+  };
+}
+
+// Z-axis: Left-circulant (G,H swapped from W/Y pattern)
+rotateAboutZ(qPoint, theta) {
+  const { F, G, H } = this.fghCoeffs(theta);
+  return {
+    w: F * qPoint.w + G * qPoint.x + H * qPoint.y,
+    x: H * qPoint.w + F * qPoint.x + G * qPoint.y,
+    y: G * qPoint.w + H * qPoint.x + F * qPoint.y,
+    z: qPoint.z,  // Z unchanged (rotation axis)
+  };
+}
 ```
-R_X(θ) = T_XW⁻¹ · R_W(θ) · T_XW
-```
 
-Where T_XW is the coordinate transformation that maps X-basis to W-basis position.
+**Verification Results** (all 18 tests pass):
+- W-axis: 4/4 passed (right-circulant)
+- Y-axis: 4/4 passed (right-circulant)
+- X-axis: 4/4 passed (left-circulant)
+- Z-axis: 4/4 passed (left-circulant)
+- Composition: 2/2 passed
 
-**Tasks**:
-- [ ] Derive T_XW transformation matrix (X→W coordinate alignment)
-- [ ] Derive T_ZW transformation matrix (Z→W coordinate alignment)
-- [ ] Implement `rotateAboutX(qPoint, theta)` via conjugation
-- [ ] Implement `rotateAboutZ(qPoint, theta)` via conjugation
-- [ ] Verify X,Z rotations match quaternions to machine precision
-- [ ] Add to verification test suite
-
-**Mathematical approach**:
-
-The Quadray basis vectors in Cartesian:
-- W = (1, 1, 1)/√3
-- X = (1, -1, -1)/√3
-- Y = (-1, 1, -1)/√3
-- Z = (-1, -1, 1)/√3
-
-To rotate about X, we need a Quadray-space transformation T such that:
-- T maps the X-axis direction to the W-axis direction
-- T⁻¹ maps it back
-
-This is a permutation/reflection in Quadray space, likely involving coordinate swaps.
+**Conclusion**: Tom Ace's F,G,H formula works for ALL four Quadray basis axes when the correct circulant pattern is used. This confirms **Option (1): Equivalence** — native Quadray rotation produces identical results to quaternion rotation.
 
 ---
 

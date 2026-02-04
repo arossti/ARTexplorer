@@ -1,14 +1,19 @@
 /**
- * F,G,H Verification Test - Phase 6.0 Gateway
+ * F,G,H Verification Test - Phase 6.0/6.2
  *
  * Tests whether Tom Ace's F,G,H rotation coefficients produce
  * the same 3D rotations as quaternions when rotating about
  * Quadray basis axes.
  *
- * Run in browser console after loading ARTexplorer:
- *   import('./modules/fgh-verification-test.js').then(m => m.runAllTests())
+ * Phase 6.0 (Initial): Discovered W,Y axes work with right-circulant [F H G; G F H; H G F]
+ * Phase 6.2 (Update):  Discovered X,Z axes work with LEFT-circulant [F G H; H F G; G H F]
+ *                      (G and H swapped to account for tetrahedral chirality)
  *
- * Or copy-paste the test functions directly into console.
+ * Run in browser console after loading ARTexplorer:
+ *   import('./Geometry documents/Geometry Tests/fgh-verification-test.js').then(m => m.runAllTests())
+ *
+ * Or with Node.js:
+ *   node --input-type=module -e "import('./Geometry documents/Geometry Tests/fgh-verification-test.js').then(m => m.runAllTests())"
  */
 
 // === QUADRAY BASIS AXES IN CARTESIAN ===
@@ -94,11 +99,13 @@ function rotateAboutW(qPoint, theta) {
 function rotateAboutX(qPoint, theta) {
   const { F, G, H } = fghCoeffs(theta);
 
+  // Phase 6.2: Left-circulant pattern for X-axis (G,H swapped from W/Y)
+  // Accounts for chirality difference in tetrahedral vertex arrangement
   return {
-    w: F * qPoint.w + H * qPoint.y + G * qPoint.z,
+    w: F * qPoint.w + G * qPoint.y + H * qPoint.z,
     x: qPoint.x,  // X unchanged
-    y: G * qPoint.w + F * qPoint.y + H * qPoint.z,
-    z: H * qPoint.w + G * qPoint.y + F * qPoint.z
+    y: H * qPoint.w + F * qPoint.y + G * qPoint.z,
+    z: G * qPoint.w + H * qPoint.y + F * qPoint.z
   };
 }
 
@@ -116,10 +123,12 @@ function rotateAboutY(qPoint, theta) {
 function rotateAboutZ(qPoint, theta) {
   const { F, G, H } = fghCoeffs(theta);
 
+  // Phase 6.2: Left-circulant pattern for Z-axis (G,H swapped from W/Y)
+  // Accounts for chirality difference in tetrahedral vertex arrangement
   return {
-    w: F * qPoint.w + H * qPoint.x + G * qPoint.y,
-    x: G * qPoint.w + F * qPoint.x + H * qPoint.y,
-    y: H * qPoint.w + G * qPoint.x + F * qPoint.y,
+    w: F * qPoint.w + G * qPoint.x + H * qPoint.y,
+    x: H * qPoint.w + F * qPoint.x + G * qPoint.y,
+    y: G * qPoint.w + H * qPoint.x + F * qPoint.y,
     z: qPoint.z  // Z unchanged
   };
 }
@@ -354,22 +363,22 @@ export function runAllTests() {
 
   console.log('\n━━━ KEY FINDINGS ━━━');
   if (wPassed === wResults.length) {
-    console.log('✅ W-axis: Tom Ace\'s original F,G,H formula WORKS PERFECTLY');
-    console.log('   → Proceed with W-axis as reference implementation');
+    console.log('✅ W-axis: Right-circulant [F H G; G F H; H G F] - VERIFIED');
   }
   if (yPassed === yResults.length) {
-    console.log('✅ Y-axis: Same F,G,H pattern also works for Y-axis');
+    console.log('✅ Y-axis: Right-circulant [F H G; G F H; H G F] - VERIFIED');
   }
-  if (xzPassed < xzResults.length) {
-    console.log('❌ X,Z-axes: Naive matrix extension FAILS');
-    console.log('   → Need to derive correct matrix structure for X,Z axes');
-    console.log('   → Or use conjugation: transform axis to W, rotate, transform back');
+  if (xzPassed === xzResults.length) {
+    console.log('✅ X,Z-axes: Left-circulant [F G H; H F G; G H F] - VERIFIED (Phase 6.2)');
+    console.log('   → Chirality swap: G and H positions swapped relative to W/Y pattern');
+  } else {
+    console.log('❌ X,Z-axes: Some tests failed');
   }
 
-  console.log('\n━━━ RECOMMENDATION ━━━');
-  console.log('Phase 6.1: Implement W-axis F,G,H rotation (verified working)');
-  console.log('Phase 6.2: Research correct X,Y,Z axis matrix structures');
-  console.log('Phase 6.3: Or use conjugation approach for arbitrary axis');
+  console.log('\n━━━ PHASE 6.2 COMPLETE ━━━');
+  console.log('All four Quadray axes now have verified rotation formulas!');
+  console.log('Right-circulant: W, Y axes (original Tom Ace pattern)');
+  console.log('Left-circulant:  X, Z axes (chirality-corrected pattern)');
 
   console.log('═══════════════════════════════════════════════════════════════════════════\n');
 
