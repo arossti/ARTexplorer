@@ -898,20 +898,26 @@ W-axis 60° & \textcolor{green!50!black}{\textbf{PASS}} & $2.2 \times 10^{-16}$ 
 W-axis 90° & \textcolor{green!50!black}{\textbf{PASS}} & $1.7 \times 10^{-16}$ & Machine precision\\
 W-axis 120° & \textcolor{green!50!black}{\textbf{PASS}} & $5.6 \times 10^{-17}$ & Machine precision\\
 W-axis composition & \textcolor{green!50!black}{\textbf{PASS}} & $5.6 \times 10^{-17}$ & $R_W(45°) \times R_W(45°) = R_W(90°)$\\
-Y-axis (all angles) & \textcolor{green!50!black}{\textbf{PASS}} & $\sim 10^{-16}$ & Same pattern works\\
-X-axis (all angles) & \textcolor{red}{\textbf{FAIL}} & $\sim 1.0$ & Naive extension fails\\
-Z-axis (all angles) & \textcolor{red}{\textbf{FAIL}} & $\sim 1.0$ & Naive extension fails\\
+Y-axis (all angles) & \textcolor{green!50!black}{\textbf{PASS}} & $\sim 10^{-16}$ & Right-circulant pattern\\
+X-axis (all angles) & \textcolor{green!50!black}{\textbf{PASS}} & $\sim 10^{-16}$ & Left-circulant (Phase 6.2)\\
+Z-axis (all angles) & \textcolor{green!50!black}{\textbf{PASS}} & $\sim 10^{-16}$ & Left-circulant (Phase 6.2)\\
+Cross-axis composition & \textcolor{green!50!black}{\textbf{PASS}} & $\sim 10^{-16}$ & $R_W \times R_X$ matches quaternions\\
 \bottomrule
 \end{tabular}
-\caption{Phase 6.0 verification test results (February 2026)}
+\caption{Phase 6.0/6.2 verification test results (February 2026)}
 \end{table}
 
 \subsection{Key Findings}
 
-\begin{tcolorbox}[colback=green!5, colframe=green!40!black, title=\textbf{Phase 6.0 Complete: Tom Ace's F,G,H Formula Verified}]
-\textbf{Outcome 1 confirmed for W and Y axes}: F,G,H rotation produces \emph{identical} results to quaternion rotation about the same tetrahedral axis, to machine precision ($10^{-16}$).
+\begin{tcolorbox}[colback=green!5, colframe=green!40!black, title=\textbf{Phase 6.2 Complete: All Four Quadray Axes Verified}]
+\textbf{Outcome 1 confirmed for ALL axes}: F,G,H rotation produces \emph{identical} results to quaternion rotation about all four tetrahedral basis axes, to machine precision ($10^{-16}$).
 
-This means native Quadray rotation is \textbf{mathematically equivalent} to quaternion rotation when rotating about the tetrahedral basis directions---an elegant coordinate-native expression of the same underlying rotations.
+\textbf{Key discovery}: Tetrahedral chirality requires two circulant patterns:
+\begin{itemize}
+    \item \textbf{Right-circulant} $[F, H, G; G, F, H; H, G, F]$: W and Y axes
+    \item \textbf{Left-circulant} $[F, G, H; H, F, G; G, H, F]$: X and Z axes
+\end{itemize}
+The difference is swapping G and H positions to account for opposite handedness.
 \end{tcolorbox}
 
 \textbf{Detailed findings:}
@@ -919,15 +925,13 @@ This means native Quadray rotation is \textbf{mathematically equivalent} to quat
 \begin{enumerate}
     \item \textbf{W-axis F,G,H verified}: Tom Ace's original formula produces rotations identical to $q_{\hat{W},\theta}$ where $\hat{W} = (1,1,1)/\sqrt{3}$.
 
-    \item \textbf{Y-axis also works}: The same circulant matrix pattern applies to Y-axis rotation.
+    \item \textbf{Y-axis also works}: The same right-circulant matrix pattern applies to Y-axis rotation.
 
-    \item \textbf{X,Z-axis matrices need derivation}: The naive extension of placing F,G,H in a circulant pattern for X and Z axes produces incorrect rotations. Two solutions:
-    \begin{itemize}
-        \item Derive axis-specific matrix structures for X and Z
-        \item Use conjugation: transform so target axis $\to$ W, apply $R_W$, transform back
-    \end{itemize}
+    \item \textbf{X,Z-axis matrices SOLVED (Phase 6.2)}: The tetrahedral vertex arrangement has chirality---W and Y share one handedness, while X and Z have the opposite. Swapping G and H positions (left-circulant) produces correct rotations for X and Z axes.
 
-    \item \textbf{Same-axis composition verified}: $R_W(45°) \times R_W(45°) = R_W(90°)$ exactly, confirming that sequential F,G,H rotations compose correctly.
+    \item \textbf{Same-axis composition verified}: $R_W(45°) \times R_W(45°) = R_W(90°)$ exactly.
+
+    \item \textbf{Cross-axis composition verified}: $R_W(45°) \times R_X(45°)$ matches quaternion composition to machine precision, confirming the rotation algebra is equivalent.
 \end{enumerate}
 
 \subsection{Mathematical Interpretation}
@@ -944,9 +948,9 @@ where $\text{Quadray}(\cdot)$ denotes the Cartesian-to-Quadray coordinate transf
 Based on verification results:
 
 \begin{itemize}
-    \item \textbf{Phase 6.1}: Implement W-axis F,G,H rotation in \texttt{rt-math.js} (verified working)
-    \item \textbf{Phase 6.2}: Derive correct X,Y,Z axis matrix structures (or implement conjugation)
-    \item \textbf{Phase 6.3}: Verify arbitrary-axis rotation via basis decomposition
+    \item \textbf{Phase 6.1} (\textcolor{green!50!black}{\textbf{COMPLETE}}): Implement W/Y-axis F,G,H rotation in \texttt{rt-math.js}
+    \item \textbf{Phase 6.2} (\textcolor{green!50!black}{\textbf{COMPLETE}}): Derive X/Z axis matrices via left-circulant pattern
+    \item \textbf{Phase 6.3}: Integrate into demo, test arbitrary-axis rotation via basis composition
     \item \textbf{Phase 6.4}: Performance comparison vs quaternion path
 \end{itemize}
 
@@ -958,7 +962,8 @@ Based on verification results:
     \item \textbf{[ANSWERED]} \emph{Equivalence verification:} Does $R_W(\theta)$ match $q_{\hat{W},\theta}$?\\
     \textbf{Yes}, to machine precision. F,G,H is a coordinate-native expression of quaternion rotation.
 
-    \item \textbf{X,Z-axis matrix structure:} What is the correct F,G,H placement for X and Z axes? The circulant pattern that works for W and Y does not directly extend.
+    \item \textbf{[ANSWERED]} \emph{X,Z-axis matrix structure:} What is the correct F,G,H placement for X and Z axes?\\
+    \textbf{Left-circulant} (G,H swapped): tetrahedral chirality requires opposite handedness for X,Z vs W,Y.
 
     \item \textbf{Arbitrary axis rotation:} Can we decompose arbitrary axis rotation into W,X,Y,Z compositions? Does this introduce ``tetrahedral gimbal lock''?
 

@@ -1485,6 +1485,7 @@ export const RT = {
      * Y-axis direction in Cartesian: (-1,1,-1)/√3
      *
      * Verified to match quaternions (Phase 6.0 testing).
+     * Uses right-circulant pattern (same as W-axis).
      *
      * @param {Object} qPoint - Quadray point { w, x, y, z }
      * @param {number} theta - Rotation angle in radians
@@ -1498,6 +1499,56 @@ export const RT = {
         x: G * qPoint.w + F * qPoint.x + H * qPoint.z,
         y: qPoint.y, // Y unchanged (rotation axis)
         z: H * qPoint.w + G * qPoint.x + F * qPoint.z,
+      };
+    },
+
+    /**
+     * Apply rotation about X-axis to a Quadray point
+     * X-axis direction in Cartesian: (1,-1,-1)/√3
+     *
+     * Uses LEFT-circulant pattern (G,H swapped from W/Y pattern).
+     * This accounts for the chirality difference in tetrahedral vertex arrangement.
+     *
+     * Phase 6.2: Hypothesis - X and Z axes have opposite handedness from W and Y.
+     *
+     * @param {Object} qPoint - Quadray point { w, x, y, z }
+     * @param {number} theta - Rotation angle in radians
+     * @returns {Object} Rotated Quadray point { w, x, y, z }
+     */
+    rotateAboutX(qPoint, theta) {
+      const { F, G, H } = this.fghCoeffs(theta);
+
+      // Left-circulant: [F G H; H F G; G H F] on W,Y,Z
+      return {
+        w: F * qPoint.w + G * qPoint.y + H * qPoint.z,
+        x: qPoint.x, // X unchanged (rotation axis)
+        y: H * qPoint.w + F * qPoint.y + G * qPoint.z,
+        z: G * qPoint.w + H * qPoint.y + F * qPoint.z,
+      };
+    },
+
+    /**
+     * Apply rotation about Z-axis to a Quadray point
+     * Z-axis direction in Cartesian: (-1,-1,1)/√3
+     *
+     * Uses LEFT-circulant pattern (G,H swapped from W/Y pattern).
+     * This accounts for the chirality difference in tetrahedral vertex arrangement.
+     *
+     * Phase 6.2: Hypothesis - X and Z axes have opposite handedness from W and Y.
+     *
+     * @param {Object} qPoint - Quadray point { w, x, y, z }
+     * @param {number} theta - Rotation angle in radians
+     * @returns {Object} Rotated Quadray point { w, x, y, z }
+     */
+    rotateAboutZ(qPoint, theta) {
+      const { F, G, H } = this.fghCoeffs(theta);
+
+      // Left-circulant: [F G H; H F G; G H F] on W,X,Y
+      return {
+        w: F * qPoint.w + G * qPoint.x + H * qPoint.y,
+        x: H * qPoint.w + F * qPoint.x + G * qPoint.y,
+        y: G * qPoint.w + H * qPoint.x + F * qPoint.y,
+        z: qPoint.z, // Z unchanged (rotation axis)
       };
     },
 
