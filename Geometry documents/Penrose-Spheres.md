@@ -23,8 +23,8 @@
 - **Thin Rhombus**: Angles 36°, 144°, 36°, 144°
 
 **Robinson Triangles** (building blocks):
-- **BL (Large)**: Isosceles triangle, sides ratio **1:1:φ** (φ = golden ratio)
-- **BS (Small)**: Isosceles triangle, sides ratio **1:1:ψ** (ψ = 1/φ = φ - 1)
+- **BL (Large)**: Isosceles triangle, **legs:legs:base = φ:φ:1** (legs are φ times longer than base)
+- **BS (Small)**: Isosceles triangle, **legs:legs:base = ψ:ψ:1** (legs are ψ = 1/φ times shorter than base)
 
 ### Golden Ratio Relationships
 
@@ -381,8 +381,8 @@ thickRhombus: (quadrance = 1) => {
   const phi = RT.PurePhi.value();
   const cos72 = RT.PurePhi.pentagon.cos72();
   const sin72 = RT.PurePhi.pentagon.sin72();
-  const cos36 = RT.PurePhi.pentagon.cos72() + 0.5; // cos(36°) = (1+√5)/4
-  const sin36 = RT.PurePhi.pentagon.sin144();       // sin(36°) = sin(144°)
+  const cos36 = RT.PurePhi.pentagon.cos36();  // (1+√5)/4 = φ/2 [FIXED: use cached value]
+  const sin36 = RT.PurePhi.pentagon.sin36();  // [FIXED: use cached value]
 
   // Short diagonal = √Q, long diagonal = φ × √Q
   const shortDiag = Math.sqrt(quadrance);
@@ -415,7 +415,7 @@ thickRhombus: (quadrance = 1) => {
       longDiagonalQuadrance: phi * phi * quadrance,
       edgeQuadrance,
       acuteAngleSpread: RT.PurePhi.pentagon.beta(),  // 72°
-      obtuseAngleSpread: RT.PurePhi.pentagon.alpha(), // 108° (same spread as 72°)
+      obtuseAngleSpread: RT.PurePhi.pentagon.beta(), // 108° [FIXED: same spread as 72°, NOT alpha]
       rtPure: true,
     }
   };
@@ -1048,5 +1048,277 @@ Following ARTexplorer conventions:
 
 ---
 
+## Implementation Review & Open Questions
+
+> **Review Date:** February 2026
+> **Status:** Critical review for implementation readiness
+
+### Corrections to Workplan
+
+#### 1. Robinson Triangle Side Ratio Notation (CLARIFICATION NEEDED)
+
+The workplan states:
+- BL (Large): sides ratio **1:1:φ**
+- BS (Small): sides ratio **1:1:ψ**
+
+**Clarification**: This notation is ambiguous. The actual geometry is:
+- **BL**: Two LEGS of length φ, BASE of length 1 → ratio should be written **φ:φ:1** (legs:legs:base)
+- **BS**: Two LEGS of length ψ=1/φ, BASE of length 1 → ratio should be written **ψ:ψ:1**
+
+The implemented code in `rt-penrose.js` is CORRECT:
+```javascript
+// BL: legQuadrance = φ² × baseQuadrance (legs are φ times longer than base)
+// BS: legQuadrance = (1/φ)² × baseQuadrance (legs are ψ times shorter than base)
+```
+
+**Action**: Update workplan notation to use unambiguous format: **legs:legs:base = φ:φ:1** for BL.
+
+#### 2. Spread Metadata Error (BUG IN WORKPLAN)
+
+The workplan line 417-418 contains an error:
+```javascript
+// WRONG:
+acuteAngleSpread: RT.PurePhi.pentagon.beta(),  // 72°
+obtuseAngleSpread: RT.PurePhi.pentagon.alpha(), // 108° (same spread as 72°)
+```
+
+**Correction**: Spread of 108° equals spread of 72° (both = β), NOT α!
+```javascript
+// CORRECT:
+acuteAngleSpread: RT.PurePhi.pentagon.beta(),  // 72°
+obtuseAngleSpread: RT.PurePhi.pentagon.beta(), // 108° has same spread as 72°
+```
+
+The implemented `rt-penrose.js` already handles this correctly.
+
+#### 3. cos36 Calculation (OUTDATED IN WORKPLAN)
+
+The workplan uses a confusing calculation:
+```javascript
+const cos36 = RT.PurePhi.pentagon.cos72() + 0.5; // cos(36°) = (1+√5)/4
+```
+
+**Correction**: Use the now-implemented cached value:
+```javascript
+const cos36 = RT.PurePhi.pentagon.cos36(); // Already cached in rt-math.js
+```
+
+The implemented `rt-penrose.js` already uses the correct cached values.
+
+### Critical Missing Implementations
+
+#### 4. Deflation Algorithm (CORE MISSING PIECE)
+
+The deflation algorithm is marked TODO but is THE critical function for tiling generation.
+
+**Required Implementation Details:**
+
+```javascript
+/**
+ * Deflate a thick rhombus into 2 thick + 1 thin
+ *
+ * Geometry (see: de Bruijn, Penrose original papers):
+ *
+ *        V0 (72°)                    V0
+ *       /    \                      /|\
+ *      /      \         →          / | \
+ *    V3        V1                V3  P  V1   (P = new vertex at φ-ratio)
+ *      \      /                    \ | /
+ *       \    /                      \|/
+ *        V2 (72°)                    V2
+ *
+ * New vertex P divides long diagonal at golden ratio:
+ *   P = V0 + (V2 - V0) × (1/φ)
+ *
+ * Resulting tiles:
+ *   Thick 1: V0, V1, P, V3  (rotated)
+ *   Thick 2: V1, V2, P      (actually this needs more work)
+ *   Thin 1:  P, V2, V3
+ *
+ * ⚠️ RESEARCH NEEDED: Exact vertex positions for subdivided tiles
+ * Reference: http://tilings.math.uni-bielefeld.de/substitution/penrose-rhomb/
+ */
+_deflateThickRhombus: (tile, scale) => {
+  // TODO: Implement exact subdivision geometry
+  // This requires careful calculation of new vertex positions
+}
+```
+
+**Open Question**: The exact deflation rules vary by source. Need to verify:
+- [ ] Which vertices become which in the subdivided tiles?
+- [ ] Are the new tiles properly oriented for matching?
+- [ ] Does the scale factor apply before or after subdivision?
+
+#### 5. Triangle Patch Boundary Problem (FUNDAMENTAL ISSUE)
+
+The `trianglePatch()` approach has a fundamental problem:
+
+**Problem**: Clipping Penrose tiles to an equilateral triangle boundary:
+1. Creates partial tiles at edges
+2. Breaks matching rules
+3. May not produce valid Penrose tiling at boundaries
+
+**The 4D Quadray approach claims to solve this, but**:
+
+⚠️ **UNRESOLVED**: How exactly does Janus inversion preserve matching rules?
+- The claim is that `Tile_B = Janus(Tile_A)` automatically satisfies matching
+- But matching rules depend on tile TYPE and ORIENTATION, not just position
+- A Janus-inverted thick rhombus is still a thick rhombus with inverted coordinates
+- Does this actually satisfy the arrow-matching rules?
+
+**Research Required**:
+- [ ] Prove (or disprove) that Janus inversion preserves Penrose matching
+- [ ] If not automatic, what additional constraints are needed?
+- [ ] Alternative: Use de Bruijn's pentagrid method which guarantees global consistency
+
+#### 6. Icosahedron Face Adjacency (MISSING DATA)
+
+The workplan references "face adjacency" but doesn't provide the actual adjacency table.
+
+**Required Data Structure**:
+```javascript
+/**
+ * Icosahedron face adjacency
+ * Each face has 3 neighbors (sharing an edge)
+ *
+ * Standard labeling (see rt-polyhedra.js icosahedron implementation):
+ * Faces 0-4: Top cap (around north pole)
+ * Faces 5-14: Middle band
+ * Faces 15-19: Bottom cap (around south pole)
+ */
+const ICOSAHEDRON_ADJACENCY = [
+  // Face 0 neighbors
+  { face: 0, neighbors: [{ face: 1, edge: 'AB' }, { face: 4, edge: 'AC' }, { face: 5, edge: 'BC' }] },
+  // ... 19 more entries
+];
+
+// ⚠️ TODO: Verify against rt-polyhedra.js icosahedron face ordering
+```
+
+#### 7. Matching Arc Geometry (NOT SPECIFIED)
+
+Matching arcs are mentioned but never defined.
+
+**Required Specification**:
+```javascript
+/**
+ * Matching arc decorations for Penrose tiles
+ *
+ * Each tile type has specific arc patterns:
+ * - Arcs are circular segments
+ * - Must connect when tiles are properly matched
+ *
+ * Thick Rhombus:
+ *   - Arc A: Centered at V0 (acute vertex), radius = 0.3 × edge
+ *   - Arc B: Centered at V2 (acute vertex), radius = 0.3 × edge
+ *
+ * Thin Rhombus:
+ *   - Arc A: Centered at V0 (acute vertex), radius = 0.2 × edge
+ *   - Arc B: Centered at V2 (acute vertex), radius = 0.2 × edge
+ *
+ * ⚠️ RESEARCH NEEDED: Exact arc radii and angular extents
+ * Reference: Penrose's original 1974 paper
+ */
+```
+
+### Existing Assets (Verified)
+
+These functions already exist and can be used:
+
+| Function | Location | Status |
+|----------|----------|--------|
+| `RT.PurePhi.pentagon.cos36()` | rt-math.js | ✅ Implemented |
+| `RT.PurePhi.pentagon.sin36()` | rt-math.js | ✅ Implemented |
+| `RT.PurePhi.penrose.rotate36()` | rt-math.js | ✅ Implemented |
+| `RT.PurePhi.penrose.rotateN36()` | rt-math.js | ✅ Implemented |
+| `Quadray.toCartesian()` | rt-math.js | ✅ Implemented |
+| `Quadray.fromCartesian()` | rt-math.js | ✅ Implemented |
+| `PenroseTiles.robinsonLarge()` | rt-penrose.js | ✅ Implemented |
+| `PenroseTiles.robinsonSmall()` | rt-penrose.js | ✅ Implemented |
+| `PenroseTiles.thickRhombus()` | rt-penrose.js | ✅ Implemented |
+| `PenroseTiles.thinRhombus()` | rt-penrose.js | ✅ Implemented |
+| `PenroseTiles.kite()` | rt-penrose.js | ✅ Implemented |
+| `PenroseTiles.dart()` | rt-penrose.js | ✅ Implemented |
+| Icosahedron Quadray vertices | 4D-COORDINATES.md | ✅ Documented |
+
+### Performance Considerations
+
+**Tile Count Growth**:
+| Generations | Approx Tiles (star seed) | Notes |
+|-------------|--------------------------|-------|
+| 1 | 15 | 5 tiles × 3 avg |
+| 2 | 37 | |
+| 3 | 97 | |
+| 4 | 252 | |
+| 5 | 655 | Default in workplan |
+| 6 | 1,702 | |
+| 7 | 4,425 | Performance concern |
+| 8 | 11,502 | May cause lag |
+
+**Recommendation**: Cap generations at 6 for real-time interaction, allow 7-8 for export only.
+
+### Revised Implementation Order
+
+Based on dependencies and critical path:
+
+**Phase 1: Verify Existing Tiles** (1 hour)
+- [ ] Visual test all 6 tile types in browser console
+- [ ] Verify RT-pure logging output
+- [ ] Check face winding (CCW for outward normals)
+
+**Phase 2: Implement Deflation** (4-6 hours) ⚠️ CRITICAL PATH
+- [ ] Research exact deflation geometry from authoritative source
+- [ ] Implement `_deflateThickRhombus()`
+- [ ] Implement `_deflateThinRhombus()`
+- [ ] Test: Single tile → verify 2-3 output tiles
+- [ ] Test: 5 generations → visual inspection
+
+**Phase 3: Seed Configurations** (1 hour)
+- [ ] Implement star (5 thick rhombi, acute angles meeting)
+- [ ] Implement sun (5 kites, 72° tips meeting)
+- [ ] Verify 5-fold symmetry visually
+
+**Phase 4: Basic UI** (2 hours)
+- [ ] Add single tile display to Primitives
+- [ ] Add generation slider
+- [ ] Add seed selector
+
+**Phase 5: Triangle Boundary** (2-3 hours)
+- [ ] Implement point-in-triangle test
+- [ ] Implement tile centroid filter
+- [ ] Implement boundary clipping (accept partial tiles for now)
+
+**Phase 6: Icosahedral Mapping** (4-6 hours)
+- [ ] Implement net generation with adjacency
+- [ ] Implement tile transformation to each face
+- [ ] Implement spherical projection
+
+**Phase 7: 4D Quadray Approach** (RESEARCH PHASE)
+- [ ] Prototype Janus-based matching on paper/mathematically
+- [ ] If valid: implement 4D tile structures
+- [ ] If not valid: document why and use traditional approach
+
+### Open Research Questions
+
+1. **Deflation Exact Geometry**: What are the precise vertex positions after deflation? Multiple sources give slightly different rules.
+
+2. **Janus Matching Validity**: Does Janus inversion truly preserve Penrose matching rules, or is additional logic required?
+
+3. **Triangle Boundary Matching**: When tiling an equilateral triangle, can boundary tiles be arranged to match across icosahedral edges? Or is this fundamentally incompatible with aperiodicity?
+
+4. **Twarock T-numbers**: What specific Penrose patterns correspond to T=1, T=3, T=4, T=7 viral capsids? Need literature review.
+
+5. **3D Distortion**: When projecting flat Penrose tiles onto a sphere, how much angular distortion occurs? Is it acceptable for visualization?
+
+### References for Implementation
+
+- **Deflation rules**: [Tilings Encyclopedia - Penrose Rhombus](http://tilings.math.uni-bielefeld.de/substitution/penrose-rhomb/)
+- **Original Penrose paper**: Penrose, R. (1974). "The role of aesthetics in pure and applied mathematical research"
+- **de Bruijn pentagrid**: de Bruijn, N.G. (1981). "Algebraic theory of Penrose's non-periodic tilings"
+- **Twarock capsids**: Twarock, R. (2006). "Mathematical virology: a novel approach to the structure and assembly of viruses"
+
+---
+
 _Last updated: February 2026_
 _Contributors: Andy & Claude (for Bonnie Devarco's virology research)_
+_Review: Implementation readiness audit completed_
