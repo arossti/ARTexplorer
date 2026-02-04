@@ -371,6 +371,13 @@ function updateInfoPanel(rotor, deltaTime) {
 For Euler angles (XYZ order), gimbal lock occurs when the middle axis (Y) rotation
 approaches ±90°. This creates "danger zones" that we visualize as 3D surfaces.
 
+**Note:** The current implementation visualizes Y-axis gimbal lock zones (XYZ order). In general, gimbal lock occurs when the *middle* axis of any Euler order reaches ±90°:
+- XYZ, ZYX: Y-axis poles (current visualization)
+- YXZ, ZXY: X-axis poles
+- XZY, YZX: Z-axis poles
+
+A complete visualization would show six singularity regions—one at each face center of an inscribed cube. See Phase 5 future enhancements for planned implementation.
+
 ```javascript
 /**
  * Create gimbal lock warning zones in 3D space
@@ -702,6 +709,7 @@ provide a rational, gimbal-lock-free alternative to both Euler angles and quater
 - [ ] Record and playback rotation sequences
 - [ ] Export rotation as QuadrayRotor constructor call
 - [ ] Side-by-side Euler vs Quadray visualization (split view)
+- [ ] **Full gimbal lock cube visualization**: Display all six singularity regions (±X, ±Y, ±Z poles) as faces of an inscribed cube. Allow users to select different Euler rotation orders (XYZ, ZYX, YXZ, ZXY, XZY, YZX) and see which face pairs become the active danger zones. This would demonstrate that gimbal lock depends on the rotation order, not on 3D space itself.
 
 ### Phase 6: Native F,G,H Tetrahedral Rotation 🎯 TARGET
 

@@ -741,6 +741,14 @@ ARTexplorer includes an interactive demo (\texttt{rt-rotor-demo.js}) that visual
 
 \textbf{Key demonstration:} In Euler mode, approaching the gimbal lock zones causes visible rotation instability (simulated jitter). In Quadray mode, the same axis orientations produce smooth, continuous rotation---the zones are ``irrelevant'' because the 4D representation has no singularities.
 
+\textbf{Note on gimbal lock zone visualization:} The current demo displays gimbal lock zones at the Y-axis poles ($\pm 90°$), which is correct for Euler XYZ rotation order specifically. In general, gimbal lock occurs when the \emph{middle axis} of any Euler rotation order reaches $\pm 90°$. A complete visualization would show six singularity regions---one at each face center of an inscribed cube:
+\begin{itemize}
+    \item $\pm$Y poles: XYZ and ZYX orders
+    \item $\pm$X poles: YXZ and ZXY orders
+    \item $\pm$Z poles: XZY and YZX orders
+\end{itemize}
+A future enhancement could map a cube in 3D space with gimbal lock zones on each face, allowing users to select different Euler orders and see the corresponding singularity locations.
+
 The demo is available at: \url{https://arossti.github.io/ARTexplorer/}
 
 %==============================================================================
@@ -960,8 +968,9 @@ Based on verification results:
 \begin{itemize}
     \item \textbf{Phase 6.1} (\textcolor{green!50!black}{\textbf{COMPLETE}}): Implement W/Y-axis F,G,H rotation in \texttt{rt-math.js}
     \item \textbf{Phase 6.2} (\textcolor{green!50!black}{\textbf{COMPLETE}}): Derive X/Z axis matrices via left-circulant pattern
-    \item \textbf{Phase 6.3}: Integrate into demo, test arbitrary-axis rotation via basis composition
+    \item \textbf{Phase 6.3} (\textcolor{green!50!black}{\textbf{COMPLETE}}): Integrate into demo with interactive F,G,H rotation buttons for all four axes
     \item \textbf{Phase 6.4}: Performance comparison vs quaternion path
+    \item \textbf{Phase 6.5} (\textcolor{green!50!black}{\textbf{COMPLETE}}): Interactive orbit handles for dragging spin axis with mode-based visibility
 \end{itemize}
 
 %==============================================================================
@@ -975,13 +984,17 @@ Based on verification results:
     \item \textbf{[ANSWERED]} \emph{X,Z-axis matrix structure:} What is the correct F,G,H placement for X and Z axes?\\
     \textbf{Left-circulant} (G,H swapped): tetrahedral chirality requires opposite handedness for X,Z vs W,Y.
 
-    \item \textbf{Arbitrary axis rotation:} Can we decompose arbitrary axis rotation into W,X,Y,Z compositions? Does this introduce ``tetrahedral gimbal lock''?
+    \item \textbf{[ANSWERED]} \emph{Arbitrary axis rotation:} Can we decompose arbitrary axis rotation into W,X,Y,Z compositions? Does this introduce ``tetrahedral gimbal lock''?\\
+    \textbf{Yes}, arbitrary axis rotation works via basis composition. The interactive demo (Phase 6.5) allows dragging the spin axis to any orientation using orbit handles. No ``tetrahedral gimbal lock'' observed---the 4D representation remains smooth everywhere, unlike Euler angles which exhibit jitter near $\pm 90°$ Y-axis.
 
-    \item \textbf{Normalization trade-offs:} Operating without zero-sum normalization preserves 4 DOF. Are there numerical stability concerns?
+    \item \textbf{[PARTIALLY ANSWERED]} \emph{Normalization trade-offs:} Operating without zero-sum normalization preserves 4 DOF. Are there numerical stability concerns?\\
+    \textbf{No stability issues observed} in practice. The demo runs continuously with Hamilton product composition and periodic normalization. Long-running sessions show no drift or instability. Further stress testing recommended for edge cases.
 
-    \item \textbf{Closed-form composition rule:} Can we derive explicit formulas for $F_{12}, G_{12}, H_{12}$ from $R(\theta_1) \times R(\theta_2)$?
+    \item \textbf{Closed-form composition rule:} Can we derive explicit formulas for $F_{12}, G_{12}, H_{12}$ from $R(\theta_1) \times R(\theta_2)$?\\
+    \emph{Open question.} Current implementation uses Hamilton product for composition, which is verified correct. Deriving native F,G,H composition formulas remains a theoretical goal.
 
-    \item \textbf{GPU efficiency:} Can F,G,H 4×4 matrices be sent directly to shaders, or is quaternion conversion at the boundary necessary?
+    \item \textbf{[ANSWERED]} \emph{GPU efficiency:} Can F,G,H 4×4 matrices be sent directly to shaders, or is quaternion conversion at the boundary necessary?\\
+    \textbf{Quaternion-to-matrix conversion at boundary.} The current implementation converts QuadrayRotor to THREE.js Quaternion for rendering. The \texttt{toMatrix3()} method produces RT-pure polynomial output (no transcendentals). Direct 4×4 matrix shaders remain a future optimization.
 \end{enumerate}
 
 %==============================================================================
