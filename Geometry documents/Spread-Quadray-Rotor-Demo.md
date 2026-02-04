@@ -1105,15 +1105,16 @@ rotateAboutZ(qPoint, theta) {
 
 ---
 
-**Phase 6.3: Demo Integration** ← CURRENT
+**Phase 6.3: Demo Integration** ✅ COMPLETE
 
 Integration of native F,G,H Quadray rotation into the interactive demo.
 
 **Completed Tasks**:
-- [x] Add W/X/Y/Z tetrahedral axis buttons to demo UI
+- [x] Add QW/QX/QY/QZ tetrahedral axis buttons to demo UI
 - [x] Wire buttons to `RT.QuadrayRotation.rotateAbout{W,X,Y,Z}` functions
 - [x] Display F,G,H coefficients in info panel during rotation
 - [x] Add visual indicator for current Quadray axis mode
+- [x] Buttons preserve spinning state (no velocity reset)
 
 **Implementation Details**:
 
@@ -1140,6 +1141,75 @@ onQuadrayAxisButton(axis) {
 - [ ] Test for "tetrahedral gimbal lock" configurations
 - [ ] Replace Hamilton scaffolding in `rt-quadray-rotor.js` with native F,G,H
 - [ ] Compare performance: native F,G,H vs quaternion path
+
+---
+
+**Phase 6.5: Mode-Aware Gumball Rotation Handles** ← PLANNED
+
+Replace or augment the single axis handle with **mode-aware gumball handles** that switch between tetrahedral (WXYZ) and Cartesian (XYZ) based on the current rotation mode.
+
+**Problem Statement**:
+The current axis handle (at the tip of the spin axis) is functional but difficult to drag into gimbal-lock territory due to camera dynamics. While the axis visualization remains valuable, adding proper gumball rotation handles would provide:
+1. Direct manipulation of rotation around specific basis vectors
+2. Visual distinction between Quadray and Euler rotation modes
+3. Clearer UI feedback about which coordinate system is active
+
+**Design Goals**:
+- **Quadray Mode**: Display WXYZ tetrahedral gumball handles
+  - W-handle rotates around (1,1,1)/√3 direction (cyan arc)
+  - X-handle rotates around (1,-1,-1)/√3 direction (magenta arc)
+  - Y-handle rotates around (-1,1,-1)/√3 direction (yellow arc)
+  - Z-handle rotates around (-1,-1,1)/√3 direction (green arc)
+  - Uses `RT.QuadrayRotation.rotateAbout{W,X,Y,Z}` functions
+
+- **Euler Mode**: Display XYZ Cartesian gumball handles
+  - X-handle (red arc) rotates around (1,0,0)
+  - Y-handle (green arc) rotates around (0,1,0)
+  - Z-handle (blue arc) rotates around (0,0,1)
+  - Standard THREE.js quaternion rotation
+
+**Visual Design**:
+```
+  QUADRAY MODE (WXYZ)              EULER MODE (XYZ)
+       ╭─W─╮                           ╭─X─╮
+      ╱     ╲                         ╱  R  ╲
+   ╭─X─╮ ╭─Y─╮                     ╭─Y─╮   ╭─Z─╮
+    ╲   ╳   ╱                       G ╲   ╱ B
+     ╰─Z─╯                             ╰───╯
+  (tetrahedral)                    (orthogonal)
+```
+
+**Implementation Tasks**:
+- [ ] Change current axis handle color to bright cyan for better visibility
+- [ ] Create `GumballController` class with mode-switching capability
+- [ ] Reference `modules/rt-init.js` `createEditingBasis()` for pattern guidance
+- [ ] Implement tetrahedral WXYZ handles (4 rotation arcs at 109.47° apart)
+- [ ] Implement Cartesian XYZ handles (3 orthogonal rotation arcs)
+- [ ] Auto-switch handle set when user toggles "Use Quadray Rotors" checkbox
+- [ ] Wire WXYZ handles to `RT.QuadrayRotation` functions
+- [ ] Wire XYZ handles to standard quaternion rotation
+- [ ] Add hover highlighting and drag interaction for each arc
+- [ ] Evaluate whether to keep or retire the tip axis handle
+
+**Mode Switching Behavior**:
+```javascript
+// When rotation mode changes
+onRotationModeChange(useQuadrayRotors) {
+  if (useQuadrayRotors) {
+    this.gumball.showTetrahedralHandles();  // WXYZ
+    this.gumball.hideCartesianHandles();
+  } else {
+    this.gumball.showCartesianHandles();    // XYZ
+    this.gumball.hideTetrahedralHandles();
+  }
+}
+```
+
+**Success Criteria**:
+- Users can visually distinguish which rotation mode is active by handle geometry
+- Dragging a handle applies smooth rotation around that basis axis
+- Handle set automatically updates when switching modes
+- Integration with existing `QuadrayRotor` and demo state management
 
 ---
 
