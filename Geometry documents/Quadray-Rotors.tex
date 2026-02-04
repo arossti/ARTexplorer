@@ -27,7 +27,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}{Proposition}
 
-\title{Spread-Quadray Rotors -- v1.1 (Feb 2026)\\
+\title{Spread-Quadray Rotors -- v2.0 (Feb 2026)\\
 \large A Tetrahedral Alternative to Quaternions\\
 for Gimbal-Lock-Free Rotation Representation}
 
@@ -114,6 +114,16 @@ There is no nonvanishing continuous tangent vector field on even-dimensional $n$
     \item You cannot texture-map a sphere without at least one singularity
     \item \textbf{Gimbal lock is unavoidable with 3-parameter rotation systems}
 \end{itemize}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!40!black, title=\textbf{Escaping the Hairy Ball: Two Approaches}]
+The cowlick exists because hair must lie flat \emph{on} the 2D spherical surface---there must be at least one point where no consistent direction can be assigned. How do we escape?
+
+\textbf{Quaternions} escape by moving to $S^3$, a higher-dimensional sphere where combing \emph{is} possible. Think of it as finding a better-shaped surface---one without the topological obstruction.
+
+\textbf{Quadray Rotors} escape differently: we use four tetrahedral directions instead of three orthogonal ones. Picture a tetrahedron at the origin, with axes pointing to its four vertices. These four directions naturally span a 4-dimensional space---not by adding an abstract fourth axis, but because four non-coplanar points require four independent coordinates to describe fully. There is no 2D surface to comb, so there is no cowlick to create.
+
+In the ARTexplorer demo, the four colored rings (W, X, Y, Z) represent rotation \emph{about} each tetrahedral axis---gumball-style handles that let you spin the orientation around any of the four basis directions. The smooth motion, even where Euler angles would fail, demonstrates the absence of singularities in tetrahedral 4D space.
+\end{tcolorbox}
 
 \subsection{Why 3 Parameters Are Not Enough}
 

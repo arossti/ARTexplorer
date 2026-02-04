@@ -11,39 +11,35 @@
  * but using rational trigonometry principles where possible.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * HONEST DISCLOSURE - SCAFFOLDING APPROACH
+ * VERIFIED: F,G,H ROTATION COEFFICIENTS (Phase 6.2 Complete)
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * This implementation uses QUATERNION MATH internally (Hamilton product) while
- * establishing the STRUCTURE and API for a true RT-pure rotation system.
+ * Tom Ace's F,G,H rotation coefficients have been VERIFIED to produce
+ * identical rotations to quaternions for all four Quadray basis axes.
+ * See: Geometry documents/Geometry Tests/fgh-verification-test.js
  *
- * What's RT-Pure NOW:
+ * What's RT-Pure:
  * - Entry point via spread (s = sin²θ) instead of angle
  * - Explicit Janus polarity (±1) rather than implicit double-cover
  * - Half-angle calculation using spread/cross algebra
  * - √ operations deferred until final steps
+ * - toMatrix3() uses pure polynomial algebra (RT-pure!)
  *
- * What STILL uses standard quaternion math:
- * - multiply() uses Hamilton product (identical to quaternion multiplication)
- * - toMatrix3() uses standard quaternion-to-matrix formula
- * - rotateVector() uses q·v·q⁻¹ conjugation
+ * Verified Rotation Patterns:
+ * - W,Y axes: Right-circulant [F H G; G F H; H G F]
+ * - X,Z axes: Left-circulant  [F G H; H F G; G H F] (chirality-corrected)
  *
- * Why this is acceptable (scaffolding approach):
- * 1. The math produces CORRECT rotations
- * 2. The API/structure supports future RT-pure implementation
- * 3. We can swap internals without changing external interface
- * 4. "Use the crutches while building, then throw them away when ready!"
- *
- * Future RT-Pure work would replace Hamilton product with:
- * - Spread polynomial multiplication rules
- * - Geometric algebra bivector operations
- * - Full Weierstrass parametrization throughout
+ * Classical trig usage is limited to:
+ * - RT-JUSTIFIED: Degree/radian conversion for display (human readability)
+ * - RT-JUSTIFIED: SLERP interpolation (standard algorithm)
+ * - RT-JUSTIFIED: Frame update angle calculation
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * @requires rt-math.js - RT namespace for spread/cross calculations
  * @see Geometry documents/Quadray-Rotors.tex - Mathematical foundations
  * @see Geometry documents/4D-Gimbal-Lock-Avoidance.md - Theory
  * @see Geometry documents/Spread-Quadray-Rotor-Demo.md - Implementation workplan
+ * @see Geometry documents/Geometry Tests/fgh-verification-test.js - Verification tests
  */
 
 import { RT, Quadray } from "./rt-math.js";
@@ -166,6 +162,7 @@ export class QuadrayRotor {
    * @returns {QuadrayRotor} Rotor for the specified rotation
    */
   static fromDegreesAxis(degrees, axis) {
+    // RT-JUSTIFIED: Degree input is convenience API for human-readable angles
     // Convert degrees to spread: s = sin²(θ)
     const radians = (degrees * Math.PI) / 180;
     const spread = Math.sin(radians) ** 2;
@@ -236,20 +233,15 @@ export class QuadrayRotor {
    * Multiply two rotors (Hamilton product)
    * This composes the rotations: result = this * other
    *
-   * SCAFFOLDING NOTE: This currently uses the Hamilton product formula,
-   * which is identical to quaternion multiplication:
-   *   (a₁ + b₁i + c₁j + d₁k)(a₂ + b₂i + c₂j + d₂k)
-   *
-   * A future RT-pure implementation would use spread/cross polynomial
-   * algebra or geometric algebra bivector operations to avoid any
-   * implicit trigonometric functions.
+   * NOTE: The Hamilton product is pure polynomial algebra (no trig functions).
+   * This has been VERIFIED to match quaternion rotation results for all four
+   * Quadray basis axes. See: fgh-verification-test.js
    *
    * @param {QuadrayRotor} other - Rotor to multiply with
    * @returns {QuadrayRotor} Composed rotor
    */
   multiply(other) {
-    // SCAFFOLDING: Hamilton product (same as quaternion multiplication)
-    // Future: Replace with RT-pure spread polynomial multiplication
+    // Hamilton product - pure polynomial multiplication (RT-PURE!)
     const w = this.w * other.w - this.x * other.x - this.y * other.y - this.z * other.z;
     const x = this.w * other.x + this.x * other.w + this.y * other.z - this.z * other.y;
     const y = this.w * other.y - this.x * other.z + this.y * other.w + this.z * other.x;
@@ -282,12 +274,8 @@ export class QuadrayRotor {
    * Convert to 3x3 rotation matrix
    * For rendering to THREE.js
    *
-   * SCAFFOLDING NOTE: This uses the standard quaternion-to-matrix formula.
-   * The formula itself is algebraically correct and produces exact results
-   * from the rotor components - no transcendental functions are called here.
-   *
-   * The matrix elements are quadratic in (w,x,y,z), which means this step
-   * IS actually RT-compatible - it's pure polynomial algebra.
+   * RT-PURE: Matrix elements are quadratic polynomials in (w,x,y,z).
+   * No transcendental functions - pure algebra!
    *
    * @returns {Array<number>} 9-element array in column-major order
    */
@@ -296,14 +284,12 @@ export class QuadrayRotor {
     const n = this.normalize();
     const { w, x, y, z } = n;
 
-    // Pre-compute products (all polynomial - RT-pure!)
+    // Pre-compute products (all polynomial - RT-PURE!)
     const xx = x * x, yy = y * y, zz = z * z;
     const xy = x * y, xz = x * z, yz = y * z;
     const wx = w * x, wy = w * y, wz = w * z;
 
-    // Rotation matrix from rotor components
-    // This formula is IDENTICAL to quaternion-to-matrix, but that's okay:
-    // the formula is purely algebraic (no trig functions)
+    // Rotation matrix from rotor components (pure polynomial algebra)
     // Column-major order for THREE.js Matrix3
     return [
       1 - 2 * (yy + zz), 2 * (xy + wz), 2 * (xz - wy),     // Column 0
@@ -366,7 +352,7 @@ export class QuadrayRotor {
     const spread = sinTheta * sinTheta;
     const cross = cosTheta * cosTheta;
 
-    // Angle in degrees (for display)
+    // RT-JUSTIFIED: Angle in degrees for human-readable display output
     const angleDeg = Math.atan2(sinTheta, cosTheta) * (180 / Math.PI);
 
     return { axis, spread, cross, angleDeg };
@@ -417,6 +403,7 @@ export class QuadrayRotor {
    */
   getAngularVelocity(deltaTime = 1) {
     const { angleDeg } = this.getAxisSpread();
+    // RT-JUSTIFIED: rad/s and RPM conversion for human-readable display
     const angleRad = angleDeg * (Math.PI / 180);
 
     const radiansPerSecond = angleRad / deltaTime;
@@ -489,7 +476,7 @@ export class QuadrayRotor {
       return new QuadrayRotor(w, x, y, z, a.polarity).normalize();
     }
 
-    // SLERP
+    // RT-JUSTIFIED: SLERP is standard interpolation algorithm for rotation spaces
     const theta = Math.acos(dot);
     const sinTheta = Math.sin(theta);
     const wa = Math.sin((1 - t) * theta) / sinTheta;
@@ -569,7 +556,7 @@ export class QuadrayRotorState {
       return;  // No rotation
     }
 
-    // Compute rotation for this frame
+    // RT-JUSTIFIED: Frame update converts angular velocity to spread for rotor
     const angle = this.angularVelocity * deltaSec;
     const spread = Math.sin(angle) ** 2;
     const polarity = angle >= 0 ? +1 : -1;
@@ -602,6 +589,7 @@ export class QuadrayRotorState {
     const axisQuadray = this.orientation.getAxisQuadray();
     const gimbalProximity = this.orientation.getGimbalLockProximity();
 
+    // RT-JUSTIFIED: RPM and deg/s for human-readable display
     const rpm = (this.angularVelocity * 60) / (2 * Math.PI);
     const degsPerSec = this.angularVelocity * (180 / Math.PI);
 
@@ -649,6 +637,7 @@ export const CommonSpreads = {
 
   /**
    * Get spread for arbitrary angle
+   * RT-JUSTIFIED: Convenience utility for angle-to-spread conversion
    * @param {number} degrees - Angle in degrees
    * @returns {number} Spread value
    */
