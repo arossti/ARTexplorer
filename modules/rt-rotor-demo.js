@@ -1073,6 +1073,26 @@ export class RotorDemo {
       </div>
 
       <div class="section">
+        <div class="section-title">Native F,G,H Rotation (Phase 6.2)</div>
+        <div style="font-size: 9px; color: #888; margin-bottom: 4px;">
+          Tetrahedral basis axis rotation using Tom Ace's formula
+        </div>
+        <div class="controls" style="margin-top: 4px; gap: 3px;">
+          <button class="ctrl-btn" id="rp-fgh-w" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about W-axis (1,1,1)/√3">W</button>
+          <button class="ctrl-btn" id="rp-fgh-x" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about X-axis (1,-1,-1)/√3">X</button>
+          <button class="ctrl-btn" id="rp-fgh-y" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about Y-axis (-1,1,-1)/√3">Y</button>
+          <button class="ctrl-btn" id="rp-fgh-z" style="flex: 1; padding: 4px 8px; font-size: 11px;" title="Rotate 30° about Z-axis (-1,-1,1)/√3">Z</button>
+        </div>
+        <div class="row" style="margin-top: 6px;">
+          <span class="label">F,G,H:</span>
+          <span class="value" id="rp-fgh-coeffs" style="font-size: 10px;">(-, -, -)</span>
+        </div>
+        <div style="font-size: 9px; color: #666; margin-top: 2px; text-align: center;">
+          Click axis buttons to apply 30° rotation steps
+        </div>
+      </div>
+
+      <div class="section">
         <div class="section-title">Angular Velocity</div>
         <div class="row"><span class="label">RPM:</span><span class="value" id="rp-rpm">0.0</span></div>
         <div class="row"><span class="label">rad/s:</span><span class="value" id="rp-rads">0.00</span></div>
@@ -1147,6 +1167,20 @@ export class RotorDemo {
     });
     document.getElementById('rp-mode-euler').addEventListener('click', () => {
       this.setRotationMode('euler');
+    });
+
+    // Native F,G,H rotation buttons (Phase 6.2)
+    document.getElementById('rp-fgh-w').addEventListener('click', () => {
+      this.applyNativeQuadrayRotation('W');
+    });
+    document.getElementById('rp-fgh-x').addEventListener('click', () => {
+      this.applyNativeQuadrayRotation('X');
+    });
+    document.getElementById('rp-fgh-y').addEventListener('click', () => {
+      this.applyNativeQuadrayRotation('Y');
+    });
+    document.getElementById('rp-fgh-z').addEventListener('click', () => {
+      this.applyNativeQuadrayRotation('Z');
     });
   }
 
@@ -1571,6 +1605,53 @@ export class RotorDemo {
   applyTestRotation(degrees, axis) {
     const rotor = QuadrayRotor.fromDegreesAxis(degrees, axis);
     this.rotorState.orientation = this.rotorState.orientation.multiply(rotor);
+  }
+
+  /**
+   * Apply native F,G,H rotation about a Quadray basis axis (Phase 6.2)
+   *
+   * Uses RT.QuadrayRotation to compute coefficients and apply rotation
+   * about the tetrahedral basis vectors:
+   *   W = (1,1,1)/√3    X = (1,-1,-1)/√3
+   *   Y = (-1,1,-1)/√3  Z = (-1,-1,1)/√3
+   *
+   * @param {string} axis - 'W', 'X', 'Y', or 'Z'
+   */
+  applyNativeQuadrayRotation(axis) {
+    const theta = Math.PI / 6;  // 30° per click
+
+    // Get F,G,H coefficients for display
+    const { F, G, H } = RT.QuadrayRotation.fghCoeffs(theta);
+
+    // Update F,G,H display in info panel
+    const fghDisplay = document.getElementById('rp-fgh-coeffs');
+    if (fghDisplay) {
+      fghDisplay.textContent = `(${F.toFixed(3)}, ${G.toFixed(3)}, ${H.toFixed(3)})`;
+    }
+
+    // Quadray basis vectors in Cartesian coordinates
+    const sqrt3 = Math.sqrt(3);
+    const quadrayAxes = {
+      W: { x: 1/sqrt3, y: 1/sqrt3, z: 1/sqrt3 },
+      X: { x: 1/sqrt3, y: -1/sqrt3, z: -1/sqrt3 },
+      Y: { x: -1/sqrt3, y: 1/sqrt3, z: -1/sqrt3 },
+      Z: { x: -1/sqrt3, y: -1/sqrt3, z: 1/sqrt3 }
+    };
+
+    // Get the Cartesian axis for the selected Quadray basis
+    const cartesianAxis = quadrayAxes[axis];
+
+    // Stop current rotation
+    this.rotorState.setVelocity(0, { x: 0, y: 0, z: 1 });
+
+    // Apply 30° rotation about the Quadray basis axis
+    const rotor = QuadrayRotor.fromDegreesAxis(30, cartesianAxis);
+    this.rotorState.orientation = this.rotorState.orientation.multiply(rotor);
+
+    // Log the rotation with F,G,H values
+    console.log(`🔄 Native F,G,H rotation: ${axis}-axis @ 30°`);
+    console.log(`   F=${F.toFixed(6)}, G=${G.toFixed(6)}, H=${H.toFixed(6)}`);
+    console.log(`   Pattern: ${axis === 'W' || axis === 'Y' ? 'Right-circulant' : 'Left-circulant'}`);
   }
 
   /**
