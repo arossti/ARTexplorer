@@ -122,7 +122,7 @@ The cowlick exists because hair must lie flat \emph{on} the 2D spherical surface
 
 \textbf{Quaternions} escape by moving to $S^3$, a higher-dimensional sphere where combing \emph{is} possible. Think of it as finding a better-shaped surface---one without the topological obstruction.
 
-\textbf{Quadray Rotors} escape differently: we use four tetrahedral directions instead of three orthogonal ones. Picture a tetrahedron at the origin, with axes pointing to its four vertices. These four directions naturally span a 4-dimensional space---not by adding an abstract fourth axis, but because four non-coplanar points require four independent coordinates to describe fully. There is no 2D surface to comb, so there is no cowlick to create.
+\textbf{Quadray Rotors} escape differently: we use four tetrahedral directions instead of three orthogonal ones. Picture a tetrahedron at the origin, with axes pointing to its four vertices. While these four vertices are non-coplanar in 3D space, the key insight is that we store \emph{all four coordinates} rather than constraining to three. This creates a 4-parameter representation ($\mathbb{R}^4$) that avoids the topological trap---we're not confined to a 2D surface that must be combed, so there is no cowlick to create.
 
 In the ARTexplorer demo, the four colored rings (W, X, Y, Z) represent rotation \emph{about} each tetrahedral axis---gumball-style handles that let you spin the orientation around any of the four basis directions. The smooth motion, even where Euler angles would fail, demonstrates the absence of singularities in tetrahedral 4D space.
 \end{tcolorbox}
