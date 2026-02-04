@@ -122,6 +122,7 @@ export class RotorDemo {
     this.hoveredRotorHandle = null;
     this.activeRotorHandle = null;  // Currently dragged rotation handle
     this.dragStarted = false;  // Prevents axis jump on initial click
+    this.lastDragMouse = null;  // For delta-based dragging
   }
 
   /**
@@ -642,61 +643,79 @@ export class RotorDemo {
 
   /**
    * Drag the axis handle to a new position, updating spin axis
+   * Uses delta-based movement for smooth, jump-free dragging
    */
   dragAxisHandle(event) {
     const camera = this.camera;
-    if (!camera || !this.raycaster || !this.dragPlane) return;
-
-    // Skip the first mousemove after mousedown to prevent axis jump
-    // The click itself shouldn't move the axis - only subsequent drags
-    if (!this.dragStarted) {
-      this.dragStarted = true;
-      return;
-    }
+    if (!camera) return;
 
     const THREE = this.THREE;
 
-    // Cast ray from camera through mouse position
-    this.raycaster.setFromCamera(this.mouse, camera);
-
-    // Find intersection with drag plane
-    const intersection = new THREE.Vector3();
-    this.raycaster.ray.intersectPlane(this.dragPlane, intersection);
-
-    if (intersection) {
-      // Normalize to get new axis direction
-      const length = intersection.length();
-      if (length > 0.1) {  // Avoid division by near-zero
-        const newAxis = {
-          x: intersection.x / length,
-          y: intersection.y / length,
-          z: intersection.z / length
-        };
-
-        // Update rotor state axis
-        this.rotorState.axis = newAxis;
-
-        // Update handle position
-        const distance = DEMO_CONFIG.axisHandleDistance;
-        this.axisHandle.position.set(
-          newAxis.x * distance,
-          newAxis.y * distance,
-          newAxis.z * distance
-        );
-
-        // Update negative handle position
-        if (this.axisHandleNeg) {
-          this.axisHandleNeg.position.set(
-            -newAxis.x * distance,
-            -newAxis.y * distance,
-            -newAxis.z * distance
-          );
-        }
-
-        // Update gimbal lock proximity and color
-        this.updateAxisHandleColor();
-      }
+    // First mousemove: just record position, don't move anything
+    if (!this.dragStarted) {
+      this.dragStarted = true;
+      this.lastDragMouse = { x: this.mouse.x, y: this.mouse.y };
+      return;
     }
+
+    // Calculate mouse delta since last frame
+    const deltaX = this.mouse.x - this.lastDragMouse.x;
+    const deltaY = this.mouse.y - this.lastDragMouse.y;
+    this.lastDragMouse = { x: this.mouse.x, y: this.mouse.y };
+
+    // Skip if no significant movement
+    if (Math.abs(deltaX) < 0.001 && Math.abs(deltaY) < 0.001) return;
+
+    // Get camera's right and up vectors for screen-space rotation
+    const cameraRight = new THREE.Vector3();
+    const cameraUp = new THREE.Vector3();
+    camera.matrixWorld.extractBasis(cameraRight, cameraUp, new THREE.Vector3());
+
+    // Current axis as Vector3
+    const axis = this.rotorState.axis;
+    const axisVec = new THREE.Vector3(axis.x, axis.y, axis.z);
+
+    // Rotate axis based on mouse delta
+    // Horizontal mouse movement rotates around camera's up vector
+    // Vertical mouse movement rotates around camera's right vector
+    const sensitivity = 2.0;  // Adjust for feel
+
+    if (Math.abs(deltaX) > 0.0001) {
+      const rotX = new THREE.Quaternion().setFromAxisAngle(cameraUp, -deltaX * sensitivity);
+      axisVec.applyQuaternion(rotX);
+    }
+
+    if (Math.abs(deltaY) > 0.0001) {
+      const rotY = new THREE.Quaternion().setFromAxisAngle(cameraRight, deltaY * sensitivity);
+      axisVec.applyQuaternion(rotY);
+    }
+
+    // Normalize and update
+    axisVec.normalize();
+    const newAxis = { x: axisVec.x, y: axisVec.y, z: axisVec.z };
+
+    // Update rotor state axis
+    this.rotorState.axis = newAxis;
+
+    // Update handle position
+    const distance = DEMO_CONFIG.axisHandleDistance;
+    this.axisHandle.position.set(
+      newAxis.x * distance,
+      newAxis.y * distance,
+      newAxis.z * distance
+    );
+
+    // Update negative handle position
+    if (this.axisHandleNeg) {
+      this.axisHandleNeg.position.set(
+        -newAxis.x * distance,
+        -newAxis.y * distance,
+        -newAxis.z * distance
+      );
+    }
+
+    // Update gimbal lock proximity and color
+    this.updateAxisHandleColor();
   }
 
   /**
