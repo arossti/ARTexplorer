@@ -1628,16 +1628,60 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Geodesic Icosahedron (Orange - complementary to base Cyan)
-    renderGeodesicPolyhedron({
-      checkboxId: "showGeodesicIcosahedron",
-      frequencyId: "geodesicIcosaFrequency",
-      projectionName: "geodesicIcosaProjection",
-      polyhedronFn: Polyhedra.geodesicIcosahedron,
-      group: geodesicIcosahedronGroup,
-      color: colorPalette.geodesicIcosahedron, // Bright orange
-      scale,
-      opacity,
-    });
+    // Custom handling to support Face Tiling option
+    if (document.getElementById("showGeodesicIcosahedron").checked) {
+      const frequency = parseInt(
+        document.getElementById("geodesicIcosaFrequency").value
+      );
+      const projectionRadio = document.querySelector(
+        'input[name="geodesicIcosaProjection"]:checked'
+      );
+      const projection = projectionRadio ? projectionRadio.value : "out";
+      const actualFrequency = isNaN(frequency) ? 1 : frequency;
+
+      // Check for face tiling - multiplies effective frequency
+      const faceTilingEnabled =
+        document.getElementById("geodesicIcosaFaceTiling")?.checked || false;
+      const tilingGenerations = faceTilingEnabled
+        ? parseInt(
+            document.getElementById("polygonTilingGenerations")?.value || "1"
+          )
+        : 1;
+
+      // Effective frequency = base frequency × tiling divisions
+      // Tiling gen=1 → no change, gen=2 → 2× subdivision, gen=3 → 4× subdivision
+      const tilingDivisions = Math.pow(2, tilingGenerations - 1);
+      const effectiveFrequency = actualFrequency * tilingDivisions;
+
+      const geometry = Polyhedra.geodesicIcosahedron(
+        scale,
+        effectiveFrequency,
+        projection
+      );
+      renderPolyhedron(
+        geodesicIcosahedronGroup,
+        geometry,
+        colorPalette.geodesicIcosahedron,
+        opacity
+      );
+      geodesicIcosahedronGroup.visible = true;
+
+      geodesicIcosahedronGroup.userData.parameters = {
+        frequency: actualFrequency,
+        effectiveFrequency,
+        projection,
+        faceTilingEnabled,
+        tilingGenerations,
+      };
+
+      if (faceTilingEnabled && tilingGenerations > 1) {
+        console.log(
+          `[RT] Geodesic Icosahedron: freq=${actualFrequency} × tiling=${tilingDivisions} → effective=${effectiveFrequency}`
+        );
+      }
+    } else {
+      geodesicIcosahedronGroup.visible = false;
+    }
 
     // Dual Icosahedron (Orange - reciprocal complementary: matches base geodesic)
     if (document.getElementById("showDualIcosahedron").checked) {

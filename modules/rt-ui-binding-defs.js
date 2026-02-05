@@ -106,6 +106,11 @@ export const checkboxWithControlsBindings = [
     controlsId: "polygon-tiling-controls",
   },
   {
+    id: "geodesicIcosaFaceTiling",
+    type: "checkbox-controls",
+    controlsId: "geodesic-icosa-face-tiling-options",
+  },
+  {
     id: "showPrism",
     type: "checkbox-controls",
     controlsId: "prism-controls",
