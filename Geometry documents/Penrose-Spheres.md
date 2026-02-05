@@ -1341,38 +1341,175 @@ position: { x: (V0.x + V1.x + P.x) / 3, y: (V0.y + V1.y + P.y) / 3 }
 
 These triangles (V0-V1-P, V2-V1-Q, etc.) are **reference triangles from the division points**, NOT the actual child rhombi. Child rhombi have 4 vertices each, and their centroids are different from these triangle centroids.
 
+### The Underlying Principle (from regular tilings)
+
+All tilings follow the same rule: **tile position comes from tile geometry, not abstract formulas**.
+
+| Tiling | How new tile position is determined |
+|--------|-------------------------------------|
+| Square | Position = neighbor + edge normal × edge length |
+| Triangle | Position = reflection of neighbor centroid across shared edge |
+| Hexagon | Position = neighbor + edge normal × (√3 × edge length) |
+| Rhombic | Position = neighbor + edge vector |
+
+**Common pattern**: The child tile's position is determined by **where its vertices actually are**.
+
 ### The Fix
 
-**Instead of computing positions from reference-triangle centroids:**
+For Penrose deflation (subdivision, not extension), the same principle applies:
 
-1. Determine the **4 vertices of each child rhombus** using canonical P3 deflation rules
-2. Compute the centroid as `(V0+V1+V2+V3)/4` for each child
-3. Derive the rotation from the child's vertex geometry (or from known P3 substitution angles)
+1. **Identify the 4 vertices** of each child rhombus from P3 deflation rules
+   - Vertices are either parent vertices {V0,V1,V2,V3} or division points {P,Q}
+2. **Compute centroid** from actual vertices: `position = (A+B+C+D)/4`
+3. **Derive rotation** from vertex geometry (angle of short diagonal)
 
-### Research Needed
+### P3 Deflation Vertex Assignments
 
-- [ ] Find authoritative P3 deflation vertex mappings (de Bruijn, Penrose original, or Tilings Encyclopedia)
-- [ ] For each child tile from thick rhombus deflation, identify which 4 vertices form it
-- [ ] For each child tile from thin rhombus deflation, identify which 4 vertices form it
-- [ ] Verify child tile rotations relative to parent
+**Thick Rhombus → 2 Thick + 1 Thin**
 
-### Workplan for Next Session
+Parent vertices: V0 (top, 72°), V1 (right, 108°), V2 (bottom, 72°), V3 (left, 108°)
+Division points: P = V1 + (V3-V1)/φ, Q = V3 + (V1-V3)/φ
 
-1. **Research**: Find canonical P3 deflation diagrams showing exact child tile vertices
-2. **Implement**: Update `_deflateThickRhombus()` to:
-   - Compute all child rhombus vertices explicitly
-   - Calculate centroid from 4 vertices: `{x: (v0+v1+v2+v3)/4, ...}`
-   - Derive rotation from vertex positions (or use known deflation rotations)
-3. **Implement**: Same for `_deflateThinRhombus()`
-4. **Test**: Visual verification at each deflation level
-5. **Validate**: Check that tiles fit together without gaps/overlaps
+```
+        V0
+       /  \
+      /    \
+    V3--Q--P--V1
+      \    /
+       \  /
+        V2
+
+Child tiles (vertices in CCW order):
+  Thick 1: [V0, V1, P, ?]  ← need 4th vertex
+  Thick 2: [V2, ?, Q, V1]  ← need 2nd vertex
+  Thin 1:  [V0, P, ?, V3]  ← need 3rd vertex
+```
+
+⚠️ **Key insight**: The child tiles share edges with each other, so the "missing" vertices must be computed from edge-sharing constraints, not invented independently.
+
+### Implementation Approach
+
+```javascript
+_deflateThickRhombus: (tile) => {
+  const verts = _tileVertices(tile);  // Get parent's 4 vertices
+  const [V0, V1, V2, V3] = verts;
+
+  // Division points on long diagonal
+  const P = lerp(V1, V3, invPhi);
+  const Q = lerp(V3, V1, invPhi);
+
+  // Child 1 (thick): vertices are [A, B, C, D]
+  const child1Verts = [V0, V1, P, /* computed from geometry */];
+  const child1Pos = centroid4(child1Verts);
+  const child1Rot = rotationFromVertices(child1Verts);
+
+  // ... same for other children
+}
+```
 
 ### Notes
 
-The current architecture is worth keeping - it's the **position calculation** that needs fixing, not the data structure. The `{type, quadrance, rotationN36, position}` format is elegant and performant.
+The `{type, quadrance, rotationN36, position}` format is elegant and worth keeping. Only the position/rotation derivation needs fixing.
 
 ---
 
-_Last updated: February 4, 2026_
+## Revised Approach: Build Tiling Infrastructure First (Feb 5, 2026)
+
+### The Insight
+
+Instead of solving Penrose deflation in isolation, **build tiling infrastructure using simple regular tilings first**. The same logic that tiles triangles, squares, and hexagons will eventually extend to Penrose.
+
+### Phase 1: Regular Polygon Tiling (Primitives)
+
+**Add "Enable Tiling" section to Polygon primitive UI:**
+
+```
+Polygon (n-gon)
+├── Sides: [3] [4] [5] [6] ...
+├── Quadrance: [slider]
+├── Edge Weight: [slider]
+└── [NEW] Enable Tiling
+    ├── ☑ Enable Grid
+    ├── Generations: [1] [2] [3] [4] [5]
+    └── Grid Type: ○ Vertex-centered ○ Edge-centered
+```
+
+**Tiling types by polygon:**
+| n-gon | Grid Type | Notes |
+|-------|-----------|-------|
+| 3 (triangle) | Triangular grid | Tiles plane, self-similar |
+| 4 (square) | Square grid | Tiles plane, self-similar |
+| 5 (pentagon) | **Does not tile plane** | But useful as Penrose guide! |
+| 6 (hexagon) | Hexagonal grid | Tiles plane, dual of triangular |
+
+### Phase 2: Geodesic Face Tiling
+
+**Add radio buttons to Geodesic options:**
+
+```
+Geodesic Icosahedron
+├── Frequency: [F1] [F2] [F3] [F4]
+├── ...existing options...
+└── [NEW] Face Tiling
+    ├── ○ None
+    ├── ○ Primitive Polygon (uses active Polygon settings)
+    └── ○ Penrose (future)
+```
+
+**Nesting behavior:**
+- Geodesic F2 already subdivides each face into smaller triangles
+- If "Primitive Polygon" is selected with Triangle Grid (gen 3):
+  - Each F2 subdivided triangle gets a 3-generation triangular tiling
+  - Tiling is **nested/child** of the geodesic subdivision
+
+```
+Octahedron (8 faces)
+    └── F2 subdivision (4 triangles per face = 32 triangles)
+        └── Triangle Grid gen 3 (per subdivided triangle)
+            └── Result: 32 × (tiled triangles) = dense mesh
+```
+
+### Phase 3: Penrose as Special Case
+
+Once regular tiling works on geodesic faces:
+- Penrose becomes just another "Grid Type" option
+- Pentagon grid serves as the underlying structure
+- Rhombi fill in around the pentagonal framework
+
+### Implementation Order
+
+1. **Add tiling to Polygon primitive** (triangular grid first)
+   - New UI section in index.html
+   - Tiling logic in rt-polyhedra.js or new rt-tiling.js
+   - Test: Triangle with generations 1-5
+
+2. **Add square and hexagonal grids**
+   - Same pattern, different geometry
+   - Test: Square and hexagon grids
+
+3. **Add geodesic face tiling option**
+   - Radio buttons in geodesic UI
+   - Apply active polygon tiling to each face
+   - Handle nesting with existing frequency subdivision
+
+4. **Pentagon grid (non-tiling but useful)**
+   - Generates pentagonal pattern
+   - Serves as guide/scaffold for Penrose
+
+5. **Penrose integration**
+   - Use pentagon grid as underlying structure
+   - Rhombi derived from grid cells
+   - Matching arcs = grid lines
+
+### Why This Works
+
+- **Babysteps**: Each phase is testable independently
+- **Reuses existing UI**: Polygon controls, geodesic controls
+- **Clear nesting model**: Geodesic subdivision → face tiling → render
+- **Penrose becomes tractable**: It's just a fancy tiling applied to faces
+
+---
+
+_Last updated: February 5, 2026_
 _Contributors: Andy & Claude (for Bonnie Devarco's virology research)_
 _Review: Implementation readiness audit completed_
