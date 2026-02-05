@@ -1319,6 +1319,60 @@ Based on dependencies and critical path:
 
 ---
 
-_Last updated: February 2026_
+## Next Session: Deflation Position Fix (Feb 4, 2026)
+
+### Current State
+
+**Commit**: `6104a93` - "Fix: Correct deflation geometry - divide long diagonal (V1-V3)"
+
+**Architecture** (GOOD - keep this):
+- Tiles parameterized as `{type, quadrance, rotationN36, position}`
+- `_tileVertices()` reconstructs 4 vertices from parameters
+- `tilesToGeometry()` converts to renderable form at GPU boundary
+- Clean, performant, minimal storage
+
+### The Bug
+
+In `_deflateThickRhombus()` and `_deflateThinRhombus()`, child tile positions are computed as **triangle centroids**:
+
+```javascript
+position: { x: (V0.x + V1.x + P.x) / 3, y: (V0.y + V1.y + P.y) / 3 }
+```
+
+These triangles (V0-V1-P, V2-V1-Q, etc.) are **reference triangles from the division points**, NOT the actual child rhombi. Child rhombi have 4 vertices each, and their centroids are different from these triangle centroids.
+
+### The Fix
+
+**Instead of computing positions from reference-triangle centroids:**
+
+1. Determine the **4 vertices of each child rhombus** using canonical P3 deflation rules
+2. Compute the centroid as `(V0+V1+V2+V3)/4` for each child
+3. Derive the rotation from the child's vertex geometry (or from known P3 substitution angles)
+
+### Research Needed
+
+- [ ] Find authoritative P3 deflation vertex mappings (de Bruijn, Penrose original, or Tilings Encyclopedia)
+- [ ] For each child tile from thick rhombus deflation, identify which 4 vertices form it
+- [ ] For each child tile from thin rhombus deflation, identify which 4 vertices form it
+- [ ] Verify child tile rotations relative to parent
+
+### Workplan for Next Session
+
+1. **Research**: Find canonical P3 deflation diagrams showing exact child tile vertices
+2. **Implement**: Update `_deflateThickRhombus()` to:
+   - Compute all child rhombus vertices explicitly
+   - Calculate centroid from 4 vertices: `{x: (v0+v1+v2+v3)/4, ...}`
+   - Derive rotation from vertex positions (or use known deflation rotations)
+3. **Implement**: Same for `_deflateThinRhombus()`
+4. **Test**: Visual verification at each deflation level
+5. **Validate**: Check that tiles fit together without gaps/overlaps
+
+### Notes
+
+The current architecture is worth keeping - it's the **position calculation** that needs fixing, not the data structure. The `{type, quadrance, rotationN36, position}` format is elegant and performant.
+
+---
+
+_Last updated: February 4, 2026_
 _Contributors: Andy & Claude (for Bonnie Devarco's virology research)_
 _Review: Implementation readiness audit completed_
