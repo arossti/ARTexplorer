@@ -576,7 +576,9 @@ export const PenroseTiling = {
    * Deflate a thick rhombus into 2 thick + 1 thin
    *
    * P3 substitution rule for thick rhombus (72°/108°):
-   * New vertex P divides long diagonal at golden ratio from acute vertex
+   * - V0, V2 are acute (72°) vertices - SHORT diagonal
+   * - V1, V3 are obtuse (108°) vertices - LONG diagonal
+   * - Division point P is on LONG diagonal (V1-V3) at golden ratio from V1
    *
    * @param {Object} tile - Thick rhombus tile
    * @returns {Array} Three new tiles [thick, thick, thin]
@@ -590,42 +592,23 @@ export const PenroseTiling = {
     // New quadrance is scaled by (1/φ)² = 1/φ² (RT-pure)
     const newQ = tile.quadrance * invPhi * invPhi;
 
-    // Point P divides V0-V2 (long diagonal) at ratio 1/φ from V0
+    // Point P divides LONG diagonal V1-V3 at ratio 1/φ from V1
     const P = {
-      x: V0.x + (V2.x - V0.x) * invPhi,
-      y: V0.y + (V2.y - V0.y) * invPhi,
+      x: V1.x + (V3.x - V1.x) * invPhi,
+      y: V1.y + (V3.y - V1.y) * invPhi,
     };
 
-    // Point Q divides V0-V2 at ratio 1/φ from V2 (mirror of P)
+    // Point Q divides LONG diagonal V1-V3 at ratio 1/φ from V3 (mirror of P)
     const Q = {
-      x: V2.x + (V0.x - V2.x) * invPhi,
-      y: V2.y + (V0.y - V2.y) * invPhi,
+      x: V3.x + (V1.x - V3.x) * invPhi,
+      y: V3.y + (V1.y - V3.y) * invPhi,
     };
 
-    // Calculate rotations and positions for new tiles
-    // The new tiles inherit orientation from parent, adjusted by their position
+    // New tile positions are centroids of their vertex triangles
+    // Thick 1: V0, V1, P region (upper right)
+    // Thick 2: V2, V1, Q region (lower right) - note: uses Q not P
+    // Thin: V0, V3, P, Q region (left side)
 
-    // Thick 1: Upper portion (V0, V1, P)
-    // Center is centroid of triangle V0-V1-P extended to rhombus
-    const thick1Center = {
-      x: (V0.x + V1.x + P.x + (V0.x + P.x) / 2 - V1.x / 2) / 3,
-      y: (V0.y + V1.y + P.y + (V0.y + P.y) / 2 - V1.y / 2) / 3,
-    };
-
-    // Thick 2: Lower portion (P, V1, V2 region)
-    const thick2Center = {
-      x: (Q.x + V1.x + V2.x) / 3,
-      y: (Q.y + V1.y + V2.y) / 3,
-    };
-
-    // Thin: Left portion (V3, P, Q region)
-    const thinCenter = {
-      x: (V3.x + P.x + Q.x) / 3,
-      y: (V3.y + P.y + Q.y) / 3,
-    };
-
-    // Calculate rotation from edge direction
-    // New tiles are oriented based on their edge directions
     const baseRotation = tile.rotationN36;
 
     return [
@@ -644,8 +627,8 @@ export const PenroseTiling = {
       {
         type: "thin-rhombus",
         quadrance: newQ,
-        rotationN36: (baseRotation + 5) % 10, // +180° rotation (flip)
-        position: { x: (V3.x + P.x + Q.x) / 3, y: (V3.y + P.y + Q.y) / 3 },
+        rotationN36: (baseRotation + 5) % 10, // 180° rotation
+        position: { x: (V0.x + V3.x + P.x + Q.x) / 4, y: (V0.y + V3.y + P.y + Q.y) / 4 },
       },
     ];
   },
@@ -654,6 +637,9 @@ export const PenroseTiling = {
    * Deflate a thin rhombus into 1 thick + 1 thin
    *
    * P3 substitution rule for thin rhombus (36°/144°):
+   * - V0, V2 are acute (36°) vertices - SHORT diagonal (Y-axis)
+   * - V1, V3 are obtuse (144°) vertices - LONG diagonal (X-axis, φ² × short)
+   * - Division point P is on LONG diagonal (V1-V3) at golden ratio from V1
    *
    * @param {Object} tile - Thin rhombus tile
    * @returns {Array} Two new tiles [thick, thin]
@@ -667,7 +653,7 @@ export const PenroseTiling = {
     // New quadrance scaled by (1/φ)²
     const newQ = tile.quadrance * invPhi * invPhi;
 
-    // Point P divides the long diagonal V1-V3 at golden ratio from V1
+    // Point P divides LONG diagonal V1-V3 at golden ratio from V1
     const P = {
       x: V1.x + (V3.x - V1.x) * invPhi,
       y: V1.y + (V3.y - V1.y) * invPhi,
@@ -675,6 +661,8 @@ export const PenroseTiling = {
 
     const baseRotation = tile.rotationN36;
 
+    // Thick: V0, V1, P region (upper)
+    // Thin: V2, V3, P region (lower)
     return [
       {
         type: "thick-rhombus",
