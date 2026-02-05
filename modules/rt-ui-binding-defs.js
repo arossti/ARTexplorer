@@ -51,6 +51,7 @@ export const simpleCheckboxBindings = [
   { id: "polygonShowFace", type: "checkbox" },
   { id: "prismShowFaces", type: "checkbox" },
   { id: "coneShowFaces", type: "checkbox" },
+  { id: "penroseShowFace", type: "checkbox" },
 
   // Helix options (chirality commented out for tetrahelix1 - left-handed only)
   // { id: "tetrahelix1LeftHanded", type: "checkbox" },
@@ -108,6 +109,11 @@ export const checkboxWithControlsBindings = [
     id: "showCone",
     type: "checkbox-controls",
     controlsId: "cone-controls",
+  },
+  {
+    id: "showPenroseTiling",
+    type: "checkbox-controls",
+    controlsId: "penrose-tiling-controls",
   },
   {
     id: "showTetrahelix1",
@@ -390,6 +396,7 @@ export const simpleSliderBindings = [
   { id: "polygonSides", type: "slider" },
   { id: "prismSides", type: "slider" },
   { id: "coneSides", type: "slider" },
+  { id: "penroseQuadrance", type: "slider" },
 
   // Helix controls
   { id: "tetrahelix1CountSlider", type: "slider", valueId: "tetrahelix1CountDisplay" },
@@ -467,6 +474,11 @@ export const lineweightSliderBindings = [
     type: "slider",
     valueId: "polygonEdgeWeightValue",
   },
+  {
+    id: "penroseEdgeWeight",
+    type: "slider",
+    valueId: "penroseEdgeWeightValue",
+  },
 ];
 
 // ============================================================================
@@ -474,6 +486,8 @@ export const lineweightSliderBindings = [
 // ============================================================================
 
 export const geodesicProjectionBindings = [
+  // Penrose tile type selection
+  { type: "radio-group", name: "penroseTileType" },
   // Each geodesic form has out/in/mid projection options
   { type: "radio-group", name: "geodesicTetraProjection" },
   { type: "radio-group", name: "geodesicDualTetraProjection" },

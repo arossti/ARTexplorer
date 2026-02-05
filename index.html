@@ -1094,6 +1094,110 @@
                 </div>
               </div>
             </div>
+
+            <!-- Penrose Tiling (2D aperiodic tiling with golden ratio) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPenroseTiling" />
+                Penrose Tiling (φ)
+              </label>
+              <div
+                id="penrose-tiling-controls"
+                class="penrose-options"
+                style="display: none; margin-left: 20px; margin-top: 5px"
+              >
+                <!-- Tile Type Selection -->
+                <div
+                  class="penrose-type-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">
+                    <input
+                      type="radio"
+                      name="penroseTileType"
+                      value="thick"
+                      checked
+                    />
+                    Thick (72°)
+                  </label>
+                  <label style="font-size: 0.85em">
+                    <input type="radio" name="penroseTileType" value="thin" />
+                    Thin (36°)
+                  </label>
+                  <label style="font-size: 0.85em">
+                    <input type="radio" name="penroseTileType" value="kite" />
+                    Kite
+                  </label>
+                  <label style="font-size: 0.85em">
+                    <input type="radio" name="penroseTileType" value="dart" />
+                    Dart
+                  </label>
+                </div>
+                <!-- Quadrance Input -->
+                <div
+                  class="penrose-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q:</label>
+                  <input
+                    type="number"
+                    id="penroseQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Short diagonal quadrance"
+                  />
+                </div>
+                <!-- Edge Weight Slider -->
+                <div
+                  class="penrose-weight-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Edge:</label>
+                  <input
+                    type="range"
+                    id="penroseEdgeWeight"
+                    min="1"
+                    max="10"
+                    value="2"
+                    style="width: 80px"
+                  />
+                  <span
+                    class="slider-value"
+                    id="penroseEdgeWeightValue"
+                    style="font-size: 0.85em"
+                    >2</span
+                  >
+                </div>
+                <!-- Show Face Checkbox -->
+                <div
+                  class="penrose-face-container"
+                  style="display: flex; gap: 10px; align-items: center"
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="penroseShowFace" checked />
+                    Show Face
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <!-- END SECTION 3: PRIMITIVES -->

@@ -138,6 +138,7 @@ function startARTexplorer(
   let tetrahelix1Group; // Tetrahelix 1: Toroidal (left-handed)
   let tetrahelix2Group; // Tetrahelix 2: Linear (tetrahedral seed)
   let tetrahelix3Group; // Tetrahelix 3: Linear (octahedral seed)
+  let penroseTilingGroup; // Penrose Tiling
   let cubeGroup, tetrahedronGroup, dualTetrahedronGroup, octahedronGroup;
   let icosahedronGroup, dodecahedronGroup, dualIcosahedronGroup;
   let cuboctahedronGroup, rhombicDodecahedronGroup;
@@ -2309,6 +2310,7 @@ function startARTexplorer(
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
       quadrayCuboctahedronGroup,
+      penroseTilingGroup,
     ];
 
     formGroups.forEach(group => {
@@ -2575,6 +2577,7 @@ function startARTexplorer(
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
       quadrayCuboctahedronGroup,
+      penroseTilingGroup,
     ];
 
     formGroups.forEach(group => {
@@ -4008,6 +4011,7 @@ function startARTexplorer(
     quadrayTetrahedronGroup,
     quadrayTetraDeformedGroup,
     quadrayCuboctahedronGroup,
+    penroseTilingGroup,
   } = formGroups);
 
   initGumballEventListeners(); // Initialize gumball after scene is ready
