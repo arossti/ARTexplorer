@@ -882,6 +882,60 @@
                     >2</span
                   >
                 </div>
+                <!-- Tiling Section -->
+                <div
+                  class="polygon-tiling-section"
+                  style="
+                    margin-top: 10px;
+                    padding-top: 8px;
+                    border-top: 1px solid #444;
+                  "
+                >
+                  <label
+                    class="checkbox-label"
+                    style="font-size: 0.85em; font-weight: bold"
+                  >
+                    <input type="checkbox" id="polygonEnableTiling" />
+                    Enable Tiling
+                  </label>
+                  <div
+                    id="polygon-tiling-controls"
+                    style="display: none; margin-left: 10px; margin-top: 5px"
+                  >
+                    <div
+                      class="tiling-generations-container slider-container"
+                      style="
+                        display: flex;
+                        gap: 5px;
+                        align-items: center;
+                        margin-bottom: 5px;
+                      "
+                    >
+                      <label style="font-size: 0.85em">Generations:</label>
+                      <input
+                        type="range"
+                        id="polygonTilingGenerations"
+                        min="1"
+                        max="5"
+                        step="1"
+                        value="2"
+                      />
+                      <span
+                        class="slider-value"
+                        id="polygonTilingGenerationsValue"
+                        >2</span
+                      >
+                    </div>
+                    <div
+                      class="tiling-info"
+                      style="font-size: 0.75em; color: #888; margin-top: 3px"
+                    >
+                      <span id="polygonTilingInfo"
+                        >Triangle: subdivides into 4 per gen</span
+                      >
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1091,6 +1145,157 @@
                     <input type="checkbox" id="coneShowFaces" checked />
                     Show Faces
                   </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Penrose Tiling (2D aperiodic tiling with golden ratio) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPenroseTiling" />
+                Penrose Tiling (φ)
+              </label>
+              <div
+                id="penrose-tiling-controls"
+                class="penrose-options"
+                style="display: none; margin-left: 20px; margin-top: 5px"
+              >
+                <!-- Tile Type Selection -->
+                <div
+                  class="penrose-type-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">
+                    <input
+                      type="radio"
+                      name="penroseTileType"
+                      value="thick"
+                      checked
+                    />
+                    Thick (72°)
+                  </label>
+                  <label style="font-size: 0.85em">
+                    <input type="radio" name="penroseTileType" value="thin" />
+                    Thin (36°)
+                  </label>
+                  <label style="font-size: 0.85em">
+                    <input type="radio" name="penroseTileType" value="kite" />
+                    Kite
+                  </label>
+                  <label style="font-size: 0.85em">
+                    <input type="radio" name="penroseTileType" value="dart" />
+                    Dart
+                  </label>
+                </div>
+                <!-- Quadrance Input -->
+                <div
+                  class="penrose-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q:</label>
+                  <input
+                    type="number"
+                    id="penroseQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Short diagonal quadrance"
+                  />
+                </div>
+                <!-- Edge Weight Slider -->
+                <div
+                  class="penrose-weight-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Edge:</label>
+                  <input
+                    type="range"
+                    id="penroseEdgeWeight"
+                    min="1"
+                    max="10"
+                    value="2"
+                    style="width: 80px"
+                  />
+                  <span
+                    class="slider-value"
+                    id="penroseEdgeWeightValue"
+                    style="font-size: 0.85em"
+                    >2</span
+                  >
+                </div>
+                <!-- Show Face Checkbox -->
+                <div
+                  class="penrose-face-container"
+                  style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px"
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="penroseShowFace" checked />
+                    Show Face
+                  </label>
+                </div>
+                <!-- Tiling Generation Controls -->
+                <div style="border-top: 1px solid #444; padding-top: 8px; margin-top: 5px">
+                  <label class="checkbox-label" style="font-size: 0.85em; margin-bottom: 5px; display: block">
+                    <input type="checkbox" id="penroseTilingEnabled" />
+                    Enable Tiling (Deflation)
+                  </label>
+                  <div
+                    id="penrose-deflation-controls"
+                    style="display: none; margin-left: 10px; margin-top: 5px"
+                  >
+                    <!-- Seed Selection -->
+                    <div style="margin-bottom: 5px">
+                      <label style="font-size: 0.8em; display: block; margin-bottom: 3px">Seed:</label>
+                      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                        <label style="font-size: 0.8em">
+                          <input type="radio" name="penroseSeed" value="star" checked />
+                          Star
+                        </label>
+                        <label style="font-size: 0.8em">
+                          <input type="radio" name="penroseSeed" value="sun" />
+                          Sun
+                        </label>
+                        <label style="font-size: 0.8em">
+                          <input type="radio" name="penroseSeed" value="cartwheel" />
+                          Cartwheel
+                        </label>
+                        <label style="font-size: 0.8em">
+                          <input type="radio" name="penroseSeed" value="single-thick" />
+                          Single
+                        </label>
+                      </div>
+                    </div>
+                    <!-- Generations Slider -->
+                    <div style="display: flex; gap: 8px; align-items: center">
+                      <label style="font-size: 0.8em">Generations:</label>
+                      <input
+                        type="range"
+                        id="penroseGenerations"
+                        min="0"
+                        max="6"
+                        value="2"
+                        style="width: 70px"
+                      />
+                      <span class="slider-value" id="penroseGenerationsValue" style="font-size: 0.8em">2</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1383,6 +1588,16 @@
                         />
                         OutSphere
                       </label>
+                    </div>
+                    <!-- Face Tiling option -->
+                    <div class="geodesic-face-tiling-container">
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="geodesicIcosaFaceTiling" />
+                        Face Tiling
+                      </label>
+                      <div id="geodesic-icosa-face-tiling-options" class="sub-controls" style="display: none">
+                        <span class="tiling-info" style="font-size: 10px; color: #00b4ff;">Set Polygon Tiling Properties under Primitives/Polygons</span>
+                      </div>
                     </div>
                   </div>
                 </div>

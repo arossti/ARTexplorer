@@ -73,7 +73,21 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
       const sides = options.sides || 3;
       const centralAngle = Math.PI / sides;
       const spread = Math.pow(Math.sin(centralAngle), 2);
-      return 4 * scale * spread; // RT-pure quadrance result
+      let Q_edge = 4 * scale * spread; // RT-pure quadrance result
+
+      // TILING SUBDIVISION: When polygon is tiled, edge length divides by 2^(gen-1)
+      // So edge quadrance divides by 4^(gen-1)
+      // This ensures PACKED nodes scale correctly with subdivided tiles
+      if (options.tilingGenerations && options.tilingGenerations > 1) {
+        const gen = options.tilingGenerations;
+        const divisionsPerEdge = Math.pow(2, gen - 1);
+        Q_edge = Q_edge / (divisionsPerEdge * divisionsPerEdge);
+        console.log(
+          `[RT] Polygon tiling: gen=${gen}, edge Q scaled by 1/${divisionsPerEdge * divisionsPerEdge}`
+        );
+      }
+
+      return Q_edge;
     }
 
     case "prism": {
@@ -172,9 +186,21 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
     case "geodesicTetrahedron":
     case "geodesicOctahedron":
     case "geodesicIcosahedron": {
-      // Geodesics subdivide base edges - use base polyhedron quadrance
+      // Geodesics subdivide base edges - edge Q scales by 1/frequency²
+      // At frequency F, each base edge is divided into F segments
       const baseType = type.replace("geodesic", "").toLowerCase();
-      return getPolyhedronEdgeQuadrance(baseType, scale);
+      let Q_edge = getPolyhedronEdgeQuadrance(baseType, scale);
+
+      // FREQUENCY SUBDIVISION: Edge length divides by F, so Q divides by F²
+      if (options.frequency && options.frequency > 1) {
+        const freq = options.frequency;
+        Q_edge = Q_edge / (freq * freq);
+        console.log(
+          `[RT] Geodesic ${type}: freq=${freq}, edge Q scaled by 1/${freq * freq}`
+        );
+      }
+
+      return Q_edge;
     }
 
     case "quadrayTetrahedron":
@@ -276,9 +302,12 @@ function getCachedNodeGeometry(
   scale,
   options = {}
 ) {
-  // Include options.sides in cache key for polygon (different n-gons have different edge quadrance)
+  // Include options in cache key: sides for polygons, tilingGenerations, frequency for geodesics
+  // Different configurations have different edge quadrance values
   const sidesKey = options.sides ? `-n${options.sides}` : "";
-  const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}${sidesKey}`;
+  const tilingKey = options.tilingGenerations ? `-gen${options.tilingGenerations}` : "";
+  const freqKey = options.frequency ? `-f${options.frequency}` : "";
+  const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}${sidesKey}${tilingKey}${freqKey}`;
 
   if (nodeGeometryCache.has(cacheKey)) {
     return nodeGeometryCache.get(cacheKey);

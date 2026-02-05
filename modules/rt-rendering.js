@@ -23,6 +23,7 @@ import { RTPapercut } from "./rt-papercut.js";
 import { Grids } from "./rt-grids.js";
 import { Nodes } from "./rt-nodes.js";
 import { Helices } from "./rt-helices.js";
+import { PenroseTiles, PenroseTiling } from "./rt-penrose.js";
 
 // Line2 addons for variable lineweight (cross-platform support)
 import { Line2 } from "three/addons/lines/Line2.js";
@@ -68,6 +69,10 @@ const colorPalette = {
   tetrahelix: 0xffaa00, // Orange - Tetrahelix 1 (toroidal)
   tetrahelix2: 0x88ff88, // Light green - Tetrahelix 2 (linear, tetrahedral seed)
   tetrahelix3: 0xff88ff, // Light magenta - Tetrahelix 3 (linear, octahedral seed)
+  // Penrose Tiling
+  penroseThick: 0xffd700, // Gold - Thick rhombus (72°/108°)
+  penroseThin: 0x4169e1, // Royal Blue - Thin rhombus (36°/144°)
+  penroseTiling: 0xffd700, // Gold - Default tiling color
 };
 
 /**
@@ -103,6 +108,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let tetrahelix1Group; // Tetrahelix 1: Toroidal (left-handed)
   let tetrahelix2Group; // Tetrahelix 2: Linear (tetrahedral seed)
   let tetrahelix3Group; // Tetrahelix 3: Linear (octahedral seed)
+  let penroseTilingGroup; // Penrose Tiling: Aperiodic tiling with golden ratio
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -192,6 +198,10 @@ export function initScene(THREE, OrbitControls, RT) {
     tetrahelix3Group = new THREE.Group();
     tetrahelix3Group.userData.type = "tetrahelix3";
     // Tetrahelix 3 allows all tools (Move, Scale, Rotate)
+
+    penroseTilingGroup = new THREE.Group();
+    penroseTilingGroup.userData.type = "penroseTiling";
+    // Penrose Tiling allows all tools (Move, Scale, Rotate)
 
     cubeGroup = new THREE.Group();
     cubeGroup.userData.type = "cube";
@@ -296,6 +306,7 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(tetrahelix1Group);
     scene.add(tetrahelix2Group);
     scene.add(tetrahelix3Group);
+    scene.add(penroseTilingGroup);
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -591,10 +602,10 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Render edges using LineSegments for efficiency
-    // For Line/Polygon primitives with lineWidth option, use Line2/LineMaterial for cross-platform support
+    // For Line/Polygon/Penrose primitives with lineWidth option, use Line2/LineMaterial for cross-platform support
     const polyType = group.userData.type;
     const useThickLine =
-      (polyType === "line" || polyType === "polygon") &&
+      (polyType === "line" || polyType === "polygon" || polyType === "penroseTiling") &&
       options.lineWidth &&
       options.lineWidth > 1;
 
@@ -676,7 +687,15 @@ export function initScene(THREE, OrbitControls, RT) {
         group.userData.parameters?.quadrance
       ) {
         scale = group.userData.parameters.quadrance;
-        nodeOptions = { sides: group.userData.parameters.sides || 3 };
+        nodeOptions = {
+          sides: group.userData.parameters.sides || 3,
+          // Pass tiling generations for PACKED node scaling
+          tilingGenerations:
+            group.userData.parameters.tilingEnabled &&
+            group.userData.parameters.tilingGenerations > 1
+              ? group.userData.parameters.tilingGenerations
+              : undefined,
+        };
       } else if (
         polyType === "prism" &&
         group.userData.parameters?.baseQuadrance
@@ -691,6 +710,16 @@ export function initScene(THREE, OrbitControls, RT) {
         // Cone: scale is baseQuadrance, pass sides for edge quadrance calculation
         scale = group.userData.parameters.baseQuadrance;
         nodeOptions = { sides: group.userData.parameters.sides || 6 };
+      } else if (
+        polyType?.startsWith("geodesic") &&
+        group.userData.parameters?.frequency
+      ) {
+        // Geodesic: pass frequency for edge quadrance scaling (Q divides by freq²)
+        const tetEdge = parseFloat(
+          document.getElementById("tetScaleSlider").value
+        );
+        scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
+        nodeOptions = { frequency: group.userData.parameters.frequency };
       } else {
         const tetEdge = parseFloat(
           document.getElementById("tetScaleSlider").value
@@ -799,14 +828,15 @@ export function initScene(THREE, OrbitControls, RT) {
 
       const actualFrequency = isNaN(frequency) ? 1 : frequency;
       const geometry = polyhedronFn(scale, actualFrequency, projection);
-      renderPolyhedron(group, geometry, color, opacity);
-      group.visible = true;
 
-      // Store parameters for instance export (state manager captures these on deposit)
+      // IMPORTANT: Set parameters BEFORE renderPolyhedron so PACKED nodes can access frequency
       group.userData.parameters = {
         frequency: actualFrequency,
         projection: projection,
       };
+
+      renderPolyhedron(group, geometry, color, opacity);
+      group.visible = true;
     } else {
       group.visible = false;
     }
@@ -879,10 +909,67 @@ export function initScene(THREE, OrbitControls, RT) {
       const polygonShowFace =
         document.getElementById("polygonShowFace")?.checked !== false;
 
-      const polygonData = Polyhedra.polygon(polygonQuadrance, {
+      // Check if tiling is enabled
+      const tilingEnabled =
+        document.getElementById("polygonEnableTiling")?.checked || false;
+      const tilingGenerations = tilingEnabled
+        ? parseInt(
+            document.getElementById("polygonTilingGenerations")?.value || "2"
+          )
+        : 1;
+
+      // Update tiling info text based on polygon type
+      const tilingInfoEl = document.getElementById("polygonTilingInfo");
+      if (tilingInfoEl) {
+        if (polygonSides === 3) {
+          const tileCount = Math.pow(4, tilingGenerations - 1);
+          tilingInfoEl.textContent = `Triangle: ${tileCount} tiles (4^${tilingGenerations - 1})`;
+        } else if (polygonSides === 4) {
+          const tileCount = Math.pow(4, tilingGenerations - 1);
+          tilingInfoEl.textContent = `Square: ${tileCount} tiles (4^${tilingGenerations - 1})`;
+        } else if (polygonSides === 6) {
+          tilingInfoEl.textContent = `Hexagon: tiling not yet implemented`;
+        } else {
+          tilingInfoEl.textContent = `${polygonSides}-gon: tiling not supported`;
+        }
+      }
+
+      let polygonData;
+
+      if (tilingEnabled && polygonSides === 3 && tilingGenerations > 1) {
+        // Generate triangular tiling using Grids module
+        polygonData = Grids.triangularTiling(polygonQuadrance, tilingGenerations, {
+          showFace: polygonShowFace,
+        });
+      } else if (tilingEnabled && polygonSides === 4 && tilingGenerations > 1) {
+        // Generate square tiling using Grids module
+        polygonData = Grids.squareTiling(polygonQuadrance, tilingGenerations, {
+          showFace: polygonShowFace,
+        });
+      } else {
+        // Single polygon (no tiling or unsupported)
+        polygonData = Polyhedra.polygon(polygonQuadrance, {
+          sides: polygonSides,
+          showFace: polygonShowFace,
+        });
+      }
+
+      // Set userData.parameters BEFORE renderPolyhedron so node rendering
+      // has access to current tiling values (fixes PACKED cache key issue)
+      polygonGroup.userData.type = "polygon";
+      polygonGroup.userData.parameters = {
+        quadrance: polygonQuadrance,
+        circumradius: Math.sqrt(polygonQuadrance),
         sides: polygonSides,
+        edgeQuadrance: polygonData.metadata?.edgeQuadrance,
+        edgeLength: polygonData.metadata?.edgeLength,
+        edgeWeight: polygonEdgeWeight,
         showFace: polygonShowFace,
-      });
+        tilingEnabled,
+        tilingGenerations,
+        rtPure: polygonData.metadata?.rtPure,
+      };
+
       renderPolyhedron(
         polygonGroup,
         polygonData,
@@ -892,17 +979,6 @@ export function initScene(THREE, OrbitControls, RT) {
           lineWidth: polygonEdgeWeight,
         }
       );
-      polygonGroup.userData.type = "polygon";
-      polygonGroup.userData.parameters = {
-        quadrance: polygonQuadrance,
-        circumradius: Math.sqrt(polygonQuadrance),
-        sides: polygonSides,
-        edgeQuadrance: polygonData.metadata.edgeQuadrance,
-        edgeLength: polygonData.metadata.edgeLength,
-        edgeWeight: polygonEdgeWeight,
-        showFace: polygonShowFace,
-        rtPure: polygonData.metadata.rtPure, // Track which engine was used
-      };
       polygonGroup.visible = true;
     } else {
       polygonGroup.visible = false;
@@ -984,6 +1060,108 @@ export function initScene(THREE, OrbitControls, RT) {
       coneGroup.visible = true;
     } else {
       coneGroup.visible = false;
+    }
+
+    // Penrose Tiling (aperiodic tiling with golden ratio)
+    if (document.getElementById("showPenroseTiling")?.checked) {
+      // Get common parameters
+      const penroseQuadrance = parseFloat(
+        document.getElementById("penroseQuadrance")?.value || "1"
+      );
+      const penroseEdgeWeight = parseFloat(
+        document.getElementById("penroseEdgeWeight")?.value || "2"
+      );
+      const penroseShowFace =
+        document.getElementById("penroseShowFace")?.checked !== false;
+
+      // Check if tiling (deflation) mode is enabled
+      const tilingEnabled =
+        document.getElementById("penroseTilingEnabled")?.checked || false;
+
+      let penroseData;
+      let tileColor = colorPalette.penroseThick; // Default color
+
+      if (tilingEnabled) {
+        // TILING MODE: Generate multi-tile pattern via deflation
+        const seedRadio = document.querySelector(
+          'input[name="penroseSeed"]:checked'
+        );
+        const seed = seedRadio ? seedRadio.value : "star";
+        const generations = parseInt(
+          document.getElementById("penroseGenerations")?.value || "2"
+        );
+
+        // Generate tiling via deflation
+        const tiles = PenroseTiling.generate(generations, seed, penroseQuadrance);
+
+        // Convert to renderable geometry
+        penroseData = PenroseTiling.tilesToGeometry(tiles, {
+          showFace: penroseShowFace,
+        });
+
+        // Store metadata
+        penroseTilingGroup.userData.parameters = {
+          tilingEnabled: true,
+          seed,
+          generations,
+          quadrance: penroseQuadrance,
+          edgeWeight: penroseEdgeWeight,
+          showFace: penroseShowFace,
+          tileCount: tiles.length,
+          ...penroseData.metadata,
+        };
+      } else {
+        // SINGLE TILE MODE: Show individual tile based on type selection
+        const tileTypeRadio = document.querySelector(
+          'input[name="penroseTileType"]:checked'
+        );
+        const penroseTileType = tileTypeRadio ? tileTypeRadio.value : "thick";
+
+        switch (penroseTileType) {
+          case "thin":
+            penroseData = PenroseTiles.thinRhombus(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThin;
+            break;
+          case "kite":
+            penroseData = PenroseTiles.kite(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThick;
+            break;
+          case "dart":
+            penroseData = PenroseTiles.dart(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThin;
+            break;
+          case "thick":
+          default:
+            penroseData = PenroseTiles.thickRhombus(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThick;
+            break;
+        }
+
+        penroseTilingGroup.userData.parameters = {
+          tilingEnabled: false,
+          tileType: penroseTileType,
+          quadrance: penroseQuadrance,
+          edgeWeight: penroseEdgeWeight,
+          showFace: penroseShowFace,
+          ...penroseData.metadata,
+        };
+      }
+
+      renderPolyhedron(penroseTilingGroup, penroseData, tileColor, opacity, {
+        lineWidth: penroseEdgeWeight,
+      });
+      penroseTilingGroup.userData.type = "penroseTiling";
+      penroseTilingGroup.visible = true;
+    } else {
+      penroseTilingGroup.visible = false;
     }
 
     // Tetrahelix 1: Toroidal - uses Quadray axis notation (QW, QX, QY, QZ)
@@ -1461,16 +1639,64 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Geodesic Icosahedron (Orange - complementary to base Cyan)
-    renderGeodesicPolyhedron({
-      checkboxId: "showGeodesicIcosahedron",
-      frequencyId: "geodesicIcosaFrequency",
-      projectionName: "geodesicIcosaProjection",
-      polyhedronFn: Polyhedra.geodesicIcosahedron,
-      group: geodesicIcosahedronGroup,
-      color: colorPalette.geodesicIcosahedron, // Bright orange
-      scale,
-      opacity,
-    });
+    // Custom handling to support Face Tiling option
+    if (document.getElementById("showGeodesicIcosahedron").checked) {
+      const frequency = parseInt(
+        document.getElementById("geodesicIcosaFrequency").value
+      );
+      const projectionRadio = document.querySelector(
+        'input[name="geodesicIcosaProjection"]:checked'
+      );
+      const projection = projectionRadio ? projectionRadio.value : "out";
+      const actualFrequency = isNaN(frequency) ? 1 : frequency;
+
+      // Check for face tiling - multiplies effective frequency
+      const faceTilingEnabled =
+        document.getElementById("geodesicIcosaFaceTiling")?.checked || false;
+      const tilingGenerations = faceTilingEnabled
+        ? parseInt(
+            document.getElementById("polygonTilingGenerations")?.value || "1"
+          )
+        : 1;
+
+      // Effective frequency = base frequency × tiling divisions
+      // Tiling gen=1 → no change, gen=2 → 2× subdivision, gen=3 → 4× subdivision
+      const tilingDivisions = Math.pow(2, tilingGenerations - 1);
+      const effectiveFrequency = actualFrequency * tilingDivisions;
+
+      const geometry = Polyhedra.geodesicIcosahedron(
+        scale,
+        effectiveFrequency,
+        projection
+      );
+
+      // IMPORTANT: Set parameters BEFORE renderPolyhedron so node rendering has access
+      // Use effectiveFrequency for PACKED nodes (includes tiling divisions)
+      geodesicIcosahedronGroup.userData.parameters = {
+        frequency: effectiveFrequency, // Use effective for PACKED node scaling
+        baseFrequency: actualFrequency,
+        effectiveFrequency,
+        projection,
+        faceTilingEnabled,
+        tilingGenerations,
+      };
+
+      renderPolyhedron(
+        geodesicIcosahedronGroup,
+        geometry,
+        colorPalette.geodesicIcosahedron,
+        opacity
+      );
+      geodesicIcosahedronGroup.visible = true;
+
+      if (faceTilingEnabled && tilingGenerations > 1) {
+        console.log(
+          `[RT] Geodesic Icosahedron: freq=${actualFrequency} × tiling=${tilingDivisions} → effective=${effectiveFrequency}`
+        );
+      }
+    } else {
+      geodesicIcosahedronGroup.visible = false;
+    }
 
     // Dual Icosahedron (Orange - reciprocal complementary: matches base geodesic)
     if (document.getElementById("showDualIcosahedron").checked) {
@@ -2905,6 +3131,7 @@ export function initScene(THREE, OrbitControls, RT) {
       tetrahelix1Group,
       tetrahelix2Group,
       tetrahelix3Group,
+      penroseTilingGroup,
     };
   }
 
@@ -3218,6 +3445,57 @@ export function initScene(THREE, OrbitControls, RT) {
           expectedQ: geometry.metadata.expectedQ,
         };
         renderPolyhedron(group, geometry, color, opacity);
+        break;
+      }
+
+      case "penroseTiling": {
+        // Penrose Tiling: Aperiodic tiling with golden ratio
+        const penroseTileType = options.tileType ?? "thick";
+        const penroseQuadrance = options.quadrance ?? scale;
+        const penroseEdgeWeight = options.edgeWeight ?? 2;
+        const penroseShowFace = options.showFace !== false;
+
+        // Select tile generator based on type
+        let tileColor;
+        switch (penroseTileType) {
+          case "thin":
+            geometry = PenroseTiles.thinRhombus(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThin;
+            break;
+          case "kite":
+            geometry = PenroseTiles.kite(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThick;
+            break;
+          case "dart":
+            geometry = PenroseTiles.dart(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThin;
+            break;
+          case "thick":
+          default:
+            geometry = PenroseTiles.thickRhombus(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThick;
+            break;
+        }
+
+        group.userData.type = "penroseTiling";
+        group.userData.parameters = {
+          tileType: penroseTileType,
+          quadrance: penroseQuadrance,
+          edgeWeight: penroseEdgeWeight,
+          showFace: penroseShowFace,
+          ...geometry.metadata,
+        };
+        renderPolyhedron(group, geometry, tileColor, opacity, {
+          lineWidth: penroseEdgeWeight,
+        });
         break;
       }
 

@@ -191,6 +191,9 @@ export const RTFileHandler = {
       showCartesianBasis:
         document.getElementById("showCartesianBasis")?.checked || false,
       showQuadray: document.getElementById("showQuadray")?.checked || false,
+      // Penrose Tiling
+      showPenroseTiling:
+        document.getElementById("showPenroseTiling")?.checked || false,
     };
 
     // Get slider values
@@ -375,6 +378,18 @@ export const RTFileHandler = {
       geodesicDualIcosaFrequency: parseInt(
         document.getElementById("geodesicDualIcosaFrequency")?.value || "1"
       ),
+      // Penrose Tiling parameters
+      penroseQuadrance: parseFloat(
+        document.getElementById("penroseQuadrance")?.value || "1"
+      ),
+      penroseEdgeWeight: parseInt(
+        document.getElementById("penroseEdgeWeight")?.value || "2"
+      ),
+      penroseShowFace:
+        document.getElementById("penroseShowFace")?.checked !== false,
+      penroseTileType:
+        document.querySelector('input[name="penroseTileType"]:checked')
+          ?.value || "thick",
     };
 
     // Get geodesic projection radio states
@@ -842,6 +857,27 @@ export const RTFileHandler = {
           const el = document.getElementById("geodesicDualIcosaFrequency");
           if (el) el.value = sliders.geodesicDualIcosaFrequency;
         }
+        // Penrose Tiling parameters
+        if (sliders.penroseQuadrance !== undefined) {
+          const el = document.getElementById("penroseQuadrance");
+          if (el) el.value = sliders.penroseQuadrance;
+        }
+        if (sliders.penroseEdgeWeight !== undefined) {
+          const slider = document.getElementById("penroseEdgeWeight");
+          const display = document.getElementById("penroseEdgeWeightValue");
+          if (slider) slider.value = sliders.penroseEdgeWeight;
+          if (display) display.textContent = sliders.penroseEdgeWeight;
+        }
+        if (sliders.penroseShowFace !== undefined) {
+          const checkbox = document.getElementById("penroseShowFace");
+          if (checkbox) checkbox.checked = sliders.penroseShowFace;
+        }
+        if (sliders.penroseTileType !== undefined) {
+          const radio = document.querySelector(
+            `input[name="penroseTileType"][value="${sliders.penroseTileType}"]`
+          );
+          if (radio) radio.checked = true;
+        }
       }
 
       // Restore geodesic projection radio states
@@ -944,6 +980,14 @@ export const RTFileHandler = {
         );
         if (tetrahelix3Controls && checkboxes.showTetrahelix3) {
           tetrahelix3Controls.style.display = "block";
+        }
+
+        // Show/hide Penrose Tiling controls based on checkbox state
+        const penroseTilingControls = document.getElementById(
+          "penrose-tiling-controls"
+        );
+        if (penroseTilingControls && checkboxes.showPenroseTiling) {
+          penroseTilingControls.style.display = "block";
         }
 
         // Trigger updateGeometry to render the restored forms
