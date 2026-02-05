@@ -932,8 +932,19 @@ export function initScene(THREE, OrbitControls, RT) {
         } else if (polygonSides === 4) {
           const tileCount = Math.pow(4, tilingGenerations - 1);
           tilingInfoEl.textContent = `Square: ${tileCount} tiles (4^${tilingGenerations - 1})`;
+        } else if (polygonSides === 5) {
+          // Pentagon array: gen 1=1, gen 2=5, gen 3=10, gen 4+=more
+          const pentCount =
+            tilingGenerations === 1
+              ? 1
+              : tilingGenerations === 2
+                ? 5
+                : 5 + 5 * (tilingGenerations - 2);
+          tilingInfoEl.textContent = `Pentagon array: ${pentCount} pentagons`;
         } else if (polygonSides === 6) {
-          tilingInfoEl.textContent = `Hexagon: tiling not yet implemented`;
+          const n = Math.pow(2, tilingGenerations - 1);
+          const tileCount = 6 * n * n;
+          tilingInfoEl.textContent = `Hexagon: ${tileCount} triangles (6×${n}²)`;
         } else {
           tilingInfoEl.textContent = `${polygonSides}-gon: tiling not supported`;
         }
