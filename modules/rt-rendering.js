@@ -23,6 +23,7 @@ import { RTPapercut } from "./rt-papercut.js";
 import { Grids } from "./rt-grids.js";
 import { Nodes } from "./rt-nodes.js";
 import { Helices } from "./rt-helices.js";
+import { PenroseTiles } from "./rt-penrose.js";
 
 // Line2 addons for variable lineweight (cross-platform support)
 import { Line2 } from "three/addons/lines/Line2.js";
@@ -68,6 +69,10 @@ const colorPalette = {
   tetrahelix: 0xffaa00, // Orange - Tetrahelix 1 (toroidal)
   tetrahelix2: 0x88ff88, // Light green - Tetrahelix 2 (linear, tetrahedral seed)
   tetrahelix3: 0xff88ff, // Light magenta - Tetrahelix 3 (linear, octahedral seed)
+  // Penrose Tiling
+  penroseThick: 0xffd700, // Gold - Thick rhombus (72°/108°)
+  penroseThin: 0x4169e1, // Royal Blue - Thin rhombus (36°/144°)
+  penroseTiling: 0xffd700, // Gold - Default tiling color
 };
 
 /**
@@ -103,6 +108,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let tetrahelix1Group; // Tetrahelix 1: Toroidal (left-handed)
   let tetrahelix2Group; // Tetrahelix 2: Linear (tetrahedral seed)
   let tetrahelix3Group; // Tetrahelix 3: Linear (octahedral seed)
+  let penroseTilingGroup; // Penrose Tiling: Aperiodic tiling with golden ratio
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   function initScene() {
@@ -192,6 +198,10 @@ export function initScene(THREE, OrbitControls, RT) {
     tetrahelix3Group = new THREE.Group();
     tetrahelix3Group.userData.type = "tetrahelix3";
     // Tetrahelix 3 allows all tools (Move, Scale, Rotate)
+
+    penroseTilingGroup = new THREE.Group();
+    penroseTilingGroup.userData.type = "penroseTiling";
+    // Penrose Tiling allows all tools (Move, Scale, Rotate)
 
     cubeGroup = new THREE.Group();
     cubeGroup.userData.type = "cube";
@@ -296,6 +306,7 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(tetrahelix1Group);
     scene.add(tetrahelix2Group);
     scene.add(tetrahelix3Group);
+    scene.add(penroseTilingGroup);
     scene.add(cubeGroup);
     scene.add(tetrahedronGroup);
     scene.add(dualTetrahedronGroup);
@@ -591,10 +602,10 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Render edges using LineSegments for efficiency
-    // For Line/Polygon primitives with lineWidth option, use Line2/LineMaterial for cross-platform support
+    // For Line/Polygon/Penrose primitives with lineWidth option, use Line2/LineMaterial for cross-platform support
     const polyType = group.userData.type;
     const useThickLine =
-      (polyType === "line" || polyType === "polygon") &&
+      (polyType === "line" || polyType === "polygon" || polyType === "penroseTiling") &&
       options.lineWidth &&
       options.lineWidth > 1;
 
@@ -984,6 +995,72 @@ export function initScene(THREE, OrbitControls, RT) {
       coneGroup.visible = true;
     } else {
       coneGroup.visible = false;
+    }
+
+    // Penrose Tiling (aperiodic tiling with golden ratio)
+    if (document.getElementById("showPenroseTiling")?.checked) {
+      // Get tile type from radio (thick/thin/kite/dart)
+      const tileTypeRadio = document.querySelector(
+        'input[name="penroseTileType"]:checked'
+      );
+      const penroseTileType = tileTypeRadio ? tileTypeRadio.value : "thick";
+      // Get quadrance from input (default 1)
+      const penroseQuadrance = parseFloat(
+        document.getElementById("penroseQuadrance")?.value || "1"
+      );
+      // Get edge weight
+      const penroseEdgeWeight = parseFloat(
+        document.getElementById("penroseEdgeWeight")?.value || "2"
+      );
+      // Get face visibility
+      const penroseShowFace =
+        document.getElementById("penroseShowFace")?.checked !== false;
+
+      // Select tile generator based on type
+      let penroseData;
+      let tileColor;
+      switch (penroseTileType) {
+        case "thin":
+          penroseData = PenroseTiles.thinRhombus(penroseQuadrance, {
+            showFace: penroseShowFace,
+          });
+          tileColor = colorPalette.penroseThin;
+          break;
+        case "kite":
+          penroseData = PenroseTiles.kite(penroseQuadrance, {
+            showFace: penroseShowFace,
+          });
+          tileColor = colorPalette.penroseThick; // Kites use gold
+          break;
+        case "dart":
+          penroseData = PenroseTiles.dart(penroseQuadrance, {
+            showFace: penroseShowFace,
+          });
+          tileColor = colorPalette.penroseThin; // Darts use blue
+          break;
+        case "thick":
+        default:
+          penroseData = PenroseTiles.thickRhombus(penroseQuadrance, {
+            showFace: penroseShowFace,
+          });
+          tileColor = colorPalette.penroseThick;
+          break;
+      }
+
+      renderPolyhedron(penroseTilingGroup, penroseData, tileColor, opacity, {
+        lineWidth: penroseEdgeWeight,
+      });
+      penroseTilingGroup.userData.type = "penroseTiling";
+      penroseTilingGroup.userData.parameters = {
+        tileType: penroseTileType,
+        quadrance: penroseQuadrance,
+        edgeWeight: penroseEdgeWeight,
+        showFace: penroseShowFace,
+        ...penroseData.metadata,
+      };
+      penroseTilingGroup.visible = true;
+    } else {
+      penroseTilingGroup.visible = false;
     }
 
     // Tetrahelix 1: Toroidal - uses Quadray axis notation (QW, QX, QY, QZ)
@@ -2905,6 +2982,7 @@ export function initScene(THREE, OrbitControls, RT) {
       tetrahelix1Group,
       tetrahelix2Group,
       tetrahelix3Group,
+      penroseTilingGroup,
     };
   }
 
@@ -3218,6 +3296,57 @@ export function initScene(THREE, OrbitControls, RT) {
           expectedQ: geometry.metadata.expectedQ,
         };
         renderPolyhedron(group, geometry, color, opacity);
+        break;
+      }
+
+      case "penroseTiling": {
+        // Penrose Tiling: Aperiodic tiling with golden ratio
+        const penroseTileType = options.tileType ?? "thick";
+        const penroseQuadrance = options.quadrance ?? scale;
+        const penroseEdgeWeight = options.edgeWeight ?? 2;
+        const penroseShowFace = options.showFace !== false;
+
+        // Select tile generator based on type
+        let tileColor;
+        switch (penroseTileType) {
+          case "thin":
+            geometry = PenroseTiles.thinRhombus(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThin;
+            break;
+          case "kite":
+            geometry = PenroseTiles.kite(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThick;
+            break;
+          case "dart":
+            geometry = PenroseTiles.dart(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThin;
+            break;
+          case "thick":
+          default:
+            geometry = PenroseTiles.thickRhombus(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThick;
+            break;
+        }
+
+        group.userData.type = "penroseTiling";
+        group.userData.parameters = {
+          tileType: penroseTileType,
+          quadrance: penroseQuadrance,
+          edgeWeight: penroseEdgeWeight,
+          showFace: penroseShowFace,
+          ...geometry.metadata,
+        };
+        renderPolyhedron(group, geometry, tileColor, opacity, {
+          lineWidth: penroseEdgeWeight,
+        });
         break;
       }
 

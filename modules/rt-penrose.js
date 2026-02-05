@@ -106,7 +106,7 @@ export const PenroseTiles = {
       [1, 2],
       [2, 0],
     ];
-    const faces = showFace ? [[0, 1, 2]] : []; // CCW for +Z normal
+    const faces = showFace ? [[0, 2, 1]] : []; // CCW for +Z normal (reversed)
 
     console.log(
       `[RT] Robinson Large (BL): Q_base=${quadrance.toFixed(6)}, Q_leg=${legQuadrance.toFixed(6)}, ` +
@@ -180,7 +180,7 @@ export const PenroseTiles = {
       [1, 2],
       [2, 0],
     ];
-    const faces = showFace ? [[0, 1, 2]] : [];
+    const faces = showFace ? [[0, 2, 1]] : []; // CCW for +Z normal
 
     console.log(
       `[RT] Robinson Small (BS): Q_base=${quadrance.toFixed(6)}, Q_leg=${legQuadrance.toFixed(6)}, ` +
@@ -254,7 +254,7 @@ export const PenroseTiles = {
       [2, 3],
       [3, 0],
     ];
-    const faces = showFace ? [[0, 1, 2, 3]] : [];
+    const faces = showFace ? [[0, 3, 2, 1]] : []; // CCW for +Z normal
 
     // Edge quadrance calculation
     // From Pythagorean: edge² = (shortDiag/2)² + (longDiag/2)²
@@ -329,7 +329,7 @@ export const PenroseTiles = {
       [2, 3],
       [3, 0],
     ];
-    const faces = showFace ? [[0, 1, 2, 3]] : [];
+    const faces = showFace ? [[0, 3, 2, 1]] : []; // CCW for +Z normal
 
     // Edge quadrance: Q(1 + φ⁴)/4
     const edgeQuadrance = (quadrance * (1 + phiFourth)) / 4;
@@ -407,7 +407,7 @@ export const PenroseTiles = {
       [2, 3],
       [3, 0],
     ];
-    const faces = showFace ? [[0, 1, 2, 3]] : [];
+    const faces = showFace ? [[0, 3, 2, 1]] : []; // CCW for +Z normal
 
     console.log(
       `[RT] Kite: Q_short=${quadrance.toFixed(6)}, Q_long=${longEdgeQ.toFixed(6)}, ` +
@@ -474,7 +474,7 @@ export const PenroseTiles = {
       [2, 3],
       [3, 0],
     ];
-    const faces = showFace ? [[0, 1, 2, 3]] : [];
+    const faces = showFace ? [[0, 3, 2, 1]] : []; // CCW for +Z normal
 
     console.log(
       `[RT] Dart: Q_short=${quadrance.toFixed(6)}, Q_long=${longEdgeQ.toFixed(6)}, ` +
