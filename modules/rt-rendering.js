@@ -799,6 +799,115 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   /**
+   * Render pentagon face tiling on a dodecahedron
+   * Applies the pentagonalTiling pattern to each of the 12 pentagonal faces
+   *
+   * @param {THREE.Group} group - Group to render into
+   * @param {Object} dodecGeometry - Dodecahedron geometry {vertices, edges, faces}
+   * @param {number} scale - Scale of the dodecahedron
+   * @param {number} generations - Pentagon tiling generations (1-3)
+   * @param {number} opacity - Opacity for rendering
+   */
+  function renderDodecahedronFaceTiling(
+    group,
+    dodecGeometry,
+    _scale, // Reserved for future use (e.g., scaling tiling independently)
+    generations,
+    _opacity // Reserved for future use (e.g., tiling face opacity)
+  ) {
+    const { vertices, faces } = dodecGeometry;
+
+    // Get pentagon tiling geometry (2D, centered at origin)
+    // Use quadrance of 1 and scale to face size later
+    const pentTiling = Grids.pentagonalTiling(1, generations, {
+      showFace: false,
+    });
+
+    // Create material for tiling edges - cyan to contrast with yellow dodecahedron
+    const tilingMaterial = new THREE.LineBasicMaterial({
+      color: 0x00ffff, // Cyan
+      linewidth: 1,
+      depthTest: true,
+      depthWrite: true,
+    });
+
+    // Process each of the 12 pentagonal faces
+    faces.forEach(faceIndices => {
+      // Get face vertices in 3D
+      const faceVerts = faceIndices.map(i => vertices[i]);
+
+      // Calculate face center (centroid)
+      const center = new THREE.Vector3(0, 0, 0);
+      faceVerts.forEach(fv => center.add(fv));
+      center.divideScalar(faceVerts.length);
+
+      // Calculate face normal (cross product of two edges)
+      const v0 = faceVerts[0];
+      const v1 = faceVerts[1];
+      const v2 = faceVerts[2];
+      const edge1 = new THREE.Vector3().subVectors(v1, v0);
+      const edge2 = new THREE.Vector3().subVectors(v2, v0);
+      const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize();
+
+      // Calculate face circumradius (distance from center to vertex)
+      const faceRadius = center.distanceTo(faceVerts[0]);
+
+      // Build transformation from 2D tiling plane (XY) to 3D face plane
+      // Create orthonormal basis vectors for the face plane:
+      // uBasis = direction from center to first vertex (the "X" axis on face)
+      // vBasis = normal × uBasis (the "Y" axis on face, perpendicular in face plane)
+      const uBasis = new THREE.Vector3()
+        .subVectors(faceVerts[0], center)
+        .normalize();
+      const vBasis = new THREE.Vector3()
+        .crossVectors(normal, uBasis)
+        .normalize();
+
+      // Transform each vertex from 2D tiling to 3D face
+      const transformed3DVertices = pentTiling.vertices.map(v2d => {
+        // Scale 2D coords by face radius
+        const x2d = v2d.x * faceRadius;
+        const y2d = v2d.y * faceRadius;
+
+        // Position in 3D: center + x*uBasis + y*vBasis
+        return new THREE.Vector3(
+          center.x + x2d * uBasis.x + y2d * vBasis.x,
+          center.y + x2d * uBasis.y + y2d * vBasis.y,
+          center.z + x2d * uBasis.z + y2d * vBasis.z
+        );
+      });
+
+      // Create edge geometry for this face's tiling
+      const edgePositions = [];
+      pentTiling.edges.forEach(([i, j]) => {
+        const p1 = transformed3DVertices[i];
+        const p2 = transformed3DVertices[j];
+        edgePositions.push(p1.x, p1.y, p1.z);
+        edgePositions.push(p2.x, p2.y, p2.z);
+      });
+
+      if (edgePositions.length > 0) {
+        const edgeGeometry = new THREE.BufferGeometry();
+        edgeGeometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(edgePositions, 3)
+        );
+
+        const edgeLines = new THREE.LineSegments(
+          edgeGeometry,
+          tilingMaterial.clone()
+        );
+        edgeLines.renderOrder = 4; // Render tiling on top of base edges
+        group.add(edgeLines);
+      }
+    });
+
+    console.log(
+      `[RT] Dodecahedron Face Tiling: ${faces.length} faces × ${pentTiling.metadata.pentagonCount} pentagons = ${faces.length * pentTiling.metadata.pentagonCount} total pentagons`
+    );
+  }
+
+  /**
    * Helper function to render geodesic polyhedra with DRY pattern
    * Consolidates ~25 lines of duplicated code per geodesic into single config call
    *
@@ -1658,15 +1767,57 @@ export function initScene(THREE, OrbitControls, RT) {
       icosahedronGroup.visible = false;
     }
 
-    // Dodecahedron (Yellow)
+    // Dodecahedron (Yellow) - with Face Tiling option
     if (document.getElementById("showDodecahedron").checked) {
-      const dodec = Polyhedra.dodecahedron(scale);
-      renderPolyhedron(
-        dodecahedronGroup,
-        dodec,
-        colorPalette.dodecahedron,
-        opacity
-      );
+      // Check for face tiling - applies pentagon tiling to each pentagonal face
+      const faceTilingEnabled =
+        document.getElementById("dodecahedronFaceTiling")?.checked || false;
+      const tilingGenerations = faceTilingEnabled
+        ? parseInt(
+            document.getElementById("polygonTilingGenerations")?.value || "1"
+          )
+        : 1;
+
+      // Store parameters for potential future use (e.g., PACKED nodes)
+      dodecahedronGroup.userData.parameters = {
+        faceTilingEnabled,
+        tilingGenerations,
+      };
+
+      if (faceTilingEnabled && tilingGenerations > 1) {
+        // Face tiling enabled: apply pentagon array to each face
+        // TODO: Implement actual face subdivision - for now render with pentagon overlay
+        console.log(
+          `[RT] Dodecahedron Face Tiling: gen=${tilingGenerations}, applying pentagon array to 12 faces`
+        );
+
+        // Render base dodecahedron with reduced opacity when tiling is shown
+        const dodec = Polyhedra.dodecahedron(scale);
+        renderPolyhedron(
+          dodecahedronGroup,
+          dodec,
+          colorPalette.dodecahedron,
+          opacity * 0.3 // Reduced opacity for base when tiled
+        );
+
+        // Apply pentagon tiling to each of the 12 pentagonal faces
+        renderDodecahedronFaceTiling(
+          dodecahedronGroup,
+          dodec,
+          scale,
+          tilingGenerations,
+          opacity
+        );
+      } else {
+        // No face tiling - render normally
+        const dodec = Polyhedra.dodecahedron(scale);
+        renderPolyhedron(
+          dodecahedronGroup,
+          dodec,
+          colorPalette.dodecahedron,
+          opacity
+        );
+      }
       dodecahedronGroup.visible = true;
     } else {
       dodecahedronGroup.visible = false;
