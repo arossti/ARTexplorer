@@ -1695,6 +1695,124 @@ This would create variable-sized spheres that perfectly "kiss" at each vertex wi
 
 ---
 
+## Pentagon Array Tiling for Penrose Guidance Grid (Feb 5, 2026)
+
+### ✅ RT-Pure Pentagon Array Implementation
+
+**Purpose**: Create a 5-fold symmetric array of regular pentagons to serve as a guidance grid for Penrose tiling. Unlike triangular/square tilings that subdivide, pentagons DON'T tile the plane - the gaps form the characteristic star shapes seen in Penrose patterns.
+
+**Implementation** (`rt-grids.js: pentagonalTiling()`):
+
+**Golden Ratio Geometry (algebraically exact)**:
+```
+R = overall pattern radius (input)
+pentRadius = R/φ = R × (φ-1)     (RT-pure: invPhi identity)
+innerRingRadius = pentRadius × φ = R    (exactly!)
+outerRingRadius = R × φ               (Gen 3)
+```
+
+**Key RT-Pure Relationships**:
+| Property | Formula | Value |
+|----------|---------|-------|
+| Pentagon circumradius | R/φ | ≈ 0.618R |
+| Inner ring radius | R/φ × φ = R | Exact |
+| Inward vertex from origin | R - R/φ = R/φ² | ≈ 0.382R |
+| Outer ring radius | R × φ | ≈ 1.618R |
+
+**Generation Structure**:
+- **Gen 1**: Single central pentagon (vertex pointing up)
+- **Gen 2**: 5 inner pentagons at 72° intervals, vertices pointing at origin
+- **Gen 3**: 5 inner + 5 outer pentagons (10 total), outer offset 36°
+
+**Vertex Orientation**: Each pentagon has one vertex pointing directly at the origin, achieved by matching pentagon rotation to its angular position (no 180° offset needed).
+
+**RT-Pure Functions Used**:
+- `RT.PurePhi.value()` - φ = (1+√5)/2
+- `RT.PurePhi.inverse()` - 1/φ = φ-1 (algebraic identity, no division)
+- `RT.PurePhi.penrose.rotateN36(x, y, n)` - rotation by n×36° using cached trig
+
+### ⚠️ Gen 4+ Extension (Not Yet Implemented)
+
+**Current Status**: Gen 4+ uses approximate angular spacing that doesn't maintain proper Penrose geometry.
+
+**For Penrose Guidance Grid Use**:
+- Gen 2-3 (5-10 pentagons) may be sufficient for central pattern guidance
+- Extending beyond requires careful analysis of how pentagons nest in Penrose tilings
+- The "decagon" configuration (10 thick rhombi around a central point) relates to the pentagon array
+
+**Research Needed**:
+- How pentagon vertices align with Penrose rhombus vertices at deflation boundaries
+- Whether additional rings follow φ-scaling or require different geometry
+- Integration with existing `PenroseTiling.deflate()` algorithm
+
+---
+
+## Pentagon Face Tiling via Dodecahedron Overlay (Planned)
+
+### The Icosahedron-Dodecahedron Duality
+
+The natural way to apply pentagon tiling to icosahedron faces is through the **dual dodecahedron**:
+
+| Icosahedron | Dodecahedron (Dual) |
+|-------------|---------------------|
+| 12 vertices (5-fold) | 12 pentagonal faces |
+| 20 triangular faces | 20 vertices (3-fold) |
+| 30 edges | 30 edges |
+
+**Key geometric relationship**:
+- Each dodecahedral **face center** aligns exactly with an icosahedral **vertex**
+- Each dodecahedral **vertex** aligns exactly with an icosahedral **face center**
+- Pentagon edges cross icosahedral edges at golden ratio (φ) division points
+
+### Implementation Approach: Dodecahedron Face Tiling
+
+**Concept**: Add "Face Tiling" option to Dodecahedron (similar to Geodesic Icosahedron Face Tiling):
+
+1. **When enabled**: Uses the active Pentagon polygon tiling settings (generations)
+2. **Natural fit**: Dodecahedron faces ARE pentagons - no geometric distortion
+3. **Pentagon array on each face**: Gen 2 = 5 pentagons per face, Gen 3 = 10 per face
+4. **Vertex alignment**: Pentagon vertices naturally align with icosahedral geometry
+
+**UI Extension** (future):
+```
+☐ Dodecahedron (12 faces, φ)
+  ☐ Face Tiling
+     "Set Pentagon Tiling Properties under Primitives/Polygons"
+```
+
+### Future: Dodecahedron → Icosahedron Projection
+
+**Analogy to Geodesic Projection**:
+
+Geodesic subdivision projects from flat faces to spherical surfaces:
+- **Off (flat)**: Vertices on original polyhedron faces
+- **InSphere**: Vertices projected to insphere
+- **MidSphere**: Vertices projected to midsphere
+- **OutSphere**: Vertices projected to circumsphere
+
+**Proposed Dual Projection** for Dodecahedron:
+- **Dodecahedron (native)**: Pentagon faces as-is
+- **Icosahedral mapping**: Pentagon vertices/edges mapped onto icosahedral triangular faces
+- This is a "deflation" from 12 pentagons → 20 triangles (face dual transformation)
+
+**Geometric Mechanics**:
+1. Each pentagon face maps to 5 icosahedral faces (the faces sharing that vertex)
+2. Pentagon sectors (center-to-edge isoceles triangles, 72° apex) map to face wedges
+3. Three pentagon sectors meet at each icosahedral face center
+4. The mapping involves angular distortion: 72° (pentagon sector) → ~70.5° (icosahedral face angle)
+
+**RT-Pure Considerations**:
+- The dihedral angle of icosahedron involves φ: arctan(φ²) ≈ 70.53°
+- Pentagon central angle is 72° = 2×36° (RT-pure via cached trig)
+- The ~1.5° difference per sector accumulates to the spherical excess
+
+**Research Questions**:
+1. Can the pentagon→triangle mapping preserve RT-pure golden ratio relationships?
+2. How do Penrose matching rules translate through the dual transformation?
+3. Is there a "deflation" interpretation connecting Penrose P3 rules to icosahedral faces?
+
+---
+
 _Last updated: February 5, 2026_
 _Contributors: Andy & Claude (for Bonnie Devarco's virology research)_
 _Review: Implementation readiness audit completed_
