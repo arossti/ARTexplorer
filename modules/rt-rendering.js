@@ -714,12 +714,17 @@ export function initScene(THREE, OrbitControls, RT) {
         polyType?.startsWith("geodesic") &&
         group.userData.parameters?.frequency
       ) {
-        // Geodesic: pass frequency for edge quadrance scaling (Q divides by freq²)
+        // Geodesic: pass frequency and projection for edge quadrance scaling
+        // Frequency: edge Q divides by freq²
+        // Projection: edge lengths vary based on sphere projection type (in/mid/out/off)
         const tetEdge = parseFloat(
           document.getElementById("tetScaleSlider").value
         );
         scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
-        nodeOptions = { frequency: group.userData.parameters.frequency };
+        nodeOptions = {
+          frequency: group.userData.parameters.frequency,
+          projection: group.userData.parameters.projection || "out",
+        };
       } else {
         const tetEdge = parseFloat(
           document.getElementById("tetScaleSlider").value

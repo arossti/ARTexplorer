@@ -1558,6 +1558,143 @@ This rule applies to ALL tiling implementations: triangular, square, hexagonal, 
 
 ---
 
+## Completed Implementation: Face Tiling & PACKED Node Scaling (Feb 5, 2026)
+
+### ✅ Polygon Face Tiling on Geodesic Icosahedron
+
+**Feature**: Apply polygon tilings to geodesic icosahedron faces with generation-based subdivision.
+
+**Implementation** (`rt-rendering.js`, `rt-grids.js`):
+- Added "Face Tiling" checkbox to Geodesic Icosahedron controls
+- When enabled, uses the active Polygon primitive's tiling settings (type, generations)
+- Tilings applied to each icosahedral face after geodesic frequency subdivision
+- `effectiveFrequency = baseFrequency * 2^(tilingGenerations-1)` for edge length calculation
+
+**UI** (`index.html`):
+- Checkbox: "Enable Face Tiling" with cyan info text
+- Links to Polygon controls: "Set Polygon Tiling Properties under Primitives/Polygons"
+
+**Cache Key** (`rt-nodes.js`):
+- Format: `{rt|classical}-{nodeSize}-{polyType}-{scale}-{sides}-gen{N}-f{freq}`
+- Includes `-genN` for tilingGenerations and `-fN` for frequency
+
+### ✅ PACKED Node Dynamic Recalculation
+
+**Problem Solved**: PACKED node spheres (radius = edge/2 for close-packing) were not scaling correctly when:
+1. Geodesic frequency slider changed
+2. Polygon tiling generations changed
+
+**Root Causes Fixed**:
+
+1. **`getPolyhedronEdgeQuadrance()` in `rt-nodes.js`**:
+   - Added geodesic case that divides edge quadrance by frequency²:
+   ```javascript
+   case "geodesicTetrahedron":
+   case "geodesicOctahedron":
+   case "geodesicIcosahedron": {
+     const baseType = type.replace("geodesic", "").toLowerCase();
+     let Q_edge = getPolyhedronEdgeQuadrance(baseType, scale);
+     if (options.frequency && options.frequency > 1) {
+       Q_edge = Q_edge / (freq * freq);  // Quadrance divides by freq²
+     }
+     return Q_edge;
+   }
+   ```
+
+2. **nodeOptions in `rt-rendering.js`**:
+   - Added geodesic case to pass frequency from userData.parameters:
+   ```javascript
+   } else if (polyType?.startsWith("geodesic") && group.userData.parameters?.frequency) {
+     nodeOptions = { frequency: group.userData.parameters.frequency };
+   }
+   ```
+
+3. **Parameter ordering**:
+   - Fixed: `userData.parameters` must be set BEFORE `renderPolyhedron()` so nodes can access frequency
+   - Applies to `renderGeodesicPolyhedron()` helper and geodesic icosahedron custom rendering
+
+4. **Cache invalidation**:
+   - Added `-fN` suffix to cache key for frequency
+   - Added `-genN` suffix for tilingGenerations
+   - Ensures node spheres regenerate when sliders change
+
+**RT-Pure Calculation**:
+- Edge quadrance Q divides by frequency² (geodesics) or by 4^(gen-1) (polygon tilings)
+- PACKED radius = √(Q_edge)/2 calculated at render time
+- Stays in quadrance space until final sqrt at GPU boundary
+
+### ✅ Projection-Based PACKED Node Adjustment (Implemented Feb 5, 2026)
+
+**Context**: Geodesic polyhedra support four projection modes:
+- **Flat (off)**: Vertices stay on base polyhedron faces
+- **Insphere**: Vertices projected to insphere (smaller sphere)
+- **Midsphere**: Vertices projected to midsphere (edge-tangent sphere)
+- **Outsphere**: Vertices projected to circumsphere (largest sphere)
+
+**Implementation**:
+
+1. **Pass projection type to node rendering** (`rt-rendering.js`):
+   ```javascript
+   nodeOptions = {
+     frequency: group.userData.parameters.frequency,
+     projection: group.userData.parameters.projection || "out",
+   };
+   ```
+
+2. **Sphere projection stretch factors** (`rt-nodes.js`):
+   When projecting flat vertices to a sphere, edges STRETCH because vertices near face centers move outward. Empirically derived factors:
+   ```javascript
+   // Stretch factors (flat → sphere projection)
+   geodesicTetrahedron: 1.5   // Large faces, significant stretch
+   geodesicOctahedron:  1.35  // Medium faces
+   geodesicIcosahedron: 1.27  // Smallest faces, verified from avgQ
+   ```
+
+3. **Radius scaling for in/mid projections** (relative to outsphere):
+   ```javascript
+   // Geodesic Tetrahedron: mid=1/3, in=1/9
+   // Geodesic Octahedron:  mid=1/2, in=1/3
+   // Geodesic Icosahedron: mid=φ²/(φ+2)≈0.724, in=(3-√5)/2≈0.382
+   ```
+
+4. **Cache key includes projection**: `-{projection}` suffix ensures nodes regenerate when projection changes
+
+**Result**: PACKED nodes now scale appropriately for all projection modes. Spheres approximately "kiss" for outsphere and scale down proportionally for midsphere/insphere.
+
+### ⚠️ Known Limitation: Non-Uniform Edge Lengths on Projected Geodesics
+
+**Observation**: Geodesic projections produce non-uniform edge lengths:
+- Edges near original polyhedron vertices are **shorter**
+- Edges near face centers are **longer**
+- The tetrahedron has the most extreme variation (large faces)
+- The icosahedron has the least variation (small faces)
+
+**Current Approach**: Uses **average edge length** for uniform PACKED sphere radius. This produces:
+- Slight gaps where actual edges are longer than average
+- Slight overlaps where actual edges are shorter than average
+
+**Perfect Solution (Future Work)**: Calculate per-vertex sphere radius based on actual incident edge lengths:
+```javascript
+// Pseudocode for perfect close-packing
+for each vertex V:
+  incidentEdges = getEdgesAt(V)
+  minEdgeQ = min(incidentEdges.map(e => e.quadrance))
+  packedRadius[V] = sqrt(minEdgeQ) / 2
+```
+
+This would create variable-sized spheres that perfectly "kiss" at each vertex without gaps or overlaps.
+
+**Priority**: Nice-to-have. Current uniform-radius solution is acceptable for visualization purposes. The flat projection case remains exact (all edges equal length)
+
+**Research Needed**:
+- Exact relationship between frequency and edge length for each projection
+- Whether uniform scaling is acceptable or per-edge calculation required
+- For midsphere/outsphere, edges near icosahedral vertices may differ from edges near face centers
+
+**Priority**: Nice-to-have for visual consistency. Flat projection is the primary use case for tiling work.
+
+---
+
 _Last updated: February 5, 2026_
 _Contributors: Andy & Claude (for Bonnie Devarco's virology research)_
 _Review: Implementation readiness audit completed_
