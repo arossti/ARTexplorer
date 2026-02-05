@@ -355,6 +355,69 @@ function getClosePackedRadius(type, scale, options = {}) {
 }
 
 // ============================================================================
+// TODO: PER-VERTEX SPHERE SIZING FOR PERFECT CLOSE-PACKING
+// ============================================================================
+//
+// PROBLEM: Projected geodesics have non-uniform edge lengths.
+// - Edges near original polyhedron vertices are shorter
+// - Edges near face centers are longer (stretched outward by projection)
+// - Current getClosePackedRadius uses average/approximate stretch factors
+// - Result: slight gaps or overlaps in PACKED mode for projected geodesics
+//
+// PERFECT SOLUTION: Compute per-vertex sphere radii based on incident edges
+//
+// Algorithm pseudocode:
+//   function getPerVertexPackedRadii(vertices, edges) {
+//     const vertexRadii = new Map();
+//
+//     // Build vertex → incident edges mapping
+//     const vertexEdges = new Map();
+//     for (const edge of edges) {
+//       for (const v of [edge.v1, edge.v2]) {
+//         if (!vertexEdges.has(v)) vertexEdges.set(v, []);
+//         vertexEdges.get(v).push(edge);
+//       }
+//     }
+//
+//     // Compute packed radius at each vertex
+//     for (const [vertex, incidentEdges] of vertexEdges) {
+//       // Get quadrances of all incident edges
+//       const edgeQuadrances = incidentEdges.map(e => e.quadrance);
+//
+//       // Packed radius = min(incident edge lengths) / 2
+//       // In quadrance form: Q_radius = min(Q_edges) / 4
+//       const minQ = Math.min(...edgeQuadrances);
+//       vertexRadii.set(vertex, Math.sqrt(minQ / 4));
+//     }
+//
+//     return vertexRadii;
+//   }
+//
+// IMPLEMENTATION CHALLENGES:
+// 1. Current architecture assumes uniform node sphere size
+//    - createNodeGeometry returns single BufferedGeometry
+//    - Would need to return per-instance radii array
+//
+// 2. Data plumbing:
+//    - Edge quadrance data computed in rt-polyhedra.js (geodesic generation)
+//    - Would need to store edges with vertices in group.userData
+//    - rt-nodes.js would consume this data for radius computation
+//
+// 3. Instanced mesh scaling:
+//    - Currently uses single scale matrix for all instances
+//    - Would need per-instance scale or separate geometries
+//
+// 4. Cache invalidation:
+//    - Per-vertex radii would vary with frequency AND projection
+//    - More complex caching strategy needed
+//
+// PRIORITY: Deferred - current stretch-factor approach is "good enough"
+// Visual improvement is marginal vs implementation complexity.
+// Revisit if user feedback indicates close-packing precision is critical.
+//
+// ============================================================================
+
+// ============================================================================
 // NODE GEOMETRY CACHE
 // ============================================================================
 
