@@ -512,6 +512,186 @@ export const PenroseTiling = {
   DEFLATION_SCALE: (() => RT.PurePhi.inverse())(),
 
   /**
+   * Get vertices of a tile in world coordinates
+   * Converts from (position, rotation, quadrance) format to 4 vertex positions
+   *
+   * @param {Object} tile - Tile with type, quadrance, rotationN36, position
+   * @returns {Array<{x,y}>} Four vertices [V0, V1, V2, V3] in CCW order
+   */
+  _tileVertices: tile => {
+    const phi = RT.PurePhi.value();
+    const phiSq = RT.PurePhi.squared();
+    const q = tile.quadrance;
+
+    // Short diagonal = √Q, long diagonal = φ√Q (thick) or φ²√Q (thin)
+    const shortHalf = Math.sqrt(q) / 2;
+    let longHalf;
+
+    if (tile.type === "thick-rhombus") {
+      // Thick: long diagonal = φ × short diagonal
+      longHalf = (phi * Math.sqrt(q)) / 2;
+    } else if (tile.type === "thin-rhombus") {
+      // Thin: long diagonal = φ² × short diagonal
+      longHalf = (phiSq * Math.sqrt(q)) / 2;
+    } else {
+      console.warn(`[RT] _tileVertices: Unknown type ${tile.type}`);
+      return null;
+    }
+
+    // Local vertices (unrotated): short diagonal along Y, long along X
+    // V0: top (acute), V1: right (obtuse), V2: bottom (acute), V3: left (obtuse)
+    const localVerts = [
+      { x: 0, y: shortHalf },
+      { x: longHalf, y: 0 },
+      { x: 0, y: -shortHalf },
+      { x: -longHalf, y: 0 },
+    ];
+
+    // Apply rotation: n × 36° = n × π/5 radians
+    const angle = (tile.rotationN36 * Math.PI) / 5;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    // Rotate and translate to world position
+    return localVerts.map(v => ({
+      x: tile.position.x + v.x * cos - v.y * sin,
+      y: tile.position.y + v.x * sin + v.y * cos,
+    }));
+  },
+
+  /**
+   * Calculate centroid of a tile
+   * @param {Object} tile - Tile object
+   * @returns {{x,y}} Centroid position
+   */
+  _tileCentroid: tile => {
+    const verts = PenroseTiling._tileVertices(tile);
+    return {
+      x: (verts[0].x + verts[1].x + verts[2].x + verts[3].x) / 4,
+      y: (verts[0].y + verts[1].y + verts[2].y + verts[3].y) / 4,
+    };
+  },
+
+  /**
+   * Deflate a thick rhombus into 2 thick + 1 thin
+   *
+   * P3 substitution rule for thick rhombus (72°/108°):
+   * New vertex P divides long diagonal at golden ratio from acute vertex
+   *
+   * @param {Object} tile - Thick rhombus tile
+   * @returns {Array} Three new tiles [thick, thick, thin]
+   */
+  _deflateThickRhombus: tile => {
+    const phi = RT.PurePhi.value();
+    const invPhi = RT.PurePhi.inverse(); // 1/φ = φ - 1
+    const verts = PenroseTiling._tileVertices(tile);
+    const [V0, V1, V2, V3] = verts;
+
+    // New quadrance is scaled by (1/φ)² = 1/φ² (RT-pure)
+    const newQ = tile.quadrance * invPhi * invPhi;
+
+    // Point P divides V0-V2 (long diagonal) at ratio 1/φ from V0
+    const P = {
+      x: V0.x + (V2.x - V0.x) * invPhi,
+      y: V0.y + (V2.y - V0.y) * invPhi,
+    };
+
+    // Point Q divides V0-V2 at ratio 1/φ from V2 (mirror of P)
+    const Q = {
+      x: V2.x + (V0.x - V2.x) * invPhi,
+      y: V2.y + (V0.y - V2.y) * invPhi,
+    };
+
+    // Calculate rotations and positions for new tiles
+    // The new tiles inherit orientation from parent, adjusted by their position
+
+    // Thick 1: Upper portion (V0, V1, P)
+    // Center is centroid of triangle V0-V1-P extended to rhombus
+    const thick1Center = {
+      x: (V0.x + V1.x + P.x + (V0.x + P.x) / 2 - V1.x / 2) / 3,
+      y: (V0.y + V1.y + P.y + (V0.y + P.y) / 2 - V1.y / 2) / 3,
+    };
+
+    // Thick 2: Lower portion (P, V1, V2 region)
+    const thick2Center = {
+      x: (Q.x + V1.x + V2.x) / 3,
+      y: (Q.y + V1.y + V2.y) / 3,
+    };
+
+    // Thin: Left portion (V3, P, Q region)
+    const thinCenter = {
+      x: (V3.x + P.x + Q.x) / 3,
+      y: (V3.y + P.y + Q.y) / 3,
+    };
+
+    // Calculate rotation from edge direction
+    // New tiles are oriented based on their edge directions
+    const baseRotation = tile.rotationN36;
+
+    return [
+      {
+        type: "thick-rhombus",
+        quadrance: newQ,
+        rotationN36: (baseRotation + 1) % 10, // +36° rotation
+        position: { x: (V0.x + V1.x + P.x) / 3, y: (V0.y + V1.y + P.y) / 3 },
+      },
+      {
+        type: "thick-rhombus",
+        quadrance: newQ,
+        rotationN36: (baseRotation + 9) % 10, // -36° rotation
+        position: { x: (V2.x + V1.x + Q.x) / 3, y: (V2.y + V1.y + Q.y) / 3 },
+      },
+      {
+        type: "thin-rhombus",
+        quadrance: newQ,
+        rotationN36: (baseRotation + 5) % 10, // +180° rotation (flip)
+        position: { x: (V3.x + P.x + Q.x) / 3, y: (V3.y + P.y + Q.y) / 3 },
+      },
+    ];
+  },
+
+  /**
+   * Deflate a thin rhombus into 1 thick + 1 thin
+   *
+   * P3 substitution rule for thin rhombus (36°/144°):
+   *
+   * @param {Object} tile - Thin rhombus tile
+   * @returns {Array} Two new tiles [thick, thin]
+   */
+  _deflateThinRhombus: tile => {
+    const phi = RT.PurePhi.value();
+    const invPhi = RT.PurePhi.inverse();
+    const verts = PenroseTiling._tileVertices(tile);
+    const [V0, V1, V2, V3] = verts;
+
+    // New quadrance scaled by (1/φ)²
+    const newQ = tile.quadrance * invPhi * invPhi;
+
+    // Point P divides the long diagonal V1-V3 at golden ratio from V1
+    const P = {
+      x: V1.x + (V3.x - V1.x) * invPhi,
+      y: V1.y + (V3.y - V1.y) * invPhi,
+    };
+
+    const baseRotation = tile.rotationN36;
+
+    return [
+      {
+        type: "thick-rhombus",
+        quadrance: newQ,
+        rotationN36: (baseRotation + 2) % 10, // +72° rotation
+        position: { x: (V0.x + V1.x + P.x) / 3, y: (V0.y + V1.y + P.y) / 3 },
+      },
+      {
+        type: "thin-rhombus",
+        quadrance: newQ,
+        rotationN36: (baseRotation + 8) % 10, // -72° rotation
+        position: { x: (V2.x + V3.x + P.x) / 3, y: (V2.y + V3.y + P.y) / 3 },
+      },
+    ];
+  },
+
+  /**
    * Apply deflation (subdivision) to a set of tiles
    *
    * Deflation rules for P3 (rhombic) tiling:
@@ -522,10 +702,23 @@ export const PenroseTiling = {
    * @returns {Array} Subdivided tiles at smaller scale
    */
   deflate: tiles => {
-    // TODO: Implement deflation rules
-    // This is the core tiling generation algorithm
-    console.log(`[RT] Penrose deflate: ${tiles.length} tiles → TBD`);
-    return tiles; // Placeholder
+    const newTiles = [];
+
+    for (const tile of tiles) {
+      if (tile.type === "thick-rhombus") {
+        newTiles.push(...PenroseTiling._deflateThickRhombus(tile));
+      } else if (tile.type === "thin-rhombus") {
+        newTiles.push(...PenroseTiling._deflateThinRhombus(tile));
+      } else {
+        // Kites and darts use different deflation rules (P2 tiling)
+        // For now, pass through unchanged
+        console.warn(`[RT] Deflation not implemented for type: ${tile.type}`);
+        newTiles.push(tile);
+      }
+    }
+
+    console.log(`[RT] Penrose deflate: ${tiles.length} tiles → ${newTiles.length} tiles`);
+    return newTiles;
   },
 
   /**
@@ -655,6 +848,85 @@ export const PenroseTiling = {
       boundary: null,
       metadata: { triangleQuadrance, generations, tileCount: 0 },
     }; // Placeholder
+  },
+
+  /**
+   * Convert tile array to renderable THREE.js geometry
+   *
+   * Transforms the tile objects (position, rotation, quadrance format)
+   * into vertices, edges, and faces arrays for renderPolyhedron()
+   *
+   * @param {Array} tiles - Array of tile objects from generate() or deflate()
+   * @param {Object} options - Rendering options
+   * @param {boolean} options.showFace - Whether to generate faces (default true)
+   * @param {boolean} options.colorByType - Different colors for thick/thin (default true)
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  tilesToGeometry: (tiles, options = {}) => {
+    const showFace = options.showFace !== false;
+    const colorByType = options.colorByType !== false;
+
+    const allVertices = [];
+    const allEdges = [];
+    const allFaces = [];
+    const tileMetadata = [];
+
+    let vertexOffset = 0;
+
+    for (const tile of tiles) {
+      const verts = PenroseTiling._tileVertices(tile);
+      if (!verts) continue;
+
+      // Add vertices as THREE.Vector3
+      const v0 = allVertices.length;
+      for (const v of verts) {
+        allVertices.push(new THREE.Vector3(v.x, v.y, 0));
+      }
+
+      // Add edges (4 edges per rhombus)
+      allEdges.push([v0, v0 + 1]);
+      allEdges.push([v0 + 1, v0 + 2]);
+      allEdges.push([v0 + 2, v0 + 3]);
+      allEdges.push([v0 + 3, v0]);
+
+      // Add face (CCW winding for +Z normal)
+      if (showFace) {
+        allFaces.push([v0, v0 + 3, v0 + 2, v0 + 1]);
+      }
+
+      // Track tile metadata for coloring
+      tileMetadata.push({
+        type: tile.type,
+        vertexStart: v0,
+        vertexCount: 4,
+      });
+
+      vertexOffset += 4;
+    }
+
+    // Count tile types
+    const thickCount = tiles.filter(t => t.type === "thick-rhombus").length;
+    const thinCount = tiles.filter(t => t.type === "thin-rhombus").length;
+
+    console.log(
+      `[RT] Penrose tilesToGeometry: ${tiles.length} tiles → ` +
+        `${allVertices.length} vertices, ${allEdges.length} edges, ${allFaces.length} faces ` +
+        `(thick: ${thickCount}, thin: ${thinCount})`
+    );
+
+    return {
+      vertices: allVertices,
+      edges: allEdges,
+      faces: allFaces,
+      metadata: {
+        tileCount: tiles.length,
+        thickCount,
+        thinCount,
+        tileMetadata,
+        colorByType,
+        rtPure: true,
+      },
+    };
   },
 };
 
