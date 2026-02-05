@@ -418,7 +418,7 @@ export const simpleSliderBindings = [
   },
 
   // Primitive size inputs
-  { id: "polygonSides", type: "slider" },
+  { id: "polygonSides", type: "slider", valueId: "polygonSidesValue" },
   { id: "prismSides", type: "slider" },
   { id: "coneSides", type: "slider" },
   { id: "penroseQuadrance", type: "slider" },
