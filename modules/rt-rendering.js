@@ -951,6 +951,24 @@ export function initScene(THREE, OrbitControls, RT) {
         polygonData = Grids.squareTiling(polygonQuadrance, tilingGenerations, {
           showFace: polygonShowFace,
         });
+      } else if (tilingEnabled && polygonSides === 5 && tilingGenerations > 1) {
+        // Generate pentagonal tiling (5 triangular sectors from center)
+        polygonData = Grids.pentagonalTiling(
+          polygonQuadrance,
+          tilingGenerations,
+          {
+            showFace: polygonShowFace,
+          }
+        );
+      } else if (tilingEnabled && polygonSides === 6 && tilingGenerations > 1) {
+        // Generate hexagonal tiling (6 triangular sectors from center)
+        polygonData = Grids.hexagonalTiling(
+          polygonQuadrance,
+          tilingGenerations,
+          {
+            showFace: polygonShowFace,
+          }
+        );
       } else {
         // Single polygon (no tiling or unsupported)
         polygonData = Polyhedra.polygon(polygonQuadrance, {
