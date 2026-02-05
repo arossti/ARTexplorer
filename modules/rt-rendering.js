@@ -813,20 +813,60 @@ export function initScene(THREE, OrbitControls, RT) {
     dodecGeometry,
     _scale, // Reserved for future use (e.g., scaling tiling independently)
     generations,
-    _opacity // Reserved for future use (e.g., tiling face opacity)
+    opacity // Used for face rendering
   ) {
     const { vertices, faces } = dodecGeometry;
 
     // Get pentagon tiling geometry (2D, centered at origin)
     // Use quadrance of 1 and scale to face size later
+    // Enable faces for filled pentagon rendering
     const pentTiling = Grids.pentagonalTiling(1, generations, {
-      showFace: false,
+      showFace: true,
     });
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // RT-PURE SCALING: Fit tiling pattern WITHIN face
+    // ═══════════════════════════════════════════════════════════════════════════
+    // The tiling pattern's outermost vertices should align with the face vertices.
+    // We use maxExtent (max radius of pattern) to scale pattern to fit face.
+    //
+    // Pattern growth by generation (for pattern radius R=1):
+    //   Gen 1: maxExtent = 1 (single pentagon circumradius)
+    //   Gen 2: maxExtent ≈ φ (pentagon centers at 1, circumradius 1/φ)
+    //   Gen 3: maxExtent ≈ φ + 1/φ = φ² (outer ring at φ, circumradius 1/φ)
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Calculate max extent of the 2D tiling pattern
+    // This is the radius of the bounding circle (distance from center to farthest vertex)
+    const maxExtent = Math.max(
+      ...pentTiling.vertices.map(v => Math.sqrt(v.x * v.x + v.y * v.y))
+    );
+
+    // Find the outermost vertices (for boundary visualization)
+    // These form the "perimeter" of the tiling pattern
+    const EXTENT_THRESHOLD = 0.95; // Vertices within 95% of maxExtent
+    const boundaryVertexIndices = pentTiling.vertices
+      .map((v, i) => ({ i, r: Math.sqrt(v.x * v.x + v.y * v.y) }))
+      .filter(({ r }) => r >= maxExtent * EXTENT_THRESHOLD)
+      .map(({ i }) => i);
+
+    console.log(
+      `[RT] Pentagon tiling pattern: gen=${generations}, maxExtent=${maxExtent.toFixed(4)}, boundaryVerts=${boundaryVertexIndices.length}`
+    );
+
     // Create material for tiling edges - cyan to contrast with yellow dodecahedron
-    const tilingMaterial = new THREE.LineBasicMaterial({
+    const tilingEdgeMaterial = new THREE.LineBasicMaterial({
       color: 0x00ffff, // Cyan
       linewidth: 1,
+      depthTest: true,
+      depthWrite: true,
+    });
+
+    // Create material for tiling faces - semi-transparent cyan
+    const tilingFaceMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00ffff,
+      transparent: true,
+      opacity: opacity * 0.7,
+      side: THREE.FrontSide, // Only render front faces (proper winding required)
       depthTest: true,
       depthWrite: true,
     });
@@ -849,31 +889,46 @@ export function initScene(THREE, OrbitControls, RT) {
       const edge2 = new THREE.Vector3().subVectors(v2, v0);
       const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize();
 
-      // Calculate face circumradius (distance from center to vertex)
-      const faceRadius = center.distanceTo(faceVerts[0]);
+      // CRITICAL: Ensure normal points OUTWARD (away from origin)
+      // Dodecahedron is centered at origin, so face center is on the outward side
+      if (normal.dot(center) < 0) {
+        normal.negate();
+      }
+      // Note: No flipWinding needed. With uBasis = normal × vBasis, the transformation
+      // always preserves orientation (uBasis × vBasis = normal), so 2D CCW → 3D CCW from outside
 
-      // Scale factor for tiling:
-      // - Gen 1: Single pentagon with circumradius R matches the face directly
-      // - Gen 2+: Pentagon array outer extent is R×φ, so scale by 1/φ to fit inside face
-      // Using RT-pure golden ratio
-      const phi = RT.PurePhi.value();
-      const tilingScale =
-        generations === 1 ? faceRadius : faceRadius / phi;
+      // Calculate face INRADIUS (distance from center to edge midpoint)
+      // This is smaller than circumradius and ensures tiling fits within face edges
+      // For a regular pentagon: inradius = circumradius × cos(36°)
+      const edgeMidpoint = new THREE.Vector3()
+        .addVectors(faceVerts[0], faceVerts[1])
+        .multiplyScalar(0.5);
+      const faceInradius = center.distanceTo(edgeMidpoint);
+
+      // RT-PURE SCALE FACTOR: Fit pattern within face INSCRIBED circle
+      // The tiling boundary is decagonal - 5 vertices in gaps extend beyond pentagon edges
+      // Using inradius ensures the pattern fits entirely within the pentagonal face
+      const tilingScale = faceInradius / maxExtent;
 
       // Build transformation from 2D tiling plane (XY) to 3D face plane
-      // Create orthonormal basis vectors for the face plane:
-      // uBasis = direction from center to first vertex (the "X" axis on face)
-      // vBasis = normal × uBasis (the "Y" axis on face, perpendicular in face plane)
-      const uBasis = new THREE.Vector3()
+      // The pentagon tiling has its first pentagon at +Y direction (top of pattern)
+      // So we map 2D +Y to the direction of face vertex 0 for proper alignment
+      //
+      // vBasis = direction from center to first vertex (maps 2D +Y axis)
+      // uBasis = perpendicular in face plane (maps 2D +X axis)
+      const vBasis = new THREE.Vector3()
         .subVectors(faceVerts[0], center)
         .normalize();
-      const vBasis = new THREE.Vector3()
-        .crossVectors(normal, uBasis)
+
+      // uBasis = normal × vBasis gives right-handed system where uBasis × vBasis = normal
+      // This preserves CCW winding from 2D to 3D
+      const uBasis = new THREE.Vector3()
+        .crossVectors(normal, vBasis)
         .normalize();
 
       // Transform each vertex from 2D tiling to 3D face
       const transformed3DVertices = pentTiling.vertices.map(v2d => {
-        // Scale 2D coords by tiling scale (accounts for φ-scaling of pentagon array)
+        // Scale 2D coords by tiling scale
         const x2d = v2d.x * tilingScale;
         const y2d = v2d.y * tilingScale;
 
@@ -903,15 +958,99 @@ export function initScene(THREE, OrbitControls, RT) {
 
         const edgeLines = new THREE.LineSegments(
           edgeGeometry,
-          tilingMaterial.clone()
+          tilingEdgeMaterial.clone()
         );
         edgeLines.renderOrder = 4; // Render tiling on top of base edges
         group.add(edgeLines);
       }
+
+      // Create face geometry for pentagon faces
+      // Each face in pentTiling.faces is a 5-element array of vertex indices
+      pentTiling.faces.forEach(pentFaceIndices => {
+        // Get 3D vertices for this pentagon face
+        const pentVerts3D = pentFaceIndices.map(i => transformed3DVertices[i]);
+
+        // Triangulate pentagon (fan from first vertex)
+        // Pentagon: V0, V1, V2, V3, V4 → triangles with REVERSED winding
+        // The 2D→3D transform inverts orientation, so we use CW order to get outward normals
+        const facePositions = [];
+        for (let i = 1; i < pentVerts3D.length - 1; i++) {
+          const pv0 = pentVerts3D[0];
+          const pvi = pentVerts3D[i];
+          const pvi1 = pentVerts3D[i + 1];
+
+          // Reversed winding: [v0, vi1, vi] for correct front-face orientation
+          facePositions.push(pv0.x, pv0.y, pv0.z);
+          facePositions.push(pvi1.x, pvi1.y, pvi1.z);
+          facePositions.push(pvi.x, pvi.y, pvi.z);
+        }
+
+        if (facePositions.length > 0) {
+          const faceGeometry = new THREE.BufferGeometry();
+          faceGeometry.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(facePositions, 3)
+          );
+          faceGeometry.computeVertexNormals();
+
+          const faceMesh = new THREE.Mesh(
+            faceGeometry,
+            tilingFaceMaterial.clone()
+          );
+          faceMesh.renderOrder = 3; // Render faces behind edges
+          group.add(faceMesh);
+        }
+      });
+
+      // VISUAL BOUNDARY: Draw the tiling pattern's perimeter (for debugging scale)
+      // Sort boundary vertices by angle to form a closed polygon
+      if (boundaryVertexIndices.length >= 3) {
+        // Get 2D boundary vertices and sort by angle around origin
+        const boundaryVerts2D = boundaryVertexIndices.map(i => ({
+          index: i,
+          v: pentTiling.vertices[i],
+          angle: Math.atan2(pentTiling.vertices[i].y, pentTiling.vertices[i].x)
+        }));
+        boundaryVerts2D.sort((a, b) => a.angle - b.angle);
+
+        // Create boundary line geometry (closed loop)
+        const boundaryPositions = [];
+        for (let i = 0; i < boundaryVerts2D.length; i++) {
+          const curr = boundaryVerts2D[i];
+          const next = boundaryVerts2D[(i + 1) % boundaryVerts2D.length];
+
+          // Transform 2D to 3D (same as above)
+          const p1 = transformed3DVertices[curr.index];
+          const p2 = transformed3DVertices[next.index];
+
+          boundaryPositions.push(p1.x, p1.y, p1.z);
+          boundaryPositions.push(p2.x, p2.y, p2.z);
+        }
+
+        const boundaryGeometry = new THREE.BufferGeometry();
+        boundaryGeometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(boundaryPositions, 3)
+        );
+
+        const boundaryMaterial = new THREE.LineBasicMaterial({
+          color: 0xff00ff, // Magenta - distinct from cyan tiling
+          linewidth: 2,
+          depthTest: true,
+          depthWrite: true,
+        });
+
+        const boundaryLines = new THREE.LineSegments(boundaryGeometry, boundaryMaterial);
+        boundaryLines.renderOrder = 5; // Render on top of everything
+        group.add(boundaryLines);
+      }
     });
 
     console.log(
-      `[RT] Dodecahedron Face Tiling: ${faces.length} faces × ${pentTiling.metadata.pentagonCount} pentagons = ${faces.length * pentTiling.metadata.pentagonCount} total pentagons (scale=1/φ for gen ${generations})`
+      `[RT] Dodecahedron Face Tiling: ${faces.length} faces × ${pentTiling.metadata.pentagonCount} pentagons = ${faces.length * pentTiling.metadata.pentagonCount} total pentagons`
+    );
+    console.log(
+      `  └─ RT-pure extent scaling: maxExtent=${maxExtent.toFixed(4)}, scale=faceRadius/maxExtent`
     );
   }
 
