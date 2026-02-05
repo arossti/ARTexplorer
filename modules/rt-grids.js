@@ -888,7 +888,6 @@ export const Grids = {
 
     // RT-pure golden ratio constants
     const phi = RT.PurePhi.value(); // φ = (1 + √5)/2
-    const phiSq = RT.PurePhi.squared(); // φ² = φ + 1
     const invPhi = RT.PurePhi.inverse(); // 1/φ = φ - 1
 
     const vertices = [];
@@ -974,20 +973,19 @@ export const Grids = {
       // R × φ/(φ+1) = R × φ/φ² = R/φ using RT-pure identity
       const pentRadius = R * invPhi;
 
-      // Inner ring: position pentagon centers so inward vertices nearly meet
-      // Star gap radius uses φ² relationship: r / φ²
-      const starGapRadius = pentRadius / phiSq;
-      const innerRingRadius = pentRadius + starGapRadius;
+      // Inner ring: position pentagon centers so adjacent pentagons don't overlap
+      // For 5 pentagons at 72° spacing, centers must be at least pentRadius/sin(36°) apart
+      // Using φ as multiplier provides good spacing with RT-pure relationship
+      // innerRingRadius = pentRadius × φ ensures vertices nearly meet at center
+      const innerRingRadius = pentRadius * phi;
 
       // Inner ring: 5 pentagons at 72° = 2×36° intervals, starting at top
       for (let i = 0; i < 5; i++) {
         // Position at (0, innerRingRadius) rotated by i×72° (starting from top)
-        // Pentagon at top: center at (0, innerRingRadius)
         const pos = rotateN36(0, innerRingRadius, i * 2); // i×72° = i×2×36°
-        // Rotate pentagon so vertex points toward origin (inward)
-        // For pentagon at angle θ, we need vertex at θ + 180°
-        // θ = i×72° = i×2×36°, so rotation = i×2 + 5 (for 180°)
-        addPentagon(pos.x, pos.y, pentRadius, i * 2 + 5);
+        // Pentagon base vertex at (0, -r) points toward origin when rotation matches position
+        // No 180° offset needed - base vertex naturally points inward
+        addPentagon(pos.x, pos.y, pentRadius, i * 2);
         pentagonCount++;
       }
 
@@ -1000,7 +998,7 @@ export const Grids = {
           // Position offset by 36° (1 step) from inner ring positions
           const pos = rotateN36(0, outerRingRadius, i * 2 + 1); // (i×72° + 36°)
           // Rotate so vertex points toward center
-          addPentagon(pos.x, pos.y, pentRadius, i * 2 + 1 + 5);
+          addPentagon(pos.x, pos.y, pentRadius, i * 2 + 1);
           pentagonCount++;
         }
       }
@@ -1015,8 +1013,9 @@ export const Grids = {
           for (let i = 0; i < pentagonsInRing; i++) {
             // Approximate angular spacing using available 36° steps
             const stepOffset = (ring % 2) * (5 / ring);
-            const pos = rotateN36(0, ringRadius, Math.round(i * stepsPerPentagon + stepOffset));
-            addPentagon(pos.x, pos.y, pentRadius, Math.round(i * stepsPerPentagon + stepOffset) + 5);
+            const rotationSteps = Math.round(i * stepsPerPentagon + stepOffset);
+            const pos = rotateN36(0, ringRadius, rotationSteps);
+            addPentagon(pos.x, pos.y, pentRadius, rotationSteps);
             pentagonCount++;
           }
         }
