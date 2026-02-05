@@ -1813,6 +1813,142 @@ Geodesic subdivision projects from flat faces to spherical surfaces:
 
 ---
 
-_Last updated: February 5, 2026_
+## ⚠️ OPEN PROBLEM: Pentagon Tiling Scale on Dodecahedron Faces (Feb 5, 2026)
+
+### Critical Insight: Pentagon Array IS the Penrose Scaffold
+
+**Key realization**: The pentagon array (central star + surrounding pentagons) is the CORRECT underlying structure for Penrose tiling. The "odd shapes" that appear between pentagons are NOT errors - they're the spaces where Penrose thick/thin rhombi belong.
+
+```
+Pentagon Array (Gen 2):           Penrose P3 Tiling:
+      ⬠                               ⬠
+    ⬠ ★ ⬠     ←→ same structure     ⬠ ★ ⬠ + rhombi filling gaps
+      ⬠                               ⬠
+
+★ = central pentagon (or star void)
+⬠ = surrounding pentagons
+gaps = where thick/thin rhombi tile in
+```
+
+**The relationship**:
+- Pentagon vertices define 5-fold symmetry centers
+- Pentagon edges guide rhombus edge placement
+- Gaps between pentagons = rhombus tiling regions
+- The scaffold + rhombi = complete Penrose P3 tiling
+
+### The Scaling Problem Remains
+
+Even though the pentagon array IS the correct scaffold, we still need to **scale it correctly** to fit dodecahedron faces. The current issue: the calculated bounding pentagon doesn't match the actual tiling extent.
+
+### Visual Debug Aid: Bounding Pentagon on Base Polygon
+
+A magenta bounding pentagon is now drawn on the base Polygon primitive (when 5-gon with tiling enabled, Gen 2+). This allows debugging the scale relationship in isolation, without the complexity of dodecahedron face mapping.
+
+**Current implementation** (`rt-rendering.js` line ~1230):
+```javascript
+// Calculate bounding pentagon that should contain tiling
+const tilingMaxExtent = Math.max(
+  ...polygonData.vertices.map(v => Math.sqrt(v.x * v.x + v.y * v.y))
+);
+const cos36 = RT.PurePhi.pentagon.cos36();
+const boundingPentRadius = tilingMaxExtent / cos36;
+```
+
+**Observation**: The magenta pentagon (circumR = maxExtent/cos36) is LARGER than the actual tiling pattern. There's a gap between the outermost tiling vertices and the bounding pentagon edges.
+
+### What We Know
+
+**Geometric facts**:
+- Pentagon circumradius R and inradius r = R × cos(36°) ≈ 0.809R
+- Gen 2 tiling has 5 pentagons arranged around center
+- Each outer pentagon's tip points toward origin
+- Outer pentagon vertices don't all lie on same circle (irregular boundary)
+
+**What the formula predicts vs reality**:
+| Gen | maxExtent | Predicted boundingR | Observed | Gap |
+|-----|-----------|---------------------|----------|-----|
+| 2   | 1.5434    | 1.907 (maxE/cos36)  | < 1.907  | Yes |
+| 3   | 2.1490    | 2.656 (maxE/cos36)  | < 2.656  | Yes |
+
+### Wrong Approaches Tried
+
+1. ❌ `tilingScale = faceRadius / maxExtent` → Pattern too large, extends beyond face edges
+2. ❌ `tilingScale = faceInradius / maxExtent` → Pattern too small, doesn't fill face
+3. ❌ `tilingScale = faceRadius × (1/φ)` for Gen 2+ → Recent fix, partially works but not exact
+4. ❌ `boundingPentRadius = maxExtent / cos36` → Produces pentagon larger than tiling
+
+### The Core Question
+
+**What is the exact algebraic relationship between**:
+- `maxExtent` (furthest tiling vertex from center)
+- The circumradius of a pentagon that exactly contains the tiling
+
+This relationship likely involves φ (golden ratio) in a non-obvious way, since:
+- Pentagon geometry is φ-based
+- Penrose tiling growth follows φ scaling
+- The 5-fold symmetry creates φ-related interference patterns
+
+### Way Forward
+
+1. **Measure actual boundary geometry**: Log all boundary vertex distances, not just maxExtent
+2. **Identify the algebraic pattern**: Does boundary radius follow φⁿ scaling with generations?
+3. **Derive bounding pentagon formula**: From actual geometry, not assumed regular decagon
+4. **Express in RT-pure form**: Using only `RT.PurePhi` cached values
+
+### For Penrose Implementation
+
+Once the scaffold scaling is solved:
+1. Pentagon array provides the underlying 5-fold grid
+2. Thick rhombi fill 72°/108° gaps
+3. Thin rhombi fill 36°/144° gaps
+4. Matching arcs follow pentagon edge alignments
+5. Deflation creates nested φ-scaled copies
+
+### Current Debug Aid
+
+Visual boundary rendering on base Pentagon polygon (`rt-rendering.js`):
+- Magenta outline shows calculated bounding pentagon
+- Compare against actual tiling pattern extent
+- Gap visible = formula needs refinement
+
+---
+
+## Session Summary: Pentagon Array as Penrose Scaffold (Feb 5, 2026 Evening)
+
+### Key Realizations
+
+1. **Pentagon array IS correct**: The central star + surrounding pentagons is the proper Penrose guidance grid, not a failed tiling attempt
+
+2. **Gaps are features, not bugs**: The "odd shapes" between pentagons are exactly where Penrose thick/thin rhombi belong
+
+3. **Scaling problem isolable**: Moving magenta bounding pentagon to base Polygon primitive allows debugging scale relationship without dodecahedron complexity
+
+4. **Formula mismatch identified**: `boundingPentRadius = maxExtent / cos36` produces a pentagon LARGER than the actual tiling extent
+
+### What Works
+
+- ✅ Pentagon array generation (Gen 1-3)
+- ✅ Face Tiling on dodecahedron (uses pentagon array)
+- ✅ Gen 2+ scaling by 1/φ
+- ✅ Magenta bounding pentagon debug visualization
+
+### What Remains
+
+- ❓ Exact algebraic relationship: maxExtent → bounding pentagon circumradius
+- ❓ Why current formula overestimates bounding pentagon size
+- ❓ RT-pure derivation of correct scale factor
+- 🔜 Implementation of Penrose rhombi to fill pentagon array gaps
+
+### Next Session Tasks
+
+1. Log all boundary vertex distances (not just max)
+2. Identify φ-based pattern in boundary geometry
+3. Derive correct bounding pentagon formula
+4. Test on dodecahedron faces
+
+---
+
+_Last updated: February 5, 2026 (evening session)_
 _Contributors: Andy & Claude (for Bonnie Devarco's virology research)_
 _Review: Implementation readiness audit completed_
+_Session: Pentagon scaffold realization + scale problem documentation_

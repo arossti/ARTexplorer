@@ -428,6 +428,28 @@ export const simpleSliderBindings = [
   { id: "tetrahelix1CountSlider", type: "slider", valueId: "tetrahelix1CountDisplay" },
   { id: "tetrahelix2CountSlider", type: "slider", valueId: "tetrahelix2CountDisplay" },
   { id: "tetrahelix3CountSlider", type: "slider", valueId: "tetrahelix3CountDisplay" },
+
+  // Dodecahedron face tiling scale (for finding φ-ratio)
+  // Slider and numeric input are synced together
+  {
+    id: "dodecTilingScale",
+    type: "slider",
+    onInput: (value) => {
+      const input = document.getElementById("dodecTilingScaleInput");
+      if (input) input.value = parseFloat(value).toFixed(3);
+    },
+  },
+  {
+    id: "dodecTilingScaleInput",
+    type: "slider", // Treated as slider for updateGeometry trigger
+    onInput: (value) => {
+      const slider = document.getElementById("dodecTilingScale");
+      if (slider) {
+        const clamped = Math.max(0.5, Math.min(1.5, parseFloat(value) || 1.0));
+        slider.value = clamped;
+      }
+    },
+  },
 ];
 
 // ============================================================================

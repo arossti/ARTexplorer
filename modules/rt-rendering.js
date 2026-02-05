@@ -905,10 +905,37 @@ export function initScene(THREE, OrbitControls, RT) {
         .multiplyScalar(0.5);
       const faceInradius = center.distanceTo(edgeMidpoint);
 
-      // RT-PURE SCALE FACTOR: Fit pattern within face INSCRIBED circle
-      // The tiling boundary is decagonal - 5 vertices in gaps extend beyond pentagon edges
-      // Using inradius ensures the pattern fits entirely within the pentagonal face
-      const tilingScale = faceInradius / maxExtent;
+      // Also get face circumradius (for reference)
+      const faceCircumradius = center.distanceTo(faceVerts[0]);
+
+      // ═══════════════════════════════════════════════════════════════════════════
+      // SCALING STRATEGY: Use slider/input to find correct φ-ratio empirically
+      // The scale adjusts relative to CIRCUMRADIUS as base
+      // φ-candidates: 0.618 (1/φ), 0.809 (cos36), 0.899 (√cos36), 1.236 (1/cos36)
+      // ═══════════════════════════════════════════════════════════════════════════
+      // Prefer numeric input (more precise) over slider
+      const userScale = parseFloat(
+        document.getElementById("dodecTilingScaleInput")?.value ||
+        document.getElementById("dodecTilingScale")?.value || "1.0"
+      );
+      const tilingScale = (faceCircumradius * userScale) / maxExtent;
+
+      // Log once per dodecahedron (first face only) for debugging
+      if (faceIndices === faces[0]) {
+        const invPhi = RT.PurePhi.inverse();
+        const cos36 = RT.PurePhi.pentagon.cos36();
+        console.log(
+          `[RT] Dodec Face Tiling: userScale=${userScale.toFixed(3)}, ` +
+          `circumR=${faceCircumradius.toFixed(4)}, inR=${faceInradius.toFixed(4)}, ` +
+          `ratio(in/circ)=${(faceInradius/faceCircumradius).toFixed(4)} (cos36=${cos36.toFixed(4)})`
+        );
+        console.log(
+          `  → tilingScale=${tilingScale.toFixed(4)}, maxExtent=${maxExtent.toFixed(4)}`
+        );
+        console.log(
+          `  φ-refs: 1/φ=${invPhi.toFixed(4)}, cos36=${cos36.toFixed(4)}, 1/cos36=${(1/cos36).toFixed(4)}`
+        );
+      }
 
       // Build transformation from 2D tiling plane (XY) to 3D face plane
       // The pentagon tiling has its first pentagon at +Y direction (top of pattern)
@@ -1227,56 +1254,57 @@ export function initScene(THREE, OrbitControls, RT) {
         }
       );
 
-      // BOUNDING PENTAGON: Draw magenta container for pentagon tiling debugging
-      // Shows the pentagon that should contain the tiling pattern
+      // BOUNDING PENTAGON: Draw candidate bounding pentagons for debugging
+      // Shows multiple φ-ratio candidates to find the correct scale
       if (polygonSides === 5 && tilingEnabled && tilingGenerations > 1) {
         // Calculate max extent of the tiling pattern
         const tilingMaxExtent = Math.max(
           ...polygonData.vertices.map(v => Math.sqrt(v.x * v.x + v.y * v.y))
         );
 
-        // Bounding pentagon: circumradius = maxExtent / cos(36°)
-        // This assumes tips lie on edges (maxExtent = inradius)
-        const cos36 = RT.PurePhi.pentagon.cos36();
-        const boundingPentRadius = tilingMaxExtent / cos36;
+        const invPhi = RT.PurePhi.inverse(); // 1/φ = φ-1 ≈ 0.618
+        const cos36 = RT.PurePhi.pentagon.cos36(); // φ/2 ≈ 0.809
 
-        // Generate pentagon vertices (starting at +Y, CCW)
-        const boundaryPositions = [];
-        for (let i = 0; i < 5; i++) {
-          const angle1 = Math.PI / 2 + i * (2 * Math.PI / 5);
-          const angle2 = Math.PI / 2 + ((i + 1) % 5) * (2 * Math.PI / 5);
+        // Candidate bounding radii (all φ-rational multiples of maxExtent)
+        const candidates = [
+          { scale: 1.0, color: 0x00ff00, name: "1.0 (maxExtent)" },
+          { scale: invPhi, color: 0x0000ff, name: `1/φ ≈ ${invPhi.toFixed(4)}` },
+          { scale: cos36, color: 0xffff00, name: `cos36 ≈ ${cos36.toFixed(4)}` },
+          { scale: 1 / cos36, color: 0xff00ff, name: `1/cos36 ≈ ${(1/cos36).toFixed(4)}` },
+        ];
 
-          boundaryPositions.push(
-            boundingPentRadius * Math.cos(angle1),
-            boundingPentRadius * Math.sin(angle1),
-            0
-          );
-          boundaryPositions.push(
-            boundingPentRadius * Math.cos(angle2),
-            boundingPentRadius * Math.sin(angle2),
-            0
-          );
-        }
+        // Helper to draw pentagon at given radius
+        const drawPentagon = (radius, color) => {
+          const positions = [];
+          for (let i = 0; i < 5; i++) {
+            const angle1 = Math.PI / 2 + i * (2 * Math.PI / 5);
+            const angle2 = Math.PI / 2 + ((i + 1) % 5) * (2 * Math.PI / 5);
+            positions.push(
+              radius * Math.cos(angle1), radius * Math.sin(angle1), 0,
+              radius * Math.cos(angle2), radius * Math.sin(angle2), 0
+            );
+          }
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+          const material = new THREE.LineBasicMaterial({ color, linewidth: 2, depthTest: true });
+          const lines = new THREE.LineSegments(geometry, material);
+          lines.renderOrder = 10;
+          polygonGroup.add(lines);
+        };
 
-        const boundaryGeometry = new THREE.BufferGeometry();
-        boundaryGeometry.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(boundaryPositions, 3)
-        );
-
-        const boundaryMaterial = new THREE.LineBasicMaterial({
-          color: 0xff00ff, // Magenta
-          linewidth: 2,
-          depthTest: true,
+        // Draw all candidates
+        candidates.forEach(c => {
+          const radius = tilingMaxExtent * c.scale;
+          drawPentagon(radius, c.color);
         });
 
-        const boundaryLines = new THREE.LineSegments(boundaryGeometry, boundaryMaterial);
-        boundaryLines.renderOrder = 10;
-        polygonGroup.add(boundaryLines);
-
-        console.log(
-          `[RT] Pentagon bounding: maxExtent=${tilingMaxExtent.toFixed(4)}, boundingR=${boundingPentRadius.toFixed(4)}, ratio=${(boundingPentRadius / tilingMaxExtent).toFixed(4)}`
-        );
+        // Log all candidates for analysis
+        console.log(`[RT] Pentagon bounding candidates (maxExtent=${tilingMaxExtent.toFixed(4)}):`);
+        candidates.forEach(c => {
+          const radius = tilingMaxExtent * c.scale;
+          console.log(`  ${c.name}: boundingR=${radius.toFixed(4)}`);
+        });
+        console.log(`  Legend: GREEN=1.0, BLUE=1/φ, YELLOW=cos36, MAGENTA=1/cos36`);
       }
 
       polygonGroup.visible = true;
