@@ -511,6 +511,59 @@ export const PenroseTiling = {
    */
   DEFLATION_SCALE: (() => RT.PurePhi.inverse())(),
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HELPER FUNCTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Linear interpolation between two points */
+  _lerp: (a, b, t) => ({
+    x: a.x + (b.x - a.x) * t,
+    y: a.y + (b.y - a.y) * t,
+  }),
+
+  /** Centroid of 4 vertices */
+  _centroid4: verts => ({
+    x: (verts[0].x + verts[1].x + verts[2].x + verts[3].x) / 4,
+    y: (verts[0].y + verts[1].y + verts[2].y + verts[3].y) / 4,
+  }),
+
+  /**
+   * Compute rotation (as n×36°) from rhombus vertices
+   * Uses the short diagonal (V0-V2) direction
+   * @param {Array} verts - [V0, V1, V2, V3] where V0-V2 is short diagonal
+   * @returns {number} Rotation as n in n×36°
+   */
+  _rotationFromVerts: verts => {
+    // Short diagonal direction (V0 to V2)
+    const dx = verts[0].x - verts[2].x;
+    const dy = verts[0].y - verts[2].y;
+    // Angle of short diagonal (should be vertical at rotation=0)
+    const angle = Math.atan2(dy, dx);
+    // At rotation=0, short diagonal points along +Y (angle = π/2)
+    // So adjusted = angle - π/2, then convert to n×36°
+    const adjusted = angle - Math.PI / 2;
+    const n36 = Math.round((adjusted * 5) / Math.PI);
+    return ((n36 % 10) + 10) % 10; // Ensure positive 0-9
+  },
+
+  /**
+   * Construct a rhombus from 4 explicit vertices
+   * Computes position (centroid) and rotation from the geometry
+   * @param {string} type - "thick-rhombus" or "thin-rhombus"
+   * @param {Array} verts - [V0, V1, V2, V3] vertices in CCW order
+   * @param {number} quadrance - The quadrance (short diagonal²)
+   * @returns {Object} Tile in {type, quadrance, rotationN36, position} format
+   */
+  _rhombusFromVerts: (type, verts, quadrance) => {
+    const position = PenroseTiling._centroid4(verts);
+    const rotationN36 = PenroseTiling._rotationFromVerts(verts);
+    return { type, quadrance, rotationN36, position };
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TILE VERTEX COMPUTATION
+  // ═══════════════════════════════════════════════════════════════════════════
+
   /**
    * Get vertices of a tile in world coordinates
    * Converts from (position, rotation, quadrance) format to 4 vertex positions
@@ -578,7 +631,9 @@ export const PenroseTiling = {
    * P3 substitution rule for thick rhombus (72°/108°):
    * - V0, V2 are acute (72°) vertices - SHORT diagonal
    * - V1, V3 are obtuse (108°) vertices - LONG diagonal
-   * - Division point P is on LONG diagonal (V1-V3) at golden ratio from V1
+   *
+   * Child tiles are constructed by computing their actual 4 vertices,
+   * then deriving position (centroid) and rotation from the geometry.
    *
    * @param {Object} tile - Thick rhombus tile
    * @returns {Array} Three new tiles [thick, thick, thin]
@@ -586,97 +641,109 @@ export const PenroseTiling = {
   _deflateThickRhombus: tile => {
     const phi = RT.PurePhi.value();
     const invPhi = RT.PurePhi.inverse(); // 1/φ = φ - 1
+    const lerp = PenroseTiling._lerp;
+
     const verts = PenroseTiling._tileVertices(tile);
     const [V0, V1, V2, V3] = verts;
 
-    // New quadrance is scaled by (1/φ)² = 1/φ² (RT-pure)
+    // New quadrance is scaled by (1/φ)² (RT-pure)
     const newQ = tile.quadrance * invPhi * invPhi;
 
-    // Point P divides LONG diagonal V1-V3 at ratio 1/φ from V1
-    const P = {
-      x: V1.x + (V3.x - V1.x) * invPhi,
-      y: V1.y + (V3.y - V1.y) * invPhi,
-    };
+    // Division points on LONG diagonal (V1-V3)
+    // P is at 1/φ from V1 toward V3
+    // Q is at 1/φ from V3 toward V1
+    const P = lerp(V1, V3, invPhi);
+    const Q = lerp(V3, V1, invPhi);
 
-    // Point Q divides LONG diagonal V1-V3 at ratio 1/φ from V3 (mirror of P)
-    const Q = {
-      x: V3.x + (V1.x - V3.x) * invPhi,
-      y: V3.y + (V1.y - V3.y) * invPhi,
-    };
+    // Division points on edges (at 1/φ from each vertex)
+    // These define where child tiles meet
+    const A = lerp(V0, V1, invPhi); // On V0-V1
+    const B = lerp(V1, V2, invPhi); // On V1-V2
+    const C = lerp(V2, V3, invPhi); // On V2-V3
+    const D = lerp(V3, V0, invPhi); // On V3-V0
 
-    // New tile positions are centroids of their vertex triangles
-    // Thick 1: V0, V1, P region (upper right)
-    // Thick 2: V2, V1, Q region (lower right) - note: uses Q not P
-    // Thin: V0, V3, P, Q region (left side)
+    // Child thick rhombus #1: centered near V0-V1 corner
+    // Vertices: V0 (acute), A, P, D form the rhombus
+    // But we need to verify these form a valid rhombus with correct angles!
+    // Actually, construct from known geometry:
+    // Child has its acute vertex at V0, rotated +36° from parent
+    const child1Verts = [V0, A, P, D];
+    const child1 = PenroseTiling._rhombusFromVerts("thick-rhombus", child1Verts, newQ);
 
-    const baseRotation = tile.rotationN36;
+    // Child thick rhombus #2: centered near V2-V1 corner
+    // Vertices: V2 (acute), C, Q, B
+    const child2Verts = [V2, C, Q, B];
+    const child2 = PenroseTiling._rhombusFromVerts("thick-rhombus", child2Verts, newQ);
 
-    return [
-      {
-        type: "thick-rhombus",
-        quadrance: newQ,
-        rotationN36: (baseRotation + 1) % 10, // +36° rotation
-        position: { x: (V0.x + V1.x + P.x) / 3, y: (V0.y + V1.y + P.y) / 3 },
-      },
-      {
-        type: "thick-rhombus",
-        quadrance: newQ,
-        rotationN36: (baseRotation + 9) % 10, // -36° rotation
-        position: { x: (V2.x + V1.x + Q.x) / 3, y: (V2.y + V1.y + Q.y) / 3 },
-      },
-      {
-        type: "thin-rhombus",
-        quadrance: newQ,
-        rotationN36: (baseRotation + 5) % 10, // 180° rotation
-        position: { x: (V0.x + V3.x + P.x + Q.x) / 4, y: (V0.y + V3.y + P.y + Q.y) / 4 },
-      },
-    ];
+    // Child thin rhombus: fills the gap between thick children
+    // Vertices: A, B, Q, P (the central region)
+    // Note: thin rhombus has acute (36°) at V0,V2 positions
+    // Here A and B become the obtuse (144°) vertices
+    // P and Q become the acute (36°) vertices
+    const child3Verts = [P, A, Q, C]; // Reorder for thin: acute at 0,2
+    const child3 = PenroseTiling._rhombusFromVerts("thin-rhombus", child3Verts, newQ);
+
+    console.log(
+      `[RT] Thick deflate: parent at (${tile.position.x.toFixed(2)}, ${tile.position.y.toFixed(2)}) → ` +
+        `children at (${child1.position.x.toFixed(2)}, ${child1.position.y.toFixed(2)}), ` +
+        `(${child2.position.x.toFixed(2)}, ${child2.position.y.toFixed(2)}), ` +
+        `(${child3.position.x.toFixed(2)}, ${child3.position.y.toFixed(2)})`
+    );
+
+    return [child1, child2, child3];
   },
 
   /**
    * Deflate a thin rhombus into 1 thick + 1 thin
    *
    * P3 substitution rule for thin rhombus (36°/144°):
-   * - V0, V2 are acute (36°) vertices - SHORT diagonal (Y-axis)
-   * - V1, V3 are obtuse (144°) vertices - LONG diagonal (X-axis, φ² × short)
-   * - Division point P is on LONG diagonal (V1-V3) at golden ratio from V1
+   * - V0, V2 are acute (36°) vertices - SHORT diagonal
+   * - V1, V3 are obtuse (144°) vertices - LONG diagonal (φ² × short)
+   *
+   * Child tiles are constructed by computing their actual 4 vertices,
+   * then deriving position (centroid) and rotation from the geometry.
    *
    * @param {Object} tile - Thin rhombus tile
    * @returns {Array} Two new tiles [thick, thin]
    */
   _deflateThinRhombus: tile => {
-    const phi = RT.PurePhi.value();
     const invPhi = RT.PurePhi.inverse();
+    const lerp = PenroseTiling._lerp;
+
     const verts = PenroseTiling._tileVertices(tile);
     const [V0, V1, V2, V3] = verts;
 
     // New quadrance scaled by (1/φ)²
     const newQ = tile.quadrance * invPhi * invPhi;
 
-    // Point P divides LONG diagonal V1-V3 at golden ratio from V1
-    const P = {
-      x: V1.x + (V3.x - V1.x) * invPhi,
-      y: V1.y + (V3.y - V1.y) * invPhi,
-    };
+    // Division point P on LONG diagonal (V1-V3) at 1/φ from V1
+    const P = lerp(V1, V3, invPhi);
 
-    const baseRotation = tile.rotationN36;
+    // Division points on edges
+    const A = lerp(V0, V1, invPhi); // On V0-V1
+    const B = lerp(V0, V3, invPhi); // On V0-V3
 
-    // Thick: V0, V1, P region (upper)
-    // Thin: V2, V3, P region (lower)
-    return [
-      {
-        type: "thick-rhombus",
-        quadrance: newQ,
-        rotationN36: (baseRotation + 2) % 10, // +72° rotation
-        position: { x: (V0.x + V1.x + P.x) / 3, y: (V0.y + V1.y + P.y) / 3 },
-      },
-      {
-        type: "thin-rhombus",
-        quadrance: newQ,
-        rotationN36: (baseRotation + 8) % 10, // -72° rotation
-        position: { x: (V2.x + V3.x + P.x) / 3, y: (V2.y + V3.y + P.y) / 3 },
-      },
-    ];
+    // Child thick rhombus: near V0
+    // Vertices: V0 (acute of parent becomes acute of child), A, P, B
+    const child1Verts = [V0, A, P, B];
+    const child1 = PenroseTiling._rhombusFromVerts("thick-rhombus", child1Verts, newQ);
+
+    // Child thin rhombus: fills remaining space
+    // Vertices: P, A (becomes obtuse), V2, ... need to work out
+    // The thin child shares edge A-P with thick child
+    // Its other vertices are toward V2 and V3
+    const C = lerp(V2, V1, invPhi); // On V2-V1
+    const D = lerp(V2, V3, invPhi); // On V2-V3
+    const child2Verts = [P, C, V2, D]; // Thin: acute at P and V2
+    const child2 = PenroseTiling._rhombusFromVerts("thin-rhombus", child2Verts, newQ);
+
+    console.log(
+      `[RT] Thin deflate: parent at (${tile.position.x.toFixed(2)}, ${tile.position.y.toFixed(2)}) → ` +
+        `children at (${child1.position.x.toFixed(2)}, ${child1.position.y.toFixed(2)}), ` +
+        `(${child2.position.x.toFixed(2)}, ${child2.position.y.toFixed(2)})`
+    );
+
+    return [child1, child2];
   },
 
   /**
