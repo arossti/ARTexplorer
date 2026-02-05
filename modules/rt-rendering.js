@@ -1002,47 +1002,75 @@ export function initScene(THREE, OrbitControls, RT) {
         }
       });
 
-      // VISUAL BOUNDARY: Draw the tiling pattern's perimeter (for debugging scale)
-      // Sort boundary vertices by angle to form a closed polygon
-      if (boundaryVertexIndices.length >= 3) {
-        // Get 2D boundary vertices and sort by angle around origin
-        const boundaryVerts2D = boundaryVertexIndices.map(i => ({
-          index: i,
-          v: pentTiling.vertices[i],
-          angle: Math.atan2(pentTiling.vertices[i].y, pentTiling.vertices[i].x)
-        }));
-        boundaryVerts2D.sort((a, b) => a.angle - b.angle);
+      // VISUAL BOUNDARY: Draw PENTAGONAL bounding container (for debugging scale)
+      // The tiling's outermost vertices lie ON the edges of this bounding pentagon
+      // Pentagon circumradius = maxExtent / cos(36°), where maxExtent is the inradius
+      {
+        const cos36 = RT.PurePhi.pentagon.cos36();
 
-        // Create boundary line geometry (closed loop)
-        const boundaryPositions = [];
-        for (let i = 0; i < boundaryVerts2D.length; i++) {
-          const curr = boundaryVerts2D[i];
-          const next = boundaryVerts2D[(i + 1) % boundaryVerts2D.length];
+        // Bounding pentagon circumradius: if tips at maxExtent lie on edges,
+        // then maxExtent is the inradius, circumradius = maxExtent / cos(36°)
+        const boundingPentRadius = maxExtent / cos36;
 
-          // Transform 2D to 3D (same as above)
-          const p1 = transformed3DVertices[curr.index];
-          const p2 = transformed3DVertices[next.index];
-
-          boundaryPositions.push(p1.x, p1.y, p1.z);
-          boundaryPositions.push(p2.x, p2.y, p2.z);
+        // Generate 5 pentagon vertices in 2D (aligned with face vertices at 90° start)
+        // Face vertex 0 is at +Y direction (90°), so bounding pentagon aligns
+        const pentagonVerts2D = [];
+        for (let i = 0; i < 5; i++) {
+          const angle = Math.PI / 2 + i * (2 * Math.PI / 5); // Start at 90°, CCW
+          pentagonVerts2D.push({
+            x: boundingPentRadius * Math.cos(angle),
+            y: boundingPentRadius * Math.sin(angle)
+          });
         }
 
-        const boundaryGeometry = new THREE.BufferGeometry();
-        boundaryGeometry.setAttribute(
+        // Transform to 3D and create line segments
+        const pentBoundaryPositions = [];
+        for (let i = 0; i < 5; i++) {
+          const curr = pentagonVerts2D[i];
+          const next = pentagonVerts2D[(i + 1) % 5];
+
+          // Scale and transform (same as tiling vertices)
+          const currX = curr.x * tilingScale;
+          const currY = curr.y * tilingScale;
+          const nextX = next.x * tilingScale;
+          const nextY = next.y * tilingScale;
+
+          const p1 = new THREE.Vector3(
+            center.x + currX * uBasis.x + currY * vBasis.x,
+            center.y + currX * uBasis.y + currY * vBasis.y,
+            center.z + currX * uBasis.z + currY * vBasis.z
+          );
+          const p2 = new THREE.Vector3(
+            center.x + nextX * uBasis.x + nextY * vBasis.x,
+            center.y + nextX * uBasis.y + nextY * vBasis.y,
+            center.z + nextX * uBasis.z + nextY * vBasis.z
+          );
+
+          pentBoundaryPositions.push(p1.x, p1.y, p1.z);
+          pentBoundaryPositions.push(p2.x, p2.y, p2.z);
+        }
+
+        const pentBoundaryGeometry = new THREE.BufferGeometry();
+        pentBoundaryGeometry.setAttribute(
           "position",
-          new THREE.Float32BufferAttribute(boundaryPositions, 3)
+          new THREE.Float32BufferAttribute(pentBoundaryPositions, 3)
         );
 
-        const boundaryMaterial = new THREE.LineBasicMaterial({
-          color: 0xff00ff, // Magenta - distinct from cyan tiling
+        const pentBoundaryMaterial = new THREE.LineBasicMaterial({
+          color: 0xff00ff, // Magenta pentagon boundary
           linewidth: 2,
           depthTest: true,
           depthWrite: true,
         });
 
-        const boundaryLines = new THREE.LineSegments(boundaryGeometry, boundaryMaterial);
-        boundaryLines.renderOrder = 5; // Render on top of everything
-        group.add(boundaryLines);
+        const pentBoundaryLines = new THREE.LineSegments(pentBoundaryGeometry, pentBoundaryMaterial);
+        pentBoundaryLines.renderOrder = 5;
+        group.add(pentBoundaryLines);
+
+        // Log bounding pentagon info
+        if (faceIndices === faces[0]) {
+          console.log(`[RT] Bounding pentagon: maxExtent=${maxExtent.toFixed(4)} (inradius), circumR=${boundingPentRadius.toFixed(4)}`);
+        }
       }
     });
 
