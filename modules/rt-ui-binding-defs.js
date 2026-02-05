@@ -18,7 +18,7 @@ export const simpleCheckboxBindings = [
   // Base polyhedra (just trigger updateGeometry)
   { id: "showPoint", type: "checkbox" },
   { id: "showCube", type: "checkbox" },
-  { id: "showDodecahedron", type: "checkbox" },
+  // showDodecahedron moved to checkboxWithControlsBindings (has Face Tiling option)
   { id: "showCuboctahedron", type: "checkbox" },
   { id: "showRhombicDodecahedron", type: "checkbox" },
 
@@ -109,6 +109,16 @@ export const checkboxWithControlsBindings = [
     id: "geodesicIcosaFaceTiling",
     type: "checkbox-controls",
     controlsId: "geodesic-icosa-face-tiling-options",
+  },
+  {
+    id: "showDodecahedron",
+    type: "checkbox-controls",
+    controlsId: "dodecahedron-options",
+  },
+  {
+    id: "dodecahedronFaceTiling",
+    type: "checkbox-controls",
+    controlsId: "dodecahedron-face-tiling-options",
   },
   {
     id: "showPrism",
