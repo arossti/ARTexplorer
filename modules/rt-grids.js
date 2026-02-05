@@ -886,6 +886,14 @@ export const Grids = {
     const showFace = options.showFace !== false;
     const R = Math.sqrt(quadrance); // Overall pattern radius (sqrt at GPU boundary only)
 
+    // Cap generations at 3 (see TODO comment below for Gen 4+ research)
+    const maxGen = Math.min(generations, 3);
+    if (generations > 3) {
+      console.warn(
+        `[RT] Pentagon array: Gen ${generations} requested, capped at 3 (proper extension requires Penrose research)`
+      );
+    }
+
     // RT-pure golden ratio constants
     const phi = RT.PurePhi.value(); // φ = (1 + √5)/2
     const invPhi = RT.PurePhi.inverse(); // 1/φ = φ - 1
@@ -960,7 +968,7 @@ export const Grids = {
 
     let pentagonCount = 0;
 
-    if (generations === 1) {
+    if (maxGen === 1) {
       // Single central pentagon with vertex pointing up
       addPentagon(0, 0, R, 5); // 5×36° = 180° rotation so vertex points up
       pentagonCount = 1;
@@ -989,7 +997,7 @@ export const Grids = {
         pentagonCount++;
       }
 
-      if (generations >= 3) {
+      if (maxGen >= 3) {
         // Outer ring: 5 pentagons positioned to interlock with inner ring
         // Offset by 36° from inner ring and scaled by φ
         const outerRingRadius = innerRingRadius * phi;
@@ -1003,27 +1011,17 @@ export const Grids = {
         }
       }
 
-      if (generations >= 4) {
-        // Additional outer rings with φ-scaling
-        for (let ring = 3; ring < generations; ring++) {
-          const ringRadius = innerRingRadius * RT.PurePhi.penrose.phiPowerN(ring - 1);
-          const pentagonsInRing = 5 * ring; // More pentagons in outer rings
-          const stepsPerPentagon = Math.round(10 / ring); // Distribute around ring
-
-          for (let i = 0; i < pentagonsInRing; i++) {
-            // Approximate angular spacing using available 36° steps
-            const stepOffset = (ring % 2) * (5 / ring);
-            const rotationSteps = Math.round(i * stepsPerPentagon + stepOffset);
-            const pos = rotateN36(0, ringRadius, rotationSteps);
-            addPentagon(pos.x, pos.y, pentRadius, rotationSteps);
-            pentagonCount++;
-          }
-        }
-      }
+      // TODO: Gen 4+ pentagon extension requires research into proper Penrose P3 tiling rules.
+      // Current implementation caps at Gen 3 (inner 5 + outer 5 = 10 pentagons).
+      // For deeper nesting, consider:
+      // 1. Geodesic frequency as parent multiplier for face tiling (polygons as children)
+      // 2. True Penrose P3 deflation rules for kites/darts → pentagon subdivision
+      // 3. Research how pentagons properly nest in Penrose patterns
+      // See: Geometry documents/Penrose-Spheres.md for context
     }
 
     console.log(
-      `[RT] Pentagonal array: gen=${generations}, ` +
+      `[RT] Pentagonal array: gen=${maxGen}, ` +
         `pentagons=${pentagonCount}, V=${vertices.length}, E=${edges.length}, F=${faces.length}`
     );
 
