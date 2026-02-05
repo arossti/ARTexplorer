@@ -75,16 +75,30 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
       const spread = Math.pow(Math.sin(centralAngle), 2);
       let Q_edge = 4 * scale * spread; // RT-pure quadrance result
 
-      // TILING SUBDIVISION: When polygon is tiled, edge length divides by 2^(gen-1)
-      // So edge quadrance divides by 4^(gen-1)
-      // This ensures PACKED nodes scale correctly with subdivided tiles
+      // TILING SUBDIVISION: Different tilings have different scaling
       if (options.tilingGenerations && options.tilingGenerations > 1) {
         const gen = options.tilingGenerations;
-        const divisionsPerEdge = Math.pow(2, gen - 1);
-        Q_edge = Q_edge / (divisionsPerEdge * divisionsPerEdge);
-        console.log(
-          `[RT] Polygon tiling: gen=${gen}, edge Q scaled by 1/${divisionsPerEdge * divisionsPerEdge}`
-        );
+
+        if (sides === 5) {
+          // PENTAGON ARRAY: Gen 2+ uses pentagons with circumradius R/φ (not R)
+          // Pentagon circumradius scales by 1/φ, so edge scales by 1/φ
+          // Edge quadrance scales by (1/φ)² = invPhi²
+          // This is RT-pure using identity: 1/φ = φ - 1, so (1/φ)² = (φ-1)² = φ² - 2φ + 1 = 3 - φ
+          const invPhi = RT.PurePhi.inverse(); // φ - 1 ≈ 0.618
+          const invPhiSq = invPhi * invPhi; // (φ-1)² ≈ 0.382
+          Q_edge = Q_edge * invPhiSq;
+          console.log(
+            `[RT] Pentagon array: gen=${gen}, edge Q scaled by 1/φ² ≈ ${invPhiSq.toFixed(4)}`
+          );
+        } else {
+          // TRIANGULAR/SQUARE/HEXAGONAL TILING: edge divides by 2^(gen-1)
+          // So edge quadrance divides by 4^(gen-1)
+          const divisionsPerEdge = Math.pow(2, gen - 1);
+          Q_edge = Q_edge / (divisionsPerEdge * divisionsPerEdge);
+          console.log(
+            `[RT] Polygon tiling: gen=${gen}, edge Q scaled by 1/${divisionsPerEdge * divisionsPerEdge}`
+          );
+        }
       }
 
       return Q_edge;
