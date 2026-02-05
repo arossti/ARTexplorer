@@ -862,4 +862,282 @@ export const Grids = {
       },
     };
   },
+
+  /**
+   * Generate a pentagonal tiling by subdividing a regular pentagon
+   * Pentagons don't tile the plane, so we subdivide into 5 triangular sectors
+   * from the center, then each sector is subdivided like triangular tiling.
+   *
+   * @param {number} quadrance - Circumradius quadrance of the original pentagon (Q = R²)
+   * @param {number} generations - Number of subdivision generations
+   * @param {Object} options - Configuration options
+   * @param {boolean} options.showFace - Whether to include faces (default true)
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  pentagonalTiling: (quadrance, generations = 1, options = {}) => {
+    const showFace = options.showFace !== false;
+    const R = Math.sqrt(quadrance);
+    const n = Math.pow(2, generations - 1); // Divisions per radial edge
+
+    // Pentagon vertices (5-fold symmetry, first vertex at top)
+    const pentagonVerts = [];
+    for (let i = 0; i < 5; i++) {
+      const angle = Math.PI / 2 + (i * 2 * Math.PI) / 5; // Start at top
+      pentagonVerts.push(
+        new THREE.Vector3(R * Math.cos(angle), R * Math.sin(angle), 0)
+      );
+    }
+
+    const center = new THREE.Vector3(0, 0, 0);
+    const vertices = [center]; // Index 0 is center
+    const vertexMap = { "0,0,0": 0 }; // Center at origin
+
+    // Helper to get or create vertex
+    const getVertex = (x, y, z) => {
+      const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+      if (vertexMap[key] !== undefined) {
+        return vertexMap[key];
+      }
+      const idx = vertices.length;
+      vertices.push(new THREE.Vector3(x, y, z));
+      vertexMap[key] = idx;
+      return idx;
+    };
+
+    const edges = [];
+    const edgeSet = new Set();
+    const faces = [];
+
+    const addEdge = (v1, v2) => {
+      const key = v1 < v2 ? `${v1}-${v2}` : `${v2}-${v1}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        edges.push([v1, v2]);
+      }
+    };
+
+    // For each of the 5 sectors (center to edge)
+    for (let sector = 0; sector < 5; sector++) {
+      const A = center;
+      const B = pentagonVerts[sector];
+      const C = pentagonVerts[(sector + 1) % 5];
+
+      // Subdivide this triangle using barycentric coords
+      for (let i = 0; i <= n; i++) {
+        for (let j = 0; j <= n - i; j++) {
+          const k = n - i - j;
+          // Barycentric interpolation
+          const x = (i * A.x + j * B.x + k * C.x) / n;
+          const y = (i * A.y + j * B.y + k * C.y) / n;
+          getVertex(x, y, 0);
+        }
+      }
+    }
+
+    // Generate edges and faces for each sector
+    for (let sector = 0; sector < 5; sector++) {
+      const A = center;
+      const B = pentagonVerts[sector];
+      const C = pentagonVerts[(sector + 1) % 5];
+
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n - i; j++) {
+          const k = n - i - j;
+          // Current triangle vertices (barycentric)
+          const p0 = {
+            x: (i * A.x + j * B.x + k * C.x) / n,
+            y: (i * A.y + j * B.y + k * C.y) / n,
+          };
+          const p1 = {
+            x: (i * A.x + (j + 1) * B.x + (k - 1) * C.x) / n,
+            y: (i * A.y + (j + 1) * B.y + (k - 1) * C.y) / n,
+          };
+          const p2 = {
+            x: ((i + 1) * A.x + j * B.x + (k - 1) * C.x) / n,
+            y: ((i + 1) * A.y + j * B.y + (k - 1) * C.y) / n,
+          };
+
+          const v0 = getVertex(p0.x, p0.y, 0);
+          const v1 = getVertex(p1.x, p1.y, 0);
+          const v2 = getVertex(p2.x, p2.y, 0);
+
+          addEdge(v0, v1);
+          addEdge(v1, v2);
+          addEdge(v2, v0);
+          if (showFace) faces.push([v0, v2, v1]); // CCW for +Z normal
+
+          // Downward triangle (if valid)
+          if (j + 1 <= n - i - 1) {
+            const p3 = {
+              x: ((i + 1) * A.x + (j + 1) * B.x + (k - 2) * C.x) / n,
+              y: ((i + 1) * A.y + (j + 1) * B.y + (k - 2) * C.y) / n,
+            };
+            const v3 = getVertex(p3.x, p3.y, 0);
+            addEdge(v1, v3);
+            addEdge(v3, v2);
+            if (showFace) faces.push([v1, v2, v3]); // CCW for +Z normal
+          }
+        }
+      }
+    }
+
+    const tileCount = 5 * n * n; // 5 sectors × n² triangles each
+    console.log(
+      `[RT] Pentagonal tiling: gen=${generations}, n=${n}, ` +
+        `V=${vertices.length}, E=${edges.length}, F=${faces.length}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        type: "pentagonal-tiling",
+        generations,
+        divisionsPerEdge: n,
+        tileCount,
+        circumradiusQuadrance: quadrance,
+        rtPure: true,
+      },
+    };
+  },
+
+  /**
+   * Generate a hexagonal tiling by subdividing a regular hexagon
+   * Subdivides into 6 equilateral triangular sectors from center,
+   * then each sector is subdivided like triangular tiling.
+   *
+   * @param {number} quadrance - Circumradius quadrance of the original hexagon (Q = R²)
+   * @param {number} generations - Number of subdivision generations
+   * @param {Object} options - Configuration options
+   * @param {boolean} options.showFace - Whether to include faces (default true)
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  hexagonalTiling: (quadrance, generations = 1, options = {}) => {
+    const showFace = options.showFace !== false;
+    const R = Math.sqrt(quadrance);
+    const n = Math.pow(2, generations - 1); // Divisions per radial edge
+
+    // Hexagon vertices (6-fold symmetry, first vertex at right)
+    const hexagonVerts = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * Math.PI) / 3; // 60° increments, start at right
+      hexagonVerts.push(
+        new THREE.Vector3(R * Math.cos(angle), R * Math.sin(angle), 0)
+      );
+    }
+
+    const center = new THREE.Vector3(0, 0, 0);
+    const vertices = [center]; // Index 0 is center
+    const vertexMap = { "0,0,0": 0 }; // Center at origin
+
+    // Helper to get or create vertex
+    const getVertex = (x, y, z) => {
+      const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+      if (vertexMap[key] !== undefined) {
+        return vertexMap[key];
+      }
+      const idx = vertices.length;
+      vertices.push(new THREE.Vector3(x, y, z));
+      vertexMap[key] = idx;
+      return idx;
+    };
+
+    const edges = [];
+    const edgeSet = new Set();
+    const faces = [];
+
+    const addEdge = (v1, v2) => {
+      const key = v1 < v2 ? `${v1}-${v2}` : `${v2}-${v1}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        edges.push([v1, v2]);
+      }
+    };
+
+    // For each of the 6 sectors (center to edge)
+    for (let sector = 0; sector < 6; sector++) {
+      const A = center;
+      const B = hexagonVerts[sector];
+      const C = hexagonVerts[(sector + 1) % 6];
+
+      // Subdivide this triangle using barycentric coords
+      for (let i = 0; i <= n; i++) {
+        for (let j = 0; j <= n - i; j++) {
+          const k = n - i - j;
+          // Barycentric interpolation
+          const x = (i * A.x + j * B.x + k * C.x) / n;
+          const y = (i * A.y + j * B.y + k * C.y) / n;
+          getVertex(x, y, 0);
+        }
+      }
+    }
+
+    // Generate edges and faces for each sector
+    for (let sector = 0; sector < 6; sector++) {
+      const A = center;
+      const B = hexagonVerts[sector];
+      const C = hexagonVerts[(sector + 1) % 6];
+
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n - i; j++) {
+          const k = n - i - j;
+          // Current triangle vertices (barycentric)
+          const p0 = {
+            x: (i * A.x + j * B.x + k * C.x) / n,
+            y: (i * A.y + j * B.y + k * C.y) / n,
+          };
+          const p1 = {
+            x: (i * A.x + (j + 1) * B.x + (k - 1) * C.x) / n,
+            y: (i * A.y + (j + 1) * B.y + (k - 1) * C.y) / n,
+          };
+          const p2 = {
+            x: ((i + 1) * A.x + j * B.x + (k - 1) * C.x) / n,
+            y: ((i + 1) * A.y + j * B.y + (k - 1) * C.y) / n,
+          };
+
+          const v0 = getVertex(p0.x, p0.y, 0);
+          const v1 = getVertex(p1.x, p1.y, 0);
+          const v2 = getVertex(p2.x, p2.y, 0);
+
+          addEdge(v0, v1);
+          addEdge(v1, v2);
+          addEdge(v2, v0);
+          if (showFace) faces.push([v0, v2, v1]); // CCW for +Z normal
+
+          // Downward triangle (if valid)
+          if (j + 1 <= n - i - 1) {
+            const p3 = {
+              x: ((i + 1) * A.x + (j + 1) * B.x + (k - 2) * C.x) / n,
+              y: ((i + 1) * A.y + (j + 1) * B.y + (k - 2) * C.y) / n,
+            };
+            const v3 = getVertex(p3.x, p3.y, 0);
+            addEdge(v1, v3);
+            addEdge(v3, v2);
+            if (showFace) faces.push([v1, v2, v3]); // CCW for +Z normal
+          }
+        }
+      }
+    }
+
+    const tileCount = 6 * n * n; // 6 sectors × n² triangles each
+    console.log(
+      `[RT] Hexagonal tiling: gen=${generations}, n=${n}, ` +
+        `V=${vertices.length}, E=${edges.length}, F=${faces.length}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        type: "hexagonal-tiling",
+        generations,
+        divisionsPerEdge: n,
+        tileCount,
+        circumradiusQuadrance: quadrance,
+        rtPure: true,
+      },
+    };
+  },
 };
