@@ -852,6 +852,14 @@ export function initScene(THREE, OrbitControls, RT) {
       // Calculate face circumradius (distance from center to vertex)
       const faceRadius = center.distanceTo(faceVerts[0]);
 
+      // Scale factor for tiling:
+      // - Gen 1: Single pentagon with circumradius R matches the face directly
+      // - Gen 2+: Pentagon array outer extent is R×φ, so scale by 1/φ to fit inside face
+      // Using RT-pure golden ratio
+      const phi = RT.PurePhi.value();
+      const tilingScale =
+        generations === 1 ? faceRadius : faceRadius / phi;
+
       // Build transformation from 2D tiling plane (XY) to 3D face plane
       // Create orthonormal basis vectors for the face plane:
       // uBasis = direction from center to first vertex (the "X" axis on face)
@@ -865,9 +873,9 @@ export function initScene(THREE, OrbitControls, RT) {
 
       // Transform each vertex from 2D tiling to 3D face
       const transformed3DVertices = pentTiling.vertices.map(v2d => {
-        // Scale 2D coords by face radius
-        const x2d = v2d.x * faceRadius;
-        const y2d = v2d.y * faceRadius;
+        // Scale 2D coords by tiling scale (accounts for φ-scaling of pentagon array)
+        const x2d = v2d.x * tilingScale;
+        const y2d = v2d.y * tilingScale;
 
         // Position in 3D: center + x*uBasis + y*vBasis
         return new THREE.Vector3(
@@ -903,7 +911,7 @@ export function initScene(THREE, OrbitControls, RT) {
     });
 
     console.log(
-      `[RT] Dodecahedron Face Tiling: ${faces.length} faces × ${pentTiling.metadata.pentagonCount} pentagons = ${faces.length * pentTiling.metadata.pentagonCount} total pentagons`
+      `[RT] Dodecahedron Face Tiling: ${faces.length} faces × ${pentTiling.metadata.pentagonCount} pentagons = ${faces.length * pentTiling.metadata.pentagonCount} total pentagons (scale=1/φ for gen ${generations})`
     );
   }
 
