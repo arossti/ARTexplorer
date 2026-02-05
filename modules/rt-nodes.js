@@ -73,7 +73,21 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
       const sides = options.sides || 3;
       const centralAngle = Math.PI / sides;
       const spread = Math.pow(Math.sin(centralAngle), 2);
-      return 4 * scale * spread; // RT-pure quadrance result
+      let Q_edge = 4 * scale * spread; // RT-pure quadrance result
+
+      // TILING SUBDIVISION: When polygon is tiled, edge length divides by 2^(gen-1)
+      // So edge quadrance divides by 4^(gen-1)
+      // This ensures PACKED nodes scale correctly with subdivided tiles
+      if (options.tilingGenerations && options.tilingGenerations > 1) {
+        const gen = options.tilingGenerations;
+        const divisionsPerEdge = Math.pow(2, gen - 1);
+        Q_edge = Q_edge / (divisionsPerEdge * divisionsPerEdge);
+        console.log(
+          `[RT] Polygon tiling: gen=${gen}, edge Q scaled by 1/${divisionsPerEdge * divisionsPerEdge}`
+        );
+      }
+
+      return Q_edge;
     }
 
     case "prism": {
@@ -276,9 +290,11 @@ function getCachedNodeGeometry(
   scale,
   options = {}
 ) {
-  // Include options.sides in cache key for polygon (different n-gons have different edge quadrance)
+  // Include options.sides and tilingGenerations in cache key for polygon
+  // Different n-gons have different edge quadrance, and tiling changes edge length
   const sidesKey = options.sides ? `-n${options.sides}` : "";
-  const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}${sidesKey}`;
+  const tilingKey = options.tilingGenerations ? `-gen${options.tilingGenerations}` : "";
+  const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}${sidesKey}${tilingKey}`;
 
   if (nodeGeometryCache.has(cacheKey)) {
     return nodeGeometryCache.get(cacheKey);

@@ -687,7 +687,15 @@ export function initScene(THREE, OrbitControls, RT) {
         group.userData.parameters?.quadrance
       ) {
         scale = group.userData.parameters.quadrance;
-        nodeOptions = { sides: group.userData.parameters.sides || 3 };
+        nodeOptions = {
+          sides: group.userData.parameters.sides || 3,
+          // Pass tiling generations for PACKED node scaling
+          tilingGenerations:
+            group.userData.parameters.tilingEnabled &&
+            group.userData.parameters.tilingGenerations > 1
+              ? group.userData.parameters.tilingGenerations
+              : undefined,
+        };
       } else if (
         polyType === "prism" &&
         group.userData.parameters?.baseQuadrance
@@ -890,10 +898,67 @@ export function initScene(THREE, OrbitControls, RT) {
       const polygonShowFace =
         document.getElementById("polygonShowFace")?.checked !== false;
 
-      const polygonData = Polyhedra.polygon(polygonQuadrance, {
+      // Check if tiling is enabled
+      const tilingEnabled =
+        document.getElementById("polygonEnableTiling")?.checked || false;
+      const tilingGenerations = tilingEnabled
+        ? parseInt(
+            document.getElementById("polygonTilingGenerations")?.value || "2"
+          )
+        : 1;
+
+      // Update tiling info text based on polygon type
+      const tilingInfoEl = document.getElementById("polygonTilingInfo");
+      if (tilingInfoEl) {
+        if (polygonSides === 3) {
+          const tileCount = Math.pow(4, tilingGenerations - 1);
+          tilingInfoEl.textContent = `Triangle: ${tileCount} tiles (4^${tilingGenerations - 1})`;
+        } else if (polygonSides === 4) {
+          const tileCount = Math.pow(4, tilingGenerations - 1);
+          tilingInfoEl.textContent = `Square: ${tileCount} tiles (4^${tilingGenerations - 1})`;
+        } else if (polygonSides === 6) {
+          tilingInfoEl.textContent = `Hexagon: tiling not yet implemented`;
+        } else {
+          tilingInfoEl.textContent = `${polygonSides}-gon: tiling not supported`;
+        }
+      }
+
+      let polygonData;
+
+      if (tilingEnabled && polygonSides === 3 && tilingGenerations > 1) {
+        // Generate triangular tiling using Grids module
+        polygonData = Grids.triangularTiling(polygonQuadrance, tilingGenerations, {
+          showFace: polygonShowFace,
+        });
+      } else if (tilingEnabled && polygonSides === 4 && tilingGenerations > 1) {
+        // Generate square tiling using Grids module
+        polygonData = Grids.squareTiling(polygonQuadrance, tilingGenerations, {
+          showFace: polygonShowFace,
+        });
+      } else {
+        // Single polygon (no tiling or unsupported)
+        polygonData = Polyhedra.polygon(polygonQuadrance, {
+          sides: polygonSides,
+          showFace: polygonShowFace,
+        });
+      }
+
+      // Set userData.parameters BEFORE renderPolyhedron so node rendering
+      // has access to current tiling values (fixes PACKED cache key issue)
+      polygonGroup.userData.type = "polygon";
+      polygonGroup.userData.parameters = {
+        quadrance: polygonQuadrance,
+        circumradius: Math.sqrt(polygonQuadrance),
         sides: polygonSides,
+        edgeQuadrance: polygonData.metadata?.edgeQuadrance,
+        edgeLength: polygonData.metadata?.edgeLength,
+        edgeWeight: polygonEdgeWeight,
         showFace: polygonShowFace,
-      });
+        tilingEnabled,
+        tilingGenerations,
+        rtPure: polygonData.metadata?.rtPure,
+      };
+
       renderPolyhedron(
         polygonGroup,
         polygonData,
@@ -903,17 +968,6 @@ export function initScene(THREE, OrbitControls, RT) {
           lineWidth: polygonEdgeWeight,
         }
       );
-      polygonGroup.userData.type = "polygon";
-      polygonGroup.userData.parameters = {
-        quadrance: polygonQuadrance,
-        circumradius: Math.sqrt(polygonQuadrance),
-        sides: polygonSides,
-        edgeQuadrance: polygonData.metadata.edgeQuadrance,
-        edgeLength: polygonData.metadata.edgeLength,
-        edgeWeight: polygonEdgeWeight,
-        showFace: polygonShowFace,
-        rtPure: polygonData.metadata.rtPure, // Track which engine was used
-      };
       polygonGroup.visible = true;
     } else {
       polygonGroup.visible = false;
