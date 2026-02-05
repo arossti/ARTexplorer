@@ -188,6 +188,7 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
     case "geodesicIcosahedron": {
       // Geodesics subdivide base edges - edge Q scales by 1/frequency²
       // At frequency F, each base edge is divided into F segments
+      // For sphere projections, edge Q also scales with (projection radius)²
       const baseType = type.replace("geodesic", "").toLowerCase();
       let Q_edge = getPolyhedronEdgeQuadrance(baseType, scale);
 
@@ -195,8 +196,79 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
       if (options.frequency && options.frequency > 1) {
         const freq = options.frequency;
         Q_edge = Q_edge / (freq * freq);
+      }
+
+      const projection = options.projection || "out";
+
+      // SPHERE PROJECTION STRETCH: When projecting flat vertices to a sphere,
+      // edges STRETCH because vertices near face centers move outward.
+      // This stretch factor is empirically derived from actual geodesic avgQ.
+      // For "off" (flat) projection, no stretch occurs.
+      if (projection !== "off") {
+        // Sphere projection stretch factors (derived from rt-polyhedra.js avgQ validation)
+        // These account for the flat→sphere projection before any radius scaling
+        let stretchFactor = 1.0;
+
+        if (type === "geodesicTetrahedron") {
+          // Tetrahedron has large faces, significant stretch
+          stretchFactor = 1.5; // Empirical approximation
+        } else if (type === "geodesicOctahedron") {
+          // Octahedron has medium faces
+          stretchFactor = 1.35; // Empirical approximation
+        } else if (type === "geodesicIcosahedron") {
+          // Icosahedron has smallest faces, least stretch
+          // Verified: avgQ ≈ 0.000251, formula gives 0.000197 → ratio ≈ 1.27
+          stretchFactor = 1.27;
+        }
+
+        Q_edge = Q_edge * stretchFactor;
+
+        // RADIUS SCALING: For mid/in projections, scale by sphere radius ratio
+        // relative to outsphere (which is the baseline for stretch factors above)
+        if (projection !== "out") {
+          let radiusScale = 1.0;
+
+          if (type === "geodesicTetrahedron") {
+            // OutSphere: Q = 3s², MidSphere: Q = s², InSphere: Q = s²/3
+            if (projection === "mid") {
+              radiusScale = 1 / 3; // s² / (3s²)
+            } else if (projection === "in") {
+              radiusScale = 1 / 9; // (s²/3) / (3s²)
+            }
+          } else if (type === "geodesicOctahedron") {
+            // OutSphere: Q = s², MidSphere: Q = s²/2, InSphere: Q = s²/3
+            if (projection === "mid") {
+              radiusScale = 1 / 2; // (s²/2) / s²
+            } else if (projection === "in") {
+              radiusScale = 1 / 3; // (s²/3) / s²
+            }
+          } else if (type === "geodesicIcosahedron") {
+            // OutSphere: Q = s²
+            // MidSphere: Q = s² × φ²/(φ+2) ≈ 0.724s²
+            // InSphere: Q = s² × (3-√5)/2 ≈ 0.382s²
+            const phi = RT.PurePhi.value();
+            const phiSq = RT.PurePhi.squared(); // φ² = φ + 1
+            if (projection === "mid") {
+              radiusScale = phiSq / (phi + 2); // ≈ 0.724
+            } else if (projection === "in") {
+              radiusScale = (3 - RT.Phi.sqrt5()) / 2; // ≈ 0.382
+            }
+          }
+
+          Q_edge = Q_edge * radiusScale;
+          console.log(
+            `[RT] Geodesic ${type}: projection=${projection}, stretch=${stretchFactor.toFixed(2)}, radius scale=${radiusScale.toFixed(4)}`
+          );
+        } else {
+          console.log(
+            `[RT] Geodesic ${type}: projection=${projection}, stretch=${stretchFactor.toFixed(2)}`
+          );
+        }
+      }
+
+      if (options.frequency && options.frequency > 1) {
         console.log(
-          `[RT] Geodesic ${type}: freq=${freq}, edge Q scaled by 1/${freq * freq}`
+          `[RT] Geodesic ${type}: freq=${options.frequency}, projection=${projection}, edge Q=${Q_edge.toFixed(6)}`
         );
       }
 
@@ -302,12 +374,15 @@ function getCachedNodeGeometry(
   scale,
   options = {}
 ) {
-  // Include options in cache key: sides for polygons, tilingGenerations, frequency for geodesics
+  // Include options in cache key: sides for polygons, tilingGenerations, frequency, projection for geodesics
   // Different configurations have different edge quadrance values
   const sidesKey = options.sides ? `-n${options.sides}` : "";
-  const tilingKey = options.tilingGenerations ? `-gen${options.tilingGenerations}` : "";
+  const tilingKey = options.tilingGenerations
+    ? `-gen${options.tilingGenerations}`
+    : "";
   const freqKey = options.frequency ? `-f${options.frequency}` : "";
-  const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}${sidesKey}${tilingKey}${freqKey}`;
+  const projKey = options.projection ? `-${options.projection}` : "";
+  const cacheKey = `${useRT ? "rt" : "classical"}-${nodeSize}-${polyhedronType || "default"}-${scale || 1}${sidesKey}${tilingKey}${freqKey}${projKey}`;
 
   if (nodeGeometryCache.has(cacheKey)) {
     return nodeGeometryCache.get(cacheKey);
