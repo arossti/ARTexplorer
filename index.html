@@ -1189,12 +1189,59 @@
                 <!-- Show Face Checkbox -->
                 <div
                   class="penrose-face-container"
-                  style="display: flex; gap: 10px; align-items: center"
+                  style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px"
                 >
                   <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="penroseShowFace" checked />
                     Show Face
                   </label>
+                </div>
+                <!-- Tiling Generation Controls -->
+                <div style="border-top: 1px solid #444; padding-top: 8px; margin-top: 5px">
+                  <label class="checkbox-label" style="font-size: 0.85em; margin-bottom: 5px; display: block">
+                    <input type="checkbox" id="penroseTilingEnabled" />
+                    Enable Tiling (Deflation)
+                  </label>
+                  <div
+                    id="penrose-deflation-controls"
+                    style="display: none; margin-left: 10px; margin-top: 5px"
+                  >
+                    <!-- Seed Selection -->
+                    <div style="margin-bottom: 5px">
+                      <label style="font-size: 0.8em; display: block; margin-bottom: 3px">Seed:</label>
+                      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                        <label style="font-size: 0.8em">
+                          <input type="radio" name="penroseSeed" value="star" checked />
+                          Star
+                        </label>
+                        <label style="font-size: 0.8em">
+                          <input type="radio" name="penroseSeed" value="sun" />
+                          Sun
+                        </label>
+                        <label style="font-size: 0.8em">
+                          <input type="radio" name="penroseSeed" value="cartwheel" />
+                          Cartwheel
+                        </label>
+                        <label style="font-size: 0.8em">
+                          <input type="radio" name="penroseSeed" value="single-thick" />
+                          Single
+                        </label>
+                      </div>
+                    </div>
+                    <!-- Generations Slider -->
+                    <div style="display: flex; gap: 8px; align-items: center">
+                      <label style="font-size: 0.8em">Generations:</label>
+                      <input
+                        type="range"
+                        id="penroseGenerations"
+                        min="0"
+                        max="6"
+                        value="2"
+                        style="width: 70px"
+                      />
+                      <span class="slider-value" id="penroseGenerationsValue" style="font-size: 0.8em">2</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

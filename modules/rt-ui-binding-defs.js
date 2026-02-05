@@ -116,6 +116,11 @@ export const checkboxWithControlsBindings = [
     controlsId: "penrose-tiling-controls",
   },
   {
+    id: "penroseTilingEnabled",
+    type: "checkbox-controls",
+    controlsId: "penrose-deflation-controls",
+  },
+  {
     id: "showTetrahelix1",
     type: "checkbox-controls",
     controlsId: "tetrahelix1-controls",
@@ -397,6 +402,7 @@ export const simpleSliderBindings = [
   { id: "prismSides", type: "slider" },
   { id: "coneSides", type: "slider" },
   { id: "penroseQuadrance", type: "slider" },
+  { id: "penroseGenerations", type: "slider", valueId: "penroseGenerationsValue" },
 
   // Helix controls
   { id: "tetrahelix1CountSlider", type: "slider", valueId: "tetrahelix1CountDisplay" },
@@ -486,8 +492,9 @@ export const lineweightSliderBindings = [
 // ============================================================================
 
 export const geodesicProjectionBindings = [
-  // Penrose tile type selection
+  // Penrose tile type and seed selection
   { type: "radio-group", name: "penroseTileType" },
+  { type: "radio-group", name: "penroseSeed" },
   // Each geodesic form has out/in/mid projection options
   { type: "radio-group", name: "geodesicTetraProjection" },
   { type: "radio-group", name: "geodesicDualTetraProjection" },
