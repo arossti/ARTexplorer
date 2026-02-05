@@ -710,6 +710,16 @@ export function initScene(THREE, OrbitControls, RT) {
         // Cone: scale is baseQuadrance, pass sides for edge quadrance calculation
         scale = group.userData.parameters.baseQuadrance;
         nodeOptions = { sides: group.userData.parameters.sides || 6 };
+      } else if (
+        polyType?.startsWith("geodesic") &&
+        group.userData.parameters?.frequency
+      ) {
+        // Geodesic: pass frequency for edge quadrance scaling (Q divides by freq²)
+        const tetEdge = parseFloat(
+          document.getElementById("tetScaleSlider").value
+        );
+        scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
+        nodeOptions = { frequency: group.userData.parameters.frequency };
       } else {
         const tetEdge = parseFloat(
           document.getElementById("tetScaleSlider").value
@@ -818,14 +828,15 @@ export function initScene(THREE, OrbitControls, RT) {
 
       const actualFrequency = isNaN(frequency) ? 1 : frequency;
       const geometry = polyhedronFn(scale, actualFrequency, projection);
-      renderPolyhedron(group, geometry, color, opacity);
-      group.visible = true;
 
-      // Store parameters for instance export (state manager captures these on deposit)
+      // IMPORTANT: Set parameters BEFORE renderPolyhedron so PACKED nodes can access frequency
       group.userData.parameters = {
         frequency: actualFrequency,
         projection: projection,
       };
+
+      renderPolyhedron(group, geometry, color, opacity);
+      group.visible = true;
     } else {
       group.visible = false;
     }
@@ -1658,6 +1669,18 @@ export function initScene(THREE, OrbitControls, RT) {
         effectiveFrequency,
         projection
       );
+
+      // IMPORTANT: Set parameters BEFORE renderPolyhedron so node rendering has access
+      // Use effectiveFrequency for PACKED nodes (includes tiling divisions)
+      geodesicIcosahedronGroup.userData.parameters = {
+        frequency: effectiveFrequency, // Use effective for PACKED node scaling
+        baseFrequency: actualFrequency,
+        effectiveFrequency,
+        projection,
+        faceTilingEnabled,
+        tilingGenerations,
+      };
+
       renderPolyhedron(
         geodesicIcosahedronGroup,
         geometry,
@@ -1665,14 +1688,6 @@ export function initScene(THREE, OrbitControls, RT) {
         opacity
       );
       geodesicIcosahedronGroup.visible = true;
-
-      geodesicIcosahedronGroup.userData.parameters = {
-        frequency: actualFrequency,
-        effectiveFrequency,
-        projection,
-        faceTilingEnabled,
-        tilingGenerations,
-      };
 
       if (faceTilingEnabled && tilingGenerations > 1) {
         console.log(
