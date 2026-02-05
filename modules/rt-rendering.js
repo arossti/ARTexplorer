@@ -23,7 +23,7 @@ import { RTPapercut } from "./rt-papercut.js";
 import { Grids } from "./rt-grids.js";
 import { Nodes } from "./rt-nodes.js";
 import { Helices } from "./rt-helices.js";
-import { PenroseTiles } from "./rt-penrose.js";
+import { PenroseTiles, PenroseTiling } from "./rt-penrose.js";
 
 // Line2 addons for variable lineweight (cross-platform support)
 import { Line2 } from "three/addons/lines/Line2.js";
@@ -999,65 +999,101 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Penrose Tiling (aperiodic tiling with golden ratio)
     if (document.getElementById("showPenroseTiling")?.checked) {
-      // Get tile type from radio (thick/thin/kite/dart)
-      const tileTypeRadio = document.querySelector(
-        'input[name="penroseTileType"]:checked'
-      );
-      const penroseTileType = tileTypeRadio ? tileTypeRadio.value : "thick";
-      // Get quadrance from input (default 1)
+      // Get common parameters
       const penroseQuadrance = parseFloat(
         document.getElementById("penroseQuadrance")?.value || "1"
       );
-      // Get edge weight
       const penroseEdgeWeight = parseFloat(
         document.getElementById("penroseEdgeWeight")?.value || "2"
       );
-      // Get face visibility
       const penroseShowFace =
         document.getElementById("penroseShowFace")?.checked !== false;
 
-      // Select tile generator based on type
+      // Check if tiling (deflation) mode is enabled
+      const tilingEnabled =
+        document.getElementById("penroseTilingEnabled")?.checked || false;
+
       let penroseData;
-      let tileColor;
-      switch (penroseTileType) {
-        case "thin":
-          penroseData = PenroseTiles.thinRhombus(penroseQuadrance, {
-            showFace: penroseShowFace,
-          });
-          tileColor = colorPalette.penroseThin;
-          break;
-        case "kite":
-          penroseData = PenroseTiles.kite(penroseQuadrance, {
-            showFace: penroseShowFace,
-          });
-          tileColor = colorPalette.penroseThick; // Kites use gold
-          break;
-        case "dart":
-          penroseData = PenroseTiles.dart(penroseQuadrance, {
-            showFace: penroseShowFace,
-          });
-          tileColor = colorPalette.penroseThin; // Darts use blue
-          break;
-        case "thick":
-        default:
-          penroseData = PenroseTiles.thickRhombus(penroseQuadrance, {
-            showFace: penroseShowFace,
-          });
-          tileColor = colorPalette.penroseThick;
-          break;
+      let tileColor = colorPalette.penroseThick; // Default color
+
+      if (tilingEnabled) {
+        // TILING MODE: Generate multi-tile pattern via deflation
+        const seedRadio = document.querySelector(
+          'input[name="penroseSeed"]:checked'
+        );
+        const seed = seedRadio ? seedRadio.value : "star";
+        const generations = parseInt(
+          document.getElementById("penroseGenerations")?.value || "2"
+        );
+
+        // Generate tiling via deflation
+        const tiles = PenroseTiling.generate(generations, seed, penroseQuadrance);
+
+        // Convert to renderable geometry
+        penroseData = PenroseTiling.tilesToGeometry(tiles, {
+          showFace: penroseShowFace,
+        });
+
+        // Store metadata
+        penroseTilingGroup.userData.parameters = {
+          tilingEnabled: true,
+          seed,
+          generations,
+          quadrance: penroseQuadrance,
+          edgeWeight: penroseEdgeWeight,
+          showFace: penroseShowFace,
+          tileCount: tiles.length,
+          ...penroseData.metadata,
+        };
+      } else {
+        // SINGLE TILE MODE: Show individual tile based on type selection
+        const tileTypeRadio = document.querySelector(
+          'input[name="penroseTileType"]:checked'
+        );
+        const penroseTileType = tileTypeRadio ? tileTypeRadio.value : "thick";
+
+        switch (penroseTileType) {
+          case "thin":
+            penroseData = PenroseTiles.thinRhombus(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThin;
+            break;
+          case "kite":
+            penroseData = PenroseTiles.kite(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThick;
+            break;
+          case "dart":
+            penroseData = PenroseTiles.dart(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThin;
+            break;
+          case "thick":
+          default:
+            penroseData = PenroseTiles.thickRhombus(penroseQuadrance, {
+              showFace: penroseShowFace,
+            });
+            tileColor = colorPalette.penroseThick;
+            break;
+        }
+
+        penroseTilingGroup.userData.parameters = {
+          tilingEnabled: false,
+          tileType: penroseTileType,
+          quadrance: penroseQuadrance,
+          edgeWeight: penroseEdgeWeight,
+          showFace: penroseShowFace,
+          ...penroseData.metadata,
+        };
       }
 
       renderPolyhedron(penroseTilingGroup, penroseData, tileColor, opacity, {
         lineWidth: penroseEdgeWeight,
       });
       penroseTilingGroup.userData.type = "penroseTiling";
-      penroseTilingGroup.userData.parameters = {
-        tileType: penroseTileType,
-        quadrance: penroseQuadrance,
-        edgeWeight: penroseEdgeWeight,
-        showFace: penroseShowFace,
-        ...penroseData.metadata,
-      };
       penroseTilingGroup.visible = true;
     } else {
       penroseTilingGroup.visible = false;
