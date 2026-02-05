@@ -101,6 +101,11 @@ export const checkboxWithControlsBindings = [
     controlsId: "polygon-controls",
   },
   {
+    id: "polygonEnableTiling",
+    type: "checkbox-controls",
+    controlsId: "polygon-tiling-controls",
+  },
+  {
     id: "showPrism",
     type: "checkbox-controls",
     controlsId: "prism-controls",
@@ -479,6 +484,11 @@ export const lineweightSliderBindings = [
     id: "polygonEdgeWeight",
     type: "slider",
     valueId: "polygonEdgeWeightValue",
+  },
+  {
+    id: "polygonTilingGenerations",
+    type: "slider",
+    valueId: "polygonTilingGenerationsValue",
   },
   {
     id: "penroseEdgeWeight",

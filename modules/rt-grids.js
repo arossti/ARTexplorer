@@ -682,4 +682,184 @@ export const Grids = {
 
     return { cartesianGrid, cartesianBasis, gridXY, gridXZ, gridYZ };
   },
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * POLYGON TILING GRIDS
+   * ═══════════════════════════════════════════════════════════════════════════
+   * Functions for subdividing regular polygons into smaller tiles.
+   * Used for: Polygon primitive tiling, Geodesic face tiling, Penrose scaffold.
+   * ═══════════════════════════════════════════════════════════════════════════ */
+
+  /**
+   * Generate a triangular grid by subdividing an equilateral triangle
+   * Each generation divides each triangle into 4 smaller triangles.
+   * Similar to geodesic Class I subdivision.
+   *
+   * @param {number} quadrance - Circumradius quadrance of the original triangle (Q = R²)
+   * @param {number} generations - Number of subdivision generations (1 = original, 2 = 4 tiles)
+   * @param {Object} options - Configuration options
+   * @param {boolean} options.showFace - Whether to include faces (default true)
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  triangularTiling: (quadrance, generations = 1, options = {}) => {
+    const showFace = options.showFace !== false;
+    const R = Math.sqrt(quadrance);
+    const n = Math.pow(2, generations - 1); // Divisions per edge
+
+    // Equilateral triangle vertices (centered, pointing up)
+    const sqrt3 = Math.sqrt(3);
+    const A = new THREE.Vector3(0, R, 0); // Top
+    const B = new THREE.Vector3((-R * sqrt3) / 2, -R / 2, 0); // Bottom left
+    const C = new THREE.Vector3((R * sqrt3) / 2, -R / 2, 0); // Bottom right
+
+    // Generate vertices using barycentric interpolation
+    const vertices = [];
+    const vertexMap = {};
+
+    for (let i = 0; i <= n; i++) {
+      for (let j = 0; j <= n - i; j++) {
+        const k = n - i - j;
+        const x = (i * A.x + j * B.x + k * C.x) / n;
+        const y = (i * A.y + j * B.y + k * C.y) / n;
+        vertices.push(new THREE.Vector3(x, y, 0));
+        vertexMap[`${i},${j}`] = vertices.length - 1;
+      }
+    }
+
+    // Generate edges and faces
+    const edges = [];
+    const edgeSet = new Set();
+    const faces = [];
+
+    const addEdge = (v1, v2) => {
+      const key = v1 < v2 ? `${v1}-${v2}` : `${v2}-${v1}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        edges.push([v1, v2]);
+      }
+    };
+
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n - i; j++) {
+        // Upward triangle
+        const v0 = vertexMap[`${i},${j}`];
+        const v1 = vertexMap[`${i},${j + 1}`];
+        const v2 = vertexMap[`${i + 1},${j}`];
+
+        addEdge(v0, v1);
+        addEdge(v1, v2);
+        addEdge(v2, v0);
+        // CCW winding for +Z normal (faces visible from above)
+        if (showFace) faces.push([v0, v2, v1]);
+
+        // Downward triangle (if valid)
+        if (j + 1 <= n - i - 1) {
+          const v3 = vertexMap[`${i + 1},${j + 1}`];
+          if (v3 !== undefined) {
+            addEdge(v1, v3);
+            addEdge(v3, v2);
+            // CCW winding for +Z normal
+            if (showFace) faces.push([v1, v2, v3]);
+          }
+        }
+      }
+    }
+
+    const tileCount = n * n;
+    console.log(
+      `[RT] Triangular tiling: gen=${generations}, n=${n}, ` +
+        `V=${vertices.length}, E=${edges.length}, F=${faces.length}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        type: "triangular-tiling",
+        generations,
+        divisionsPerEdge: n,
+        tileCount,
+        circumradiusQuadrance: quadrance,
+        rtPure: true,
+      },
+    };
+  },
+
+  /**
+   * Generate a square grid by subdividing a square
+   * Each generation divides each square into 4 smaller squares.
+   *
+   * @param {number} quadrance - Circumradius quadrance of the original square (Q = R²)
+   * @param {number} generations - Number of subdivision generations
+   * @param {Object} options - Configuration options
+   * @param {boolean} options.showFace - Whether to include faces (default true)
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  squareTiling: (quadrance, generations = 1, options = {}) => {
+    const showFace = options.showFace !== false;
+    const R = Math.sqrt(quadrance);
+    const n = Math.pow(2, generations - 1); // Divisions per edge
+    const halfSize = R / Math.sqrt(2); // Half-diagonal for inscribed square
+
+    const vertices = [];
+    const vertexMap = {};
+
+    // Grid of (n+1) × (n+1) vertices
+    for (let i = 0; i <= n; i++) {
+      for (let j = 0; j <= n; j++) {
+        const x = -halfSize + (2 * halfSize * i) / n;
+        const y = -halfSize + (2 * halfSize * j) / n;
+        vertices.push(new THREE.Vector3(x, y, 0));
+        vertexMap[`${i},${j}`] = vertices.length - 1;
+      }
+    }
+
+    const edges = [];
+    const edgeSet = new Set();
+    const faces = [];
+
+    const addEdge = (v1, v2) => {
+      const key = v1 < v2 ? `${v1}-${v2}` : `${v2}-${v1}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        edges.push([v1, v2]);
+      }
+    };
+
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        const v0 = vertexMap[`${i},${j}`];
+        const v1 = vertexMap[`${i + 1},${j}`];
+        const v2 = vertexMap[`${i + 1},${j + 1}`];
+        const v3 = vertexMap[`${i},${j + 1}`];
+
+        addEdge(v0, v1);
+        addEdge(v1, v2);
+        addEdge(v2, v3);
+        addEdge(v3, v0);
+        if (showFace) faces.push([v0, v1, v2, v3]);
+      }
+    }
+
+    const tileCount = n * n;
+    console.log(
+      `[RT] Square tiling: gen=${generations}, n=${n}, ` +
+        `V=${vertices.length}, E=${edges.length}, F=${faces.length}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        type: "square-tiling",
+        generations,
+        divisionsPerEdge: n,
+        tileCount,
+        circumradiusQuadrance: quadrance,
+        rtPure: true,
+      },
+    };
+  },
 };

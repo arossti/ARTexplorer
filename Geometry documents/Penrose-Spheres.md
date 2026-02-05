@@ -1508,6 +1508,54 @@ Once regular tiling works on geodesic faces:
 - **Clear nesting model**: Geodesic subdivision → face tiling → render
 - **Penrose becomes tractable**: It's just a fancy tiling applied to faces
 
+### Technical Rule: CCW Face Winding for +Z Normals
+
+**Problem discovered**: When implementing triangular tiling, faces rendered from underneath (backface culling hid them from above).
+
+**Rule**: For faces with outward normals pointing in +Z direction (facing camera/above):
+- Vertices must be ordered **Counter-Clockwise (CCW)** when viewed from +Z
+- Example: Triangle with vertices A(left), B(right), C(top) → face index `[A, C, B]` NOT `[A, B, C]`
+
+**Why this matters**:
+- THREE.js uses CCW winding to determine front faces
+- Backface culling hides CW-wound faces
+- Regular polygon primitive already has correct winding → tiled subdivisions must match
+
+**Implementation pattern**:
+```javascript
+// For triangular tiling generating faces in XY plane with +Z normal:
+if (showFace) faces.push([v0, v2, v1]);  // CCW from +Z view
+
+// For quad faces:
+if (showFace) faces.push([v0, v3, v2, v1]);  // CCW from +Z view
+```
+
+This rule applies to ALL tiling implementations: triangular, square, hexagonal, and eventually Penrose.
+
+### Technical Rule: PACKED Node Spheres with Tiling Subdivisions
+
+**Context**: Node spheres come in 4 sizes: sm, md, lg, and PACKED. The PACKED option creates spheres with radius = ½ edge length, so adjacent spheres "kiss" (close-pack).
+
+**Problem**: When tiling subdivides a polygon, the edge length decreases. PACKED spheres must scale accordingly.
+
+**Rule**: PACKED sphere radius = ½ × (subdivided edge length)
+
+| Generations | Edge Scale | PACKED Radius Scale |
+|-------------|------------|---------------------|
+| 1 (original) | 1 | 1/2 |
+| 2 | 1/2 | 1/4 |
+| 3 | 1/4 | 1/8 |
+| n | 1/2^(n-1) | 1/2^n |
+
+**Implementation considerations**:
+- When rendering tiled polygons with PACKED nodes, compute sphere radius from tiled edge length
+- For triangular tiling: edge = original_edge / 2^(gen-1)
+- For square tiling: edge = original_edge / 2^(gen-1)
+- Hexagonal/pentagonal: similar scaling based on subdivision
+- **Penrose**: More complex due to two tile types with different edge lengths (defer to later)
+
+**Priority**: Solve for simple periodic tilings (triangle, square, hexagon) first. Penrose packed spheres can follow once the basic infrastructure is proven.
+
 ---
 
 _Last updated: February 5, 2026_
