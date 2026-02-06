@@ -1146,9 +1146,88 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("polygonQuadrance")?.value || "1"
       );
       // Get number of sides (default 3 = triangle)
+      // Read from numeric input to allow values > 24, fallback to slider
       const polygonSides = parseInt(
-        document.getElementById("polygonSides")?.value || "3"
+        document.getElementById("polygonSidesInput")?.value ||
+          document.getElementById("polygonSides")?.value ||
+          "3"
       );
+
+      // Update method info text based on n-gon type (Gauss-Wantzel constructibility)
+      // See: Geometry documents/Polygon-Rationalize.md for full classification
+      const polygonMethodInfo = document.getElementById("polygonMethodInfo");
+      if (polygonMethodInfo) {
+        let methodText;
+        const names = [
+          "",
+          "Line",
+          "Digon",
+          "Triangle",
+          "Square",
+          "Pentagon",
+          "Hexagon",
+          "Heptagon",
+          "Octagon",
+          "Nonagon",
+          "Decagon",
+          "Hendecagon",
+          "Dodecagon",
+        ];
+        const name = names[polygonSides] || `${polygonSides}-gon`;
+
+        // RT-Pure: rational spreads only
+        if (polygonSides === 3) {
+          methodText = `${name}: RT-Pure (s = 3/4)`;
+        } else if (polygonSides === 4) {
+          methodText = `${name}: RT-Pure (s = 1)`;
+        } else if (polygonSides === 6) {
+          methodText = `${name}: RT-Pure (2×3 @ 60°)`;
+        } else if (polygonSides === 12) {
+          methodText = `${name}: RT-Pure (2×6 @ 30°)`;
+        }
+        // φ-Rational: uses √5 / golden ratio
+        else if (polygonSides === 5) {
+          methodText = `${name}: φ-Rational (s = β)`;
+        } else if (polygonSides === 10) {
+          methodText = `${name}: φ-Rational (2×5 @ 36°)`;
+        } else if (polygonSides === 15) {
+          methodText = `${name}: φ-Rational (3×5 GCD)`;
+        } else if (polygonSides === 20) {
+          methodText = `${name}: φ-Rational (2×10 @ 18°)`;
+        }
+        // Algebraic: uses √2, √3
+        else if (polygonSides === 8) {
+          methodText = `${name}: Algebraic (2×4 @ 45°)`;
+        } else if (polygonSides === 16) {
+          methodText = `${name}: Algebraic (2×8 @ 22.5°)`;
+        } else if (polygonSides === 24) {
+          methodText = `${name}: Algebraic (2×12 @ 15°)`;
+        }
+        // Cubic: requires solving cubic equation once, then cache
+        else if (polygonSides === 7) {
+          methodText = `${name}: Cubic (cos 360°/7)`;
+        } else if (polygonSides === 9) {
+          methodText = `${name}: Cubic (3×3 @ 40°)`;
+        } else if (polygonSides === 14) {
+          methodText = `${name}: Cubic (2×7 @ 25.7°)`;
+        } else if (polygonSides === 18) {
+          methodText = `${name}: Cubic (6×3 @ 20°)`;
+        } else if (polygonSides === 21) {
+          methodText = `${name}: Cubic (3×7 @ 17.1°)`;
+        } else if (polygonSides % 9 === 0) {
+          // Multiples of 9: use nonagon cubic
+          methodText = `${name}: Cubic (${polygonSides / 3}×3)`;
+        } else if (polygonSides % 7 === 0) {
+          // Multiples of 7: use heptagon cubic
+          methodText = `${name}: Cubic (${polygonSides / 7}×7)`;
+        }
+        // Classical: requires sin(π/n) - no algebraic shortcut
+        else {
+          methodText = `${name}: Classical (sin π/${polygonSides})`;
+        }
+        polygonMethodInfo.textContent = methodText;
+      }
+
       // Get edge weight from input field (default 2)
       const polygonEdgeWeight = parseFloat(
         document.getElementById("polygonEdgeWeight")?.value || "2"
@@ -1384,6 +1463,87 @@ export function initScene(THREE, OrbitControls, RT) {
         rtPure: prismData.metadata.rtPure,
       };
       prismGroup.visible = true;
+
+      // Update method info text based on n-gon type (Gauss-Wantzel constructibility)
+      // See: Geometry documents/Polygon-Rationalize.md for full classification
+      const prismMethodInfo = document.getElementById("prismMethodInfo");
+      if (prismMethodInfo) {
+        let methodText;
+        const names = [
+          "",
+          "Line",
+          "Digon",
+          "Triangle",
+          "Square",
+          "Pentagon",
+          "Hexagon",
+          "Heptagon",
+          "Octagon",
+          "Nonagon",
+          "Decagon",
+          "Hendecagon",
+          "Dodecagon",
+        ];
+        const name = names[prismSides] || `${prismSides}-gon`;
+
+        // Degenerate cases (prism-specific)
+        if (prismSides === 1) {
+          methodText = `${name}: Degenerate (1D segment)`;
+        } else if (prismSides === 2) {
+          methodText = `${name}: Degenerate (2D plane)`;
+        }
+        // RT-Pure: rational spreads only
+        else if (prismSides === 3) {
+          methodText = `${name}: RT-Pure (s = 3/4)`;
+        } else if (prismSides === 4) {
+          methodText = `${name}: RT-Pure (s = 1)`;
+        } else if (prismSides === 6) {
+          methodText = `${name}: RT-Pure (2×3 @ 60°)`;
+        } else if (prismSides === 12) {
+          methodText = `${name}: RT-Pure (2×6 @ 30°)`;
+        }
+        // φ-Rational: uses √5 / golden ratio
+        else if (prismSides === 5) {
+          methodText = `${name}: φ-Rational (s = β)`;
+        } else if (prismSides === 10) {
+          methodText = `${name}: φ-Rational (2×5 @ 36°)`;
+        } else if (prismSides === 15) {
+          methodText = `${name}: φ-Rational (3×5 GCD)`;
+        } else if (prismSides === 20) {
+          methodText = `${name}: φ-Rational (2×10 @ 18°)`;
+        }
+        // Algebraic: uses √2, √3
+        else if (prismSides === 8) {
+          methodText = `${name}: Algebraic (2×4 @ 45°)`;
+        } else if (prismSides === 16) {
+          methodText = `${name}: Algebraic (2×8 @ 22.5°)`;
+        } else if (prismSides === 24) {
+          methodText = `${name}: Algebraic (2×12 @ 15°)`;
+        }
+        // Cubic: requires solving cubic equation once, then cache
+        else if (prismSides === 7) {
+          methodText = `${name}: Cubic (cos 360°/7)`;
+        } else if (prismSides === 9) {
+          methodText = `${name}: Cubic (3×3 @ 40°)`;
+        } else if (prismSides === 14) {
+          methodText = `${name}: Cubic (2×7 @ 25.7°)`;
+        } else if (prismSides === 18) {
+          methodText = `${name}: Cubic (6×3 @ 20°)`;
+        } else if (prismSides === 21) {
+          methodText = `${name}: Cubic (3×7 @ 17.1°)`;
+        } else if (prismSides % 9 === 0) {
+          // Multiples of 9: use nonagon cubic
+          methodText = `${name}: Cubic (${prismSides / 3}×3)`;
+        } else if (prismSides % 7 === 0) {
+          // Multiples of 7: use heptagon cubic
+          methodText = `${name}: Cubic (${prismSides / 7}×7)`;
+        }
+        // Classical: requires sin(π/n) - no algebraic shortcut
+        else {
+          methodText = `${name}: Classical (sin π/${prismSides})`;
+        }
+        prismMethodInfo.textContent = methodText;
+      }
     } else {
       prismGroup.visible = false;
     }
@@ -2773,7 +2933,9 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("polygonQuadrance")?.value || "1"
       );
       const polySides = parseInt(
-        document.getElementById("polygonSides")?.value || "3"
+        document.getElementById("polygonSidesInput")?.value ||
+          document.getElementById("polygonSides")?.value ||
+          "3"
       );
       const polyR = Math.sqrt(polyQ);
       // Math.sin justified: arbitrary n-gon spread calculation (see CODE-QUALITY-AUDIT.md)

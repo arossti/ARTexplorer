@@ -418,7 +418,25 @@ export const simpleSliderBindings = [
   },
 
   // Primitive size inputs
-  { id: "polygonSides", type: "slider", valueId: "polygonSidesValue" },
+  {
+    id: "polygonSides",
+    type: "slider",
+    onInput: value => {
+      const input = document.getElementById("polygonSidesInput");
+      if (input) input.value = parseInt(value);
+    },
+  },
+  {
+    id: "polygonSidesInput",
+    type: "slider", // Treated as slider for updateGeometry trigger
+    onInput: value => {
+      const slider = document.getElementById("polygonSides");
+      if (slider) {
+        const clamped = Math.max(3, Math.min(24, parseInt(value) || 3));
+        slider.value = clamped;
+      }
+    },
+  },
   {
     id: "prismSides",
     type: "slider",

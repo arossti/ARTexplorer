@@ -1448,6 +1448,194 @@ export const RT = {
   },
 
   /**
+   * PureCubics - Cached cubic equation solutions for non-constructible polygons
+   *
+   * While Gauss-Wantzel constructible polygons use only √ radicals,
+   * some polygons (7, 9, 14, 18, 21...) require solving cubic equations.
+   * We solve these cubics ONCE and cache the results.
+   *
+   * Philosophy (same as PurePhi/PureRadicals):
+   * - Solve cubic algebraically or numerically ONCE
+   * - Cache sin/cos values for RT-pure rotation
+   * - Composite construction: build from RT-pure bases + cached rotations
+   *
+   * Reference: Polygon-Rationalize.md for mathematical foundations
+   *
+   * @namespace PureCubics
+   */
+  PureCubics: {
+    /**
+     * NONAGON (9-gon) constants - Built from 3×Triangle @ 40° intervals
+     *
+     * Cubic equation for cos(20°): 8x³ - 6x - 1 = 0
+     * This is the minimal polynomial for cos(20°), requiring angle trisection.
+     *
+     * Construction: Triangle vertices at 0°, 120°, 240°
+     *              + rotated by 40° → vertices at 40°, 160°, 280°
+     *              + rotated by 80° → vertices at 80°, 200°, 320°
+     */
+    nonagon: {
+      /**
+       * cos(20°) - Root of cubic 8x³ - 6x - 1 = 0
+       * Computed once and cached for IEEE 754 precision
+       * @returns {number} cos(20°) ≈ 0.9396926207859084
+       */
+      cos20: (() => {
+        const cached = 0.9396926207859084; // Verified: Math.cos(20 * Math.PI / 180)
+        return () => cached;
+      })(),
+
+      /**
+       * sin(20°) - Derived from cos(20°) via Pythagorean identity
+       * @returns {number} sin(20°) ≈ 0.3420201433256687
+       */
+      sin20: (() => {
+        const cached = 0.3420201433256687; // Verified: Math.sin(20 * Math.PI / 180)
+        return () => cached;
+      })(),
+
+      /**
+       * cos(40°) = 2cos²(20°) - 1 (double-angle formula)
+       * @returns {number} cos(40°) ≈ 0.7660444431189780
+       */
+      cos40: (() => {
+        const cos20 = 0.9396926207859084;
+        const cached = 2 * cos20 * cos20 - 1;
+        return () => cached;
+      })(),
+
+      /**
+       * sin(40°) = 2·sin(20°)·cos(20°) (double-angle formula)
+       * @returns {number} sin(40°) ≈ 0.6427876096865394
+       */
+      sin40: (() => {
+        const cos20 = 0.9396926207859084;
+        const sin20 = 0.3420201433256687;
+        const cached = 2 * sin20 * cos20;
+        return () => cached;
+      })(),
+
+      /**
+       * cos(80°) = 2cos²(40°) - 1 (double-angle formula)
+       * @returns {number} cos(80°) ≈ 0.1736481776669303
+       */
+      cos80: (() => {
+        const cos40 = 0.7660444431189780;
+        const cached = 2 * cos40 * cos40 - 1;
+        return () => cached;
+      })(),
+
+      /**
+       * sin(80°) = 2·sin(40°)·cos(40°) (double-angle formula)
+       * @returns {number} sin(80°) ≈ 0.9848077530122080
+       */
+      sin80: (() => {
+        const cos40 = 0.7660444431189780;
+        const sin40 = 0.6427876096865394;
+        const cached = 2 * sin40 * cos40;
+        return () => cached;
+      })(),
+
+      /**
+       * spread(40°) = sin²(40°) - Used for rotation spread
+       * @returns {number} spread(40°) ≈ 0.4131759111665348
+       */
+      spread40: (() => {
+        const sin40 = 0.6427876096865394;
+        const cached = sin40 * sin40;
+        return () => cached;
+      })(),
+
+      /**
+       * Star spread for 9-gon: sin²(π/9) = sin²(20°)
+       * @returns {number} ≈ 0.1169777784405110
+       */
+      starSpread: (() => {
+        const sin20 = 0.3420201433256687;
+        const cached = sin20 * sin20;
+        return () => cached;
+      })(),
+    },
+
+    /**
+     * HEPTAGON (7-gon) constants - Direct construction
+     *
+     * Cubic equation for cos(2π/7): 8x³ - 4x² - 4x + 1 = 0
+     * This is the minimal polynomial for cos(360°/7).
+     *
+     * The heptagon cannot be constructed from simpler polygons;
+     * it requires solving this irreducible cubic directly.
+     */
+    heptagon: {
+      /**
+       * cos(2π/7) = cos(360°/7) ≈ cos(51.4286°)
+       * Root of cubic 8x³ - 4x² - 4x + 1 = 0
+       * @returns {number} ≈ 0.6234898018587336
+       */
+      cos1: (() => {
+        const cached = 0.6234898018587336; // cos(2π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * sin(2π/7) = sin(360°/7)
+       * @returns {number} ≈ 0.7818314824680298
+       */
+      sin1: (() => {
+        const cached = 0.7818314824680298; // sin(2π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * cos(4π/7) = cos(720°/7)
+       * @returns {number} ≈ -0.2225209339563144
+       */
+      cos2: (() => {
+        const cached = -0.2225209339563144; // cos(4π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * sin(4π/7) = sin(720°/7)
+       * @returns {number} ≈ 0.9749279121818236
+       */
+      sin2: (() => {
+        const cached = 0.9749279121818236; // sin(4π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * cos(6π/7) = cos(1080°/7)
+       * @returns {number} ≈ -0.9009688679024191
+       */
+      cos3: (() => {
+        const cached = -0.9009688679024191; // cos(6π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * sin(6π/7) = sin(1080°/7)
+       * @returns {number} ≈ 0.4338837391175582
+       */
+      sin3: (() => {
+        const cached = 0.4338837391175582; // sin(6π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * Star spread for 7-gon: sin²(π/7)
+       * @returns {number} ≈ 0.1882550990706332
+       */
+      starSpread: (() => {
+        // sin(π/7) = sin(180°/7) ≈ 0.4338837391175582
+        const sinPi7 = 0.4338837391175582;
+        const cached = sinPi7 * sinPi7;
+        return () => cached;
+      })(),
+    },
+  },
+
+  /**
    * Face Spreads for Platonic Solids
    * From "Divine Proportions" Chapter 26 (N.J. Wildberger)
    *

@@ -138,14 +138,17 @@ export const Primitives = {
 
   /**
    * Polygon (n-gon) - Regular polygon in XY plane
-   * RT-PURE implementation using Wildberger's Regular Stars theory
+   * RT-PURE and CUBIC-ALGEBRAIC implementation using Wildberger's Regular Stars theory
    *
-   * Supported n values (Gauss-Wantzel constructible + subdivision):
-   *   3, 4, 5, 6, 8, 9, 10, 12
+   * Supported n values:
+   *   RT-Pure (√ radicals only): 3, 4, 5, 6, 8, 10, 12
+   *   Cubic-Algebraic (cached cubic solutions): 7, 9
    *
-   * NOT supported (non-constructible, no classical trig fallback):
-   *   7  - Heptagon requires solving irreducible cubic (not algebraic in √)
-   *   11 - 11 is not a Fermat prime, not of form 2^k × Fermat primes
+   * Classical trig fallback for non-supported n (11, 13, 14, 17, 18, 19, 21, 22, 23...)
+   *
+   * The 7-gon (heptagon) and 9-gon (nonagon) use RT.PureCubics namespace:
+   *   7: cubic 8x³ - 4x² - 4x + 1 = 0 (cos 2π/7)
+   *   9: cubic 8x³ - 6x - 1 = 0 (cos 20°), built from 3×Triangle @ 40°
    *
    * Parameterized by circumradius quadrance (Q_R = R²) for RT purity.
    * Edge quadrance: Q_edge = 4·s·Q_R where s = star spread (Theorem 98)
@@ -154,6 +157,7 @@ export const Primitives = {
    * @param {Object} options - Configuration: sides, showFace
    * @returns {Object} {vertices, edges, faces, metadata}
    * @see RT.StarSpreads - Exact spread values for each n
+   * @see RT.PureCubics - Cached cubic solutions for 7, 9
    * @see RT.SpreadPolynomials - Diagonal quadrance calculations
    * @see Wildberger "Divine Proportions" Chapter 14, pp. 159-166
    */
@@ -161,15 +165,16 @@ export const Primitives = {
     const n = options.sides || 3;
     const showFace = options.showFace !== false;
 
-    // Dispatch to RT-pure generators
-    // Each uses cached radicals from RT.PureRadicals or RT.PurePhi
+    // Dispatch to RT-pure and cubic-algebraic generators
+    // Each uses cached radicals from RT.PureRadicals, RT.PurePhi, or RT.PureCubics
     const generators = {
       3: Primitives._polygonTriangle,
       4: Primitives._polygonSquare,
       5: Primitives._polygonPentagon,
       6: Primitives._polygonHexagon,
+      7: Primitives._polygonHeptagon, // Cubic: 8x³ - 4x² - 4x + 1 = 0
       8: Primitives._polygonOctagon,
-      9: Primitives._polygonNonagon, // Via triangle subdivision
+      9: Primitives._polygonNonagon, // Cubic: 3×Triangle @ 40°
       10: Primitives._polygonDecagon,
       12: Primitives._polygonDodecagon,
     };
@@ -180,11 +185,11 @@ export const Primitives = {
       return generator(quadrance, { showFace });
     }
 
-    // Classical trig fallback for non-constructible n (7, 11, 13, etc.)
-    // Gauss-Wantzel: these require transcendental functions
+    // Classical trig fallback for n values without algebraic/cubic solutions
+    // (11, 13, 14, 17, 18, 19, 21, 22, 23...) require transcendental sin(π/n)
     console.log(
-      `[RT] ${n}-gon using classical trig (not RT-constructible). ` +
-        `RT-pure: 3, 4, 5, 6, 8, 9, 10, 12`
+      `[RT] ${n}-gon using classical trig (sin π/${n}). ` +
+        `RT-pure: 3,4,5,6,8,10,12 | Cubic: 7,9`
     );
     return Primitives._polygonClassical(quadrance, { sides: n, showFace });
   },
@@ -507,15 +512,18 @@ export const Primitives = {
   },
 
   /**
-   * Nonagon (n=9) - RT-pure via TRIANGLE SUBDIVISION
+   * Nonagon (n=9) - Cubic-Algebraic via TRIANGLE SUBDIVISION
    *
    * Gauss-Wantzel: 9 = 3² is NOT constructible (3 is used twice).
-   * HOWEVER: We can place 9 equidistant points by subdividing the
-   * triangle's circumcircle into 3×3 = 9 equal arcs.
+   * HOWEVER: We can build it from 3×Triangle rotated by 40° intervals.
    *
-   * Method: Start with triangle vertices (0°, 120°, 240°), then
-   * interpolate 2 points between each pair at 40° intervals.
-   * Uses rational interpolation on the circumcircle.
+   * The 40° rotation requires solving cubic 8x³ - 6x - 1 = 0 (for cos 20°).
+   * We solve this ONCE and cache all derived values in RT.PureCubics.nonagon.
+   *
+   * Construction:
+   * - Triangle 1 @ 0°:   vertices at 0°, 120°, 240° (RT-pure √3)
+   * - Triangle 2 @ 40°:  vertices at 40°, 160°, 280° (cached cubic)
+   * - Triangle 3 @ 80°:  vertices at 80°, 200°, 320° (cached cubic)
    *
    * @private
    */
@@ -523,75 +531,49 @@ export const Primitives = {
     const R = Math.sqrt(quadrance);
     const sqrt3 = RT.PureRadicals.sqrt3();
 
-    // Triangle vertices at 0°, 120°, 240° (indices 0, 3, 6 in nonagon)
-    // Intermediate vertices at 40°, 80°, 160°, 200°, 280°, 320°
+    // Cached cubic-derived values from RT.PureCubics.nonagon
+    const cos40 = RT.PureCubics.nonagon.cos40();
+    const sin40 = RT.PureCubics.nonagon.sin40();
+    const cos80 = RT.PureCubics.nonagon.cos80();
+    const sin80 = RT.PureCubics.nonagon.sin80();
 
-    // For 40° and 80°, we need:
-    // cos(40°), sin(40°), cos(80°), sin(80°)
-    // These involve solving cubic equations, but we can express them
-    // using the triple angle formula starting from cos(120°) = -1/2
-
-    // cos(3θ) = 4cos³(θ) - 3cos(θ)
-    // For θ = 40°: cos(120°) = -1/2 = 4cos³(40°) - 3cos(40°)
-    // Let c = cos(40°): 4c³ - 3c + 1/2 = 0, or 8c³ - 6c + 1 = 0
-
-    // Solving: c = cos(40°) = (√3·sin(20°) + cos(20°))/2... complex
-    // ALTERNATIVE: Use the identity that these are roots of Chebyshev polynomial
-
-    // For RT-purity, we compute these nested radicals once:
-    // cos(40°) = (1 + √(5 + 2√5·√3)) / 4... actually simpler:
-
-    // Use exact formula: cos(40°) involves cube roots which aren't √-expressible
-    // BUT the 9 points ARE equidistant, so we use parametric approach:
-
-    // Actually, let's use the RATIONAL CIRCLE approach with cached values
-    // computed from the algebraic relationships
-
-    // Cached trig values for 40°/80° (educational - for future RT-pure alternatives)
-    // const cos40 = Math.cos((40 * Math.PI) / 180);
-    // const sin40 = Math.sin((40 * Math.PI) / 180);
-    // const cos80 = Math.cos((80 * Math.PI) / 180);
-    // const sin80 = Math.sin((80 * Math.PI) / 180);
-
-    // Note: While cos(40°) isn't expressible in √ radicals alone,
-    // the 9 vertices ARE equidistant on the circle. We cache these
-    // values for consistency. This is the triangle subdivision approach.
-
-    // For 9-gon at 40° intervals:
-    // 0°, 40°, 80°, 120°, 160°, 200°, 240°, 280°, 320°
-    const vertices9 = [];
-    for (let i = 0; i < 9; i++) {
-      const angle = (i * 40 * Math.PI) / 180;
-      // Use exact values where available (0°, 120°, 240°)
-      if (i === 0) {
-        vertices9.push(new THREE.Vector3(R, 0, 0));
-      } else if (i === 3) {
-        vertices9.push(new THREE.Vector3(-R / 2, (R * sqrt3) / 2, 0));
-      } else if (i === 6) {
-        vertices9.push(new THREE.Vector3(-R / 2, (-R * sqrt3) / 2, 0));
-      } else {
-        // Cached trig for non-triangle vertices
-        vertices9.push(
-          new THREE.Vector3(R * Math.cos(angle), R * Math.sin(angle), 0)
-        );
-      }
-    }
+    // 9 vertices at 40° intervals: 0°, 40°, 80°, 120°, 160°, 200°, 240°, 280°, 320°
+    const vertices = [
+      // Triangle 1 vertices (RT-pure √3)
+      new THREE.Vector3(R, 0, 0), // 0°
+      // Triangle 2 vertex
+      new THREE.Vector3(R * cos40, R * sin40, 0), // 40°
+      // Triangle 3 vertex
+      new THREE.Vector3(R * cos80, R * sin80, 0), // 80°
+      // Triangle 1 vertex (RT-pure √3)
+      new THREE.Vector3(-R / 2, (R * sqrt3) / 2, 0), // 120°
+      // Triangle 2 vertex (160° = 120° + 40°, or cos(160°) = -cos(20°), sin(160°) = sin(20°))
+      new THREE.Vector3(-R * cos40, R * sin40, 0), // 160° = 180° - 20°
+      // Triangle 3 vertex (200° = 120° + 80°)
+      new THREE.Vector3(-R * cos80, -R * sin80, 0), // 200° = 180° + 20°
+      // Triangle 1 vertex (RT-pure √3)
+      new THREE.Vector3(-R / 2, (-R * sqrt3) / 2, 0), // 240°
+      // Triangle 2 vertex (280° = 240° + 40°)
+      new THREE.Vector3(R * cos80, -R * sin80, 0), // 280° = 360° - 80°
+      // Triangle 3 vertex (320° = 240° + 80°)
+      new THREE.Vector3(R * cos40, -R * sin40, 0), // 320° = 360° - 40°
+    ];
 
     const edges = [];
     for (let i = 0; i < 9; i++) edges.push([i, (i + 1) % 9]);
     const faces = options.showFace ? [[0, 1, 2, 3, 4, 5, 6, 7, 8]] : [];
 
-    // Star spread for 9-gon (computed, not algebraically exact)
-    const starSpread = Math.pow(Math.sin(Math.PI / 9), 2);
+    // Star spread for 9-gon from cached value
+    const starSpread = RT.PureCubics.nonagon.starSpread();
     const Q_edge = 4 * starSpread * quadrance;
 
     console.log(
       `[RT] Nonagon: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `s=${starSpread.toFixed(6)} (triangle subdivision)`
+        `s=${starSpread.toFixed(6)} (3×Triangle @ 40°, cubic-cached)`
     );
 
     return {
-      vertices: vertices9,
+      vertices,
       edges,
       faces,
       metadata: {
@@ -602,8 +584,78 @@ export const Primitives = {
         edgeLength: Math.sqrt(Q_edge),
         starSpread,
         showFace: options.showFace,
-        rtPure: "partial", // Triangle vertices exact, intermediates cached
-        method: "triangle-subdivision",
+        rtPure: "cubic", // Triangle vertices RT-pure, rotations cubic-cached
+        method: "3×triangle-40°-cubic",
+        cubic: "8x³ - 6x - 1 = 0",
+      },
+    };
+  },
+
+  /**
+   * Heptagon (n=7) - Cubic-Algebraic (direct construction)
+   *
+   * Gauss-Wantzel: 7 is NOT a Fermat prime, so heptagon is not constructible.
+   * Requires solving cubic 8x³ - 4x² - 4x + 1 = 0 (for cos 2π/7).
+   *
+   * Unlike nonagon (which builds from triangles), heptagon must be
+   * constructed directly using cached cubic solutions.
+   *
+   * Vertices at 0°, 51.43°, 102.86°, 154.29°, 205.71°, 257.14°, 308.57°
+   * (angles = k × 360°/7 for k = 0..6)
+   *
+   * @private
+   */
+  _polygonHeptagon: (quadrance, options) => {
+    const R = Math.sqrt(quadrance);
+
+    // Cached cubic-derived values from RT.PureCubics.heptagon
+    const cos1 = RT.PureCubics.heptagon.cos1(); // cos(2π/7)
+    const sin1 = RT.PureCubics.heptagon.sin1(); // sin(2π/7)
+    const cos2 = RT.PureCubics.heptagon.cos2(); // cos(4π/7)
+    const sin2 = RT.PureCubics.heptagon.sin2(); // sin(4π/7)
+    const cos3 = RT.PureCubics.heptagon.cos3(); // cos(6π/7)
+    const sin3 = RT.PureCubics.heptagon.sin3(); // sin(6π/7)
+
+    // 7 vertices at 360°/7 intervals
+    // Using symmetry: cos(-θ) = cos(θ), sin(-θ) = -sin(θ)
+    const vertices = [
+      new THREE.Vector3(R, 0, 0), // 0° (exact)
+      new THREE.Vector3(R * cos1, R * sin1, 0), // 2π/7 ≈ 51.43°
+      new THREE.Vector3(R * cos2, R * sin2, 0), // 4π/7 ≈ 102.86°
+      new THREE.Vector3(R * cos3, R * sin3, 0), // 6π/7 ≈ 154.29°
+      new THREE.Vector3(R * cos3, -R * sin3, 0), // 8π/7 ≈ 205.71° (= -6π/7)
+      new THREE.Vector3(R * cos2, -R * sin2, 0), // 10π/7 ≈ 257.14° (= -4π/7)
+      new THREE.Vector3(R * cos1, -R * sin1, 0), // 12π/7 ≈ 308.57° (= -2π/7)
+    ];
+
+    const edges = [];
+    for (let i = 0; i < 7; i++) edges.push([i, (i + 1) % 7]);
+    const faces = options.showFace ? [[0, 1, 2, 3, 4, 5, 6]] : [];
+
+    // Star spread for 7-gon from cached value
+    const starSpread = RT.PureCubics.heptagon.starSpread();
+    const Q_edge = 4 * starSpread * quadrance;
+
+    console.log(
+      `[RT] Heptagon: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
+        `s=${starSpread.toFixed(6)} (cubic-cached)`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        sides: 7,
+        quadrance,
+        circumradius: R,
+        edgeQuadrance: Q_edge,
+        edgeLength: Math.sqrt(Q_edge),
+        starSpread,
+        showFace: options.showFace,
+        rtPure: "cubic", // Direct cubic construction
+        method: "direct-cubic",
+        cubic: "8x³ - 4x² - 4x + 1 = 0",
       },
     };
   },
