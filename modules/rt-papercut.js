@@ -1410,11 +1410,12 @@ export const RTPapercut = {
 
     // ═══════════════════════════════════════════════════════════════════════
     // PROJECT VERTICES TO THE PLANE
+    // Track component membership: first 12 = truncated tet, next 12 = icosahedron
     // ═══════════════════════════════════════════════════════════════════════
     const projectedPoints = []; // 2D coordinates in plane space
     const projected3D = []; // 3D world positions on plane
 
-    worldVertices.forEach(vertex => {
+    worldVertices.forEach((vertex, i) => {
       // Project vertex onto plane along planeNormal direction
       const toVertex = vertex.clone().sub(planeCenter);
       const distAlongNormal = toVertex.dot(planeNormal);
@@ -1425,27 +1426,39 @@ export const RTPapercut = {
       const x = localPoint.dot(planeRight);
       const y = localPoint.dot(planeUp);
 
-      projectedPoints.push({ x, y, vertex3D: vertex, projected3D: projectedPoint });
+      // Track component: first 12 = truncated tet (yellow-green), rest = icosahedron (cyan)
+      const component = (isCompoundProjection && i >= 12) ? "icosahedron" : "truncatedTet";
+      projectedPoints.push({ x, y, vertex3D: vertex, projected3D: projectedPoint, component, index: i });
       projected3D.push(projectedPoint);
     });
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 1. PROJECTION RAYS (YELLOW lines from vertices to projected points)
+    // 1. PROJECTION RAYS - Color-coded by component
+    //    Yellow-green for truncated tetrahedron, Cyan for icosahedron
     // ═══════════════════════════════════════════════════════════════════════
-    const rayMaterial = new THREE.LineBasicMaterial({
-      color: 0xffff00,
+    const truncTetRayMaterial = new THREE.LineBasicMaterial({
+      color: 0xaaff00, // Yellow-green (matches trunc tet mesh color)
+      transparent: true,
+      opacity: 0.5,
+      depthTest: true,
+    });
+    const icosaRayMaterial = new THREE.LineBasicMaterial({
+      color: 0x00ffff, // Cyan (matches icosahedron mesh color)
       transparent: true,
       opacity: 0.5,
       depthTest: true,
     });
 
+    let truncTetCount = 0, icosaCount = 0;
     projectedPoints.forEach((p, i) => {
+      const rayMaterial = p.component === "icosahedron" ? icosaRayMaterial : truncTetRayMaterial;
       const rayGeometry = new THREE.BufferGeometry().setFromPoints([p.vertex3D, p.projected3D]);
       const ray = new THREE.Line(rayGeometry, rayMaterial);
-      ray.name = `projectionRay-${i}`;
+      ray.name = `projectionRay-${p.component}-${i}`;
       group.add(ray);
+      if (p.component === "icosahedron") icosaCount++; else truncTetCount++;
     });
-    console.log("   ✓ Added", projectedPoints.length, "projection rays");
+    console.log(`   ✓ Added ${projectedPoints.length} projection rays (${truncTetCount} trunc tet, ${icosaCount} icosa)`);
 
     // ═══════════════════════════════════════════════════════════════════════
     // 2. COMPUTE CONVEX HULL of projected points
@@ -1544,22 +1557,29 @@ export const RTPapercut = {
       group.add(node);
     }
 
-    // Small white nodes at all projected points (showing interior vs hull)
-    const projNodeMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+    // Component-colored nodes at all projected points (showing interior vs hull)
+    // Yellow-green for truncated tet, cyan for icosahedron
+    const truncTetProjNodeMaterial = new THREE.MeshBasicMaterial({
+      color: 0xaaff00, // Yellow-green (matches trunc tet)
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.6,
+    });
+    const icosaProjNodeMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00ffff, // Cyan (matches icosahedron)
+      transparent: true,
+      opacity: 0.6,
     });
     const smallNodeGeom = new THREE.SphereGeometry(nodeRadius * 0.5, 8, 8);
 
-    projected3D.forEach((p, i) => {
-      const node = new THREE.Mesh(smallNodeGeom, projNodeMaterial.clone());
-      node.position.copy(p);
-      node.name = `projectedPoint-${i}`;
+    projectedPoints.forEach((p, i) => {
+      const nodeMaterial = p.component === "icosahedron" ? icosaProjNodeMaterial : truncTetProjNodeMaterial;
+      const node = new THREE.Mesh(smallNodeGeom, nodeMaterial.clone());
+      node.position.copy(p.projected3D);
+      node.name = `projectedPoint-${p.component}-${i}`;
       group.add(node);
     });
 
-    console.log("   ✓ Added vertex nodes (yellow=hull, cyan=ideal, white=all projected)");
+    console.log("   ✓ Added vertex nodes (yellow=hull, yellow-green=trunc tet proj, cyan=icosa proj)");
 
     // ═══════════════════════════════════════════════════════════════════════
     // FINAL SETUP
@@ -1568,10 +1588,16 @@ export const RTPapercut = {
     RTPapercut._primePolygonGroup = group;
     RTPapercut._primePolygonVisible = true;
 
+    const sourceDesc = isCompoundProjection
+      ? `${worldVertices.length} vertices from Compound (TruncTet + Icosa)`
+      : `${worldVertices.length} vertices from Quadray Truncated Tetrahedron`;
     console.log(`📐 Projection visualization complete:`);
-    console.log(`   Source: ${worldVertices.length} vertices from Quadray Truncated Tetrahedron`);
+    console.log(`   Source: ${sourceDesc}`);
     console.log(`   Projection: ${hull2D.length}-vertex hull (YELLOW) vs ${n}-vertex ideal (CYAN)`);
     console.log(`   Plane distance: ${planeDistance} units from polyhedron center`);
+    if (isCompoundProjection) {
+      console.log(`   Components: Yellow-green rays/nodes = TruncTet (12v), Cyan rays/nodes = Icosa (12v)`);
+    }
 
     // Update UI info display
     RTPapercut._updateProjectionInfo(n);
@@ -1784,9 +1810,11 @@ export const RTPapercut = {
     } else if (n === 7) {
       s1 = 0.11; s2 = 0; s3 = 0.5; // Truncated tetrahedron
     } else if (n === 11) {
-      s1 = 0; s2 = 0.4; s3 = 0.2; // Compound (trunc tet + icosa) - BREAKTHROUGH!
+      // Swap s2/s3 from Python [0, 0.4, 0.2] to match JS rotation order
+      s1 = 0; s2 = 0.2; s3 = 0.4; // Compound (trunc tet + icosa) - BREAKTHROUGH!
     } else if (n === 13) {
-      s1 = 0; s2 = 0.6; s3 = 0.8; // Compound (trunc tet + icosa) - BREAKTHROUGH!
+      // Swap s2/s3 from Python [0, 0.6, 0.8] to match JS rotation order
+      s1 = 0; s2 = 0.8; s3 = 0.6; // Compound (trunc tet + icosa) - BREAKTHROUGH!
     } else {
       // Default: XY plane
       return {

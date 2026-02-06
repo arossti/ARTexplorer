@@ -720,8 +720,21 @@ export const QuadrayPolyhedra = {
       normalize ? zeroSumNormalize(coords) : coords
     );
 
-    const truncTetVertices = truncTetNormalized.map(([w, x, y, z]) =>
-      wxyzToCartesian(w, x, y, z, scale * 0.5) // Scale to match icosahedron radius
+    // First pass: compute raw vertices to find circumradius
+    const truncTetRaw = truncTetNormalized.map(([w, x, y, z]) =>
+      wxyzToCartesian(w, x, y, z, 1.0) // Unit scale first
+    );
+
+    // Calculate truncated tet circumradius
+    let truncTetCircumradius = 0;
+    truncTetRaw.forEach(v => {
+      const r = v.length();
+      if (r > truncTetCircumradius) truncTetCircumradius = r;
+    });
+
+    // Normalize to unit circumradius, then apply user scale
+    const truncTetVertices = truncTetRaw.map(v =>
+      v.clone().multiplyScalar(scale / truncTetCircumradius)
     );
 
     // Edges for truncated tetrahedron (indices 0-11)
@@ -741,12 +754,27 @@ export const QuadrayPolyhedra = {
     // ═══════════════════════════════════════════════════════════════════════
     // 2. ICOSAHEDRON (12 vertices) - Call actual Polyhedra.icosahedron()
     // Uses TESTED geometry from rt-polyhedra.js (golden ratio construction)
+    // CRITICAL: Normalize to SAME circumradius as truncated tetrahedron!
     // ═══════════════════════════════════════════════════════════════════════
     const Polyhedra = await getPolyhedra();
-    const icosa = Polyhedra.icosahedron(scale);
-    const icosaVertices = icosa.vertices;
-    const icosaEdgesLocal = icosa.edges;
-    const icosaFacesLocal = icosa.faces;
+    const icosaRaw = Polyhedra.icosahedron(1.0); // Unit scale first
+
+    // Calculate icosahedron circumradius
+    let icosaCircumradius = 0;
+    icosaRaw.vertices.forEach(v => {
+      const r = v.length();
+      if (r > icosaCircumradius) icosaCircumradius = r;
+    });
+
+    // Normalize to unit circumradius, then apply user scale (SAME as trunc tet!)
+    const icosaVertices = icosaRaw.vertices.map(v =>
+      v.clone().multiplyScalar(scale / icosaCircumradius)
+    );
+    const icosaEdgesLocal = icosaRaw.edges;
+    const icosaFacesLocal = icosaRaw.faces;
+
+    console.log(`  [Compound Scale] TruncTet circumradius: ${truncTetCircumradius.toFixed(4)}, Icosa: ${icosaCircumradius.toFixed(4)}`);
+    console.log(`  [Compound Scale] Both normalized to circumradius: ${scale.toFixed(4)}`);
 
     // ═══════════════════════════════════════════════════════════════════════
     // 3. COMBINE VERTEX SETS (24 total)
