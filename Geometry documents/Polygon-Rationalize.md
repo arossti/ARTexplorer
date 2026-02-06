@@ -830,6 +830,91 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
 
 ---
 
+## Quadray Coordinate Solutions
+
+The Quadray (WXYZ) tetrahedral coordinate system offers significant advantages for prime polygon construction over Cartesian XYZ. Where Cartesian coordinates require irrational radicals, Quadray coordinates remain **purely rational**.
+
+### Tetrahedron: Maximally Simple
+
+In Quadray, the regular tetrahedron has trivially simple vertices:
+
+| Vertex | Quadray (W,X,Y,Z) | Cartesian (x,y,z) |
+|--------|-------------------|-------------------|
+| W | (1, 0, 0, 0) | (1, 1, 1)/√3 |
+| X | (0, 1, 0, 0) | (1, -1, -1)/√3 |
+| Y | (0, 0, 1, 0) | (-1, 1, -1)/√3 |
+| Z | (0, 0, 0, 1) | (-1, -1, 1)/√3 |
+
+**Key insight**: The Quadray coordinates are **integer** while Cartesian requires √3.
+
+### Truncated Tetrahedron: All Rational Quadray Vertices
+
+The truncated tetrahedron—source of the 7-gon projection—has 12 vertices. In Quadray, all coordinates are **rational fractions**:
+
+```
+Quadray Vertices (scale factor 1/3):
+[2,1,0,0], [2,0,1,0], [2,0,0,1]   # Near W vertex
+[1,2,0,0], [0,2,1,0], [0,2,0,1]   # Near X vertex
+[1,0,2,0], [0,1,2,0], [0,0,2,1]   # Near Y vertex
+[1,0,0,2], [0,1,0,2], [0,0,1,2]   # Near Z vertex
+```
+
+Compare with Cartesian (requires √2):
+```
+Cartesian Vertices:
+(±1, ±1, ±3) permutations with sign constraints
+```
+
+### Spread Between Quadray Basis Vectors
+
+The spread between any two Quadray basis vectors is:
+
+```
+s = sin²(109.47°) = 8/9  (exact rational!)
+cos(109.47°) = -1/3     (exact rational!)
+```
+
+This is the **natural angle** of tetrahedral geometry—fully compatible with Rational Trigonometry.
+
+### Rotation via F, G, H Coefficients
+
+For a rotation by spread s in the Quadray system, define coefficients:
+
+```javascript
+F = (2·cos(θ) + 1) / 3     // derived from spread s = sin²(θ)
+G = (1 - cos(θ) + √3·sin(θ)) / 3
+H = (1 - cos(θ) - √3·sin(θ)) / 3
+
+// From spread s, recover trig values:
+sin(θ) = √s
+cos(θ) = √(1-s)
+```
+
+For rational spreads, the rotation remains algebraically exact until the √ operation.
+
+### Heptagon Projection in Quadray Terms
+
+The 7-gon projection from truncated tetrahedron at spreads (s₁=3/20, s₂=0, s₃=1/2):
+
+1. **Source polyhedron**: Truncated tetrahedron with rational Quadray vertices
+2. **Viewing angle**: Specified by rational spreads (no transcendentals)
+3. **Rotation matrix**: Computed from F, G, H coefficients
+4. **Result**: 7 hull vertices, each with algebraic coordinates
+
+The Quadray formulation maintains rationality longer than Cartesian, deferring radical evaluation until the final projection step.
+
+### Comparison: Quadray vs Cartesian
+
+| Property | Quadray WXYZ | Cartesian XYZ |
+|----------|--------------|---------------|
+| Tetrahedron vertices | Integer (1,0,0,0) | Irrational (√3) |
+| Truncated tetrahedron | Rational (2,1,0,0)/3 | Irrational (√2) |
+| Basis vector angle | Spread 8/9 (rational) | cos⁻¹(-1/3) (transcendental) |
+| Rotation coefficients | Algebraic in √s | Transcendental sin/cos |
+| Natural for IVM lattice | Yes | Requires conversion |
+
+---
+
 ## References
 
 - Wildberger, N.J. "Divine Proportions" Chapter 14 (Spread Polynomials)

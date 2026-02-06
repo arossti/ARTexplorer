@@ -546,6 +546,78 @@ These are exact rational values, not approximations. The 7-gon emerges from a pu
 
 This aligns with Wildberger's program: avoiding transcendental functions while retaining geometric expressiveness.
 
+\subsection{Quadray Coordinate Formulation}
+
+The discussion above implicitly uses Cartesian $(x, y, z)$ coordinates. However, the \textbf{Quadray coordinate system} $(W, X, Y, Z)$---with basis vectors pointing to tetrahedron vertices---offers significant advantages for rational polygon construction.
+
+\subsubsection{Tetrahedron: Integer Coordinates}
+
+In Quadray, the regular tetrahedron has trivially simple vertices:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Vertex} & \textbf{Quadray} $(W,X,Y,Z)$ & \textbf{Cartesian} $(x,y,z)$ \\
+\midrule
+$W$ & $(1, 0, 0, 0)$ & $(1, 1, 1)/\sqrt{3}$ \\
+$X$ & $(0, 1, 0, 0)$ & $(1, -1, -1)/\sqrt{3}$ \\
+$Y$ & $(0, 0, 1, 0)$ & $(-1, 1, -1)/\sqrt{3}$ \\
+$Z$ & $(0, 0, 0, 1)$ & $(-1, -1, 1)/\sqrt{3}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The Quadray coordinates are \textbf{integer} while Cartesian requires $\sqrt{3}$.
+
+\subsubsection{Truncated Tetrahedron: Rational Coordinates}
+
+The truncated tetrahedron---source of the 7-gon projection---has 12 vertices. In Quadray, \textbf{all coordinates are rational}:
+
+\begin{equation}
+\begin{aligned}
+\text{Near } W: \quad &(2,1,0,0), \; (2,0,1,0), \; (2,0,0,1) \\
+\text{Near } X: \quad &(1,2,0,0), \; (0,2,1,0), \; (0,2,0,1) \\
+\text{Near } Y: \quad &(1,0,2,0), \; (0,1,2,0), \; (0,0,2,1) \\
+\text{Near } Z: \quad &(1,0,0,2), \; (0,1,0,2), \; (0,0,1,2)
+\end{aligned}
+\end{equation}
+
+(Normalized by factor of $1/3$.) Compare with the Cartesian form, which requires $\sqrt{2}$ for the edge lengths.
+
+\subsubsection{Basis Vector Spread}
+
+The spread between any two Quadray basis vectors is:
+\begin{equation}
+s = \sin^2(109.47°) = \frac{8}{9} \quad \text{(exact rational)}
+\end{equation}
+with $\cos(109.47°) = -\frac{1}{3}$ (also rational). This is the \textbf{natural angle} of tetrahedral geometry---inherently compatible with Rational Trigonometry.
+
+\subsubsection{Rotation Coefficients}
+
+For a rotation by spread $s$ in the Quadray system, we define:
+\begin{equation}
+F = \frac{2\cos\theta + 1}{3}, \quad G = \frac{1 - \cos\theta + \sqrt{3}\sin\theta}{3}, \quad H = \frac{1 - \cos\theta - \sqrt{3}\sin\theta}{3}
+\end{equation}
+
+where $\sin\theta = \sqrt{s}$ and $\cos\theta = \sqrt{1-s}$. For rational spreads, the rotation remains algebraically exact until the final $\sqrt{\cdot}$ operation.
+
+\subsubsection{Advantage Summary}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Property} & \textbf{Quadray} $(W,X,Y,Z)$ & \textbf{Cartesian} $(x,y,z)$ \\
+\midrule
+Tetrahedron vertices & Integer $(1,0,0,0)$ & Irrational $(\sqrt{3})$ \\
+Truncated tetrahedron & Rational $(2,1,0,0)/3$ & Irrational $(\sqrt{2})$ \\
+Basis vector angle & Spread $8/9$ (rational) & $\cos^{-1}(-1/3)$ (transcendental) \\
+IVM lattice & Native & Requires conversion \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The Quadray formulation maintains rationality longer than Cartesian, deferring radical evaluation until the final projection step. This makes it the natural coordinate system for Rational Synergetics and prime polygon projections.
+
 %==============================================================================
 \section{Future Work}
 %==============================================================================
