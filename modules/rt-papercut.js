@@ -9,6 +9,7 @@
  * - SVG export via browser print
  */
 
+import * as THREE from "three";
 import { Line2 } from "three/addons/lines/Line2.js";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineGeometry } from "three/addons/lines/LineGeometry.js";
@@ -1091,5 +1092,141 @@ export const RTPapercut = {
     if (RTPapercut.state.cutplaneEnabled) {
       RTPapercut.updateCutplane(RTPapercut.state.cutplaneValue, scene);
     }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PRIME PROJECTION POLYGON OVERLAY
+  // Shows unit-radius regular n-gon to demonstrate prime projection hypothesis
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  _primePolygonGroup: null,
+  _primePolygonVisible: false,
+
+  /**
+   * Create a regular n-gon in the camera's view plane
+   * Uses RT-pure methodology: generates vertices at exact rational spreads
+   *
+   * @param {number} n - Number of sides (7 for heptagon, 9 for nonagon, etc.)
+   * @param {number} radius - Polygon radius (default: 1.0 for unit polygon)
+   * @param {THREE.Camera} camera - Camera to align polygon perpendicular to view
+   * @returns {Array<THREE.Vector3>} Polygon vertices
+   */
+  _createRegularPolygonVertices: function (n, radius, camera) {
+    const vertices = [];
+
+    // Get the view plane basis vectors (perpendicular to camera direction)
+    const viewDir = new THREE.Vector3();
+    camera.getWorldDirection(viewDir);
+
+    // Create orthonormal basis in view plane
+    const up = camera.up.clone().normalize();
+    const right = new THREE.Vector3().crossVectors(viewDir, up).normalize();
+    const planeUp = new THREE.Vector3().crossVectors(right, viewDir).normalize();
+
+    // Generate n vertices at equal angular spacing
+    // Spread between adjacent vertices: s = sin²(π/n)
+    // This is the RT-pure representation of the angular step
+    for (let i = 0; i <= n; i++) {
+      const angle = (2 * Math.PI * i) / n;
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
+
+      // Project onto view plane (centered at origin)
+      const vertex = new THREE.Vector3()
+        .addScaledVector(right, x)
+        .addScaledVector(planeUp, y);
+
+      vertices.push(vertex);
+    }
+
+    return vertices;
+  },
+
+  /**
+   * Show or hide the prime projection polygon overlay
+   *
+   * @param {number|null} n - Number of sides (7, 9, etc.) or null to hide
+   * @param {THREE.Scene} scene - Scene to add/remove polygon from
+   * @param {THREE.Camera} camera - Camera for view plane alignment
+   * @param {number} radius - Polygon radius (default: 1.5 to encompass typical polyhedra)
+   */
+  showPrimePolygon: function (n, scene, camera, radius = 1.5) {
+    // Remove existing polygon if any
+    if (RTPapercut._primePolygonGroup) {
+      scene.remove(RTPapercut._primePolygonGroup);
+      RTPapercut._primePolygonGroup.traverse(child => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+      });
+      RTPapercut._primePolygonGroup = null;
+    }
+
+    // If n is null, just hide (already removed above)
+    if (!n) {
+      RTPapercut._primePolygonVisible = false;
+      console.log("📐 Prime polygon overlay hidden");
+      return;
+    }
+
+    // Create new polygon group
+    const group = new THREE.Group();
+    group.name = `primePolygon-${n}`;
+
+    // Create vertices
+    const vertices = RTPapercut._createRegularPolygonVertices(n, radius, camera);
+
+    // Create line geometry from vertices
+    const positions = [];
+    vertices.forEach(v => positions.push(v.x, v.y, v.z));
+
+    const lineGeometry = new LineGeometry();
+    lineGeometry.setPositions(positions);
+
+    // Create line material (cyan/teal for visibility)
+    const lineMaterial = new LineMaterial({
+      color: 0x00ffff,
+      linewidth: 0.003,
+      transparent: true,
+      opacity: 0.8,
+      depthTest: false, // Always visible
+      depthWrite: false,
+    });
+    lineMaterial.resolution.set(window.innerWidth, window.innerHeight);
+
+    const line = new Line2(lineGeometry, lineMaterial);
+    line.computeLineDistances();
+    group.add(line);
+
+    // Add to scene
+    scene.add(group);
+    RTPapercut._primePolygonGroup = group;
+    RTPapercut._primePolygonVisible = true;
+
+    // Log RT-pure spread information
+    const spreadBetweenVertices = Math.pow(Math.sin(Math.PI / n), 2);
+    console.log(`📐 Prime polygon overlay: ${n}-gon at radius ${radius}`);
+    console.log(`   Adjacent vertex spread: s = sin²(π/${n}) ≈ ${spreadBetweenVertices.toFixed(6)}`);
+    console.log(`   Non-constructible polygon demonstrating prime projection`);
+  },
+
+  /**
+   * Update polygon orientation to match camera (call on camera change)
+   * @param {THREE.Scene} scene
+   * @param {THREE.Camera} camera
+   */
+  updatePrimePolygonOrientation: function (scene, camera) {
+    if (!RTPapercut._primePolygonVisible || !RTPapercut._primePolygonGroup) {
+      return;
+    }
+
+    // Extract n from group name
+    const match = RTPapercut._primePolygonGroup.name.match(/primePolygon-(\d+)/);
+    if (!match) return;
+
+    const n = parseInt(match[1]);
+    const radius = 1.5; // Default radius
+
+    // Recreate polygon with new orientation
+    RTPapercut.showPrimePolygon(n, scene, camera, radius);
   },
 };
