@@ -1112,16 +1112,28 @@ export const RTPapercut = {
    * @returns {Array<THREE.Vector3>} Polygon vertices
    */
   _createRegularPolygonVertices: function (n, radius, camera) {
+    console.log("🔍 _createRegularPolygonVertices:", { n, radius, camera: !!camera });
     const vertices = [];
 
     // Get the view plane basis vectors (perpendicular to camera direction)
     const viewDir = new THREE.Vector3();
     camera.getWorldDirection(viewDir);
+    console.log("   viewDir:", viewDir.x.toFixed(3), viewDir.y.toFixed(3), viewDir.z.toFixed(3));
 
     // Create orthonormal basis in view plane
     const up = camera.up.clone().normalize();
+    console.log("   camera.up:", up.x.toFixed(3), up.y.toFixed(3), up.z.toFixed(3));
+
     const right = new THREE.Vector3().crossVectors(viewDir, up).normalize();
+    console.log("   right:", right.x.toFixed(3), right.y.toFixed(3), right.z.toFixed(3), "length:", right.length().toFixed(3));
+
     const planeUp = new THREE.Vector3().crossVectors(right, viewDir).normalize();
+    console.log("   planeUp:", planeUp.x.toFixed(3), planeUp.y.toFixed(3), planeUp.z.toFixed(3), "length:", planeUp.length().toFixed(3));
+
+    // Check for degenerate basis (if right or planeUp is zero/NaN)
+    if (right.length() < 0.001 || planeUp.length() < 0.001 || isNaN(right.x) || isNaN(planeUp.x)) {
+      console.error("❌ Degenerate basis vectors! right length:", right.length(), "planeUp length:", planeUp.length());
+    }
 
     // Generate n vertices at equal angular spacing
     // Spread between adjacent vertices: s = sin²(π/n)
@@ -1139,6 +1151,7 @@ export const RTPapercut = {
       vertices.push(vertex);
     }
 
+    console.log("   Generated", vertices.length, "vertices");
     return vertices;
   },
 
@@ -1151,8 +1164,21 @@ export const RTPapercut = {
    * @param {number} radius - Polygon radius (default: 1.5 to encompass typical polyhedra)
    */
   showPrimePolygon: function (n, scene, camera, radius = 1.5) {
+    console.log("🔍 showPrimePolygon called with:", { n, scene: !!scene, camera: !!camera, radius });
+
+    // Validate inputs
+    if (!scene) {
+      console.error("❌ showPrimePolygon: scene is undefined!");
+      return;
+    }
+    if (!camera) {
+      console.error("❌ showPrimePolygon: camera is undefined!");
+      return;
+    }
+
     // Remove existing polygon if any
     if (RTPapercut._primePolygonGroup) {
+      console.log("🧹 Removing existing polygon group");
       scene.remove(RTPapercut._primePolygonGroup);
       RTPapercut._primePolygonGroup.traverse(child => {
         if (child.geometry) child.geometry.dispose();
@@ -1169,18 +1195,27 @@ export const RTPapercut = {
     }
 
     // Create new polygon group
+    console.log("🔨 Creating new polygon group for", n, "-gon");
     const group = new THREE.Group();
     group.name = `primePolygon-${n}`;
+    console.log("   ✓ Group created:", group.name);
 
     // Create vertices
     const vertices = RTPapercut._createRegularPolygonVertices(n, radius, camera);
+    console.log("   ✓ Vertices created:", vertices.length, "points");
+    if (vertices.length > 0) {
+      console.log("   First vertex:", vertices[0].x.toFixed(3), vertices[0].y.toFixed(3), vertices[0].z.toFixed(3));
+      console.log("   Last vertex:", vertices[vertices.length-1].x.toFixed(3), vertices[vertices.length-1].y.toFixed(3), vertices[vertices.length-1].z.toFixed(3));
+    }
 
     // Create line geometry from vertices
     const positions = [];
     vertices.forEach(v => positions.push(v.x, v.y, v.z));
+    console.log("   ✓ Positions array length:", positions.length, "(expecting", (n+1)*3, ")");
 
     const lineGeometry = new LineGeometry();
     lineGeometry.setPositions(positions);
+    console.log("   ✓ LineGeometry created");
 
     // Create line material (cyan/teal for visibility)
     const lineMaterial = new LineMaterial({
@@ -1192,13 +1227,19 @@ export const RTPapercut = {
       depthWrite: false,
     });
     lineMaterial.resolution.set(window.innerWidth, window.innerHeight);
+    console.log("   ✓ LineMaterial created, resolution:", window.innerWidth, "x", window.innerHeight);
 
     const line = new Line2(lineGeometry, lineMaterial);
     line.computeLineDistances();
+    console.log("   ✓ Line2 created and distances computed");
+
     group.add(line);
+    console.log("   ✓ Line added to group, group.children:", group.children.length);
 
     // Add to scene
     scene.add(group);
+    console.log("   ✓ Group added to scene, scene.children count:", scene.children.length);
+
     RTPapercut._primePolygonGroup = group;
     RTPapercut._primePolygonVisible = true;
 
@@ -1207,6 +1248,11 @@ export const RTPapercut = {
     console.log(`📐 Prime polygon overlay: ${n}-gon at radius ${radius}`);
     console.log(`   Adjacent vertex spread: s = sin²(π/${n}) ≈ ${spreadBetweenVertices.toFixed(6)}`);
     console.log(`   Non-constructible polygon demonstrating prime projection`);
+
+    // Debug: check if group is in scene
+    const inScene = scene.children.includes(group);
+    console.log("   🔍 Group in scene.children:", inScene);
+    console.log("   🔍 Group world position:", group.position.x, group.position.y, group.position.z);
   },
 
   /**
