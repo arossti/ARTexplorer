@@ -546,6 +546,56 @@ These are exact rational values, not approximations. The 7-gon emerges from a pu
 
 This aligns with Wildberger's program: avoiding transcendental functions while retaining geometric expressiveness.
 
+\subsection{Claims of Novelty}
+
+To preempt misunderstanding, we clarify what this work does and does not claim.
+
+\subsubsection{What We Do NOT Claim}
+
+\begin{itemize}
+    \item \textbf{We do not ``solve'' the Gauss-Wantzel impossibility.} The heptagon remains non-constructible with compass and straightedge. Our projections do not change this classical result.
+
+    \item \textbf{We do not claim that projection yields a ``true'' regular heptagon.} The 7-vertex hull boundary is not equilateral or equiangular in the projected plane---it is merely a 7-sided convex polygon.
+
+    \item \textbf{We do not claim priority on dimensional projection methods.} De Bruijn's 1981 work on Penrose tilings established that ``forbidden'' symmetries can emerge via projection from higher dimensions. Our work extends this insight to prime vertex counts.
+
+    \item \textbf{We do not claim the truncated tetrahedron is newly discovered.} It is a classical Archimedean solid known since antiquity.
+\end{itemize}
+
+\subsubsection{What We DO Claim as Novel}
+
+\begin{enumerate}
+    \item \textbf{The Symmetry Barrier theorem and its resolution.} We identify why centrally symmetric polytopes \emph{cannot} produce prime projections (all hull counts are even), and demonstrate that asymmetric polytopes like the truncated tetrahedron \emph{can}.
+
+    \item \textbf{Rational-spread parameterization of projection angles.} Prior projection work (e.g., quasicrystals) typically uses irrational ``golden angle'' orientations. We demonstrate that \emph{rational} spread values---specifically $s = (3/20, 0, 1/2)$---suffice to produce prime hull counts.
+
+    \item \textbf{The 4D± Quadray formulation.} The truncated tetrahedron's vertices are \emph{all rational} in Quadray coordinates: permutations of $(2,1,0,0)/3$. This maintains algebraic exactness throughout the construction, with radicals entering only at the final projection step.
+
+    \item \textbf{Systematic computational search methodology.} We provide reproducible scripts and parameters for discovering prime projections, enabling extension to higher primes (11, 13, ...) as computational resources permit.
+
+    \item \textbf{Interactive visualization in ARTexplorer.} The web-based demonstration allows direct manipulation and verification of the projection phenomenon.
+\end{enumerate}
+
+\subsubsection{Relationship to Prior Art}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Approach} & \textbf{Prior Work} & \textbf{This Work} \\
+\midrule
+Projection source & 5D hypercubic lattice & 3D/4D polytopes \\
+Projection angle & Irrational (golden) & Rational spreads \\
+Target symmetry & 5-fold (quasicrystal) & Prime $n$-gon hull \\
+Coordinate system & Cartesian & Quadray (WXYZ) \\
+Algebraic status & Involves $\phi$ & Purely rational until projection \\
+\bottomrule
+\end{tabular}
+\caption{Comparison with de Bruijn's quasicrystal projection method}
+\end{table}
+
+The key novelty is not the \emph{fact} of projection, but the \emph{rationality} of the entire construction chain: rational Quadray vertices $\to$ rational spread rotation $\to$ prime hull count. This aligns with Wildberger's Rational Trigonometry program in a way that irrational-angle projections do not.
+
 \subsection{Quadray Coordinate Formulation}
 
 The discussion above implicitly uses Cartesian $(x, y, z)$ coordinates. However, the \textbf{Quadray coordinate system} $(W, X, Y, Z)$---with basis vectors pointing to tetrahedron vertices---offers significant advantages for rational polygon construction.
@@ -666,12 +716,20 @@ The prime projection discovery is implemented as an interactive demonstration in
 
 The cyan polygon overlay appears perpendicular to the camera view, demonstrating the prime n-gon that emerges from the polyhedron's projection at that viewing angle.
 
-% FIGURE PLACEHOLDER: Screenshot of 7-gon projection overlay on truncated tetrahedron
-% \begin{figure}[h]
-% \centering
-% \includegraphics[width=0.8\textwidth]{7gon-projection.png}
-% \caption{The 7-gon projection overlay (cyan) on the truncated tetrahedron at viewing spreads $s = (0.11, 0, 0.5)$. The heptagonal silhouette emerges from 7 of the 12 Quadray-rational vertices falling on the convex hull boundary.}
-% \end{figure}
+\begin{figure}[p]
+    \centering
+    \includegraphics[width=0.85\linewidth]{5-gon.png}
+    \vspace{0.3cm}
+    \caption{5-gon projection: Quadray Truncated Tetrahedron at spread view angle $s=(0,0,\frac{1}{2})$. The pentagon emerges as the convex hull boundary of the projected vertices.}
+    \label{fig:5gon-demo}
+
+    \vspace{0.8cm}
+
+    \includegraphics[width=0.85\linewidth]{7-gon.png}
+    \vspace{0.3cm}
+    \caption{7-gon projection: Spread-rotated view at $s=(0.11,0,\frac{1}{2})$ produces a heptagonal silhouette---a non-constructible prime polygon from rational parameters.}
+    \label{fig:7gon-demo}
+\end{figure}
 
 \subsubsection{Condensed Quadray Formulations}
 
@@ -707,13 +765,6 @@ Trunc Tet: 12v → 7-hull (non-constructible)
     \item \textbf{Constructibility}: $\varphi$-constructible (Fermat prime, requires only $\sqrt{5}$)
 \end{itemize}
 \end{tcolorbox}
-
-% FIGURE PLACEHOLDER: Screenshot of 5-gon projection overlay
-% \begin{figure}[h]
-% \centering
-% \includegraphics[width=0.8\textwidth]{5gon-projection.png}
-% \caption{The 5-gon projection overlay (cyan) viewed along the icosahedral 5-fold axis at spreads $s = (0, 0, 0.5)$. The pentagon is $\varphi$-constructible, requiring only $\sqrt{5}$.}
-% \end{figure}
 
 \subsubsection{Technical Implementation}
 
@@ -784,6 +835,11 @@ Developed in collaboration with AI assistance (Claude/Anthropic) for algorithm d
 \end{enumerate}
 
 \vfill
+
+\noindent\rule{\textwidth}{0.4pt}
+\smallskip
+\noindent DOI: 10.13140/RG.2.2.23043.98089 | CC BY-NC-ND 4.0 | \copyright\ Andy Ross Thomson, M.Arch, OAA 2026 | February 2026
+
 \begin{center}
 \textit{``The prime heptagon, forbidden by Euclid's tools,\\
 emerges as a shadow from the tetrahedron's light.''}
