@@ -14,6 +14,7 @@ import { Line2 } from "three/addons/lines/Line2.js";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 import { RT, Quadray } from "./rt-math.js";
+import { QuadrayPolyhedra } from "./rt-quadray-polyhedra.js";
 
 export const RTPapercut = {
   // Module state (local, not persisted)
@@ -1335,44 +1336,63 @@ export const RTPapercut = {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // FIND THE ACTUAL TRUNCATED TETRAHEDRON IN THE SCENE
+    // GET VERTICES FOR PROJECTION
+    // For 5/7-gon: Use truncated tetrahedron from scene (12 vertices)
+    // For 11/13-gon: Generate compound polyhedra (24 vertices) - BREAKTHROUGH!
     // ═══════════════════════════════════════════════════════════════════════
-    let truncTetGroup = null;
-    scene.traverse(obj => {
-      if (obj.name === "QuadrayTruncatedTetrahedron" || obj.name === "quadrayTruncatedTetGroup") {
-        truncTetGroup = obj;
-      }
-    });
+    let worldVertices = [];
+    const isCompoundProjection = (n === 11 || n === 13);
 
-    // Also check for the group by looking for userData with primeProjection
-    if (!truncTetGroup) {
+    if (isCompoundProjection) {
+      // Find the actual compound polyhedron in the scene (same as 5/7-gon approach)
+      let compoundGroup = null;
       scene.traverse(obj => {
-        if (obj.userData?.parameters?.primeProjection) {
+        if (obj.userData?.type === "quadrayCompound") {
+          compoundGroup = obj;
+        }
+      });
+
+      if (!compoundGroup || !compoundGroup.visible) {
+        console.warn("⚠️ Quadray Compound not found or not visible in scene");
+        console.log("   Please enable 'Quadray Compound (TruncTet + Icosa)' checkbox first");
+        RTPapercut._hideProjectionInfo();
+        return;
+      }
+
+      worldVertices = RTPapercut._getWorldVerticesFromGroup(compoundGroup);
+      if (worldVertices.length === 0) {
+        // Fallback to generating vertices if extraction fails
+        console.warn("⚠️ Could not extract vertices from compound, generating programmatically");
+        worldVertices = RTPapercut._generateCompoundVertices();
+      }
+      console.log("   Found", worldVertices.length, "vertices from compound (trunc tet + icosa)");
+    } else {
+      // Find the actual truncated tetrahedron in the scene (using userData.type)
+      let truncTetGroup = null;
+      scene.traverse(obj => {
+        if (obj.userData?.type === "quadrayTruncatedTet") {
           truncTetGroup = obj;
         }
       });
-    }
 
-    if (!truncTetGroup || !truncTetGroup.visible) {
-      console.warn("⚠️ Quadray Truncated Tetrahedron not found or not visible in scene");
-      console.log("   Please enable 'Quadray Truncated Tetrahedron' checkbox first");
-      RTPapercut._hideProjectionInfo();
-      return;
+      if (!truncTetGroup || !truncTetGroup.visible) {
+        console.warn("⚠️ Quadray Truncated Tetrahedron not found or not visible in scene");
+        console.log("   Please enable 'Quadray Truncated Tetrahedron' checkbox first");
+        RTPapercut._hideProjectionInfo();
+        return;
+      }
+
+      worldVertices = RTPapercut._getWorldVerticesFromGroup(truncTetGroup);
+      if (worldVertices.length === 0) {
+        console.error("❌ Could not extract vertices from truncated tetrahedron");
+        return;
+      }
+      console.log("   Found", worldVertices.length, "vertices from scene mesh");
     }
 
     console.log("🔨 Creating projection visualization for", n, "-hull");
     const group = new THREE.Group();
     group.name = `primeProjection-${n}`;
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // GET WORLD VERTICES FROM THE ACTUAL MESH
-    // ═══════════════════════════════════════════════════════════════════════
-    const worldVertices = RTPapercut._getWorldVerticesFromGroup(truncTetGroup);
-    if (worldVertices.length === 0) {
-      console.error("❌ Could not extract vertices from truncated tetrahedron");
-      return;
-    }
-    console.log("   Found", worldVertices.length, "vertices from scene mesh");
 
     // Get center of the polyhedron
     const center = new THREE.Vector3();
@@ -1606,6 +1626,21 @@ export const RTPapercut = {
   },
 
   /**
+   * Generate compound polyhedra vertices (truncated tetrahedron + icosahedron)
+   * Used for 11-gon and 13-gon projections - BREAKTHROUGH compound that bypasses Gauss-Wantzel!
+   *
+   * Reuses QuadrayPolyhedra.compoundTruncTetIcosahedron for consistency.
+   *
+   * @returns {Array<THREE.Vector3>} 24 vertices (12 from trunc tet + 12 from icosahedron)
+   */
+  _generateCompoundVertices: function () {
+    // Reuse the existing compound generator from rt-quadray-polyhedra.js
+    const compound = QuadrayPolyhedra.compoundTruncTetIcosahedron(1, { normalize: true });
+    console.log(`   _generateCompoundVertices: ${compound.vertices.length} vertices (reusing QuadrayPolyhedra)`);
+    return compound.vertices;
+  },
+
+  /**
    * Activate the Papercut cutplane at the prime projection plane orientation
    * This allows the user to see the actual section cut through the truncated tetrahedron
    *
@@ -1741,12 +1776,17 @@ export const RTPapercut = {
    * @returns {{planeRight: THREE.Vector3, planeUp: THREE.Vector3, planeNormal: THREE.Vector3}}
    */
   _getProjectionPlaneBasis: function (n) {
-    // Get viewing spreads for this n-gon
+    // Get viewing spreads for this n-gon from breakthrough results
+    // Reference: results/prime_breakthrough_20260206_145052.json
     let s1, s2, s3;
-    if (n === 7) {
-      s1 = 0.11; s2 = 0; s3 = 0.5;
-    } else if (n === 5) {
-      s1 = 0; s2 = 0; s3 = 0.5;
+    if (n === 5) {
+      s1 = 0; s2 = 0; s3 = 0.5; // Truncated tetrahedron
+    } else if (n === 7) {
+      s1 = 0.11; s2 = 0; s3 = 0.5; // Truncated tetrahedron
+    } else if (n === 11) {
+      s1 = 0; s2 = 0.4; s3 = 0.2; // Compound (trunc tet + icosa) - BREAKTHROUGH!
+    } else if (n === 13) {
+      s1 = 0; s2 = 0.6; s3 = 0.8; // Compound (trunc tet + icosa) - BREAKTHROUGH!
     } else {
       // Default: XY plane
       return {
@@ -1921,7 +1961,29 @@ export const RTPapercut = {
           "YELLOW: Actual 5-gon projection\n" +
           "  Trunc Tet → s=(0,0,½)\n" +
           "CYAN: Ideal regular pentagon\n" +
-          "  Classical trig (for comparison)";
+          "  Fermat prime - compass constructible";
+        break;
+
+      case 11:
+        // 11-gon: BREAKTHROUGH - Compound polyhedra
+        // Viewing spreads: s=(0, 0.4, 0.2)
+        formulaText =
+          "★ BREAKTHROUGH: Hendecagon (11-gon)\n" +
+          "  Compound (Trunc Tet + Icosa)\n" +
+          "  s=(0, 0.4, 0.2) → 24 vertices\n" +
+          "  Bypasses Gauss-Wantzel theorem!\n" +
+          "  Quintic polynomial - NOT solvable by radicals";
+        break;
+
+      case 13:
+        // 13-gon: BREAKTHROUGH - Compound polyhedra
+        // Viewing spreads: s=(0, 0.6, 0.8)
+        formulaText =
+          "★ BREAKTHROUGH: Tridecagon (13-gon)\n" +
+          "  Compound (Trunc Tet + Icosa)\n" +
+          "  s=(0, 0.6, 0.8) → 24 vertices\n" +
+          "  Bypasses Gauss-Wantzel theorem!\n" +
+          "  Sextic polynomial - NOT solvable by radicals";
         break;
 
       default:

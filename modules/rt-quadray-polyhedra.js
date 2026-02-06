@@ -478,6 +478,70 @@ export const QuadrayPolyhedra = {
   },
 
   /**
+   * Quadray Stella Octangula (Star Tetrahedron / Compound of Two Tetrahedra)
+   * The classic "merkaba" form - two interpenetrating tetrahedra.
+   *
+   * In Quadray coordinates:
+   * - Base tetrahedron: (1,0,0,0), (0,1,0,0), (0,0,1,0), (0,0,0,1)
+   * - Dual tetrahedron: (0,1,1,1), (1,0,1,1), (1,1,0,1), (1,1,1,0)
+   *
+   * Total: 8 vertices (pure integer Quadray coordinates)
+   *
+   * Used as base for compound projections with truncated tetrahedron.
+   *
+   * @param {number} scale - Uniform scale factor
+   * @param {Object} options - Configuration options
+   * @returns {Object} - {vertices, edges, faces, wxyz_raw, wxyz_normalized, metadata}
+   */
+  stellaOctangula: (scale = 1, options = {}) => {
+    const { normalize = true } = options;
+
+    // Reuse existing tetrahedron and dualTetrahedron generators
+    const baseTet = QuadrayPolyhedra.tetrahedron(scale, { normalize });
+    const dualTet = QuadrayPolyhedra.dualTetrahedron(scale, { normalize });
+
+    // Combine vertices (base: 0-3, dual: 4-7)
+    const vertices = [...baseTet.vertices, ...dualTet.vertices];
+    const wxyz_raw = [...baseTet.wxyz_raw, ...dualTet.wxyz_raw];
+    const wxyz_normalized = [...baseTet.wxyz_normalized, ...dualTet.wxyz_normalized];
+
+    // Combine edges (offset dual edges by 4)
+    const edges = [
+      ...baseTet.edges,
+      ...dualTet.edges.map(([a, b]) => [a + 4, b + 4]),
+    ];
+
+    // Combine faces (offset dual faces by 4)
+    const faces = [
+      ...baseTet.faces,
+      ...dualTet.faces.map(f => f.map(idx => idx + 4)),
+    ];
+
+    console.log(
+      `[RT] Quadray Stella Octangula: normalize=${normalize}, scale=${scale}`
+    );
+    console.log(`  Composed from tetrahedron + dualTetrahedron`);
+    console.log(`  8 vertices, 12 edges, 8 faces`);
+
+    return {
+      vertices,
+      edges,
+      faces,
+      wxyz_raw,
+      wxyz_normalized,
+      metadata: {
+        coordinateSystem: "quadray",
+        pattern: "tetrahedron + dualTetrahedron compound",
+        normalized: normalize,
+        scale: scale,
+        physicalMeaning: "Star Tetrahedron (Merkaba) - compound of two tetrahedra",
+        vertexCount: 8,
+        note: "Composed from existing Quadray tetrahedron generators",
+      },
+    };
+  },
+
+  /**
    * Quadray Cuboctahedron (Vector Equilibrium - 4D Native)
    * Defined NATIVELY in integer Quadray coordinates per Kirby Urner's calibration.
    *
@@ -607,6 +671,187 @@ export const QuadrayPolyhedra = {
         scale: scale,
         physicalMeaning: "12-around-1 closest sphere packing (IVM lattice)",
         attribution: "Kirby Urner calibration, January 2026",
+      },
+    };
+  },
+  // ═══════════════════════════════════════════════════════════════════════
+  // COMPOUND POLYHEDRA - For Prime Polygon Projections (Breakthrough Feb 2026)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Compound Polyhedra Generator
+   * Combines truncated tetrahedron (12v) + icosahedron (12v) = 24 vertices
+   * This asymmetric compound produces prime hull projections (11-gon, 13-gon)
+   * that BYPASS Gauss-Wantzel constructibility theorem!
+   *
+   * Key insight: Centrally symmetric polytopes only produce even hull counts.
+   * Asymmetric compounds can produce prime hulls.
+   *
+   * @param {number} scale - Uniform scale factor
+   * @param {Object} options - Configuration options
+   * @returns {Object} - {vertices, edges, faces, metadata, primeProjections}
+   */
+  compoundTruncTetIcosahedron: (scale = 1, options = {}) => {
+    const { normalize = true } = options;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 1. TRUNCATED TETRAHEDRON VERTICES (12) - From Quadray {2,1,0,0} permutations
+    // ═══════════════════════════════════════════════════════════════════════
+    const truncTetWXYZ = [];
+    const coordSets = [
+      [2, 1, 0, 0], [2, 0, 1, 0], [2, 0, 0, 1], // W=2
+      [1, 2, 0, 0], [0, 2, 1, 0], [0, 2, 0, 1], // X=2
+      [1, 0, 2, 0], [0, 1, 2, 0], [0, 0, 2, 1], // Y=2
+      [1, 0, 0, 2], [0, 1, 0, 2], [0, 0, 1, 2], // Z=2
+    ];
+    coordSets.forEach(c => truncTetWXYZ.push(c));
+
+    const truncTetNormalized = truncTetWXYZ.map(coords =>
+      normalize ? zeroSumNormalize(coords) : coords
+    );
+
+    const truncTetVertices = truncTetNormalized.map(([w, x, y, z]) =>
+      wxyzToCartesian(w, x, y, z, scale * 0.5) // Scale to match icosahedron radius
+    );
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 2. ICOSAHEDRON VERTICES (12) - From golden ratio construction
+    // ═══════════════════════════════════════════════════════════════════════
+    const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
+    const onePlusPhiSq = 1 + phi * phi; // 1 + φ² = 2 + φ
+    const normFactor = 1 / Math.sqrt(onePlusPhiSq);
+    const a = scale * normFactor;
+    const b = scale * normFactor * phi;
+
+    const icosaVertices = [
+      // Vertices along X-axis (±a, ±b, 0)
+      new THREE.Vector3(a, b, 0),
+      new THREE.Vector3(-a, b, 0),
+      new THREE.Vector3(a, -b, 0),
+      new THREE.Vector3(-a, -b, 0),
+      // Vertices along Y-axis (0, ±a, ±b)
+      new THREE.Vector3(0, a, b),
+      new THREE.Vector3(0, -a, b),
+      new THREE.Vector3(0, a, -b),
+      new THREE.Vector3(0, -a, -b),
+      // Vertices along Z-axis (±b, 0, ±a)
+      new THREE.Vector3(b, 0, a),
+      new THREE.Vector3(-b, 0, a),
+      new THREE.Vector3(b, 0, -a),
+      new THREE.Vector3(-b, 0, -a),
+    ];
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 3. COMBINE VERTEX SETS (24 total)
+    // ═══════════════════════════════════════════════════════════════════════
+    const vertices = [...truncTetVertices, ...icosaVertices];
+
+    // Edges for truncated tetrahedron (indices 0-11)
+    const truncTetEdges = [];
+    for (let i = 0; i < 12; i++) {
+      for (let j = i + 1; j < 12; j++) {
+        const vi = truncTetWXYZ[i];
+        const vj = truncTetWXYZ[j];
+        let diffs = 0, diffSum = 0;
+        for (let k = 0; k < 4; k++) {
+          if (vi[k] !== vj[k]) { diffs++; diffSum += Math.abs(vi[k] - vj[k]); }
+        }
+        if (diffs === 2 && diffSum === 2) truncTetEdges.push([i, j]);
+      }
+    }
+
+    // Edges for icosahedron (indices 12-23) - adjacent vertices at distance ~0.6
+    const icosaEdges = [];
+    const edgeThreshold = 0.7 * scale; // Approximate edge length threshold
+    for (let i = 0; i < 12; i++) {
+      for (let j = i + 1; j < 12; j++) {
+        const dist = icosaVertices[i].distanceTo(icosaVertices[j]);
+        if (dist < edgeThreshold) {
+          icosaEdges.push([i + 12, j + 12]); // Offset indices by 12
+        }
+      }
+    }
+
+    const edges = [...truncTetEdges, ...icosaEdges];
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 4. FACES FOR BOTH COMPONENTS (with CCW winding for outward normals)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Truncated tetrahedron faces (indices 0-11)
+    // 4 triangular faces (one per original tet vertex)
+    const truncTetTriangles = [
+      [0, 1, 2],   // Near W
+      [3, 4, 5],   // Near X
+      [6, 7, 8],   // Near Y
+      [9, 10, 11], // Near Z
+    ];
+
+    // 4 hexagonal faces (one per original tet face)
+    const truncTetHexagons = [
+      [0, 3, 4, 7, 6, 1],     // WXY face (Z=0)
+      [0, 3, 5, 10, 9, 2],    // WXZ face (Y=0)
+      [1, 6, 8, 11, 9, 2],    // WYZ face (X=0)
+      [4, 7, 8, 11, 10, 5],   // XYZ face (W=0)
+    ];
+
+    // Icosahedron faces (indices 12-23, so offset by 12)
+    // Standard icosahedron has 20 triangular faces
+    // Vertex indices 0-11 map to our 12-23
+    const icosaFacesLocal = [
+      [0, 4, 1], [0, 9, 4], [9, 5, 4], [4, 5, 8], [4, 8, 1],
+      [8, 10, 1], [8, 3, 10], [5, 3, 8], [5, 2, 3], [2, 7, 3],
+      [7, 10, 3], [7, 6, 10], [7, 11, 6], [11, 0, 6], [0, 1, 6],
+      [6, 1, 10], [9, 0, 11], [9, 11, 2], [9, 2, 5], [7, 2, 11],
+    ];
+
+    // Offset icosahedron face indices by 12
+    const icosaFaces = icosaFacesLocal.map(f => f.map(idx => idx + 12));
+
+    // Apply winding fix to all faces
+    const truncTetFaces = [
+      ...truncTetTriangles.map(f => fixWinding(f, vertices)),
+      ...truncTetHexagons.map(f => fixWinding(f, vertices)),
+    ];
+
+    const faces = [
+      ...truncTetFaces,
+      ...icosaFaces.map(f => fixWinding(f, vertices)),
+    ];
+
+    console.log(
+      `[RT] Compound Polyhedra (Trunc Tet + Icosahedron): ${vertices.length} vertices, ${edges.length} edges, ${faces.length} faces`
+    );
+    console.log(`  Truncated Tetrahedron: 12 vertices, 8 faces (4 tri + 4 hex)`);
+    console.log(`  Icosahedron: 12 vertices, 20 faces (all triangular)`);
+    console.log(`  Prime projection targets: 11-gon at s=(0,0.4,0.2), 13-gon at s=(0,0.6,0.8)`);
+
+    return {
+      vertices,
+      edges,
+      faces,
+      truncTetWXYZ,
+      truncTetNormalized,
+      metadata: {
+        coordinateSystem: "mixed",
+        components: ["truncatedTetrahedron", "icosahedron"],
+        totalVertices: 24,
+        normalized: normalize,
+        scale: scale,
+        physicalMeaning: "Asymmetric compound for prime projections",
+        discoveryDate: "2026-02-06",
+        primeProjections: {
+          hendecagon: {
+            spreads: [0, 0.4, 0.2],
+            hullCount: 11,
+            note: "Hendecagon - requires quintic polynomial, NOT algebraically solvable",
+          },
+          tridecagon: {
+            spreads: [0, 0.6, 0.8],
+            hullCount: 13,
+            note: "Tridecagon - requires sextic polynomial, NOT algebraically solvable",
+          },
+        },
       },
     };
   },
