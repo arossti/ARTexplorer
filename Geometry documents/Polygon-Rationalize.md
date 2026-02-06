@@ -356,8 +356,444 @@ The display now reveals the mathematical construction method to mathematicians!
 
 ---
 
+## Future Research
+
+### Quartic-Algebraic Polygons
+
+The 17-gon (heptadecagon) is Gauss-constructible but requires solving a degree-16 polynomial. Could we cache these values like we do for cubics?
+
+| n | Name | Polynomial Degree | Feasibility |
+|---|------|-------------------|-------------|
+| 17 | Heptadecagon | 16 | Possible but complex nested radicals |
+| 257 | 257-gon | 256 | Theoretical only |
+| 65537 | 65537-gon | 65536 | Theoretical only |
+
+### Composite Cubic Generators (14, 18, 21)
+
+Currently falling back to classical trig. Could implement as:
+- **14-gon**: 2×Heptagon @ 360°/14 = 25.714...° (uses same cubic as 7)
+- **18-gon**: 2×Nonagon @ 20° OR 6×Triangle @ 20° (uses same cubic as 9)
+- **21-gon**: 3×Heptagon @ 360°/21 = 17.143...° (uses same cubic as 7)
+
+```javascript
+// Proposed additions to RT.PureCubics
+RT.PureCubics.octadecagon = {
+  // 18-gon: uses nonagon's cos20/sin20 directly
+  // 20° rotation spread = sin²(20°) = nonagon.starSpread()
+};
+
+RT.PureCubics.tetradecagon = {
+  // 14-gon: cos(π/7) and sin(π/7) for 25.714° rotation
+  // Half-angle of heptagon values
+};
+```
+
+### Quadray-Native Polygon Rotation
+
+Current implementation uses Cartesian coordinates then converts. Could use `RT.QuadrayRotation.fghCoeffsFromSpread()` for pure quadray polygon construction:
+
+```javascript
+// Native quadray polygon rotation (conceptual)
+function rotatePolygonQuadray(vertices, spread, polarity, axis = 'W') {
+  const { F, G, H } = RT.QuadrayRotation.fghCoeffsFromSpread(spread, polarity);
+  return vertices.map(v => RT.QuadrayRotation[`rotateAbout${axis}`](v, F, G, H));
+}
+```
+
+### Symbolic Spread Algebra
+
+Extend `RT.PurePhi.Symbolic` pattern to general spread operations:
+- Spread addition: s₁ + s₂ - 2s₁s₂ + 2√(s₁s₂(1-s₁)(1-s₂))
+- Spread multiplication (composition)
+- Spread polynomial evaluation in symbolic form
+
+### RT-Pure 3D Prism/Antiprism
+
+Current prisms use polygon generators for bases. Could extend to:
+- **Antiprisms**: Twisted prisms with triangular side faces
+- **Cupolas**: Half-regular polyhedra
+- **Rotundas**: Domed polyhedra
+
+### Connection to Penrose Tilings
+
+The 36°/72° angles in Penrose tilings are φ-rational. Could the cubic-algebraic approach extend to:
+- **Nonagon-based tilings**: 40° angles
+- **Heptagon-based tilings**: 360°/7 angles
+- **Mixed cubic-φ tilings**: Combining heptagon and pentagon symmetries
+
+---
+
+## 4D± Prime Projection Conjecture
+
+### The Quasicrystal Precedent
+
+Penrose tilings exhibit 5-fold rotational symmetry — "impossible" in periodic 2D lattices. Yet this "forbidden" symmetry emerges naturally as a **2D projection of a 5D hypercubic lattice**. The symmetry exists in higher dimensions and projects down to what appears impossible in 2D alone.
+
+### The Conjecture
+
+**Prime n-gons (7, 11, 13, 19...) are non-constructible in 2D with compass and straightedge (Gauss-Wantzel). But they might exist as rational-spread projections of 4D± polytope structures in the Quadray system.**
+
+Key insight:
+- In 2D, we're constrained to Gauss-Wantzel constructibility
+- In 4D±, we have an extra dimension of freedom (plus Janus polarity)
+- **Projecting along a rational-spread axis** might "reveal" prime vertex arrangements invisible from standard axial views
+
+### Mathematical Foundation
+
+The ARTexplorer 4D± system provides:
+- **Spread 8/9** between quadray basis vectors (rational!)
+- **Full 4D coordinates** (no zero-sum constraint)
+- **Janus polarity** (discrete ± dimensional state)
+- **Gimbal-lock-free rotations** via Spread-Quadray Rotors
+
+If we construct a polyhedron rationally in 4D and project to 2D at a carefully chosen **rational spread rotation**, the visible vertex silhouette might form a prime n-gon — even though that n-gon is "non-constructible" in purely 2D terms.
+
+### The Search
+
+Finding rational spread angles where 4D polytope projections yield prime vertex counts. The "trick" may be that primes have a hidden relationship to tetrahedral symmetry when viewed from the right angle — literally **"prime relationships from a rational angle."**
+
+---
+
+## Prime Projection Search Script
+
+### Objective
+
+Systematically search for rational-spread viewing angles where 3D/4D polyhedra project to 2D with **prime vertex counts** on the convex hull silhouette.
+
+### Search Parameters
+
+```javascript
+/**
+ * Prime Projection Search Configuration
+ */
+const SEARCH_CONFIG = {
+  // Rational spread precision (4 decimal places = 10,001 values)
+  spreadMin: 0.0000,
+  spreadMax: 1.0000,
+  spreadStep: 0.0001,
+
+  // Polyhedra to test (RT-pure and cubic-algebraic)
+  polyhedra: [
+    'tetrahedron',    // 4 vertices
+    'cube',           // 8 vertices
+    'octahedron',     // 6 vertices
+    'icosahedron',    // 12 vertices
+    'dodecahedron',   // 20 vertices
+    'cuboctahedron',  // 12 vertices (Vector Equilibrium)
+    // Future: 4D polytopes
+    // '5-cell',      // 5 vertices
+    // '8-cell',      // 16 vertices (tesseract)
+    // '24-cell',     // 24 vertices (unique to 4D!)
+  ],
+
+  // Projection planes
+  cartesianPlanes: ['XY', 'XZ', 'YZ'],
+  quadrayPlanes: ['QW', 'QX', 'QY', 'QZ'],  // Perpendicular to each basis
+
+  // Prime targets (non-constructible)
+  targetPrimes: [7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47],
+
+  // Vertex tolerance for counting unique hull vertices
+  vertexTolerance: 1e-6,
+};
+```
+
+### Algorithm
+
+```javascript
+/**
+ * Prime Projection Search Algorithm
+ * Uses ARTexplorer's camera/papercut axial view system
+ */
+async function searchPrimeProjections(config) {
+  const results = [];
+  const { spreadMin, spreadMax, spreadStep } = config;
+
+  for (const polyhedronName of config.polyhedra) {
+    // Generate polyhedron using RT-pure methods
+    const polyhedron = generateRationalPolyhedron(polyhedronName);
+
+    for (const plane of [...config.cartesianPlanes, ...config.quadrayPlanes]) {
+      // Determine rotation axis perpendicular to projection plane
+      const rotationAxis = getPerpendicularAxis(plane);
+
+      for (let spread = spreadMin; spread <= spreadMax; spread += spreadStep) {
+        // Apply rational-spread rotation
+        const rotated = applySpreadRotation(polyhedron, spread, rotationAxis);
+
+        // Project to 2D plane
+        const projected = projectToPlane(rotated, plane);
+
+        // Compute convex hull and count boundary vertices
+        const hull = computeConvexHull(projected);
+        const vertexCount = countUniqueHullVertices(hull, config.vertexTolerance);
+
+        // Check if prime
+        if (isPrime(vertexCount) && config.targetPrimes.includes(vertexCount)) {
+          results.push({
+            polyhedron: polyhedronName,
+            plane,
+            spread: spread.toFixed(4),
+            vertexCount,
+            hullVertices: hull,
+            // Store for visualization
+            rotationMatrix: getRotationMatrix(spread, rotationAxis),
+          });
+
+          console.log(
+            `[PRIME FOUND] ${polyhedronName} @ spread=${spread.toFixed(4)} ` +
+            `on ${plane} plane → ${vertexCount}-gon!`
+          );
+        }
+      }
+    }
+  }
+
+  return results;
+}
+```
+
+### Helper Functions
+
+```javascript
+/**
+ * Apply rotation using RT.QuadrayRotation spread-based coefficients
+ */
+function applySpreadRotation(polyhedron, spread, axis) {
+  const polarity = spread <= 0.5 ? +1 : -1;  // Quadrant handling
+  const { F, G, H } = RT.QuadrayRotation.fghCoeffsFromSpread(spread, polarity);
+
+  return polyhedron.vertices.map(v => {
+    // Convert to quadray, rotate, convert back
+    const qv = Quadray.fromCartesian(v);
+    const rotated = RT.QuadrayRotation[`rotateAbout${axis}`](qv, F, G, H);
+    return Quadray.toCartesian(rotated.w, rotated.x, rotated.y, rotated.z, THREE);
+  });
+}
+
+/**
+ * Project 3D vertices to 2D plane
+ * Uses existing papercut/camera axial view logic
+ */
+function projectToPlane(vertices, plane) {
+  // Cartesian planes
+  if (plane === 'XY') return vertices.map(v => ({ x: v.x, y: v.y }));
+  if (plane === 'XZ') return vertices.map(v => ({ x: v.x, y: v.z }));
+  if (plane === 'YZ') return vertices.map(v => ({ x: v.y, y: v.z }));
+
+  // Quadray perpendicular planes
+  // QW perpendicular: plane through origin normal to (1,1,1)
+  // Project by removing component along basis vector
+  const basisIndex = Quadray.AXIS_INDEX[plane.toLowerCase()];
+  const basis = Quadray.basisVectors[basisIndex];
+
+  return vertices.map(v => {
+    const dot = v.x * basis.x + v.y * basis.y + v.z * basis.z;
+    const projected = {
+      x: v.x - dot * basis.x,
+      y: v.y - dot * basis.y,
+      z: v.z - dot * basis.z,
+    };
+    // Flatten to 2D using plane's local coordinates
+    return flattenToPlaneCoords(projected, basis);
+  });
+}
+
+/**
+ * Count unique vertices on convex hull boundary
+ * Handles near-coincident vertices from projection
+ */
+function countUniqueHullVertices(hull, tolerance) {
+  const unique = [];
+  for (const v of hull) {
+    const isDuplicate = unique.some(u =>
+      Math.abs(u.x - v.x) < tolerance &&
+      Math.abs(u.y - v.y) < tolerance
+    );
+    if (!isDuplicate) unique.push(v);
+  }
+  return unique.length;
+}
+
+/**
+ * Primality test
+ */
+function isPrime(n) {
+  if (n < 2) return false;
+  if (n === 2) return true;
+  if (n % 2 === 0) return false;
+  for (let i = 3; i * i <= n; i += 2) {
+    if (n % i === 0) return false;
+  }
+  return true;
+}
+```
+
+### Output Format
+
+```javascript
+/**
+ * Example search results
+ */
+const exampleResults = [
+  {
+    polyhedron: 'icosahedron',
+    plane: 'QW',
+    spread: '0.3827',
+    vertexCount: 7,
+    hullVertices: [/* 7 2D points */],
+    note: 'Heptagon silhouette from icosahedron at rational spread!'
+  },
+  {
+    polyhedron: 'dodecahedron',
+    plane: 'QY',
+    spread: '0.6180',  // Note: φ-1 ≈ 0.618!
+    vertexCount: 11,
+    hullVertices: [/* 11 2D points */],
+    note: 'Hendecagon at golden ratio spread!'
+  },
+];
+```
+
+### Visualization Integration
+
+```javascript
+/**
+ * Visualize discovered prime projections in ARTexplorer
+ */
+function visualizePrimeProjection(result) {
+  // Set camera to axial view for the projection plane
+  setCameraToAxialView(result.plane);
+
+  // Apply the rotation that produces the prime
+  const spread = parseFloat(result.spread);
+  applyGlobalRotation(spread, getPerpendicularAxis(result.plane));
+
+  // Enable papercut mode to show the projection
+  enablePapercutMode(result.plane);
+
+  // Highlight the prime-gon hull vertices
+  highlightHullVertices(result.hullVertices);
+
+  // Display method info
+  updateMethodInfo(
+    `${result.polyhedron} → ${result.vertexCount}-gon ` +
+    `(spread=${result.spread}, plane=${result.plane})`
+  );
+}
+```
+
+### Search Statistics
+
+| Search Space | Count |
+|--------------|-------|
+| Spread values (4dp) | 10,001 |
+| Polyhedra | 6 (expandable) |
+| Projection planes | 7 (3 Cartesian + 4 Quadray) |
+| **Total projections** | **420,042** |
+
+For each projection, we compute convex hull and check for prime vertex count. Parallelizable across polyhedra and planes.
+
+### Future Extensions
+
+1. **4D Polytopes**: Add 5-cell, 8-cell, 16-cell, 24-cell, 120-cell, 600-cell
+2. **Compound Rotations**: Apply spreads on multiple axes simultaneously
+3. **Janus Polarity**: Search in both 4D+ and 4D- spaces
+4. **Machine Learning**: Train classifier to predict promising spread/plane combinations
+5. **Symbolic Verification**: When prime found, attempt symbolic proof of the relationship
+
+---
+
+## Experimental Findings
+
+### The Even Hull Count Phenomenon (Feb 2026)
+
+**Python Search Script**: `scripts/prime_projection_search.py`
+
+Initial computational experiments on regular polytopes revealed:
+
+| Polytope | Vertices | Observed Hull Counts | Pattern |
+|----------|----------|---------------------|---------|
+| Dodecahedron | 20 | 10, 12 | All even |
+| 600-cell | 216 | 12, 14, 16, 18, 20, 22, 24, 26 | All even |
+
+Regular polytopes with **inversion symmetry** always produce even hull counts.
+
+### The Symmetry Barrier (and How to Break It)
+
+Regular polytopes have **inversion symmetry** (point reflection through center). When projected to 2D:
+- Each hull vertex v has a paired vertex -v
+- The convex hull boundary always has even vertex count
+- **Prime hulls (except 2) are impossible for centrally symmetric polytopes!**
+
+### ★ BREAKTHROUGH: Asymmetric Polytopes Work!
+
+**Truncated Tetrahedron** (12 vertices, NO central symmetry) produces:
+
+| Hull Count | Frequency | Type |
+|------------|-----------|------|
+| **5-gon** | 0.2% | ★ PRIME (Fermat) |
+| 6-gon | 0.5% | Even |
+| **7-gon** | 0.1% | ★ PRIME (Non-constructible!) |
+| 8-gon | 55.6% | Even |
+| **9-gon** | 43.8% | ODD (Cubic-algebraic) |
+
+**Prime Projection Examples Found:**
+
+| Prime | Spreads (s₁, s₂, s₃) | Polyhedron |
+|-------|----------------------|------------|
+| 5-gon | (0, 0, 0.5) | Truncated Tetrahedron |
+| 5-gon | (0, 0.5, 0) | Truncated Tetrahedron |
+| **7-gon** | (0.15, 0, 0.5) | Truncated Tetrahedron |
+| **7-gon** | (0.15, 0.5, 0) | Truncated Tetrahedron |
+
+**The 7-gon is NOT compass-constructible** (Gauss-Wantzel), yet it emerges as a rational-spread projection of an asymmetric polyhedron!
+
+### Paths Forward
+
+1. **✓ Asymmetric Polytopes**: Use polytopes without central symmetry
+   - **Truncated tetrahedron** → WORKS! (5, 7, 9-gons found)
+   - Snub cube (chiral)
+   - Compound of 5 tetrahedra
+
+2. **Compound Pairs with Relative Rotations**: Combine two polyhedra
+   - tetrahedron + tetrahedron at varying angles
+   - Stella Octangula variations
+
+3. **Search for Higher Primes**: 11, 13, 17, 19...
+   - Need polyhedra with more vertices
+   - Compound pairs may unlock these
+
+4. **4D± Extensions**: Use full 4D quadray system
+   - Janus polarity for asymmetric configurations
+
+5. **Quasicrystal Construction**: Irrational cuts of rational lattices
+
+### Script Usage
+
+```bash
+# Install dependencies
+pip install -r scripts/requirements.txt
+
+# List available polyhedra
+python scripts/prime_projection_search.py --list-polyhedra
+
+# Quick test (coarse precision)
+python scripts/prime_projection_search.py --precision 1 --polyhedra tetrahedron,cube
+
+# Full search (slow)
+python scripts/prime_projection_search.py --precision 2 --polyhedra all
+
+# Search for specific primes
+python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahedron
+```
+
+**Results output**: `results/prime_projections_YYYYMMDD_HHMMSS.json`
+
+---
+
 ## References
 
 - Wildberger, N.J. "Divine Proportions" Chapter 14 (Spread Polynomials)
 - Gauss-Wantzel Theorem on constructible polygons
-- `modules/rt-math.js` - RT.StarSpreads, RT.PurePhi, RT.QuadrayRotation
+- `modules/rt-math.js` - RT.StarSpreads, RT.PurePhi, RT.PureCubics, RT.QuadrayRotation
