@@ -378,7 +378,7 @@ The -90° rotation is **optimal RT math** because it uses exact integer values (
 
 All RT-Pure enhancements successfully implemented:
 
-1. **RT Library Enhanced** (src/geometry/modules/rt-math.js)
+1. **RT Library Enhanced** (modules/rt-math.js)
    - `RT.quadrance(p1, p2)` - Distance² without square roots
    - `RT.spread(v1, v2)` - Angular spread (sin²θ) for vector pairs
    - `RT.Phi` - Symbolic golden ratio with algebraic identities
@@ -509,7 +509,7 @@ The demo includes a "theatrical" performance comparison showing ~3.75× theoreti
 
 **Deliverable: Enhanced Section Cut Visualization with Node Controls**
 
-**Module:** `src/geometry/modules/rt-papercut.js`
+**Module:** `modules/rt-papercut.js`
 
 The Papercut module has been significantly enhanced with new features for controlling node sphere appearance and generating section node circles at cutplane intersections.
 
@@ -684,7 +684,7 @@ state: {
 
 **Deliverable: Corrected IVM Spatial Arrays with Proper Node Sizing**
 
-**Module:** `src/geometry/modules/rt-matrix.js`
+**Module:** `modules/rt-matrix.js`
 
 The matrix module generates N×N grids of polyhedra demonstrating space-filling properties (Isotropic Vector Matrix - IVM).
 
@@ -864,7 +864,7 @@ All three geometric families (√2, √3, φ) emerge naturally from **pure algeb
 
 ### 7.1 Rational Trigonometry Implementation
 
-See [rt-math.js](../../../src/geometry/modules/rt-math.js) for complete RT function library.
+See [rt-math.js](../../modules/rt-math.js) for complete RT function library.
 
 **Core RT Functions:**
 
@@ -1117,7 +1117,7 @@ See [Phase 2.8 implementation](../../../src/geometry/rt-grids.js) for Central An
 
 ### 7.4 Polyhedra Specifications
 
-See [rt-polyhedra.js](../../../src/geometry/modules/rt-polyhedra.js) for complete generator functions.
+See [rt-polyhedra.js](../../modules/rt-polyhedra.js) for complete generator functions.
 
 **Platonic Solids (Regular Convex):**
 | Name | Vertices | Edges | Faces | Face Type | Schläfli | Edge Q (Tet basis) |

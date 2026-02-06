@@ -334,24 +334,33 @@ The interface consists of several control panels:
 /
 ├── index.html              ← Main entry point
 ├── art.css                 ← All application styles
+├── CLAUDE.md               ← Claude Code AI instructions
 ├── modules/                ← Core JavaScript modules
 │   ├── rt-init.js              ← Application initialization, UI wiring
 │   ├── rt-rendering.js         ← WebGL rendering engine, camera, scene
 │   ├── rt-math.js              ← Quadray coords & RT functions
 │   ├── rt-polyhedra.js         ← 3D polyhedra generation (RT-pure)
 │   ├── rt-primitives.js        ← 2D primitives (point, line, polygon)
+│   ├── rt-penrose.js           ← Penrose tiling generation (φ-rational)
 │   ├── rt-grids.js             ← Cartesian/Quadray grid generation
 │   ├── rt-nodes.js             ← Vertex node geometry & caching
 │   ├── rt-matrix-planar.js     ← IVM spatial arrays (planar N×N)
 │   ├── rt-matrix-radial.js     ← IVM spatial arrays (radial)
+│   ├── rt-helices.js           ← Tetrahelix generation
 │   ├── rt-controls.js          ← Gumball interaction
+│   ├── rt-coordinates.js       ← Coordinate input/display handling
 │   ├── rt-papercut.js          ← Cutplane/slicing, print mode
+│   ├── rt-snap-geometry.js     ← Snap geometry utilities
 │   ├── rt-state-manager.js     ← State persistence
 │   ├── rt-filehandler.js       ← Import/export (JSON, glTF)
 │   ├── rt-viewmanager.js       ← View management
 │   ├── rt-context.js           ← Context menu handling
 │   ├── rt-info-modal.js        ← Info modal UI
 │   ├── rt-janus.js             ← Janus mode handling
+│   ├── rt-quadray-rotor.js     ← Spread-Quadray Rotor implementation
+│   ├── rt-rotor-demo.js        ← Rotor demonstration modal
+│   ├── rt-ui-bindings.js       ← UI event binding system
+│   ├── rt-ui-binding-defs.js   ← UI binding definitions
 │   ├── performance-clock.js    ← Performance monitoring
 │   └── color-theory-modal.js   ← Color palettes
 ├── modules/asteroids/      ← Asteroids game module
@@ -369,6 +378,9 @@ The interface consists of several control panels:
 │   ├── rt-weierstrass-demo.js  ← Rational circle parametrization
 │   └── rt-demo-utils.js        ← Shared demo utilities
 ├── Geometry documents/     ← Technical documentation
+│   ├── Penrose-Spheres.md      ← Spherical Penrose tiling research
+│   ├── CODE-QUALITY-AUDIT.md   ← Code quality audit guidelines
+│   └── ...                     ← Additional geometry docs
 └── .github/workflows/      ← GitHub Actions deployment
 ```
 
@@ -385,9 +397,13 @@ The interface consists of several control panels:
 
 - `rt-polyhedra.js`: 3D polyhedra definitions using RT-pure methods (Platonic, Archimedean, Geodesic)
 - `rt-primitives.js`: 2D primitives (point, line, polygon) with RT-pure and classical engines
+- `rt-penrose.js`: Penrose tiling generation (thick/thin rhombi, kite/dart) using φ-rational coordinates
 - `rt-math.js`: Core RT library (quadrance, spread, golden ratio, circle parametrization)
 - `rt-matrix-planar.js`: IVM spatial array generation for polyhedra matrices (planar N×N)
 - `rt-matrix-radial.js`: IVM spatial array generation for radial arrangements
+- `rt-helices.js`: Tetrahelix generation and rendering
+- `rt-quadray-rotor.js`: Spread-Quadray Rotor implementation (gimbal-lock-free rotation)
+- `rt-snap-geometry.js`: Snap geometry utilities for vertex/edge/face snapping
 
 **Scene Infrastructure:**
 
@@ -397,10 +413,14 @@ The interface consists of several control panels:
 **UI & Controls:**
 
 - `rt-controls.js`: ART Gumball interactive transform controls
+- `rt-coordinates.js`: Coordinate input/display handling (XYZ/WXYZ panels)
 - `rt-papercut.js`: Print mode, dynamic cutplane, section nodes, line weights
 - `rt-context.js`: Context menu handling for object selection
 - `rt-info-modal.js`: Information modal UI
 - `rt-janus.js`: Janus mode handling (dual-view functionality)
+- `rt-rotor-demo.js`: Spread-Quadray Rotor demonstration modal
+- `rt-ui-bindings.js`: UI event binding system (sliders, checkboxes, toggles)
+- `rt-ui-binding-defs.js`: UI binding definitions and configurations
 - `color-theory-modal.js`: Color palette management
 
 **Utilities:**
