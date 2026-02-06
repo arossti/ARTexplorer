@@ -843,7 +843,22 @@
                     value="3"
                     title="Number of sides (n-gon)"
                   />
-                  <span class="slider-value" id="polygonSidesValue">3</span>
+                  <input
+                    type="number"
+                    id="polygonSidesInput"
+                    min="3"
+                    step="1"
+                    value="3"
+                    style="width: 55px; font-size: 11px"
+                  />
+                </div>
+                <div
+                  class="tiling-info"
+                  style="font-size: 10px; color: #00b4ff; margin-bottom: 5px"
+                >
+                  <span id="polygonMethodInfo"
+                    >Triangle: RT-Pure (s = 3/4)</span
+                  >
                 </div>
                 <div
                   class="polygon-quadrance-container"
@@ -997,6 +1012,12 @@
                     value="6"
                     style="width: 55px; font-size: 11px"
                   />
+                </div>
+                <div
+                  class="tiling-info"
+                  style="font-size: 10px; color: #00b4ff; margin-bottom: 5px"
+                >
+                  <span id="prismMethodInfo">Hexagon: Classical (sin π/6)</span>
                 </div>
                 <div
                   class="prism-quadrance-container"
