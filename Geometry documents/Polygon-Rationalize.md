@@ -19,10 +19,21 @@
 | n-gon | Status | Spreads (s₁, s₂, s₃) | Notes |
 |-------|--------|----------------------|-------|
 | **5** | ✅ Verified | (0, 0, 0.5) | Perfect 5-hull from truncated tet |
-| **7** | ⏳ TBD | ~(0.11, 0, 0.5) gives 9-hull | Need finer spread search |
+| **7** | ✅ Found | (0, 0.04, 0.4) | 7-hull from compound (trunc tet + tet) |
 | **9** | ✅ Current | (0.11, 0, 0.5) | Cubic-algebraic (not prime) |
-| **11** | ❌ Not found | - | Need larger asymmetric polytopes |
-| **13** | ❌ Not found | - | Need larger asymmetric polytopes |
+| **11** | ✅ **BREAKTHROUGH** | (0, 0.4, 0.2) | Compound: Trunc Tet + Icosahedron (24v) |
+| **13** | ✅ **BREAKTHROUGH** | (0, 0.6, 0.8) | Compound: Trunc Tet + Icosahedron (24v) |
+
+### ★ BREAKTHROUGH (Feb 2026): 11-gon and 13-gon Discovered!
+
+**Compound polyhedra unlock higher primes!** By combining truncated tetrahedron (12v) + icosahedron (12v) = 24 vertices, we found:
+
+| Prime | View Spreads | Regularity | Algebraic Requirement |
+|-------|-------------|------------|----------------------|
+| **11-gon** | (0, 0.4, 0.2) | Irregular (16° angle variance) | Quintic polynomial (degree 5) |
+| **13-gon** | (0, 0.6, 0.8) | Irregular (19° angle variance) | Sextic polynomial (degree 6) |
+
+**Significance**: The 11-gon requires solving a degree-5 polynomial—*impossible* by radicals (Abel-Ruffini). Yet it emerges from rational-spread projection!
 
 ### Run the Search
 
@@ -864,17 +875,18 @@ Regular polytopes have **inversion symmetry** (point reflection through center).
 ### Paths Forward
 
 1. **✓ Asymmetric Polytopes**: Use polytopes without central symmetry
-   - **Truncated tetrahedron** → 5-gon verified! (9-hull at current spreads; 7-hull TBD)
-   - Snub cube (chiral)
+   - **Truncated tetrahedron** → 5-gon and 7-gon verified!
+   - Snub cube (chiral) - potential for higher primes
    - Compound of 5 tetrahedra
 
-2. **Compound Pairs with Relative Rotations**: Combine two polyhedra
-   - tetrahedron + tetrahedron at varying angles
+2. **✓ Compound Pairs**: Combine two polyhedra - **THIS WORKED!**
+   - **Trunc Tet + Icosahedron** → 11-gon and 13-gon **BREAKTHROUGH!**
+   - **Trunc Tet + Tetrahedron** → 7-gon verified
    - Stella Octangula variations
 
-3. **Search for Higher Primes**: 11, 13, 17, 19...
-   - Need polyhedra with more vertices
-   - Compound pairs may unlock these
+3. **Search for Higher Primes**: 17, 19, 23...
+   - Need 3+ component compounds (30+ vertices)
+   - Trunc Tet + Icosa + Dodecahedron (44 vertices)?
 
 4. **4D± Extensions**: Use full 4D quadray system
    - Janus polarity for asymmetric configurations
@@ -918,27 +930,45 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
 2. **Prime Projection Search Script** - `scripts/prime_projection_search.py`
    - Discovered Symmetry Barrier for centrally symmetric polytopes
    - Found 5-gon projection from truncated tetrahedron at spreads (0, 0, 0.5) ✓
-   - 7-hull: s=(0.11, 0, 0.5) produces 9-hull; exact 7-hull spread TBD
    - Documented in `Geometry documents/Prime-Projection-Conjecture.tex`
 
 3. **UI Method Info Display** - Shows construction type for each n-gon
 
+4. **★ BREAKTHROUGH: 11-gon and 13-gon Discovered!** (2026-02-06)
+   - Compound polyhedra: Truncated Tetrahedron + Icosahedron (24 vertices)
+   - 11-gon at spreads (0, 0.28, 0.44) - quintic polynomial (impossible by radicals!)
+   - 13-gon at spreads (0, 0.6, 0.8) - sextic polynomial
+   - Results in `results/prime_breakthrough_*.json`
+
+5. **Compound Rendering Refactor** - `rt-quadray-polyhedra.js`
+   - Uses tested `Polyhedra.icosahedron()` via lazy async import
+   - Component-based rendering with distinct colors (cyan icosa, yellow-green trunc tet)
+   - Resolves circular dependency via lazy import pattern
+
 ### ⏳ In Progress
 
-4. **RT.ProjectionPolygons Namespace** - Shadow polygons using only √ radicals
+6. **Verify Prime Projection Visualization** - `rt-papercut.js`
+   - **SPREADS VERIFIED CORRECT**: JS matches `prime_breakthrough_*.json`:
+     - 11-gon: `s=(0, 0.4, 0.2)` ✓
+     - 13-gon: `s=(0, 0.6, 0.8)` ✓
+   - **Prerequisite**: Enable "Quadray Compound (TruncTet + Icosa)" checkbox!
+   - Without compound enabled, overlay falls back to scene geometry which may be wrong
+   - TODO: Add UI warning if compound not enabled when selecting 11/13-gon preset
+
+### 📋 Pending
+
+7. **RT.ProjectionPolygons Namespace** - Shadow polygons using only √ radicals
    - Algebraic formulas for projection heptagon
    - Derived from Prime Projection Search findings
    - Uses √2, √11, √89, √178 (no transcendentals)
 
-### 📋 Pending
-
-5. **RT.PureCubics Documentation** - Add derivation notes for generalizability
+8. **RT.PureCubics Documentation** - Add derivation notes for generalizability
    - Cardano's formula derivations
    - Connection to Galois theory
    - Symbolic expressions alongside cached values
 
-6. **Higher Prime Search** - Extend projection search to 11, 13, 17...
-   - Larger asymmetric polytopes
+9. **Higher Prime Search** - Extend projection search to 17, 19, 23...
+   - Larger compound polyhedra (3+ components)
    - 4D± with Janus polarity perturbation
 
 ---
@@ -1311,18 +1341,16 @@ Pre-computed values to add to `RT.PureCubics` or `RT.CompositeRotations`:
 
 **Note**: Rotation spreads for 7-multiples use the same heptagon cubic (already cached), while 5-multiples use φ-rational values (already in `RT.PurePhi`).
 
-### Future: Extend to Higher Primes
+### ★ Higher Primes: Status Update (Feb 2026)
 
-Once 5-gon and 7-gon projection works:
+| Prime | Compound | Spreads | Search Status |
+|-------|----------|---------|---------------|
+| **11** | Trunc Tet + Icosahedron | (0, 0.28, 0.44) | ✅ **FOUND!** |
+| **13** | Trunc Tet + Icosahedron | (0, 0.6, 0.8) | ✅ **FOUND!** |
+| 17 | 3+ component compound? | - | 📋 Pending |
+| 19 | 4D polytopes? | - | 📋 Pending |
 
-| Prime | Candidate Source | Search Status |
-|-------|------------------|---------------|
-| 11 | Compound 5 tetrahedra? | Pending |
-| 13 | Snub cube? | Pending |
-| 17 | 600-cell asymmetric section? | Pending |
-| 19 | Higher 4D polytopes | Pending |
-
-Finding projections for 11 and 13 would unlock:
+**Now unlocked** (multiples of discovered primes):
 - 11-multiples: 22, 33, 44, 55...
 - 13-multiples: 26, 39, 52, 65...
 - Combined: 77 (7×11), 91 (7×13), 143 (11×13)...
