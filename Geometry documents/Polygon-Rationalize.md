@@ -792,8 +792,47 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
 
 ---
 
+---
+
+## Current Workplan Status (Feb 2026)
+
+### ✓ Completed
+
+1. **RT.PureCubics Namespace** - Implemented in `modules/rt-math.js`
+   - Nonagon: cubic 8x³ - 6x - 1 = 0 (cos 20°)
+   - Heptagon: cubic 8x³ - 4x² - 4x + 1 = 0 (cos 360°/7)
+   - Cached sin/cos values for RT-pure rotation
+
+2. **Prime Projection Search Script** - `scripts/prime_projection_search.py`
+   - Discovered Symmetry Barrier for centrally symmetric polytopes
+   - Found 7-gon projection from truncated tetrahedron at spreads (0.11, 0, 0.5)
+   - Documented in `Geometry documents/Prime-Projection-Conjecture.tex`
+
+3. **UI Method Info Display** - Shows construction type for each n-gon
+
+### ⏳ In Progress
+
+4. **RT.ProjectionPolygons Namespace** - Shadow polygons using only √ radicals
+   - Algebraic formulas for projection heptagon
+   - Derived from Prime Projection Search findings
+   - Uses √2, √11, √89, √178 (no transcendentals)
+
+### 📋 Pending
+
+5. **RT.PureCubics Documentation** - Add derivation notes for generalizability
+   - Cardano's formula derivations
+   - Connection to Galois theory
+   - Symbolic expressions alongside cached values
+
+6. **Higher Prime Search** - Extend projection search to 11, 13, 17...
+   - Larger asymmetric polytopes
+   - 4D± with Janus polarity perturbation
+
+---
+
 ## References
 
 - Wildberger, N.J. "Divine Proportions" Chapter 14 (Spread Polynomials)
 - Gauss-Wantzel Theorem on constructible polygons
 - `modules/rt-math.js` - RT.StarSpreads, RT.PurePhi, RT.PureCubics, RT.QuadrayRotation
+- `Geometry documents/Prime-Projection-Conjecture.tex` - 4D± Prime Projection Whitepaper
