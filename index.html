@@ -801,25 +801,25 @@
                 style="display: none; margin-left: 20px; margin-top: 5px"
               >
                 <div
-                  class="polygon-sides-container"
+                  class="polygon-sides-container slider-container"
                   style="
                     display: flex;
-                    gap: 10px;
+                    gap: 5px;
                     align-items: center;
                     margin-bottom: 5px;
                   "
                 >
                   <label style="font-size: 0.85em">Sides:</label>
                   <input
-                    type="number"
+                    type="range"
                     id="polygonSides"
                     min="3"
                     max="24"
                     step="1"
                     value="3"
-                    style="width: 50px; font-size: 0.85em"
                     title="Number of sides (n-gon)"
                   />
+                  <span class="slider-value" id="polygonSidesValue">3</span>
                 </div>
                 <div
                   class="polygon-quadrance-container"
@@ -867,7 +867,7 @@
                 </div>
                 <div
                   class="polygon-weight-container slider-container"
-                  style="display: flex; gap: 5px; align-items: center"
+                  style="display: flex; gap: 5px; align-items: center; margin-bottom: 8px"
                 >
                   <label style="font-size: 0.85em">Edge Weight:</label>
                   <input
@@ -882,58 +882,54 @@
                     >2</span
                   >
                 </div>
-                <!-- Tiling Section -->
+                <!-- Enable Tiling toggle and controls -->
+                <label
+                  class="checkbox-label"
+                  style="font-size: 0.85em; font-weight: bold; margin-top: 8px"
+                >
+                  <input type="checkbox" id="polygonEnableTiling" />
+                  Enable Tiling
+                </label>
                 <div
+                  id="polygon-tiling-controls"
                   class="polygon-tiling-section"
                   style="
-                    margin-top: 10px;
-                    padding-top: 8px;
-                    border-top: 1px solid #444;
+                    display: none;
+                    margin-top: 5px;
+                    margin-left: 10px;
                   "
                 >
-                  <label
-                    class="checkbox-label"
-                    style="font-size: 0.85em; font-weight: bold"
-                  >
-                    <input type="checkbox" id="polygonEnableTiling" />
-                    Enable Tiling
-                  </label>
                   <div
-                    id="polygon-tiling-controls"
-                    style="display: none; margin-left: 10px; margin-top: 5px"
+                    class="tiling-generations-container slider-container"
+                    style="
+                      display: flex;
+                      gap: 5px;
+                      align-items: center;
+                      margin-bottom: 5px;
+                    "
                   >
-                    <div
-                      class="tiling-generations-container slider-container"
-                      style="
-                        display: flex;
-                        gap: 5px;
-                        align-items: center;
-                        margin-bottom: 5px;
-                      "
+                    <label style="font-size: 0.85em">Generations:</label>
+                    <input
+                      type="range"
+                      id="polygonTilingGenerations"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="2"
+                    />
+                    <span
+                      class="slider-value"
+                      id="polygonTilingGenerationsValue"
+                      >2</span
                     >
-                      <label style="font-size: 0.85em">Generations:</label>
-                      <input
-                        type="range"
-                        id="polygonTilingGenerations"
-                        min="1"
-                        max="5"
-                        step="1"
-                        value="2"
-                      />
-                      <span
-                        class="slider-value"
-                        id="polygonTilingGenerationsValue"
-                        >2</span
-                      >
-                    </div>
-                    <div
-                      class="tiling-info"
-                      style="font-size: 0.75em; color: #888; margin-top: 3px"
+                  </div>
+                  <div
+                    class="tiling-info"
+                    style="font-size: 0.75em; color: #888; margin-top: 3px"
+                  >
+                    <span id="polygonTilingInfo"
+                      >Triangle: subdivides into 4 per gen</span
                     >
-                      <span id="polygonTilingInfo"
-                        >Triangle: subdivides into 4 per gen</span
-                      >
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1608,6 +1604,32 @@
                 <input type="checkbox" id="showDodecahedron" />
                 Dodecahedron (12 faces, φ)
               </label>
+              <div
+                id="dodecahedron-options"
+                class="geodesic-options geodesic-control-wrapper"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <!-- Face Tiling option for Dodecahedron -->
+                  <div class="geodesic-face-tiling-container">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="dodecahedronFaceTiling" />
+                      Face Tiling (Pentagon)
+                    </label>
+                    <div id="dodecahedron-face-tiling-options" class="sub-controls" style="display: none">
+                      <span class="tiling-info" style="font-size: 10px; color: #00b4ff;">Uses Pentagon settings from Primitives/Polygons</span>
+                      <div class="slider-container" style="display: flex; gap: 5px; align-items: center; margin-top: 6px;">
+                        <label style="font-size: 0.85em">Scale:</label>
+                        <input type="range" id="dodecTilingScale" min="0.5" max="1.5" step="0.001" value="1.0" />
+                        <input type="number" id="dodecTilingScaleInput" min="0.1" max="2.0" step="0.001" value="1.000" style="width: 55px; font-size: 11px;" />
+                      </div>
+                      <div style="font-size: 9px; color: #888; margin-top: 2px;">
+                        φ: 0.618, 0.809, 0.899, 1.236
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="control-item">
               <label class="checkbox-label">
