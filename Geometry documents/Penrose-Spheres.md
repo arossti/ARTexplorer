@@ -1592,6 +1592,157 @@ static createPenroseSphere(polyhedronType, tilingType, generations) {
 3. **Quasicrystal Mode**: Extends to dodecahedral and other 3D quasiperiodic structures
 4. **Assembly Animation**: Visualize tile-by-tile assembly (viral assembly code)
 5. **Export to STL**: 3D-printable Penrose spheres
+6. **Infinite Sphere**: Dynamic regeneration mode (see below)
+
+### Concept: "Infinite Sphere" — Dynamic Penrose Regeneration
+
+> **Analogy**: Just as social media uses "infinite scroll" on a finite screen by regenerating content as users scroll, "Infinite Sphere" creates the experience of infinite aperiodic exploration on a finite closed surface.
+
+**The Problem Restated:**
+- A sphere is a finite, closed 2-manifold
+- True Penrose aperiodicity requires infinite extent
+- Any static tiling on a sphere must eventually "close" on itself
+
+**The Solution: Dynamic Regeneration**
+
+Instead of attempting impossible infinite aperiodicity, we create the *experience* of infinite exploration through regeneration:
+
+1. **Swipe Slider Interface**
+   - Similar to the dodecahedron face tiling scale slider
+   - Slider resets to origin after each "swipe" gesture
+   - Each swipe triggers regeneration of tiling patches
+
+2. **Random Flat Penrose Seeds**
+   - Each regeneration starts from a random flat Penrose tiling patch
+   - Different seed = different local aperiodic structure
+   - Maintains Penrose matching rules within each patch
+
+3. **Seam Boundaries for Regeneration**
+   - **Option A: Great Circle Seams** — Regeneration occurs along geodesic great circles dividing the polyhedron
+   - **Option B: Polyhedral Edge Seams** — Natural edges of icosahedron/dodecahedron faces serve as regeneration boundaries
+   - **Option C: Emergent Patterns** — Seams follow tile boundaries, creating organic regeneration zones
+
+4. **Sliding Transition Animation**
+   - New tiling patches "slide into place" as user swipes
+   - Old patches slide out at opposite seam
+   - Creates illusion of continuous infinite surface
+
+**Implementation Sketch:**
+
+```javascript
+/**
+ * Infinite Sphere - Dynamic Penrose Regeneration
+ *
+ * Slider controls regeneration, resets to origin after each gesture
+ */
+class InfiniteSphere {
+  constructor(polyhedronType) {
+    this.polyhedron = polyhedronType; // 'icosahedron' | 'dodecahedron'
+    this.currentPatches = new Map();  // faceIndex → tiling patch
+    this.regenerationSeams = this.calculateSeams();
+  }
+
+  /**
+   * Called on slider swipe - regenerates patches crossing the seam
+   * @param {number} swipeDirection - positive or negative swipe
+   * @param {number} swipeMagnitude - how far the swipe went (0-1)
+   */
+  onSwipe(swipeDirection, swipeMagnitude) {
+    // 1. Identify which patches cross the active seam
+    const affectedFaces = this.getFacesAtSeam(swipeDirection);
+
+    // 2. Generate new random Penrose seed for each affected face
+    for (const faceIndex of affectedFaces) {
+      const newSeed = this.generateRandomPenroseSeed();
+      const newPatch = this.createPatchFromSeed(newSeed, faceIndex);
+
+      // 3. Animate transition: old slides out, new slides in
+      this.animateTransition(
+        this.currentPatches.get(faceIndex),
+        newPatch,
+        swipeDirection,
+        swipeMagnitude
+      );
+
+      this.currentPatches.set(faceIndex, newPatch);
+    }
+  }
+
+  /**
+   * Generate random Penrose seed configuration
+   * Uses different deflation paths to create variety
+   */
+  generateRandomPenroseSeed() {
+    const seedTypes = ['star', 'sun', 'cartwheel', 'ace', 'deuce'];
+    const randomSeed = seedTypes[Math.floor(Math.random() * seedTypes.length)];
+    const randomRotation = Math.random() * 2 * Math.PI; // Random orientation
+    const randomGeneration = 2 + Math.floor(Math.random() * 3); // 2-4 generations
+
+    return {
+      type: randomSeed,
+      rotation: randomRotation,
+      generations: randomGeneration
+    };
+  }
+
+  /**
+   * Calculate seam boundaries based on polyhedron structure
+   */
+  calculateSeams() {
+    if (this.polyhedron === 'icosahedron') {
+      // Great circles through opposite vertices (6 of them)
+      // Or: edges of icosahedron (30 edges)
+      return this.icosahedronGreatCircles();
+    } else {
+      // Dodecahedron: edges between pentagon faces (30 edges)
+      // Or: great circles through face centers
+      return this.dodecahedronSeams();
+    }
+  }
+}
+```
+
+**Why This Resolves the Closed Surface Problem:**
+
+| Static Approach | Infinite Sphere Approach |
+|-----------------|--------------------------|
+| Finite tiling, eventually repeats | Dynamic regeneration, always fresh |
+| Global constraints force periodicity | Local patches are genuinely aperiodic |
+| Fixed pattern, user explores | Pattern evolves as user interacts |
+| Mathematical limitation visible | Limitation hidden by UX design |
+
+**Connection to 4D Polyhedra:**
+
+The "Infinite Sphere" concept extends naturally to 4D:
+- 4D polytopes (120-cell, 600-cell) have 3D "faces"
+- Regeneration seams become 2D surfaces
+- User "swipes" through 4D cross-sections
+- Each cross-section shows different 3D Penrose-like tilings
+
+**User Experience Goal:**
+
+The user should feel they're exploring an infinite quasi-crystalline universe, even though they're on a finite closed surface. The mathematics of aperiodicity is honored *locally* while the *global* constraint of closure is hidden through dynamic interaction.
+
+**Biological Connection: Viral Capsid Self-Assembly**
+
+The "Infinite Sphere" regeneration model isn't just a UX metaphor — it mirrors how viral capsid proteins actually self-assemble:
+
+| Viral Assembly | Infinite Sphere |
+|----------------|-----------------|
+| **Limited protein types** (often just 1-3) | **Limited tile types** (kite/dart or thick/thin) |
+| **Local binding rules** (protein-protein interfaces) | **Penrose matching rules** (colored edges/arrows) |
+| **Quasi-random encounters** (Brownian motion) | **Random seed selection** (different starting configs) |
+| **Wide variability** (polymorphism, different T-numbers) | **Wide variability** (infinite distinct tilings from same rules) |
+| **Emergent icosahedral symmetry** (global structure) | **Emergent closed surface** (sphere/polyhedron) |
+
+This means the "Infinite Sphere" interaction model could serve as:
+
+1. **Visualization of assembly dynamics** — Each "swipe" represents a new assembly pathway
+2. **Exploration of configuration space** — User discovers the variety possible from minimal rules
+3. **Intuition builder** — Demonstrates how simple local rules create complex global structures
+4. **Research tool** — Could help identify favorable/unfavorable assembly configurations
+
+> *"The quasi-random regeneration of Penrose patches on a closed surface models the same process by which coat proteins find their positions during viral capsid assembly — limited rules, local interactions, global emergence."*
 
 ---
 
