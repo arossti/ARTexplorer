@@ -1,5 +1,117 @@
 # Polygon Rationalization Workplan
 
+---
+
+## 🚀 QUICKSTART: Prime Polygon Search (Agent Handoff)
+
+> **Mission**: Find rational-spread viewing angles where 3D polyhedra project to prime n-gon silhouettes (5, 7, 11, 13, 17, 19...). This bypasses Gauss-Wantzel impossibility via dimensional projection.
+
+### What We're Searching For
+
+| Priority | Target | Description | Why It Matters |
+|----------|--------|-------------|----------------|
+| **A** | **Equi-angular** | All interior angles equal (360°/n) | True regular n-gon from projection! |
+| **B** | **Equal edge-lengths** | All edges same length (may not be equi-angular) | Significant pattern, investigate further |
+| **C** | **Prime hull count** | Convex hull has prime vertices | Basic discovery, refine for A or B |
+
+### Current Status
+
+| n-gon | Status | Spreads (s₁, s₂, s₃) | Notes |
+|-------|--------|----------------------|-------|
+| **5** | ✅ Verified | (0, 0, 0.5) | Perfect 5-hull from truncated tet |
+| **7** | ⏳ TBD | ~(0.11, 0, 0.5) gives 9-hull | Need finer spread search |
+| **9** | ✅ Current | (0.11, 0, 0.5) | Cubic-algebraic (not prime) |
+| **11** | ❌ Not found | - | Need larger asymmetric polytopes |
+| **13** | ❌ Not found | - | Need larger asymmetric polytopes |
+
+### Run the Search
+
+```bash
+# Navigate to project root
+cd /path/to/ARTexplorer
+
+# Install dependencies (first time only)
+pip install -r scripts/requirements.txt
+
+# Quick test (coarse precision)
+python scripts/prime_projection_search.py --precision 1 --polyhedra truncated_tetrahedron
+
+# Full search for 7-hull (fine precision around known region)
+python scripts/prime_projection_search.py --precision 3 --polyhedra truncated_tetrahedron --primes 7
+
+# Exhaustive search for higher primes
+python scripts/prime_projection_search.py --precision 2 --polyhedra all --primes 7,11,13,17,19
+
+# List available polyhedra
+python scripts/prime_projection_search.py --list-polyhedra
+```
+
+### Results Format
+
+Results are saved to `results/prime_projections_YYYYMMDD_HHMMSS.json`:
+
+```json
+{
+  "metadata": {
+    "timestamp": "2026-02-06T12:25:23",
+    "precision": 2,
+    "target_primes": [7, 11, 13],
+    "polyhedra_searched": ["truncated_tetrahedron"]
+  },
+  "findings": [
+    {
+      "polyhedron": "truncated_tetrahedron",
+      "hull_count": 7,
+      "spreads": [0.1137, 0.0, 0.5],
+      "hull_vertices_2d": [[x1,y1], [x2,y2], ...],
+      "interior_angles": [51.4, 51.4, 51.4, 51.4, 51.4, 51.4, 51.4],
+      "edge_lengths": [0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73],
+      "equiangular": true,
+      "equilateral": true,
+      "regularity_score": 1.0
+    }
+  ]
+}
+```
+
+### Key Metrics to Log
+
+For each discovery, record:
+
+1. **Hull vertex count** - Must be prime (or 9 for cubic-algebraic)
+2. **Interior angles** - List all angles; check if equi-angular (variance < 0.1°)
+3. **Edge lengths** - List all lengths; check if equilateral (variance < 1%)
+4. **Spreads** - The (s₁, s₂, s₃) viewing spreads (KEEP RATIONAL if possible!)
+5. **Source polyhedron** - Which 3D shape was projected
+6. **Regularity score** - 0-1 measure of how "regular" the projection is
+
+### Symmetry Barrier (Critical!)
+
+**Regular polytopes with central symmetry CANNOT produce odd-vertex hulls!**
+
+- ❌ Dodecahedron, Icosahedron, Cube, Octahedron → Always even hulls
+- ✅ **Truncated Tetrahedron** → Asymmetric, produces odd hulls (5, 7, 9)
+- ✅ Snub Cube (chiral) → Asymmetric, may produce primes
+- ✅ Compound of 5 Tetrahedra → Asymmetric, may produce primes
+
+### Visualization in ARTexplorer
+
+1. Enable **"Quadray Truncated Tetrahedron"** checkbox
+2. Select **"7-gon Projection"** or **"5-gon Projection"** camera preset
+3. Observe:
+   - **YELLOW** = Actual projection hull
+   - **CYAN** = Ideal regular n-gon (for comparison)
+   - **WHITE** = Interior projected points (not on hull)
+
+### Next Steps for New Agent
+
+1. **Refine 7-hull spread**: Current s=(0.11, 0, 0.5) gives 9-hull. Search s₁ ∈ [0.08, 0.15] at precision 4
+2. **Add equi-angular/equilateral checks**: Extend Python script to flag these
+3. **Try larger asymmetric polytopes**: Snub cube, great rhombicuboctahedron
+4. **Document ALL findings** in `results/` JSON files for reproducibility
+
+---
+
 ## Objective
 
 Replace classical trigonometric methods (`sin(π/n)`, `cos(π/n)`) with RT-pure spread/cross calculations for as many n-gons as possible, leveraging:
