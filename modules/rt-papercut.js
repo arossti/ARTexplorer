@@ -1263,6 +1263,8 @@ export const RTPapercut = {
       }
       hull.push(p);
     }
+
+    console.log(`   _computeConvexHull2D: ${unique.length} unique points → ${hull.length} hull vertices`);
     return hull;
   },
 
@@ -1298,9 +1300,9 @@ export const RTPapercut = {
    * @param {number|null} n - Number of sides (7, 5, etc.) or null to hide
    * @param {THREE.Scene} scene - Scene to add/remove visualization from
    * @param {THREE.Camera} camera - Camera reference
-   * @param {number} planeDistance - Distance from polyhedron center to projection plane (default: 2.5)
+   * @param {number} planeDistance - Distance from polyhedron center to projection plane (default: 5)
    */
-  showPrimePolygon: function (n, scene, camera, planeDistance = 2.5) {
+  showPrimePolygon: function (n, scene, camera, planeDistance = 5) {
     console.log("🔍 showPrimePolygon called with:", { n, scene: !!scene, camera: !!camera, planeDistance });
 
     // Validate inputs
