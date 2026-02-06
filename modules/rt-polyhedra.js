@@ -1536,6 +1536,8 @@ export const Polyhedra = {
   // NEW Quadray forms (for prime projection visualization)
   quadrayOctahedron: QuadrayPolyhedra.octahedron,
   quadrayTruncatedTetrahedron: QuadrayPolyhedra.truncatedTetrahedron,
+  quadrayStellaOctangula: QuadrayPolyhedra.stellaOctangula,
+  quadrayCompoundTruncTetIcosa: QuadrayPolyhedra.compoundTruncTetIcosahedron,
 };
 
 /**

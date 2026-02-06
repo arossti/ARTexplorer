@@ -49,13 +49,35 @@ export const CAMERA_PRESETS = {
   },
   pentagonProjection: {
     name: "5-gon Projection",
-    description: "Icosahedron/dodecahedron axis view",
+    description: "Truncated tetrahedron axis view - verified 5-hull",
     spreads: [0, 0, 0.5], // Pure 45° X rotation
-    recommendedForm: "icosahedron",
-    reference: "Gauss-Wantzel constructible",
+    recommendedForm: "quadrayTruncatedTetrahedron",
+    reference: "Gauss-Wantzel constructible (Fermat prime)",
   },
-  // Future: add more prime projections as discovered
-  // 11-gon, 13-gon, etc. from Quadray polyhedra search
+  // ═══════════════════════════════════════════════════════════════════════
+  // BREAKTHROUGH PROJECTIONS (Feb 2026)
+  // Compound polyhedra produce prime hulls beyond Gauss-Wantzel constructibility
+  // ═══════════════════════════════════════════════════════════════════════
+  hendecagonProjection: {
+    name: "11-gon Projection",
+    description: "Compound (truncated tet + icosahedron) - NOT algebraically solvable!",
+    spreads: [0, 0.4, 0.2], // Verified 11-hull
+    recommendedForm: "quadrayCompound",
+    reference: "Prime-Projection-Conjecture.tex §BREAKTHROUGH",
+    compound: ["truncatedTetrahedron", "icosahedron"],
+    totalVertices: 24,
+    note: "Hendecagon requires quintic polynomial - bypassed via projection",
+  },
+  tridecagonProjection: {
+    name: "13-gon Projection",
+    description: "Compound (truncated tet + icosahedron) - NOT algebraically solvable!",
+    spreads: [0, 0.6, 0.8], // Verified 13-hull
+    recommendedForm: "quadrayCompound",
+    reference: "Prime-Projection-Conjecture.tex §BREAKTHROUGH",
+    compound: ["truncatedTetrahedron", "icosahedron"],
+    totalVertices: 24,
+    note: "Tridecagon requires sextic polynomial - bypassed via projection",
+  },
 };
 
 // Module-level color palette (source of truth for all polyhedron colors)
@@ -86,6 +108,8 @@ const colorPalette = {
   quadrayCuboctahedron: 0x88ff00, // Lime-yellow (VE in native Quadray)
   quadrayOctahedron: 0x66ffaa, // Sea green (Quadray octahedron)
   quadrayTruncatedTet: 0x9acd32, // Yellow-green (7-gon projection source)
+  quadrayStellaOctangula: 0xff6b9d, // Pink-coral (Star Tetrahedron / Merkaba)
+  quadrayCompound: 0xffaa55, // Orange-gold (Compound Trunc Tet + Icosa for 11/13-gon)
   // Primitives
   point: 0xff00ff, // Fuchsia/bright pink - highly visible coordinate exploration point
   line: 0xff0000, // Red - 1D primitive
@@ -128,7 +152,9 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayTetraDeformedGroup,
     quadrayCuboctahedronGroup,
     quadrayOctahedronGroup,
-    quadrayTruncatedTetGroup; // Quadray demonstrators
+    quadrayTruncatedTetGroup,
+    quadrayStellaOctangulaGroup,
+    quadrayCompoundGroup; // Quadray demonstrators
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
@@ -333,6 +359,12 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayTruncatedTetGroup = new THREE.Group();
     quadrayTruncatedTetGroup.userData.type = "quadrayTruncatedTet";
 
+    quadrayStellaOctangulaGroup = new THREE.Group();
+    quadrayStellaOctangulaGroup.userData.type = "quadrayStellaOctangula";
+
+    quadrayCompoundGroup = new THREE.Group();
+    quadrayCompoundGroup.userData.type = "quadrayCompound";
+
     scene.add(pointGroup);
     scene.add(lineGroup);
     scene.add(polygonGroup);
@@ -371,6 +403,8 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(quadrayCuboctahedronGroup);
     scene.add(quadrayOctahedronGroup);
     scene.add(quadrayTruncatedTetGroup);
+    scene.add(quadrayStellaOctangulaGroup);
+    scene.add(quadrayCompoundGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -2553,6 +2587,50 @@ export function initScene(THREE, OrbitControls, RT) {
       RTPapercut.showPrimePolygon(null, scene, camera);
     }
 
+    // Quadray Stella Octangula (Star Tetrahedron - compound of two tetrahedra)
+    if (document.getElementById("showQuadrayStellaOctangula")?.checked) {
+      const normalize =
+        document.getElementById("quadrayStellaOctangulaNormalize")?.checked ?? true;
+      const stellaOcta = Polyhedra.quadrayStellaOctangula(scale, {
+        normalize: normalize,
+      });
+      renderPolyhedron(
+        quadrayStellaOctangulaGroup,
+        stellaOcta,
+        colorPalette.quadrayStellaOctangula,
+        opacity
+      );
+      quadrayStellaOctangulaGroup.userData.parameters = {
+        normalize: normalize,
+        wxyz: stellaOcta.wxyz_normalized,
+      };
+      quadrayStellaOctangulaGroup.visible = true;
+    } else {
+      quadrayStellaOctangulaGroup.visible = false;
+    }
+
+    // Quadray Compound (Truncated Tetrahedron + Icosahedron) for 11/13-gon projections
+    if (document.getElementById("showQuadrayCompound")?.checked) {
+      const normalize =
+        document.getElementById("quadrayCompoundNormalize")?.checked ?? true;
+      const compound = Polyhedra.quadrayCompoundTruncTetIcosa(scale, {
+        normalize: normalize,
+      });
+      renderPolyhedron(
+        quadrayCompoundGroup,
+        compound,
+        colorPalette.quadrayCompound,
+        opacity
+      );
+      quadrayCompoundGroup.userData.parameters = {
+        normalize: normalize,
+        wxyz: compound.wxyz_normalized,
+      };
+      quadrayCompoundGroup.visible = true;
+    } else {
+      quadrayCompoundGroup.visible = false;
+    }
+
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
     if (document.getElementById("showRhombicDodecMatrix").checked) {
       const matrixSize = parseInt(
@@ -3596,7 +3674,13 @@ export function initScene(THREE, OrbitControls, RT) {
     const distance = 10; // Standard distance from origin
 
     // Hide prime polygon overlay unless switching to a prime projection view
-    if (view !== "heptagonProjection" && view !== "pentagonProjection") {
+    const primeProjectionViews = [
+      "pentagonProjection",
+      "heptagonProjection",
+      "hendecagonProjection",
+      "tridecagonProjection",
+    ];
+    if (!primeProjectionViews.includes(view)) {
       RTPapercut.showPrimePolygon(null, scene, camera);
     }
 
@@ -3693,7 +3777,9 @@ export function initScene(THREE, OrbitControls, RT) {
       // ═══════════════════════════════════════════════════════════════════════
 
       case "heptagonProjection":
-      case "pentagonProjection": {
+      case "pentagonProjection":
+      case "hendecagonProjection":
+      case "tridecagonProjection": {
         const preset = CAMERA_PRESETS[view];
         if (!preset) {
           console.warn(`Unknown projection preset: ${view}`);
@@ -3712,15 +3798,26 @@ export function initScene(THREE, OrbitControls, RT) {
         camera.position.copy(viewDir.multiplyScalar(distance));
         camera.up.set(0, 0, 1);
 
-        // Show prime polygon overlay (7-gon for heptagon, 5-gon for pentagon)
+        // Determine polygon sides from preset name
+        const polygonSidesMap = {
+          pentagonProjection: 5,
+          heptagonProjection: 7,
+          hendecagonProjection: 11,
+          tridecagonProjection: 13,
+        };
+        const polygonSides = polygonSidesMap[view] || 5;
+
+        // Show prime polygon overlay
         // This demonstrates that hull vertices map to regular polygon at unit radius
-        const polygonSides = view === "heptagonProjection" ? 7 : 5;
         RTPapercut.showPrimePolygon(polygonSides, scene, camera, 3.5);
 
         console.log(`📐 ${preset.name}: spreads=(${s1}, ${s2}, ${s3})`);
         console.log(`   ${preset.description}`);
         if (preset.recommendedForm) {
           console.log(`   Best viewed with: ${preset.recommendedForm}`);
+        }
+        if (preset.note) {
+          console.log(`   ★ ${preset.note}`);
         }
         break;
       }

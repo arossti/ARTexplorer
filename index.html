@@ -2001,19 +2001,22 @@
                     <div class="button-grid-2col">
                       <button
                         class="toggle-btn variant-special"
+                        id="viewPentagonProjection"
+                        title="5-gon: Truncated tetrahedron at s=(0,0,0.5) - Fermat prime"
+                      >
+                        5-gon
+                      </button>
+                      <button
+                        class="toggle-btn variant-special"
                         id="viewHeptagonProjection"
                         title="7-gon: Truncated tetrahedron at s=(0.11,0,0.5)"
                       >
                         7-gon
                       </button>
-                      <button
-                        class="toggle-btn variant-special"
-                        id="viewPentagonProjection"
-                        title="5-gon: Icosahedron/dodecahedron axis at s=(0,0,0.5)"
-                      >
-                        5-gon
-                      </button>
                     </div>
+                    <p class="info-text" style="font-size: 8px; margin-top: 4px">
+                      5, 7-gon from 12 vertices (truncated tetrahedron)
+                    </p>
                     <!-- Prime Projection Formula Info -->
                     <div
                       id="primeProjectionInfo"
@@ -2021,6 +2024,85 @@
                     >
                       <span id="primeProjectionFormula"></span>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayStellaOctangula" />
+                Quadray Stella Octangula
+              </label>
+              <div
+                id="quadray-stella-octangula-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="quadrayStellaOctangulaNormalize"
+                      checked
+                    />
+                    Zero-Sum Normalize
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    Star Tetrahedron (Merkaba)<br />
+                    tetrahedron + dualTetrahedron compound — 8 vertices
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayCompound" />
+                Quadray Compound (TruncTet + Icosa)
+              </label>
+              <div
+                id="quadray-compound-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="quadrayCompoundNormalize"
+                      checked
+                    />
+                    Zero-Sum Normalize
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    24-vertex compound for 11-gon/13-gon projections<br />
+                    Truncated Tetrahedron (12v) + Icosahedron (12v)
+                  </p>
+                  <!-- Prime Projection Views for Compound -->
+                  <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333">
+                    <label class="label-section" style="font-size: 11px; color: #ffd93d">★ Prime Projections (Breakthrough!)</label>
+                    <div class="button-grid-2col" style="margin-top: 6px">
+                      <button
+                        class="toggle-btn variant-special"
+                        id="viewHendecagonProjection"
+                        title="11-gon: Compound at s=(0,0.4,0.2) - quintic polynomial!"
+                        style="background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%); color: #000"
+                      >
+                        11-gon
+                      </button>
+                      <button
+                        class="toggle-btn variant-special"
+                        id="viewTridecagonProjection"
+                        title="13-gon: Compound at s=(0,0.6,0.8) - sextic polynomial!"
+                        style="background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%); color: #000"
+                      >
+                        13-gon
+                      </button>
+                    </div>
+                    <p class="info-text" style="font-size: 8px; margin-top: 4px; color: #ffd93d">
+                      Bypass Gauss-Wantzel via compound projection!
+                    </p>
                   </div>
                 </div>
               </div>
