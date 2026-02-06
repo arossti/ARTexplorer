@@ -33,6 +33,31 @@ import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 // Re-export PerformanceClock so rt-init.js can import it from here
 export { PerformanceClock };
 
+/**
+ * Camera view presets configuration
+ * Spreads use RT notation: s = sin²(θ) for ZYX Euler rotation
+ * Reference: Geometry documents/Prime-Projection-Conjecture.tex
+ */
+export const CAMERA_PRESETS = {
+  // Prime projection discovery views
+  heptagonProjection: {
+    name: "7-gon Projection",
+    description: "Truncated tetrahedron projects to 7-vertex hull",
+    spreads: [0.11, 0, 0.5], // (s1, s2, s3) via ZYX rotation
+    recommendedForm: "quadrayTruncatedTetrahedron",
+    reference: "Prime-Projection-Conjecture.tex §8.4",
+  },
+  pentagonProjection: {
+    name: "5-gon Projection",
+    description: "Icosahedron/dodecahedron axis view",
+    spreads: [0, 0, 0.5], // Pure 45° X rotation
+    recommendedForm: "icosahedron",
+    reference: "Gauss-Wantzel constructible",
+  },
+  // Future: add more prime projections as discovered
+  // 11-gon, 13-gon, etc. from Quadray polyhedra search
+};
+
 // Module-level color palette (source of truth for all polyhedron colors)
 const colorPalette = {
   cube: 0x0433ff,
@@ -59,6 +84,8 @@ const colorPalette = {
   quadrayTetrahedron: 0x00ff88, // Bright teal/mint (distinct from other forms)
   quadrayTetraDeformed: 0xff5577, // Coral-pink (visually distinct for deformed)
   quadrayCuboctahedron: 0x88ff00, // Lime-yellow (VE in native Quadray)
+  quadrayOctahedron: 0x66ffaa, // Sea green (Quadray octahedron)
+  quadrayTruncatedTet: 0x9acd32, // Yellow-green (7-gon projection source)
   // Primitives
   point: 0xff00ff, // Fuchsia/bright pink - highly visible coordinate exploration point
   line: 0xff0000, // Red - 1D primitive
@@ -99,7 +126,9 @@ export function initScene(THREE, OrbitControls, RT) {
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup; // Radial matrix forms (Phase 3)
   let quadrayTetrahedronGroup,
     quadrayTetraDeformedGroup,
-    quadrayCuboctahedronGroup; // Quadray demonstrators
+    quadrayCuboctahedronGroup,
+    quadrayOctahedronGroup,
+    quadrayTruncatedTetGroup; // Quadray demonstrators
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
@@ -298,6 +327,12 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayCuboctahedronGroup = new THREE.Group();
     quadrayCuboctahedronGroup.userData.type = "quadrayCuboctahedron";
 
+    quadrayOctahedronGroup = new THREE.Group();
+    quadrayOctahedronGroup.userData.type = "quadrayOctahedron";
+
+    quadrayTruncatedTetGroup = new THREE.Group();
+    quadrayTruncatedTetGroup.userData.type = "quadrayTruncatedTet";
+
     scene.add(pointGroup);
     scene.add(lineGroup);
     scene.add(polygonGroup);
@@ -334,6 +369,8 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(quadrayTetrahedronGroup);
     scene.add(quadrayTetraDeformedGroup);
     scene.add(quadrayCuboctahedronGroup);
+    scene.add(quadrayOctahedronGroup);
+    scene.add(quadrayTruncatedTetGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -605,7 +642,9 @@ export function initScene(THREE, OrbitControls, RT) {
     // For Line/Polygon/Penrose primitives with lineWidth option, use Line2/LineMaterial for cross-platform support
     const polyType = group.userData.type;
     const useThickLine =
-      (polyType === "line" || polyType === "polygon" || polyType === "penroseTiling") &&
+      (polyType === "line" ||
+        polyType === "polygon" ||
+        polyType === "penroseTiling") &&
       options.lineWidth &&
       options.lineWidth > 1;
 
@@ -916,7 +955,8 @@ export function initScene(THREE, OrbitControls, RT) {
       // Prefer numeric input (more precise) over slider
       const userScale = parseFloat(
         document.getElementById("dodecTilingScaleInput")?.value ||
-        document.getElementById("dodecTilingScale")?.value || "1.0"
+          document.getElementById("dodecTilingScale")?.value ||
+          "1.0"
       );
       const tilingScale = (faceCircumradius * userScale) / maxExtent;
 
@@ -926,14 +966,14 @@ export function initScene(THREE, OrbitControls, RT) {
         const cos36 = RT.PurePhi.pentagon.cos36();
         console.log(
           `[RT] Dodec Face Tiling: userScale=${userScale.toFixed(3)}, ` +
-          `circumR=${faceCircumradius.toFixed(4)}, inR=${faceInradius.toFixed(4)}, ` +
-          `ratio(in/circ)=${(faceInradius/faceCircumradius).toFixed(4)} (cos36=${cos36.toFixed(4)})`
+            `circumR=${faceCircumradius.toFixed(4)}, inR=${faceInradius.toFixed(4)}, ` +
+            `ratio(in/circ)=${(faceInradius / faceCircumradius).toFixed(4)} (cos36=${cos36.toFixed(4)})`
         );
         console.log(
           `  → tilingScale=${tilingScale.toFixed(4)}, maxExtent=${maxExtent.toFixed(4)}`
         );
         console.log(
-          `  φ-refs: 1/φ=${invPhi.toFixed(4)}, cos36=${cos36.toFixed(4)}, 1/cos36=${(1/cos36).toFixed(4)}`
+          `  φ-refs: 1/φ=${invPhi.toFixed(4)}, cos36=${cos36.toFixed(4)}, 1/cos36=${(1 / cos36).toFixed(4)}`
         );
       }
 
@@ -1143,9 +1183,88 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("polygonQuadrance")?.value || "1"
       );
       // Get number of sides (default 3 = triangle)
+      // Read from numeric input to allow values > 24, fallback to slider
       const polygonSides = parseInt(
-        document.getElementById("polygonSides")?.value || "3"
+        document.getElementById("polygonSidesInput")?.value ||
+          document.getElementById("polygonSides")?.value ||
+          "3"
       );
+
+      // Update method info text based on n-gon type (Gauss-Wantzel constructibility)
+      // See: Geometry documents/Polygon-Rationalize.md for full classification
+      const polygonMethodInfo = document.getElementById("polygonMethodInfo");
+      if (polygonMethodInfo) {
+        let methodText;
+        const names = [
+          "",
+          "Line",
+          "Digon",
+          "Triangle",
+          "Square",
+          "Pentagon",
+          "Hexagon",
+          "Heptagon",
+          "Octagon",
+          "Nonagon",
+          "Decagon",
+          "Hendecagon",
+          "Dodecagon",
+        ];
+        const name = names[polygonSides] || `${polygonSides}-gon`;
+
+        // RT-Pure: rational spreads only
+        if (polygonSides === 3) {
+          methodText = `${name}: RT-Pure (s = 3/4)`;
+        } else if (polygonSides === 4) {
+          methodText = `${name}: RT-Pure (s = 1)`;
+        } else if (polygonSides === 6) {
+          methodText = `${name}: RT-Pure (2×3 @ 60°)`;
+        } else if (polygonSides === 12) {
+          methodText = `${name}: RT-Pure (2×6 @ 30°)`;
+        }
+        // φ-Rational: uses √5 / golden ratio
+        else if (polygonSides === 5) {
+          methodText = `${name}: φ-Rational (s = β)`;
+        } else if (polygonSides === 10) {
+          methodText = `${name}: φ-Rational (2×5 @ 36°)`;
+        } else if (polygonSides === 15) {
+          methodText = `${name}: φ-Rational (3×5 GCD)`;
+        } else if (polygonSides === 20) {
+          methodText = `${name}: φ-Rational (2×10 @ 18°)`;
+        }
+        // Algebraic: uses √2, √3
+        else if (polygonSides === 8) {
+          methodText = `${name}: Algebraic (2×4 @ 45°)`;
+        } else if (polygonSides === 16) {
+          methodText = `${name}: Algebraic (2×8 @ 22.5°)`;
+        } else if (polygonSides === 24) {
+          methodText = `${name}: Algebraic (2×12 @ 15°)`;
+        }
+        // Cubic: requires solving cubic equation once, then cache
+        else if (polygonSides === 7) {
+          methodText = `${name}: Cubic (cos 360°/7)`;
+        } else if (polygonSides === 9) {
+          methodText = `${name}: Cubic (3×3 @ 40°)`;
+        } else if (polygonSides === 14) {
+          methodText = `${name}: Cubic (2×7 @ 25.7°)`;
+        } else if (polygonSides === 18) {
+          methodText = `${name}: Cubic (6×3 @ 20°)`;
+        } else if (polygonSides === 21) {
+          methodText = `${name}: Cubic (3×7 @ 17.1°)`;
+        } else if (polygonSides % 9 === 0) {
+          // Multiples of 9: use nonagon cubic
+          methodText = `${name}: Cubic (${polygonSides / 3}×3)`;
+        } else if (polygonSides % 7 === 0) {
+          // Multiples of 7: use heptagon cubic
+          methodText = `${name}: Cubic (${polygonSides / 7}×7)`;
+        }
+        // Classical: requires sin(π/n) - no algebraic shortcut
+        else {
+          methodText = `${name}: Classical (sin π/${polygonSides})`;
+        }
+        polygonMethodInfo.textContent = methodText;
+      }
+
       // Get edge weight from input field (default 2)
       const polygonEdgeWeight = parseFloat(
         document.getElementById("polygonEdgeWeight")?.value || "2"
@@ -1194,9 +1313,13 @@ export function initScene(THREE, OrbitControls, RT) {
 
       if (tilingEnabled && polygonSides === 3 && tilingGenerations > 1) {
         // Generate triangular tiling using Grids module
-        polygonData = Grids.triangularTiling(polygonQuadrance, tilingGenerations, {
-          showFace: polygonShowFace,
-        });
+        polygonData = Grids.triangularTiling(
+          polygonQuadrance,
+          tilingGenerations,
+          {
+            showFace: polygonShowFace,
+          }
+        );
       } else if (tilingEnabled && polygonSides === 4 && tilingGenerations > 1) {
         // Generate square tiling using Grids module
         polygonData = Grids.squareTiling(polygonQuadrance, tilingGenerations, {
@@ -1268,25 +1391,48 @@ export function initScene(THREE, OrbitControls, RT) {
         // Candidate bounding radii (all φ-rational multiples of maxExtent)
         const candidates = [
           { scale: 1.0, color: 0x00ff00, name: "1.0 (maxExtent)" },
-          { scale: invPhi, color: 0x0000ff, name: `1/φ ≈ ${invPhi.toFixed(4)}` },
-          { scale: cos36, color: 0xffff00, name: `cos36 ≈ ${cos36.toFixed(4)}` },
-          { scale: 1 / cos36, color: 0xff00ff, name: `1/cos36 ≈ ${(1/cos36).toFixed(4)}` },
+          {
+            scale: invPhi,
+            color: 0x0000ff,
+            name: `1/φ ≈ ${invPhi.toFixed(4)}`,
+          },
+          {
+            scale: cos36,
+            color: 0xffff00,
+            name: `cos36 ≈ ${cos36.toFixed(4)}`,
+          },
+          {
+            scale: 1 / cos36,
+            color: 0xff00ff,
+            name: `1/cos36 ≈ ${(1 / cos36).toFixed(4)}`,
+          },
         ];
 
         // Helper to draw pentagon at given radius
         const drawPentagon = (radius, color) => {
           const positions = [];
           for (let i = 0; i < 5; i++) {
-            const angle1 = Math.PI / 2 + i * (2 * Math.PI / 5);
-            const angle2 = Math.PI / 2 + ((i + 1) % 5) * (2 * Math.PI / 5);
+            const angle1 = Math.PI / 2 + i * ((2 * Math.PI) / 5);
+            const angle2 = Math.PI / 2 + ((i + 1) % 5) * ((2 * Math.PI) / 5);
             positions.push(
-              radius * Math.cos(angle1), radius * Math.sin(angle1), 0,
-              radius * Math.cos(angle2), radius * Math.sin(angle2), 0
+              radius * Math.cos(angle1),
+              radius * Math.sin(angle1),
+              0,
+              radius * Math.cos(angle2),
+              radius * Math.sin(angle2),
+              0
             );
           }
           const geometry = new THREE.BufferGeometry();
-          geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-          const material = new THREE.LineBasicMaterial({ color, linewidth: 2, depthTest: true });
+          geometry.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(positions, 3)
+          );
+          const material = new THREE.LineBasicMaterial({
+            color,
+            linewidth: 2,
+            depthTest: true,
+          });
           const lines = new THREE.LineSegments(geometry, material);
           lines.renderOrder = 10;
           polygonGroup.add(lines);
@@ -1299,12 +1445,16 @@ export function initScene(THREE, OrbitControls, RT) {
         });
 
         // Log all candidates for analysis
-        console.log(`[RT] Pentagon bounding candidates (maxExtent=${tilingMaxExtent.toFixed(4)}):`);
+        console.log(
+          `[RT] Pentagon bounding candidates (maxExtent=${tilingMaxExtent.toFixed(4)}):`
+        );
         candidates.forEach(c => {
           const radius = tilingMaxExtent * c.scale;
           console.log(`  ${c.name}: boundingR=${radius.toFixed(4)}`);
         });
-        console.log(`  Legend: GREEN=1.0, BLUE=1/φ, YELLOW=cos36, MAGENTA=1/cos36`);
+        console.log(
+          `  Legend: GREEN=1.0, BLUE=1/φ, YELLOW=cos36, MAGENTA=1/cos36`
+        );
       }
 
       polygonGroup.visible = true;
@@ -1323,8 +1473,11 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("prismHeightQuadrance")?.value || "1"
       );
       // Get number of sides (default 6 = hexagonal prism)
+      // Read from numeric input to allow values > 24, fallback to slider
       const prismSides = parseInt(
-        document.getElementById("prismSides")?.value || "6"
+        document.getElementById("prismSidesInput")?.value ||
+          document.getElementById("prismSides")?.value ||
+          "6"
       );
       // Get face visibility
       const prismShowFaces =
@@ -1347,6 +1500,87 @@ export function initScene(THREE, OrbitControls, RT) {
         rtPure: prismData.metadata.rtPure,
       };
       prismGroup.visible = true;
+
+      // Update method info text based on n-gon type (Gauss-Wantzel constructibility)
+      // See: Geometry documents/Polygon-Rationalize.md for full classification
+      const prismMethodInfo = document.getElementById("prismMethodInfo");
+      if (prismMethodInfo) {
+        let methodText;
+        const names = [
+          "",
+          "Line",
+          "Digon",
+          "Triangle",
+          "Square",
+          "Pentagon",
+          "Hexagon",
+          "Heptagon",
+          "Octagon",
+          "Nonagon",
+          "Decagon",
+          "Hendecagon",
+          "Dodecagon",
+        ];
+        const name = names[prismSides] || `${prismSides}-gon`;
+
+        // Degenerate cases (prism-specific)
+        if (prismSides === 1) {
+          methodText = `${name}: Degenerate (1D segment)`;
+        } else if (prismSides === 2) {
+          methodText = `${name}: Degenerate (2D plane)`;
+        }
+        // RT-Pure: rational spreads only
+        else if (prismSides === 3) {
+          methodText = `${name}: RT-Pure (s = 3/4)`;
+        } else if (prismSides === 4) {
+          methodText = `${name}: RT-Pure (s = 1)`;
+        } else if (prismSides === 6) {
+          methodText = `${name}: RT-Pure (2×3 @ 60°)`;
+        } else if (prismSides === 12) {
+          methodText = `${name}: RT-Pure (2×6 @ 30°)`;
+        }
+        // φ-Rational: uses √5 / golden ratio
+        else if (prismSides === 5) {
+          methodText = `${name}: φ-Rational (s = β)`;
+        } else if (prismSides === 10) {
+          methodText = `${name}: φ-Rational (2×5 @ 36°)`;
+        } else if (prismSides === 15) {
+          methodText = `${name}: φ-Rational (3×5 GCD)`;
+        } else if (prismSides === 20) {
+          methodText = `${name}: φ-Rational (2×10 @ 18°)`;
+        }
+        // Algebraic: uses √2, √3
+        else if (prismSides === 8) {
+          methodText = `${name}: Algebraic (2×4 @ 45°)`;
+        } else if (prismSides === 16) {
+          methodText = `${name}: Algebraic (2×8 @ 22.5°)`;
+        } else if (prismSides === 24) {
+          methodText = `${name}: Algebraic (2×12 @ 15°)`;
+        }
+        // Cubic: requires solving cubic equation once, then cache
+        else if (prismSides === 7) {
+          methodText = `${name}: Cubic (cos 360°/7)`;
+        } else if (prismSides === 9) {
+          methodText = `${name}: Cubic (3×3 @ 40°)`;
+        } else if (prismSides === 14) {
+          methodText = `${name}: Cubic (2×7 @ 25.7°)`;
+        } else if (prismSides === 18) {
+          methodText = `${name}: Cubic (6×3 @ 20°)`;
+        } else if (prismSides === 21) {
+          methodText = `${name}: Cubic (3×7 @ 17.1°)`;
+        } else if (prismSides % 9 === 0) {
+          // Multiples of 9: use nonagon cubic
+          methodText = `${name}: Cubic (${prismSides / 3}×3)`;
+        } else if (prismSides % 7 === 0) {
+          // Multiples of 7: use heptagon cubic
+          methodText = `${name}: Cubic (${prismSides / 7}×7)`;
+        }
+        // Classical: requires sin(π/n) - no algebraic shortcut
+        else {
+          methodText = `${name}: Classical (sin π/${prismSides})`;
+        }
+        prismMethodInfo.textContent = methodText;
+      }
     } else {
       prismGroup.visible = false;
     }
@@ -1420,7 +1654,11 @@ export function initScene(THREE, OrbitControls, RT) {
         );
 
         // Generate tiling via deflation
-        const tiles = PenroseTiling.generate(generations, seed, penroseQuadrance);
+        const tiles = PenroseTiling.generate(
+          generations,
+          seed,
+          penroseQuadrance
+        );
 
         // Convert to renderable geometry
         penroseData = PenroseTiling.tilesToGeometry(tiles, {
@@ -1540,8 +1778,10 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
       // Read direction checkboxes - javelin can show both + and -
-      const showPlus = document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
-      const showMinus = document.getElementById("tetrahelix2DirMinus")?.checked ?? false;
+      const showPlus =
+        document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
+      const showMinus =
+        document.getElementById("tetrahelix2DirMinus")?.checked ?? false;
 
       // 3021 Rule: Map QW→B, QX→A, QY→C, QZ→D for generator compatibility
       const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
@@ -1550,28 +1790,36 @@ export function initScene(THREE, OrbitControls, RT) {
       const strandsRadio = document.querySelector(
         'input[name="tetrahelix2Strands"]:checked'
       );
-      const tetrahelix2Strands = strandsRadio ? parseInt(strandsRadio.value) : 1;
+      const tetrahelix2Strands = strandsRadio
+        ? parseInt(strandsRadio.value)
+        : 1;
       const bondModeRadio = document.querySelector(
         'input[name="tetrahelix2BondMode"]:checked'
       );
-      const tetrahelix2BondMode = bondModeRadio ? bondModeRadio.value : "zipped";
+      const tetrahelix2BondMode = bondModeRadio
+        ? bondModeRadio.value
+        : "zipped";
 
       // Read per-strand exit face settings (using Quadray axis names)
       const getExitFace = qAxis => {
-        const radio = document.querySelector(`input[name="tetrahelix2Exit${qAxis}"]:checked`);
+        const radio = document.querySelector(
+          `input[name="tetrahelix2Exit${qAxis}"]:checked`
+        );
         return radio ? parseInt(radio.value) : 0;
       };
       // Map UI Quadray names to internal face labels using 3021 Rule
       const tetrahelix2ExitFaces = {
-        A: getExitFace("QX"),  // QX → face A (3021 Rule)
-        B: getExitFace("QW"),  // QW → face B (3021 Rule)
-        C: getExitFace("QY"),  // QY → face C (3021 Rule)
-        D: getExitFace("QZ"),  // QZ → face D (3021 Rule)
+        A: getExitFace("QX"), // QX → face A (3021 Rule)
+        B: getExitFace("QW"), // QW → face B (3021 Rule)
+        C: getExitFace("QY"), // QY → face C (3021 Rule)
+        D: getExitFace("QZ"), // QZ → face D (3021 Rule)
       };
 
       // Javelin model: single call with dirPlus/dirMinus flags
       if (!showPlus && !showMinus) {
-        console.log("[RT] Tetrahelix2: No direction selected (+ or -). Enable at least one to render.");
+        console.log(
+          "[RT] Tetrahelix2: No direction selected (+ or -). Enable at least one to render."
+        );
         tetrahelix2Group.visible = false;
       } else {
         // Clear existing geometry
@@ -2258,6 +2506,51 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayCuboctahedronGroup.visible = false;
     }
 
+    // Quadray Octahedron
+    if (document.getElementById("showQuadrayOctahedron")?.checked) {
+      const normalize =
+        document.getElementById("quadrayOctaNormalize")?.checked ?? true;
+      const quadrayOcta = Polyhedra.quadrayOctahedron(scale, {
+        normalize: normalize,
+      });
+      renderPolyhedron(
+        quadrayOctahedronGroup,
+        quadrayOcta,
+        colorPalette.quadrayOctahedron,
+        opacity
+      );
+      quadrayOctahedronGroup.userData.parameters = {
+        normalize: normalize,
+        wxyz: quadrayOcta.wxyz_normalized,
+      };
+      quadrayOctahedronGroup.visible = true;
+    } else {
+      quadrayOctahedronGroup.visible = false;
+    }
+
+    // Quadray Truncated Tetrahedron (7-gon projection source)
+    if (document.getElementById("showQuadrayTruncatedTet")?.checked) {
+      const normalize =
+        document.getElementById("quadrayTruncTetNormalize")?.checked ?? true;
+      const quadrayTruncTet = Polyhedra.quadrayTruncatedTetrahedron(scale, {
+        normalize: normalize,
+      });
+      renderPolyhedron(
+        quadrayTruncatedTetGroup,
+        quadrayTruncTet,
+        colorPalette.quadrayTruncatedTet,
+        opacity
+      );
+      quadrayTruncatedTetGroup.userData.parameters = {
+        normalize: normalize,
+        wxyz: quadrayTruncTet.wxyz_normalized,
+        primeProjection: quadrayTruncTet.metadata?.primeProjection,
+      };
+      quadrayTruncatedTetGroup.visible = true;
+    } else {
+      quadrayTruncatedTetGroup.visible = false;
+    }
+
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
     if (document.getElementById("showRhombicDodecMatrix").checked) {
       const matrixSize = parseInt(
@@ -2722,7 +3015,9 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("polygonQuadrance")?.value || "1"
       );
       const polySides = parseInt(
-        document.getElementById("polygonSides")?.value || "3"
+        document.getElementById("polygonSidesInput")?.value ||
+          document.getElementById("polygonSides")?.value ||
+          "3"
       );
       const polyR = Math.sqrt(polyQ);
       // Math.sin justified: arbitrary n-gon spread calculation (see CODE-QUALITY-AUDIT.md)
@@ -2746,7 +3041,9 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("prismHeightQuadrance")?.value || "1"
       );
       const prismSides = parseInt(
-        document.getElementById("prismSides")?.value || "6"
+        document.getElementById("prismSidesInput")?.value ||
+          document.getElementById("prismSides")?.value ||
+          "6"
       );
       const prismShowFaces =
         document.getElementById("prismShowFaces")?.checked !== false;
@@ -2829,8 +3126,10 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
       // Read direction checkboxes (javelin model)
-      const showPlus = document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
-      const showMinus = document.getElementById("tetrahelix2DirMinus")?.checked ?? true;
+      const showPlus =
+        document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
+      const showMinus =
+        document.getElementById("tetrahelix2DirMinus")?.checked ?? true;
       // 3021 Rule mapping
       const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
       const tetrahelix2StartFace = axisToFace[tetrahelix2Axis] || "B";
@@ -2838,14 +3137,20 @@ export function initScene(THREE, OrbitControls, RT) {
       const strandsRadio = document.querySelector(
         'input[name="tetrahelix2Strands"]:checked'
       );
-      const tetrahelix2Strands = strandsRadio ? parseInt(strandsRadio.value) : 1;
+      const tetrahelix2Strands = strandsRadio
+        ? parseInt(strandsRadio.value)
+        : 1;
       const bondModeRadio2 = document.querySelector(
         'input[name="tetrahelix2BondMode"]:checked'
       );
-      const tetrahelix2BondMode = bondModeRadio2 ? bondModeRadio2.value : "zipped";
+      const tetrahelix2BondMode = bondModeRadio2
+        ? bondModeRadio2.value
+        : "zipped";
       // Read per-strand exit faces for stats (using Quadray axis names)
       const getExitFaceStats = qAxis => {
-        const radio = document.querySelector(`input[name="tetrahelix2Exit${qAxis}"]:checked`);
+        const radio = document.querySelector(
+          `input[name="tetrahelix2Exit${qAxis}"]:checked`
+        );
         return radio ? parseInt(radio.value) : 0;
       };
       const tetrahelix2ExitFaces = {
@@ -2866,8 +3171,10 @@ export function initScene(THREE, OrbitControls, RT) {
       const V2 = tetrahelix2Data.vertices.length;
       const E2 = tetrahelix2Data.edges.length;
       const F2 = tetrahelix2Data.faces.length;
-      const strandLabel = tetrahelix2Strands === 1 ? "1 strand" : `${tetrahelix2Strands} strands`;
-      const modeLabel = tetrahelix2Strands > 1 ? `, ${tetrahelix2BondMode}` : "";
+      const strandLabel =
+        tetrahelix2Strands === 1 ? "1 strand" : `${tetrahelix2Strands} strands`;
+      const modeLabel =
+        tetrahelix2Strands > 1 ? `, ${tetrahelix2BondMode}` : "";
       const dirLabel = (showPlus ? "+" : "") + (showMinus ? "-" : "");
       html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (${tetrahelix2Count} tet, ${strandLabel}${modeLabel}):</strong></div>`;
       html += `<div>V: ${V2}, E: ${E2}, F: ${F2}</div>`;
@@ -2911,7 +3218,10 @@ export function initScene(THREE, OrbitControls, RT) {
       const E3 = tetrahelix3Data.edges.length;
       const F3 = tetrahelix3Data.faces.length;
       const activeStrands = tetrahelix3Data.metadata.activeStrands || [];
-      const strandLabel3 = activeStrands.length === 1 ? "1 strand" : `${activeStrands.length} strands`;
+      const strandLabel3 =
+        activeStrands.length === 1
+          ? "1 strand"
+          : `${activeStrands.length} strands`;
       html += `<div style="margin-top: 10px;"><strong>Tetrahelix 3 (${tetrahelix3Count} tet, ${strandLabel3}):</strong></div>`;
       html += `<div>V: ${V3}, E: ${E3}, F: ${F3}</div>`;
       html += `<div>Euler: N/A (open chain)</div>`;
@@ -3164,6 +3474,46 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
     }
 
+    // Quadray Octahedron
+    if (document.getElementById("showQuadrayOctahedron")?.checked) {
+      const normalize =
+        document.getElementById("quadrayOctaNormalize")?.checked ?? true;
+      const quadrayOcta = Polyhedra.quadrayOctahedron(1, { normalize });
+      const eulerOK = RT.verifyEuler(
+        quadrayOcta.vertices.length,
+        quadrayOcta.edges.length,
+        quadrayOcta.faces.length
+      );
+      html += `<div style="margin-top: 10px;"><strong>Quadray Octahedron:</strong></div>`;
+      html += `<div>WXYZ: {1,1,0,0} permutations</div>`;
+      html += `<div>Normalized: ${normalize ? "Yes" : "No"}</div>`;
+      html += `<div>V: ${quadrayOcta.vertices.length}, E: ${quadrayOcta.edges.length}, F: ${quadrayOcta.faces.length}</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+    }
+
+    // Quadray Truncated Tetrahedron (7-gon projection source)
+    if (document.getElementById("showQuadrayTruncatedTet")?.checked) {
+      const normalize =
+        document.getElementById("quadrayTruncTetNormalize")?.checked ?? true;
+      const quadrayTruncTet = Polyhedra.quadrayTruncatedTetrahedron(1, {
+        normalize,
+      });
+      const eulerOK = RT.verifyEuler(
+        quadrayTruncTet.vertices.length,
+        quadrayTruncTet.edges.length,
+        quadrayTruncTet.faces.length
+      );
+      const triangles = quadrayTruncTet.faces.filter(f => f.length === 3).length;
+      const hexagons = quadrayTruncTet.faces.filter(f => f.length === 6).length;
+      html += `<div style="margin-top: 10px;"><strong>Quadray Truncated Tetrahedron:</strong></div>`;
+      html += `<div>WXYZ: {2,1,0,0} permutations (ALL rational!)</div>`;
+      html += `<div>Normalized: ${normalize ? "Yes" : "No"}</div>`;
+      html += `<div>V: ${quadrayTruncTet.vertices.length}, E: ${quadrayTruncTet.edges.length}, F: ${quadrayTruncTet.faces.length}</div>`;
+      html += `<div>Faces: ${triangles} △ + ${hexagons} ⬡</div>`;
+      html += `<div>Prime: 7-gon projection at s=(0.11,0,0.5)</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+    }
+
     stats.innerHTML = html || "Select a polyhedron to see stats";
   }
 
@@ -3242,6 +3592,11 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function setCameraPreset(view) {
     const distance = 10; // Standard distance from origin
+
+    // Hide prime polygon overlay unless switching to a prime projection view
+    if (view !== "heptagonProjection" && view !== "pentagonProjection") {
+      RTPapercut.showPrimePolygon(null, scene, camera);
+    }
 
     // Z-up coordinate system (CAD/BIM standard)
     // Z = vertical, X-Y = horizontal ground plane
@@ -3329,6 +3684,45 @@ export function initScene(THREE, OrbitControls, RT) {
         break;
       }
 
+      // ═══════════════════════════════════════════════════════════════════════
+      // PRIME PROJECTION VIEWS (Rational n-gon discovery)
+      // Uses CAMERA_PRESETS configuration for extensibility
+      // Reference: Geometry documents/Prime-Projection-Conjecture.tex
+      // ═══════════════════════════════════════════════════════════════════════
+
+      case "heptagonProjection":
+      case "pentagonProjection": {
+        const preset = CAMERA_PRESETS[view];
+        if (!preset) {
+          console.warn(`Unknown projection preset: ${view}`);
+          break;
+        }
+
+        // Convert spreads to Euler angles: θ = arcsin(sqrt(s))
+        const [s1, s2, s3] = preset.spreads;
+        const theta1 = Math.asin(Math.sqrt(s1)); // Z rotation
+        const theta2 = Math.asin(Math.sqrt(s2)); // Y rotation
+        const theta3 = Math.asin(Math.sqrt(s3)); // X rotation
+
+        // Build rotation matrix from ZYX Euler angles
+        const euler = new THREE.Euler(theta3, theta2, theta1, "ZYX");
+        const viewDir = new THREE.Vector3(0, 0, 1).applyEuler(euler);
+        camera.position.copy(viewDir.multiplyScalar(distance));
+        camera.up.set(0, 0, 1);
+
+        // Show prime polygon overlay (7-gon for heptagon, 5-gon for pentagon)
+        // This demonstrates that hull vertices map to regular polygon at unit radius
+        const polygonSides = view === "heptagonProjection" ? 7 : 5;
+        RTPapercut.showPrimePolygon(polygonSides, scene, camera, 1.5);
+
+        console.log(`📐 ${preset.name}: spreads=(${s1}, ${s2}, ${s3})`);
+        console.log(`   ${preset.description}`);
+        if (preset.recommendedForm) {
+          console.log(`   Best viewed with: ${preset.recommendedForm}`);
+        }
+        break;
+      }
+
       case "perspective":
         // TRUE PERSPECTIVE view - return to initial app state
         // CRITICAL: Switch to perspective camera FIRST, then set position
@@ -3378,7 +3772,11 @@ export function initScene(THREE, OrbitControls, RT) {
     // Set cutplane axis based on view
     if (tetrahedralAxisMap[view]) {
       // QWXYZ Tetrahedral views
-      RTPapercut.setCutplaneAxis("tetrahedral", tetrahedralAxisMap[view], scene);
+      RTPapercut.setCutplaneAxis(
+        "tetrahedral",
+        tetrahedralAxisMap[view],
+        scene
+      );
     } else if (cartesianAxisMap[view]) {
       // XYZ Cartesian views
       RTPapercut.setCutplaneAxis("cartesian", cartesianAxisMap[view], scene);
@@ -3498,6 +3896,8 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
       quadrayCuboctahedronGroup,
+      quadrayOctahedronGroup,
+      quadrayTruncatedTetGroup,
       tetrahelix1Group,
       tetrahelix2Group,
       tetrahelix3Group,
@@ -3770,7 +4170,12 @@ export function initScene(THREE, OrbitControls, RT) {
         const tetrahelix2DirMinus = options.dirMinus ?? true;
         const tetrahelix2Strands = options.strands ?? 1;
         const tetrahelix2BondMode = options.bondMode ?? "zipped";
-        const tetrahelix2ExitFaces = options.exitFaces ?? { A: 0, B: 0, C: 0, D: 0 };
+        const tetrahelix2ExitFaces = options.exitFaces ?? {
+          A: 0,
+          B: 0,
+          C: 0,
+          D: 0,
+        };
         geometry = Helices.tetrahelix2(scale, {
           count: tetrahelix2Count,
           startFace: tetrahelix2StartFace,
@@ -3799,8 +4204,26 @@ export function initScene(THREE, OrbitControls, RT) {
       case "tetrahelix3": {
         // Tetrahelix 3: Linear (octahedral seed)
         const tetrahelix3Count = options.count ?? 10;
-        const enabledStrands = options.enabledStrands ?? { A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false };
-        const strandChirality = options.strandChirality ?? { A: true, B: true, C: true, D: true, E: true, F: true, G: true, H: true };
+        const enabledStrands = options.enabledStrands ?? {
+          A: true,
+          B: false,
+          C: false,
+          D: false,
+          E: false,
+          F: false,
+          G: false,
+          H: false,
+        };
+        const strandChirality = options.strandChirality ?? {
+          A: true,
+          B: true,
+          C: true,
+          D: true,
+          E: true,
+          F: true,
+          G: true,
+          H: true,
+        };
         geometry = Helices.tetrahelix3(scale, {
           count: tetrahelix3Count,
           enabledStrands,
@@ -4015,6 +4438,25 @@ export function initScene(THREE, OrbitControls, RT) {
         group.userData.parameters = {
           normalize: normalize,
           wxyz: geometry.wxyz_normalized,
+        };
+        break;
+
+      case "quadrayOctahedron":
+        geometry = Polyhedra.quadrayOctahedron(scale, { normalize });
+        renderPolyhedron(group, geometry, color, opacity);
+        group.userData.parameters = {
+          normalize: normalize,
+          wxyz: geometry.wxyz_normalized,
+        };
+        break;
+
+      case "quadrayTruncatedTet":
+        geometry = Polyhedra.quadrayTruncatedTetrahedron(scale, { normalize });
+        renderPolyhedron(group, geometry, color, opacity);
+        group.userData.parameters = {
+          normalize: normalize,
+          wxyz: geometry.wxyz_normalized,
+          primeProjection: geometry.metadata?.primeProjection,
         };
         break;
 

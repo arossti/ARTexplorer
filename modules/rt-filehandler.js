@@ -163,6 +163,12 @@ export const RTFileHandler = {
         document.getElementById("showQuadrayTetrahedron")?.checked || false,
       showQuadrayTetraDeformed:
         document.getElementById("showQuadrayTetraDeformed")?.checked || false,
+      showQuadrayCuboctahedron:
+        document.getElementById("showQuadrayCuboctahedron")?.checked || false,
+      showQuadrayOctahedron:
+        document.getElementById("showQuadrayOctahedron")?.checked || false,
+      showQuadrayTruncatedTet:
+        document.getElementById("showQuadrayTruncatedTet")?.checked || false,
       // Planar matrices
       showCubeMatrix:
         document.getElementById("showCubeMatrix")?.checked || false,
@@ -988,6 +994,22 @@ export const RTFileHandler = {
         );
         if (penroseTilingControls && checkboxes.showPenroseTiling) {
           penroseTilingControls.style.display = "block";
+        }
+
+        // Show/hide Quadray Octahedron controls based on checkbox state
+        const quadrayOctaControls = document.getElementById(
+          "quadray-octahedron-controls"
+        );
+        if (quadrayOctaControls && checkboxes.showQuadrayOctahedron) {
+          quadrayOctaControls.style.display = "block";
+        }
+
+        // Show/hide Quadray Truncated Tetrahedron controls based on checkbox state
+        const quadrayTruncTetControls = document.getElementById(
+          "quadray-trunc-tet-controls"
+        );
+        if (quadrayTruncTetControls && checkboxes.showQuadrayTruncatedTet) {
+          quadrayTruncTetControls.style.display = "block";
         }
 
         // Trigger updateGeometry to render the restored forms

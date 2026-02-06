@@ -583,14 +583,22 @@
                 Cartesian Planes
               </label>
               <div id="cartesian-planes" class="geodesic-options collapsed">
-                <div id="cartesian-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                <div
+                  id="cartesian-checkboxes"
+                  style="
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-bottom: 8px;
+                  "
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeXY" /> XY
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeXZ" /> XZ
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeYZ" /> YZ
                   </label>
                 </div>
@@ -633,23 +641,31 @@
                 this coupling issue. - Feb 2026
               -->
               <div id="ivm-grids" class="geodesic-options collapsed">
-                <div id="quadray-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                <div
+                  id="quadray-checkboxes"
+                  style="
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-bottom: 8px;
+                  "
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeQuadrayWX" /> WX
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeQuadrayWY" /> WY
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeQuadrayWZ" /> WZ
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeQuadrayXY" /> XY
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeQuadrayXZ" /> XZ
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeQuadrayYZ" /> YZ
                   </label>
                 </div>
@@ -668,23 +684,31 @@
                 Central Angle Grids (Corrected Tessellation)
               </label>
               <div id="central-angle-grids" class="geodesic-options">
-                <div id="ivm-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                <div
+                  id="ivm-checkboxes"
+                  style="
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-bottom: 8px;
+                  "
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeIvmWX" checked /> WX
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeIvmWY" checked /> WY
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeIvmWZ" checked /> WZ
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeIvmXY" checked /> XY
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeIvmXZ" checked /> XZ
                   </label>
-                  <label class="checkbox-label" style="font-size: 0.85em;">
+                  <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeIvmYZ" checked /> YZ
                   </label>
                 </div>
@@ -819,7 +843,22 @@
                     value="3"
                     title="Number of sides (n-gon)"
                   />
-                  <span class="slider-value" id="polygonSidesValue">3</span>
+                  <input
+                    type="number"
+                    id="polygonSidesInput"
+                    min="3"
+                    step="1"
+                    value="3"
+                    style="width: 55px; font-size: 11px"
+                  />
+                </div>
+                <div
+                  class="tiling-info"
+                  style="font-size: 10px; color: #00b4ff; margin-bottom: 5px"
+                >
+                  <span id="polygonMethodInfo"
+                    >Triangle: RT-Pure (s = 3/4)</span
+                  >
                 </div>
                 <div
                   class="polygon-quadrance-container"
@@ -867,7 +906,12 @@
                 </div>
                 <div
                   class="polygon-weight-container slider-container"
-                  style="display: flex; gap: 5px; align-items: center; margin-bottom: 8px"
+                  style="
+                    display: flex;
+                    gap: 5px;
+                    align-items: center;
+                    margin-bottom: 8px;
+                  "
                 >
                   <label style="font-size: 0.85em">Edge Weight:</label>
                   <input
@@ -893,11 +937,7 @@
                 <div
                   id="polygon-tiling-controls"
                   class="polygon-tiling-section"
-                  style="
-                    display: none;
-                    margin-top: 5px;
-                    margin-left: 10px;
-                  "
+                  style="display: none; margin-top: 5px; margin-left: 10px"
                 >
                   <div
                     class="tiling-generations-container slider-container"
@@ -946,25 +986,38 @@
                 style="display: none; margin-left: 20px; margin-top: 5px"
               >
                 <div
-                  class="prism-sides-container"
+                  class="prism-sides-container slider-container"
                   style="
                     display: flex;
-                    gap: 10px;
+                    gap: 5px;
                     align-items: center;
                     margin-bottom: 5px;
                   "
                 >
                   <label style="font-size: 0.85em">Sides:</label>
                   <input
-                    type="number"
+                    type="range"
                     id="prismSides"
-                    min="3"
+                    min="1"
                     max="24"
                     step="1"
                     value="6"
-                    style="width: 50px; font-size: 0.85em"
                     title="Number of sides (n-gon prism)"
                   />
+                  <input
+                    type="number"
+                    id="prismSidesInput"
+                    min="1"
+                    step="1"
+                    value="6"
+                    style="width: 55px; font-size: 11px"
+                  />
+                </div>
+                <div
+                  class="tiling-info"
+                  style="font-size: 10px; color: #00b4ff; margin-bottom: 5px"
+                >
+                  <span id="prismMethodInfo">Hexagon: Classical (sin π/6)</span>
                 </div>
                 <div
                   class="prism-quadrance-container"
@@ -1239,7 +1292,12 @@
                 <!-- Show Face Checkbox -->
                 <div
                   class="penrose-face-container"
-                  style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 8px;
+                  "
                 >
                   <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="penroseShowFace" checked />
@@ -1247,8 +1305,21 @@
                   </label>
                 </div>
                 <!-- Tiling Generation Controls -->
-                <div style="border-top: 1px solid #444; padding-top: 8px; margin-top: 5px">
-                  <label class="checkbox-label" style="font-size: 0.85em; margin-bottom: 5px; display: block">
+                <div
+                  style="
+                    border-top: 1px solid #444;
+                    padding-top: 8px;
+                    margin-top: 5px;
+                  "
+                >
+                  <label
+                    class="checkbox-label"
+                    style="
+                      font-size: 0.85em;
+                      margin-bottom: 5px;
+                      display: block;
+                    "
+                  >
                     <input type="checkbox" id="penroseTilingEnabled" />
                     Enable Tiling (Deflation)
                   </label>
@@ -1258,10 +1329,22 @@
                   >
                     <!-- Seed Selection -->
                     <div style="margin-bottom: 5px">
-                      <label style="font-size: 0.8em; display: block; margin-bottom: 3px">Seed:</label>
+                      <label
+                        style="
+                          font-size: 0.8em;
+                          display: block;
+                          margin-bottom: 3px;
+                        "
+                        >Seed:</label
+                      >
                       <div style="display: flex; gap: 8px; flex-wrap: wrap">
                         <label style="font-size: 0.8em">
-                          <input type="radio" name="penroseSeed" value="star" checked />
+                          <input
+                            type="radio"
+                            name="penroseSeed"
+                            value="star"
+                            checked
+                          />
                           Star
                         </label>
                         <label style="font-size: 0.8em">
@@ -1269,11 +1352,19 @@
                           Sun
                         </label>
                         <label style="font-size: 0.8em">
-                          <input type="radio" name="penroseSeed" value="cartwheel" />
+                          <input
+                            type="radio"
+                            name="penroseSeed"
+                            value="cartwheel"
+                          />
                           Cartwheel
                         </label>
                         <label style="font-size: 0.8em">
-                          <input type="radio" name="penroseSeed" value="single-thick" />
+                          <input
+                            type="radio"
+                            name="penroseSeed"
+                            value="single-thick"
+                          />
                           Single
                         </label>
                       </div>
@@ -1289,7 +1380,12 @@
                         value="2"
                         style="width: 70px"
                       />
-                      <span class="slider-value" id="penroseGenerationsValue" style="font-size: 0.8em">2</span>
+                      <span
+                        class="slider-value"
+                        id="penroseGenerationsValue"
+                        style="font-size: 0.8em"
+                        >2</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -1341,7 +1437,9 @@
                         step="1"
                         value="1"
                       />
-                      <span class="slider-value" id="geodesicTetraFreqValue">1</span>
+                      <span class="slider-value" id="geodesicTetraFreqValue"
+                        >1</span
+                      >
                     </div>
                     <div class="geodesic-projection-container">
                       <label class="geodesic-projection-label">Project:</label>
@@ -1409,7 +1507,9 @@
                         step="1"
                         value="1"
                       />
-                      <span class="slider-value" id="geodesicDualTetraFreqValue">1</span>
+                      <span class="slider-value" id="geodesicDualTetraFreqValue"
+                        >1</span
+                      >
                     </div>
                     <div class="geodesic-projection-container">
                       <label class="geodesic-projection-label">Project:</label>
@@ -1478,7 +1578,9 @@
                         step="1"
                         value="1"
                       />
-                      <span class="slider-value" id="geodesicOctaFreqValue">1</span>
+                      <span class="slider-value" id="geodesicOctaFreqValue"
+                        >1</span
+                      >
                     </div>
                     <div class="geodesic-projection-container">
                       <label class="geodesic-projection-label">Project:</label>
@@ -1547,7 +1649,9 @@
                         step="1"
                         value="1"
                       />
-                      <span class="slider-value" id="geodesicIcosaFreqValue">1</span>
+                      <span class="slider-value" id="geodesicIcosaFreqValue"
+                        >1</span
+                      >
                     </div>
                     <div class="geodesic-projection-container">
                       <label class="geodesic-projection-label">Project:</label>
@@ -1591,8 +1695,17 @@
                         <input type="checkbox" id="geodesicIcosaFaceTiling" />
                         Face Tiling
                       </label>
-                      <div id="geodesic-icosa-face-tiling-options" class="sub-controls" style="display: none">
-                        <span class="tiling-info" style="font-size: 10px; color: #00b4ff;">Set Polygon Tiling Properties under Primitives/Polygons</span>
+                      <div
+                        id="geodesic-icosa-face-tiling-options"
+                        class="sub-controls"
+                        style="display: none"
+                      >
+                        <span
+                          class="tiling-info"
+                          style="font-size: 10px; color: #00b4ff"
+                          >Set Polygon Tiling Properties under
+                          Primitives/Polygons</span
+                        >
                       </div>
                     </div>
                   </div>
@@ -1616,14 +1729,45 @@
                       <input type="checkbox" id="dodecahedronFaceTiling" />
                       Face Tiling (Pentagon)
                     </label>
-                    <div id="dodecahedron-face-tiling-options" class="sub-controls" style="display: none">
-                      <span class="tiling-info" style="font-size: 10px; color: #00b4ff;">Uses Pentagon settings from Primitives/Polygons</span>
-                      <div class="slider-container" style="display: flex; gap: 5px; align-items: center; margin-top: 6px;">
+                    <div
+                      id="dodecahedron-face-tiling-options"
+                      class="sub-controls"
+                      style="display: none"
+                    >
+                      <span
+                        class="tiling-info"
+                        style="font-size: 10px; color: #00b4ff"
+                        >Uses Pentagon settings from Primitives/Polygons</span
+                      >
+                      <div
+                        class="slider-container"
+                        style="
+                          display: flex;
+                          gap: 5px;
+                          align-items: center;
+                          margin-top: 6px;
+                        "
+                      >
                         <label style="font-size: 0.85em">Scale:</label>
-                        <input type="range" id="dodecTilingScale" min="0.5" max="1.5" step="0.001" value="1.0" />
-                        <input type="number" id="dodecTilingScaleInput" min="0.1" max="2.0" step="0.001" value="1.000" style="width: 55px; font-size: 11px;" />
+                        <input
+                          type="range"
+                          id="dodecTilingScale"
+                          min="0.5"
+                          max="1.5"
+                          step="0.001"
+                          value="1.0"
+                        />
+                        <input
+                          type="number"
+                          id="dodecTilingScaleInput"
+                          min="0.1"
+                          max="2.0"
+                          step="0.001"
+                          value="1.000"
+                          style="width: 55px; font-size: 11px"
+                        />
                       </div>
-                      <div style="font-size: 9px; color: #888; margin-top: 2px;">
+                      <div style="font-size: 9px; color: #888; margin-top: 2px">
                         φ: 0.618, 0.809, 0.899, 1.236
                       </div>
                     </div>
@@ -1657,7 +1801,9 @@
                         step="1"
                         value="1"
                       />
-                      <span class="slider-value" id="geodesicDualIcosaFreqValue">1</span>
+                      <span class="slider-value" id="geodesicDualIcosaFreqValue"
+                        >1</span
+                      >
                     </div>
                     <div class="geodesic-projection-container">
                       <label class="geodesic-projection-label">Project:</label>
@@ -1793,6 +1939,89 @@
                     {2,1,1,0} permutations — 12-around-1 sphere packing<br />
                     (Kirby Urner calibration)
                   </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayOctahedron" />
+                Quadray Octahedron
+              </label>
+              <div
+                id="quadray-octahedron-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="quadrayOctaNormalize"
+                      checked
+                    />
+                    Zero-Sum Normalize
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    {1,1,0,0} permutations — 6 vertices
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayTruncatedTet" />
+                Quadray Truncated Tetrahedron
+              </label>
+              <div
+                id="quadray-trunc-tet-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="quadrayTruncTetNormalize"
+                      checked
+                    />
+                    Zero-Sum Normalize
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    {2,1,0,0} permutations — ALL rational!<br />
+                    Source of 7-gon projection (prime polygon)
+                  </p>
+                  <!-- Prime Projection Views (specific to Truncated Tetrahedron) -->
+                  <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333">
+                    <label class="label-section" style="font-size: 11px">Prime Projection Views</label>
+                    <p class="info-text" style="font-size: 9px; margin-bottom: 6px">
+                      Camera angles producing prime n-gon projections
+                    </p>
+                    <div class="button-grid-2col">
+                      <button
+                        class="toggle-btn variant-special"
+                        id="viewHeptagonProjection"
+                        title="7-gon: Truncated tetrahedron at s=(0.11,0,0.5)"
+                      >
+                        7-gon
+                      </button>
+                      <button
+                        class="toggle-btn variant-special"
+                        id="viewPentagonProjection"
+                        title="5-gon: Icosahedron/dodecahedron axis at s=(0,0,0.5)"
+                      >
+                        5-gon
+                      </button>
+                    </div>
+                    <!-- Prime Projection Formula Info -->
+                    <div
+                      id="primeProjectionInfo"
+                      style="font-size: 10px; color: #00ffff; margin-top: 8px; display: none"
+                    >
+                      <span id="primeProjectionFormula"></span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2300,55 +2529,99 @@
                   </div>
                 </div>
                 <!-- Axis, Direction, and Strands on same row -->
-                <div class="matrix-control-item" style="display: flex; gap: 16px; flex-wrap: wrap;">
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <label class="matrix-size-label" style="margin-right: 4px;">Axis</label>
+                <div
+                  class="matrix-control-item"
+                  style="display: flex; gap: 16px; flex-wrap: wrap"
+                >
+                  <div style="display: flex; align-items: center; gap: 4px">
+                    <label class="matrix-size-label" style="margin-right: 4px"
+                      >Axis</label
+                    >
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2Axis" value="QW" checked /> QW
+                      <input
+                        type="radio"
+                        name="tetrahelix2Axis"
+                        value="QW"
+                        checked
+                      />
+                      QW
                     </label>
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2Axis" value="QX" /> QX
+                      <input type="radio" name="tetrahelix2Axis" value="QX" />
+                      QX
                     </label>
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2Axis" value="QY" /> QY
+                      <input type="radio" name="tetrahelix2Axis" value="QY" />
+                      QY
                     </label>
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2Axis" value="QZ" /> QZ
+                      <input type="radio" name="tetrahelix2Axis" value="QZ" />
+                      QZ
                     </label>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <label class="matrix-size-label" style="margin-right: 4px;">Dir</label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
-                      <input type="checkbox" id="tetrahelix2DirPlus" checked /> +
+                  <div style="display: flex; align-items: center; gap: 4px">
+                    <label class="matrix-size-label" style="margin-right: 4px"
+                      >Dir</label
+                    >
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix2DirPlus" checked />
+                      +
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
+                    <label class="checkbox-label" style="font-size: 0.85em">
                       <input type="checkbox" id="tetrahelix2DirMinus" /> -
                     </label>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <label class="matrix-size-label" style="margin-right: 4px;">Strands</label>
+                  <div style="display: flex; align-items: center; gap: 4px">
+                    <label class="matrix-size-label" style="margin-right: 4px"
+                      >Strands</label
+                    >
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2Strands" value="1" checked /> 1
+                      <input
+                        type="radio"
+                        name="tetrahelix2Strands"
+                        value="1"
+                        checked
+                      />
+                      1
                     </label>
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2Strands" value="2" /> 2
+                      <input type="radio" name="tetrahelix2Strands" value="2" />
+                      2
                     </label>
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2Strands" value="3" /> 3
+                      <input type="radio" name="tetrahelix2Strands" value="3" />
+                      3
                     </label>
                     <label class="geodesic-projection-option">
-                      <input type="radio" name="tetrahelix2Strands" value="4" /> 4
+                      <input type="radio" name="tetrahelix2Strands" value="4" />
+                      4
                     </label>
                   </div>
                 </div>
                 <!-- Bonding mode: zipped (radial) vs unzipped (parallel chains) -->
-                <div class="matrix-control-item" style="display: flex; align-items: center; gap: 8px;">
-                  <label class="matrix-size-label" style="margin-right: 4px;">Mode</label>
+                <div
+                  class="matrix-control-item"
+                  style="display: flex; align-items: center; gap: 8px"
+                >
+                  <label class="matrix-size-label" style="margin-right: 4px"
+                    >Mode</label
+                  >
                   <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelix2BondMode" value="zipped" checked /> Zipped
+                    <input
+                      type="radio"
+                      name="tetrahelix2BondMode"
+                      value="zipped"
+                      checked
+                    />
+                    Zipped
                   </label>
                   <label class="geodesic-projection-option">
-                    <input type="radio" name="tetrahelix2BondMode" value="unzipped" /> Unzipped
+                    <input
+                      type="radio"
+                      name="tetrahelix2BondMode"
+                      value="unzipped"
+                    />
+                    Unzipped
                   </label>
                 </div>
                 <p class="matrix-info-text">
@@ -2419,29 +2692,30 @@
                 <!-- Strands: checkboxes for each octahedral face A-H -->
                 <div class="matrix-control-item">
                   <label class="matrix-size-label">Strands</label>
-                  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    <label class="checkbox-label" style="font-size: 0.85em;">
-                      <input type="checkbox" id="tetrahelix3StrandA" checked /> A
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3StrandA" checked />
+                      A
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
+                    <label class="checkbox-label" style="font-size: 0.85em">
                       <input type="checkbox" id="tetrahelix3StrandB" /> B
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
+                    <label class="checkbox-label" style="font-size: 0.85em">
                       <input type="checkbox" id="tetrahelix3StrandC" /> C
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
+                    <label class="checkbox-label" style="font-size: 0.85em">
                       <input type="checkbox" id="tetrahelix3StrandD" /> D
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
+                    <label class="checkbox-label" style="font-size: 0.85em">
                       <input type="checkbox" id="tetrahelix3StrandE" /> E
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
+                    <label class="checkbox-label" style="font-size: 0.85em">
                       <input type="checkbox" id="tetrahelix3StrandF" /> F
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
+                    <label class="checkbox-label" style="font-size: 0.85em">
                       <input type="checkbox" id="tetrahelix3StrandG" /> G
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
+                    <label class="checkbox-label" style="font-size: 0.85em">
                       <input type="checkbox" id="tetrahelix3StrandH" /> H
                     </label>
                   </div>
@@ -2449,38 +2723,47 @@
                 <!-- Twist: LH/RH toggle for each strand A-H -->
                 <div class="matrix-control-item">
                   <label class="matrix-size-label">Twist (LH/RH)</label>
-                  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    <label class="checkbox-label" style="font-size: 0.85em;">
-                      <input type="checkbox" id="tetrahelix3ChiralA" checked /> A
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralA" checked />
+                      A
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
-                      <input type="checkbox" id="tetrahelix3ChiralB" checked /> B
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralB" checked />
+                      B
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
-                      <input type="checkbox" id="tetrahelix3ChiralC" checked /> C
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralC" checked />
+                      C
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
-                      <input type="checkbox" id="tetrahelix3ChiralD" checked /> D
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralD" checked />
+                      D
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
-                      <input type="checkbox" id="tetrahelix3ChiralE" checked /> E
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralE" checked />
+                      E
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
-                      <input type="checkbox" id="tetrahelix3ChiralF" checked /> F
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralF" checked />
+                      F
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
-                      <input type="checkbox" id="tetrahelix3ChiralG" checked /> G
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralG" checked />
+                      G
                     </label>
-                    <label class="checkbox-label" style="font-size: 0.85em;">
-                      <input type="checkbox" id="tetrahelix3ChiralH" checked /> H
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralH" checked />
+                      H
                     </label>
                   </div>
-                  <p class="matrix-info-text" style="margin-top: 4px;">
+                  <p class="matrix-info-text" style="margin-top: 4px">
                     Unchecked = Left-Hand twist, Checked = Right-Hand twist
                   </p>
                 </div>
                 <p class="matrix-info-text">
-                  Octahedral seed with 8 faces. Each checked strand bonds a tetrahelix to that face.
+                  Octahedral seed with 8 faces. Each checked strand bonds a
+                  tetrahelix to that face.
                 </p>
               </div>
             </div>
@@ -2912,6 +3195,7 @@
                 </button>
               </div>
             </div>
+
           </div>
         </div>
         <!-- END SECTION 7: CAMERA -->
@@ -3021,22 +3305,13 @@
                 <button class="toggle-btn variant-small" id="cutplaneAxisQW">
                   QW
                 </button>
-                <button
-                  class="toggle-btn variant-small"
-                  id="cutplaneAxisQX"
-                >
+                <button class="toggle-btn variant-small" id="cutplaneAxisQX">
                   QX
                 </button>
-                <button
-                  class="toggle-btn variant-small"
-                  id="cutplaneAxisQY"
-                >
+                <button class="toggle-btn variant-small" id="cutplaneAxisQY">
                   QY
                 </button>
-                <button
-                  class="toggle-btn variant-small"
-                  id="cutplaneAxisQZ"
-                >
+                <button class="toggle-btn variant-small" id="cutplaneAxisQZ">
                   QZ
                 </button>
               </div>

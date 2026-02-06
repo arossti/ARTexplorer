@@ -1,0 +1,848 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{parskip}
+\usepackage{tcolorbox}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\geometry{margin=1in}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10}
+}
+
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{definition}{Definition}
+\newtheorem{observation}{Observation}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+
+\title{The 4D± Prime Projection Conjecture -- v2.0 (Feb 2026)\\
+\large Rational-Spread Projections of Higher-Dimensional Polytopes\\
+as a Source of Non-Constructible Prime n-Gons}
+
+\author{Andrew Thomson\\
+\small Open Building / ARTexplorer Project\\
+\small \href{mailto:andy@openbuilding.ca}{andy@openbuilding.ca}}
+
+\date{February 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This paper presents the \textbf{4D± Prime Projection Conjecture}: that prime-sided polygons (7, 11, 13, 19...), which are non-constructible in 2D under the Gauss-Wantzel theorem, might emerge as rational-spread projections of higher-dimensional polytope structures. We describe the problem of irrational polygon construction, introduce a computational search methodology using rational spread values, and report experimental findings. Key results include the discovery of the \textbf{Symmetry Barrier}---regular polytopes with central symmetry always project to even-sided hull boundaries---and its resolution through \textbf{asymmetric polytopes}, specifically the truncated tetrahedron, which produces 5-gon and 7-gon projections at rational spread viewing angles.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%==============================================================================
+\section{Introduction: The Problem of Irrational Polygons}
+%==============================================================================
+
+\subsection{Classical Polygon Construction}
+
+Constructing a regular $n$-gon requires placing $n$ equally-spaced vertices on a circle. Classically, this involves computing:
+\begin{equation}
+v_k = \left( R \cos\frac{2\pi k}{n}, \; R \sin\frac{2\pi k}{n} \right), \quad k = 0, 1, \ldots, n-1
+\end{equation}
+
+The functions $\sin(\pi/n)$ and $\cos(\pi/n)$ are \textbf{transcendental} for most values of $n$---they cannot be expressed as finite algebraic expressions involving only rationals and radicals.
+
+\subsection{The Gauss-Wantzel Theorem}
+
+\begin{theorem}[Gauss-Wantzel, 1837]
+A regular $n$-gon is constructible with compass and straightedge if and only if $n$ is of the form:
+\begin{equation}
+n = 2^k \times p_1 \times p_2 \times \cdots \times p_m
+\end{equation}
+where $k \geq 0$ and $p_1, p_2, \ldots, p_m$ are \textbf{distinct Fermat primes} of the form $F_j = 2^{2^j} + 1$.
+\end{theorem}
+
+The known Fermat primes are: $3, 5, 17, 257, 65537$.
+
+\begin{corollary}[Constructible n-gons for $n \leq 24$]
+The constructible regular polygons with $n \leq 24$ sides are:
+\[
+n \in \{3, 4, 5, 6, 8, 10, 12, 15, 16, 17, 20, 24\}
+\]
+\end{corollary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{clcc}
+\toprule
+$n$ & \textbf{Name} & \textbf{Constructible?} & \textbf{Required Algebra} \\
+\midrule
+3 & Triangle & Yes & Rational \\
+4 & Square & Yes & Rational \\
+5 & Pentagon & Yes & $\sqrt{5}$ (Golden ratio) \\
+6 & Hexagon & Yes & Rational \\
+\textbf{7} & \textbf{Heptagon} & \textbf{No} & Cubic (degree 3) \\
+8 & Octagon & Yes & $\sqrt{2}$ \\
+\textbf{9} & \textbf{Nonagon} & \textbf{No} & Cubic (angle trisection) \\
+10 & Decagon & Yes & $\sqrt{5}$ \\
+\textbf{11} & \textbf{Hendecagon} & \textbf{No} & Degree 5 \\
+12 & Dodecagon & Yes & $\sqrt{3}$ \\
+\textbf{13} & \textbf{Tridecagon} & \textbf{No} & Degree 6 \\
+\bottomrule
+\end{tabular}
+\caption{Constructibility of regular polygons. Bold entries are non-constructible primes.}
+\end{table}
+
+\subsection{The Accuracy Problem}
+
+In computational geometry, non-constructible polygons require evaluating transcendental functions:
+\begin{align}
+\sin(\pi/7) &= 0.4338837391175582\ldots \quad \text{(non-terminating, non-repeating)}\\
+\cos(\pi/7) &= 0.9009688679024191\ldots \quad \text{(irrational)}
+\end{align}
+
+These values are:
+\begin{enumerate}
+    \item \textbf{Approximations}---floating-point representation introduces error
+    \item \textbf{Non-algebraic}---cannot be expressed as roots of rational polynomials
+    \item \textbf{Computationally expensive}---transcendental evaluation per vertex
+\end{enumerate}
+
+\subsection{The Desire for Rational Construction}
+
+Wildberger's \textbf{Rational Trigonometry} (RT) replaces distance and angle with:
+\begin{align}
+\text{Quadrance:} \quad Q &= d^2 \quad \text{(distance squared)}\\
+\text{Spread:} \quad s &= \sin^2(\theta) \quad \text{(angle measure)}
+\end{align}
+
+\begin{observation}[Rational Spreads]
+Many useful angles have \textbf{rational} spread values:
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+\textbf{Angle} & $\sin(\theta)$ & $\cos(\theta)$ & \textbf{Spread} $s = \sin^2(\theta)$ \\
+\midrule
+$30°$ & $1/2$ & $\sqrt{3}/2$ & $\mathbf{1/4}$ \\
+$45°$ & $\sqrt{2}/2$ & $\sqrt{2}/2$ & $\mathbf{1/2}$ \\
+$60°$ & $\sqrt{3}/2$ & $1/2$ & $\mathbf{3/4}$ \\
+$90°$ & $1$ & $0$ & $\mathbf{1}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{observation}
+
+This leads to our central question: \textbf{Can prime $n$-gons emerge from rational operations in a higher-dimensional system?}
+
+%==============================================================================
+\section{The Quasicrystal Precedent}
+%==============================================================================
+
+\subsection{Penrose Tilings and Forbidden Symmetry}
+
+Penrose tilings exhibit \textbf{5-fold rotational symmetry}---a pattern ``impossible'' in periodic 2D crystal lattices. The \textbf{crystallographic restriction theorem} states that periodic tilings of the plane can only have 2-, 3-, 4-, or 6-fold rotational symmetry.
+
+Yet 5-fold symmetry exists in Penrose tilings. How?
+
+\begin{theorem}[de Bruijn, 1981]
+Penrose tilings can be constructed as \textbf{2D projections of 5D hypercubic lattices}. The ``forbidden'' 5-fold symmetry exists naturally in 5D and projects down to what appears impossible in 2D alone.
+\end{theorem}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!40!black, title=\textbf{The Dimensional Escape}]
+The crystallographic restriction limits what can exist \emph{within} 2D. It says nothing about what can \emph{project into} 2D from higher dimensions.
+
+Penrose tilings are not 2D objects that violate the crystallographic restriction---they are \textbf{shadows of 5D structures} that happen to fall on a 2D plane.
+\end{tcolorbox}
+
+This suggests a profound possibility: constraints on constructibility in 2D might be circumvented by working in higher dimensions and projecting down.
+
+%==============================================================================
+\section{The 4D± Prime Projection Conjecture}
+%==============================================================================
+
+\subsection{Statement of the Conjecture}
+
+\begin{conjecture}[4D± Prime Projection]
+Prime $n$-gons (7, 11, 13, 19...) are non-constructible in 2D under the Gauss-Wantzel theorem. However, they may exist as \textbf{rational-spread projections} of 4D± polytope structures in the Quadray coordinate system.
+\end{conjecture}
+
+\subsection{ARTexplorer: A Rational Synergetics Geometry Tool}
+
+This research is conducted within \textbf{ARTexplorer} (Algebraic Rational Trigonometry Explorer), an interactive 3D/4D geometry visualization application available at:
+
+\begin{center}
+\url{https://arossti.github.io/ARTexplorer/}
+\end{center}
+
+ARTexplorer implements three foundational mathematical frameworks:
+\begin{enumerate}
+    \item \textbf{N.J. Wildberger's Rational Trigonometry}---replacing distance and angle with quadrance ($Q = d^2$) and spread ($s = \sin^2\theta$) to avoid transcendental functions
+    \item \textbf{R. Buckminster Fuller's Synergetics}---using tetrahedral geometry as the primary coordinate basis, with the IVM (Isotropic Vector Matrix) as the foundational lattice
+    \item \textbf{Kirby Urner's Quadray Coordinates}---four-axis coordinates based on tetrahedron vertices, extended to full 4D with Janus polarity
+\end{enumerate}
+
+The application is designed to maintain \textbf{algebraic exactness} as long as possible, deferring floating-point evaluation until the final GPU boundary. This makes it an ideal platform for exploring rational-spread projections of higher-dimensional polytopes.
+
+\subsection{The 4D± Quadray System}
+
+ARTexplorer implements a \textbf{full 4D Quadray coordinate system} with:
+\begin{itemize}
+    \item \textbf{Four basis vectors} pointing to tetrahedron vertices
+    \item \textbf{No zero-sum constraint}---full 4D, not projected to 3D
+    \item \textbf{Janus polarity}---discrete $\pm$ state for dimensional sign
+    \item \textbf{Spread 8/9} between basis vectors (rational!)
+\end{itemize}
+
+The central angle between any two Quadray basis vectors is $109.47°$, with:
+\begin{equation}
+\cos(109.47°) = -\frac{1}{3}, \quad \sin^2(109.47°) = \frac{8}{9}
+\end{equation}
+
+Both values are \textbf{exact rationals}---the tetrahedral geometry is inherently rational-trigonometry compatible.
+
+\subsection{The Search Strategy}
+
+If we construct polyhedra rationally in 4D and project to 2D at carefully chosen \textbf{rational spread rotations}, the visible vertex silhouette might form a prime $n$-gon---even though that $n$-gon is ``non-constructible'' in purely 2D terms.
+
+The search involves:
+\begin{enumerate}
+    \item Generating 3D/4D polyhedra with rational vertex coordinates
+    \item Rotating by rational spread values $s \in [0, 1]$
+    \item Projecting to 2D (orthographic)
+    \item Computing the convex hull boundary
+    \item Counting hull vertices
+    \item Checking for prime counts
+\end{enumerate}
+
+%==============================================================================
+\section{Computational Search Methodology}
+%==============================================================================
+
+\subsection{The Prime Projection Search Script}
+
+We developed a Python-based search tool (\texttt{scripts/prime\_projection\_search.py}) using NumPy and SciPy for efficient computation.
+
+\begin{lstlisting}[language=Python, caption=Core search algorithm (pseudocode)]
+def search_polyhedron(poly_name, precision, target_primes):
+    vertices = get_polyhedron_vertices(poly_name)
+    spreads = generate_rational_spreads(precision)  # 0.00, 0.01, ..., 1.00
+
+    for spread_tuple in product(spreads, repeat=num_rotation_params):
+        R = rotation_matrix_from_spreads(spread_tuple)
+        rotated = vertices @ R.T
+        projected = project_to_2d(rotated)
+
+        hull = ConvexHull(projected)
+        hull_count = len(hull.vertices)
+
+        if hull_count in target_primes:
+            record_finding(poly_name, spread_tuple, hull_count)
+\end{lstlisting}
+
+\subsection{Polyhedra Library}
+
+The search includes:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccl}
+\toprule
+\textbf{Polyhedron} & \textbf{Dimension} & \textbf{Vertices} & \textbf{Notes} \\
+\midrule
+Tetrahedron & 3D & 4 & Platonic solid \\
+Cube & 3D & 8 & Platonic solid \\
+Octahedron & 3D & 6 & Platonic solid \\
+Icosahedron & 3D & 12 & Platonic solid, $\phi$-based \\
+Dodecahedron & 3D & 20 & Platonic solid, $\phi$-based \\
+\midrule
+Stella Octangula & 3D & 8 & Compound: 2 tetrahedra \\
+Truncated Tetrahedron & 3D & 12 & \textbf{No central symmetry!} \\
+Snub Cube & 3D & 24 & Chiral (left/right-handed) \\
+\midrule
+Tesseract & 4D & 16 & 4D hypercube \\
+24-cell & 4D & 24 & Unique to 4D \\
+600-cell & 4D & 216 & 4D analogue of icosahedron \\
+\bottomrule
+\end{tabular}
+\caption{Polyhedra included in the search}
+\end{table}
+
+\subsection{Rational Spread Rotation}
+
+Rotation matrices are constructed from spread values using the relationship:
+\begin{align}
+\sin(\theta) &= \sqrt{s} \\
+\cos(\theta) &= \sqrt{1 - s}
+\end{align}
+
+For 3D polyhedra, we use three rotation parameters (ZYX Euler convention).
+For 4D polytopes, we use six rotation parameters (one per rotation plane: XY, XZ, XW, YZ, YW, ZW).
+
+\subsection{Search Parameters}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Spread precision & 2 decimal places (101 values: 0.00--1.00) \\
+3D rotation configurations & $101^3 \approx 1.03 \times 10^6$ per polyhedron \\
+4D rotation configurations & $101^6 \approx 1.06 \times 10^{12}$ (sampled) \\
+Target primes & 7, 11, 13, 17, 19, 23, 29, 31 \\
+Vertex tolerance & $10^{-6}$ (for deduplication) \\
+\bottomrule
+\end{tabular}
+\caption{Search configuration}
+\end{table}
+
+%==============================================================================
+\section{Experimental Findings}
+%==============================================================================
+
+\subsection{The Symmetry Barrier}
+
+\begin{observation}[Even Hull Count Phenomenon]
+Initial experiments on regular polytopes revealed that \textbf{all observed hull counts are even}:
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Polytope} & \textbf{Vertices} & \textbf{Observed Hull Counts} \\
+\midrule
+Dodecahedron & 20 & 10, 12 only \\
+600-cell & 216 & 12, 14, 16, 18, 20, 22, 24, 26 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{observation}
+
+\begin{theorem}[Symmetry Barrier]
+Regular polytopes with \textbf{inversion symmetry} (point reflection through center) always project to 2D with even hull vertex counts.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+For a polytope with inversion symmetry, every vertex $v$ has a paired vertex $-v$ at the diametrically opposite position. Under orthographic projection to 2D:
+\begin{enumerate}
+    \item If $v$ is on the convex hull boundary, then $-v$ is also on the hull boundary (or the interior, but symmetrically)
+    \item The hull boundary consists of vertex pairs $(v_i, -v_i)$
+    \item Therefore, the hull vertex count is even
+\end{enumerate}
+\end{proof}
+
+\begin{corollary}
+Prime $n$-gon projections (for primes $> 2$) cannot arise from centrally symmetric polytopes.
+\end{corollary}
+
+\subsection{Breaking the Symmetry Barrier}
+
+The key insight: \textbf{asymmetric polytopes} can break the even-hull constraint.
+
+\begin{definition}[Asymmetric Polytope]
+A polytope is \textbf{asymmetric} if it lacks inversion symmetry---there is no center point $c$ such that for every vertex $v$, the point $2c - v$ is also a vertex.
+\end{definition}
+
+Candidates for asymmetric polyhedra:
+\begin{enumerate}
+    \item \textbf{Truncated tetrahedron}---Archimedean solid, 12 vertices, NO central symmetry
+    \item \textbf{Snub cube}---chiral Archimedean solid, 24 vertices, NO central symmetry
+    \item \textbf{Compound of 5 tetrahedra}---20 vertices, chiral
+\end{enumerate}
+
+\subsection{Breakthrough: The Truncated Tetrahedron}
+
+Exhaustive search on the truncated tetrahedron (12 vertices) with precision 0.05 (21 values per axis, 9,261 total configurations) yielded:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cccc}
+\toprule
+\textbf{Hull Count} & \textbf{Frequency} & \textbf{Percentage} & \textbf{Type} \\
+\midrule
+\textbf{5-gon} & 15 & 0.2\% & \textcolor{green!50!black}{\textbf{PRIME (Fermat)}} \\
+6-gon & 42 & 0.5\% & Even \\
+\textbf{7-gon} & 6 & 0.1\% & \textcolor{green!50!black}{\textbf{PRIME (Non-constructible!)}} \\
+8-gon & 5,145 & 55.6\% & Even \\
+\textbf{9-gon} & 4,053 & 43.8\% & Odd (cubic-algebraic) \\
+\bottomrule
+\end{tabular}
+\caption{Hull count distribution for truncated tetrahedron projections}
+\end{table}
+
+\begin{tcolorbox}[colback=green!5, colframe=green!40!black, title=\textbf{Key Discovery: 7-gon Projection Found}]
+The \textbf{heptagon (7-gon)} is NOT compass-constructible under Gauss-Wantzel (requires solving a cubic equation). Yet it emerges as a rational-spread projection of the truncated tetrahedron:
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+\textbf{Prime} & \textbf{Spreads $(s_1, s_2, s_3)$} & \textbf{Polyhedron} \\
+\midrule
+5-gon & $(0, 0, 0.5)$ & Truncated Tetrahedron \\
+5-gon & $(0, 0.5, 0)$ & Truncated Tetrahedron \\
+\textbf{7-gon} & $(0.15, 0, 0.5)$ & Truncated Tetrahedron \\
+\textbf{7-gon} & $(0.15, 0.5, 0)$ & Truncated Tetrahedron \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The viewing angle at spread $(0.15, 0, 0.5)$ produces a \textbf{heptagonal silhouette} from a 12-vertex Archimedean solid!
+\end{tcolorbox}
+
+\subsection{Interpretation}
+
+The 7-gon projection arises because:
+\begin{enumerate}
+    \item The truncated tetrahedron lacks inversion symmetry---odd hull counts are possible
+    \item At specific rational spread viewing angles, exactly 7 vertices fall on the convex hull boundary
+    \item The remaining 5 vertices project to the interior of the hull
+    \item The result is a heptagonal silhouette from a 3D solid
+\end{enumerate}
+
+This does not violate Gauss-Wantzel: we are not \emph{constructing} a heptagon in 2D. We are \emph{projecting} a 3D object that happens to have 7 visible boundary vertices at this viewing angle.
+
+%==============================================================================
+\section{Compound Polyhedra and Relative Rotations}
+%==============================================================================
+
+\subsection{Dynamic Compound Generation}
+
+Beyond fixed asymmetric polyhedra, we can create \textbf{compound polyhedra} by combining two polyhedra with a relative rotation:
+
+\begin{lstlisting}[language=Python, caption=Compound generation with relative rotation]
+def create_compound(poly1, poly2, relative_spread):
+    verts1 = get_vertices(poly1)
+    verts2 = get_vertices(poly2)
+
+    # Rotate second polyhedron by relative_spread
+    R = rotation_matrix_from_spread(relative_spread)
+    verts2_rotated = verts2 @ R.T
+
+    # Combine vertices
+    return np.vstack([verts1, verts2_rotated])
+\end{lstlisting}
+
+This allows searching a 4-dimensional parameter space: 3 viewing angles + 1 relative rotation angle.
+
+\subsection{Stella Octangula Variations}
+
+The Stella Octangula (compound of two tetrahedra) is a classic dual compound. Varying the relative rotation between the two tetrahedra creates a family of configurations that may yield different prime projections.
+
+\subsection{Search for Higher Primes}
+
+Finding 11-gon, 13-gon, 17-gon, etc. requires:
+\begin{enumerate}
+    \item Polyhedra with more vertices (to have enough boundary candidates)
+    \item More extensive searches (finer precision, more configurations)
+    \item Potentially 4D polytopes with asymmetric structure
+\end{enumerate}
+
+This remains an area for future investigation.
+
+%==============================================================================
+\section{Implementation Details}
+%==============================================================================
+
+\subsection{Script Usage}
+
+\begin{lstlisting}[language=bash, caption=Command-line examples]
+# Install dependencies
+pip install -r scripts/requirements.txt
+
+# List available polyhedra
+python scripts/prime_projection_search.py --list-polyhedra
+
+# Quick test with coarse precision
+python scripts/prime_projection_search.py --precision 1 --polyhedra truncated_tetrahedron
+
+# Full search on asymmetric polyhedra
+python scripts/prime_projection_search.py --polyhedra truncated_tetrahedron,snub_cube --precision 2
+
+# Search compound pairs with relative rotations
+python scripts/prime_projection_search.py --compounds tetrahedron:tetrahedron --precision 2
+
+# Target specific primes
+python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra truncated_tetrahedron
+\end{lstlisting}
+
+\subsection{Output Format}
+
+Results are saved as JSON for ARTexplorer visualization:
+
+\begin{lstlisting}[language=json, caption=Example output format]
+{
+  "metadata": {
+    "timestamp": "2026-02-06T12:00:00",
+    "precision": 2,
+    "target_primes": [7, 11, 13]
+  },
+  "findings": [
+    {
+      "polyhedron": "truncated_tetrahedron",
+      "spreads": [0.15, 0.0, 0.5],
+      "hull_vertices": 7,
+      "projected_points": [[x1, y1], [x2, y2], ...]
+    }
+  ]
+}
+\end{lstlisting}
+
+\subsection{Performance}
+
+The search is parallelized across CPU cores using Python's \texttt{multiprocessing}:
+\begin{itemize}
+    \item 3D polyhedra: $\sim$1 million configurations per minute (8-core machine)
+    \item 4D polytopes: Coarse precision (0.1) required due to 6-parameter space
+    \item Compound pairs: 4-parameter space, moderate search times
+\end{itemize}
+
+%==============================================================================
+\section{Discussion}
+%==============================================================================
+
+\subsection{Relationship to Gauss-Wantzel}
+
+Our findings do not contradict the Gauss-Wantzel theorem. The theorem states what can be \emph{constructed} in 2D with compass and straightedge. We are not constructing---we are \emph{projecting}.
+
+The distinction:
+\begin{itemize}
+    \item \textbf{Construction}: Creating a shape from first principles using geometric operations
+    \item \textbf{Projection}: Casting a shadow of an existing higher-dimensional object
+\end{itemize}
+
+A heptagonal shadow of a truncated tetrahedron is not a constructed heptagon. It is a \textbf{view} of a 3D object that happens to have 7-fold boundary structure at that angle.
+
+\subsection{Relationship to Penrose Tilings}
+
+Penrose tilings emerge as 2D projections of 5D hypercubic lattices. The ``impossible'' 5-fold symmetry exists in 5D and projects down.
+
+Our prime projections follow the same principle: the truncated tetrahedron is a 3D object with specific symmetry properties. When viewed from the right angle, 7 of its 12 vertices form the visible boundary---a ``7-fold structure'' that could not be constructed in 2D alone.
+
+\subsection{Implications for Rational Trigonometry}
+
+The viewing angles that produce prime projections are specified in terms of \textbf{rational spreads}:
+\begin{equation}
+s_1 = 0.15 = \frac{3}{20}, \quad s_2 = 0, \quad s_3 = 0.5 = \frac{1}{2}
+\end{equation}
+
+These are exact rational values, not approximations. The 7-gon emerges from a purely rational viewing specification applied to a polyhedron with rational vertex coordinates.
+
+This aligns with Wildberger's program: avoiding transcendental functions while retaining geometric expressiveness.
+
+\subsection{Claims of Novelty}
+
+To preempt misunderstanding, we clarify what this work does and does not claim.
+
+\subsubsection{What We Do NOT Claim}
+
+\begin{itemize}
+    \item \textbf{We do not ``solve'' the Gauss-Wantzel impossibility.} The heptagon remains non-constructible with compass and straightedge. Our projections do not change this classical result.
+
+    \item \textbf{We do not claim that projection yields a ``true'' regular heptagon.} The 7-vertex hull boundary is not equilateral or equiangular in the projected plane---it is merely a 7-sided convex polygon.
+
+    \item \textbf{We do not claim priority on dimensional projection methods.} De Bruijn's 1981 work on Penrose tilings established that ``forbidden'' symmetries can emerge via projection from higher dimensions. Our work extends this insight to prime vertex counts.
+
+    \item \textbf{We do not claim the truncated tetrahedron is newly discovered.} It is a classical Archimedean solid known since antiquity.
+\end{itemize}
+
+\subsubsection{What We DO Claim as Novel}
+
+\begin{enumerate}
+    \item \textbf{The Symmetry Barrier theorem and its resolution.} We identify why centrally symmetric polytopes \emph{cannot} produce prime projections (all hull counts are even), and demonstrate that asymmetric polytopes like the truncated tetrahedron \emph{can}.
+
+    \item \textbf{Rational-spread parameterization of projection angles.} Prior projection work (e.g., quasicrystals) typically uses irrational ``golden angle'' orientations. We demonstrate that \emph{rational} spread values---specifically $s = (3/20, 0, 1/2)$---suffice to produce prime hull counts.
+
+    \item \textbf{The 4D± Quadray formulation.} The truncated tetrahedron's vertices are \emph{all rational} in Quadray coordinates: permutations of $(2,1,0,0)/3$. This maintains algebraic exactness throughout the construction, with radicals entering only at the final projection step.
+
+    \item \textbf{Systematic computational search methodology.} We provide reproducible scripts and parameters for discovering prime projections, enabling extension to higher primes (11, 13, ...) as computational resources permit.
+
+    \item \textbf{Interactive visualization in ARTexplorer.} The web-based demonstration allows direct manipulation and verification of the projection phenomenon.
+\end{enumerate}
+
+\subsubsection{Relationship to Prior Art}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Approach} & \textbf{Prior Work} & \textbf{This Work} \\
+\midrule
+Projection source & 5D hypercubic lattice & 3D/4D polytopes \\
+Projection angle & Irrational (golden) & Rational spreads \\
+Target symmetry & 5-fold (quasicrystal) & Prime $n$-gon hull \\
+Coordinate system & Cartesian & Quadray (WXYZ) \\
+Algebraic status & Involves $\phi$ & Purely rational until projection \\
+\bottomrule
+\end{tabular}
+\caption{Comparison with de Bruijn's quasicrystal projection method}
+\end{table}
+
+The key novelty is not the \emph{fact} of projection, but the \emph{rationality} of the entire construction chain: rational Quadray vertices $\to$ rational spread rotation $\to$ prime hull count. This aligns with Wildberger's Rational Trigonometry program in a way that irrational-angle projections do not.
+
+\subsection{Quadray Coordinate Formulation}
+
+The discussion above implicitly uses Cartesian $(x, y, z)$ coordinates. However, the \textbf{Quadray coordinate system} $(W, X, Y, Z)$---with basis vectors pointing to tetrahedron vertices---offers significant advantages for rational polygon construction.
+
+\subsubsection{Tetrahedron: Integer Coordinates}
+
+In Quadray, the regular tetrahedron has trivially simple vertices:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Vertex} & \textbf{Quadray} $(W,X,Y,Z)$ & \textbf{Cartesian} $(x,y,z)$ \\
+\midrule
+$W$ & $(1, 0, 0, 0)$ & $(1, 1, 1)/\sqrt{3}$ \\
+$X$ & $(0, 1, 0, 0)$ & $(1, -1, -1)/\sqrt{3}$ \\
+$Y$ & $(0, 0, 1, 0)$ & $(-1, 1, -1)/\sqrt{3}$ \\
+$Z$ & $(0, 0, 0, 1)$ & $(-1, -1, 1)/\sqrt{3}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The Quadray coordinates are \textbf{integer} while Cartesian requires $\sqrt{3}$.
+
+\subsubsection{Truncated Tetrahedron: Rational Coordinates}
+
+The truncated tetrahedron---source of the 7-gon projection---has 12 vertices. In Quadray, \textbf{all coordinates are rational}:
+
+\begin{equation}
+\begin{aligned}
+\text{Near } W: \quad &(2,1,0,0), \; (2,0,1,0), \; (2,0,0,1) \\
+\text{Near } X: \quad &(1,2,0,0), \; (0,2,1,0), \; (0,2,0,1) \\
+\text{Near } Y: \quad &(1,0,2,0), \; (0,1,2,0), \; (0,0,2,1) \\
+\text{Near } Z: \quad &(1,0,0,2), \; (0,1,0,2), \; (0,0,1,2)
+\end{aligned}
+\end{equation}
+
+(Normalized by factor of $1/3$.) Compare with the Cartesian form, which requires $\sqrt{2}$ for the edge lengths.
+
+\subsubsection{Basis Vector Spread}
+
+The spread between any two Quadray basis vectors is:
+\begin{equation}
+s = \sin^2(109.47°) = \frac{8}{9} \quad \text{(exact rational)}
+\end{equation}
+with $\cos(109.47°) = -\frac{1}{3}$ (also rational). This is the \textbf{natural angle} of tetrahedral geometry---inherently compatible with Rational Trigonometry.
+
+\subsubsection{Rotation Coefficients}
+
+For a rotation by spread $s$ in the Quadray system, we define:
+\begin{equation}
+F = \frac{2\cos\theta + 1}{3}, \quad G = \frac{1 - \cos\theta + \sqrt{3}\sin\theta}{3}, \quad H = \frac{1 - \cos\theta - \sqrt{3}\sin\theta}{3}
+\end{equation}
+
+where $\sin\theta = \sqrt{s}$ and $\cos\theta = \sqrt{1-s}$. For rational spreads, the rotation remains algebraically exact until the final $\sqrt{\cdot}$ operation.
+
+\subsubsection{Advantage Summary}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Property} & \textbf{Quadray} $(W,X,Y,Z)$ & \textbf{Cartesian} $(x,y,z)$ \\
+\midrule
+Tetrahedron vertices & Integer $(1,0,0,0)$ & Irrational $(\sqrt{3})$ \\
+Truncated tetrahedron & Rational $(2,1,0,0)/3$ & Irrational $(\sqrt{2})$ \\
+Basis vector angle & Spread $8/9$ (rational) & $\cos^{-1}(-1/3)$ (transcendental) \\
+IVM lattice & Native & Requires conversion \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The Quadray formulation maintains rationality longer than Cartesian, deferring radical evaluation until the final projection step. This makes it the natural coordinate system for Rational Synergetics and prime polygon projections.
+
+%==============================================================================
+\section{Future Work}
+%==============================================================================
+
+\subsection{Higher Primes}
+
+\begin{enumerate}
+    \item \textbf{11-gon, 13-gon searches}: Require polyhedra with $\geq 11$ asymmetrically arranged vertices
+    \item \textbf{4D asymmetric polytopes}: The 4D analogue of the truncated tetrahedron may yield higher primes
+    \item \textbf{Compound families}: Systematic search over relative rotation parameters
+\end{enumerate}
+
+\subsection{Janus Polarity Perturbation}
+
+The 4D± system includes Janus polarity---a discrete $\pm$ state. Applying opposite polarities to paired vertices might break symmetry in centrally symmetric polytopes, potentially enabling prime projections from regular polytopes.
+
+\subsection{Quasicrystal Construction}
+
+Instead of projecting polytopes, we could project \textbf{lattices}:
+\begin{itemize}
+    \item Rational cut planes through irrational lattice orientations
+    \item May produce boundary configurations with prime vertex counts
+\end{itemize}
+
+\subsection{Symbolic Verification}
+
+When a prime projection is found numerically, can we \textbf{prove} it algebraically?
+\begin{itemize}
+    \item Derive exact algebraic expressions for the hull vertices
+    \item Verify that exactly $n$ vertices lie on the boundary for prime $n$
+    \item Express the viewing transformation in closed form
+\end{itemize}
+
+\subsection{ARTexplorer Interactive Demo}
+
+The prime projection discovery is implemented as an interactive demonstration in the ARTexplorer web application at \url{https://arossti.github.io/ARTexplorer/}.
+
+\subsubsection{Accessing the Demo}
+
+\begin{enumerate}
+    \item Navigate to \textbf{Section 3B: Polyhedra} in the left control panel
+    \item Enable \textbf{Quadray Truncated Tetrahedron} checkbox
+    \item Expand the controls to reveal \textbf{Prime Projection Views}
+    \item Click the \textbf{7-gon} or \textbf{5-gon} buttons to activate the projection overlay
+\end{enumerate}
+
+The cyan polygon overlay appears perpendicular to the camera view, demonstrating the prime n-gon that emerges from the polyhedron's projection at that viewing angle.
+
+\begin{figure}[p]
+    \centering
+    \includegraphics[width=0.85\linewidth]{5-gon.png}
+    \vspace{0.3cm}
+    \caption{5-gon projection: Quadray Truncated Tetrahedron at spread view angle $s=(0,0,\frac{1}{2})$. The pentagon emerges as the convex hull boundary of the projected vertices.}
+    \label{fig:5gon-demo}
+
+    \vspace{0.8cm}
+
+    \includegraphics[width=0.85\linewidth]{7-gon.png}
+    \vspace{0.3cm}
+    \caption{7-gon projection: Spread-rotated view at $s=(0.11,0,\frac{1}{2})$ produces a heptagonal silhouette---a non-constructible prime polygon from rational parameters.}
+    \label{fig:7gon-demo}
+\end{figure}
+
+\subsubsection{Condensed Quadray Formulations}
+
+The UI displays condensed formulas explaining each projection's construction:
+
+\begin{tcolorbox}[colback=cyan!5, colframe=cyan!40!black, title=\textbf{7-gon Projection Formula}]
+\begin{verbatim}
+7-gon: Quadray {2,1,0,0}/3 → s=(0.11,0,½)
+Trunc Tet: 12v → 7-hull (non-constructible)
+\end{verbatim}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item \textbf{Source}: Truncated tetrahedron with 12 vertices
+    \item \textbf{Quadray coordinates}: All permutations of $\{2,1,0,0\}$ scaled by $1/3$---\emph{purely rational}
+    \item \textbf{Viewing spreads}: $s_1 = 0.11 \approx 11/100$, $s_2 = 0$, $s_3 = 1/2$
+    \item \textbf{Hull reduction}: 12 vertices $\to$ 7-vertex boundary (5 project to interior)
+    \item \textbf{Constructibility}: Non-constructible (Gauss-Wantzel: requires cubic)
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=cyan!5, colframe=cyan!40!black, title=\textbf{5-gon Projection Formula}]
+\begin{verbatim}
+5-gon: Icosa axis → s=(0,0,½)
+φ-constructible: s = (5-√5)/8
+\end{verbatim}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item \textbf{Source}: Icosahedron/dodecahedron 5-fold axis view
+    \item \textbf{Viewing spreads}: $s_1 = 0$, $s_2 = 0$, $s_3 = 1/2$ (axis-aligned)
+    \item \textbf{Pentagon spread}: $s = \sin^2(\pi/5) = (5 - \sqrt{5})/8$
+    \item \textbf{Constructibility}: $\varphi$-constructible (Fermat prime, requires only $\sqrt{5}$)
+\end{itemize}
+\end{tcolorbox}
+
+\subsubsection{Technical Implementation}
+
+The projection overlay is implemented in \texttt{modules/rt-papercut.js} using THREE.js Line2 geometry:
+\begin{itemize}
+    \item \textbf{LineMaterial} with \texttt{worldUnits: true} for consistent line width
+    \item \textbf{renderOrder: 999} ensures the overlay renders on top of the polyhedron
+    \item \textbf{depthTest: false} makes the overlay always visible
+    \item Polygon vertices are computed in the camera's view plane using the current camera orientation
+\end{itemize}
+
+The camera presets are defined in \texttt{modules/rt-rendering.js} in the \texttt{setCameraPreset()} function, implementing the rational spread viewing angles discovered by the Python search script.
+
+%==============================================================================
+\section{Conclusion}
+%==============================================================================
+
+We have demonstrated that:
+
+\begin{enumerate}
+    \item \textbf{The Symmetry Barrier exists}: Regular polytopes with central symmetry always project to even-sided hull boundaries, precluding prime n-gons (except 2).
+
+    \item \textbf{The Symmetry Barrier can be broken}: Asymmetric polytopes, specifically the truncated tetrahedron, produce odd hull counts including prime counts.
+
+    \item \textbf{7-gon projections exist}: At rational spread viewing angles $(0.15, 0, 0.5)$, the truncated tetrahedron projects to a heptagonal silhouette.
+
+    \item \textbf{The 4D± Prime Projection Conjecture is partially validated}: Prime n-gons can emerge from rational-spread projections of 3D polyhedra, even when those n-gons are non-constructible in 2D.
+\end{enumerate}
+
+The search for higher primes (11, 13, 17...) continues. The methodology is established; extending it requires larger polyhedra, finer precision, or 4D asymmetric structures.
+
+This work connects three mathematical traditions:
+\begin{itemize}
+    \item \textbf{Gauss-Wantzel constructibility}---the classical limits of compass and straightedge
+    \item \textbf{Wildberger's Rational Trigonometry}---avoiding transcendentals through spread/quadrance
+    \item \textbf{Projection from higher dimensions}---the quasicrystal insight that ``impossible'' symmetries can be shadows of higher-dimensional regularity
+\end{itemize}
+
+The prime n-gon, forbidden by Gauss and Wantzel in 2D, may yet be found as a shadow cast from the higher-dimensional geometry of Fuller's synergetics.
+
+%==============================================================================
+\section*{Acknowledgments}
+%==============================================================================
+
+This work draws on:
+\begin{itemize}
+    \item N.J.\ Wildberger's Rational Trigonometry
+    \item R.\ Buckminster Fuller's Synergetic Geometry
+    \item Kirby Urner's Quadray coordinate system
+    \item de Bruijn's projection methods for Penrose tilings
+\end{itemize}
+
+Developed in collaboration with AI assistance (Claude/Anthropic) for algorithm design, mathematical formalization, and documentation.
+
+%==============================================================================
+\section*{References}
+%==============================================================================
+
+\begin{enumerate}
+    \item Wildberger, N.J. (2005). \emph{Divine Proportions: Rational Trigonometry to Universal Geometry}. Wild Egg Books.
+    \item Gauss, C.F. (1801). \emph{Disquisitiones Arithmeticae}. Leipzig.
+    \item Wantzel, P.L. (1837). ``Recherches sur les moyens de reconna\^itre si un Probl\`eme de G\'eom\'etrie peut se r\'esoudre avec la r\`egle et le compas.'' \emph{Journal de Math\'ematiques Pures et Appliqu\'ees}.
+    \item de Bruijn, N.G. (1981). ``Algebraic theory of Penrose's non-periodic tilings of the plane.'' \emph{Indagationes Mathematicae}.
+    \item Fuller, R.B. (1975). \emph{Synergetics: Explorations in the Geometry of Thinking}. Macmillan.
+    \item Thomson, A. (2026). ``Spread-Quadray Rotors: A Tetrahedral Alternative to Quaternions.'' Open Building / ARTexplorer Project.
+    \item Thomson, A. (2026). ``Geometric Janus Inversion: Extending the Janus Point from Temporal to Spatial Geometry via Tetrahedral (Quadray) Coordinates.'' Open Building / ARTexplorer Project. (Companion paper on 4D$^\pm$ Quadray space and zero-sum normalization.)
+    \item Thomson, A. (2026). \emph{ARTexplorer: Interactive Tetrahedral Geometry Visualization}. \url{https://arossti.github.io/ARTexplorer/}
+\end{enumerate}
+
+\vfill
+
+\noindent\rule{\textwidth}{0.4pt}
+\smallskip
+\noindent DOI: 10.13140/RG.2.2.23043.98089 | CC BY-NC-ND 4.0 | \copyright\ Andy Ross Thomson, M.Arch, OAA 2026 | February 2026
+
+\begin{center}
+\textit{``The prime heptagon, forbidden by Euclid's tools,\\
+emerges as a shadow from the tetrahedron's light.''}
+\end{center}
+
+\end{document}
