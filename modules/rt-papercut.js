@@ -1298,9 +1298,9 @@ export const RTPapercut = {
    * @param {number|null} n - Number of sides (7, 5, etc.) or null to hide
    * @param {THREE.Scene} scene - Scene to add/remove visualization from
    * @param {THREE.Camera} camera - Camera reference
-   * @param {number} planeDistance - Distance from polyhedron center to projection plane (default: 2.5)
+   * @param {number} planeDistance - Distance from polyhedron center to projection plane (default: 6)
    */
-  showPrimePolygon: function (n, scene, camera, planeDistance = 2.5) {
+  showPrimePolygon: function (n, scene, camera, planeDistance = 6) {
     console.log("🔍 showPrimePolygon called with:", { n, scene: !!scene, camera: !!camera, planeDistance });
 
     // Validate inputs
@@ -1577,7 +1577,7 @@ export const RTPapercut = {
       [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3]
     ];
 
-    // Get scale from group's userData or compute from first mesh
+    // Get scale from group's userData
     let scale = 1;
     if (group.userData?.parameters?.scale) {
       scale = group.userData.parameters.scale;
@@ -1585,8 +1585,9 @@ export const RTPapercut = {
       scale = group.userData.parameters.halfSize;
     }
 
-    // Normalize factor: vertices are at distance √11 from origin
-    const normFactor = scale / Math.sqrt(11);
+    // Canonical coords (3,1,1) match the mesh exactly when multiplied by scale
+    // NO √11 normalization - the zero-sum Quadray conversion already produces these
+    const normFactor = scale;
 
     // Get world matrix
     group.updateMatrixWorld(true);
