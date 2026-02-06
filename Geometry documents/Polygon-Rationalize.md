@@ -730,29 +730,29 @@ Regular polytopes have **inversion symmetry** (point reflection through center).
 
 **Truncated Tetrahedron** (12 vertices, NO central symmetry) produces:
 
-| Hull Count | Frequency | Type |
-|------------|-----------|------|
-| **5-gon** | 0.2% | ★ PRIME (Fermat) |
-| 6-gon | 0.5% | Even |
-| **7-gon** | 0.1% | ★ PRIME (Non-constructible!) |
-| 8-gon | 55.6% | Even |
-| **9-gon** | 43.8% | ODD (Cubic-algebraic) |
+| Hull Count | Frequency | Type | Status |
+|------------|-----------|------|--------|
+| **5-gon** | 0.2% | ★ PRIME (Fermat) | ✓ Verified at s=(0,0,0.5) |
+| 6-gon | 0.5% | Even | |
+| **7-gon** | 0.1% | ★ PRIME (Non-constructible!) | Exact spread TBD |
+| 8-gon | 55.6% | Even | |
+| **9-gon** | 43.8% | ODD (Cubic-algebraic) | Current at s=(0.11,0,0.5) |
 
 **Prime Projection Examples Found:**
 
-| Prime | Spreads (s₁, s₂, s₃) | Polyhedron |
-|-------|----------------------|------------|
-| 5-gon | (0, 0, 0.5) | Truncated Tetrahedron |
-| 5-gon | (0, 0.5, 0) | Truncated Tetrahedron |
-| **7-gon** | (0.15, 0, 0.5) | Truncated Tetrahedron |
-| **7-gon** | (0.15, 0.5, 0) | Truncated Tetrahedron |
+| Prime | Spreads (s₁, s₂, s₃) | Polyhedron | Notes |
+|-------|----------------------|------------|-------|
+| 5-gon | (0, 0, 0.5) | Truncated Tetrahedron | ✓ Verified |
+| 5-gon | (0, 0.5, 0) | Truncated Tetrahedron | ✓ Verified |
+| **9-hull** | (0.11, 0, 0.5) | Truncated Tetrahedron | Current best (7 TBD) |
+| **9-hull** | (0.11, 0.5, 0) | Truncated Tetrahedron | Current best (7 TBD) |
 
-**The 7-gon is NOT compass-constructible** (Gauss-Wantzel), yet it emerges as a rational-spread projection of an asymmetric polyhedron!
+**The 7-gon is NOT compass-constructible** (Gauss-Wantzel). Initial search found 7-hulls at ~0.1% frequency; exact spread refinement needed. Current spread s=(0.11, 0, 0.5) produces a 9-hull.
 
 ### Paths Forward
 
 1. **✓ Asymmetric Polytopes**: Use polytopes without central symmetry
-   - **Truncated tetrahedron** → WORKS! (5, 7, 9-gons found)
+   - **Truncated tetrahedron** → 5-gon verified! (9-hull at current spreads; 7-hull TBD)
    - Snub cube (chiral)
    - Compound of 5 tetrahedra
 
@@ -805,7 +805,8 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
 
 2. **Prime Projection Search Script** - `scripts/prime_projection_search.py`
    - Discovered Symmetry Barrier for centrally symmetric polytopes
-   - Found 7-gon projection from truncated tetrahedron at spreads (0.11, 0, 0.5)
+   - Found 5-gon projection from truncated tetrahedron at spreads (0, 0, 0.5) ✓
+   - 7-hull: s=(0.11, 0, 0.5) produces 9-hull; exact 7-hull spread TBD
    - Documented in `Geometry documents/Prime-Projection-Conjecture.tex`
 
 3. **UI Method Info Display** - Shows construction type for each n-gon
@@ -827,6 +828,392 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
 6. **Higher Prime Search** - Extend projection search to 11, 13, 17...
    - Larger asymmetric polytopes
    - 4D± with Janus polarity perturbation
+
+---
+
+## Workplan: Projection-Based Polygon Generation (Swap-Out Plan)
+
+### Objective
+
+Replace the current 5-gon and 7-gon generation methods in `rt-primitives.js` with our new **projection-based construction** from `rt-quadray-polyhedra.js` and `rt-math.js`.
+
+### Current Implementation (To Be Replaced)
+
+| n-gon | Current Location | Current Method |
+|-------|------------------|----------------|
+| 5-gon | `rt-primitives.js:351-402` | `_polygonPentagon()` using `RT.PurePhi.pentagon` constants |
+| 7-gon | `rt-primitives.js:608-661` | `_polygonHeptagon()` using `RT.PureCubics.heptagon` cached cubics |
+
+**Prism generation** (`rt-primitives.js:814-918`) calls `Primitives.polygon()` for bases, so updating the polygon generators automatically updates prisms.
+
+### New Projection-Based Methods
+
+| n-hull | Source Polyhedron | Viewing Spreads | Formula Location | Status |
+|--------|-------------------|-----------------|------------------|--------|
+| **5-gon** | Truncated Tetrahedron | s = (0, 0, ½) | `RT.ProjectionPolygons.pentagon` | ✓ Verified |
+| **9-hull** | Truncated Tetrahedron | s = (0.11, 0, ½) | `RT.ProjectionPolygons.heptagon` | 7-hull TBD |
+
+**9-HULL GEOMETRY** (verified 2026-02-06):
+- At spreads s=(0.11, 0, 0.5), the convex hull has **9 vertices** (not 7)
+- The 5-gon at s=(0, 0, 0.5) works correctly: 12 → 7 unique → 5 hull ✓
+- **Spread refinement needed** to find exact value for true 7-vertex hull
+- For regular heptagons, use `RT.PureCubics.heptagon` (cubic-cached method)
+- The 9-hull is accepted as interim result; more precise spread search pending
+
+---
+
+### Prime Projection Visualization (Updated 2026-02-06)
+
+**CORRECTED APPROACH**: The UI overlay should demonstrate the projection operation visually:
+
+#### Visualization Components
+
+1. **Source Polyhedron** (Truncated Tetrahedron)
+   - Displayed at its actual position/scale/orientation in the scene
+   - Uses standard halfSize metric for rational coordinates
+   - 12 vertices from Quadray {2,1,0,0} permutations (ALL RATIONAL)
+
+2. **Projection Rays** (YELLOW lines)
+   - 12 rays emanating from each truncated tet vertex
+   - Rays travel in the viewing direction defined by spreads s=(0.11, 0, 0.5)
+   - Shows HOW vertices project to the 2D plane
+
+3. **Projection Plane** (at distance from polyhedron)
+   - Positioned AWAY from the truncated tet (not overlapping)
+   - Oriented perpendicular to viewing direction
+   - Shows where rays intersect the plane
+
+4. **Projected Vertices** (YELLOW nodes)
+   - 12 points where rays hit the plane
+   - For 7-gon preset: currently **9** form the convex hull (spread refinement pending)
+   - For 5-gon preset: **5** form the convex hull ✓
+
+5. **Actual Hull** (YELLOW polygon)
+   - Convex hull of the boundary vertices
+   - 9-gon at current spreads (0.11, 0, 0.5) - refinement needed for true 7-hull
+   - 5-gon at spreads (0, 0, 0.5) - verified working ✓
+
+6. **Ideal Comparison** (CYAN polygon)
+   - Regular heptagon using classical trig
+   - Same circumradius, for visual comparison
+   - Shows deviation from "perfect" regularity
+
+#### Scale and Orientation Matching
+
+The visualization MUST use the actual scene mesh:
+- Find the displayed Quadray Truncated Tetrahedron group
+- Extract its world transform (position, rotation, scale)
+- Use its ACTUAL vertices for projection
+- Match the overlay to the displayed geometry
+
+#### Rational HalfSize Selection
+
+For the truncated tetrahedron, use halfSize that maximizes rational output:
+- Quadray coords {2,1,0,0}/3 → Cartesian (3,1,1)/√11 (normalized)
+- Edge quadrance between adjacent vertices: Q = 8/11 (normalized)
+- For halfSize = h, edge quadrance Q = 8h²/11
+
+**Recommended**: Use halfSize = √(11/8) ≈ 1.172 for edge quadrance Q = 1
+
+#### Key Insight: Projection ≠ Section Cut
+
+**IMPORTANT**: The Papercut cutplane should NOT be activated for this visualization!
+- **Projection** = viewing silhouette (convex hull of all vertices from a direction)
+- **Section cut** = plane intersection with faces (different polygon entirely)
+
+The 7-hull emerges from PROJECTION, not from cutting.
+
+---
+
+**Key formulas already in `rt-math.js`:**
+- Pentagon α spread: `RT.PurePhi.pentagon.alpha()` = (5-√5)/8
+- Pentagon β spread: `RT.PurePhi.pentagon.beta()` = (5+√5)/8
+- Heptagon viewing spreads: `RT.ProjectionPolygons.heptagon.viewingSpreads()`
+- Quadray source vertices: `RT.ProjectionPolygons.heptagon.sourceVerticesQuadray()`
+
+### Phase 1: Create Unified Projection Generator
+
+Add to `rt-primitives.js` or create new `rt-projection-polygons.js`:
+
+```javascript
+/**
+ * Generate polygon via 3D polyhedron projection
+ * Uses Quadray-native vertices + rational spread rotation + 2D convex hull
+ *
+ * @param {number} n - Number of sides (currently 5 or 7)
+ * @param {number} circumradiusQ - Circumradius quadrance for scaling
+ * @returns {Object} {vertices, edges, metadata}
+ */
+function generateProjectionPolygon(n, circumradiusQ = 1) {
+  const config = PROJECTION_POLYGON_CONFIG[n];
+  if (!config) {
+    throw new Error(`Projection polygon not available for n=${n}`);
+  }
+
+  // 1. Get Quadray source vertices (ALL RATIONAL)
+  const quadrayVertices = config.sourceVerticesQuadray();
+
+  // 2. Convert to Cartesian for rotation
+  const cartesianVertices = quadrayVertices.map(([w, x, y, z]) =>
+    wxyzToCartesian(w, x, y, z, 1/3)  // Normalization factor
+  );
+
+  // 3. Apply spread-based rotation
+  const { s1, s2, s3 } = config.viewingSpreads();
+  const rotated = applySpreadRotations(cartesianVertices, s1, s2, s3);
+
+  // 4. Project to XY plane (drop Z)
+  const projected2D = rotated.map(v => ({ x: v.x, y: v.y }));
+
+  // 5. Compute convex hull → n vertices on boundary
+  const hull = computeConvexHull(projected2D);
+
+  // 6. Scale to match circumradius quadrance
+  const scaled = scaleToCircumradius(hull, circumradiusQ);
+
+  return {
+    vertices: scaled,
+    edges: generatePolygonEdges(n),
+    metadata: {
+      method: 'projection',
+      sourcePolyhedron: config.name,
+      spreads: { s1, s2, s3 },
+      coordinateSystem: 'quadray→cartesian→2D',
+      radicals: config.radicals(),
+    }
+  };
+}
+
+const PROJECTION_POLYGON_CONFIG = {
+  5: {
+    name: 'truncated_tetrahedron',
+    sourceVerticesQuadray: RT.ProjectionPolygons.pentagon.sourceVerticesQuadray ||
+                           RT.QuadrayPolyhedra.truncatedTetrahedron,
+    viewingSpreads: () => ({ s1: 0, s2: 0, s3: 0.5 }),
+    radicals: () => ({ sqrt5: Math.sqrt(5) }),
+  },
+  7: {
+    name: 'truncated_tetrahedron',
+    sourceVerticesQuadray: RT.ProjectionPolygons.heptagon.sourceVerticesQuadray,
+    viewingSpreads: RT.ProjectionPolygons.heptagon.viewingSpreads,
+    radicals: RT.ProjectionPolygons.heptagon.radicals,
+  },
+};
+```
+
+### Phase 2: Update Polygon Dispatcher
+
+Modify the `polygon()` dispatcher in `rt-primitives.js`:
+
+```javascript
+// BEFORE (current):
+const generators = {
+  5: Primitives._polygonPentagon,   // φ-Rational method
+  7: Primitives._polygonHeptagon,   // Cubic method
+  // ...
+};
+
+// AFTER (projection-based):
+const generators = {
+  5: (Q, opts) => generateProjectionPolygon(5, Q),  // Projection from Trunc Tet
+  7: (Q, opts) => generateProjectionPolygon(7, Q),  // Projection from Trunc Tet
+  // ... other n-gons unchanged
+};
+```
+
+### Phase 3: Update Method Info Display
+
+Modify `getPolygonMethodInfo()` in `rt-init.js`:
+
+```javascript
+// BEFORE:
+case 5: return 'φ-Rational (s = β)';
+case 7: return 'Cubic (cos 360°/7)';
+
+// AFTER:
+case 5: return 'Projection (Trunc Tet → s=(0,0,½))';
+case 7: return 'Projection (Trunc Tet → s=(0.11,0,½))';
+```
+
+### Phase 4: Prism Auto-Update (No Changes Needed!)
+
+Since `Primitives.prism()` calls `Primitives.polygon()` internally:
+
+```javascript
+// From rt-primitives.js:819-823
+const basePolygon = Primitives.polygon(baseQuadrance, { sides: n });
+```
+
+**Prisms automatically use the new projection-based polygons** once we update the polygon generator.
+
+### Phase 5: Validation & Testing
+
+1. **Visual Comparison**: Render old vs new 5-gon/7-gon side-by-side
+2. **Vertex Count Check**: Confirm hull produces exactly n vertices
+3. **Edge Regularity**: Measure edge length variance (projection polygons are NOT perfectly regular)
+4. **Prism Check**: Verify prism bases match new polygon generation
+5. **State Save/Load**: Ensure projection metadata persists correctly
+
+### Implementation Checklist
+
+- [ ] Add `generateProjectionPolygon()` to `rt-primitives.js`
+- [ ] Add `PROJECTION_POLYGON_CONFIG` lookup table
+- [ ] Implement `applySpreadRotations()` helper (3-axis rotation)
+- [ ] Implement `computeConvexHull()` for 2D points
+- [ ] Update polygon dispatcher to use projection for n=5,7
+- [ ] Update method info display strings
+- [ ] Add console logging for projection metadata
+- [ ] Test in browser with various circumradii
+- [ ] Verify prism generation inherits projection method
+- [ ] Document edge length variance for non-regular projection polygons
+
+### Trade-offs & Considerations
+
+| Aspect | Current Method | Projection Method |
+|--------|----------------|-------------------|
+| **5-gon regularity** | Perfect (φ-constructible) | Irregular (~25% angular variance) |
+| **7-gon regularity** | Perfect (cubic cached) | **Irregular** (~25% angular, ~15% edge) |
+| **Computation** | Direct formula | Hull computation |
+| **Rationality** | Cubic roots | Only √ radicals |
+| **Educational value** | Shows cubic algebra | Shows projection emergence |
+| **Gauss-Wantzel** | Bypasses via cached cubics | Demonstrates prime-from-projection |
+
+**Critical distinction**: Projection method produces **irregular** n-gons with correct vertex count but unequal angles/edges. Use cubic-cached method when regularity is required.
+
+**Recommendation**: Offer **both methods** via UI toggle:
+- Default: Projection-based (demonstrates prime emergence from higher dimensions)
+- Alternative: Cubic/φ-cached (maximally regular polygons)
+
+```javascript
+// Add to polygon options
+const polygonOptions = {
+  method: 'projection' | 'algebraic',  // User-selectable
+  // ...
+};
+```
+
+### Phase 6: Composite Multiples (5k, 7k polygons)
+
+Once base 5-gon and 7-gon projection works, **all multiples inherit** via composite construction:
+
+#### Multiples of 5 (10, 15, 20, 25, 30, 35...)
+
+| n-gon | Construction | Rotation Spread | Method |
+|-------|--------------|-----------------|--------|
+| **10** | 2 × 5-gon @ 36° | α = (5-√5)/8 | Projection base + φ-rotation |
+| **15** | 3 × 5-gon @ 24° | sin²(24°) | Projection base + GCD |
+| **20** | 2 × 10-gon @ 18° | sin²(18°) = (3-√5)/16 | Projection chain |
+| **25** | 5 × 5-gon @ 14.4° | sin²(72°/5) | Projection base + 5-fold |
+| **30** | 2 × 15-gon @ 12° | complex | Projection chain |
+| **35** | 5 × 7-gon @ 10.29° | sin²(360°/35) | Projection bases combined |
+
+#### Multiples of 7 (14, 21, 28, 35...)
+
+| n-gon | Construction | Rotation Spread | Method |
+|-------|--------------|-----------------|--------|
+| **14** | 2 × 7-gon @ 25.71° | sin²(180°/7) | Projection base + half-rotation |
+| **21** | 3 × 7-gon @ 17.14° | sin²(360°/21) | Projection base + 3-fold |
+| **28** | 2 × 14-gon @ 12.86° | sin²(180°/14) | Projection chain |
+| **35** | 5 × 7-gon @ 10.29° | sin²(360°/35) | LCM of 5 and 7 |
+
+#### Implementation Strategy
+
+```javascript
+/**
+ * Generate composite polygon from projection base
+ * @param {number} n - Target polygon sides
+ * @param {number} base - Base polygon (5 or 7)
+ * @param {number} k - Multiplier (n = base × k or n = base × k / gcd)
+ */
+function generateCompositeFromProjection(n, base, k) {
+  // Get projection-based base polygon
+  const basePolygon = generateProjectionPolygon(base, circumradiusQ);
+
+  // Calculate rotation spread for k-fold multiplication
+  const rotationAngle = 360 / n;  // degrees
+  const rotationSpread = RT.degreesToSpread(rotationAngle);
+
+  // Generate k rotated copies
+  const allVertices = [];
+  for (let i = 0; i < k; i++) {
+    const cumulativeSpread = RT.degreesToSpread(rotationAngle * i);
+    const rotated = rotatePolygon(basePolygon.vertices, cumulativeSpread);
+    allVertices.push(...rotated);
+  }
+
+  return {
+    vertices: allVertices,
+    edges: generatePolygonEdges(n),
+    metadata: {
+      method: 'composite-projection',
+      base: base,
+      multiplier: k,
+      baseMethod: 'projection',
+    }
+  };
+}
+
+// Extended dispatcher
+const COMPOSITE_FROM_PROJECTION = {
+  10: { base: 5, k: 2 },   // 2×5 @ 36°
+  14: { base: 7, k: 2 },   // 2×7 @ 25.71°
+  15: { base: 5, k: 3 },   // 3×5 @ 24°
+  20: { base: 5, k: 4 },   // 4×5 @ 18° (or 2×10)
+  21: { base: 7, k: 3 },   // 3×7 @ 17.14°
+  25: { base: 5, k: 5 },   // 5×5 @ 14.4°
+  28: { base: 7, k: 4 },   // 4×7 @ 12.86°
+  35: { base: 7, k: 5 },   // 5×7 @ 10.29° (= LCM(5,7))
+  // ... extensible to any 5k or 7k
+};
+```
+
+#### GCD/LCM Special Cases
+
+For n where gcd(5,7) divides n (like 35 = 5×7):
+
+```javascript
+// 35-gon can be built from EITHER base:
+// - 5 × 7-gon @ 10.29° (seven copies of projection 7-gon)
+// - 7 × 5-gon @ 10.29° (five copies of projection 5-gon)
+// Both produce identical 35-gon!
+
+const n35_from_7 = generateCompositeFromProjection(35, 7, 5);
+const n35_from_5 = generateCompositeFromProjection(35, 5, 7);
+// Verify: vertices should be identical (modulo ordering)
+```
+
+#### Rotation Spreads for Common Multiples
+
+Pre-computed values to add to `RT.PureCubics` or `RT.CompositeRotations`:
+
+| Angle | Spread s = sin²(θ) | Used For |
+|-------|-------------------|----------|
+| 36° | (5-√5)/8 = α | 10-gon from 5 |
+| 25.71° | sin²(π/7) ≈ 0.1883 | 14-gon from 7 |
+| 24° | sin²(24°) ≈ 0.1654 | 15-gon from 5 |
+| 18° | (3-√5)/16 | 20-gon from 5 |
+| 17.14° | sin²(π/21) ≈ 0.0857 | 21-gon from 7 |
+| 14.4° | sin²(72°/5) ≈ 0.0618 | 25-gon from 5 |
+| 12.86° | sin²(π/14) ≈ 0.0495 | 28-gon from 7 |
+| 10.29° | sin²(π/35) ≈ 0.0255 | 35-gon from 5 or 7 |
+
+**Note**: Rotation spreads for 7-multiples use the same heptagon cubic (already cached), while 5-multiples use φ-rational values (already in `RT.PurePhi`).
+
+### Future: Extend to Higher Primes
+
+Once 5-gon and 7-gon projection works:
+
+| Prime | Candidate Source | Search Status |
+|-------|------------------|---------------|
+| 11 | Compound 5 tetrahedra? | Pending |
+| 13 | Snub cube? | Pending |
+| 17 | 600-cell asymmetric section? | Pending |
+| 19 | Higher 4D polytopes | Pending |
+
+Finding projections for 11 and 13 would unlock:
+- 11-multiples: 22, 33, 44, 55...
+- 13-multiples: 26, 39, 52, 65...
+- Combined: 77 (7×11), 91 (7×13), 143 (11×13)...
 
 ---
 
