@@ -1103,64 +1103,200 @@ export const RTPapercut = {
   _primePolygonVisible: false,
 
   /**
-   * Create a regular n-gon in the camera's view plane
-   * Uses RT-pure methodology: generates vertices at exact rational spreads
+   * Create ACTUAL projection hull vertices from truncated tetrahedron
+   * NOT a fake regular polygon - uses real projection computation!
    *
-   * @param {number} n - Number of sides (7 for heptagon, 9 for nonagon, etc.)
-   * @param {number} radius - Polygon radius (default: 1.0 for unit polygon)
+   * @param {number} n - Number of sides (7 for heptagon projection)
+   * @param {number} radius - Target radius for scaling the projection
    * @param {THREE.Camera} camera - Camera to align polygon perpendicular to view
-   * @returns {Array<THREE.Vector3>} Polygon vertices
+   * @returns {Array<THREE.Vector3>} Polygon vertices from ACTUAL projection
    */
-  _createRegularPolygonVertices: function (n, radius, camera) {
-    console.log("🔍 _createRegularPolygonVertices:", { n, radius, camera: !!camera });
-    const vertices = [];
+  _createProjectionHullVertices: function (n, radius, camera) {
+    console.log("📐 _createProjectionHullVertices: ACTUAL projection for", n, "-hull");
 
-    // Get the view plane basis vectors (perpendicular to camera direction)
+    // Get view plane basis vectors
     const viewDir = new THREE.Vector3();
     camera.getWorldDirection(viewDir);
-    console.log("   viewDir:", viewDir.x.toFixed(3), viewDir.y.toFixed(3), viewDir.z.toFixed(3));
-
-    // Create orthonormal basis in view plane
     const up = camera.up.clone().normalize();
-    console.log("   camera.up:", up.x.toFixed(3), up.y.toFixed(3), up.z.toFixed(3));
-
     const right = new THREE.Vector3().crossVectors(viewDir, up).normalize();
-    console.log("   right:", right.x.toFixed(3), right.y.toFixed(3), right.z.toFixed(3), "length:", right.length().toFixed(3));
-
     const planeUp = new THREE.Vector3().crossVectors(right, viewDir).normalize();
-    console.log("   planeUp:", planeUp.x.toFixed(3), planeUp.y.toFixed(3), planeUp.z.toFixed(3), "length:", planeUp.length().toFixed(3));
 
-    // Check for degenerate basis (if right or planeUp is zero/NaN)
-    if (right.length() < 0.001 || planeUp.length() < 0.001 || isNaN(right.x) || isNaN(planeUp.x)) {
-      console.error("❌ Degenerate basis vectors! right length:", right.length(), "planeUp length:", planeUp.length());
+    // Truncated tetrahedron vertices (normalized, from rt-math.js)
+    // These are permutations of (3,1,1) with even parity, normalized
+    const truncTetVertices = [
+      [3, 1, 1], [3, -1, -1], [1, 3, 1], [1, -3, -1],
+      [1, 1, 3], [1, -1, -3], [-3, 1, -1], [-3, -1, 1],
+      [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3]
+    ].map(v => {
+      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+      return [v[0]/len, v[1]/len, v[2]/len];
+    });
+
+    // Get viewing spreads for this n-gon
+    // 7-hull: s=(0.11, 0, 0.5), 5-gon: s=(0, 0, 0.5)
+    let s1, s2, s3;
+    if (n === 7) {
+      s1 = 0.11; s2 = 0; s3 = 0.5;
+    } else if (n === 5) {
+      s1 = 0; s2 = 0; s3 = 0.5;
+    } else {
+      // Fallback: no projection defined, use regular polygon
+      console.warn("⚠️ No projection defined for", n, "-gon, using regular polygon");
+      return this._createRegularPolygonVerticesFallback(n, radius, camera);
     }
 
-    // Generate n vertices at equal angular spacing
-    // Spread between adjacent vertices: s = sin²(π/n)
-    // This is the RT-pure representation of the angular step
+    // Build rotation matrix from spreads (ZYX Euler)
+    // sin(θ) = √s, cos(θ) = √(1-s)
+    const sin1 = Math.sqrt(s1), cos1 = Math.sqrt(1 - s1);
+    const sin2 = Math.sqrt(s2), cos2 = Math.sqrt(1 - s2);
+    const sin3 = Math.sqrt(s3), cos3 = Math.sqrt(1 - s3);
+
+    // Rotation matrices
+    const Rz = [[cos1, -sin1, 0], [sin1, cos1, 0], [0, 0, 1]];
+    const Ry = [[cos2, 0, sin2], [0, 1, 0], [-sin2, 0, cos2]];
+    const Rx = [[1, 0, 0], [0, cos3, -sin3], [0, sin3, cos3]];
+
+    // Matrix multiply helper
+    const matMul = (A, B) => A.map((row, i) =>
+      B[0].map((_, j) => row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0))
+    );
+    const R = matMul(Rz, matMul(Ry, Rx));
+
+    // Apply rotation and project to 2D
+    const projected2D = truncTetVertices.map(v => {
+      const rx = R[0][0]*v[0] + R[0][1]*v[1] + R[0][2]*v[2];
+      const ry = R[1][0]*v[0] + R[1][1]*v[1] + R[1][2]*v[2];
+      return { x: rx, y: ry };
+    });
+
+    // Compute convex hull (Graham scan)
+    const hull = this._computeConvexHull2D(projected2D);
+    console.log("   Hull vertices:", hull.length, "(expected:", n, ")");
+
+    // Log interior angles for verification
+    const angles = [];
+    for (let i = 0; i < hull.length; i++) {
+      const prev = hull[(i - 1 + hull.length) % hull.length];
+      const curr = hull[i];
+      const next = hull[(i + 1) % hull.length];
+      const v1 = { x: prev.x - curr.x, y: prev.y - curr.y };
+      const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+      const dot = v1.x * v2.x + v1.y * v2.y;
+      const len1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+      const len2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+      const cosAng = Math.max(-1, Math.min(1, dot / (len1 * len2)));
+      angles.push(Math.round(Math.acos(cosAng) * 180 / Math.PI));
+    }
+    console.log("   Interior angles:", angles.join("°, ") + "°");
+
+    // Scale to target radius (find max distance from centroid)
+    const cx = hull.reduce((s, p) => s + p.x, 0) / hull.length;
+    const cy = hull.reduce((s, p) => s + p.y, 0) / hull.length;
+    let maxDist = 0;
+    hull.forEach(p => {
+      const d = Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2);
+      if (d > maxDist) maxDist = d;
+    });
+    const scale = radius / maxDist;
+
+    // Convert to 3D vertices in camera view plane
+    const vertices = [];
+    hull.forEach(p => {
+      const x = (p.x - cx) * scale;
+      const y = (p.y - cy) * scale;
+      const vertex = new THREE.Vector3()
+        .addScaledVector(right, x)
+        .addScaledVector(planeUp, y);
+      vertices.push(vertex);
+    });
+    // Close the loop
+    vertices.push(vertices[0].clone());
+
+    console.log("   ✓ ACTUAL projection hull with", hull.length, "vertices (irregular!)");
+    return vertices;
+  },
+
+  /**
+   * Compute 2D convex hull using Graham scan
+   * @param {Array<{x,y}>} points - 2D points
+   * @returns {Array<{x,y}>} Hull vertices in CCW order
+   */
+  _computeConvexHull2D: function (points) {
+    // Remove duplicates (within tolerance)
+    const unique = [];
+    const tol = 1e-8;
+    points.forEach(p => {
+      if (!unique.some(u => Math.abs(u.x - p.x) < tol && Math.abs(u.y - p.y) < tol)) {
+        unique.push(p);
+      }
+    });
+
+    if (unique.length < 3) return unique;
+
+    // Find lowest point (and leftmost if tie)
+    let lowest = 0;
+    for (let i = 1; i < unique.length; i++) {
+      if (unique[i].y < unique[lowest].y ||
+          (unique[i].y === unique[lowest].y && unique[i].x < unique[lowest].x)) {
+        lowest = i;
+      }
+    }
+    [unique[0], unique[lowest]] = [unique[lowest], unique[0]];
+    const pivot = unique[0];
+
+    // Sort by polar angle
+    const sorted = unique.slice(1).sort((a, b) => {
+      const angleA = Math.atan2(a.y - pivot.y, a.x - pivot.x);
+      const angleB = Math.atan2(b.y - pivot.y, b.x - pivot.x);
+      return angleA - angleB;
+    });
+
+    // Graham scan
+    const hull = [pivot];
+    for (const p of sorted) {
+      while (hull.length > 1) {
+        const a = hull[hull.length - 2];
+        const b = hull[hull.length - 1];
+        const cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+        if (cross <= 0) hull.pop();
+        else break;
+      }
+      hull.push(p);
+    }
+    return hull;
+  },
+
+  /**
+   * Fallback: regular polygon for n-gons without projection definition
+   */
+  _createRegularPolygonVerticesFallback: function (n, radius, camera) {
+    const viewDir = new THREE.Vector3();
+    camera.getWorldDirection(viewDir);
+    const up = camera.up.clone().normalize();
+    const right = new THREE.Vector3().crossVectors(viewDir, up).normalize();
+    const planeUp = new THREE.Vector3().crossVectors(right, viewDir).normalize();
+
+    const vertices = [];
     for (let i = 0; i <= n; i++) {
       const angle = (2 * Math.PI * i) / n;
       const x = radius * Math.cos(angle);
       const y = radius * Math.sin(angle);
-
-      // Project onto view plane (centered at origin)
-      const vertex = new THREE.Vector3()
-        .addScaledVector(right, x)
-        .addScaledVector(planeUp, y);
-
-      vertices.push(vertex);
+      vertices.push(new THREE.Vector3().addScaledVector(right, x).addScaledVector(planeUp, y));
     }
-
-    console.log("   Generated", vertices.length, "vertices");
     return vertices;
   },
 
   /**
    * Show or hide the prime projection polygon overlay
+   * DUAL OVERLAY: Shows BOTH actual projection (YELLOW) and ideal regular polygon (CYAN)
+   * with vertex nodes to visualize collinear points
+   *
+   * FIXED IN 3D SPACE: Polygon is positioned at the actual projection plane defined by
+   * viewing spreads, NOT in camera view plane. This allows orbiting to see the cutplane.
    *
    * @param {number|null} n - Number of sides (7, 9, etc.) or null to hide
    * @param {THREE.Scene} scene - Scene to add/remove polygon from
-   * @param {THREE.Camera} camera - Camera for view plane alignment
+   * @param {THREE.Camera} camera - Camera (used only for initial spread lookup, not alignment)
    * @param {number} radius - Polygon radius (default: 1.5 to encompass typical polyhedra)
    */
   showPrimePolygon: function (n, scene, camera, radius = 1.5) {
@@ -1191,80 +1327,444 @@ export const RTPapercut = {
     if (!n) {
       RTPapercut._primePolygonVisible = false;
       RTPapercut._hideProjectionInfo();
+      // Disable the prime projection cutplane
+      RTPapercut._deactivatePrimeProjectionCutplane(scene);
       console.log("📐 Prime polygon overlay hidden");
       return;
     }
 
     // Create new polygon group
-    console.log("🔨 Creating new polygon group for", n, "-gon");
+    console.log("🔨 Creating DUAL polygon overlay for", n, "-gon (FIXED in 3D space)");
     const group = new THREE.Group();
     group.name = `primePolygon-${n}`;
-    console.log("   ✓ Group created:", group.name);
 
-    // Create vertices
-    const vertices = RTPapercut._createRegularPolygonVertices(n, radius, camera);
-    console.log("   ✓ Vertices created:", vertices.length, "points");
-    if (vertices.length > 0) {
-      console.log("   First vertex:", vertices[0].x.toFixed(3), vertices[0].y.toFixed(3), vertices[0].z.toFixed(3));
-      console.log("   Last vertex:", vertices[vertices.length-1].x.toFixed(3), vertices[vertices.length-1].y.toFixed(3), vertices[vertices.length-1].z.toFixed(3));
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // COMPUTE PROJECTION PLANE BASIS from viewing spreads
+    // The polygon lives in THIS plane, not the camera view plane
+    // ═══════════════════════════════════════════════════════════════════════
+    const { planeRight, planeUp, planeNormal } = RTPapercut._getProjectionPlaneBasis(n);
+    console.log("   Projection plane normal:", planeNormal.x.toFixed(3), planeNormal.y.toFixed(3), planeNormal.z.toFixed(3));
 
-    // Create line geometry from vertices
-    const positions = [];
-    vertices.forEach(v => positions.push(v.x, v.y, v.z));
-    console.log("   ✓ Positions array length:", positions.length, "(expecting", (n+1)*3, ")");
+    // ═══════════════════════════════════════════════════════════════════════
+    // 1. ACTUAL PROJECTION (YELLOW) - The real irregular hull from truncated tet
+    // ═══════════════════════════════════════════════════════════════════════
+    const actualVertices = RTPapercut._createProjectionHullVerticesFixed(n, radius, planeRight, planeUp);
+    console.log("   ✓ ACTUAL vertices:", actualVertices.length - 1, "hull points (YELLOW)");
 
-    const lineGeometry = new LineGeometry();
-    lineGeometry.setPositions(positions);
-    console.log("   ✓ LineGeometry created");
+    const actualPositions = [];
+    actualVertices.forEach(v => actualPositions.push(v.x, v.y, v.z));
 
-    // Create line material (cyan/teal for visibility)
-    // worldUnits: true makes linewidth work in world units instead of pixels
-    const lineMaterial = new LineMaterial({
-      color: 0x00ffff,
-      linewidth: 0.015, // World units (not pixels) when worldUnits: true
-      worldUnits: true, // CRITICAL: interpret linewidth as world units
+    const actualGeometry = new LineGeometry();
+    actualGeometry.setPositions(actualPositions);
+
+    // YELLOW for actual projection (the truth!)
+    const actualMaterial = new LineMaterial({
+      color: 0xffff00, // YELLOW - actual projection
+      linewidth: 0.02, // Slightly thicker to emphasize
+      worldUnits: true,
       transparent: true,
-      opacity: 0.9,
-      depthTest: false, // Always visible
+      opacity: 0.95,
+      depthTest: true, // Now participates in depth testing since it's in 3D
       depthWrite: false,
     });
-    lineMaterial.resolution.set(window.innerWidth, window.innerHeight);
-    console.log("   ✓ LineMaterial created, resolution:", window.innerWidth, "x", window.innerHeight, "linewidth:", lineMaterial.linewidth);
+    actualMaterial.resolution.set(window.innerWidth, window.innerHeight);
 
-    const line = new Line2(lineGeometry, lineMaterial);
-    line.computeLineDistances();
-    line.renderOrder = 999; // Render on top of everything
-    console.log("   ✓ Line2 created, renderOrder:", line.renderOrder);
+    const actualLine = new Line2(actualGeometry, actualMaterial);
+    actualLine.computeLineDistances();
+    actualLine.renderOrder = 1000;
+    actualLine.name = "actualProjection";
+    group.add(actualLine);
 
-    group.add(line);
-    group.renderOrder = 999; // Group also on top
-    console.log("   ✓ Line added to group, group.children:", group.children.length);
+    // ═══════════════════════════════════════════════════════════════════════
+    // 2. IDEAL REGULAR POLYGON (CYAN) - Classical trig for comparison
+    // ═══════════════════════════════════════════════════════════════════════
+    const idealVertices = RTPapercut._createRegularPolygonVerticesFixed(n, radius, planeRight, planeUp);
+    console.log("   ✓ IDEAL vertices:", idealVertices.length - 1, "regular polygon points (CYAN)");
 
-    // Add to scene
+    const idealPositions = [];
+    idealVertices.forEach(v => idealPositions.push(v.x, v.y, v.z));
+
+    const idealGeometry = new LineGeometry();
+    idealGeometry.setPositions(idealPositions);
+
+    // CYAN for ideal regular polygon (the classical trig reference)
+    const idealMaterial = new LineMaterial({
+      color: 0x00ffff, // CYAN - ideal regular polygon
+      linewidth: 0.012,
+      worldUnits: true,
+      transparent: true,
+      opacity: 0.7, // More transparent to show difference
+      depthTest: true,
+      depthWrite: false,
+    });
+    idealMaterial.resolution.set(window.innerWidth, window.innerHeight);
+
+    const idealLine = new Line2(idealGeometry, idealMaterial);
+    idealLine.computeLineDistances();
+    idealLine.renderOrder = 999;
+    idealLine.name = "idealPolygon";
+    group.add(idealLine);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 3. VERTEX NODES - Small spheres at each vertex to show collinear points
+    // ═══════════════════════════════════════════════════════════════════════
+    const nodeRadius = 0.03; // Small but visible
+    const nodeGeometry = new THREE.SphereGeometry(nodeRadius, 12, 12);
+
+    // YELLOW nodes for actual projection vertices
+    const actualNodeMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffff00,
+      transparent: true,
+      opacity: 0.9,
+      depthTest: true,
+    });
+
+    // Add nodes at actual vertices (skip last since it's a duplicate closing vertex)
+    for (let i = 0; i < actualVertices.length - 1; i++) {
+      const node = new THREE.Mesh(nodeGeometry, actualNodeMaterial.clone());
+      node.position.copy(actualVertices[i]);
+      node.renderOrder = 1001;
+      node.name = `actualNode-${i}`;
+      node.userData.isVertexNode = true;
+      node.userData.nodeType = "sphere";
+      node.userData.nodeRadius = nodeRadius;
+      group.add(node);
+    }
+    console.log("   ✓ Added", actualVertices.length - 1, "YELLOW vertex nodes (actual)");
+
+    // CYAN nodes for ideal polygon vertices
+    const idealNodeMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00ffff,
+      transparent: true,
+      opacity: 0.7,
+      depthTest: true,
+    });
+
+    // Add nodes at ideal vertices (skip last since it's a duplicate closing vertex)
+    for (let i = 0; i < idealVertices.length - 1; i++) {
+      const node = new THREE.Mesh(nodeGeometry, idealNodeMaterial.clone());
+      node.position.copy(idealVertices[i]);
+      node.renderOrder = 998;
+      node.name = `idealNode-${i}`;
+      node.userData.isVertexNode = true;
+      node.userData.nodeType = "sphere";
+      node.userData.nodeRadius = nodeRadius;
+      group.add(node);
+    }
+    console.log("   ✓ Added", idealVertices.length - 1, "CYAN vertex nodes (ideal)");
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // FINAL SETUP
+    // ═══════════════════════════════════════════════════════════════════════
+    group.renderOrder = 999;
     scene.add(group);
-    console.log("   ✓ Group added to scene, scene.children count:", scene.children.length);
+    console.log("   ✓ DUAL overlay added to scene (FIXED in projection plane)");
 
     RTPapercut._primePolygonGroup = group;
     RTPapercut._primePolygonVisible = true;
 
-    // Log RT-pure spread information
-    const spreadBetweenVertices = Math.pow(Math.sin(Math.PI / n), 2);
-    console.log(`📐 Prime polygon overlay: ${n}-gon at radius ${radius}`);
-    console.log(`   Adjacent vertex spread: s = sin²(π/${n}) ≈ ${spreadBetweenVertices.toFixed(6)}`);
-    console.log(`   Non-constructible polygon demonstrating prime projection`);
+    // ═══════════════════════════════════════════════════════════════════════
+    // 4. ACTIVATE CUTPLANE at the projection plane orientation
+    // ═══════════════════════════════════════════════════════════════════════
+    RTPapercut._activatePrimeProjectionCutplane(n, scene, planeNormal);
 
-    // Debug: check if group is in scene
-    const inScene = scene.children.includes(group);
-    console.log("   🔍 Group in scene.children:", inScene);
-    console.log("   🔍 Group world position:", group.position.x, group.position.y, group.position.z);
+    // Log comparison info
+    console.log(`📐 DUAL Prime polygon overlay: ${n}-gon at radius ${radius}`);
+    console.log(`   YELLOW: Actual projection (${actualVertices.length - 1} vertices, irregular, includes collinear)`);
+    console.log(`   CYAN: Ideal regular ${n}-gon (classical trig reference)`);
+    console.log(`   Cutplane ACTIVE at projection plane - orbit to see 3D intersection`);
 
-    // Update UI info display with Quadray projection formula
+    // Update UI info display
     RTPapercut._updateProjectionInfo(n);
   },
 
   /**
+   * Activate the Papercut cutplane at the prime projection plane orientation
+   * This allows the user to see the actual section cut through the truncated tetrahedron
+   *
+   * @param {number} n - Number of sides (7 or 5)
+   * @param {THREE.Scene} scene - Scene reference
+   * @param {THREE.Vector3} planeNormal - Normal vector of the projection plane
+   */
+  _activatePrimeProjectionCutplane: function (n, scene, planeNormal) {
+    console.log(`✂️ Activating cutplane for ${n}-gon projection`);
+
+    // Create clipping plane with the projection normal, passing through origin
+    // THREE.Plane(normal, constant) where constant = -d (distance from origin)
+    const plane = new THREE.Plane(planeNormal.clone(), 0);
+
+    // Update state
+    RTPapercut.state.cutplaneEnabled = true;
+    RTPapercut.state.cutplaneNormal = plane;
+    RTPapercut.state.cutplaneValue = 0;
+
+    // Update the UI checkbox to reflect enabled state
+    const cutplaneCheckbox = document.getElementById("enableCutPlane");
+    if (cutplaneCheckbox) {
+      cutplaneCheckbox.checked = true;
+    }
+
+    // Update slider display
+    const cutplaneValue = document.getElementById("cutplaneValue");
+    if (cutplaneValue) {
+      cutplaneValue.textContent = "0";
+    }
+    const cutplaneSlider = document.getElementById("cutplaneSlider");
+    if (cutplaneSlider) {
+      cutplaneSlider.value = 0;
+    }
+
+    // Update axis info display
+    const axisInfo = document.getElementById("cutplaneAxisInfo");
+    if (axisInfo) {
+      axisInfo.textContent = `Axis: ${n}-gon projection plane (custom)`;
+    }
+
+    // Apply clipping plane to all renderable objects
+    scene.traverse(object => {
+      if (object.material) {
+        if (Array.isArray(object.material)) {
+          object.material.forEach(mat => {
+            mat.clippingPlanes = [plane];
+            mat.clipShadows = true;
+            mat.needsUpdate = true;
+          });
+        } else {
+          object.material.clippingPlanes = [plane];
+          object.material.clipShadows = true;
+          object.material.needsUpdate = true;
+        }
+      }
+    });
+
+    // Enable renderer local clipping
+    if (RTPapercut._renderer) {
+      RTPapercut._renderer.localClippingEnabled = true;
+    }
+
+    // Generate intersection edges
+    RTPapercut._generateIntersectionEdges(scene, plane);
+
+    console.log(`   ✓ Cutplane active with normal: (${planeNormal.x.toFixed(3)}, ${planeNormal.y.toFixed(3)}, ${planeNormal.z.toFixed(3)})`);
+  },
+
+  /**
+   * Deactivate the prime projection cutplane
+   * Called when hiding the prime polygon overlay
+   *
+   * @param {THREE.Scene} scene - Scene reference
+   */
+  _deactivatePrimeProjectionCutplane: function (scene) {
+    console.log("✂️ Deactivating prime projection cutplane");
+
+    // Remove clipping planes from all materials
+    scene.traverse(object => {
+      if (object.material) {
+        if (Array.isArray(object.material)) {
+          object.material.forEach(mat => {
+            mat.clippingPlanes = [];
+            mat.needsUpdate = true;
+          });
+        } else {
+          object.material.clippingPlanes = [];
+          object.material.needsUpdate = true;
+        }
+      }
+    });
+
+    // Disable renderer clipping
+    if (RTPapercut._renderer) {
+      RTPapercut._renderer.localClippingEnabled = false;
+    }
+
+    // Remove intersection lines
+    if (RTPapercut._intersectionLines) {
+      scene.remove(RTPapercut._intersectionLines);
+      RTPapercut._intersectionLines.traverse(child => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+      });
+      RTPapercut._intersectionLines = null;
+    }
+
+    // Update state
+    RTPapercut.state.cutplaneEnabled = false;
+    RTPapercut.state.cutplaneNormal = null;
+
+    // Update the UI checkbox
+    const cutplaneCheckbox = document.getElementById("enableCutPlane");
+    if (cutplaneCheckbox) {
+      cutplaneCheckbox.checked = false;
+    }
+
+    // Reset axis info display
+    const axisInfo = document.getElementById("cutplaneAxisInfo");
+    if (axisInfo) {
+      axisInfo.textContent = "Axis: Z (Top/Bottom view)";
+    }
+
+    console.log("   ✓ Cutplane deactivated");
+  },
+
+  /**
+   * Get projection plane basis vectors from viewing spreads
+   * Returns the plane where the n-gon projection lives (fixed in 3D space)
+   *
+   * @param {number} n - Number of sides (7 for heptagon, 5 for pentagon)
+   * @returns {{planeRight: THREE.Vector3, planeUp: THREE.Vector3, planeNormal: THREE.Vector3}}
+   */
+  _getProjectionPlaneBasis: function (n) {
+    // Get viewing spreads for this n-gon
+    let s1, s2, s3;
+    if (n === 7) {
+      s1 = 0.11; s2 = 0; s3 = 0.5;
+    } else if (n === 5) {
+      s1 = 0; s2 = 0; s3 = 0.5;
+    } else {
+      // Default: XY plane
+      return {
+        planeRight: new THREE.Vector3(1, 0, 0),
+        planeUp: new THREE.Vector3(0, 1, 0),
+        planeNormal: new THREE.Vector3(0, 0, 1),
+      };
+    }
+
+    // Build rotation matrix from spreads (ZYX Euler)
+    // sin(θ) = √s, cos(θ) = √(1-s)
+    const sin1 = Math.sqrt(s1), cos1 = Math.sqrt(1 - s1);
+    const sin2 = Math.sqrt(s2), cos2 = Math.sqrt(1 - s2);
+    const sin3 = Math.sqrt(s3), cos3 = Math.sqrt(1 - s3);
+
+    // ZYX rotation matrices
+    const Rz = [[cos1, -sin1, 0], [sin1, cos1, 0], [0, 0, 1]];
+    const Ry = [[cos2, 0, sin2], [0, 1, 0], [-sin2, 0, cos2]];
+    const Rx = [[1, 0, 0], [0, cos3, -sin3], [0, sin3, cos3]];
+
+    // Matrix multiply helper
+    const matMul = (A, B) => A.map((row, i) =>
+      B[0].map((_, j) => row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0))
+    );
+    const R = matMul(Rz, matMul(Ry, Rx));
+
+    // Transform basis vectors
+    // planeRight = R * (1,0,0)
+    const planeRight = new THREE.Vector3(R[0][0], R[1][0], R[2][0]).normalize();
+    // planeUp = R * (0,1,0)
+    const planeUp = new THREE.Vector3(R[0][1], R[1][1], R[2][1]).normalize();
+    // planeNormal = R * (0,0,1) - this is the viewing direction
+    const planeNormal = new THREE.Vector3(R[0][2], R[1][2], R[2][2]).normalize();
+
+    console.log(`📐 Projection plane for ${n}-gon: spreads=(${s1}, ${s2}, ${s3})`);
+    console.log(`   Right: (${planeRight.x.toFixed(3)}, ${planeRight.y.toFixed(3)}, ${planeRight.z.toFixed(3)})`);
+    console.log(`   Up: (${planeUp.x.toFixed(3)}, ${planeUp.y.toFixed(3)}, ${planeUp.z.toFixed(3)})`);
+    console.log(`   Normal: (${planeNormal.x.toFixed(3)}, ${planeNormal.y.toFixed(3)}, ${planeNormal.z.toFixed(3)})`);
+
+    return { planeRight, planeUp, planeNormal };
+  },
+
+  /**
+   * Create ACTUAL projection hull vertices in the fixed projection plane
+   * @param {number} n - Number of sides
+   * @param {number} radius - Target radius
+   * @param {THREE.Vector3} planeRight - Plane's X axis
+   * @param {THREE.Vector3} planeUp - Plane's Y axis
+   * @returns {Array<THREE.Vector3>} Vertices in 3D space
+   */
+  _createProjectionHullVerticesFixed: function (n, radius, planeRight, planeUp) {
+    // Truncated tetrahedron vertices (normalized)
+    const truncTetVertices = [
+      [3, 1, 1], [3, -1, -1], [1, 3, 1], [1, -3, -1],
+      [1, 1, 3], [1, -1, -3], [-3, 1, -1], [-3, -1, 1],
+      [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3]
+    ].map(v => {
+      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+      return [v[0]/len, v[1]/len, v[2]/len];
+    });
+
+    // Get viewing spreads
+    let s1, s2, s3;
+    if (n === 7) {
+      s1 = 0.11; s2 = 0; s3 = 0.5;
+    } else if (n === 5) {
+      s1 = 0; s2 = 0; s3 = 0.5;
+    } else {
+      s1 = 0; s2 = 0; s3 = 0;
+    }
+
+    // Build rotation matrix from spreads
+    const sin1 = Math.sqrt(s1), cos1 = Math.sqrt(1 - s1);
+    const sin2 = Math.sqrt(s2), cos2 = Math.sqrt(1 - s2);
+    const sin3 = Math.sqrt(s3), cos3 = Math.sqrt(1 - s3);
+
+    const Rz = [[cos1, -sin1, 0], [sin1, cos1, 0], [0, 0, 1]];
+    const Ry = [[cos2, 0, sin2], [0, 1, 0], [-sin2, 0, cos2]];
+    const Rx = [[1, 0, 0], [0, cos3, -sin3], [0, sin3, cos3]];
+
+    const matMul = (A, B) => A.map((row, i) =>
+      B[0].map((_, j) => row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0))
+    );
+    const R = matMul(Rz, matMul(Ry, Rx));
+
+    // Apply rotation and project to 2D (in rotated frame)
+    const projected2D = truncTetVertices.map(v => {
+      const rx = R[0][0]*v[0] + R[0][1]*v[1] + R[0][2]*v[2];
+      const ry = R[1][0]*v[0] + R[1][1]*v[1] + R[1][2]*v[2];
+      return { x: rx, y: ry };
+    });
+
+    // Compute convex hull
+    const hull = this._computeConvexHull2D(projected2D);
+
+    // Scale to target radius
+    const cx = hull.reduce((s, p) => s + p.x, 0) / hull.length;
+    const cy = hull.reduce((s, p) => s + p.y, 0) / hull.length;
+    let maxDist = 0;
+    hull.forEach(p => {
+      const d = Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2);
+      if (d > maxDist) maxDist = d;
+    });
+    const scale = radius / maxDist;
+
+    // Convert to 3D vertices in the FIXED projection plane
+    const vertices = [];
+    hull.forEach(p => {
+      const x = (p.x - cx) * scale;
+      const y = (p.y - cy) * scale;
+      const vertex = new THREE.Vector3()
+        .addScaledVector(planeRight, x)
+        .addScaledVector(planeUp, y);
+      vertices.push(vertex);
+    });
+    vertices.push(vertices[0].clone()); // Close the loop
+
+    return vertices;
+  },
+
+  /**
+   * Create regular polygon vertices in the fixed projection plane
+   * @param {number} n - Number of sides
+   * @param {number} radius - Circumradius
+   * @param {THREE.Vector3} planeRight - Plane's X axis
+   * @param {THREE.Vector3} planeUp - Plane's Y axis
+   * @returns {Array<THREE.Vector3>} Vertices in 3D space
+   */
+  _createRegularPolygonVerticesFixed: function (n, radius, planeRight, planeUp) {
+    const vertices = [];
+    for (let i = 0; i <= n; i++) {
+      const angle = (2 * Math.PI * i) / n;
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
+      const vertex = new THREE.Vector3()
+        .addScaledVector(planeRight, x)
+        .addScaledVector(planeUp, y);
+      vertices.push(vertex);
+    }
+    return vertices;
+  },
+
+  /**
    * Update the prime projection info display with Quadray formula
+   * Shows DUAL overlay legend: YELLOW (actual) vs CYAN (ideal)
    * @param {number} n - Number of sides
    */
   _updateProjectionInfo: function (n) {
@@ -1276,27 +1776,34 @@ export const RTPapercut = {
 
     switch (n) {
       case 7:
-        // 7-gon: Non-constructible prime from truncated tetrahedron
+        // 7-hull: ACTUAL projection from truncated tetrahedron
         // Quadray coords: {2,1,0,0} permutations (12 vertices, ALL RATIONAL)
-        // Viewing spreads: s=(0.11, 0, 0.5) → 7-vertex hull
+        // Viewing spreads: s=(0.11, 0, 0.5) → 7-vertex hull (2 collinear)
         formulaText =
-          "7-gon: Quadray {2,1,0,0}/3 → s=(0.11,0,½)\n" +
-          "Trunc Tet: 12v → 7-hull (non-constructible)";
+          "YELLOW: Actual 7-hull projection\n" +
+          "  Quadray {2,1,0,0}/3 → s=(0.11,0,½)\n" +
+          "  7 vertices (2 collinear @ 180°)\n" +
+          "CYAN: Ideal regular heptagon\n" +
+          "  Classical trig (for comparison)";
         break;
 
       case 5:
-        // 5-gon: Fermat prime (φ-constructible) from icosahedron axis
+        // 5-gon: ACTUAL projection from truncated tetrahedron
         // Viewing spreads: s=(0, 0, 0.5)
-        // Pentagon spread: s = (5-√5)/8 = sin²(π/5)
         formulaText =
-          "5-gon: Icosa axis → s=(0,0,½)\n" +
-          "φ-constructible: s = (5-√5)/8";
+          "YELLOW: Actual 5-gon projection\n" +
+          "  Trunc Tet → s=(0,0,½)\n" +
+          "CYAN: Ideal regular pentagon\n" +
+          "  Classical trig (for comparison)";
         break;
 
       default:
         // Generic n-gon info
         const s = Math.pow(Math.sin(Math.PI / n), 2);
-        formulaText = `${n}-gon: s = sin²(π/${n}) ≈ ${s.toFixed(4)}`;
+        formulaText =
+          `YELLOW: Actual projection (irregular)\n` +
+          `CYAN: Ideal regular ${n}-gon\n` +
+          `  s = sin²(π/${n}) ≈ ${s.toFixed(4)}`;
     }
 
     formulaSpan.textContent = formulaText;
