@@ -2549,6 +2549,8 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayTruncatedTetGroup.visible = true;
     } else {
       quadrayTruncatedTetGroup.visible = false;
+      // Hide prime projection visualization when truncated tet is hidden
+      RTPapercut.showPrimePolygon(null, scene, camera);
     }
 
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
