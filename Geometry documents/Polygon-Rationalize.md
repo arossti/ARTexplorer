@@ -862,33 +862,66 @@ Replace the current 5-gon and 7-gon generation methods in `rt-primitives.js` wit
 
 ---
 
-### CRITICAL: UI Overlay Must Show Actual Projection (NOT Classical Trig)
+### Prime Projection Visualization (Updated 2026-02-06)
 
-**ISSUE IDENTIFIED 2026-02-06**: The cyan polygon overlay in `rt-papercut.js` was drawing a **fake regular heptagon** using classical trigonometry (`Math.sin`, `Math.cos`), NOT the actual projection hull. This is academically misleading.
+**CORRECTED APPROACH**: The UI overlay should demonstrate the projection operation visually:
 
-**The theatrical overlay code (TO BE REPLACED):**
-```javascript
-// rt-papercut.js:1141-1144 - THIS IS WRONG
-for (let i = 0; i <= n; i++) {
-  const angle = (2 * Math.PI * i) / n;  // ← Classical trig!
-  const x = radius * Math.cos(angle);    // ← NOT our projection!
-  const y = radius * Math.sin(angle);
-```
+#### Visualization Components
 
-**What the overlay SHOULD show:**
-The actual convex hull of the truncated tetrahedron projected at s=(0.11, 0, 0.5):
-- 7 vertices at IRREGULAR positions (not evenly spaced)
-- 2 vertices collinear with neighbors (on straight edges)
-- Visual appearance: **irregular 5-gon with 2 midpoints on edges**
+1. **Source Polyhedron** (Truncated Tetrahedron)
+   - Displayed at its actual position/scale/orientation in the scene
+   - Uses standard halfSize metric for rational coordinates
+   - 12 vertices from Quadray {2,1,0,0} permutations (ALL RATIONAL)
 
-**FIX REQUIRED**: Replace `_createRegularPolygonVertices()` with actual projection computation:
-1. Get truncated tetrahedron vertices from `RT.ProjectionPolygons.heptagon.sourceVertices()`
-2. Apply spread-based rotation using viewing spreads s=(0.11, 0, 0.5)
-3. Project to camera plane (drop depth coordinate)
-4. Compute convex hull of projected points
-5. Render the ACTUAL hull vertices, not a fake regular polygon
+2. **Projection Rays** (YELLOW lines)
+   - 12 rays emanating from each truncated tet vertex
+   - Rays travel in the viewing direction defined by spreads s=(0.11, 0, 0.5)
+   - Shows HOW vertices project to the 2D plane
 
-**This is dogfooding**: Use our own `rt-nodes.js` vertex generation patterns to create honest vertices.
+3. **Projection Plane** (at distance from polyhedron)
+   - Positioned AWAY from the truncated tet (not overlapping)
+   - Oriented perpendicular to viewing direction
+   - Shows where rays intersect the plane
+
+4. **Projected Vertices** (YELLOW nodes)
+   - 12 points where rays hit the plane
+   - 7 of these form the convex hull boundary
+   - 5 are interior points (not on hull)
+
+5. **Actual Hull** (YELLOW polygon)
+   - Convex hull of the 7 boundary vertices
+   - Irregular heptagon with 2 collinear vertices at 180°
+   - This is the REAL 7-hull projection
+
+6. **Ideal Comparison** (CYAN polygon)
+   - Regular heptagon using classical trig
+   - Same circumradius, for visual comparison
+   - Shows deviation from "perfect" regularity
+
+#### Scale and Orientation Matching
+
+The visualization MUST use the actual scene mesh:
+- Find the displayed Quadray Truncated Tetrahedron group
+- Extract its world transform (position, rotation, scale)
+- Use its ACTUAL vertices for projection
+- Match the overlay to the displayed geometry
+
+#### Rational HalfSize Selection
+
+For the truncated tetrahedron, use halfSize that maximizes rational output:
+- Quadray coords {2,1,0,0}/3 → Cartesian (3,1,1)/√11 (normalized)
+- Edge quadrance between adjacent vertices: Q = 8/11 (normalized)
+- For halfSize = h, edge quadrance Q = 8h²/11
+
+**Recommended**: Use halfSize = √(11/8) ≈ 1.172 for edge quadrance Q = 1
+
+#### Key Insight: Projection ≠ Section Cut
+
+**IMPORTANT**: The Papercut cutplane should NOT be activated for this visualization!
+- **Projection** = viewing silhouette (convex hull of all vertices from a direction)
+- **Section cut** = plane intersection with faces (different polygon entirely)
+
+The 7-hull emerges from PROJECTION, not from cutting.
 
 ---
 
