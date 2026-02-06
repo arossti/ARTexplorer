@@ -1218,22 +1218,25 @@ export const RTPapercut = {
     console.log("   ✓ LineGeometry created");
 
     // Create line material (cyan/teal for visibility)
+    // linewidth is in world units for LineMaterial - use larger value for visibility
     const lineMaterial = new LineMaterial({
       color: 0x00ffff,
-      linewidth: 0.003,
+      linewidth: 0.015, // Increased from 0.003 for visibility
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.9,
       depthTest: false, // Always visible
       depthWrite: false,
     });
     lineMaterial.resolution.set(window.innerWidth, window.innerHeight);
-    console.log("   ✓ LineMaterial created, resolution:", window.innerWidth, "x", window.innerHeight);
+    console.log("   ✓ LineMaterial created, resolution:", window.innerWidth, "x", window.innerHeight, "linewidth:", lineMaterial.linewidth);
 
     const line = new Line2(lineGeometry, lineMaterial);
     line.computeLineDistances();
-    console.log("   ✓ Line2 created and distances computed");
+    line.renderOrder = 999; // Render on top of everything
+    console.log("   ✓ Line2 created, renderOrder:", line.renderOrder);
 
     group.add(line);
+    group.renderOrder = 999; // Group also on top
     console.log("   ✓ Line added to group, group.children:", group.children.length);
 
     // Add to scene
