@@ -1560,39 +1560,46 @@ export const RTPapercut = {
    * @param {THREE.Group} group - The polyhedron group
    * @returns {Array<THREE.Vector3>} World-space vertices
    */
+  /**
+   * Get the 12 canonical truncated tetrahedron vertices
+   * Uses Quadray {2,1,0,0} permutations converted to Cartesian
+   * This avoids extracting from triangulated mesh + node spheres
+   *
+   * @param {THREE.Group} group - The polyhedron group (for world transform)
+   * @returns {Array<THREE.Vector3>} World-space vertices (exactly 12)
+   */
   _getWorldVerticesFromGroup: function (group) {
-    const vertices = [];
-    const seen = new Set();
+    // Truncated tetrahedron: {2,1,0,0} permutations in Quadray
+    // These are the 12 canonical vertices (ALL RATIONAL in Quadray!)
+    const truncTetCartesian = [
+      [3, 1, 1], [3, -1, -1], [1, 3, 1], [1, -3, -1],
+      [1, 1, 3], [1, -1, -3], [-3, 1, -1], [-3, -1, 1],
+      [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3]
+    ];
 
-    // Use coarse tolerance (2 decimal places) to properly deduplicate
-    // triangulated mesh vertices back to the polyhedron's actual vertices
-    const TOLERANCE_DECIMALS = 2;
+    // Get scale from group's userData or compute from first mesh
+    let scale = 1;
+    if (group.userData?.parameters?.scale) {
+      scale = group.userData.parameters.scale;
+    } else if (group.userData?.parameters?.halfSize) {
+      scale = group.userData.parameters.halfSize;
+    }
 
-    group.traverse(obj => {
-      if (obj.geometry && obj.geometry.attributes?.position) {
-        const posAttr = obj.geometry.attributes.position;
-        obj.updateMatrixWorld(true);
+    // Normalize factor: vertices are at distance √11 from origin
+    const normFactor = scale / Math.sqrt(11);
 
-        for (let i = 0; i < posAttr.count; i++) {
-          const v = new THREE.Vector3(
-            posAttr.getX(i),
-            posAttr.getY(i),
-            posAttr.getZ(i)
-          );
-          v.applyMatrix4(obj.matrixWorld);
+    // Get world matrix
+    group.updateMatrixWorld(true);
+    const worldMatrix = group.matrixWorld;
 
-          // Deduplicate using coarse tolerance to collapse triangulated mesh
-          // vertices back to the original polyhedron vertices
-          const key = `${v.x.toFixed(TOLERANCE_DECIMALS)},${v.y.toFixed(TOLERANCE_DECIMALS)},${v.z.toFixed(TOLERANCE_DECIMALS)}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            vertices.push(v);
-          }
-        }
-      }
+    // Convert to world-space Vector3
+    const vertices = truncTetCartesian.map(([x, y, z]) => {
+      const v = new THREE.Vector3(x * normFactor, y * normFactor, z * normFactor);
+      v.applyMatrix4(worldMatrix);
+      return v;
     });
 
-    console.log(`   _getWorldVerticesFromGroup: ${vertices.length} unique vertices (tolerance: ${TOLERANCE_DECIMALS} decimals)`);
+    console.log(`   _getWorldVerticesFromGroup: ${vertices.length} canonical vertices (scale: ${scale.toFixed(4)})`);
     return vertices;
   },
 
