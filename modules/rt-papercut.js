@@ -1287,20 +1287,21 @@ export const RTPapercut = {
   },
 
   /**
-   * Show or hide the prime projection polygon overlay
-   * DUAL OVERLAY: Shows BOTH actual projection (YELLOW) and ideal regular polygon (CYAN)
-   * with vertex nodes to visualize collinear points
+   * Show or hide the prime projection visualization
    *
-   * FIXED IN 3D SPACE: Polygon is positioned at the actual projection plane defined by
-   * viewing spreads, NOT in camera view plane. This allows orbiting to see the cutplane.
+   * VISUALIZATION COMPONENTS:
+   * 1. Finds the actual Quadray Truncated Tetrahedron in the scene
+   * 2. Draws projection RAYS from each vertex toward the projection plane
+   * 3. Shows projection plane at a distance with YELLOW (actual) and CYAN (ideal) polygons
+   * 4. NO cutplane activation (projection ≠ section cut)
    *
-   * @param {number|null} n - Number of sides (7, 9, etc.) or null to hide
-   * @param {THREE.Scene} scene - Scene to add/remove polygon from
-   * @param {THREE.Camera} camera - Camera (used only for initial spread lookup, not alignment)
-   * @param {number} radius - Polygon radius (default: 1.5 to encompass typical polyhedra)
+   * @param {number|null} n - Number of sides (7, 5, etc.) or null to hide
+   * @param {THREE.Scene} scene - Scene to add/remove visualization from
+   * @param {THREE.Camera} camera - Camera reference
+   * @param {number} planeDistance - Distance from polyhedron center to projection plane (default: 2.5)
    */
-  showPrimePolygon: function (n, scene, camera, radius = 1.5) {
-    console.log("🔍 showPrimePolygon called with:", { n, scene: !!scene, camera: !!camera, radius });
+  showPrimePolygon: function (n, scene, camera, planeDistance = 2.5) {
+    console.log("🔍 showPrimePolygon called with:", { n, scene: !!scene, camera: !!camera, planeDistance });
 
     // Validate inputs
     if (!scene) {
@@ -1312,9 +1313,9 @@ export const RTPapercut = {
       return;
     }
 
-    // Remove existing polygon if any
+    // Remove existing visualization if any
     if (RTPapercut._primePolygonGroup) {
-      console.log("🧹 Removing existing polygon group");
+      console.log("🧹 Removing existing projection visualization");
       scene.remove(RTPapercut._primePolygonGroup);
       RTPapercut._primePolygonGroup.traverse(child => {
         if (child.geometry) child.geometry.dispose();
@@ -1327,155 +1328,266 @@ export const RTPapercut = {
     if (!n) {
       RTPapercut._primePolygonVisible = false;
       RTPapercut._hideProjectionInfo();
-      // Disable the prime projection cutplane
-      RTPapercut._deactivatePrimeProjectionCutplane(scene);
-      console.log("📐 Prime polygon overlay hidden");
+      console.log("📐 Prime projection visualization hidden");
       return;
     }
 
-    // Create new polygon group
-    console.log("🔨 Creating DUAL polygon overlay for", n, "-gon (FIXED in 3D space)");
+    // ═══════════════════════════════════════════════════════════════════════
+    // FIND THE ACTUAL TRUNCATED TETRAHEDRON IN THE SCENE
+    // ═══════════════════════════════════════════════════════════════════════
+    let truncTetGroup = null;
+    scene.traverse(obj => {
+      if (obj.name === "QuadrayTruncatedTetrahedron" || obj.name === "quadrayTruncatedTetGroup") {
+        truncTetGroup = obj;
+      }
+    });
+
+    // Also check for the group by looking for userData with primeProjection
+    if (!truncTetGroup) {
+      scene.traverse(obj => {
+        if (obj.userData?.parameters?.primeProjection) {
+          truncTetGroup = obj;
+        }
+      });
+    }
+
+    if (!truncTetGroup || !truncTetGroup.visible) {
+      console.warn("⚠️ Quadray Truncated Tetrahedron not found or not visible in scene");
+      console.log("   Please enable 'Quadray Truncated Tetrahedron' checkbox first");
+      RTPapercut._hideProjectionInfo();
+      return;
+    }
+
+    console.log("🔨 Creating projection visualization for", n, "-hull");
     const group = new THREE.Group();
-    group.name = `primePolygon-${n}`;
+    group.name = `primeProjection-${n}`;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // GET WORLD VERTICES FROM THE ACTUAL MESH
+    // ═══════════════════════════════════════════════════════════════════════
+    const worldVertices = RTPapercut._getWorldVerticesFromGroup(truncTetGroup);
+    if (worldVertices.length === 0) {
+      console.error("❌ Could not extract vertices from truncated tetrahedron");
+      return;
+    }
+    console.log("   Found", worldVertices.length, "vertices from scene mesh");
+
+    // Get center of the polyhedron
+    const center = new THREE.Vector3();
+    worldVertices.forEach(v => center.add(v));
+    center.divideScalar(worldVertices.length);
 
     // ═══════════════════════════════════════════════════════════════════════
     // COMPUTE PROJECTION PLANE BASIS from viewing spreads
-    // The polygon lives in THIS plane, not the camera view plane
     // ═══════════════════════════════════════════════════════════════════════
     const { planeRight, planeUp, planeNormal } = RTPapercut._getProjectionPlaneBasis(n);
-    console.log("   Projection plane normal:", planeNormal.x.toFixed(3), planeNormal.y.toFixed(3), planeNormal.z.toFixed(3));
+    console.log("   Projection direction:", planeNormal.x.toFixed(3), planeNormal.y.toFixed(3), planeNormal.z.toFixed(3));
+
+    // Projection plane is at distance along the normal from center
+    const planeCenter = center.clone().addScaledVector(planeNormal, planeDistance);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 1. ACTUAL PROJECTION (YELLOW) - The real irregular hull from truncated tet
+    // PROJECT VERTICES TO THE PLANE
     // ═══════════════════════════════════════════════════════════════════════
-    const actualVertices = RTPapercut._createProjectionHullVerticesFixed(n, radius, planeRight, planeUp);
-    console.log("   ✓ ACTUAL vertices:", actualVertices.length - 1, "hull points (YELLOW)");
+    const projectedPoints = []; // 2D coordinates in plane space
+    const projected3D = []; // 3D world positions on plane
 
-    const actualPositions = [];
-    actualVertices.forEach(v => actualPositions.push(v.x, v.y, v.z));
+    worldVertices.forEach(vertex => {
+      // Project vertex onto plane along planeNormal direction
+      const toVertex = vertex.clone().sub(planeCenter);
+      const distAlongNormal = toVertex.dot(planeNormal);
+      const projectedPoint = vertex.clone().addScaledVector(planeNormal, -distAlongNormal);
 
-    const actualGeometry = new LineGeometry();
-    actualGeometry.setPositions(actualPositions);
+      // Convert to 2D plane coordinates
+      const localPoint = projectedPoint.clone().sub(planeCenter);
+      const x = localPoint.dot(planeRight);
+      const y = localPoint.dot(planeUp);
 
-    // YELLOW for actual projection (the truth!)
-    const actualMaterial = new LineMaterial({
-      color: 0xffff00, // YELLOW - actual projection
-      linewidth: 0.02, // Slightly thicker to emphasize
-      worldUnits: true,
+      projectedPoints.push({ x, y, vertex3D: vertex, projected3D: projectedPoint });
+      projected3D.push(projectedPoint);
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 1. PROJECTION RAYS (YELLOW lines from vertices to projected points)
+    // ═══════════════════════════════════════════════════════════════════════
+    const rayMaterial = new THREE.LineBasicMaterial({
+      color: 0xffff00,
+      transparent: true,
+      opacity: 0.5,
+      depthTest: true,
+    });
+
+    projectedPoints.forEach((p, i) => {
+      const rayGeometry = new THREE.BufferGeometry().setFromPoints([p.vertex3D, p.projected3D]);
+      const ray = new THREE.Line(rayGeometry, rayMaterial);
+      ray.name = `projectionRay-${i}`;
+      group.add(ray);
+    });
+    console.log("   ✓ Added", projectedPoints.length, "projection rays");
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 2. COMPUTE CONVEX HULL of projected points
+    // ═══════════════════════════════════════════════════════════════════════
+    const hull2D = RTPapercut._computeConvexHull2D(projectedPoints.map(p => ({ x: p.x, y: p.y })));
+    console.log("   ✓ Hull has", hull2D.length, "vertices (expected:", n, ")");
+
+    // Convert hull back to 3D
+    const hullVertices3D = hull2D.map(p => {
+      return planeCenter.clone()
+        .addScaledVector(planeRight, p.x)
+        .addScaledVector(planeUp, p.y);
+    });
+    hullVertices3D.push(hullVertices3D[0].clone()); // Close the loop
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 3. ACTUAL HULL (YELLOW polygon) - Simple hairline
+    // ═══════════════════════════════════════════════════════════════════════
+    const actualGeometry = new THREE.BufferGeometry().setFromPoints(hullVertices3D);
+    const actualMaterial = new THREE.LineBasicMaterial({
+      color: 0xffff00,
       transparent: true,
       opacity: 0.95,
-      depthTest: true, // Now participates in depth testing since it's in 3D
-      depthWrite: false,
+      depthTest: true,
     });
-    actualMaterial.resolution.set(window.innerWidth, window.innerHeight);
-
-    const actualLine = new Line2(actualGeometry, actualMaterial);
-    actualLine.computeLineDistances();
+    const actualLine = new THREE.Line(actualGeometry, actualMaterial);
     actualLine.renderOrder = 1000;
-    actualLine.name = "actualProjection";
+    actualLine.name = "actualHull";
     group.add(actualLine);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 2. IDEAL REGULAR POLYGON (CYAN) - Classical trig for comparison
+    // 4. IDEAL REGULAR POLYGON (CYAN) for comparison - Simple hairline
     // ═══════════════════════════════════════════════════════════════════════
-    const idealVertices = RTPapercut._createRegularPolygonVerticesFixed(n, radius, planeRight, planeUp);
-    console.log("   ✓ IDEAL vertices:", idealVertices.length - 1, "regular polygon points (CYAN)");
-
-    const idealPositions = [];
-    idealVertices.forEach(v => idealPositions.push(v.x, v.y, v.z));
-
-    const idealGeometry = new LineGeometry();
-    idealGeometry.setPositions(idealPositions);
-
-    // CYAN for ideal regular polygon (the classical trig reference)
-    const idealMaterial = new LineMaterial({
-      color: 0x00ffff, // CYAN - ideal regular polygon
-      linewidth: 0.012,
-      worldUnits: true,
-      transparent: true,
-      opacity: 0.7, // More transparent to show difference
-      depthTest: true,
-      depthWrite: false,
+    // Calculate radius from hull for matching scale
+    let maxRadius = 0;
+    hull2D.forEach(p => {
+      const r = Math.sqrt(p.x * p.x + p.y * p.y);
+      if (r > maxRadius) maxRadius = r;
     });
-    idealMaterial.resolution.set(window.innerWidth, window.innerHeight);
 
-    const idealLine = new Line2(idealGeometry, idealMaterial);
-    idealLine.computeLineDistances();
+    const idealVertices = [];
+    for (let i = 0; i <= n; i++) {
+      const angle = (2 * Math.PI * i) / n;
+      const x = maxRadius * Math.cos(angle);
+      const y = maxRadius * Math.sin(angle);
+      idealVertices.push(
+        planeCenter.clone()
+          .addScaledVector(planeRight, x)
+          .addScaledVector(planeUp, y)
+      );
+    }
+
+    const idealGeometry = new THREE.BufferGeometry().setFromPoints(idealVertices);
+    const idealMaterial = new THREE.LineBasicMaterial({
+      color: 0x00ffff,
+      transparent: true,
+      opacity: 0.6,
+      depthTest: true,
+    });
+    const idealLine = new THREE.Line(idealGeometry, idealMaterial);
     idealLine.renderOrder = 999;
     idealLine.name = "idealPolygon";
     group.add(idealLine);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 3. VERTEX NODES - Small spheres at each vertex to show collinear points
+    // 5. VERTEX NODES on hull and projected points
     // ═══════════════════════════════════════════════════════════════════════
-    const nodeRadius = 0.03; // Small but visible
+    const nodeRadius = 0.04;
     const nodeGeometry = new THREE.SphereGeometry(nodeRadius, 12, 12);
 
-    // YELLOW nodes for actual projection vertices
-    const actualNodeMaterial = new THREE.MeshBasicMaterial({
+    // Yellow nodes at hull vertices
+    const hullNodeMaterial = new THREE.MeshBasicMaterial({
       color: 0xffff00,
       transparent: true,
       opacity: 0.9,
-      depthTest: true,
     });
 
-    // Add nodes at actual vertices (skip last since it's a duplicate closing vertex)
-    for (let i = 0; i < actualVertices.length - 1; i++) {
-      const node = new THREE.Mesh(nodeGeometry, actualNodeMaterial.clone());
-      node.position.copy(actualVertices[i]);
-      node.renderOrder = 1001;
-      node.name = `actualNode-${i}`;
-      node.userData.isVertexNode = true;
-      node.userData.nodeType = "sphere";
-      node.userData.nodeRadius = nodeRadius;
+    for (let i = 0; i < hullVertices3D.length - 1; i++) {
+      const node = new THREE.Mesh(nodeGeometry, hullNodeMaterial.clone());
+      node.position.copy(hullVertices3D[i]);
+      node.name = `hullNode-${i}`;
       group.add(node);
     }
-    console.log("   ✓ Added", actualVertices.length - 1, "YELLOW vertex nodes (actual)");
 
-    // CYAN nodes for ideal polygon vertices
+    // Cyan nodes at ideal vertices
     const idealNodeMaterial = new THREE.MeshBasicMaterial({
       color: 0x00ffff,
       transparent: true,
-      opacity: 0.7,
-      depthTest: true,
+      opacity: 0.6,
     });
 
-    // Add nodes at ideal vertices (skip last since it's a duplicate closing vertex)
     for (let i = 0; i < idealVertices.length - 1; i++) {
-      const node = new THREE.Mesh(nodeGeometry, idealNodeMaterial.clone());
+      const node = new THREE.Mesh(nodeGeometry.clone(), idealNodeMaterial.clone());
       node.position.copy(idealVertices[i]);
-      node.renderOrder = 998;
       node.name = `idealNode-${i}`;
-      node.userData.isVertexNode = true;
-      node.userData.nodeType = "sphere";
-      node.userData.nodeRadius = nodeRadius;
       group.add(node);
     }
-    console.log("   ✓ Added", idealVertices.length - 1, "CYAN vertex nodes (ideal)");
+
+    // Small white nodes at all projected points (showing interior vs hull)
+    const projNodeMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.4,
+    });
+    const smallNodeGeom = new THREE.SphereGeometry(nodeRadius * 0.5, 8, 8);
+
+    projected3D.forEach((p, i) => {
+      const node = new THREE.Mesh(smallNodeGeom, projNodeMaterial.clone());
+      node.position.copy(p);
+      node.name = `projectedPoint-${i}`;
+      group.add(node);
+    });
+
+    console.log("   ✓ Added vertex nodes (yellow=hull, cyan=ideal, white=all projected)");
 
     // ═══════════════════════════════════════════════════════════════════════
     // FINAL SETUP
     // ═══════════════════════════════════════════════════════════════════════
-    group.renderOrder = 999;
     scene.add(group);
-    console.log("   ✓ DUAL overlay added to scene (FIXED in projection plane)");
-
     RTPapercut._primePolygonGroup = group;
     RTPapercut._primePolygonVisible = true;
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 4. ACTIVATE CUTPLANE at the projection plane orientation
-    // ═══════════════════════════════════════════════════════════════════════
-    RTPapercut._activatePrimeProjectionCutplane(n, scene, planeNormal);
-
-    // Log comparison info
-    console.log(`📐 DUAL Prime polygon overlay: ${n}-gon at radius ${radius}`);
-    console.log(`   YELLOW: Actual projection (${actualVertices.length - 1} vertices, irregular, includes collinear)`);
-    console.log(`   CYAN: Ideal regular ${n}-gon (classical trig reference)`);
-    console.log(`   Cutplane ACTIVE at projection plane - orbit to see 3D intersection`);
+    console.log(`📐 Projection visualization complete:`);
+    console.log(`   Source: ${worldVertices.length} vertices from Quadray Truncated Tetrahedron`);
+    console.log(`   Projection: ${hull2D.length}-vertex hull (YELLOW) vs ${n}-vertex ideal (CYAN)`);
+    console.log(`   Plane distance: ${planeDistance} units from polyhedron center`);
 
     // Update UI info display
     RTPapercut._updateProjectionInfo(n);
+  },
+
+  /**
+   * Extract world-space vertices from a polyhedron group
+   * @param {THREE.Group} group - The polyhedron group
+   * @returns {Array<THREE.Vector3>} World-space vertices
+   */
+  _getWorldVerticesFromGroup: function (group) {
+    const vertices = [];
+    const seen = new Set();
+
+    group.traverse(obj => {
+      if (obj.geometry && obj.geometry.attributes?.position) {
+        const posAttr = obj.geometry.attributes.position;
+        obj.updateMatrixWorld(true);
+
+        for (let i = 0; i < posAttr.count; i++) {
+          const v = new THREE.Vector3(
+            posAttr.getX(i),
+            posAttr.getY(i),
+            posAttr.getZ(i)
+          );
+          v.applyMatrix4(obj.matrixWorld);
+
+          // Deduplicate using string key
+          const key = `${v.x.toFixed(6)},${v.y.toFixed(6)},${v.z.toFixed(6)}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            vertices.push(v);
+          }
+        }
+      }
+    });
+
+    return vertices;
   },
 
   /**
