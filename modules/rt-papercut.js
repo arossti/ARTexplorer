@@ -9,6 +9,7 @@
  * - SVG export via browser print
  */
 
+import * as THREE from "three";
 import { Line2 } from "three/addons/lines/Line2.js";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineGeometry } from "three/addons/lines/LineGeometry.js";
@@ -1091,5 +1092,246 @@ export const RTPapercut = {
     if (RTPapercut.state.cutplaneEnabled) {
       RTPapercut.updateCutplane(RTPapercut.state.cutplaneValue, scene);
     }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PRIME PROJECTION POLYGON OVERLAY
+  // Shows unit-radius regular n-gon to demonstrate prime projection hypothesis
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  _primePolygonGroup: null,
+  _primePolygonVisible: false,
+
+  /**
+   * Create a regular n-gon in the camera's view plane
+   * Uses RT-pure methodology: generates vertices at exact rational spreads
+   *
+   * @param {number} n - Number of sides (7 for heptagon, 9 for nonagon, etc.)
+   * @param {number} radius - Polygon radius (default: 1.0 for unit polygon)
+   * @param {THREE.Camera} camera - Camera to align polygon perpendicular to view
+   * @returns {Array<THREE.Vector3>} Polygon vertices
+   */
+  _createRegularPolygonVertices: function (n, radius, camera) {
+    console.log("🔍 _createRegularPolygonVertices:", { n, radius, camera: !!camera });
+    const vertices = [];
+
+    // Get the view plane basis vectors (perpendicular to camera direction)
+    const viewDir = new THREE.Vector3();
+    camera.getWorldDirection(viewDir);
+    console.log("   viewDir:", viewDir.x.toFixed(3), viewDir.y.toFixed(3), viewDir.z.toFixed(3));
+
+    // Create orthonormal basis in view plane
+    const up = camera.up.clone().normalize();
+    console.log("   camera.up:", up.x.toFixed(3), up.y.toFixed(3), up.z.toFixed(3));
+
+    const right = new THREE.Vector3().crossVectors(viewDir, up).normalize();
+    console.log("   right:", right.x.toFixed(3), right.y.toFixed(3), right.z.toFixed(3), "length:", right.length().toFixed(3));
+
+    const planeUp = new THREE.Vector3().crossVectors(right, viewDir).normalize();
+    console.log("   planeUp:", planeUp.x.toFixed(3), planeUp.y.toFixed(3), planeUp.z.toFixed(3), "length:", planeUp.length().toFixed(3));
+
+    // Check for degenerate basis (if right or planeUp is zero/NaN)
+    if (right.length() < 0.001 || planeUp.length() < 0.001 || isNaN(right.x) || isNaN(planeUp.x)) {
+      console.error("❌ Degenerate basis vectors! right length:", right.length(), "planeUp length:", planeUp.length());
+    }
+
+    // Generate n vertices at equal angular spacing
+    // Spread between adjacent vertices: s = sin²(π/n)
+    // This is the RT-pure representation of the angular step
+    for (let i = 0; i <= n; i++) {
+      const angle = (2 * Math.PI * i) / n;
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
+
+      // Project onto view plane (centered at origin)
+      const vertex = new THREE.Vector3()
+        .addScaledVector(right, x)
+        .addScaledVector(planeUp, y);
+
+      vertices.push(vertex);
+    }
+
+    console.log("   Generated", vertices.length, "vertices");
+    return vertices;
+  },
+
+  /**
+   * Show or hide the prime projection polygon overlay
+   *
+   * @param {number|null} n - Number of sides (7, 9, etc.) or null to hide
+   * @param {THREE.Scene} scene - Scene to add/remove polygon from
+   * @param {THREE.Camera} camera - Camera for view plane alignment
+   * @param {number} radius - Polygon radius (default: 1.5 to encompass typical polyhedra)
+   */
+  showPrimePolygon: function (n, scene, camera, radius = 1.5) {
+    console.log("🔍 showPrimePolygon called with:", { n, scene: !!scene, camera: !!camera, radius });
+
+    // Validate inputs
+    if (!scene) {
+      console.error("❌ showPrimePolygon: scene is undefined!");
+      return;
+    }
+    if (!camera) {
+      console.error("❌ showPrimePolygon: camera is undefined!");
+      return;
+    }
+
+    // Remove existing polygon if any
+    if (RTPapercut._primePolygonGroup) {
+      console.log("🧹 Removing existing polygon group");
+      scene.remove(RTPapercut._primePolygonGroup);
+      RTPapercut._primePolygonGroup.traverse(child => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+      });
+      RTPapercut._primePolygonGroup = null;
+    }
+
+    // If n is null, just hide (already removed above)
+    if (!n) {
+      RTPapercut._primePolygonVisible = false;
+      RTPapercut._hideProjectionInfo();
+      console.log("📐 Prime polygon overlay hidden");
+      return;
+    }
+
+    // Create new polygon group
+    console.log("🔨 Creating new polygon group for", n, "-gon");
+    const group = new THREE.Group();
+    group.name = `primePolygon-${n}`;
+    console.log("   ✓ Group created:", group.name);
+
+    // Create vertices
+    const vertices = RTPapercut._createRegularPolygonVertices(n, radius, camera);
+    console.log("   ✓ Vertices created:", vertices.length, "points");
+    if (vertices.length > 0) {
+      console.log("   First vertex:", vertices[0].x.toFixed(3), vertices[0].y.toFixed(3), vertices[0].z.toFixed(3));
+      console.log("   Last vertex:", vertices[vertices.length-1].x.toFixed(3), vertices[vertices.length-1].y.toFixed(3), vertices[vertices.length-1].z.toFixed(3));
+    }
+
+    // Create line geometry from vertices
+    const positions = [];
+    vertices.forEach(v => positions.push(v.x, v.y, v.z));
+    console.log("   ✓ Positions array length:", positions.length, "(expecting", (n+1)*3, ")");
+
+    const lineGeometry = new LineGeometry();
+    lineGeometry.setPositions(positions);
+    console.log("   ✓ LineGeometry created");
+
+    // Create line material (cyan/teal for visibility)
+    // worldUnits: true makes linewidth work in world units instead of pixels
+    const lineMaterial = new LineMaterial({
+      color: 0x00ffff,
+      linewidth: 0.015, // World units (not pixels) when worldUnits: true
+      worldUnits: true, // CRITICAL: interpret linewidth as world units
+      transparent: true,
+      opacity: 0.9,
+      depthTest: false, // Always visible
+      depthWrite: false,
+    });
+    lineMaterial.resolution.set(window.innerWidth, window.innerHeight);
+    console.log("   ✓ LineMaterial created, resolution:", window.innerWidth, "x", window.innerHeight, "linewidth:", lineMaterial.linewidth);
+
+    const line = new Line2(lineGeometry, lineMaterial);
+    line.computeLineDistances();
+    line.renderOrder = 999; // Render on top of everything
+    console.log("   ✓ Line2 created, renderOrder:", line.renderOrder);
+
+    group.add(line);
+    group.renderOrder = 999; // Group also on top
+    console.log("   ✓ Line added to group, group.children:", group.children.length);
+
+    // Add to scene
+    scene.add(group);
+    console.log("   ✓ Group added to scene, scene.children count:", scene.children.length);
+
+    RTPapercut._primePolygonGroup = group;
+    RTPapercut._primePolygonVisible = true;
+
+    // Log RT-pure spread information
+    const spreadBetweenVertices = Math.pow(Math.sin(Math.PI / n), 2);
+    console.log(`📐 Prime polygon overlay: ${n}-gon at radius ${radius}`);
+    console.log(`   Adjacent vertex spread: s = sin²(π/${n}) ≈ ${spreadBetweenVertices.toFixed(6)}`);
+    console.log(`   Non-constructible polygon demonstrating prime projection`);
+
+    // Debug: check if group is in scene
+    const inScene = scene.children.includes(group);
+    console.log("   🔍 Group in scene.children:", inScene);
+    console.log("   🔍 Group world position:", group.position.x, group.position.y, group.position.z);
+
+    // Update UI info display with Quadray projection formula
+    RTPapercut._updateProjectionInfo(n);
+  },
+
+  /**
+   * Update the prime projection info display with Quadray formula
+   * @param {number} n - Number of sides
+   */
+  _updateProjectionInfo: function (n) {
+    const infoContainer = document.getElementById("primeProjectionInfo");
+    const formulaSpan = document.getElementById("primeProjectionFormula");
+    if (!infoContainer || !formulaSpan) return;
+
+    let formulaText = "";
+
+    switch (n) {
+      case 7:
+        // 7-gon: Non-constructible prime from truncated tetrahedron
+        // Quadray coords: {2,1,0,0} permutations (12 vertices, ALL RATIONAL)
+        // Viewing spreads: s=(0.11, 0, 0.5) → 7-vertex hull
+        formulaText =
+          "7-gon: Quadray {2,1,0,0}/3 → s=(0.11,0,½)\n" +
+          "Trunc Tet: 12v → 7-hull (non-constructible)";
+        break;
+
+      case 5:
+        // 5-gon: Fermat prime (φ-constructible) from icosahedron axis
+        // Viewing spreads: s=(0, 0, 0.5)
+        // Pentagon spread: s = (5-√5)/8 = sin²(π/5)
+        formulaText =
+          "5-gon: Icosa axis → s=(0,0,½)\n" +
+          "φ-constructible: s = (5-√5)/8";
+        break;
+
+      default:
+        // Generic n-gon info
+        const s = Math.pow(Math.sin(Math.PI / n), 2);
+        formulaText = `${n}-gon: s = sin²(π/${n}) ≈ ${s.toFixed(4)}`;
+    }
+
+    formulaSpan.textContent = formulaText;
+    infoContainer.style.display = "block";
+    infoContainer.style.whiteSpace = "pre-line"; // Preserve line breaks
+  },
+
+  /**
+   * Hide the prime projection info display
+   */
+  _hideProjectionInfo: function () {
+    const infoContainer = document.getElementById("primeProjectionInfo");
+    if (infoContainer) {
+      infoContainer.style.display = "none";
+    }
+  },
+
+  /**
+   * Update polygon orientation to match camera (call on camera change)
+   * @param {THREE.Scene} scene
+   * @param {THREE.Camera} camera
+   */
+  updatePrimePolygonOrientation: function (scene, camera) {
+    if (!RTPapercut._primePolygonVisible || !RTPapercut._primePolygonGroup) {
+      return;
+    }
+
+    // Extract n from group name
+    const match = RTPapercut._primePolygonGroup.name.match(/primePolygon-(\d+)/);
+    if (!match) return;
+
+    const n = parseInt(match[1]);
+    const radius = 1.5; // Default radius
+
+    // Recreate polygon with new orientation
+    RTPapercut.showPrimePolygon(n, scene, camera, radius);
   },
 };

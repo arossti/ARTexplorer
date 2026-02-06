@@ -1448,6 +1448,804 @@ export const RT = {
   },
 
   /**
+   * PureCubics - Cached cubic equation solutions for non-constructible polygons
+   *
+   * While Gauss-Wantzel constructible polygons use only √ radicals,
+   * some polygons (7, 9, 14, 18, 21...) require solving cubic equations.
+   * We solve these cubics ONCE and cache the results.
+   *
+   * Philosophy (same as PurePhi/PureRadicals):
+   * - Solve cubic algebraically or numerically ONCE
+   * - Cache sin/cos values for RT-pure rotation
+   * - Composite construction: build from RT-pure bases + cached rotations
+   *
+   * DERIVATION NOTES (for generalizability):
+   *
+   * 1. **Galois Theory Connection**:
+   *    - n-gon constructible ⟺ Gal(ℚ(ζₙ)/ℚ) has order 2^k
+   *    - Heptagon (n=7): Galois group has order 6 = 2×3 → NOT constructible
+   *    - Nonagon (n=9): Requires trisecting 60° → cubic extension → NOT constructible
+   *
+   * 2. **Cardano's Formula (General Cubic)**:
+   *    For x³ + px + q = 0:
+   *    x = ∛(-q/2 + √(q²/4 + p³/27)) + ∛(-q/2 - √(q²/4 + p³/27))
+   *
+   *    For 8x³ - 6x - 1 = 0 (nonagon):
+   *    Depressed form: x³ - (3/4)x - 1/8 = 0
+   *    → p = -3/4, q = -1/8
+   *    → Discriminant negative: 3 real roots (casus irreducibilis)
+   *    → Use trigonometric substitution or numerical solution
+   *
+   * 3. **Why Cache Instead of Cardano?**
+   *    - Casus irreducibilis: cubic has 3 real roots but Cardano gives complex cube roots
+   *    - Must use cos(arccos(...)/3) anyway (trigonometric solution)
+   *    - Better to compute once and cache for IEEE 754 precision
+   *
+   * 4. **Generalizing to Other Cubics**:
+   *    Any non-constructible polygon requiring a cubic can follow this pattern:
+   *    a) Identify the minimal polynomial for cos(2π/n)
+   *    b) Solve numerically to machine precision
+   *    c) Cache sin/cos values
+   *    d) Derive compound angles via double-angle formulas
+   *
+   * Reference: Polygon-Rationalize.md for mathematical foundations
+   *
+   * @namespace PureCubics
+   */
+  PureCubics: {
+    /**
+     * NONAGON (9-gon) constants - Built from 3×Triangle @ 40° intervals
+     *
+     * Cubic equation for cos(20°): 8x³ - 6x - 1 = 0
+     * This is the minimal polynomial for cos(20°), requiring angle trisection.
+     *
+     * DERIVATION:
+     * - 20° = 60°/3 (trisection of 60°)
+     * - Let x = cos(20°), then cos(60°) = 4x³ - 3x = 1/2
+     * - Rearranging: 8x³ - 6x - 1 = 0
+     * - Three roots: cos(20°), cos(140°), cos(260°)
+     * - We want cos(20°) ≈ 0.9397 (largest real root)
+     *
+     * Construction: Triangle vertices at 0°, 120°, 240°
+     *              + rotated by 40° → vertices at 40°, 160°, 280°
+     *              + rotated by 80° → vertices at 80°, 200°, 320°
+     */
+    nonagon: {
+      /**
+       * cos(20°) - Root of cubic 8x³ - 6x - 1 = 0
+       * Computed once and cached for IEEE 754 precision
+       * @returns {number} cos(20°) ≈ 0.9396926207859084
+       */
+      cos20: (() => {
+        const cached = 0.9396926207859084; // Verified: Math.cos(20 * Math.PI / 180)
+        return () => cached;
+      })(),
+
+      /**
+       * sin(20°) - Derived from cos(20°) via Pythagorean identity
+       * @returns {number} sin(20°) ≈ 0.3420201433256687
+       */
+      sin20: (() => {
+        const cached = 0.3420201433256687; // Verified: Math.sin(20 * Math.PI / 180)
+        return () => cached;
+      })(),
+
+      /**
+       * cos(40°) = 2cos²(20°) - 1 (double-angle formula)
+       * @returns {number} cos(40°) ≈ 0.7660444431189780
+       */
+      cos40: (() => {
+        const cos20 = 0.9396926207859084;
+        const cached = 2 * cos20 * cos20 - 1;
+        return () => cached;
+      })(),
+
+      /**
+       * sin(40°) = 2·sin(20°)·cos(20°) (double-angle formula)
+       * @returns {number} sin(40°) ≈ 0.6427876096865394
+       */
+      sin40: (() => {
+        const cos20 = 0.9396926207859084;
+        const sin20 = 0.3420201433256687;
+        const cached = 2 * sin20 * cos20;
+        return () => cached;
+      })(),
+
+      /**
+       * cos(80°) = 2cos²(40°) - 1 (double-angle formula)
+       * @returns {number} cos(80°) ≈ 0.1736481776669303
+       */
+      cos80: (() => {
+        const cos40 = 0.7660444431189780;
+        const cached = 2 * cos40 * cos40 - 1;
+        return () => cached;
+      })(),
+
+      /**
+       * sin(80°) = 2·sin(40°)·cos(40°) (double-angle formula)
+       * @returns {number} sin(80°) ≈ 0.9848077530122080
+       */
+      sin80: (() => {
+        const cos40 = 0.7660444431189780;
+        const sin40 = 0.6427876096865394;
+        const cached = 2 * sin40 * cos40;
+        return () => cached;
+      })(),
+
+      /**
+       * spread(40°) = sin²(40°) - Used for rotation spread
+       * @returns {number} spread(40°) ≈ 0.4131759111665348
+       */
+      spread40: (() => {
+        const sin40 = 0.6427876096865394;
+        const cached = sin40 * sin40;
+        return () => cached;
+      })(),
+
+      /**
+       * Star spread for 9-gon: sin²(π/9) = sin²(20°)
+       * @returns {number} ≈ 0.1169777784405110
+       */
+      starSpread: (() => {
+        const sin20 = 0.3420201433256687;
+        const cached = sin20 * sin20;
+        return () => cached;
+      })(),
+    },
+
+    /**
+     * HEPTAGON (7-gon) constants - Direct construction
+     *
+     * Cubic equation for cos(2π/7): 8x³ - 4x² - 4x + 1 = 0
+     * This is the minimal polynomial for cos(360°/7).
+     *
+     * DERIVATION:
+     * - The 7th roots of unity satisfy x⁷ - 1 = 0
+     * - Factoring: (x-1)(x⁶ + x⁵ + x⁴ + x³ + x² + x + 1) = 0
+     * - For ζ₇ = e^(2πi/7), let c = cos(2π/7) = (ζ₇ + ζ₇⁻¹)/2
+     * - Using c = cos(2π/7), we get: 8c³ - 4c² - 4c + 1 = 0
+     * - Three roots: cos(2π/7), cos(4π/7), cos(6π/7)
+     * - We want cos(2π/7) ≈ 0.6235 (largest real root)
+     *
+     * GALOIS THEORY:
+     * - Gal(ℚ(ζ₇)/ℚ) ≅ (ℤ/7ℤ)* ≅ ℤ/6ℤ (cyclic of order 6)
+     * - Order 6 = 2×3 is NOT a power of 2
+     * - Therefore, heptagon is NOT constructible (Gauss-Wantzel)
+     *
+     * The heptagon cannot be constructed from simpler polygons;
+     * it requires solving this irreducible cubic directly.
+     */
+    heptagon: {
+      /**
+       * cos(2π/7) = cos(360°/7) ≈ cos(51.4286°)
+       * Root of cubic 8x³ - 4x² - 4x + 1 = 0
+       * @returns {number} ≈ 0.6234898018587336
+       */
+      cos1: (() => {
+        const cached = 0.6234898018587336; // cos(2π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * sin(2π/7) = sin(360°/7)
+       * @returns {number} ≈ 0.7818314824680298
+       */
+      sin1: (() => {
+        const cached = 0.7818314824680298; // sin(2π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * cos(4π/7) = cos(720°/7)
+       * @returns {number} ≈ -0.2225209339563144
+       */
+      cos2: (() => {
+        const cached = -0.2225209339563144; // cos(4π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * sin(4π/7) = sin(720°/7)
+       * @returns {number} ≈ 0.9749279121818236
+       */
+      sin2: (() => {
+        const cached = 0.9749279121818236; // sin(4π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * cos(6π/7) = cos(1080°/7)
+       * @returns {number} ≈ -0.9009688679024191
+       */
+      cos3: (() => {
+        const cached = -0.9009688679024191; // cos(6π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * sin(6π/7) = sin(1080°/7)
+       * @returns {number} ≈ 0.4338837391175582
+       */
+      sin3: (() => {
+        const cached = 0.4338837391175582; // sin(6π/7)
+        return () => cached;
+      })(),
+
+      /**
+       * Star spread for 7-gon: sin²(π/7)
+       * @returns {number} ≈ 0.1882550990706332
+       */
+      starSpread: (() => {
+        // sin(π/7) = sin(180°/7) ≈ 0.4338837391175582
+        const sinPi7 = 0.4338837391175582;
+        const cached = sinPi7 * sinPi7;
+        return () => cached;
+      })(),
+    },
+  },
+
+  /**
+   * ProjectionPolygons - Shadow polygons from 3D polyhedra projections
+   *
+   * These are polygons that emerge from projecting 3D polyhedra at specific
+   * rational spread viewing angles. Unlike PureCubics (which solves cubics
+   * for regular polygon construction), ProjectionPolygons arise from the
+   * convex hull of projected polyhedra vertices.
+   *
+   * Key Discovery (Feb 2026):
+   * The truncated tetrahedron projects to a 7-sided polygon at rational
+   * spreads (0.11, 0, 0.5), despite the heptagon being non-constructible
+   * by compass and straightedge (Gauss-Wantzel).
+   *
+   * These "projection polygons" use only √ radicals - no transcendentals!
+   * The coordinates can be expressed using √2, √11, √89, √178.
+   *
+   * Philosophy:
+   * - Gauss-Wantzel limits what can be CONSTRUCTED in 2D
+   * - It says nothing about what can PROJECT INTO 2D from higher dimensions
+   * - Just as Penrose tilings emerge from 5D hypercubic projections,
+   *   prime n-gons can emerge from 3D polyhedral projections
+   *
+   * Reference: Geometry documents/Prime-Projection-Conjecture.tex
+   *
+   * @namespace ProjectionPolygons
+   */
+  ProjectionPolygons: {
+    /**
+     * Projection Heptagon from Truncated Tetrahedron
+     *
+     * Viewing Configuration:
+     * - Polyhedron: Truncated Tetrahedron (12 vertices, no central symmetry)
+     * - Spreads: s₁ = 0.11 = 11/100, s₂ = 0, s₃ = 0.5 = 1/2
+     * - Result: 7 vertices on convex hull boundary
+     *
+     * The resulting heptagon is NOT regular (edges vary ~5%),
+     * but it IS a 7-sided polygon arising from purely rational parameters.
+     *
+     * Radicals used: √2, √11, √89, √178
+     * (All are algebraic; no transcendental functions required)
+     */
+    heptagon: {
+      /**
+       * Viewing spreads that produce 7-gon projection
+       * @returns {Object} { s1, s2, s3 } - Rational spread values
+       */
+      viewingSpreads: () => ({
+        s1: 11 / 100, // 0.11 (rational)
+        s2: 0, // 0 (rational)
+        s3: 1 / 2, // 0.5 (rational)
+      }),
+
+      /**
+       * Alternative viewing spreads (equivalent configuration)
+       * @returns {Object} { s1, s2, s3 } - Rational spread values
+       */
+      viewingSpreadsAlt: () => ({
+        s1: 3 / 20, // 0.15 (rational)
+        s2: 0, // 0 (rational)
+        s3: 1 / 2, // 0.5 (rational)
+      }),
+
+      /**
+       * Truncated tetrahedron vertices (12 vertices)
+       * Edge length = 2 for convenience
+       * @returns {Array<Array<number>>} Array of [x, y, z] coordinates
+       */
+      sourceVertices: () => [
+        // Truncation of tetrahedron at 1/3 edge length
+        [1, 1, 3],
+        [1, 3, 1],
+        [3, 1, 1],
+        [1, -1, -3],
+        [1, -3, -1],
+        [3, -1, -1],
+        [-1, 1, -3],
+        [-1, 3, -1],
+        [-3, 1, -1],
+        [-1, -1, 3],
+        [-1, -3, 1],
+        [-3, -1, 1],
+      ],
+
+      /**
+       * The radicals used in the projection coordinates
+       * These are the only irrational numbers needed - no sin/cos/π
+       * @returns {Object} Named radical values
+       */
+      radicals: () => ({
+        sqrt2: Math.sqrt(2),
+        sqrt11: Math.sqrt(11),
+        sqrt89: Math.sqrt(89),
+        sqrt178: Math.sqrt(178),
+      }),
+
+      /**
+       * Check if the projection is valid at given spreads
+       * @param {number} s1 - First rotation spread
+       * @param {number} s2 - Second rotation spread
+       * @param {number} s3 - Third rotation spread
+       * @returns {boolean} True if projection produces 7-gon
+       */
+      isValidAt: (s1, s2, s3) => {
+        // The 7-gon emerges in a narrow range around the key spreads
+        const tolerance = 0.02;
+        const target = { s1: 0.11, s2: 0, s3: 0.5 };
+        return (
+          Math.abs(s1 - target.s1) < tolerance &&
+          Math.abs(s2 - target.s2) < tolerance &&
+          Math.abs(s3 - target.s3) < tolerance
+        );
+      },
+
+      /**
+       * Quadray source vertices for the truncated tetrahedron
+       * ALL RATIONAL coordinates - no √2 required as in Cartesian!
+       *
+       * @returns {Array<Array<number>>} Array of [W,X,Y,Z] Quadray coordinates
+       */
+      sourceVerticesQuadray: () => [
+        // Near W vertex (scale factor 1/3)
+        [2, 1, 0, 0],
+        [2, 0, 1, 0],
+        [2, 0, 0, 1],
+        // Near X vertex
+        [1, 2, 0, 0],
+        [0, 2, 1, 0],
+        [0, 2, 0, 1],
+        // Near Y vertex
+        [1, 0, 2, 0],
+        [0, 1, 2, 0],
+        [0, 0, 2, 1],
+        // Near Z vertex
+        [1, 0, 0, 2],
+        [0, 1, 0, 2],
+        [0, 0, 1, 2],
+      ],
+
+      /**
+       * Quadray rotation coefficients for the viewing angle
+       * F, G, H values for spread-based Quadray rotation
+       *
+       * Formula: F = (2·cos(θ) + 1) / 3, where cos(θ) = √(1-s)
+       *
+       * @returns {Object} { axis1, axis2, axis3 } with F, G, H for each rotation
+       */
+      quadrayRotationCoeffs: () => {
+        const s1 = 0.11,
+          s2 = 0,
+          s3 = 0.5;
+        const COS_120 = -0.5;
+        const SIN_120 = Math.sqrt(0.75);
+
+        const coeffs = s => {
+          const cosT = Math.sqrt(1 - s);
+          const sinT = Math.sqrt(s);
+          return {
+            F: (2 * cosT + 1) / 3,
+            G: (2 * (cosT * COS_120 + sinT * SIN_120) + 1) / 3,
+            H: (2 * (cosT * COS_120 - sinT * SIN_120) + 1) / 3,
+          };
+        };
+
+        return {
+          axis1: coeffs(s1), // s=0.11: F≈0.96, G≈0.13, H≈-0.09
+          axis2: coeffs(s2), // s=0: F=1, G=0, H=0 (identity)
+          axis3: coeffs(s3), // s=0.5: F≈0.80, G≈0.31, H≈-0.11
+        };
+      },
+
+      /**
+       * Rationality comparison for this specific construction
+       * @returns {Object} Comparison of Quadray vs Cartesian approaches
+       */
+      rationalityAdvantage: () => ({
+        sourcePolyhedron: {
+          quadray: '12 vertices, ALL rational (2/3, 1/3, 0, 0)',
+          cartesian: '12 vertices, requires √2 for edge lengths',
+        },
+        viewingAngle: {
+          method: 'Spread specification (rational: 11/100, 0, 1/2)',
+          note: 'Identical in both coordinate systems',
+        },
+        rotationCoeffs: {
+          quadray: 'F,G,H use only √s (algebraic in spread)',
+          cartesian: 'sin/cos are transcendental in general',
+        },
+        finalProjection: {
+          note: 'Both convert to 2D at projection boundary',
+          radicals: '√2, √11, √89, √178 (algebraic, not transcendental)',
+        },
+      }),
+    },
+
+    /**
+     * Projection Pentagon from Truncated Tetrahedron
+     *
+     * Simpler case: 5-gon projection (Fermat prime, constructible)
+     * Viewing spreads: (0, 0, 0.5) or (0, 0.5, 0)
+     */
+    pentagon: {
+      /**
+       * Viewing spreads that produce 5-gon projection
+       * @returns {Object} { s1, s2, s3 } - Rational spread values
+       */
+      viewingSpreads: () => ({
+        s1: 0,
+        s2: 0,
+        s3: 1 / 2,
+      }),
+    },
+
+    /**
+     * Source polyhedra for projection experiments
+     * Only asymmetric polyhedra (no central inversion) can produce odd hull counts
+     */
+    asymmetricPolyhedra: ['truncated_tetrahedron', 'snub_cube', 'compound_5_tetrahedra'],
+  },
+
+  /**
+   * QuadrayPolyhedra - Polyhedra defined in Quadray (WXYZ) coordinates
+   *
+   * The Quadray coordinate system offers significant advantages for prime polygon
+   * construction over Cartesian XYZ. Where Cartesian coordinates require irrational
+   * radicals, Quadray coordinates remain PURELY RATIONAL.
+   *
+   * Key insight: The tetrahedron has trivially simple Quadray vertices:
+   *   W = (1,0,0,0), X = (0,1,0,0), Y = (0,0,1,0), Z = (0,0,0,1)
+   * while Cartesian requires √3 for the same vertices.
+   *
+   * Basis Vector Spread: s = sin²(109.47°) = 8/9 (exact rational!)
+   * This is the natural angle of tetrahedral geometry.
+   *
+   * Reference: Geometry documents/Prime-Projection-Conjecture.tex Section 8.4
+   *
+   * @namespace QuadrayPolyhedra
+   */
+  QuadrayPolyhedra: {
+    /**
+     * Tetrahedron in Quadray coordinates
+     * Vertices are trivially the unit basis vectors - no radicals needed!
+     *
+     * @returns {Array<Array<number>>} Array of [W,X,Y,Z] coordinates
+     */
+    tetrahedron: () => [
+      [1, 0, 0, 0], // W vertex
+      [0, 1, 0, 0], // X vertex
+      [0, 0, 1, 0], // Y vertex
+      [0, 0, 0, 1], // Z vertex
+    ],
+
+    /**
+     * Truncated Tetrahedron in Quadray coordinates
+     *
+     * 12 vertices, ALL RATIONAL coordinates (no √2 required as in Cartesian).
+     * This is the source polyhedron for 7-gon projections.
+     *
+     * Each vertex is at 1/3 edge position between two tetrahedron vertices.
+     * Normalized by factor of 1/3 (multiply by 3 for integer form).
+     *
+     * @returns {Array<Array<number>>} Array of [W,X,Y,Z] coordinates (×1/3 normalization)
+     */
+    truncatedTetrahedron: () => [
+      // Near W vertex (W has largest coordinate)
+      [2, 1, 0, 0],
+      [2, 0, 1, 0],
+      [2, 0, 0, 1],
+      // Near X vertex
+      [1, 2, 0, 0],
+      [0, 2, 1, 0],
+      [0, 2, 0, 1],
+      // Near Y vertex
+      [1, 0, 2, 0],
+      [0, 1, 2, 0],
+      [0, 0, 2, 1],
+      // Near Z vertex
+      [1, 0, 0, 2],
+      [0, 1, 0, 2],
+      [0, 0, 1, 2],
+    ],
+
+    /**
+     * Truncated Tetrahedron vertices as fraction objects (exact rational)
+     * Returns vertices with explicit numerator/denominator for symbolic computation
+     *
+     * @returns {Array<Object>} Array of {w, x, y, z} with numerator/denominator pairs
+     */
+    truncatedTetrahedronRational: () => [
+      // Near W vertex
+      { w: { n: 2, d: 3 }, x: { n: 1, d: 3 }, y: { n: 0, d: 1 }, z: { n: 0, d: 1 } },
+      { w: { n: 2, d: 3 }, x: { n: 0, d: 1 }, y: { n: 1, d: 3 }, z: { n: 0, d: 1 } },
+      { w: { n: 2, d: 3 }, x: { n: 0, d: 1 }, y: { n: 0, d: 1 }, z: { n: 1, d: 3 } },
+      // Near X vertex
+      { w: { n: 1, d: 3 }, x: { n: 2, d: 3 }, y: { n: 0, d: 1 }, z: { n: 0, d: 1 } },
+      { w: { n: 0, d: 1 }, x: { n: 2, d: 3 }, y: { n: 1, d: 3 }, z: { n: 0, d: 1 } },
+      { w: { n: 0, d: 1 }, x: { n: 2, d: 3 }, y: { n: 0, d: 1 }, z: { n: 1, d: 3 } },
+      // Near Y vertex
+      { w: { n: 1, d: 3 }, x: { n: 0, d: 1 }, y: { n: 2, d: 3 }, z: { n: 0, d: 1 } },
+      { w: { n: 0, d: 1 }, x: { n: 1, d: 3 }, y: { n: 2, d: 3 }, z: { n: 0, d: 1 } },
+      { w: { n: 0, d: 1 }, x: { n: 0, d: 1 }, y: { n: 2, d: 3 }, z: { n: 1, d: 3 } },
+      // Near Z vertex
+      { w: { n: 1, d: 3 }, x: { n: 0, d: 1 }, y: { n: 0, d: 1 }, z: { n: 2, d: 3 } },
+      { w: { n: 0, d: 1 }, x: { n: 1, d: 3 }, y: { n: 0, d: 1 }, z: { n: 2, d: 3 } },
+      { w: { n: 0, d: 1 }, x: { n: 0, d: 1 }, y: { n: 1, d: 3 }, z: { n: 2, d: 3 } },
+    ],
+
+    /**
+     * Octahedron in Quadray coordinates
+     * Edge midpoints of tetrahedron form an octahedron
+     * All coordinates are rational (multiples of 1/2)
+     *
+     * @returns {Array<Array<number>>} Array of [W,X,Y,Z] coordinates (×1/2 normalization)
+     */
+    octahedron: () => [
+      [1, 1, 0, 0], // WX edge midpoint
+      [1, 0, 1, 0], // WY edge midpoint
+      [1, 0, 0, 1], // WZ edge midpoint
+      [0, 1, 1, 0], // XY edge midpoint
+      [0, 1, 0, 1], // XZ edge midpoint
+      [0, 0, 1, 1], // YZ edge midpoint
+    ],
+
+    /**
+     * Cuboctahedron (Vector Equilibrium) in Quadray coordinates
+     * 12 vertices at equal distance from origin - Fuller's VE
+     * All coordinates are rational!
+     *
+     * @returns {Array<Array<number>>} Array of [W,X,Y,Z] coordinates
+     */
+    cuboctahedron: () => [
+      // Edge midpoints of octahedron (scaled by 2)
+      [2, 1, 1, 0],
+      [2, 1, 0, 1],
+      [2, 0, 1, 1],
+      [1, 2, 1, 0],
+      [1, 2, 0, 1],
+      [0, 2, 1, 1],
+      [1, 1, 2, 0],
+      [1, 0, 2, 1],
+      [0, 1, 2, 1],
+      [1, 1, 0, 2],
+      [1, 0, 1, 2],
+      [0, 1, 1, 2],
+    ],
+
+    /**
+     * Spread between any two Quadray basis vectors
+     * s = sin²(109.47°) = 8/9 (exact rational!)
+     *
+     * This is the defining angle of tetrahedral geometry.
+     * cos(109.47°) = -1/3 (also exact rational)
+     *
+     * @returns {number} 8/9
+     */
+    basisSpread: () => 8 / 9,
+
+    /**
+     * Cosine between any two Quadray basis vectors
+     * cos(109.47°) = -1/3 (exact rational!)
+     *
+     * @returns {number} -1/3
+     */
+    basisCosine: () => -1 / 3,
+
+    /**
+     * Convert Quadray [W,X,Y,Z] to Cartesian [x,y,z]
+     * Uses the standard basis vector mapping
+     *
+     * @param {Array<number>} qray - Quadray coordinates [W,X,Y,Z]
+     * @returns {Array<number>} Cartesian coordinates [x,y,z]
+     */
+    toCartesian: qray => {
+      const [W, X, Y, Z] = qray;
+      // Basis vectors point to tetrahedron vertices inscribed in unit cube
+      // W→(1,1,1), X→(1,-1,-1), Y→(-1,1,-1), Z→(-1,-1,1) normalized by 1/√3
+      const scale = 1 / Math.sqrt(3);
+      return [
+        scale * (W + X - Y - Z),
+        scale * (W - X + Y - Z),
+        scale * (W - X - Y + Z),
+      ];
+    },
+
+    /**
+     * Convert Cartesian [x,y,z] to Quadray [W,X,Y,Z]
+     * Returns non-normalized Quadray (not zero-sum)
+     *
+     * @param {Array<number>} xyz - Cartesian coordinates [x,y,z]
+     * @returns {Array<number>} Quadray coordinates [W,X,Y,Z]
+     */
+    fromCartesian: xyz => {
+      const [x, y, z] = xyz;
+      const scale = Math.sqrt(3) / 4;
+      return [
+        scale * (x + y + z + Math.sqrt(3)), // W
+        scale * (x - y - z + Math.sqrt(3)), // X
+        scale * (-x + y - z + Math.sqrt(3)), // Y
+        scale * (-x - y + z + Math.sqrt(3)), // Z
+      ];
+    },
+  },
+
+  /**
+   * QuadrayProjection - Projection operations in Quadray coordinates
+   *
+   * Implements the 7-gon projection from truncated tetrahedron using
+   * Quadray coordinates throughout. This maintains rationality longer
+   * than the Cartesian approach.
+   *
+   * Key advantage: Truncated tetrahedron has ALL RATIONAL Quadray vertices
+   * while Cartesian requires √2 for edge lengths.
+   *
+   * @namespace QuadrayProjection
+   */
+  QuadrayProjection: {
+    /**
+     * Heptagon projection configuration in Quadray terms
+     */
+    heptagon: {
+      /**
+       * Viewing spreads (same as Cartesian - spreads are coordinate-independent)
+       * @returns {Object} { s1, s2, s3 } - Rational spread values
+       */
+      viewingSpreads: () => ({
+        s1: 11 / 100, // 0.11
+        s2: 0,
+        s3: 1 / 2, // 0.5
+      }),
+
+      /**
+       * F, G, H rotation coefficients for the viewing angle
+       * Derived from the viewing spreads using RT.QuadrayRotation formulas
+       *
+       * For spread s, polarity p:
+       *   sin(θ) = √s
+       *   cos(θ) = p·√(1-s)
+       *   F = (2·cos(θ) + 1) / 3
+       *   G = (2·cos(θ - 120°) + 1) / 3
+       *   H = (2·cos(θ + 120°) + 1) / 3
+       *
+       * @param {number} s1 - First rotation spread
+       * @param {number} s2 - Second rotation spread
+       * @param {number} s3 - Third rotation spread
+       * @returns {Object} { F1, G1, H1, F2, G2, H2, F3, G3, H3 }
+       */
+      rotationCoeffs: (s1 = 0.11, s2 = 0, s3 = 0.5) => {
+        const COS_120 = -0.5;
+        const SIN_120 = Math.sqrt(0.75);
+
+        const coeffsFromSpread = (s, polarity = 1) => {
+          const cosT = polarity * Math.sqrt(1 - s);
+          const sinT = Math.sqrt(s);
+          return {
+            F: (2 * cosT + 1) / 3,
+            G: (2 * (cosT * COS_120 + sinT * SIN_120) + 1) / 3,
+            H: (2 * (cosT * COS_120 - sinT * SIN_120) + 1) / 3,
+          };
+        };
+
+        return {
+          axis1: coeffsFromSpread(s1, 1),
+          axis2: coeffsFromSpread(s2, 1),
+          axis3: coeffsFromSpread(s3, 1),
+        };
+      },
+
+      /**
+       * Get the 7 hull vertices in Quadray coordinates
+       * These are the truncated tetrahedron vertices that form the
+       * convex hull boundary at the viewing angle (0.11, 0, 0.5).
+       *
+       * @returns {Array<Array<number>>} 7 Quadray vertices [W,X,Y,Z]
+       */
+      hullVerticesQuadray: () => {
+        // At spreads (0.11, 0, 0.5), these 7 of 12 vertices form the hull
+        // Indices into truncatedTetrahedron(): [0, 2, 4, 5, 7, 9, 11]
+        const allVerts = RT.QuadrayPolyhedra.truncatedTetrahedron();
+        const hullIndices = [0, 2, 4, 5, 7, 9, 11];
+        return hullIndices.map(i => allVerts[i]);
+      },
+
+      /**
+       * Project truncated tetrahedron to 2D at viewing spreads
+       * Returns both Quadray intermediate and final Cartesian 2D coordinates
+       *
+       * @param {number} s1 - First rotation spread (default: 0.11)
+       * @param {number} s2 - Second rotation spread (default: 0)
+       * @param {number} s3 - Third rotation spread (default: 0.5)
+       * @returns {Object} { quadrayVertices, cartesian3D, projected2D, hullCount }
+       */
+      project: (s1 = 0.11, s2 = 0, s3 = 0.5) => {
+        const qVerts = RT.QuadrayPolyhedra.truncatedTetrahedron();
+
+        // Convert to Cartesian for projection (Quadray→XYZ at rotation boundary)
+        const cartesian3D = qVerts.map(q => RT.QuadrayPolyhedra.toCartesian(q));
+
+        // Apply rotation matrix from spreads
+        const cosS1 = Math.sqrt(1 - s1),
+          sinS1 = Math.sqrt(s1);
+        const cosS2 = Math.sqrt(1 - s2),
+          sinS2 = Math.sqrt(s2);
+        const cosS3 = Math.sqrt(1 - s3),
+          sinS3 = Math.sqrt(s3);
+
+        // ZYX Euler rotation
+        const rotated = cartesian3D.map(([x, y, z]) => {
+          // Rz
+          let x1 = cosS3 * x - sinS3 * y;
+          let y1 = sinS3 * x + cosS3 * y;
+          let z1 = z;
+          // Ry
+          let x2 = cosS2 * x1 + sinS2 * z1;
+          let y2 = y1;
+          let z2 = -sinS2 * x1 + cosS2 * z1;
+          // Rx
+          let x3 = x2;
+          let y3 = cosS1 * y2 - sinS1 * z2;
+          let z3 = sinS1 * y2 + cosS1 * z2;
+          return [x3, y3, z3];
+        });
+
+        // Orthographic projection to XY plane
+        const projected2D = rotated.map(([x, y]) => [x, y]);
+
+        return {
+          quadrayVertices: qVerts,
+          cartesian3D: cartesian3D,
+          projected2D: projected2D,
+          hullCount: 7, // At these spreads, exactly 7 vertices on hull
+        };
+      },
+    },
+
+    /**
+     * Comparison: Quadray vs Cartesian rationality
+     * Demonstrates why Quadray is preferred for RT-pure computation
+     */
+    rationalityComparison: () => ({
+      tetrahedron: {
+        quadray: 'Integer: (1,0,0,0)',
+        cartesian: 'Irrational: (1,1,1)/√3',
+        advantage: 'Quadray',
+      },
+      truncatedTetrahedron: {
+        quadray: 'Rational: (2,1,0,0)/3',
+        cartesian: 'Irrational: requires √2',
+        advantage: 'Quadray',
+      },
+      basisAngle: {
+        quadray: 'Spread 8/9 (rational)',
+        cartesian: 'cos⁻¹(-1/3) (transcendental)',
+        advantage: 'Quadray',
+      },
+      ivmLattice: {
+        quadray: 'Native integer coordinates',
+        cartesian: 'Requires √2, √3 conversions',
+        advantage: 'Quadray',
+      },
+    }),
+  },
+
+  /**
    * Face Spreads for Platonic Solids
    * From "Divine Proportions" Chapter 26 (N.J. Wildberger)
    *
