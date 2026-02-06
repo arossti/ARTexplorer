@@ -21,6 +21,16 @@
 import * as THREE from "three";
 import { RT } from "./rt-math.js";
 
+// Lazy import to avoid circular dependency - Polyhedra imports QuadrayPolyhedra
+let _Polyhedra = null;
+const getPolyhedra = async () => {
+  if (!_Polyhedra) {
+    const module = await import("./rt-polyhedra.js");
+    _Polyhedra = module.Polyhedra;
+  }
+  return _Polyhedra;
+};
+
 // ============================================================================
 // SHARED UTILITIES
 // ============================================================================
@@ -691,7 +701,7 @@ export const QuadrayPolyhedra = {
    * @param {Object} options - Configuration options
    * @returns {Object} - {vertices, edges, faces, metadata, primeProjections}
    */
-  compoundTruncTetIcosahedron: (scale = 1, options = {}) => {
+  compoundTruncTetIcosahedron: async (scale = 1, options = {}) => {
     const { normalize = true } = options;
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -714,38 +724,6 @@ export const QuadrayPolyhedra = {
       wxyzToCartesian(w, x, y, z, scale * 0.5) // Scale to match icosahedron radius
     );
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 2. ICOSAHEDRON VERTICES (12) - From golden ratio construction
-    // ═══════════════════════════════════════════════════════════════════════
-    const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
-    const onePlusPhiSq = 1 + phi * phi; // 1 + φ² = 2 + φ
-    const normFactor = 1 / Math.sqrt(onePlusPhiSq);
-    const a = scale * normFactor;
-    const b = scale * normFactor * phi;
-
-    const icosaVertices = [
-      // Vertices along X-axis (±a, ±b, 0)
-      new THREE.Vector3(a, b, 0),
-      new THREE.Vector3(-a, b, 0),
-      new THREE.Vector3(a, -b, 0),
-      new THREE.Vector3(-a, -b, 0),
-      // Vertices along Y-axis (0, ±a, ±b)
-      new THREE.Vector3(0, a, b),
-      new THREE.Vector3(0, -a, b),
-      new THREE.Vector3(0, a, -b),
-      new THREE.Vector3(0, -a, -b),
-      // Vertices along Z-axis (±b, 0, ±a)
-      new THREE.Vector3(b, 0, a),
-      new THREE.Vector3(-b, 0, a),
-      new THREE.Vector3(b, 0, -a),
-      new THREE.Vector3(-b, 0, -a),
-    ];
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 3. COMBINE VERTEX SETS (24 total)
-    // ═══════════════════════════════════════════════════════════════════════
-    const vertices = [...truncTetVertices, ...icosaVertices];
-
     // Edges for truncated tetrahedron (indices 0-11)
     const truncTetEdges = [];
     for (let i = 0; i < 12; i++) {
@@ -760,17 +738,23 @@ export const QuadrayPolyhedra = {
       }
     }
 
-    // Edges for icosahedron (indices 12-23) - adjacent vertices at distance ~0.6
-    const icosaEdges = [];
-    const edgeThreshold = 0.7 * scale; // Approximate edge length threshold
-    for (let i = 0; i < 12; i++) {
-      for (let j = i + 1; j < 12; j++) {
-        const dist = icosaVertices[i].distanceTo(icosaVertices[j]);
-        if (dist < edgeThreshold) {
-          icosaEdges.push([i + 12, j + 12]); // Offset indices by 12
-        }
-      }
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // 2. ICOSAHEDRON (12 vertices) - Call actual Polyhedra.icosahedron()
+    // Uses TESTED geometry from rt-polyhedra.js (golden ratio construction)
+    // ═══════════════════════════════════════════════════════════════════════
+    const Polyhedra = await getPolyhedra();
+    const icosa = Polyhedra.icosahedron(scale);
+    const icosaVertices = icosa.vertices;
+    const icosaEdgesLocal = icosa.edges;
+    const icosaFacesLocal = icosa.faces;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 3. COMBINE VERTEX SETS (24 total)
+    // ═══════════════════════════════════════════════════════════════════════
+    const vertices = [...truncTetVertices, ...icosaVertices];
+
+    // Offset icosahedron edge indices by 12 (truncated tet has 12 vertices)
+    const icosaEdges = icosaEdgesLocal.map(([a, b]) => [a + 12, b + 12]);
 
     const edges = [...truncTetEdges, ...icosaEdges];
 
@@ -793,16 +777,6 @@ export const QuadrayPolyhedra = {
       [0, 3, 5, 10, 9, 2],    // WXZ face (Y=0)
       [1, 6, 8, 11, 9, 2],    // WYZ face (X=0)
       [4, 7, 8, 11, 10, 5],   // XYZ face (W=0)
-    ];
-
-    // Icosahedron faces (indices 12-23, so offset by 12)
-    // Standard icosahedron has 20 triangular faces
-    // Vertex indices 0-11 map to our 12-23
-    const icosaFacesLocal = [
-      [0, 4, 1], [0, 9, 4], [9, 5, 4], [4, 5, 8], [4, 8, 1],
-      [8, 10, 1], [8, 3, 10], [5, 3, 8], [5, 2, 3], [2, 7, 3],
-      [7, 10, 3], [7, 6, 10], [7, 11, 6], [11, 0, 6], [0, 1, 6],
-      [6, 1, 10], [9, 0, 11], [9, 11, 2], [9, 2, 5], [7, 2, 11],
     ];
 
     // Offset icosahedron face indices by 12
@@ -830,11 +804,24 @@ export const QuadrayPolyhedra = {
       vertices,
       edges,
       faces,
+      // Component data for separate rendering with distinct colors
+      components: {
+        truncatedTetrahedron: {
+          vertices: truncTetVertices,
+          edges: truncTetEdges,
+          faces: truncTetFaces,
+        },
+        icosahedron: {
+          vertices: icosaVertices,
+          edges: icosaEdgesLocal, // Local indices (0-11)
+          faces: icosaFacesLocal, // Local indices (0-11)
+        },
+      },
       truncTetWXYZ,
       truncTetNormalized,
       metadata: {
         coordinateSystem: "mixed",
-        components: ["truncatedTetrahedron", "icosahedron"],
+        componentNames: ["truncatedTetrahedron", "icosahedron"],
         totalVertices: 24,
         normalized: normalize,
         scale: scale,

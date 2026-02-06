@@ -2613,20 +2613,40 @@ export function initScene(THREE, OrbitControls, RT) {
     if (document.getElementById("showQuadrayCompound")?.checked) {
       const normalize =
         document.getElementById("quadrayCompoundNormalize")?.checked ?? true;
-      const compound = Polyhedra.quadrayCompoundTruncTetIcosa(scale, {
+      // Async compound generator - render components with distinct colors
+      Polyhedra.quadrayCompoundTruncTetIcosa(scale, {
         normalize: normalize,
+      }).then(compound => {
+        // Clear existing group
+        while (quadrayCompoundGroup.children.length > 0) {
+          quadrayCompoundGroup.remove(quadrayCompoundGroup.children[0]);
+        }
+        // Render truncated tetrahedron component with its color
+        const truncTetSubGroup = new THREE.Group();
+        truncTetSubGroup.userData.type = "truncatedTetrahedron";
+        renderPolyhedron(
+          truncTetSubGroup,
+          compound.components.truncatedTetrahedron,
+          colorPalette.quadrayTruncatedTet,
+          opacity
+        );
+        quadrayCompoundGroup.add(truncTetSubGroup);
+        // Render icosahedron component with its default color (cyan) for contrast
+        const icosaSubGroup = new THREE.Group();
+        icosaSubGroup.userData.type = "icosahedron";
+        renderPolyhedron(
+          icosaSubGroup,
+          compound.components.icosahedron,
+          colorPalette.icosahedron,
+          opacity
+        );
+        quadrayCompoundGroup.add(icosaSubGroup);
+        quadrayCompoundGroup.userData.parameters = {
+          normalize: normalize,
+          wxyz: compound.truncTetNormalized,
+        };
+        quadrayCompoundGroup.visible = true;
       });
-      renderPolyhedron(
-        quadrayCompoundGroup,
-        compound,
-        colorPalette.quadrayCompound,
-        opacity
-      );
-      quadrayCompoundGroup.userData.parameters = {
-        normalize: normalize,
-        wxyz: compound.wxyz_normalized,
-      };
-      quadrayCompoundGroup.visible = true;
     } else {
       quadrayCompoundGroup.visible = false;
     }
