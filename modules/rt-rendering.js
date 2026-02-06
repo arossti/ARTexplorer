@@ -33,6 +33,31 @@ import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 // Re-export PerformanceClock so rt-init.js can import it from here
 export { PerformanceClock };
 
+/**
+ * Camera view presets configuration
+ * Spreads use RT notation: s = sin²(θ) for ZYX Euler rotation
+ * Reference: Geometry documents/Prime-Projection-Conjecture.tex
+ */
+export const CAMERA_PRESETS = {
+  // Prime projection discovery views
+  heptagonProjection: {
+    name: "7-gon Projection",
+    description: "Truncated tetrahedron projects to 7-vertex hull",
+    spreads: [0.11, 0, 0.5], // (s1, s2, s3) via ZYX rotation
+    recommendedForm: "quadrayTruncatedTetrahedron",
+    reference: "Prime-Projection-Conjecture.tex §8.4",
+  },
+  pentagonProjection: {
+    name: "5-gon Projection",
+    description: "Icosahedron/dodecahedron axis view",
+    spreads: [0, 0, 0.5], // Pure 45° X rotation
+    recommendedForm: "icosahedron",
+    reference: "Gauss-Wantzel constructible",
+  },
+  // Future: add more prime projections as discovered
+  // 11-gon, 13-gon, etc. from Quadray polyhedra search
+};
+
 // Module-level color palette (source of truth for all polyhedron colors)
 const colorPalette = {
   cube: 0x0433ff,
@@ -59,6 +84,8 @@ const colorPalette = {
   quadrayTetrahedron: 0x00ff88, // Bright teal/mint (distinct from other forms)
   quadrayTetraDeformed: 0xff5577, // Coral-pink (visually distinct for deformed)
   quadrayCuboctahedron: 0x88ff00, // Lime-yellow (VE in native Quadray)
+  quadrayOctahedron: 0x66ffaa, // Sea green (Quadray octahedron)
+  quadrayTruncatedTet: 0x9acd32, // Yellow-green (7-gon projection source)
   // Primitives
   point: 0xff00ff, // Fuchsia/bright pink - highly visible coordinate exploration point
   line: 0xff0000, // Red - 1D primitive
@@ -99,7 +126,9 @@ export function initScene(THREE, OrbitControls, RT) {
   let radialTetMatrixGroup, radialOctMatrixGroup, radialVEMatrixGroup; // Radial matrix forms (Phase 3)
   let quadrayTetrahedronGroup,
     quadrayTetraDeformedGroup,
-    quadrayCuboctahedronGroup; // Quadray demonstrators
+    quadrayCuboctahedronGroup,
+    quadrayOctahedronGroup,
+    quadrayTruncatedTetGroup; // Quadray demonstrators
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
@@ -298,6 +327,12 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayCuboctahedronGroup = new THREE.Group();
     quadrayCuboctahedronGroup.userData.type = "quadrayCuboctahedron";
 
+    quadrayOctahedronGroup = new THREE.Group();
+    quadrayOctahedronGroup.userData.type = "quadrayOctahedron";
+
+    quadrayTruncatedTetGroup = new THREE.Group();
+    quadrayTruncatedTetGroup.userData.type = "quadrayTruncatedTet";
+
     scene.add(pointGroup);
     scene.add(lineGroup);
     scene.add(polygonGroup);
@@ -334,6 +369,8 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(quadrayTetrahedronGroup);
     scene.add(quadrayTetraDeformedGroup);
     scene.add(quadrayCuboctahedronGroup);
+    scene.add(quadrayOctahedronGroup);
+    scene.add(quadrayTruncatedTetGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -2469,6 +2506,51 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayCuboctahedronGroup.visible = false;
     }
 
+    // Quadray Octahedron
+    if (document.getElementById("showQuadrayOctahedron")?.checked) {
+      const normalize =
+        document.getElementById("quadrayOctaNormalize")?.checked ?? true;
+      const quadrayOcta = Polyhedra.quadrayOctahedron(scale, {
+        normalize: normalize,
+      });
+      renderPolyhedron(
+        quadrayOctahedronGroup,
+        quadrayOcta,
+        colorPalette.quadrayOctahedron,
+        opacity
+      );
+      quadrayOctahedronGroup.userData.parameters = {
+        normalize: normalize,
+        wxyz: quadrayOcta.wxyz_normalized,
+      };
+      quadrayOctahedronGroup.visible = true;
+    } else {
+      quadrayOctahedronGroup.visible = false;
+    }
+
+    // Quadray Truncated Tetrahedron (7-gon projection source)
+    if (document.getElementById("showQuadrayTruncatedTet")?.checked) {
+      const normalize =
+        document.getElementById("quadrayTruncTetNormalize")?.checked ?? true;
+      const quadrayTruncTet = Polyhedra.quadrayTruncatedTetrahedron(scale, {
+        normalize: normalize,
+      });
+      renderPolyhedron(
+        quadrayTruncatedTetGroup,
+        quadrayTruncTet,
+        colorPalette.quadrayTruncatedTet,
+        opacity
+      );
+      quadrayTruncatedTetGroup.userData.parameters = {
+        normalize: normalize,
+        wxyz: quadrayTruncTet.wxyz_normalized,
+        primeProjection: quadrayTruncTet.metadata?.primeProjection,
+      };
+      quadrayTruncatedTetGroup.visible = true;
+    } else {
+      quadrayTruncatedTetGroup.visible = false;
+    }
+
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
     if (document.getElementById("showRhombicDodecMatrix").checked) {
       const matrixSize = parseInt(
@@ -3392,6 +3474,46 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
     }
 
+    // Quadray Octahedron
+    if (document.getElementById("showQuadrayOctahedron")?.checked) {
+      const normalize =
+        document.getElementById("quadrayOctaNormalize")?.checked ?? true;
+      const quadrayOcta = Polyhedra.quadrayOctahedron(1, { normalize });
+      const eulerOK = RT.verifyEuler(
+        quadrayOcta.vertices.length,
+        quadrayOcta.edges.length,
+        quadrayOcta.faces.length
+      );
+      html += `<div style="margin-top: 10px;"><strong>Quadray Octahedron:</strong></div>`;
+      html += `<div>WXYZ: {1,1,0,0} permutations</div>`;
+      html += `<div>Normalized: ${normalize ? "Yes" : "No"}</div>`;
+      html += `<div>V: ${quadrayOcta.vertices.length}, E: ${quadrayOcta.edges.length}, F: ${quadrayOcta.faces.length}</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+    }
+
+    // Quadray Truncated Tetrahedron (7-gon projection source)
+    if (document.getElementById("showQuadrayTruncatedTet")?.checked) {
+      const normalize =
+        document.getElementById("quadrayTruncTetNormalize")?.checked ?? true;
+      const quadrayTruncTet = Polyhedra.quadrayTruncatedTetrahedron(1, {
+        normalize,
+      });
+      const eulerOK = RT.verifyEuler(
+        quadrayTruncTet.vertices.length,
+        quadrayTruncTet.edges.length,
+        quadrayTruncTet.faces.length
+      );
+      const triangles = quadrayTruncTet.faces.filter(f => f.length === 3).length;
+      const hexagons = quadrayTruncTet.faces.filter(f => f.length === 6).length;
+      html += `<div style="margin-top: 10px;"><strong>Quadray Truncated Tetrahedron:</strong></div>`;
+      html += `<div>WXYZ: {2,1,0,0} permutations (ALL rational!)</div>`;
+      html += `<div>Normalized: ${normalize ? "Yes" : "No"}</div>`;
+      html += `<div>V: ${quadrayTruncTet.vertices.length}, E: ${quadrayTruncTet.edges.length}, F: ${quadrayTruncTet.faces.length}</div>`;
+      html += `<div>Faces: ${triangles} △ + ${hexagons} ⬡</div>`;
+      html += `<div>Prime: 7-gon projection at s=(0.11,0,0.5)</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+    }
+
     stats.innerHTML = html || "Select a polyhedron to see stats";
   }
 
@@ -3554,6 +3676,40 @@ export function initScene(THREE, OrbitControls, RT) {
           basisVector
         );
 
+        break;
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // PRIME PROJECTION VIEWS (Rational n-gon discovery)
+      // Uses CAMERA_PRESETS configuration for extensibility
+      // Reference: Geometry documents/Prime-Projection-Conjecture.tex
+      // ═══════════════════════════════════════════════════════════════════════
+
+      case "heptagonProjection":
+      case "pentagonProjection": {
+        const preset = CAMERA_PRESETS[view];
+        if (!preset) {
+          console.warn(`Unknown projection preset: ${view}`);
+          break;
+        }
+
+        // Convert spreads to Euler angles: θ = arcsin(sqrt(s))
+        const [s1, s2, s3] = preset.spreads;
+        const theta1 = Math.asin(Math.sqrt(s1)); // Z rotation
+        const theta2 = Math.asin(Math.sqrt(s2)); // Y rotation
+        const theta3 = Math.asin(Math.sqrt(s3)); // X rotation
+
+        // Build rotation matrix from ZYX Euler angles
+        const euler = new THREE.Euler(theta3, theta2, theta1, "ZYX");
+        const viewDir = new THREE.Vector3(0, 0, 1).applyEuler(euler);
+        camera.position.copy(viewDir.multiplyScalar(distance));
+        camera.up.set(0, 0, 1);
+
+        console.log(`📐 ${preset.name}: spreads=(${s1}, ${s2}, ${s3})`);
+        console.log(`   ${preset.description}`);
+        if (preset.recommendedForm) {
+          console.log(`   Best viewed with: ${preset.recommendedForm}`);
+        }
         break;
       }
 
@@ -3730,6 +3886,8 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayTetrahedronGroup,
       quadrayTetraDeformedGroup,
       quadrayCuboctahedronGroup,
+      quadrayOctahedronGroup,
+      quadrayTruncatedTetGroup,
       tetrahelix1Group,
       tetrahelix2Group,
       tetrahelix3Group,
@@ -4270,6 +4428,25 @@ export function initScene(THREE, OrbitControls, RT) {
         group.userData.parameters = {
           normalize: normalize,
           wxyz: geometry.wxyz_normalized,
+        };
+        break;
+
+      case "quadrayOctahedron":
+        geometry = Polyhedra.quadrayOctahedron(scale, { normalize });
+        renderPolyhedron(group, geometry, color, opacity);
+        group.userData.parameters = {
+          normalize: normalize,
+          wxyz: geometry.wxyz_normalized,
+        };
+        break;
+
+      case "quadrayTruncatedTet":
+        geometry = Polyhedra.quadrayTruncatedTetrahedron(scale, { normalize });
+        renderPolyhedron(group, geometry, color, opacity);
+        group.userData.parameters = {
+          normalize: normalize,
+          wxyz: geometry.wxyz_normalized,
+          primeProjection: geometry.metadata?.primeProjection,
         };
         break;
 
