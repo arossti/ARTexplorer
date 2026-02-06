@@ -1190,6 +1190,7 @@ export const RTPapercut = {
     // If n is null, just hide (already removed above)
     if (!n) {
       RTPapercut._primePolygonVisible = false;
+      RTPapercut._hideProjectionInfo();
       console.log("📐 Prime polygon overlay hidden");
       return;
     }
@@ -1218,10 +1219,11 @@ export const RTPapercut = {
     console.log("   ✓ LineGeometry created");
 
     // Create line material (cyan/teal for visibility)
-    // linewidth is in world units for LineMaterial - use larger value for visibility
+    // worldUnits: true makes linewidth work in world units instead of pixels
     const lineMaterial = new LineMaterial({
       color: 0x00ffff,
-      linewidth: 0.015, // Increased from 0.003 for visibility
+      linewidth: 0.015, // World units (not pixels) when worldUnits: true
+      worldUnits: true, // CRITICAL: interpret linewidth as world units
       transparent: true,
       opacity: 0.9,
       depthTest: false, // Always visible
@@ -1256,6 +1258,60 @@ export const RTPapercut = {
     const inScene = scene.children.includes(group);
     console.log("   🔍 Group in scene.children:", inScene);
     console.log("   🔍 Group world position:", group.position.x, group.position.y, group.position.z);
+
+    // Update UI info display with Quadray projection formula
+    RTPapercut._updateProjectionInfo(n);
+  },
+
+  /**
+   * Update the prime projection info display with Quadray formula
+   * @param {number} n - Number of sides
+   */
+  _updateProjectionInfo: function (n) {
+    const infoContainer = document.getElementById("primeProjectionInfo");
+    const formulaSpan = document.getElementById("primeProjectionFormula");
+    if (!infoContainer || !formulaSpan) return;
+
+    let formulaText = "";
+
+    switch (n) {
+      case 7:
+        // 7-gon: Non-constructible prime from truncated tetrahedron
+        // Quadray coords: {2,1,0,0} permutations (12 vertices, ALL RATIONAL)
+        // Viewing spreads: s=(0.11, 0, 0.5) → 7-vertex hull
+        formulaText =
+          "7-gon: Quadray {2,1,0,0}/3 → s=(0.11,0,½)\n" +
+          "Trunc Tet: 12v → 7-hull (non-constructible)";
+        break;
+
+      case 5:
+        // 5-gon: Fermat prime (φ-constructible) from icosahedron axis
+        // Viewing spreads: s=(0, 0, 0.5)
+        // Pentagon spread: s = (5-√5)/8 = sin²(π/5)
+        formulaText =
+          "5-gon: Icosa axis → s=(0,0,½)\n" +
+          "φ-constructible: s = (5-√5)/8";
+        break;
+
+      default:
+        // Generic n-gon info
+        const s = Math.pow(Math.sin(Math.PI / n), 2);
+        formulaText = `${n}-gon: s = sin²(π/${n}) ≈ ${s.toFixed(4)}`;
+    }
+
+    formulaSpan.textContent = formulaText;
+    infoContainer.style.display = "block";
+    infoContainer.style.whiteSpace = "pre-line"; // Preserve line breaks
+  },
+
+  /**
+   * Hide the prime projection info display
+   */
+  _hideProjectionInfo: function () {
+    const infoContainer = document.getElementById("primeProjectionInfo");
+    if (infoContainer) {
+      infoContainer.style.display = "none";
+    }
   },
 
   /**
