@@ -258,6 +258,16 @@ export const checkboxWithControlsBindings = [
     type: "checkbox-controls",
     controlsId: "quadray-cuboctahedron-controls",
   },
+  {
+    id: "showQuadrayOctahedron",
+    type: "checkbox-controls",
+    controlsId: "quadray-octahedron-controls",
+  },
+  {
+    id: "showQuadrayTruncatedTet",
+    type: "checkbox-controls",
+    controlsId: "quadray-trunc-tet-controls",
+  },
 ];
 
 // ============================================================================
@@ -677,6 +687,17 @@ export const viewControlBindings = [
       {
         id: "viewQuadQZ",
         onClick: renderingAPI => renderingAPI.setCameraPreset("quadqz"),
+      },
+      // Prime Projection Views (rational n-gon discovery)
+      {
+        id: "viewHeptagonProjection",
+        onClick: renderingAPI =>
+          renderingAPI.setCameraPreset("heptagonProjection"),
+      },
+      {
+        id: "viewPentagonProjection",
+        onClick: renderingAPI =>
+          renderingAPI.setCameraPreset("pentagonProjection"),
       },
     ],
   },
