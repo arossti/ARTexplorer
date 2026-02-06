@@ -730,29 +730,29 @@ Regular polytopes have **inversion symmetry** (point reflection through center).
 
 **Truncated Tetrahedron** (12 vertices, NO central symmetry) produces:
 
-| Hull Count | Frequency | Type |
-|------------|-----------|------|
-| **5-gon** | 0.2% | ★ PRIME (Fermat) |
-| 6-gon | 0.5% | Even |
-| **7-gon** | 0.1% | ★ PRIME (Non-constructible!) |
-| 8-gon | 55.6% | Even |
-| **9-gon** | 43.8% | ODD (Cubic-algebraic) |
+| Hull Count | Frequency | Type | Status |
+|------------|-----------|------|--------|
+| **5-gon** | 0.2% | ★ PRIME (Fermat) | ✓ Verified at s=(0,0,0.5) |
+| 6-gon | 0.5% | Even | |
+| **7-gon** | 0.1% | ★ PRIME (Non-constructible!) | Exact spread TBD |
+| 8-gon | 55.6% | Even | |
+| **9-gon** | 43.8% | ODD (Cubic-algebraic) | Current at s=(0.11,0,0.5) |
 
 **Prime Projection Examples Found:**
 
-| Prime | Spreads (s₁, s₂, s₃) | Polyhedron |
-|-------|----------------------|------------|
-| 5-gon | (0, 0, 0.5) | Truncated Tetrahedron |
-| 5-gon | (0, 0.5, 0) | Truncated Tetrahedron |
-| **7-hull** | (0.11, 0, 0.5) | Truncated Tetrahedron |
-| **7-hull** | (0.11, 0.5, 0) | Truncated Tetrahedron |
+| Prime | Spreads (s₁, s₂, s₃) | Polyhedron | Notes |
+|-------|----------------------|------------|-------|
+| 5-gon | (0, 0, 0.5) | Truncated Tetrahedron | ✓ Verified |
+| 5-gon | (0, 0.5, 0) | Truncated Tetrahedron | ✓ Verified |
+| **9-hull** | (0.11, 0, 0.5) | Truncated Tetrahedron | Current best (7 TBD) |
+| **9-hull** | (0.11, 0.5, 0) | Truncated Tetrahedron | Current best (7 TBD) |
 
-**The 7-gon is NOT compass-constructible** (Gauss-Wantzel), yet it emerges as a rational-spread projection of an asymmetric polyhedron!
+**The 7-gon is NOT compass-constructible** (Gauss-Wantzel). Initial search found 7-hulls at ~0.1% frequency; exact spread refinement needed. Current spread s=(0.11, 0, 0.5) produces a 9-hull.
 
 ### Paths Forward
 
 1. **✓ Asymmetric Polytopes**: Use polytopes without central symmetry
-   - **Truncated tetrahedron** → WORKS! (5, 7, 9-gons found)
+   - **Truncated tetrahedron** → 5-gon verified! (9-hull at current spreads; 7-hull TBD)
    - Snub cube (chiral)
    - Compound of 5 tetrahedra
 
@@ -805,7 +805,8 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
 
 2. **Prime Projection Search Script** - `scripts/prime_projection_search.py`
    - Discovered Symmetry Barrier for centrally symmetric polytopes
-   - Found 7-gon projection from truncated tetrahedron at spreads (0.11, 0, 0.5)
+   - Found 5-gon projection from truncated tetrahedron at spreads (0, 0, 0.5) ✓
+   - 7-hull: s=(0.11, 0, 0.5) produces 9-hull; exact 7-hull spread TBD
    - Documented in `Geometry documents/Prime-Projection-Conjecture.tex`
 
 3. **UI Method Info Display** - Shows construction type for each n-gon
@@ -847,18 +848,17 @@ Replace the current 5-gon and 7-gon generation methods in `rt-primitives.js` wit
 
 ### New Projection-Based Methods
 
-| n-hull | Source Polyhedron | Viewing Spreads | Formula Location |
-|--------|-------------------|-----------------|------------------|
-| **5-gon** | Truncated Tetrahedron | s = (0.08, 0, ½) or (0.31, 0, ½) | `RT.ProjectionPolygons.pentagon` |
-| **7-hull** | Truncated Tetrahedron | s = (0.11, 0, ½) or (0.89, 0, ½) | `RT.ProjectionPolygons.heptagon` |
+| n-hull | Source Polyhedron | Viewing Spreads | Formula Location | Status |
+|--------|-------------------|-----------------|------------------|--------|
+| **5-gon** | Truncated Tetrahedron | s = (0, 0, ½) | `RT.ProjectionPolygons.pentagon` | ✓ Verified |
+| **9-hull** | Truncated Tetrahedron | s = (0.11, 0, ½) | `RT.ProjectionPolygons.heptagon` | 7-hull TBD |
 
-**7-HULL GEOMETRY** (verified 2026-02-06):
-- Hull has 7 vertices and 7 edges on convex boundary
-- Interior angles: 109.5°, 125.3°, 125.3°, 109.5°, 180°, 70.5°, 180°
-- **2 collinear vertices**: 180° angles mean these points lie on edges (not corners)
-- **Visual silhouette is 5-gon**: Only 5 non-collinear corners visible
-- Edge variance: ~15% (6 edges at 0.7385, 1 edge at 0.8528)
+**9-HULL GEOMETRY** (verified 2026-02-06):
+- At spreads s=(0.11, 0, 0.5), the convex hull has **9 vertices** (not 7)
+- The 5-gon at s=(0, 0, 0.5) works correctly: 12 → 7 unique → 5 hull ✓
+- **Spread refinement needed** to find exact value for true 7-vertex hull
 - For regular heptagons, use `RT.PureCubics.heptagon` (cubic-cached method)
+- The 9-hull is accepted as interim result; more precise spread search pending
 
 ---
 
@@ -885,13 +885,13 @@ Replace the current 5-gon and 7-gon generation methods in `rt-primitives.js` wit
 
 4. **Projected Vertices** (YELLOW nodes)
    - 12 points where rays hit the plane
-   - 7 of these form the convex hull boundary
-   - 5 are interior points (not on hull)
+   - For 7-gon preset: currently **9** form the convex hull (spread refinement pending)
+   - For 5-gon preset: **5** form the convex hull ✓
 
 5. **Actual Hull** (YELLOW polygon)
-   - Convex hull of the 7 boundary vertices
-   - Irregular heptagon with 2 collinear vertices at 180°
-   - This is the REAL 7-hull projection
+   - Convex hull of the boundary vertices
+   - 9-gon at current spreads (0.11, 0, 0.5) - refinement needed for true 7-hull
+   - 5-gon at spreads (0, 0, 0.5) - verified working ✓
 
 6. **Ideal Comparison** (CYAN polygon)
    - Regular heptagon using classical trig

@@ -1903,13 +1903,13 @@ export const RTPapercut = {
 
     switch (n) {
       case 7:
-        // 7-hull: ACTUAL projection from truncated tetrahedron
+        // 7-gon preset: ACTUAL projection from truncated tetrahedron
         // Quadray coords: {2,1,0,0} permutations (12 vertices, ALL RATIONAL)
-        // Viewing spreads: s=(0.11, 0, 0.5) → 7-vertex hull (2 collinear)
+        // Current spreads s=(0.11, 0, 0.5) produce 9-hull; exact 7-hull TBD
         formulaText =
-          "YELLOW: Actual 7-hull projection\n" +
+          "YELLOW: Actual projection hull\n" +
           "  Quadray {2,1,0,0}/3 → s=(0.11,0,½)\n" +
-          "  7 vertices (2 collinear @ 180°)\n" +
+          "  9 vertices (7-hull spread TBD)\n" +
           "CYAN: Ideal regular heptagon\n" +
           "  Classical trig (for comparison)";
         break;
