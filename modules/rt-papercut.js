@@ -1564,6 +1564,10 @@ export const RTPapercut = {
     const vertices = [];
     const seen = new Set();
 
+    // Use coarse tolerance (2 decimal places) to properly deduplicate
+    // triangulated mesh vertices back to the polyhedron's actual vertices
+    const TOLERANCE_DECIMALS = 2;
+
     group.traverse(obj => {
       if (obj.geometry && obj.geometry.attributes?.position) {
         const posAttr = obj.geometry.attributes.position;
@@ -1577,8 +1581,9 @@ export const RTPapercut = {
           );
           v.applyMatrix4(obj.matrixWorld);
 
-          // Deduplicate using string key
-          const key = `${v.x.toFixed(6)},${v.y.toFixed(6)},${v.z.toFixed(6)}`;
+          // Deduplicate using coarse tolerance to collapse triangulated mesh
+          // vertices back to the original polyhedron vertices
+          const key = `${v.x.toFixed(TOLERANCE_DECIMALS)},${v.y.toFixed(TOLERANCE_DECIMALS)},${v.z.toFixed(TOLERANCE_DECIMALS)}`;
           if (!seen.has(key)) {
             seen.add(key);
             vertices.push(v);
@@ -1587,6 +1592,7 @@ export const RTPapercut = {
       }
     });
 
+    console.log(`   _getWorldVerticesFromGroup: ${vertices.length} unique vertices (tolerance: ${TOLERANCE_DECIMALS} decimals)`);
     return vertices;
   },
 
