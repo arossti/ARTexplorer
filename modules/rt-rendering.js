@@ -605,7 +605,9 @@ export function initScene(THREE, OrbitControls, RT) {
     // For Line/Polygon/Penrose primitives with lineWidth option, use Line2/LineMaterial for cross-platform support
     const polyType = group.userData.type;
     const useThickLine =
-      (polyType === "line" || polyType === "polygon" || polyType === "penroseTiling") &&
+      (polyType === "line" ||
+        polyType === "polygon" ||
+        polyType === "penroseTiling") &&
       options.lineWidth &&
       options.lineWidth > 1;
 
@@ -916,7 +918,8 @@ export function initScene(THREE, OrbitControls, RT) {
       // Prefer numeric input (more precise) over slider
       const userScale = parseFloat(
         document.getElementById("dodecTilingScaleInput")?.value ||
-        document.getElementById("dodecTilingScale")?.value || "1.0"
+          document.getElementById("dodecTilingScale")?.value ||
+          "1.0"
       );
       const tilingScale = (faceCircumradius * userScale) / maxExtent;
 
@@ -926,14 +929,14 @@ export function initScene(THREE, OrbitControls, RT) {
         const cos36 = RT.PurePhi.pentagon.cos36();
         console.log(
           `[RT] Dodec Face Tiling: userScale=${userScale.toFixed(3)}, ` +
-          `circumR=${faceCircumradius.toFixed(4)}, inR=${faceInradius.toFixed(4)}, ` +
-          `ratio(in/circ)=${(faceInradius/faceCircumradius).toFixed(4)} (cos36=${cos36.toFixed(4)})`
+            `circumR=${faceCircumradius.toFixed(4)}, inR=${faceInradius.toFixed(4)}, ` +
+            `ratio(in/circ)=${(faceInradius / faceCircumradius).toFixed(4)} (cos36=${cos36.toFixed(4)})`
         );
         console.log(
           `  → tilingScale=${tilingScale.toFixed(4)}, maxExtent=${maxExtent.toFixed(4)}`
         );
         console.log(
-          `  φ-refs: 1/φ=${invPhi.toFixed(4)}, cos36=${cos36.toFixed(4)}, 1/cos36=${(1/cos36).toFixed(4)}`
+          `  φ-refs: 1/φ=${invPhi.toFixed(4)}, cos36=${cos36.toFixed(4)}, 1/cos36=${(1 / cos36).toFixed(4)}`
         );
       }
 
@@ -1194,9 +1197,13 @@ export function initScene(THREE, OrbitControls, RT) {
 
       if (tilingEnabled && polygonSides === 3 && tilingGenerations > 1) {
         // Generate triangular tiling using Grids module
-        polygonData = Grids.triangularTiling(polygonQuadrance, tilingGenerations, {
-          showFace: polygonShowFace,
-        });
+        polygonData = Grids.triangularTiling(
+          polygonQuadrance,
+          tilingGenerations,
+          {
+            showFace: polygonShowFace,
+          }
+        );
       } else if (tilingEnabled && polygonSides === 4 && tilingGenerations > 1) {
         // Generate square tiling using Grids module
         polygonData = Grids.squareTiling(polygonQuadrance, tilingGenerations, {
@@ -1268,25 +1275,48 @@ export function initScene(THREE, OrbitControls, RT) {
         // Candidate bounding radii (all φ-rational multiples of maxExtent)
         const candidates = [
           { scale: 1.0, color: 0x00ff00, name: "1.0 (maxExtent)" },
-          { scale: invPhi, color: 0x0000ff, name: `1/φ ≈ ${invPhi.toFixed(4)}` },
-          { scale: cos36, color: 0xffff00, name: `cos36 ≈ ${cos36.toFixed(4)}` },
-          { scale: 1 / cos36, color: 0xff00ff, name: `1/cos36 ≈ ${(1/cos36).toFixed(4)}` },
+          {
+            scale: invPhi,
+            color: 0x0000ff,
+            name: `1/φ ≈ ${invPhi.toFixed(4)}`,
+          },
+          {
+            scale: cos36,
+            color: 0xffff00,
+            name: `cos36 ≈ ${cos36.toFixed(4)}`,
+          },
+          {
+            scale: 1 / cos36,
+            color: 0xff00ff,
+            name: `1/cos36 ≈ ${(1 / cos36).toFixed(4)}`,
+          },
         ];
 
         // Helper to draw pentagon at given radius
         const drawPentagon = (radius, color) => {
           const positions = [];
           for (let i = 0; i < 5; i++) {
-            const angle1 = Math.PI / 2 + i * (2 * Math.PI / 5);
-            const angle2 = Math.PI / 2 + ((i + 1) % 5) * (2 * Math.PI / 5);
+            const angle1 = Math.PI / 2 + i * ((2 * Math.PI) / 5);
+            const angle2 = Math.PI / 2 + ((i + 1) % 5) * ((2 * Math.PI) / 5);
             positions.push(
-              radius * Math.cos(angle1), radius * Math.sin(angle1), 0,
-              radius * Math.cos(angle2), radius * Math.sin(angle2), 0
+              radius * Math.cos(angle1),
+              radius * Math.sin(angle1),
+              0,
+              radius * Math.cos(angle2),
+              radius * Math.sin(angle2),
+              0
             );
           }
           const geometry = new THREE.BufferGeometry();
-          geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-          const material = new THREE.LineBasicMaterial({ color, linewidth: 2, depthTest: true });
+          geometry.setAttribute(
+            "position",
+            new THREE.Float32BufferAttribute(positions, 3)
+          );
+          const material = new THREE.LineBasicMaterial({
+            color,
+            linewidth: 2,
+            depthTest: true,
+          });
           const lines = new THREE.LineSegments(geometry, material);
           lines.renderOrder = 10;
           polygonGroup.add(lines);
@@ -1299,12 +1329,16 @@ export function initScene(THREE, OrbitControls, RT) {
         });
 
         // Log all candidates for analysis
-        console.log(`[RT] Pentagon bounding candidates (maxExtent=${tilingMaxExtent.toFixed(4)}):`);
+        console.log(
+          `[RT] Pentagon bounding candidates (maxExtent=${tilingMaxExtent.toFixed(4)}):`
+        );
         candidates.forEach(c => {
           const radius = tilingMaxExtent * c.scale;
           console.log(`  ${c.name}: boundingR=${radius.toFixed(4)}`);
         });
-        console.log(`  Legend: GREEN=1.0, BLUE=1/φ, YELLOW=cos36, MAGENTA=1/cos36`);
+        console.log(
+          `  Legend: GREEN=1.0, BLUE=1/φ, YELLOW=cos36, MAGENTA=1/cos36`
+        );
       }
 
       polygonGroup.visible = true;
@@ -1323,8 +1357,11 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("prismHeightQuadrance")?.value || "1"
       );
       // Get number of sides (default 6 = hexagonal prism)
+      // Read from numeric input to allow values > 24, fallback to slider
       const prismSides = parseInt(
-        document.getElementById("prismSides")?.value || "6"
+        document.getElementById("prismSidesInput")?.value ||
+          document.getElementById("prismSides")?.value ||
+          "6"
       );
       // Get face visibility
       const prismShowFaces =
@@ -1420,7 +1457,11 @@ export function initScene(THREE, OrbitControls, RT) {
         );
 
         // Generate tiling via deflation
-        const tiles = PenroseTiling.generate(generations, seed, penroseQuadrance);
+        const tiles = PenroseTiling.generate(
+          generations,
+          seed,
+          penroseQuadrance
+        );
 
         // Convert to renderable geometry
         penroseData = PenroseTiling.tilesToGeometry(tiles, {
@@ -1540,8 +1581,10 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
       // Read direction checkboxes - javelin can show both + and -
-      const showPlus = document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
-      const showMinus = document.getElementById("tetrahelix2DirMinus")?.checked ?? false;
+      const showPlus =
+        document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
+      const showMinus =
+        document.getElementById("tetrahelix2DirMinus")?.checked ?? false;
 
       // 3021 Rule: Map QW→B, QX→A, QY→C, QZ→D for generator compatibility
       const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
@@ -1550,28 +1593,36 @@ export function initScene(THREE, OrbitControls, RT) {
       const strandsRadio = document.querySelector(
         'input[name="tetrahelix2Strands"]:checked'
       );
-      const tetrahelix2Strands = strandsRadio ? parseInt(strandsRadio.value) : 1;
+      const tetrahelix2Strands = strandsRadio
+        ? parseInt(strandsRadio.value)
+        : 1;
       const bondModeRadio = document.querySelector(
         'input[name="tetrahelix2BondMode"]:checked'
       );
-      const tetrahelix2BondMode = bondModeRadio ? bondModeRadio.value : "zipped";
+      const tetrahelix2BondMode = bondModeRadio
+        ? bondModeRadio.value
+        : "zipped";
 
       // Read per-strand exit face settings (using Quadray axis names)
       const getExitFace = qAxis => {
-        const radio = document.querySelector(`input[name="tetrahelix2Exit${qAxis}"]:checked`);
+        const radio = document.querySelector(
+          `input[name="tetrahelix2Exit${qAxis}"]:checked`
+        );
         return radio ? parseInt(radio.value) : 0;
       };
       // Map UI Quadray names to internal face labels using 3021 Rule
       const tetrahelix2ExitFaces = {
-        A: getExitFace("QX"),  // QX → face A (3021 Rule)
-        B: getExitFace("QW"),  // QW → face B (3021 Rule)
-        C: getExitFace("QY"),  // QY → face C (3021 Rule)
-        D: getExitFace("QZ"),  // QZ → face D (3021 Rule)
+        A: getExitFace("QX"), // QX → face A (3021 Rule)
+        B: getExitFace("QW"), // QW → face B (3021 Rule)
+        C: getExitFace("QY"), // QY → face C (3021 Rule)
+        D: getExitFace("QZ"), // QZ → face D (3021 Rule)
       };
 
       // Javelin model: single call with dirPlus/dirMinus flags
       if (!showPlus && !showMinus) {
-        console.log("[RT] Tetrahelix2: No direction selected (+ or -). Enable at least one to render.");
+        console.log(
+          "[RT] Tetrahelix2: No direction selected (+ or -). Enable at least one to render."
+        );
         tetrahelix2Group.visible = false;
       } else {
         // Clear existing geometry
@@ -2746,7 +2797,9 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("prismHeightQuadrance")?.value || "1"
       );
       const prismSides = parseInt(
-        document.getElementById("prismSides")?.value || "6"
+        document.getElementById("prismSidesInput")?.value ||
+          document.getElementById("prismSides")?.value ||
+          "6"
       );
       const prismShowFaces =
         document.getElementById("prismShowFaces")?.checked !== false;
@@ -2829,8 +2882,10 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
       // Read direction checkboxes (javelin model)
-      const showPlus = document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
-      const showMinus = document.getElementById("tetrahelix2DirMinus")?.checked ?? true;
+      const showPlus =
+        document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
+      const showMinus =
+        document.getElementById("tetrahelix2DirMinus")?.checked ?? true;
       // 3021 Rule mapping
       const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
       const tetrahelix2StartFace = axisToFace[tetrahelix2Axis] || "B";
@@ -2838,14 +2893,20 @@ export function initScene(THREE, OrbitControls, RT) {
       const strandsRadio = document.querySelector(
         'input[name="tetrahelix2Strands"]:checked'
       );
-      const tetrahelix2Strands = strandsRadio ? parseInt(strandsRadio.value) : 1;
+      const tetrahelix2Strands = strandsRadio
+        ? parseInt(strandsRadio.value)
+        : 1;
       const bondModeRadio2 = document.querySelector(
         'input[name="tetrahelix2BondMode"]:checked'
       );
-      const tetrahelix2BondMode = bondModeRadio2 ? bondModeRadio2.value : "zipped";
+      const tetrahelix2BondMode = bondModeRadio2
+        ? bondModeRadio2.value
+        : "zipped";
       // Read per-strand exit faces for stats (using Quadray axis names)
       const getExitFaceStats = qAxis => {
-        const radio = document.querySelector(`input[name="tetrahelix2Exit${qAxis}"]:checked`);
+        const radio = document.querySelector(
+          `input[name="tetrahelix2Exit${qAxis}"]:checked`
+        );
         return radio ? parseInt(radio.value) : 0;
       };
       const tetrahelix2ExitFaces = {
@@ -2866,8 +2927,10 @@ export function initScene(THREE, OrbitControls, RT) {
       const V2 = tetrahelix2Data.vertices.length;
       const E2 = tetrahelix2Data.edges.length;
       const F2 = tetrahelix2Data.faces.length;
-      const strandLabel = tetrahelix2Strands === 1 ? "1 strand" : `${tetrahelix2Strands} strands`;
-      const modeLabel = tetrahelix2Strands > 1 ? `, ${tetrahelix2BondMode}` : "";
+      const strandLabel =
+        tetrahelix2Strands === 1 ? "1 strand" : `${tetrahelix2Strands} strands`;
+      const modeLabel =
+        tetrahelix2Strands > 1 ? `, ${tetrahelix2BondMode}` : "";
       const dirLabel = (showPlus ? "+" : "") + (showMinus ? "-" : "");
       html += `<div style="margin-top: 10px;"><strong>Tetrahelix 2 (${tetrahelix2Count} tet, ${strandLabel}${modeLabel}):</strong></div>`;
       html += `<div>V: ${V2}, E: ${E2}, F: ${F2}</div>`;
@@ -2911,7 +2974,10 @@ export function initScene(THREE, OrbitControls, RT) {
       const E3 = tetrahelix3Data.edges.length;
       const F3 = tetrahelix3Data.faces.length;
       const activeStrands = tetrahelix3Data.metadata.activeStrands || [];
-      const strandLabel3 = activeStrands.length === 1 ? "1 strand" : `${activeStrands.length} strands`;
+      const strandLabel3 =
+        activeStrands.length === 1
+          ? "1 strand"
+          : `${activeStrands.length} strands`;
       html += `<div style="margin-top: 10px;"><strong>Tetrahelix 3 (${tetrahelix3Count} tet, ${strandLabel3}):</strong></div>`;
       html += `<div>V: ${V3}, E: ${E3}, F: ${F3}</div>`;
       html += `<div>Euler: N/A (open chain)</div>`;
@@ -3378,7 +3444,11 @@ export function initScene(THREE, OrbitControls, RT) {
     // Set cutplane axis based on view
     if (tetrahedralAxisMap[view]) {
       // QWXYZ Tetrahedral views
-      RTPapercut.setCutplaneAxis("tetrahedral", tetrahedralAxisMap[view], scene);
+      RTPapercut.setCutplaneAxis(
+        "tetrahedral",
+        tetrahedralAxisMap[view],
+        scene
+      );
     } else if (cartesianAxisMap[view]) {
       // XYZ Cartesian views
       RTPapercut.setCutplaneAxis("cartesian", cartesianAxisMap[view], scene);
@@ -3770,7 +3840,12 @@ export function initScene(THREE, OrbitControls, RT) {
         const tetrahelix2DirMinus = options.dirMinus ?? true;
         const tetrahelix2Strands = options.strands ?? 1;
         const tetrahelix2BondMode = options.bondMode ?? "zipped";
-        const tetrahelix2ExitFaces = options.exitFaces ?? { A: 0, B: 0, C: 0, D: 0 };
+        const tetrahelix2ExitFaces = options.exitFaces ?? {
+          A: 0,
+          B: 0,
+          C: 0,
+          D: 0,
+        };
         geometry = Helices.tetrahelix2(scale, {
           count: tetrahelix2Count,
           startFace: tetrahelix2StartFace,
@@ -3799,8 +3874,26 @@ export function initScene(THREE, OrbitControls, RT) {
       case "tetrahelix3": {
         // Tetrahelix 3: Linear (octahedral seed)
         const tetrahelix3Count = options.count ?? 10;
-        const enabledStrands = options.enabledStrands ?? { A: true, B: false, C: false, D: false, E: false, F: false, G: false, H: false };
-        const strandChirality = options.strandChirality ?? { A: true, B: true, C: true, D: true, E: true, F: true, G: true, H: true };
+        const enabledStrands = options.enabledStrands ?? {
+          A: true,
+          B: false,
+          C: false,
+          D: false,
+          E: false,
+          F: false,
+          G: false,
+          H: false,
+        };
+        const strandChirality = options.strandChirality ?? {
+          A: true,
+          B: true,
+          C: true,
+          D: true,
+          E: true,
+          F: true,
+          G: true,
+          H: true,
+        };
         geometry = Helices.tetrahelix3(scale, {
           count: tetrahelix3Count,
           enabledStrands,
