@@ -1298,9 +1298,9 @@ export const RTPapercut = {
    * @param {number|null} n - Number of sides (7, 5, etc.) or null to hide
    * @param {THREE.Scene} scene - Scene to add/remove visualization from
    * @param {THREE.Camera} camera - Camera reference
-   * @param {number} planeDistance - Distance from polyhedron center to projection plane (default: 6)
+   * @param {number} planeDistance - Distance from polyhedron center to projection plane (default: 2.5)
    */
-  showPrimePolygon: function (n, scene, camera, planeDistance = 6) {
+  showPrimePolygon: function (n, scene, camera, planeDistance = 2.5) {
     console.log("🔍 showPrimePolygon called with:", { n, scene: !!scene, camera: !!camera, planeDistance });
 
     // Validate inputs
@@ -1557,50 +1557,49 @@ export const RTPapercut = {
 
   /**
    * Extract world-space vertices from a polyhedron group
-   * @param {THREE.Group} group - The polyhedron group
-   * @returns {Array<THREE.Vector3>} World-space vertices
-   */
-  /**
-   * Get the 12 canonical truncated tetrahedron vertices
-   * Uses Quadray {2,1,0,0} permutations converted to Cartesian
-   * This avoids extracting from triangulated mesh + node spheres
+   * Skips node spheres (userData.isVertexNode = true) to get only face mesh vertices
+   * Uses coarse tolerance to collapse triangulated mesh back to actual polyhedron vertices
    *
-   * @param {THREE.Group} group - The polyhedron group (for world transform)
-   * @returns {Array<THREE.Vector3>} World-space vertices (exactly 12)
+   * @param {THREE.Group} group - The polyhedron group
+   * @returns {Array<THREE.Vector3>} World-space vertices (12 for truncated tetrahedron)
    */
   _getWorldVerticesFromGroup: function (group) {
-    // Truncated tetrahedron: {2,1,0,0} permutations in Quadray
-    // These are the 12 canonical vertices (ALL RATIONAL in Quadray!)
-    const truncTetCartesian = [
-      [3, 1, 1], [3, -1, -1], [1, 3, 1], [1, -3, -1],
-      [1, 1, 3], [1, -1, -3], [-3, 1, -1], [-3, -1, 1],
-      [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3]
-    ];
+    const vertices = [];
+    const seen = new Set();
 
-    // Get scale from group's userData
-    let scale = 1;
-    if (group.userData?.parameters?.scale) {
-      scale = group.userData.parameters.scale;
-    } else if (group.userData?.parameters?.halfSize) {
-      scale = group.userData.parameters.halfSize;
-    }
+    // Coarse tolerance (2 decimal places) to collapse triangulated mesh vertices
+    // back to the actual polyhedron vertices
+    const TOLERANCE_DECIMALS = 2;
 
-    // Canonical coords (3,1,1) match the mesh exactly when multiplied by scale
-    // NO √11 normalization - the zero-sum Quadray conversion already produces these
-    const normFactor = scale;
+    group.traverse(obj => {
+      // Skip node spheres - they have userData.isVertexNode = true
+      if (obj.userData?.isVertexNode) {
+        return;
+      }
 
-    // Get world matrix
-    group.updateMatrixWorld(true);
-    const worldMatrix = group.matrixWorld;
+      if (obj.geometry && obj.geometry.attributes?.position) {
+        const posAttr = obj.geometry.attributes.position;
+        obj.updateMatrixWorld(true);
 
-    // Convert to world-space Vector3
-    const vertices = truncTetCartesian.map(([x, y, z]) => {
-      const v = new THREE.Vector3(x * normFactor, y * normFactor, z * normFactor);
-      v.applyMatrix4(worldMatrix);
-      return v;
+        for (let i = 0; i < posAttr.count; i++) {
+          const v = new THREE.Vector3(
+            posAttr.getX(i),
+            posAttr.getY(i),
+            posAttr.getZ(i)
+          );
+          v.applyMatrix4(obj.matrixWorld);
+
+          // Deduplicate using coarse tolerance
+          const key = `${v.x.toFixed(TOLERANCE_DECIMALS)},${v.y.toFixed(TOLERANCE_DECIMALS)},${v.z.toFixed(TOLERANCE_DECIMALS)}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            vertices.push(v);
+          }
+        }
+      }
     });
 
-    console.log(`   _getWorldVerticesFromGroup: ${vertices.length} canonical vertices (scale: ${scale.toFixed(4)})`);
+    console.log(`   _getWorldVerticesFromGroup: ${vertices.length} vertices (skipped node spheres)`);
     return vertices;
   },
 
