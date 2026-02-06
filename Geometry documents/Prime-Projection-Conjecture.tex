@@ -37,7 +37,7 @@
 \newtheorem{proposition}{Proposition}
 \newtheorem{corollary}{Corollary}
 
-\title{The 4D± Prime Projection Conjecture\\
+\title{The 4D± Prime Projection Conjecture -- v2.0 (Feb 2026)\\
 \large Rational-Spread Projections of Higher-Dimensional Polytopes\\
 as a Source of Non-Constructible Prime n-Gons}
 
@@ -651,14 +651,81 @@ When a prime projection is found numerically, can we \textbf{prove} it algebraic
     \item Express the viewing transformation in closed form
 \end{itemize}
 
-\subsection{ARTexplorer Visualization}
+\subsection{ARTexplorer Interactive Demo}
 
-Integration with the ARTexplorer web application:
+The prime projection discovery is implemented as an interactive demonstration in the ARTexplorer web application at \url{https://arossti.github.io/ARTexplorer/}.
+
+\subsubsection{Accessing the Demo}
+
+\begin{enumerate}
+    \item Navigate to \textbf{Section 3B: Polyhedra} in the left control panel
+    \item Enable \textbf{Quadray Truncated Tetrahedron} checkbox
+    \item Expand the controls to reveal \textbf{Prime Projection Views}
+    \item Click the \textbf{7-gon} or \textbf{5-gon} buttons to activate the projection overlay
+\end{enumerate}
+
+The cyan polygon overlay appears perpendicular to the camera view, demonstrating the prime n-gon that emerges from the polyhedron's projection at that viewing angle.
+
+% FIGURE PLACEHOLDER: Screenshot of 7-gon projection overlay on truncated tetrahedron
+% \begin{figure}[h]
+% \centering
+% \includegraphics[width=0.8\textwidth]{7gon-projection.png}
+% \caption{The 7-gon projection overlay (cyan) on the truncated tetrahedron at viewing spreads $s = (0.11, 0, 0.5)$. The heptagonal silhouette emerges from 7 of the 12 Quadray-rational vertices falling on the convex hull boundary.}
+% \end{figure}
+
+\subsubsection{Condensed Quadray Formulations}
+
+The UI displays condensed formulas explaining each projection's construction:
+
+\begin{tcolorbox}[colback=cyan!5, colframe=cyan!40!black, title=\textbf{7-gon Projection Formula}]
+\begin{verbatim}
+7-gon: Quadray {2,1,0,0}/3 → s=(0.11,0,½)
+Trunc Tet: 12v → 7-hull (non-constructible)
+\end{verbatim}
+
+\textbf{Interpretation:}
 \begin{itemize}
-    \item Load JSON results and visualize the polyhedron at the discovered angle
-    \item Interactive exploration of nearby viewing angles
-    \item Animate the transition from 3D view to 2D projection
+    \item \textbf{Source}: Truncated tetrahedron with 12 vertices
+    \item \textbf{Quadray coordinates}: All permutations of $\{2,1,0,0\}$ scaled by $1/3$---\emph{purely rational}
+    \item \textbf{Viewing spreads}: $s_1 = 0.11 \approx 11/100$, $s_2 = 0$, $s_3 = 1/2$
+    \item \textbf{Hull reduction}: 12 vertices $\to$ 7-vertex boundary (5 project to interior)
+    \item \textbf{Constructibility}: Non-constructible (Gauss-Wantzel: requires cubic)
 \end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=cyan!5, colframe=cyan!40!black, title=\textbf{5-gon Projection Formula}]
+\begin{verbatim}
+5-gon: Icosa axis → s=(0,0,½)
+φ-constructible: s = (5-√5)/8
+\end{verbatim}
+
+\textbf{Interpretation:}
+\begin{itemize}
+    \item \textbf{Source}: Icosahedron/dodecahedron 5-fold axis view
+    \item \textbf{Viewing spreads}: $s_1 = 0$, $s_2 = 0$, $s_3 = 1/2$ (axis-aligned)
+    \item \textbf{Pentagon spread}: $s = \sin^2(\pi/5) = (5 - \sqrt{5})/8$
+    \item \textbf{Constructibility}: $\varphi$-constructible (Fermat prime, requires only $\sqrt{5}$)
+\end{itemize}
+\end{tcolorbox}
+
+% FIGURE PLACEHOLDER: Screenshot of 5-gon projection overlay
+% \begin{figure}[h]
+% \centering
+% \includegraphics[width=0.8\textwidth]{5gon-projection.png}
+% \caption{The 5-gon projection overlay (cyan) viewed along the icosahedral 5-fold axis at spreads $s = (0, 0, 0.5)$. The pentagon is $\varphi$-constructible, requiring only $\sqrt{5}$.}
+% \end{figure}
+
+\subsubsection{Technical Implementation}
+
+The projection overlay is implemented in \texttt{modules/rt-papercut.js} using THREE.js Line2 geometry:
+\begin{itemize}
+    \item \textbf{LineMaterial} with \texttt{worldUnits: true} for consistent line width
+    \item \textbf{renderOrder: 999} ensures the overlay renders on top of the polyhedron
+    \item \textbf{depthTest: false} makes the overlay always visible
+    \item Polygon vertices are computed in the camera's view plane using the current camera orientation
+\end{itemize}
+
+The camera presets are defined in \texttt{modules/rt-rendering.js} in the \texttt{setCameraPreset()} function, implementing the rational spread viewing angles discovered by the Python search script.
 
 %==============================================================================
 \section{Conclusion}
@@ -712,6 +779,7 @@ Developed in collaboration with AI assistance (Claude/Anthropic) for algorithm d
     \item de Bruijn, N.G. (1981). ``Algebraic theory of Penrose's non-periodic tilings of the plane.'' \emph{Indagationes Mathematicae}.
     \item Fuller, R.B. (1975). \emph{Synergetics: Explorations in the Geometry of Thinking}. Macmillan.
     \item Thomson, A. (2026). ``Spread-Quadray Rotors: A Tetrahedral Alternative to Quaternions.'' Open Building / ARTexplorer Project.
+    \item Thomson, A. (2026). ``Geometric Janus Inversion: Extending the Janus Point from Temporal to Spatial Geometry via Tetrahedral (Quadray) Coordinates.'' Open Building / ARTexplorer Project. (Companion paper on 4D$^\pm$ Quadray space and zero-sum normalization.)
     \item Thomson, A. (2026). \emph{ARTexplorer: Interactive Tetrahedral Geometry Visualization}. \url{https://arossti.github.io/ARTexplorer/}
 \end{enumerate}
 
