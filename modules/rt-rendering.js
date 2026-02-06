@@ -42,8 +42,8 @@ export const CAMERA_PRESETS = {
   // Prime projection discovery views
   heptagonProjection: {
     name: "7-gon Projection",
-    description: "Truncated tetrahedron projects to 7-vertex hull",
-    spreads: [0.11, 0, 0.5], // (s1, s2, s3) via ZYX rotation
+    description: "Truncated tetrahedron projection (9-hull at current spreads; 7 TBD)",
+    spreads: [0.11, 0, 0.5], // (s1, s2, s3) via ZYX rotation - produces 9-hull
     recommendedForm: "quadrayTruncatedTetrahedron",
     reference: "Prime-Projection-Conjecture.tex §8.4",
   },
@@ -2549,6 +2549,8 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayTruncatedTetGroup.visible = true;
     } else {
       quadrayTruncatedTetGroup.visible = false;
+      // Hide prime projection visualization when truncated tet is hidden
+      RTPapercut.showPrimePolygon(null, scene, camera);
     }
 
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
@@ -3713,7 +3715,7 @@ export function initScene(THREE, OrbitControls, RT) {
         // Show prime polygon overlay (7-gon for heptagon, 5-gon for pentagon)
         // This demonstrates that hull vertices map to regular polygon at unit radius
         const polygonSides = view === "heptagonProjection" ? 7 : 5;
-        RTPapercut.showPrimePolygon(polygonSides, scene, camera, 1.5);
+        RTPapercut.showPrimePolygon(polygonSides, scene, camera, 3.5);
 
         console.log(`📐 ${preset.name}: spreads=(${s1}, ${s2}, ${s3})`);
         console.log(`   ${preset.description}`);

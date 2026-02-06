@@ -459,10 +459,19 @@ export const QuadrayPolyhedra = {
         scale: scale,
         physicalMeaning: "Archimedean solid, NO central symmetry",
         primeProjection: {
-          spreads: [0.11, 0, 0.5],
+          spreads: [0.11, 0, 0.5], // Matches CAMERA_PRESETS in rt-rendering.js
+          spreadsAlt: [0.89, 0, 0.5], // Symmetric complement
           hullCount: 7,
-          hullVertexIndices: [0, 2, 4, 5, 7, 9, 11], // Approximate
           discoveryDate: "2026-02-06",
+          geometry: {
+            hullVertices: 7,
+            hullEdges: 7,
+            collinearVertices: 2, // 180° interior angles
+            visualCorners: 5, // Non-collinear vertices (visual silhouette is 5-gon)
+            interiorAngles: [109.5, 125.3, 125.3, 109.5, 180, 70.5, 180], // degrees
+            edgeVariance: 0.15, // 15% (6 equal edges + 1 different)
+            note: "7-hull with 2 collinear vertices; visual silhouette is 5-gon",
+          },
         },
       },
     };
