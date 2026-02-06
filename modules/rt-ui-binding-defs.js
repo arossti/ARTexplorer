@@ -18,7 +18,7 @@ export const simpleCheckboxBindings = [
   // Base polyhedra (just trigger updateGeometry)
   { id: "showPoint", type: "checkbox" },
   { id: "showCube", type: "checkbox" },
-  { id: "showDodecahedron", type: "checkbox" },
+  // showDodecahedron moved to checkboxWithControlsBindings (has Face Tiling option)
   { id: "showCuboctahedron", type: "checkbox" },
   { id: "showRhombicDodecahedron", type: "checkbox" },
 
@@ -109,6 +109,16 @@ export const checkboxWithControlsBindings = [
     id: "geodesicIcosaFaceTiling",
     type: "checkbox-controls",
     controlsId: "geodesic-icosa-face-tiling-options",
+  },
+  {
+    id: "showDodecahedron",
+    type: "checkbox-controls",
+    controlsId: "dodecahedron-options",
+  },
+  {
+    id: "dodecahedronFaceTiling",
+    type: "checkbox-controls",
+    controlsId: "dodecahedron-face-tiling-options",
   },
   {
     id: "showPrism",
@@ -408,16 +418,54 @@ export const simpleSliderBindings = [
   },
 
   // Primitive size inputs
-  { id: "polygonSides", type: "slider" },
+  { id: "polygonSides", type: "slider", valueId: "polygonSidesValue" },
   { id: "prismSides", type: "slider" },
   { id: "coneSides", type: "slider" },
   { id: "penroseQuadrance", type: "slider" },
-  { id: "penroseGenerations", type: "slider", valueId: "penroseGenerationsValue" },
+  {
+    id: "penroseGenerations",
+    type: "slider",
+    valueId: "penroseGenerationsValue",
+  },
 
   // Helix controls
-  { id: "tetrahelix1CountSlider", type: "slider", valueId: "tetrahelix1CountDisplay" },
-  { id: "tetrahelix2CountSlider", type: "slider", valueId: "tetrahelix2CountDisplay" },
-  { id: "tetrahelix3CountSlider", type: "slider", valueId: "tetrahelix3CountDisplay" },
+  {
+    id: "tetrahelix1CountSlider",
+    type: "slider",
+    valueId: "tetrahelix1CountDisplay",
+  },
+  {
+    id: "tetrahelix2CountSlider",
+    type: "slider",
+    valueId: "tetrahelix2CountDisplay",
+  },
+  {
+    id: "tetrahelix3CountSlider",
+    type: "slider",
+    valueId: "tetrahelix3CountDisplay",
+  },
+
+  // Dodecahedron face tiling scale (for finding φ-ratio)
+  // Slider and numeric input are synced together
+  {
+    id: "dodecTilingScale",
+    type: "slider",
+    onInput: value => {
+      const input = document.getElementById("dodecTilingScaleInput");
+      if (input) input.value = parseFloat(value).toFixed(3);
+    },
+  },
+  {
+    id: "dodecTilingScaleInput",
+    type: "slider", // Treated as slider for updateGeometry trigger
+    onInput: value => {
+      const slider = document.getElementById("dodecTilingScale");
+      if (slider) {
+        const clamped = Math.max(0.5, Math.min(1.5, parseFloat(value) || 1.0));
+        slider.value = clamped;
+      }
+    },
+  },
 ];
 
 // ============================================================================

@@ -1030,11 +1030,558 @@ Following ARTexplorer conventions:
 
 - **Penrose Tilings**: Wikipedia, Wolfram MathWorld
 - **Viral Capsid Tilings**: Reidun Twarock (York), "Structures of Spherical Viral Capsids as Quasicrystalline Tilings"
-- **Spherical Penrose**: Bridges 2018 "A Class of Spherical Penrose-Like Tilings"
 - **Matching Rules**: de Bruijn's pentagrid method, substitution rules
 - **RT Foundation**: Wildberger "Divine Proportions" Chapter 14 (pentagon spreads α, β)
 - **Fuller Synergetics**: R. Buckminster Fuller, "Synergetics: Explorations in the Geometry of Thinking"
 - **Barbour Janus Point**: Julian Barbour, "The Janus Point: A New Theory of Time" (2020)
+
+### ⭐ KEY REFERENCE: Spherical Penrose-Like Tilings (Todd, Bridges 2018)
+
+**Paper**: "A Class of Spherical Penrose-Like Tilings with Connections to Virus Protein Patterns and Modular Sculpture"
+**Author**: Hamish Todd
+**Conference**: Bridges 2018 (Mathematics & Art)
+**PDF**: https://archive.bridgesmathart.org/2018/bridges2018-237.pdf
+
+**Why This Paper is Critical for Our Work:**
+
+This paper describes **T-K (Twarock-Konevtsova) tilings** - spherical polyhedra that:
+- Apply Penrose-like aperiodic patterns to icosahedral surfaces
+- Were first developed for studying **virus protein capsid structures**
+- Use **kite and dart** shapes mapped to spherical geometry
+- Have **consistent edge lengths** and limited angle selection
+- Provide algorithms for generating spherical Penrose tilings
+
+**Key Features of T-K Tilings:**
+1. **Icosahedral symmetry** - 5-fold rotational centers (same as viral capsids)
+2. **Kite/Dart mapping** - Penrose P2 tiles adapted to curved surfaces
+3. **Consistent edge lengths** - Important for RT-pure implementation
+4. **Virus connection** - Directly applicable to Twarock's virology research
+
+**Algorithms to Extract (for RT conversion):**
+- Kite placement on icosahedral faces
+- Dart placement completing the tiling
+- Edge matching across face boundaries
+- Deflation rules for spherical subdivision
+
+**Implementation Priority**: HIGH - This paper provides the specific algorithms we need to achieve our virology visualization goal. The kite/dart approach may be more tractable than trying to fit pentagon arrays.
+
+---
+
+## TODO: RT-Pure Implementation of Spherical Penrose Tilings
+
+> **Status:** PENDING IMPLEMENTATION
+> **Priority:** HIGH
+> **Target File:** `modules/rt-penrose.js`
+> **Last Updated:** February 2026
+
+### Research Context & Stakeholders
+
+This implementation is requested by **Bonnie Devarco** for collaboration with **Reidun Twarock** (University of York) — the "T" in T-K tilings and a leading researcher in viral capsid geometry.
+
+**Why This Matters:**
+- Twarock's group uses quasi-crystalline tilings to model protein arrangements on viral capsids
+- ARTexplorer's RT-pure approach offers algebraic exactness not available in standard float-based tools
+- This deployment would provide an interactive visualization tool for active virology research
+
+**Research Papers (Twarock et al.):**
+- "A mathematical model for the assembly of icosahedral virus capsids" (2006)
+- "Structural puzzles in virology solved with an overarching icosahedral design principle" (Nature, 2019)
+- Todd's Bridges 2018 paper builds directly on Twarock's T-K tiling work
+
+This section documents the required methods for mapping Penrose-like tilings to icosahedral and dodecahedral surfaces using RT-pure algebraic methods. Each TODO includes code snippets ready for implementation.
+
+### Defining Our Aim: Locally Penrose-like, Globally Symmetric
+
+**Critical Distinction: Plane vs Sphere**
+
+| Property | Infinite 2D Plane | Finite 2-Sphere |
+|----------|-------------------|-----------------|
+| Extent | Infinite | Finite, closed |
+| True aperiodicity | Possible (never repeats) | **Impossible** (must close on itself) |
+| Penrose tiling | Infinite, non-repeating | Finite patch with boundary conditions |
+
+**What We Actually Want (for virology):**
+
+A **Penrose-like spherical tiling** is NOT an aperiodic tiling on a sphere (mathematically impossible). Instead, it is:
+
+1. **Locally Penrose-structured** — Within any region, tiles follow:
+   - φ-rational edge lengths and angles
+   - Penrose deflation rules (kite→kites+darts, rhombus→rhombi)
+   - Penrose matching rules (colored edges/arrows)
+
+2. **Globally icosahedral** — The overall pattern has:
+   - 5-fold rotational axes (12 of them, at icosahedron vertices)
+   - 3-fold rotational axes (20 of them, at icosahedron face centers)
+   - 2-fold rotational axes (30 of them, at icosahedron edge midpoints)
+   - This matches viral capsid symmetry exactly
+
+3. **Patch-based with finite extent** — We work with:
+   - A fundamental domain (e.g., 1/60th of sphere for full icosahedral symmetry)
+   - OR a single face (1/20th for icosahedron, 1/12th for dodecahedron)
+   - The patch tiles the sphere when replicated by symmetry operations
+
+4. **Refinable via deflation generations** — Higher resolution comes from:
+   - Subdividing existing tiles (not expanding outward)
+   - Each generation increases tile count by ~φ² factor
+   - Maintains local Penrose structure at finer scales
+
+**Why This Matters for Virology:**
+
+Viral capsids (like HPV, rotavirus) have:
+- Icosahedral symmetry (global constraint)
+- Quasi-crystalline protein arrangements (local Penrose-like structure)
+- Finite surface area with specific protein counts
+
+The T-K tilings (Twarock-Konevtsova) capture exactly this: **global icosahedral symmetry with local Penrose-like deflation structure**. This is our implementation target.
+
+### TODO 1: Icosahedral Face Mapping (P2 Kite/Dart)
+
+The icosahedron has 20 triangular faces. Each face can host a portion of Penrose P2 tiling (kites and darts) that connects seamlessly across edges.
+
+**Algorithm (from Todd 2018):**
+1. Start with icosahedron face (equilateral triangle)
+2. Place initial kite/dart configuration respecting 5-fold symmetry at vertices
+3. Apply deflation to subdivide kites → kites + darts
+4. Match edges across face boundaries using matching rules
+
+```javascript
+/**
+ * TODO: Implement in rt-penrose.js
+ *
+ * Map Penrose P2 tiling to icosahedral face
+ * Uses RT-pure coordinates throughout
+ *
+ * @param {number} faceIndex - Which icosahedron face (0-19)
+ * @param {number} generations - Deflation generations
+ * @returns {Object} { kites: [...], darts: [...], faceTransform: Matrix4 }
+ */
+static createIcosahedralFaceTiling(faceIndex, generations = 2) {
+  // 1. Get icosahedron face vertices (RT-pure)
+  //    Use existing icosahedron from rt-polyhedra.js
+  const icoData = RT.Icosahedron.create(1); // unit circumradius
+  const face = icoData.faces[faceIndex];
+  const [v0, v1, v2] = face.map(i => icoData.vertices[i]);
+
+  // 2. Calculate face coordinate system
+  //    Origin at face center, local XY in face plane
+  const faceCenter = {
+    x: (v0.x + v1.x + v2.x) / 3,
+    y: (v0.y + v1.y + v2.y) / 3,
+    z: (v0.z + v1.z + v2.z) / 3
+  };
+
+  // 3. Initial seed configuration for triangular face
+  //    Each icosahedron vertex is shared by 5 faces → 5-fold symmetry
+  //    Seed with 5 kites meeting at each vertex (forms a "star")
+  const seedTiles = this.createIcoFaceSeed(v0, v1, v2, faceCenter);
+
+  // 4. Deflate for generations
+  let tiles = seedTiles;
+  for (let gen = 0; gen < generations; gen++) {
+    tiles = this.deflateKiteDart(tiles);
+  }
+
+  // 5. Transform to 3D face position
+  const faceTransform = this.calculateFaceTransform(faceCenter, v0, v1, v2);
+
+  return {
+    kites: tiles.filter(t => t.type === 'kite'),
+    darts: tiles.filter(t => t.type === 'dart'),
+    faceTransform,
+    faceIndex
+  };
+}
+
+/**
+ * Create initial kite configuration for icosahedron face
+ * 5 kites meet at each vertex of the icosahedron
+ */
+static createIcoFaceSeed(v0, v1, v2, center) {
+  const tiles = [];
+  const phi = RT.PurePhi.value();
+
+  // At each vertex, we need 1/5 of the 5-kite star
+  // (other 4/5 are on adjacent faces)
+
+  // Kite proportions (from Penrose P2):
+  // - Long diagonal : Short diagonal = φ : 1
+  // - All edges equal length
+
+  // Place partial kite at v0 (interior angle 72° at sharp end)
+  // The kite's sharp vertex (72°) goes at icosahedron vertex
+  // The kite's blunt end (144°) points toward face center
+
+  const kiteAtV0 = this.createKite({
+    sharpVertex: v0,
+    bluntDirection: center,
+    edgeQuadrance: this.calculateIcoKiteEdgeQ(v0, v1) // RT-pure
+  });
+  tiles.push(kiteAtV0);
+
+  // Repeat for v1, v2
+  // ... (similar pattern)
+
+  return tiles;
+}
+```
+
+### TODO 2: Dodecahedral Face Mapping (P3 Thick/Thin Rhombi)
+
+The dodecahedron has 12 pentagonal faces. Penrose P3 tiling (thick/thin rhombi) maps naturally to pentagons.
+
+**Algorithm:**
+1. Start with dodecahedron pentagonal face
+2. Place 5 thick rhombi around center (forms a "fat star")
+3. Fill gaps with thin rhombi
+4. Apply deflation for higher generations
+5. Match across edges using matching rules
+
+```javascript
+/**
+ * TODO: Implement in rt-penrose.js
+ *
+ * Map Penrose P3 tiling to dodecahedral face
+ * Pentagon faces are natural hosts for P3 rhombus tilings
+ *
+ * @param {number} faceIndex - Which dodecahedron face (0-11)
+ * @param {number} generations - Deflation generations
+ * @returns {Object} { thickRhombi: [...], thinRhombi: [...], faceTransform: Matrix4 }
+ */
+static createDodecahedralFaceTiling(faceIndex, generations = 2) {
+  // 1. Get dodecahedron face vertices (RT-pure)
+  const dodecData = RT.Dodecahedron.create(1);
+  const face = dodecData.faces[faceIndex];
+  const vertices = face.map(i => dodecData.vertices[i]);
+
+  // 2. Calculate face coordinate system
+  const faceCenter = vertices.reduce(
+    (acc, v) => ({ x: acc.x + v.x/5, y: acc.y + v.y/5, z: acc.z + v.z/5 }),
+    { x: 0, y: 0, z: 0 }
+  );
+
+  // 3. Initial P3 seed: 5 thick rhombi forming central star
+  //    Each thick rhombus has:
+  //    - Acute angle = 72° (spread = β = (5+√5)/8)
+  //    - Obtuse angle = 108° (spread = β, same as 72°!)
+  const phi = RT.PurePhi.value();
+  const seedTiles = [];
+
+  for (let i = 0; i < 5; i++) {
+    const angle1 = (i * 72 * Math.PI) / 180;      // Convert for initial placement
+    const angle2 = ((i + 1) * 72 * Math.PI) / 180;
+
+    // Thick rhombus vertices:
+    // - Center vertex at pentagon center (acute 72° angle)
+    // - Two mid vertices toward pentagon edges
+    // - Outer vertex between them
+    seedTiles.push({
+      type: 'thick',
+      vertices: this.calculateThickRhombusInPentagon(
+        faceCenter, vertices, i, phi
+      ),
+      generation: 0
+    });
+  }
+
+  // 4. Fill gaps with thin rhombi
+  //    Gaps between thick rhombi are thin rhombus shaped
+  //    Thin rhombus has:
+  //    - Acute angle = 36° (spread = α = (5-√5)/8)
+  //    - Obtuse angle = 144° (spread = α)
+  for (let i = 0; i < 5; i++) {
+    seedTiles.push({
+      type: 'thin',
+      vertices: this.calculateThinRhombusGap(
+        faceCenter, vertices, i, phi
+      ),
+      generation: 0
+    });
+  }
+
+  // 5. Deflate for generations
+  let tiles = seedTiles;
+  for (let gen = 0; gen < generations; gen++) {
+    tiles = this.deflateRhombus(tiles);
+  }
+
+  // 6. Transform to 3D face position
+  const faceTransform = this.calculatePentagonFaceTransform(faceCenter, vertices);
+
+  return {
+    thickRhombi: tiles.filter(t => t.type === 'thick'),
+    thinRhombi: tiles.filter(t => t.type === 'thin'),
+    faceTransform,
+    faceIndex
+  };
+}
+```
+
+### TODO 3: P2 Kite/Dart Deflation Rules (RT-Pure)
+
+Deflation subdivides tiles into smaller copies. Critical for generating higher-resolution tilings.
+
+**Kite Deflation (P2):**
+- 1 Kite → 2 Kites + 2 Darts
+
+**Dart Deflation (P2):**
+- 1 Dart → 1 Kite + 1 Dart
+
+```javascript
+/**
+ * TODO: Implement in rt-penrose.js
+ *
+ * Deflate P2 kite/dart tiles using RT-pure coordinates
+ *
+ * @param {Array} tiles - Array of {type: 'kite'|'dart', vertices: [...]}
+ * @returns {Array} Deflated tiles (more tiles, smaller)
+ */
+static deflateKiteDart(tiles) {
+  const result = [];
+  const phi = RT.PurePhi.value();
+  const invPhi = RT.PurePhi.inverse(); // 1/φ = φ - 1
+
+  for (const tile of tiles) {
+    if (tile.type === 'kite') {
+      // Kite has 4 vertices: A (72° sharp), B, C (72° sharp), D (144° blunt)
+      // Deflation creates subdivision points using φ ratios
+      const [A, B, C, D] = tile.vertices;
+
+      // New point P on edge AB at ratio 1/φ from A
+      const P = this.interpolateRT(A, B, invPhi);
+      // New point Q on edge AC at ratio 1/φ from A
+      const Q = this.interpolateRT(A, C, invPhi);
+      // New point R on edge BD at ratio 1/φ from B
+      const R = this.interpolateRT(B, D, invPhi);
+      // New point S on edge CD at ratio 1/φ from C
+      const S = this.interpolateRT(C, D, invPhi);
+
+      // Output: 2 kites + 2 darts
+      result.push({ type: 'kite', vertices: [A, P, Q, /* ... */] });
+      result.push({ type: 'kite', vertices: [/* ... */] });
+      result.push({ type: 'dart', vertices: [P, B, R, /* ... */] });
+      result.push({ type: 'dart', vertices: [Q, C, S, /* ... */] });
+
+    } else if (tile.type === 'dart') {
+      // Dart has 4 vertices: A (36° sharp), B (216° concave), C (36° sharp), D
+      const [A, B, C, D] = tile.vertices;
+
+      // New point P on edge AB at ratio 1/φ from A
+      const P = this.interpolateRT(A, B, invPhi);
+
+      // Output: 1 kite + 1 dart
+      result.push({ type: 'kite', vertices: [/* ... */] });
+      result.push({ type: 'dart', vertices: [/* ... */] });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * RT-pure interpolation between two points
+ * Returns point at ratio t along segment from p1 to p2
+ *
+ * IMPORTANT: Keep as quadrance until final rendering
+ */
+static interpolateRT(p1, p2, t) {
+  // For RT purity, t should be a φ-rational value (1/φ, φ-1, etc.)
+  return {
+    x: p1.x + t * (p2.x - p1.x),
+    y: p1.y + t * (p2.y - p1.y),
+    z: p1.z !== undefined ? p1.z + t * (p2.z - p1.z) : undefined,
+    // Track RT purity
+    rtPure: (typeof t === 'number' && this.isPhiRational(t))
+  };
+}
+```
+
+### TODO 4: P3 Thick/Thin Rhombus Deflation Rules (RT-Pure)
+
+**Thick Rhombus Deflation:**
+- 1 Thick → 2 Thick + 2 Thin
+
+**Thin Rhombus Deflation:**
+- 1 Thin → 1 Thick + 2 Thin
+
+```javascript
+/**
+ * TODO: Implement in rt-penrose.js
+ *
+ * Deflate P3 thick/thin rhombus tiles using RT-pure coordinates
+ *
+ * Reference: Existing rt-penrose.js has partial implementation
+ * at createFromDeflation() - extend with full RT purity
+ */
+static deflateRhombus(tiles) {
+  const result = [];
+  const phi = RT.PurePhi.value();
+  const invPhi = RT.PurePhi.inverse();
+
+  for (const tile of tiles) {
+    if (tile.type === 'thick') {
+      // Thick rhombus: angles 72°-108°-72°-108°
+      // Vertices labeled A (72°), B (108°), C (72°), D (108°)
+      const [A, B, C, D] = tile.vertices;
+
+      // Subdivision uses φ-ratio points on edges
+      // Point P on AB at 1/φ from A
+      const P = this.interpolateRT(A, B, invPhi);
+      // Point Q on AD at 1/φ from A
+      const Q = this.interpolateRT(A, D, invPhi);
+      // Point R on CB at 1/φ from C
+      const R = this.interpolateRT(C, B, invPhi);
+      // Point S on CD at 1/φ from C
+      const S = this.interpolateRT(C, D, invPhi);
+      // Central point where diagonals meet
+      const center = this.interpolateRT(A, C, 0.5); // Midpoint of AC diagonal
+
+      // Output: 2 thick + 2 thin (exact vertex arrangement TBD from images)
+      result.push({ type: 'thick', vertices: [A, P, center, Q], generation: tile.generation + 1 });
+      result.push({ type: 'thick', vertices: [C, R, center, S], generation: tile.generation + 1 });
+      result.push({ type: 'thin', vertices: [P, B, R, center], generation: tile.generation + 1 });
+      result.push({ type: 'thin', vertices: [Q, D, S, center], generation: tile.generation + 1 });
+
+    } else if (tile.type === 'thin') {
+      // Thin rhombus: angles 36°-144°-36°-144°
+      // Vertices labeled A (36°), B (144°), C (36°), D (144°)
+      const [A, B, C, D] = tile.vertices;
+
+      // Point P on AB at 1/φ from B
+      const P = this.interpolateRT(B, A, invPhi);
+      // Point Q on DB at 1/φ from B
+      const Q = this.interpolateRT(B, D, invPhi);
+
+      // Output: 1 thick + 2 thin
+      result.push({ type: 'thick', vertices: [P, A, C, Q], generation: tile.generation + 1 });
+      result.push({ type: 'thin', vertices: [P, B, Q, /* ... */], generation: tile.generation + 1 });
+      result.push({ type: 'thin', vertices: [Q, D, C, /* ... */], generation: tile.generation + 1 });
+    }
+  }
+
+  return result;
+}
+```
+
+### TODO 5: Edge Matching Across Polyhedron Faces
+
+Critical for seamless tilings: tiles must match across face boundaries.
+
+```javascript
+/**
+ * TODO: Implement in rt-penrose.js
+ *
+ * Ensure tiles match across adjacent polyhedron faces
+ * Uses Penrose matching rules (colored edges / arrows)
+ *
+ * @param {Array} allFaceTilings - Array of per-face tilings
+ * @param {Object} polyhedronData - Adjacency information
+ * @returns {Array} Validated tilings with edge matching enforced
+ */
+static enforceEdgeMatching(allFaceTilings, polyhedronData) {
+  // 1. Build face adjacency map
+  const adjacency = this.buildAdjacencyMap(polyhedronData);
+
+  // 2. For each shared edge, verify matching rules
+  for (const [face1, face2, sharedEdge] of adjacency) {
+    const tiles1 = this.getTilesOnEdge(allFaceTilings[face1], sharedEdge);
+    const tiles2 = this.getTilesOnEdge(allFaceTilings[face2], sharedEdge);
+
+    // Matching rule: tile types must be compatible
+    // and arrows/colors must align
+    if (!this.verifyMatching(tiles1, tiles2)) {
+      console.warn(`[RT] Edge mismatch between faces ${face1} and ${face2}`);
+      // Attempt to fix by adjusting tiles
+      this.resolveEdgeMismatch(tiles1, tiles2, sharedEdge);
+    }
+  }
+
+  return allFaceTilings;
+}
+```
+
+### TODO 6: Complete Sphere Tiling Assembly
+
+Assemble all faces into complete spherical tiling.
+
+```javascript
+/**
+ * TODO: Implement in rt-penrose.js
+ *
+ * Create complete Penrose-tiled sphere
+ *
+ * @param {string} polyhedronType - 'icosahedron' | 'dodecahedron'
+ * @param {string} tilingType - 'P2' (kite/dart) | 'P3' (rhombus)
+ * @param {number} generations - Deflation generations
+ * @returns {Object} Complete sphere tiling data for rendering
+ */
+static createPenroseSphere(polyhedronType, tilingType, generations) {
+  const allFaceTilings = [];
+
+  if (polyhedronType === 'icosahedron') {
+    // 20 faces
+    for (let i = 0; i < 20; i++) {
+      allFaceTilings.push(
+        tilingType === 'P2'
+          ? this.createIcosahedralFaceTiling(i, generations)
+          : this.createIcosahedralFaceP3Tiling(i, generations) // Alternative
+      );
+    }
+  } else if (polyhedronType === 'dodecahedron') {
+    // 12 faces
+    for (let i = 0; i < 12; i++) {
+      allFaceTilings.push(
+        tilingType === 'P3'
+          ? this.createDodecahedralFaceTiling(i, generations)
+          : this.createDodecahedralFaceP2Tiling(i, generations) // Alternative
+      );
+    }
+  }
+
+  // Enforce edge matching across faces
+  const matchedTilings = this.enforceEdgeMatching(allFaceTilings, polyhedronType);
+
+  // Optionally project to sphere surface
+  const projected = this.projectToSphere(matchedTilings);
+
+  return {
+    polyhedronType,
+    tilingType,
+    generations,
+    faceTilings: matchedTilings,
+    sphericalProjection: projected,
+    tileCount: this.countTiles(matchedTilings),
+    rtPure: true
+  };
+}
+```
+
+### Instructions for Subsequent Agents
+
+**Implementing these TODOs:**
+
+1. **Start with TODO 3 or 4** (deflation rules) - These are the core algorithms. The existing `rt-penrose.js` has partial implementations to build on.
+
+2. **Verify φ-rationality** - All intermediate calculations should use:
+   - `RT.PurePhi.value()` for φ
+   - `RT.PurePhi.inverse()` for 1/φ
+   - `RT.PurePhi.pentagon.cos36()`, `.cos72()` etc. for trig
+   - Log validation: `console.log('[RT] tile: rtPure=${tile.rtPure}')`
+
+3. **Test incrementally** - Start with Gen 1 (no deflation), verify seed placement, then add deflation.
+
+4. **Reference Images** - The Todd 2018 paper has diagrams showing:
+   - Figure 1: T-K tiling on icosahedron
+   - Figure 2: Kite/dart arrangement
+   - Figure 3: Virus capsid comparison
+
+   When exact vertex positions are unclear, formulate from these images.
+
+5. **Integration with rt-rendering.js** - The existing dodecahedron face tiling code (lines ~870-960) provides the pattern for rendering tiles on faces. Extend this for icosahedron.
+
+6. **Console Validation** - Add RT validation logging:
+   ```javascript
+   console.log(`[RT] PenroseSphere: ${tileCount} tiles, φ-pure=${rtPure}`);
+   ```
 
 ---
 
@@ -1045,6 +1592,157 @@ Following ARTexplorer conventions:
 3. **Quasicrystal Mode**: Extends to dodecahedral and other 3D quasiperiodic structures
 4. **Assembly Animation**: Visualize tile-by-tile assembly (viral assembly code)
 5. **Export to STL**: 3D-printable Penrose spheres
+6. **Infinite Sphere**: Dynamic regeneration mode (see below)
+
+### Concept: "Infinite Sphere" — Dynamic Penrose Regeneration
+
+> **Analogy**: Just as social media uses "infinite scroll" on a finite screen by regenerating content as users scroll, "Infinite Sphere" creates the experience of infinite aperiodic exploration on a finite closed surface.
+
+**The Problem Restated:**
+- A sphere is a finite, closed 2-manifold
+- True Penrose aperiodicity requires infinite extent
+- Any static tiling on a sphere must eventually "close" on itself
+
+**The Solution: Dynamic Regeneration**
+
+Instead of attempting impossible infinite aperiodicity, we create the *experience* of infinite exploration through regeneration:
+
+1. **Swipe Slider Interface**
+   - Similar to the dodecahedron face tiling scale slider
+   - Slider resets to origin after each "swipe" gesture
+   - Each swipe triggers regeneration of tiling patches
+
+2. **Random Flat Penrose Seeds**
+   - Each regeneration starts from a random flat Penrose tiling patch
+   - Different seed = different local aperiodic structure
+   - Maintains Penrose matching rules within each patch
+
+3. **Seam Boundaries for Regeneration**
+   - **Option A: Great Circle Seams** — Regeneration occurs along geodesic great circles dividing the polyhedron
+   - **Option B: Polyhedral Edge Seams** — Natural edges of icosahedron/dodecahedron faces serve as regeneration boundaries
+   - **Option C: Emergent Patterns** — Seams follow tile boundaries, creating organic regeneration zones
+
+4. **Sliding Transition Animation**
+   - New tiling patches "slide into place" as user swipes
+   - Old patches slide out at opposite seam
+   - Creates illusion of continuous infinite surface
+
+**Implementation Sketch:**
+
+```javascript
+/**
+ * Infinite Sphere - Dynamic Penrose Regeneration
+ *
+ * Slider controls regeneration, resets to origin after each gesture
+ */
+class InfiniteSphere {
+  constructor(polyhedronType) {
+    this.polyhedron = polyhedronType; // 'icosahedron' | 'dodecahedron'
+    this.currentPatches = new Map();  // faceIndex → tiling patch
+    this.regenerationSeams = this.calculateSeams();
+  }
+
+  /**
+   * Called on slider swipe - regenerates patches crossing the seam
+   * @param {number} swipeDirection - positive or negative swipe
+   * @param {number} swipeMagnitude - how far the swipe went (0-1)
+   */
+  onSwipe(swipeDirection, swipeMagnitude) {
+    // 1. Identify which patches cross the active seam
+    const affectedFaces = this.getFacesAtSeam(swipeDirection);
+
+    // 2. Generate new random Penrose seed for each affected face
+    for (const faceIndex of affectedFaces) {
+      const newSeed = this.generateRandomPenroseSeed();
+      const newPatch = this.createPatchFromSeed(newSeed, faceIndex);
+
+      // 3. Animate transition: old slides out, new slides in
+      this.animateTransition(
+        this.currentPatches.get(faceIndex),
+        newPatch,
+        swipeDirection,
+        swipeMagnitude
+      );
+
+      this.currentPatches.set(faceIndex, newPatch);
+    }
+  }
+
+  /**
+   * Generate random Penrose seed configuration
+   * Uses different deflation paths to create variety
+   */
+  generateRandomPenroseSeed() {
+    const seedTypes = ['star', 'sun', 'cartwheel', 'ace', 'deuce'];
+    const randomSeed = seedTypes[Math.floor(Math.random() * seedTypes.length)];
+    const randomRotation = Math.random() * 2 * Math.PI; // Random orientation
+    const randomGeneration = 2 + Math.floor(Math.random() * 3); // 2-4 generations
+
+    return {
+      type: randomSeed,
+      rotation: randomRotation,
+      generations: randomGeneration
+    };
+  }
+
+  /**
+   * Calculate seam boundaries based on polyhedron structure
+   */
+  calculateSeams() {
+    if (this.polyhedron === 'icosahedron') {
+      // Great circles through opposite vertices (6 of them)
+      // Or: edges of icosahedron (30 edges)
+      return this.icosahedronGreatCircles();
+    } else {
+      // Dodecahedron: edges between pentagon faces (30 edges)
+      // Or: great circles through face centers
+      return this.dodecahedronSeams();
+    }
+  }
+}
+```
+
+**Why This Resolves the Closed Surface Problem:**
+
+| Static Approach | Infinite Sphere Approach |
+|-----------------|--------------------------|
+| Finite tiling, eventually repeats | Dynamic regeneration, always fresh |
+| Global constraints force periodicity | Local patches are genuinely aperiodic |
+| Fixed pattern, user explores | Pattern evolves as user interacts |
+| Mathematical limitation visible | Limitation hidden by UX design |
+
+**Connection to 4D Polyhedra:**
+
+The "Infinite Sphere" concept extends naturally to 4D:
+- 4D polytopes (120-cell, 600-cell) have 3D "faces"
+- Regeneration seams become 2D surfaces
+- User "swipes" through 4D cross-sections
+- Each cross-section shows different 3D Penrose-like tilings
+
+**User Experience Goal:**
+
+The user should feel they're exploring an infinite quasi-crystalline universe, even though they're on a finite closed surface. The mathematics of aperiodicity is honored *locally* while the *global* constraint of closure is hidden through dynamic interaction.
+
+**Biological Connection: Viral Capsid Self-Assembly**
+
+The "Infinite Sphere" regeneration model isn't just a UX metaphor — it mirrors how viral capsid proteins actually self-assemble:
+
+| Viral Assembly | Infinite Sphere |
+|----------------|-----------------|
+| **Limited protein types** (often just 1-3) | **Limited tile types** (kite/dart or thick/thin) |
+| **Local binding rules** (protein-protein interfaces) | **Penrose matching rules** (colored edges/arrows) |
+| **Quasi-random encounters** (Brownian motion) | **Random seed selection** (different starting configs) |
+| **Wide variability** (polymorphism, different T-numbers) | **Wide variability** (infinite distinct tilings from same rules) |
+| **Emergent icosahedral symmetry** (global structure) | **Emergent closed surface** (sphere/polyhedron) |
+
+This means the "Infinite Sphere" interaction model could serve as:
+
+1. **Visualization of assembly dynamics** — Each "swipe" represents a new assembly pathway
+2. **Exploration of configuration space** — User discovers the variety possible from minimal rules
+3. **Intuition builder** — Demonstrates how simple local rules create complex global structures
+4. **Research tool** — Could help identify favorable/unfavorable assembly configurations
+
+> *"The quasi-random regeneration of Penrose patches on a closed surface models the same process by which coat proteins find their positions during viral capsid assembly — limited rules, local interactions, global emergence."*
 
 ---
 
@@ -1558,6 +2256,448 @@ This rule applies to ALL tiling implementations: triangular, square, hexagonal, 
 
 ---
 
-_Last updated: February 5, 2026_
+## Completed Implementation: Face Tiling & PACKED Node Scaling (Feb 5, 2026)
+
+### ✅ Polygon Face Tiling on Geodesic Icosahedron
+
+**Feature**: Apply polygon tilings to geodesic icosahedron faces with generation-based subdivision.
+
+**Implementation** (`rt-rendering.js`, `rt-grids.js`):
+- Added "Face Tiling" checkbox to Geodesic Icosahedron controls
+- When enabled, uses the active Polygon primitive's tiling settings (type, generations)
+- Tilings applied to each icosahedral face after geodesic frequency subdivision
+- `effectiveFrequency = baseFrequency * 2^(tilingGenerations-1)` for edge length calculation
+
+**UI** (`index.html`):
+- Checkbox: "Enable Face Tiling" with cyan info text
+- Links to Polygon controls: "Set Polygon Tiling Properties under Primitives/Polygons"
+
+**Cache Key** (`rt-nodes.js`):
+- Format: `{rt|classical}-{nodeSize}-{polyType}-{scale}-{sides}-gen{N}-f{freq}`
+- Includes `-genN` for tilingGenerations and `-fN` for frequency
+
+### ✅ PACKED Node Dynamic Recalculation
+
+**Problem Solved**: PACKED node spheres (radius = edge/2 for close-packing) were not scaling correctly when:
+1. Geodesic frequency slider changed
+2. Polygon tiling generations changed
+
+**Root Causes Fixed**:
+
+1. **`getPolyhedronEdgeQuadrance()` in `rt-nodes.js`**:
+   - Added geodesic case that divides edge quadrance by frequency²:
+   ```javascript
+   case "geodesicTetrahedron":
+   case "geodesicOctahedron":
+   case "geodesicIcosahedron": {
+     const baseType = type.replace("geodesic", "").toLowerCase();
+     let Q_edge = getPolyhedronEdgeQuadrance(baseType, scale);
+     if (options.frequency && options.frequency > 1) {
+       Q_edge = Q_edge / (freq * freq);  // Quadrance divides by freq²
+     }
+     return Q_edge;
+   }
+   ```
+
+2. **nodeOptions in `rt-rendering.js`**:
+   - Added geodesic case to pass frequency from userData.parameters:
+   ```javascript
+   } else if (polyType?.startsWith("geodesic") && group.userData.parameters?.frequency) {
+     nodeOptions = { frequency: group.userData.parameters.frequency };
+   }
+   ```
+
+3. **Parameter ordering**:
+   - Fixed: `userData.parameters` must be set BEFORE `renderPolyhedron()` so nodes can access frequency
+   - Applies to `renderGeodesicPolyhedron()` helper and geodesic icosahedron custom rendering
+
+4. **Cache invalidation**:
+   - Added `-fN` suffix to cache key for frequency
+   - Added `-genN` suffix for tilingGenerations
+   - Ensures node spheres regenerate when sliders change
+
+**RT-Pure Calculation**:
+- Edge quadrance Q divides by frequency² (geodesics) or by 4^(gen-1) (polygon tilings)
+- PACKED radius = √(Q_edge)/2 calculated at render time
+- Stays in quadrance space until final sqrt at GPU boundary
+
+### ✅ Projection-Based PACKED Node Adjustment (Implemented Feb 5, 2026)
+
+**Context**: Geodesic polyhedra support four projection modes:
+- **Flat (off)**: Vertices stay on base polyhedron faces
+- **Insphere**: Vertices projected to insphere (smaller sphere)
+- **Midsphere**: Vertices projected to midsphere (edge-tangent sphere)
+- **Outsphere**: Vertices projected to circumsphere (largest sphere)
+
+**Implementation**:
+
+1. **Pass projection type to node rendering** (`rt-rendering.js`):
+   ```javascript
+   nodeOptions = {
+     frequency: group.userData.parameters.frequency,
+     projection: group.userData.parameters.projection || "out",
+   };
+   ```
+
+2. **Sphere projection stretch factors** (`rt-nodes.js`):
+   When projecting flat vertices to a sphere, edges STRETCH because vertices near face centers move outward. Empirically derived factors:
+   ```javascript
+   // Stretch factors (flat → sphere projection)
+   geodesicTetrahedron: 1.5   // Large faces, significant stretch
+   geodesicOctahedron:  1.35  // Medium faces
+   geodesicIcosahedron: 1.27  // Smallest faces, verified from avgQ
+   ```
+
+3. **Radius scaling for in/mid projections** (relative to outsphere):
+   ```javascript
+   // Geodesic Tetrahedron: mid=1/3, in=1/9
+   // Geodesic Octahedron:  mid=1/2, in=1/3
+   // Geodesic Icosahedron: mid=φ²/(φ+2)≈0.724, in=(3-√5)/2≈0.382
+   ```
+
+4. **Cache key includes projection**: `-{projection}` suffix ensures nodes regenerate when projection changes
+
+**Result**: PACKED nodes now scale appropriately for all projection modes. Spheres approximately "kiss" for outsphere and scale down proportionally for midsphere/insphere.
+
+### ⚠️ Known Limitation: Non-Uniform Edge Lengths on Projected Geodesics
+
+**Observation**: Geodesic projections produce non-uniform edge lengths:
+- Edges near original polyhedron vertices are **shorter**
+- Edges near face centers are **longer**
+- The tetrahedron has the most extreme variation (large faces)
+- The icosahedron has the least variation (small faces)
+
+**Current Approach**: Uses **average edge length** for uniform PACKED sphere radius. This produces:
+- Slight gaps where actual edges are longer than average
+- Slight overlaps where actual edges are shorter than average
+
+**Perfect Solution (Future Work)**: Calculate per-vertex sphere radius based on actual incident edge lengths:
+```javascript
+// Pseudocode for perfect close-packing
+for each vertex V:
+  incidentEdges = getEdgesAt(V)
+  minEdgeQ = min(incidentEdges.map(e => e.quadrance))
+  packedRadius[V] = sqrt(minEdgeQ) / 2
+```
+
+This would create variable-sized spheres that perfectly "kiss" at each vertex without gaps or overlaps.
+
+**Priority**: Nice-to-have. Current uniform-radius solution is acceptable for visualization purposes. The flat projection case remains exact (all edges equal length)
+
+**Research Needed**:
+- Exact relationship between frequency and edge length for each projection
+- Whether uniform scaling is acceptable or per-edge calculation required
+- For midsphere/outsphere, edges near icosahedral vertices may differ from edges near face centers
+
+**Priority**: Nice-to-have for visual consistency. Flat projection is the primary use case for tiling work.
+
+---
+
+## Pentagon Array Tiling for Penrose Guidance Grid (Feb 5, 2026)
+
+### ✅ RT-Pure Pentagon Array Implementation
+
+**Purpose**: Create a 5-fold symmetric array of regular pentagons to serve as a guidance grid for Penrose tiling. Unlike triangular/square tilings that subdivide, pentagons DON'T tile the plane - the gaps form the characteristic star shapes seen in Penrose patterns.
+
+**Implementation** (`rt-grids.js: pentagonalTiling()`):
+
+**Golden Ratio Geometry (algebraically exact)**:
+```
+R = overall pattern radius (input)
+pentRadius = R/φ = R × (φ-1)     (RT-pure: invPhi identity)
+innerRingRadius = pentRadius × φ = R    (exactly!)
+outerRingRadius = R × φ               (Gen 3)
+```
+
+**Key RT-Pure Relationships**:
+| Property | Formula | Value |
+|----------|---------|-------|
+| Pentagon circumradius | R/φ | ≈ 0.618R |
+| Inner ring radius | R/φ × φ = R | Exact |
+| Inward vertex from origin | R - R/φ = R/φ² | ≈ 0.382R |
+| Outer ring radius | R × φ | ≈ 1.618R |
+
+**Generation Structure**:
+- **Gen 1**: Single central pentagon (vertex pointing up)
+- **Gen 2**: 5 inner pentagons at 72° intervals, vertices pointing at origin
+- **Gen 3**: 5 inner + 5 outer pentagons (10 total), outer offset 36°
+
+**Vertex Orientation**: Each pentagon has one vertex pointing directly at the origin, achieved by matching pentagon rotation to its angular position (no 180° offset needed).
+
+**RT-Pure Functions Used**:
+- `RT.PurePhi.value()` - φ = (1+√5)/2
+- `RT.PurePhi.inverse()` - 1/φ = φ-1 (algebraic identity, no division)
+- `RT.PurePhi.penrose.rotateN36(x, y, n)` - rotation by n×36° using cached trig
+
+### ⚠️ Gen 4+ Extension (Not Yet Implemented)
+
+**Current Status**: Gen 4+ uses approximate angular spacing that doesn't maintain proper Penrose geometry.
+
+**For Penrose Guidance Grid Use**:
+- Gen 2-3 (5-10 pentagons) may be sufficient for central pattern guidance
+- Extending beyond requires careful analysis of how pentagons nest in Penrose tilings
+- The "decagon" configuration (10 thick rhombi around a central point) relates to the pentagon array
+
+**Research Needed**:
+- How pentagon vertices align with Penrose rhombus vertices at deflation boundaries
+- Whether additional rings follow φ-scaling or require different geometry
+- Integration with existing `PenroseTiling.deflate()` algorithm
+
+---
+
+## Pentagon Face Tiling via Dodecahedron Overlay (Planned)
+
+### The Icosahedron-Dodecahedron Duality
+
+The natural way to apply pentagon tiling to icosahedron faces is through the **dual dodecahedron**:
+
+| Icosahedron | Dodecahedron (Dual) |
+|-------------|---------------------|
+| 12 vertices (5-fold) | 12 pentagonal faces |
+| 20 triangular faces | 20 vertices (3-fold) |
+| 30 edges | 30 edges |
+
+**Key geometric relationship**:
+- Each dodecahedral **face center** aligns exactly with an icosahedral **vertex**
+- Each dodecahedral **vertex** aligns exactly with an icosahedral **face center**
+- Pentagon edges cross icosahedral edges at golden ratio (φ) division points
+
+### Implementation Approach: Dodecahedron Face Tiling
+
+**Concept**: Add "Face Tiling" option to Dodecahedron (similar to Geodesic Icosahedron Face Tiling):
+
+1. **When enabled**: Uses the active Pentagon polygon tiling settings (generations)
+2. **Natural fit**: Dodecahedron faces ARE pentagons - no geometric distortion
+3. **Pentagon array on each face**: Gen 2 = 5 pentagons per face, Gen 3 = 10 per face
+4. **Vertex alignment**: Pentagon vertices naturally align with icosahedral geometry
+
+**UI Extension** (future):
+```
+☐ Dodecahedron (12 faces, φ)
+  ☐ Face Tiling
+     "Set Pentagon Tiling Properties under Primitives/Polygons"
+```
+
+### Future: Dodecahedron → Icosahedron Projection
+
+**Analogy to Geodesic Projection**:
+
+Geodesic subdivision projects from flat faces to spherical surfaces:
+- **Off (flat)**: Vertices on original polyhedron faces
+- **InSphere**: Vertices projected to insphere
+- **MidSphere**: Vertices projected to midsphere
+- **OutSphere**: Vertices projected to circumsphere
+
+**Proposed Dual Projection** for Dodecahedron:
+- **Dodecahedron (native)**: Pentagon faces as-is
+- **Icosahedral mapping**: Pentagon vertices/edges mapped onto icosahedral triangular faces
+- This is a "deflation" from 12 pentagons → 20 triangles (face dual transformation)
+
+**Geometric Mechanics**:
+1. Each pentagon face maps to 5 icosahedral faces (the faces sharing that vertex)
+2. Pentagon sectors (center-to-edge isoceles triangles, 72° apex) map to face wedges
+3. Three pentagon sectors meet at each icosahedral face center
+4. The mapping involves angular distortion: 72° (pentagon sector) → ~70.5° (icosahedral face angle)
+
+**RT-Pure Considerations**:
+- The dihedral angle of icosahedron involves φ: arctan(φ²) ≈ 70.53°
+- Pentagon central angle is 72° = 2×36° (RT-pure via cached trig)
+- The ~1.5° difference per sector accumulates to the spherical excess
+
+**Research Questions**:
+1. Can the pentagon→triangle mapping preserve RT-pure golden ratio relationships?
+2. How do Penrose matching rules translate through the dual transformation?
+3. Is there a "deflation" interpretation connecting Penrose P3 rules to icosahedral faces?
+
+---
+
+## ⚠️ OPEN PROBLEM: Pentagon Tiling Scale on Dodecahedron Faces (Feb 5, 2026)
+
+### Critical Insight: Pentagon Array IS the Penrose Scaffold
+
+**Key realization**: The pentagon array (central star + surrounding pentagons) is the CORRECT underlying structure for Penrose tiling. The "odd shapes" that appear between pentagons are NOT errors - they're the spaces where Penrose thick/thin rhombi belong.
+
+```
+Pentagon Array (Gen 2):           Penrose P3 Tiling:
+      ⬠                               ⬠
+    ⬠ ★ ⬠     ←→ same structure     ⬠ ★ ⬠ + rhombi filling gaps
+      ⬠                               ⬠
+
+★ = central pentagon (or star void)
+⬠ = surrounding pentagons
+gaps = where thick/thin rhombi tile in
+```
+
+**The relationship**:
+- Pentagon vertices define 5-fold symmetry centers
+- Pentagon edges guide rhombus edge placement
+- Gaps between pentagons = rhombus tiling regions
+- The scaffold + rhombi = complete Penrose P3 tiling
+
+### The Scaling Problem Remains
+
+Even though the pentagon array IS the correct scaffold, we still need to **scale it correctly** to fit dodecahedron faces. The current issue: the calculated bounding pentagon doesn't match the actual tiling extent.
+
+### Visual Debug Aid: Bounding Pentagon on Base Polygon
+
+A magenta bounding pentagon is now drawn on the base Polygon primitive (when 5-gon with tiling enabled, Gen 2+). This allows debugging the scale relationship in isolation, without the complexity of dodecahedron face mapping.
+
+**Current implementation** (`rt-rendering.js` line ~1230):
+```javascript
+// Calculate bounding pentagon that should contain tiling
+const tilingMaxExtent = Math.max(
+  ...polygonData.vertices.map(v => Math.sqrt(v.x * v.x + v.y * v.y))
+);
+const cos36 = RT.PurePhi.pentagon.cos36();
+const boundingPentRadius = tilingMaxExtent / cos36;
+```
+
+**Observation**: The magenta pentagon (circumR = maxExtent/cos36) is LARGER than the actual tiling pattern. There's a gap between the outermost tiling vertices and the bounding pentagon edges.
+
+### What We Know
+
+**Geometric facts**:
+- Pentagon circumradius R and inradius r = R × cos(36°) ≈ 0.809R
+- Gen 2 tiling has 5 pentagons arranged around center
+- Each outer pentagon's tip points toward origin
+- Outer pentagon vertices don't all lie on same circle (irregular boundary)
+
+**What the formula predicts vs reality**:
+| Gen | maxExtent | Predicted boundingR | Observed | Gap |
+|-----|-----------|---------------------|----------|-----|
+| 2   | 1.5434    | 1.907 (maxE/cos36)  | < 1.907  | Yes |
+| 3   | 2.1490    | 2.656 (maxE/cos36)  | < 2.656  | Yes |
+
+### Wrong Approaches Tried
+
+1. ❌ `tilingScale = faceRadius / maxExtent` → Pattern too large, extends beyond face edges
+2. ❌ `tilingScale = faceInradius / maxExtent` → Pattern too small, doesn't fill face
+3. ❌ `tilingScale = faceRadius × (1/φ)` for Gen 2+ → Recent fix, partially works but not exact
+4. ❌ `boundingPentRadius = maxExtent / cos36` → Produces pentagon larger than tiling
+
+### The Core Question
+
+**What is the exact algebraic relationship between**:
+- `maxExtent` (furthest tiling vertex from center)
+- The circumradius of a pentagon that exactly contains the tiling
+
+This relationship likely involves φ (golden ratio) in a non-obvious way, since:
+- Pentagon geometry is φ-based
+- Penrose tiling growth follows φ scaling
+- The 5-fold symmetry creates φ-related interference patterns
+
+### Way Forward
+
+1. **Measure actual boundary geometry**: Log all boundary vertex distances, not just maxExtent
+2. **Identify the algebraic pattern**: Does boundary radius follow φⁿ scaling with generations?
+3. **Derive bounding pentagon formula**: From actual geometry, not assumed regular decagon
+4. **Express in RT-pure form**: Using only `RT.PurePhi` cached values
+
+### For Penrose Implementation
+
+Once the scaffold scaling is solved:
+1. Pentagon array provides the underlying 5-fold grid
+2. Thick rhombi fill 72°/108° gaps
+3. Thin rhombi fill 36°/144° gaps
+4. Matching arcs follow pentagon edge alignments
+5. Deflation creates nested φ-scaled copies
+
+### Current Debug Aid
+
+Visual boundary rendering on base Pentagon polygon (`rt-rendering.js`):
+- Magenta outline shows calculated bounding pentagon
+- Compare against actual tiling pattern extent
+- Gap visible = formula needs refinement
+
+---
+
+## Session Summary: Pentagon Array as Penrose Scaffold (Feb 5, 2026 Evening)
+
+### Key Realizations
+
+1. **Pentagon array IS correct**: The central star + surrounding pentagons is the proper Penrose guidance grid, not a failed tiling attempt
+
+2. **Gaps are features, not bugs**: The "odd shapes" between pentagons are exactly where Penrose thick/thin rhombi belong
+
+3. **Scaling problem isolable**: Moving magenta bounding pentagon to base Polygon primitive allows debugging scale relationship without dodecahedron complexity
+
+4. **Formula mismatch identified**: `boundingPentRadius = maxExtent / cos36` produces a pentagon LARGER than the actual tiling extent
+
+### Empirical φ-Ratio Discovery
+
+Added scaling slider + numeric input to find correct φ-ratio empirically:
+
+| Measured | φ-Rational Expression | Exact Value |
+|----------|----------------------|-------------|
+| ~0.82 | cos(36°) = φ/2 | 0.8090 |
+| ~0.87-0.89 | √cos(36°) = √(φ/2) | 0.8994 |
+| ~1.22 | 1/cos(36°) = 2/φ | 1.2361 |
+
+Pattern emerging: Gen 3 → cos36, Gen 2 → √cos36 (needs verification)
+
+---
+
+## Critical Insight: Aperiodicity is the Goal (Feb 5, 2026 Late)
+
+### The Virology Question
+
+> **Bonnie Devarco's Request**: Visualize how Penrose tilings map onto spherical virus capsids with 5-fold (icosahedral) symmetry to see if they match protein arrangements.
+
+**Key distinction we must not lose sight of:**
+
+| Regular Pentagon Tiling | Penrose Aperiodic Tiling |
+|------------------------|--------------------------|
+| Periodic (repeating) | **Aperiodic (never repeats)** |
+| Simple scaling rules | Complex matching rules |
+| Easy to fit on sphere | **The actual research question** |
+| Not relevant to virology | **May explain protein arrangements** |
+
+### What We're Actually Trying to Achieve
+
+Fitting a regular pentagonal grid onto dodecahedron faces produces an **irregular but periodic** polyhedral tiling. This is interesting geometry, but it's NOT what virologists need.
+
+**The unique value for virology**: Examining what **aperiodic** Penrose tiling looks like on spherical surfaces to see if it matches observed protein capsid arrangements that violate classical crystallography.
+
+### Where We Are
+
+We've been solving the **scaffold fitting problem** - how to scale pentagon arrays onto dodecahedron faces. This IS necessary groundwork because:
+- Pentagon vertices mark 5-fold symmetry centers (same as capsid vertices)
+- Pentagon array structure underlies Penrose P3 tiling
+- The φ-scaling relationships we're discovering apply to both
+
+### What Must Come Next
+
+1. **Penrose rhombi generation** - thick (72°/108°) and thin (36°/144°) tiles
+2. **Matching rules implementation** - arrows/arcs that enforce aperiodicity
+3. **Deflation on curved surfaces** - how tiles subdivide on sphere
+4. **Comparison with capsid data** - overlay on actual virus structures
+
+### The Breakthrough We're Approaching
+
+The pentagon scaffold fitting work (φ-ratio scaling) is **prerequisite** infrastructure. Once we can reliably map pentagon arrays to dodecahedron faces, we can:
+1. Use pentagon vertices as Penrose seed points (5-fold centers)
+2. Fill gaps with rhombi following matching rules
+3. Observe whether the aperiodic pattern matches viral capsid proteins
+
+### Research Questions (for Twarock comparison)
+
+1. Do Penrose matching rules naturally produce patterns seen in viral capsids?
+2. Is there a "selection" mechanism where only certain Penrose configurations are biologically viable?
+3. Does φ-scaling explain why certain T-numbers (triangulation numbers) are preferred?
+
+### Key Reference Identified
+
+**Hamish Todd's Bridges 2018 paper** provides specific algorithms for T-K (Twarock-Konevtsova) tilings:
+- Spherical Penrose-like patterns using kite/dart tiles
+- Designed specifically for virus capsid visualization
+- Consistent edge lengths (RT-compatible)
+- Algorithms for icosahedral mapping
+
+**Next step**: Extract Todd's algorithms and convert to RT-pure methods.
+
+---
+
+_Last updated: February 5, 2026 (late evening)_
 _Contributors: Andy & Claude (for Bonnie Devarco's virology research)_
-_Review: Implementation readiness audit completed_
+_Session: Aperiodicity goal clarification + φ-ratio scaling tools + Todd reference_
+_Status: Key algorithm source identified - T-K tilings may be the path forward_

@@ -862,4 +862,319 @@ export const Grids = {
       },
     };
   },
+
+  /**
+   * Generate a pentagonal array pattern for Penrose guidance grid
+   *
+   * Creates an array of regular pentagons arranged with 5-fold symmetry.
+   * Pentagons don't tile the plane - the gaps between them form the
+   * characteristic star shapes seen in Penrose tilings.
+   *
+   * Pattern structure:
+   * - Gen 1: Single central pentagon
+   * - Gen 2: 5 inner pentagons arranged around a central star gap
+   * - Gen 3: 5 inner + 5 outer pentagons (10 total)
+   * - Gen 4+: Additional outer rings
+   *
+   * @param {number} quadrance - Circumradius quadrance of the overall pattern (Q = R²)
+   * @param {number} generations - Number of rings (1 = single, 2 = inner ring, 3 = inner+outer)
+   * @param {Object} options - Configuration options
+   * @param {boolean} options.showFace - Whether to include faces (default true)
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  pentagonalTiling: (quadrance, generations = 1, options = {}) => {
+    const showFace = options.showFace !== false;
+    const R = Math.sqrt(quadrance); // Overall pattern radius (sqrt at GPU boundary only)
+
+    // Cap generations at 3 (see TODO comment below for Gen 4+ research)
+    const maxGen = Math.min(generations, 3);
+    if (generations > 3) {
+      console.warn(
+        `[RT] Pentagon array: Gen ${generations} requested, capped at 3 (proper extension requires Penrose research)`
+      );
+    }
+
+    // RT-pure golden ratio constants
+    const phi = RT.PurePhi.value(); // φ = (1 + √5)/2
+    const invPhi = RT.PurePhi.inverse(); // 1/φ = φ - 1
+
+    const vertices = [];
+    const vertexMap = {};
+    const edges = [];
+    const edgeSet = new Set();
+    const faces = [];
+
+    // Helper to get or create vertex
+    const getVertex = (x, y, z = 0) => {
+      const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+      if (vertexMap[key] !== undefined) {
+        return vertexMap[key];
+      }
+      const idx = vertices.length;
+      vertices.push(new THREE.Vector3(x, y, z));
+      vertexMap[key] = idx;
+      return idx;
+    };
+
+    const addEdge = (v1, v2) => {
+      const key = v1 < v2 ? `${v1}-${v2}` : `${v2}-${v1}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        edges.push([v1, v2]);
+      }
+    };
+
+    /**
+     * RT-pure rotation by n×36° using cached trig values
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @param {number} n - Number of 36° rotations
+     * @returns {{x: number, y: number}} Rotated point
+     */
+    const rotateN36 = (x, y, n) => {
+      return RT.PurePhi.penrose.rotateN36(x, y, n);
+    };
+
+    /**
+     * Add a pentagon at given center with vertices computed RT-pure
+     * Pentagon has one vertex pointing toward origin
+     * @param {number} cx - Center x
+     * @param {number} cy - Center y
+     * @param {number} r - Circumradius
+     * @param {number} rotationSteps - Rotation in 36° increments (integer)
+     */
+    const addPentagon = (cx, cy, r, rotationSteps) => {
+      const pentVerts = [];
+      // Start with vertex pointing down (toward center when pentagon is above origin)
+      // Base vertex at (0, -r), then rotate for each vertex
+      for (let i = 0; i < 5; i++) {
+        // Each vertex is 72° = 2×36° apart
+        // Rotation: rotationSteps × 36° + i × 72°
+        const totalSteps = rotationSteps + i * 2;
+        const rotated = rotateN36(0, -r, totalSteps);
+        const x = cx + rotated.x;
+        const y = cy + rotated.y;
+        pentVerts.push(getVertex(x, y, 0));
+      }
+      // Add edges
+      for (let i = 0; i < 5; i++) {
+        addEdge(pentVerts[i], pentVerts[(i + 1) % 5]);
+      }
+      // Add face (pentagon as 5-vertex face)
+      if (showFace) {
+        faces.push([...pentVerts]);
+      }
+    };
+
+    let pentagonCount = 0;
+
+    if (maxGen === 1) {
+      // Single central pentagon with vertex pointing up
+      addPentagon(0, 0, R, 5); // 5×36° = 180° rotation so vertex points up
+      pentagonCount = 1;
+    } else {
+      // Penrose-compatible pentagon array geometry:
+      // Inner pentagons have inward vertices nearly meeting at center
+      // This creates the characteristic 5-pointed star gap
+
+      // Pentagon circumradius - sized to fit the pattern
+      // R × φ/(φ+1) = R × φ/φ² = R/φ using RT-pure identity
+      const pentRadius = R * invPhi;
+
+      // Inner ring: position pentagon centers so adjacent pentagons don't overlap
+      // For 5 pentagons at 72° spacing, centers must be at least pentRadius/sin(36°) apart
+      // Using φ as multiplier provides good spacing with RT-pure relationship
+      // innerRingRadius = pentRadius × φ ensures vertices nearly meet at center
+      const innerRingRadius = pentRadius * phi;
+
+      // Inner ring: 5 pentagons at 72° = 2×36° intervals, starting at top
+      for (let i = 0; i < 5; i++) {
+        // Position at (0, innerRingRadius) rotated by i×72° (starting from top)
+        const pos = rotateN36(0, innerRingRadius, i * 2); // i×72° = i×2×36°
+        // Pentagon base vertex at (0, -r) points toward origin when rotation matches position
+        // No 180° offset needed - base vertex naturally points inward
+        addPentagon(pos.x, pos.y, pentRadius, i * 2);
+        pentagonCount++;
+      }
+
+      if (maxGen >= 3) {
+        // Outer ring: 5 pentagons positioned to interlock with inner ring
+        // Offset by 36° from inner ring and scaled by φ
+        const outerRingRadius = innerRingRadius * phi;
+
+        for (let i = 0; i < 5; i++) {
+          // Position offset by 36° (1 step) from inner ring positions
+          const pos = rotateN36(0, outerRingRadius, i * 2 + 1); // (i×72° + 36°)
+          // Rotate so vertex points toward center
+          addPentagon(pos.x, pos.y, pentRadius, i * 2 + 1);
+          pentagonCount++;
+        }
+      }
+
+      // TODO: Gen 4+ pentagon extension requires research into proper Penrose P3 tiling rules.
+      // Current implementation caps at Gen 3 (inner 5 + outer 5 = 10 pentagons).
+      // For deeper nesting, consider:
+      // 1. Geodesic frequency as parent multiplier for face tiling (polygons as children)
+      // 2. True Penrose P3 deflation rules for kites/darts → pentagon subdivision
+      // 3. Research how pentagons properly nest in Penrose patterns
+      // See: Geometry documents/Penrose-Spheres.md for context
+    }
+
+    console.log(
+      `[RT] Pentagonal array: gen=${maxGen}, ` +
+        `pentagons=${pentagonCount}, V=${vertices.length}, E=${edges.length}, F=${faces.length}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        type: "pentagonal-array",
+        generations,
+        pentagonCount,
+        circumradiusQuadrance: quadrance,
+        rtPure: true,
+      },
+    };
+  },
+
+  /**
+   * Generate a hexagonal tiling by subdividing a regular hexagon
+   * Subdivides into 6 equilateral triangular sectors from center,
+   * then each sector is subdivided like triangular tiling.
+   *
+   * @param {number} quadrance - Circumradius quadrance of the original hexagon (Q = R²)
+   * @param {number} generations - Number of subdivision generations
+   * @param {Object} options - Configuration options
+   * @param {boolean} options.showFace - Whether to include faces (default true)
+   * @returns {Object} {vertices, edges, faces, metadata}
+   */
+  hexagonalTiling: (quadrance, generations = 1, options = {}) => {
+    const showFace = options.showFace !== false;
+    const R = Math.sqrt(quadrance);
+    const n = Math.pow(2, generations - 1); // Divisions per radial edge
+
+    // Hexagon vertices (6-fold symmetry, first vertex at right)
+    const hexagonVerts = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * Math.PI) / 3; // 60° increments, start at right
+      hexagonVerts.push(
+        new THREE.Vector3(R * Math.cos(angle), R * Math.sin(angle), 0)
+      );
+    }
+
+    const center = new THREE.Vector3(0, 0, 0);
+    const vertices = [center]; // Index 0 is center
+    const vertexMap = { "0,0,0": 0 }; // Center at origin
+
+    // Helper to get or create vertex
+    const getVertex = (x, y, z) => {
+      const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+      if (vertexMap[key] !== undefined) {
+        return vertexMap[key];
+      }
+      const idx = vertices.length;
+      vertices.push(new THREE.Vector3(x, y, z));
+      vertexMap[key] = idx;
+      return idx;
+    };
+
+    const edges = [];
+    const edgeSet = new Set();
+    const faces = [];
+
+    const addEdge = (v1, v2) => {
+      const key = v1 < v2 ? `${v1}-${v2}` : `${v2}-${v1}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        edges.push([v1, v2]);
+      }
+    };
+
+    // For each of the 6 sectors (center to edge)
+    for (let sector = 0; sector < 6; sector++) {
+      const A = center;
+      const B = hexagonVerts[sector];
+      const C = hexagonVerts[(sector + 1) % 6];
+
+      // Subdivide this triangle using barycentric coords
+      for (let i = 0; i <= n; i++) {
+        for (let j = 0; j <= n - i; j++) {
+          const k = n - i - j;
+          // Barycentric interpolation
+          const x = (i * A.x + j * B.x + k * C.x) / n;
+          const y = (i * A.y + j * B.y + k * C.y) / n;
+          getVertex(x, y, 0);
+        }
+      }
+    }
+
+    // Generate edges and faces for each sector
+    for (let sector = 0; sector < 6; sector++) {
+      const A = center;
+      const B = hexagonVerts[sector];
+      const C = hexagonVerts[(sector + 1) % 6];
+
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n - i; j++) {
+          const k = n - i - j;
+          // Current triangle vertices (barycentric)
+          const p0 = {
+            x: (i * A.x + j * B.x + k * C.x) / n,
+            y: (i * A.y + j * B.y + k * C.y) / n,
+          };
+          const p1 = {
+            x: (i * A.x + (j + 1) * B.x + (k - 1) * C.x) / n,
+            y: (i * A.y + (j + 1) * B.y + (k - 1) * C.y) / n,
+          };
+          const p2 = {
+            x: ((i + 1) * A.x + j * B.x + (k - 1) * C.x) / n,
+            y: ((i + 1) * A.y + j * B.y + (k - 1) * C.y) / n,
+          };
+
+          const v0 = getVertex(p0.x, p0.y, 0);
+          const v1 = getVertex(p1.x, p1.y, 0);
+          const v2 = getVertex(p2.x, p2.y, 0);
+
+          addEdge(v0, v1);
+          addEdge(v1, v2);
+          addEdge(v2, v0);
+          if (showFace) faces.push([v0, v2, v1]); // CCW for +Z normal
+
+          // Downward triangle (if valid)
+          if (j + 1 <= n - i - 1) {
+            const p3 = {
+              x: ((i + 1) * A.x + (j + 1) * B.x + (k - 2) * C.x) / n,
+              y: ((i + 1) * A.y + (j + 1) * B.y + (k - 2) * C.y) / n,
+            };
+            const v3 = getVertex(p3.x, p3.y, 0);
+            addEdge(v1, v3);
+            addEdge(v3, v2);
+            if (showFace) faces.push([v1, v2, v3]); // CCW for +Z normal
+          }
+        }
+      }
+    }
+
+    const tileCount = 6 * n * n; // 6 sectors × n² triangles each
+    console.log(
+      `[RT] Hexagonal tiling: gen=${generations}, n=${n}, ` +
+        `V=${vertices.length}, E=${edges.length}, F=${faces.length}`
+    );
+
+    return {
+      vertices,
+      edges,
+      faces,
+      metadata: {
+        type: "hexagonal-tiling",
+        generations,
+        divisionsPerEdge: n,
+        tileCount,
+        circumradiusQuadrance: quadrance,
+        rtPure: true,
+      },
+    };
+  },
 };
