@@ -413,7 +413,6 @@ export const QuadrayPolyhedra = {
     }
 
     // 4 triangular faces (one per original tet vertex)
-    // 4 hexagonal faces (one per original tet face)
     const triangleFaces = [
       [0, 1, 2], // Near W
       [3, 4, 5], // Near X
@@ -421,17 +420,21 @@ export const QuadrayPolyhedra = {
       [9, 10, 11], // Near Z
     ];
 
-    // Hexagonal faces - need to trace around each original tet face
-    // Original tet faces were: WXY, WXZ, WYZ, XYZ
+    // 4 hexagonal faces (one per original tet face)
+    // Each hexagon lies on a plane where one Quadray coordinate is absent
+    // Traced by following edges around each original tet face
     const hexagonFaces = [
-      [0, 3, 4, 1, 6, 7], // WXY face -> vertices near WX, XY, YW edges - needs verification
-      [0, 2, 9, 5, 3, 1], // This needs proper cycle order
-      [1, 4, 7, 8, 2, 6], // WYZ
-      [5, 10, 11, 8, 7, 4], // XYZ
+      [0, 3, 4, 7, 6, 1], // WXY face (Z=0): edges WX→XY→YW
+      [0, 3, 5, 10, 9, 2], // WXZ face (Y=0): edges WX→XZ→ZW
+      [1, 6, 8, 11, 9, 2], // WYZ face (X=0): edges WY→YZ→ZW
+      [4, 7, 8, 11, 10, 5], // XYZ face (W=0): edges XY→YZ→ZX
     ];
 
-    // For now, just use triangles (hexagons are trickier to get right)
-    const faces = triangleFaces.map(f => fixWinding(f, vertices));
+    // Apply winding fix to all faces (triangles + hexagons)
+    const faces = [
+      ...triangleFaces.map(f => fixWinding(f, vertices)),
+      ...hexagonFaces.map(f => fixWinding(f, vertices)),
+    ];
 
     // RT VALIDATION
     const sampleQ = vertices.length > 1 ? RT.quadrance(vertices[0], vertices[1]) : 0;

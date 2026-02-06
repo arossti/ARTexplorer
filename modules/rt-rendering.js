@@ -3593,6 +3593,11 @@ export function initScene(THREE, OrbitControls, RT) {
   function setCameraPreset(view) {
     const distance = 10; // Standard distance from origin
 
+    // Hide prime polygon overlay unless switching to a prime projection view
+    if (view !== "heptagonProjection" && view !== "pentagonProjection") {
+      RTPapercut.showPrimePolygon(null, scene, camera);
+    }
+
     // Z-up coordinate system (CAD/BIM standard)
     // Z = vertical, X-Y = horizontal ground plane
     // Viewing convention: Standing on ground (X-Y plane), Z is up
@@ -3704,6 +3709,11 @@ export function initScene(THREE, OrbitControls, RT) {
         const viewDir = new THREE.Vector3(0, 0, 1).applyEuler(euler);
         camera.position.copy(viewDir.multiplyScalar(distance));
         camera.up.set(0, 0, 1);
+
+        // Show prime polygon overlay (7-gon for heptagon, 5-gon for pentagon)
+        // This demonstrates that hull vertices map to regular polygon at unit radius
+        const polygonSides = view === "heptagonProjection" ? 7 : 5;
+        RTPapercut.showPrimePolygon(polygonSides, scene, camera, 1.5);
 
         console.log(`📐 ${preset.name}: spreads=(${s1}, ${s2}, ${s3})`);
         console.log(`   ${preset.description}`);
