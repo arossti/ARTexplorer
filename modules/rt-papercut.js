@@ -1303,7 +1303,7 @@ export const RTPapercut = {
    * @param {THREE.Camera} camera - Camera reference
    * @param {number} planeDistance - Distance from polyhedron center to projection plane (default: 5)
    */
-  showPrimePolygon: function (n, scene, camera, planeDistance = 5) {
+  showPrimePolygon: async function (n, scene, camera, planeDistance = 5) {
     console.log("🔍 showPrimePolygon called with:", { n, scene: !!scene, camera: !!camera, planeDistance });
 
     // Validate inputs
@@ -1363,7 +1363,7 @@ export const RTPapercut = {
       if (worldVertices.length === 0) {
         // Fallback to generating vertices if extraction fails
         console.warn("⚠️ Could not extract vertices from compound, generating programmatically");
-        worldVertices = RTPapercut._generateCompoundVertices();
+        worldVertices = await RTPapercut._generateCompoundVertices();
       }
       console.log("   Found", worldVertices.length, "vertices from compound (trunc tet + icosa)");
     } else {
@@ -1631,11 +1631,11 @@ export const RTPapercut = {
    *
    * Reuses QuadrayPolyhedra.compoundTruncTetIcosahedron for consistency.
    *
-   * @returns {Array<THREE.Vector3>} 24 vertices (12 from trunc tet + 12 from icosahedron)
+   * @returns {Promise<Array<THREE.Vector3>>} 24 vertices (12 from trunc tet + 12 from icosahedron)
    */
-  _generateCompoundVertices: function () {
+  _generateCompoundVertices: async function () {
     // Reuse the existing compound generator from rt-quadray-polyhedra.js
-    const compound = QuadrayPolyhedra.compoundTruncTetIcosahedron(1, { normalize: true });
+    const compound = await QuadrayPolyhedra.compoundTruncTetIcosahedron(1, { normalize: true });
     console.log(`   _generateCompoundVertices: ${compound.vertices.length} vertices (reusing QuadrayPolyhedra)`);
     return compound.vertices;
   },
