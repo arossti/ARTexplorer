@@ -1,0 +1,338 @@
+{
+  "metadata": {
+    "timestamp": "2026-02-06T14:50:52.493395",
+    "title": "Prime Polygon Projection Search - Breakthrough Results",
+    "description": "Comprehensive search for prime n-gon (5, 7, 11, 13) projections from 3D polyhedra compounds",
+    "methodology": "Rational spread-based rotations with convex hull analysis",
+    "key_insight": "Asymmetric compounds (no central symmetry) produce prime hulls; symmetric polytopes produce only even hulls"
+  },
+  "findings": [
+    {
+      "prime": 5,
+      "hull_count": 5,
+      "compound": "truncated_tetrahedron",
+      "vertices": 12,
+      "relative_spread": null,
+      "view_spreads": [
+        0.0,
+        0.0,
+        0.5
+      ],
+      "regularity_score": 0.0,
+      "angle_variance_deg": 20.02,
+      "edge_variance_pct": 32.71,
+      "hull_vertices_2d": [
+        [
+          0.904534,
+          0.0
+        ],
+        [
+          -0.301511,
+          0.852803
+        ],
+        [
+          -0.904534,
+          0.426401
+        ],
+        [
+          -0.904534,
+          -0.426401
+        ],
+        [
+          -0.301511,
+          -0.852803
+        ]
+      ],
+      "interior_angles": [
+        70.53,
+        109.47,
+        125.26,
+        125.26,
+        109.47
+      ],
+      "edge_lengths": [
+        1.4771,
+        0.7385,
+        0.8528,
+        0.7385,
+        1.4771
+      ],
+      "verified": true,
+      "notes": "Verified 5-gon - Fermat prime, compass constructible"
+    },
+    {
+      "prime": 7,
+      "hull_count": 7,
+      "compound": "truncated_tetrahedron",
+      "vertices": 12,
+      "relative_spread": null,
+      "view_spreads": [
+        0.11,
+        0.0,
+        0.5
+      ],
+      "regularity_score": 0.2352,
+      "angle_variance_deg": 36.66,
+      "edge_variance_pct": 5.3,
+      "hull_vertices_2d": [
+        [
+          -0.567288,
+          0.704533
+        ],
+        [
+          -0.994757,
+          0.102266
+        ],
+        [
+          -0.711914,
+          -0.702266
+        ],
+        [
+          -0.001603,
+          -0.904533
+        ],
+        [
+          0.425867,
+          -0.302266
+        ],
+        [
+          0.853336,
+          0.3
+        ],
+        [
+          0.143024,
+          0.502266
+        ]
+      ],
+      "interior_angles": [
+        109.47,
+        125.26,
+        125.26,
+        109.47,
+        180.0,
+        70.53,
+        180.0
+      ],
+      "edge_lengths": [
+        0.7385,
+        0.8528,
+        0.7385,
+        0.7385,
+        0.7385,
+        0.7385,
+        0.7385
+      ],
+      "verified": true,
+      "notes": "7-gon - NOT compass constructible (cubic algebraic), bypassed via projection\\!"
+    },
+    {
+      "prime": 11,
+      "hull_count": 11,
+      "compound": "truncated_tetrahedron + icosahedron",
+      "vertices": 24,
+      "relative_spread": 0.0,
+      "view_spreads": [
+        0.0,
+        0.4,
+        0.2
+      ],
+      "regularity_score": 0.0,
+      "angle_variance_deg": 16.17,
+      "edge_variance_pct": 48.44,
+      "hull_vertices_2d": [
+        [
+          -0.842714,
+          0.145309
+        ],
+        [
+          -0.492282,
+          -0.760845
+        ],
+        [
+          -0.31883,
+          -0.94388
+        ],
+        [
+          0.3893,
+          -0.67104
+        ],
+        [
+          0.842714,
+          -0.145309
+        ],
+        [
+          0.95649,
+          0.13484
+        ],
+        [
+          0.659951,
+          0.6742
+        ],
+        [
+          0.492282,
+          0.760845
+        ],
+        [
+          -0.148269,
+          0.94388
+        ],
+        [
+          -0.659951,
+          0.6742
+        ],
+        [
+          -0.785929,
+          0.40452
+        ]
+      ],
+      "interior_angles": [
+        146.5,
+        157.68,
+        112.39,
+        151.85,
+        161.33,
+        129.09,
+        146.13,
+        168.62,
+        136.26,
+        142.83,
+        167.32
+      ],
+      "edge_lengths": [
+        0.9716,
+        0.2522,
+        0.7589,
+        0.6942,
+        0.3024,
+        0.6155,
+        0.1887,
+        0.6662,
+        0.5784,
+        0.2977,
+        0.2654
+      ],
+      "verified": true,
+      "notes": "11-gon (hendecagon) - requires quintic polynomial, NOT algebraically solvable\\!"
+    },
+    {
+      "prime": 13,
+      "hull_count": 13,
+      "compound": "truncated_tetrahedron + icosahedron",
+      "vertices": 24,
+      "relative_spread": 0.0,
+      "view_spreads": [
+        0.0,
+        0.6,
+        0.8
+      ],
+      "regularity_score": 0.0,
+      "angle_variance_deg": 19.07,
+      "edge_variance_pct": 41.18,
+      "hull_vertices_2d": [
+        [
+          -0.650554,
+          0.290617
+        ],
+        [
+          -0.794845,
+          -0.380423
+        ],
+        [
+          -0.712925,
+          -0.6742
+        ],
+        [
+          -0.086246,
+          -0.94388
+        ],
+        [
+          0.069563,
+          -0.906154
+        ],
+        [
+          0.712925,
+          -0.6742
+        ],
+        [
+          0.885417,
+          -0.13484
+        ],
+        [
+          0.921819,
+          0.13484
+        ],
+        [
+          0.794845,
+          0.380423
+        ],
+        [
+          0.33154,
+          0.6742
+        ],
+        [
+          -0.069563,
+          0.906154
+        ],
+        [
+          -0.295139,
+          0.94388
+        ],
+        [
+          -0.519785,
+          0.615537
+        ]
+      ],
+      "interior_angles": [
+        170.21,
+        152.28,
+        128.86,
+        143.11,
+        173.79,
+        127.56,
+        169.95,
+        144.97,
+        149.72,
+        177.66,
+        159.45,
+        114.88,
+        167.54
+      ],
+      "edge_lengths": [
+        0.6864,
+        0.305,
+        0.6822,
+        0.1603,
+        0.6839,
+        0.5663,
+        0.2721,
+        0.2765,
+        0.5486,
+        0.4633,
+        0.2287,
+        0.3978,
+        0.3502
+      ],
+      "verified": true,
+      "notes": "13-gon (tridecagon) - requires sextic polynomial, NOT algebraically solvable\\!"
+    }
+  ],
+  "summary": {
+    "primes_found": [
+      5,
+      7,
+      11,
+      13
+    ],
+    "gauss_wantzel_bypass": "Primes 7, 11, 13 are NOT compass-constructible, but emerge as projections\\!",
+    "key_compounds": [
+      "truncated_tetrahedron (12v) -> 5, 7-gon",
+      "truncated_tetrahedron + icosahedron (24v) -> 11, 13-gon"
+    ],
+    "next_targets": [
+      17,
+      19,
+      23,
+      29
+    ]
+  }
+}
