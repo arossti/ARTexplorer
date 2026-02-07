@@ -79,13 +79,23 @@ export const RTProjections = {
     RTProjections.state.presetName = preset.name;
     RTProjections.state.customSpreads = preset.spreads || null;
 
-    // 5. Show projection with preset spreads
+    // 5. Get override vertices for prime presets (matching Python search)
+    let overrideVertices = null;
+    if (preset.compound) {
+      overrideVertices = RTProjections._getPrimePresetVertices(preset.compound);
+      if (overrideVertices.length > 0) {
+        console.log(`📐 Using ${overrideVertices.length} hardcoded vertices for ${preset.compound}`);
+      }
+    }
+
+    // 6. Show projection with preset spreads and vertices
     RTProjections.showProjection(targetGroup, {
       spreads: preset.spreads,
       showIdealPolygon: preset.projectionState?.showIdealPolygon ?? true,
+      vertices: overrideVertices,
     });
 
-    // 6. Update StateManager (for export)
+    // 7. Update StateManager (for export)
     if (window.RTStateManager) {
       window.RTStateManager.state.environment.projection = {
         ...RTProjections.state,
@@ -226,6 +236,7 @@ export const RTProjections = {
       showIdealPolygon,
       rayColor,
       spreads: options.spreads, // Pass custom spreads from presets
+      vertices: options.vertices, // Override vertices for prime presets
     });
 
     console.log("📐 Projection enabled for polyhedron");
@@ -474,6 +485,54 @@ export const RTProjections = {
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // PRIME PRESET VERTICES
+  // Hardcoded vertices matching Python search results (known-good orientations)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Get vertices for a prime preset compound type
+   * These match the Python search vertices exactly for reproducible projections
+   *
+   * @param {string} compoundType - "truncatedTetrahedron", "truncTetPlusIcosa"
+   * @returns {Array<THREE.Vector3>} Normalized vertices as Vector3
+   */
+  _getPrimePresetVertices: function (compoundType) {
+    // Truncated tetrahedron: permutations of (3,1,1) with even parity
+    const truncTetRaw = [
+      [3, 1, 1], [3, -1, -1], [1, 3, 1], [1, -3, -1],
+      [1, 1, 3], [1, -1, -3], [-3, 1, -1], [-3, -1, 1],
+      [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3],
+    ];
+
+    // Icosahedron: golden ratio vertices
+    const phi = (1 + Math.sqrt(5)) / 2;
+    const icosaRaw = [
+      [0, 1, phi], [0, 1, -phi], [0, -1, phi], [0, -1, -phi],
+      [1, phi, 0], [1, -phi, 0], [-1, phi, 0], [-1, -phi, 0],
+      [phi, 0, 1], [phi, 0, -1], [-phi, 0, 1], [-phi, 0, -1],
+    ];
+
+    // Normalize helper
+    const normalize = (v) => {
+      const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+      return new THREE.Vector3(v[0] / len, v[1] / len, v[2] / len);
+    };
+
+    const truncTetVertices = truncTetRaw.map(normalize);
+    const icosaVertices = icosaRaw.map(normalize);
+
+    switch (compoundType) {
+      case "truncatedTetrahedron":
+        return truncTetVertices;
+      case "truncTetPlusIcosa":
+        return [...truncTetVertices, ...icosaVertices];
+      default:
+        console.warn(`⚠️ Unknown compound type: ${compoundType}`);
+        return [];
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // VISUALIZATION
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -486,8 +545,17 @@ export const RTProjections = {
   _createProjectionVisualization: function (polyhedronGroup, options) {
     const { showRays, showInterior, showIdealPolygon, rayColor } = options;
 
-    // Get vertices from polyhedron
-    const worldVertices = RTProjections._getWorldVerticesFromGroup(polyhedronGroup);
+    // Get vertices - use override vertices if provided (for prime presets with known-good orientations)
+    let worldVertices;
+    if (options.vertices && options.vertices.length > 0) {
+      // Use provided vertices (already in world space as THREE.Vector3)
+      worldVertices = options.vertices;
+      console.log(`📐 Using ${worldVertices.length} override vertices from preset`);
+    } else {
+      // Extract from polyhedron group
+      worldVertices = RTProjections._getWorldVerticesFromGroup(polyhedronGroup);
+    }
+
     if (worldVertices.length === 0) {
       console.warn("⚠️ No vertices found in polyhedron group");
       return;
