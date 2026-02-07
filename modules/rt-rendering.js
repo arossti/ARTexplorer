@@ -78,9 +78,9 @@ export const CAMERA_PRESETS = {
   heptagonProjectionTet: {
     name: "7-gon Projection (TruncTet+Tet)",
     description: "Compound (truncated tet + tetrahedron) - true 7-hull via tet-family",
-    spreads: [0, 0.4, 0.04], // JS convention (swapped from Python's (0, 0.04, 0.4))
+    spreads: [0, 0, 0.5], // Same view angle as 5-gon, compound adds tet vertices to hull
     recommendedForm: "quadrayCompoundTet",
-    reference: "Polygon-Rationalize.md §7b",
+    reference: "results/prime_compound_search_20260206_144743.json",
     compound: ["truncatedTetrahedron", "tetrahedron"],
     totalVertices: 16,
     note: "Heptagon via tet-family compound projection - bypasses Gauss-Wantzel",

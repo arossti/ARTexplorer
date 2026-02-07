@@ -423,9 +423,9 @@ export const RTPrimeCuts = {
       s1 = 0; s2 = 0; s3 = 0.5; // Truncated tetrahedron (12v)
     } else if (n === 7) {
       // 7-gon REQUIRES TruncTet+Tet compound (16v) - truncated tet alone produces 9-hull!
-      // Spreads from Python (0, 0.04, 0.4) → JS rotation order (0, 0.4, 0.04)
-      // See: Geometry documents/Polygon-Rationalize.md item 7b
-      s1 = 0; s2 = 0.4; s3 = 0.04; // TruncTet+Tet compound only
+      // Source: results/prime_compound_search_20260206_144743.json
+      // Same viewing angle as 5-gon, but compound adds 2 vertices to hull boundary
+      s1 = 0; s2 = 0; s3 = 0.5; // TruncTet+Tet compound at 5-gon angle → 7-hull
     } else if (n === 11) {
       // Swap s2/s3 from Python [0, 0.4, 0.2] to match JS rotation order
       s1 = 0; s2 = 0.2; s3 = 0.4; // Compound (trunc tet + icosa) - BREAKTHROUGH!
@@ -1000,11 +1000,11 @@ export const RTPrimeCuts = {
       case 7:
         // 7-gon: REQUIRES TruncTet+Tet compound (16 vertices)
         // Truncated tetrahedron alone produces 9-hull, NOT 7-hull!
-        // Spreads: s=(0, 0.4, 0.04) from compound
+        // Same viewing angle as 5-gon, but tet vertices extend hull to 7
         formulaText =
           "YELLOW: Actual 7-hull projection\n" +
           "  Compound (TruncTet + Tet) 16v\n" +
-          "  s=(0, 0.4, 0.04)\n" +
+          "  s=(0, 0, 0.5) same as 5-gon\n" +
           "CYAN: Ideal regular heptagon\n" +
           "  Classical trig (for comparison)";
         break;
