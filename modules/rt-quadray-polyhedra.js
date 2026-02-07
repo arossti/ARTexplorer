@@ -936,33 +936,26 @@ export const QuadrayPolyhedra = {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 2. TETRAHEDRON (4 vertices) - EVEN PARITY for 11-gon projection
-    // CRITICAL: Must use EVEN parity vertices (product of signs = +1)
-    // This is the DUAL of Polyhedra.tetrahedron() which uses ODD parity.
-    // Using wrong parity limits max hull to 10 instead of 11!
+    // 2. TETRAHEDRON (4 vertices) - Call actual Polyhedra.tetrahedron()
+    // Uses TESTED geometry from rt-polyhedra.js
+    // CRITICAL: Normalize to SAME circumradius as truncated tetrahedron!
     // ═══════════════════════════════════════════════════════════════════════
-    const tetVerticesRaw = [
-      new THREE.Vector3(1, 1, 1),     // Even parity: (+)(+)(+) = +1
-      new THREE.Vector3(1, -1, -1),   // Even parity: (+)(-)(-)  = +1
-      new THREE.Vector3(-1, 1, -1),   // Even parity: (-)(+)(-)  = +1
-      new THREE.Vector3(-1, -1, 1),   // Even parity: (-)(-)(-+) = +1
-    ];
+    const Polyhedra = await getPolyhedra();
+    const tetRaw = Polyhedra.tetrahedron(1.0, { silent: true }); // Unit scale, suppress logging
 
-    // Calculate tetrahedron circumradius (should be sqrt(3))
+    // Calculate tetrahedron circumradius
     let tetCircumradius = 0;
-    tetVerticesRaw.forEach(v => {
+    tetRaw.vertices.forEach(v => {
       const r = v.length();
       if (r > tetCircumradius) tetCircumradius = r;
     });
 
     // Normalize to unit circumradius, then apply user scale (SAME as trunc tet!)
-    const tetVertices = tetVerticesRaw.map(v =>
+    const tetVertices = tetRaw.vertices.map(v =>
       v.clone().multiplyScalar(scale / tetCircumradius)
     );
-
-    // Define tetrahedron topology (same as Polyhedra.tetrahedron)
-    const tetEdgesLocal = [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]];
-    const tetFacesLocal = [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]];
+    const tetEdgesLocal = tetRaw.edges;
+    const tetFacesLocal = tetRaw.faces;
 
     console.log(`  [Compound Scale] TruncTet circumradius: ${truncTetCircumradius.toFixed(4)}, Tet: ${tetCircumradius.toFixed(4)}`);
     console.log(`  [Compound Scale] Both normalized to circumradius: ${scale.toFixed(4)}`);
@@ -1016,8 +1009,8 @@ export const QuadrayPolyhedra = {
       `[RT] Compound Polyhedra (Trunc Tet + Tetrahedron): ${vertices.length} vertices, ${edges.length} edges, ${faces.length} faces`
     );
     console.log(`  Truncated Tetrahedron: 12 vertices, 8 faces (4 tri + 4 hex)`);
-    console.log(`  Tetrahedron: 4 vertices (EVEN parity), 4 faces (all triangular)`);
-    console.log(`  Prime projection targets: 7-gon at s=(0, 0, 0.5), 11-gon at s=(0, 0.2, 0.5)`);
+    console.log(`  Tetrahedron: 4 vertices, 4 faces (all triangular)`);
+    console.log(`  Prime projection target: 7-gon at s=(0, 0.4, 0.04)`);
 
     return {
       vertices,
