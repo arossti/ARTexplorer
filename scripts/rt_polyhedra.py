@@ -45,32 +45,108 @@ def tetrahedron(half_size: float = 1.0) -> List[List[float]]:
     ]
 
 
-def truncated_tetrahedron() -> List[List[float]]:
+def truncated_tetrahedron(half_size: float = 1.0, truncation: float = 1/3) -> List[List[float]]:
     """
-    Truncated tetrahedron vertices (12 vertices).
-    Edge length = 2 for convenience.
+    Truncated tetrahedron vertices with parametric truncation.
 
-    EXACT COPY from rt-math.js:1768-1782
-    (RT.ProjectionPolygons.heptagon.sourceVertices)
+    Single source of truth - matches JavaScript Polyhedra.truncatedTetrahedron()
+    for Python/JavaScript parity in prime polygon search.
+
+    Truncation parameter t in [0, 0.5]:
+    - t = 0: Base tetrahedron (4 vertices)
+    - t = 1/3: Standard truncated tetrahedron (12 vertices)
+    - t = 0.5: Octahedron limit (6 vertices)
+
+    Args:
+        half_size: Scale factor (base tetrahedron bounding cube half-size)
+        truncation: Truncation parameter t in [0, 0.5] (default: 1/3)
 
     Returns:
-        List of 12 vertices as [x, y, z]
+        List of vertices as [x, y, z]
     """
-    return [
-        # Truncation of tetrahedron at 1/3 edge length
-        [1, 1, 3],
-        [1, 3, 1],
-        [3, 1, 1],
-        [1, -1, -3],
-        [1, -3, -1],
-        [3, -1, -1],
-        [-1, 1, -3],
-        [-1, 3, -1],
-        [-3, 1, -1],
-        [-1, -1, 3],
-        [-1, -3, 1],
-        [-3, -1, 1],
+    t = max(0, min(0.5, truncation))  # Clamp to valid range
+    s = half_size
+
+    # Base tetrahedron vertices (inscribed in cube)
+    base_verts = [
+        [-s, -s, -s],  # V0
+        [s, s, -s],    # V1
+        [s, -s, s],    # V2
+        [-s, s, s],    # V3
     ]
+
+    # Edge connectivity (all pairs for complete graph K4)
+    base_edges = [
+        (0, 1), (0, 2), (0, 3),
+        (1, 2), (1, 3), (2, 3)
+    ]
+
+    # Special case: t = 0 returns base tetrahedron
+    if t < 0.001:
+        return base_verts
+
+    # Special case: t = 0.5 returns octahedron (edge midpoints)
+    if t > 0.499:
+        vertices = []
+        for i, j in base_edges:
+            v1, v2 = base_verts[i], base_verts[j]
+            vertices.append([
+                (v1[0] + v2[0]) / 2,
+                (v1[1] + v2[1]) / 2,
+                (v1[2] + v2[2]) / 2
+            ])
+        return vertices
+
+    # General case: truncated tetrahedron with 12 vertices
+    # For each edge, place two cut points at t and (1-t) from each endpoint
+    vertices = []
+    vertex_map = {}  # Map (edge_idx, from_end) to vertex
+
+    def get_vertex(edge_idx, from_end):
+        """Get or create a truncation vertex."""
+        key = (edge_idx, from_end)
+        if key in vertex_map:
+            return vertex_map[key]
+
+        i, j = base_edges[edge_idx]
+        v1 = base_verts[i] if from_end == 0 else base_verts[j]
+        v2 = base_verts[j] if from_end == 0 else base_verts[i]
+
+        vertex = [
+            v1[0] + t * (v2[0] - v1[0]),
+            v1[1] + t * (v2[1] - v1[1]),
+            v1[2] + t * (v2[2] - v1[2])
+        ]
+
+        idx = len(vertices)
+        vertices.append(vertex)
+        vertex_map[key] = idx
+        return idx
+
+    # Vertex adjacency in K4: each vertex connects to all others
+    vertex_edges = [
+        [0, 1, 2],  # V0 connects via edges 0, 1, 2
+        [0, 3, 4],  # V1 connects via edges 0, 3, 4
+        [1, 3, 5],  # V2 connects via edges 1, 3, 5
+        [2, 4, 5],  # V3 connects via edges 2, 4, 5
+    ]
+
+    # For each base vertex, which end of each edge is it?
+    vertex_ends = [
+        [0, 0, 0],  # V0 is start of edges 0, 1, 2
+        [1, 0, 0],  # V1 is end of edge 0, start of edges 3, 4
+        [1, 1, 0],  # V2 is end of edges 1, 3, start of edge 5
+        [1, 1, 1],  # V3 is end of edges 2, 4, 5
+    ]
+
+    # Create the 12 truncation vertices (3 per base vertex)
+    for v in range(4):
+        for e in range(3):
+            edge_idx = vertex_edges[v][e]
+            from_end = vertex_ends[v][e]
+            get_vertex(edge_idx, from_end)
+
+    return vertices
 
 
 def icosahedron(half_size: float = 1.0) -> List[List[float]]:
@@ -143,9 +219,9 @@ def trunc_tet_plus_tet(half_size: float = 1.0) -> List[List[float]]:
     Returns:
         List of 16 vertices as [x, y, z]
     """
-    # Truncated tetrahedron edge length = 2 (from vertex array)
-    # Tetrahedron inscribed in cube with half_size = 3 matches bounding sphere
-    trunc_verts = truncated_tetrahedron()
+    # Truncated tetrahedron with half_size=3 at t=1/3 gives vertices at [1,1,3] permutations
+    # This matches the original hardcoded vertices
+    trunc_verts = truncated_tetrahedron(half_size=3.0, truncation=1/3)
     tet_verts = tetrahedron(half_size=3.0)
 
     return trunc_verts + tet_verts
@@ -170,7 +246,8 @@ def trunc_tet_plus_icosa(half_size: float = 1.0) -> List[List[float]]:
     Returns:
         List of 24 vertices as [x, y, z]
     """
-    trunc_verts = truncated_tetrahedron()
+    # Truncated tetrahedron with half_size=3 at t=1/3 gives vertices at [1,1,3] permutations
+    trunc_verts = truncated_tetrahedron(half_size=3.0, truncation=1/3)
 
     # Scale icosahedron to match truncated tetrahedron bounding sphere
     # TruncTet bounding radius = sqrt(1^2 + 1^2 + 3^2) = sqrt(11)

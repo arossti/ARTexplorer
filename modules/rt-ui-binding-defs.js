@@ -169,6 +169,11 @@ export const checkboxWithControlsBindings = [
     siblingCheckboxId: "showGeodesicTetrahedron",
   },
   {
+    id: "showTruncatedTetrahedron",
+    type: "checkbox-controls",
+    controlsId: "truncation-tetra-controls",
+  },
+  {
     id: "showDualTetrahedron",
     type: "checkbox-controls",
     controlsId: "geodesic-dual-tetra-all",
@@ -381,6 +386,20 @@ export const simpleSliderBindings = [
     type: "slider",
     valueId: "geodesicDualIcosaFreqValue",
     formatValue: v => v,
+  },
+
+  // Truncation slider (tetrahedron → truncated tet → octahedron)
+  {
+    id: "truncationTetraSlider",
+    type: "slider",
+    valueId: "truncationTetraValue",
+    formatValue: v => {
+      const t = parseFloat(v);
+      if (t < 0.01) return "0";
+      if (Math.abs(t - 1 / 3) < 0.02) return "⅓";
+      if (t > 0.49) return "½";
+      return t.toFixed(2);
+    },
   },
 
   // Matrix size sliders
@@ -768,17 +787,17 @@ export const viewControlBindings = [
           renderingAPI.setCameraPreset("heptagonProjectionTet");
         },
       },
-      // 11-gon from TruncTet+Tet compound (Feb 2026) - BREAKTHROUGH!
+      // 11-gon from TruncTet+Icosa compound (Project-Streamline verified)
       {
         id: "viewHendecagonProjectionTet",
         onClick: renderingAPI => {
-          // Auto-enable TruncTet+Tet compound form for 11-gon projection
-          const compoundCheckbox = document.getElementById("showQuadrayCompoundTet");
+          // Auto-enable TruncTet+Icosa compound form for 11-gon projection
+          const compoundCheckbox = document.getElementById("showQuadrayCompound");
           if (compoundCheckbox && !compoundCheckbox.checked) {
             compoundCheckbox.checked = true;
             compoundCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
           }
-          renderingAPI.setCameraPreset("hendecagonProjectionTet");
+          renderingAPI.setCameraPreset("hendecagonProjection");
         },
       },
     ],
