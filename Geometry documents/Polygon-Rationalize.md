@@ -1499,6 +1499,154 @@ The Quadray formulation maintains rationality longer than Cartesian, deferring r
 
 ---
 
+---
+
+## The Shadow Bound Theorem: Search Candidate Selection
+
+### Motivation
+
+When projecting a convex polyhedron to 2D, the convex hull of the projected vertices forms the "shadow boundary." Understanding the bounds on this hull count guides our search for prime n-gon projections.
+
+### The Shadow Bound
+
+**Observation**: For a convex polyhedron with V vertices projected orthographically to 2D, the hull vertex count H satisfies:
+
+```
+3 ≤ H ≤ V
+```
+
+The lower bound (H ≥ 3) is trivial—any 2D projection of a 3D convex body has at least triangular extent.
+
+The upper bound (H ≤ V) is achieved when the viewing direction places all vertices on the silhouette boundary (e.g., viewing a prism along its axis).
+
+### Empirical Hull Ranges
+
+| Polyhedron | V | H_min | H_max | H_min/V | Notes |
+|------------|---|-------|-------|---------|-------|
+| Tetrahedron | 4 | 3 | 4 | 75% | Edge-on view gives triangle |
+| Cube | 8 | 4 | 6 | 50% | Space diagonal → square |
+| Octahedron | 6 | 4 | 6 | 67% | Vertex view → square |
+| Icosahedron | 12 | 6 | 10 | 50% | 5-fold axis → decagon |
+| Dodecahedron | 20 | 10 | 12 | 50% | Central symmetry limits |
+| **Truncated Tet** | 12 | **5** | 9 | **42%** | Asymmetric! |
+| **Trunc Tet + Icosa** | 24 | ~8 | ~14 | ~33% | Compound, asymmetric |
+
+**Key insight**: The truncated tetrahedron can achieve H_min < V/2 because it lacks central symmetry. This is precisely what enables prime hull counts.
+
+### The Search Candidate Theorem
+
+**Theorem (Search Candidate Selection)**: To find an n-hull projection with n prime:
+
+1. **Vertex Count**: Source polyhedron must have V ≥ n vertices
+2. **Symmetry Barrier**: Source must lack central symmetry (for primes > 2)
+3. **Headroom Principle**: For reliable n-hull discovery, prefer V ≥ 1.5n to 2n
+
+**Corollary**: To search for a 17-hull (next prime target), we need:
+- Minimum: V ≥ 17 vertices
+- Preferred: V ≥ 26-34 vertices
+- Symmetry: Asymmetric (or compound with broken symmetry)
+
+**Candidates for 17-gon search**:
+| Compound | V | Symmetry | Feasibility |
+|----------|---|----------|-------------|
+| Trunc Tet + Dodecahedron | 12 + 20 = 32 | Broken | ✓ Good candidate |
+| 2× Trunc Tet + Tetrahedron | 24 + 4 = 28 | Broken | ✓ Possible |
+| Snub Cube | 24 | Chiral (no central) | ✓ Single polyhedron |
+| Trunc Tet + Snub Cube | 12 + 24 = 36 | Broken | ✓ Good headroom |
+
+### Why Quadray Viewing Angles Matter
+
+The WXYZ (Quadray) coordinate system offers **non-obvious viewing angles** that Cartesian XYZ naturally misses:
+
+1. **Tetrahedral alignment**: WXYZ basis vectors point to tetrahedron vertices at (1,1,1), (1,-1,-1), (-1,1,-1), (-1,-1,1). These are NOT aligned with Cartesian axes.
+
+2. **Rational spread relationships**: The spread between Quadray basis vectors is 8/9 (rational). Rotations within this framework preserve algebraic relationships.
+
+3. **Central angle planes**: The 6 Quadray planes (WX, WY, WZ, XY, XZ, YZ) intersect at 60° angles, providing a tessellation of viewing directions distinct from Cartesian orthogonal planes.
+
+4. **Asymmetric discovery**: The truncated tetrahedron's special relationship with Quadray coordinates (all vertices are rational: {2,1,0,0} permutations) suggests that Quadray viewing angles may reveal prime hulls invisible from Cartesian views.
+
+### Systematic Search Strategy
+
+**Phase 1: On-Axis Views** (Exhaustive)
+```
+For each candidate polyhedron/compound:
+  For each Cartesian axis (±X, ±Y, ±Z):
+    Project and count hull
+  For each Quadray axis (QW, QX, QY, QZ):
+    Project and count hull
+  Record all prime hull counts
+```
+
+**Phase 2: Rational Spread Variants** (Grid search)
+```
+For promising on-axis results (hull near target prime):
+  For s1 in [0, 0.1, 0.2, ..., 1.0]:
+    For s2 in [0, 0.1, 0.2, ..., 1.0]:
+      For s3 in [0, 0.1, 0.2, ..., 1.0]:
+        Apply spread rotation
+        Project and count hull
+        If hull == target_prime: RECORD
+```
+
+**Phase 3: Fine Refinement** (Local search)
+```
+For each (s1, s2, s3) that produced target prime:
+  Search neighborhood at precision 0.01
+  Find spread values that maximize regularity score
+```
+
+### The Regularity Challenge
+
+**Critical clarification**: Our projections produce n-HULL counts, not regular n-gons.
+
+| Prime | Hull Found? | Equilateral? | Equiangular? | Regularity Score |
+|-------|-------------|--------------|--------------|------------------|
+| 5-hull | ✓ | No (kite-like) | No | 0.0 |
+| 7-hull | ✓ | No | No (2 collinear) | 0.0 |
+| 11-hull | ✓ | No | No (16° variance) | 0.0 |
+| 13-hull | ✓ | No | No (19° variance) | 0.0 |
+
+**The fundamental incompatibility**: A regular n-gon requires n-fold rotational symmetry. Our source polyhedra have tetrahedral (3-fold, 4-fold) or icosahedral (5-fold) symmetry. There is **no viewing angle** that can make vertices from these symmetry groups project to a regular prime polygon (for primes other than 3 or 5).
+
+**What we CAN search for**:
+1. **Prime hull counts** — Achieved ✓
+2. **Minimized edge variance** — More equilateral-ish
+3. **Minimized angle variance** — More equiangular-ish
+4. **Maximum regularity score** — Closest approximation to regular
+
+### Open Questions
+
+1. **Does every asymmetric polyhedron with V ≥ n produce an n-hull at SOME viewing angle?**
+   - Conjecture: Yes, for sufficiently generic polyhedra
+   - Exception: Highly degenerate configurations may skip certain counts
+
+2. **Is there a "most regular" n-hull for each prime?**
+   - For 5-hull: Best edge variance? Best angle variance?
+   - Systematic search for "optimal" spread parameters needed
+
+3. **Do larger compounds improve regularity?**
+   - More vertices = more hull candidates = potentially better fit?
+   - Or does adding vertices just add noise?
+
+4. **Can Janus polarity (4D±) break the regularity barrier?**
+   - The discrete ± state adds asymmetry beyond 3D geometry
+   - May enable configurations impossible in standard 3D
+
+### A Note on Defeat and Discovery
+
+The gap between "n-hull" and "regular n-gon" is real. Our projections are **distorted shadows**, not perfect polygons. But consider:
+
+1. **Penrose tilings** also produce "impossible" 5-fold patterns through projection—they're not regular pentagons either, but they're mathematically profound.
+
+2. **The Gauss-Wantzel barrier** remains unbroken in 2D. Our projections don't construct regular primes; they **reveal prime structure** hidden in higher-dimensional geometry.
+
+3. **The search continues**: Every prime hull we find opens a family of multiples. Every compound we test narrows the parameter space. The path to 17-gon, 19-gon, and beyond is systematic, not random.
+
+The truncated tetrahedron's Quadray rationality, the spread-based rotation framework, and the compound polyhedra strategy all suggest we've found a **method**, not just isolated results. The method deserves further exploration.
+
+---
+
 ## References
 
 - Wildberger, N.J. "Divine Proportions" Chapter 14 (Spread Polynomials)
