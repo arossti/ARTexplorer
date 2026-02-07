@@ -34,77 +34,172 @@ Convert hardcoded prime polygon buttons to use RTProjections presets, enabling a
 
 ---
 
-## Phase 4: Presets System
+## Phase 4: Presets System (Leveraging Existing Infrastructure)
 
-### Overview
+### Design Principle
 
-The prime polygon buttons (5-gon, 7-gon, 11-gon, 13-gon) currently duplicate projection logic. Phase 4 converts these to **presets** that:
+**Presets work like file imports, except data comes from within the app.**
 
-1. Auto-enable the required polyhedron
-2. Set projection spreads via `RTProjections.applyPreset()`
-3. Reuse the generalized visualization from RTProjections
+The existing `RTFileHandler` already has a complete preset system:
+- `savePreset(name)` / `loadPreset(name)` / `deletePreset(name)` / `listPresets()`
+- Uses localStorage with key prefix `art-explorer-preset-`
+- State captured via `exportState()` / restored via `importState()`
 
-### Preset Registry Schema
+Projection presets should integrate with this pattern rather than reinvent it.
 
-The existing `VERIFIED_PROJECTIONS` in `rt-prime-cuts.js` becomes the preset source:
+### Two Types of Presets
+
+1. **Built-in Prime Presets** (read-only, shipped with app)
+   - Pentagon, Heptagon, Hendecagon, Tridecagon
+   - Stored in `PROJECTION_PRESETS` constant in `rt-prime-cuts.js`
+   - Applied via `RTProjections.applyPreset()`
+
+2. **User Projection Presets** (saved/loaded by user)
+   - Saved via existing `RTFileHandler.savePreset()` mechanism
+   - Projection state included in `environment.projection` during export
+   - Restored during `importState()` like any other environment setting
+
+### State Management Integration
+
+Add projection state to `RTStateManager.state.environment`:
 
 ```javascript
-// rt-prime-cuts.js - PROJECTION_PRESETS (rename from VERIFIED_PROJECTIONS)
+// rt-state-manager.js - Add to state.environment
+environment: {
+  colorPalette: null,
+  canvasBackground: "0x1A1A1A",
+  uiBackground: "0x2A2A2A",
+
+  // NEW: Projection environment
+  projection: {
+    enabled: false,
+    basis: "cartesian",
+    axis: "z",
+    distance: 3,
+    showRays: true,
+    showInterior: false,
+    showIdealPolygon: false,
+    // For preset-based projections:
+    customSpreads: null,      // [s1, s2, s3] or null for axis-based
+    presetName: null,         // "pentagon", "heptagon", etc. or null
+    targetPolyhedronType: null, // userData.type of projected polyhedron
+  },
+},
+```
+
+### File Handler Integration
+
+Extend `RTFileHandler.exportState()` to capture projection state:
+
+```javascript
+// rt-filehandler.js - In exportState(), add to environment object:
+environment: {
+  // ... existing camera, grids, forms, colorPalette ...
+
+  // Projection state (mirrors RTProjections.state)
+  projection: {
+    enabled: RTProjections.state.enabled,
+    basis: RTProjections.state.basis,
+    axis: RTProjections.state.axis,
+    distance: RTProjections.state.distance,
+    showRays: RTProjections.state.showRays,
+    showInterior: RTProjections.state.showInterior,
+    showIdealPolygon: RTProjections.state.showIdealPolygon,
+    customSpreads: RTProjections.state.customSpreads || null,
+    presetName: RTProjections.state.presetName || null,
+  },
+},
+```
+
+Extend `RTFileHandler.importState()` to restore projection state:
+
+```javascript
+// rt-filehandler.js - In importState(), after restoring other environment:
+if (stateData.environment?.projection) {
+  const proj = stateData.environment.projection;
+
+  // Restore RTProjections state
+  Object.assign(RTProjections.state, proj);
+
+  // Update UI elements
+  const enableCheckbox = document.getElementById("enableProjection");
+  if (enableCheckbox) enableCheckbox.checked = proj.enabled;
+
+  const distanceSlider = document.getElementById("projectionDistance");
+  if (distanceSlider) distanceSlider.value = proj.distance;
+
+  // Update axis button highlighting
+  const axisId = proj.basis === "cartesian"
+    ? `projectionAxis${proj.axis.toUpperCase()}`
+    : `projectionAxis${proj.axis.toUpperCase()}`;
+  // ... set active class on correct button
+
+  // If projection was enabled, re-apply it
+  if (proj.enabled && proj.targetPolyhedronType) {
+    // Find polyhedron in scene and show projection
+    // (handled by updateGeometry callback after import)
+  }
+
+  console.log("✅ Projection state restored");
+}
+```
+
+### Built-in Prime Presets
+
+The existing `VERIFIED_PROJECTIONS` becomes `PROJECTION_PRESETS`:
+
+```javascript
+// rt-prime-cuts.js - Rename and extend
 const PROJECTION_PRESETS = {
-  "pentagon": {
+  pentagon: {
     name: "Pentagon (5-gon)",
-    polyhedronType: "quadrayTruncatedTet",  // userData.type to find/enable
+    polyhedronType: "quadrayTruncatedTet",
     polyhedronCheckbox: "showQuadrayTruncatedTet",
     spreads: [0, 0, 0.5],
     expectedHull: 5,
     description: "Truncated Tetrahedron → 5-vertex hull",
+    // State snapshot for import compatibility
+    projectionState: {
+      enabled: true,
+      basis: "custom",
+      axis: null,
+      distance: 3,
+      showRays: true,
+      showInterior: false,
+      showIdealPolygon: true,
+      customSpreads: [0, 0, 0.5],
+      presetName: "pentagon",
+    },
   },
-  "heptagon": {
-    name: "Heptagon (7-gon)",
-    polyhedronType: "quadrayCompoundTet",
-    polyhedronCheckbox: "showQuadrayCompoundTet",
-    spreads: [0, 0, 0.5],
-    expectedHull: 7,
-    description: "TruncTet + Tet compound → 7-vertex hull",
-  },
-  "hendecagon": {
-    name: "Hendecagon (11-gon)",
-    polyhedronType: "quadrayCompoundTet",
-    polyhedronCheckbox: "showQuadrayCompoundTet",
-    spreads: [0, 0.2, 0.5],
-    expectedHull: 11,
-    description: "TruncTet + Tet compound → 11-vertex hull",
-  },
-  "tridecagon": {
-    name: "Tridecagon (13-gon)",
-    polyhedronType: "quadrayCompound",
-    polyhedronCheckbox: "showQuadrayCompound",
-    spreads: [0, 0.6, 0.8],
-    expectedHull: 13,
-    description: "TruncTet + Icosa compound → 13-vertex hull",
-  },
+  // ... heptagon, hendecagon, tridecagon
 };
 ```
 
 ### RTProjections Preset API
 
-Add to `rt-projections.js`:
-
 ```javascript
+// rt-projections.js - Add preset methods
+
 /**
- * Apply a named preset configuration
- * @param {Object} preset - Preset object with spreads, polyhedronType, etc.
- * @param {THREE.Scene} scene - Scene to find/enable polyhedron
+ * Apply a built-in or user preset
+ * Uses same code path as importState() for consistency
+ * @param {Object} preset - Preset with projectionState
+ * @param {THREE.Scene} scene - Scene reference
  */
 applyPreset: function(preset, scene) {
-  // 1. Auto-enable the required polyhedron checkbox
+  // 1. Auto-enable required polyhedron (same as current)
   const checkbox = document.getElementById(preset.polyhedronCheckbox);
   if (checkbox && !checkbox.checked) {
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  // 2. Find the polyhedron in scene
+  // 2. Apply projection state (same format as importState)
+  if (preset.projectionState) {
+    Object.assign(RTProjections.state, preset.projectionState);
+  }
+
+  // 3. Find target polyhedron
   let targetGroup = null;
   scene.traverse(obj => {
     if (obj.userData?.type === preset.polyhedronType) {
@@ -117,84 +212,81 @@ applyPreset: function(preset, scene) {
     return;
   }
 
-  // 3. Set projection spreads directly (bypass axis buttons)
-  RTProjections.state.customSpreads = preset.spreads;
+  // 4. Store for state export
+  RTProjections.state.targetPolyhedronType = preset.polyhedronType;
   RTProjections.state.presetName = preset.name;
 
-  // 4. Show projection with preset spreads
+  // 5. Show projection
   RTProjections.showProjection(targetGroup, {
     spreads: preset.spreads,
-    showIdealPolygon: true,  // Always show ideal for comparison
+    showIdealPolygon: true,
   });
+
+  // 6. Update StateManager (for export)
+  if (window.RTStateManager) {
+    window.RTStateManager.state.environment.projection = { ...RTProjections.state };
+  }
 
   console.log(`📐 Applied preset: ${preset.name}`);
 },
 
 /**
- * Get projection plane basis from explicit spreads
- * (Used by presets instead of _axisToSpreads)
+ * Export current projection state (for RTFileHandler)
+ * @returns {Object} Projection state snapshot
  */
-_getProjectionPlaneBasisFromSpreads: function(spreads) {
-  // Reuse existing _getProjectionPlaneBasis with spreads array
-  return RTProjections._getProjectionPlaneBasis(spreads);
+exportState: function() {
+  return {
+    enabled: RTProjections.state.enabled,
+    basis: RTProjections.state.basis,
+    axis: RTProjections.state.axis,
+    distance: RTProjections.state.distance,
+    showRays: RTProjections.state.showRays,
+    showInterior: RTProjections.state.showInterior,
+    showIdealPolygon: RTProjections.state.showIdealPolygon,
+    customSpreads: RTProjections.state.customSpreads,
+    presetName: RTProjections.state.presetName,
+    targetPolyhedronType: RTProjections.state.targetPolyhedronType,
+  };
+},
+
+/**
+ * Import projection state (called from RTFileHandler.importState)
+ * @param {Object} projectionState - State to restore
+ */
+importState: function(projectionState) {
+  if (!projectionState) return;
+  Object.assign(RTProjections.state, projectionState);
+  // UI updates handled by caller
 },
 ```
 
-### UI Changes: Prime Polygon Buttons
+### User Workflow: Save/Load Custom Projection
 
-Refactor the view preset buttons in `rt-ui-binding-defs.js`:
+Users can save their current projection setup as a preset:
 
-```javascript
-// viewControlBindings - Prime Projection Views
-{
-  id: "viewPentagonProjection",
-  onClick: (renderingAPI, scene) => {
-    const preset = RTPrimeCuts.getPreset("pentagon");
-    RTProjections.applyPreset(preset, scene);
-  },
-},
-{
-  id: "viewHeptagonProjectionTet",
-  onClick: (renderingAPI, scene) => {
-    const preset = RTPrimeCuts.getPreset("heptagon");
-    RTProjections.applyPreset(preset, scene);
-  },
-},
-// ... etc for 11-gon, 13-gon
-```
+1. Configure projection (axis, distance, options)
+2. File > Save Preset > "MyProjection"
+   - `RTFileHandler.savePreset("MyProjection")` captures entire state including `environment.projection`
+3. Later: File > Load Preset > "MyProjection"
+   - `RTFileHandler.loadPreset("MyProjection")` restores everything including projection
+
+No new UI needed - leverages existing preset system!
 
 ### RTPrimeCuts Thin Wrapper
 
-After Phase 4, `rt-prime-cuts.js` becomes a thin wrapper:
-
 ```javascript
 export const RTPrimeCuts = {
-  // Preset registry (single source of truth)
   _presets: PROJECTION_PRESETS,
 
-  /**
-   * Get a preset by name
-   */
   getPreset: function(name) {
     return PROJECTION_PRESETS[name];
   },
 
-  /**
-   * Get all preset names
-   */
   getPresetNames: function() {
     return Object.keys(PROJECTION_PRESETS);
   },
 
-  /**
-   * Verify a preset produces expected hull count
-   */
-  verifyPreset: function(name) {
-    const preset = PROJECTION_PRESETS[name];
-    // ... verification logic (keep from current implementation)
-  },
-
-  // Legacy compatibility - delegates to RTProjections
+  // Legacy compatibility
   showPrimePolygon: function(n, scene, camera, planeDistance) {
     const presetMap = { 5: "pentagon", 7: "heptagon", 11: "hendecagon", 13: "tridecagon" };
     const preset = PROJECTION_PRESETS[presetMap[n]];
@@ -202,12 +294,16 @@ export const RTPrimeCuts = {
       RTProjections.applyPreset(preset, scene);
     }
   },
+
+  // Verification (keep from current)
+  verifyPreset: function(name) { /* ... */ },
+  verifyAllProjections: function() { /* ... */ },
 };
 ```
 
 ### Code Removal Candidates
 
-After Phase 4, these can be removed from `rt-prime-cuts.js`:
+After Phase 4, remove from `rt-prime-cuts.js`:
 
 | Function | Lines | Reason |
 |----------|-------|--------|
@@ -223,15 +319,16 @@ After Phase 4, these can be removed from `rt-prime-cuts.js`:
 
 ### Verification Checklist (Phase 4)
 
-- [ ] PROJECTION_PRESETS registry defined
+- [ ] `RTStateManager.state.environment.projection` defined
+- [ ] `RTFileHandler.exportState()` includes projection
+- [ ] `RTFileHandler.importState()` restores projection
+- [ ] `RTProjections.exportState()` / `importState()` implemented
 - [ ] `RTProjections.applyPreset()` implemented
-- [ ] Pentagon button uses preset
-- [ ] Heptagon button uses preset
-- [ ] Hendecagon (11-gon) button uses preset
-- [ ] Tridecagon (13-gon) button uses preset
+- [ ] Built-in presets have `projectionState` snapshots
+- [ ] Pentagon/Heptagon/Hendecagon/Tridecagon buttons use presets
+- [ ] User-saved presets include projection state
 - [ ] Legacy `showPrimePolygon(n)` still works
-- [ ] Verification system still validates presets
-- [ ] Removed ~600 lines of duplicated code
+- [ ] ~600 lines removed from rt-prime-cuts.js
 
 ---
 
