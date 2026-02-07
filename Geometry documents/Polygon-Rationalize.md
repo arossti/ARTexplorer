@@ -24,6 +24,45 @@
 | **11** | ✅ **BREAKTHROUGH** | (0, 0.4, 0.2) | Compound: Trunc Tet + Icosahedron (24v) |
 | **13** | ✅ **BREAKTHROUGH** | (0, 0.6, 0.8) | Compound: Trunc Tet + Icosahedron (24v) |
 
+### ⚠️ CRITICAL: Python↔JavaScript Spread Swap
+
+**Rotation order mismatch between Python search script and JS visualization!**
+
+| System | Euler Order | Spread Mapping |
+|--------|-------------|----------------|
+| Python (`prime_projection_search.py`) | ZYX | `(s1, s2, s3)` |
+| JavaScript (`rt-papercut.js`) | ZYX | `(s1, s3, s2)` — **SWAP s2↔s3!** |
+
+**Example**: Python finds 11-gon at `(0, 0.4, 0.2)` → JS needs `(0, 0.2, 0.4)`
+
+This affects `_getProjectionPlaneBasis()` in `rt-papercut.js`. When adding new prime projections:
+1. Take spreads from Python results JSON
+2. **Swap s2 and s3** for JavaScript implementation
+3. Verify hull count matches expected prime
+
+### 📋 TODO: On-Axis Search Priority (Next Session)
+
+**Before searching arbitrary spread variants**, systematically search ON-AXIS views:
+
+| Priority | Axis Type | Views | Rationale |
+|----------|-----------|-------|-----------|
+| **1** | Cartesian XYZ | ±X, ±Y, ±Z (6 views) | Standard orthographic projections |
+| **2** | Quadray WXYZ | QW, QX, QY, QZ (4 views) | Tetrahedral-aligned projections |
+| **3** | Combined | All 10 axial views | Complete on-axis coverage |
+| **4** | Spread variants | s=(0.1, 0.2, ...) | Only AFTER on-axis exhausted |
+
+**Search order for each polyhedron/compound**:
+1. XYZ on-axis (s1=s2=s3=0 with axis-aligned camera)
+2. WXYZ on-axis (camera along Quadray basis vectors)
+3. THEN rational spread variants (0.1, 0.2, 0.25, 0.5, etc.)
+
+**Polyhedra to search (in order)**:
+- [ ] Truncated Tetrahedron (12v) — 5-gon, 7-gon source
+- [ ] Compound: Trunc Tet + Tetrahedron (16v) — **7-gon at (0, 0.04, 0.4)**
+- [ ] Compound: Trunc Tet + Icosahedron (24v) — 11-gon, 13-gon source
+- [ ] Snub Cube (24v, chiral) — potential for higher primes
+- [ ] Compound: Trunc Tet + Dodecahedron (32v) — 17-gon, 19-gon candidates
+
 ### ★ BREAKTHROUGH (Feb 2026): 11-gon and 13-gon Discovered!
 
 **Compound polyhedra unlock higher primes!** By combining truncated tetrahedron (12v) + icosahedron (12v) = 24 vertices, we found:
@@ -948,26 +987,44 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
 ### ⏳ In Progress
 
 6. **Verify Prime Projection Visualization** - `rt-papercut.js`
-   - **SPREADS VERIFIED CORRECT**: JS matches `prime_breakthrough_*.json`:
-     - 11-gon: `s=(0, 0.4, 0.2)` ✓
-     - 13-gon: `s=(0, 0.6, 0.8)` ✓
-   - **Prerequisite**: Enable "Quadray Compound (TruncTet + Icosa)" checkbox!
-   - Without compound enabled, overlay falls back to scene geometry which may be wrong
-   - TODO: Add UI warning if compound not enabled when selecting 11/13-gon preset
+   - **11-gon and 13-gon WORKING**: Compound (TruncTet + Icosa) verified
+     - 11-gon: `s=(0, 0.2, 0.4)` in JS (swapped from Python's `(0, 0.4, 0.2)`) ✓
+     - 13-gon: `s=(0, 0.8, 0.6)` in JS (swapped from Python's `(0, 0.6, 0.8)`) ✓
+   - **7-gon NEEDS DIFFERENT COMPOUND**:
+     - Current code uses Truncated Tet alone at `(0.11, 0.5, 0)` → produces 9-hull NOT 7-hull
+     - **7-hull requires Compound: Trunc Tet + Tetrahedron (16v)** at `(0, 0.04, 0.4)`
+     - TODO: Add "Quadray Compound (TruncTet + Tet)" checkbox and wire up 7-gon preset
+   - **Prerequisite**: Enable correct compound checkbox before selecting prime preset!
 
 ### 📋 Pending
 
-7. **RT.ProjectionPolygons Namespace** - Shadow polygons using only √ radicals
+7. **On-Axis Search Implementation** - Prioritize before spread variants
+   - Implement XYZ on-axis camera views in search script
+   - Implement WXYZ (Quadray) on-axis camera views
+   - Add "Quadray Compound (TruncTet + Tet)" for 7-gon (16v compound)
+   - Systematically search all polyhedra/compounds at on-axis views FIRST
+   - See "TODO: On-Axis Search Priority" section above
+
+7b. **Create `compoundTruncTetTetrahedron` in `rt-quadray-polyhedra.js`** - For 7-gon projection
+    - Combine `QuadrayPolyhedra.truncatedTetrahedron()` (12v) + `Polyhedra.tetrahedron()` (4v) = 16 vertices
+    - Use same circumradius normalization pattern as `compoundTruncTetIcosahedron`
+    - Reference: `Polyhedra.tetrahedron()` in `modules/rt-polyhedra.js`
+    - **Implementation guide**: See `Geometry documents/Add-Polyhedra-Guide.md` for step-by-step checklist
+    - Add UI checkbox: "Quadray Compound (TruncTet + Tet)"
+    - Wire up 7-gon preset to use this compound at spreads `(0, 0.04, 0.4)`
+    - **Spread swap for JS**: Python `(0, 0.04, 0.4)` → JS `(0, 0.4, 0.04)` (swap s2↔s3)
+
+8. **RT.ProjectionPolygons Namespace** - Shadow polygons using only √ radicals
    - Algebraic formulas for projection heptagon
    - Derived from Prime Projection Search findings
    - Uses √2, √11, √89, √178 (no transcendentals)
 
-8. **RT.PureCubics Documentation** - Add derivation notes for generalizability
+9. **RT.PureCubics Documentation** - Add derivation notes for generalizability
    - Cardano's formula derivations
    - Connection to Galois theory
    - Symbolic expressions alongside cached values
 
-9. **Higher Prime Search** - Extend projection search to 17, 19, 23...
+10. **Higher Prime Search** - Extend projection search to 17, 19, 23...
    - Larger compound polyhedra (3+ components)
    - 4D± with Janus polarity perturbation
 

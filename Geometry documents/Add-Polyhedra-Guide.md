@@ -270,6 +270,41 @@ const basisY = new THREE.Vector3(-1, 1, -1);
 const basisZ = new THREE.Vector3(-1, -1, 1);
 ```
 
+### Design Note: Quadray-Native vs Cartesian Imports for Compound Polyhedra
+
+**When creating new compounds for prime projection visualization**, prefer constructing components as pure rational Quadray structures when possible:
+
+| Component Type | Recommendation | Rationale |
+|----------------|----------------|-----------|
+| **Platonic solids** (tet, octa, icosa) | Use `rt-polyhedra.js` | Already tested, golden ratio construction optimal for icosa |
+| **Truncated/stellated forms** | Prefer Quadray-native | Truncated tet has ALL RATIONAL Quadray coords `{2,1,0,0}` |
+| **Snub/chiral forms** | Evaluate case-by-case | Some have rational Quadray representations |
+| **Compounds with tet-family** | Prefer Quadray-native | Maintains algebraic exactness in projection math |
+
+**Why Quadray-native matters for projections:**
+- Quadray truncated tetrahedron: ALL vertices are `{2,1,0,0}` permutations (pure integers!)
+- Cartesian truncated tetrahedron: Requires irrational coordinates
+- Projection hull calculations inherit this exactness
+- Prime polygon discoveries rely on rational spread relationships
+
+**Pattern for mixed compounds** (e.g., `compoundTruncTetIcosahedron`):
+```javascript
+// Quadray component: native construction, then normalize circumradius
+const truncTetRaw = truncTetWXYZ.map(wxyz => wxyzToCartesian(...wxyz, 1.0));
+const truncTetCircumradius = Math.max(...truncTetRaw.map(v => v.length()));
+const truncTetVertices = truncTetRaw.map(v => v.clone().multiplyScalar(scale / truncTetCircumradius));
+
+// Cartesian component: import from rt-polyhedra.js, normalize to SAME circumradius
+const Polyhedra = await getPolyhedra();  // Lazy import to avoid circular dependency
+const icosaRaw = Polyhedra.icosahedron(1.0);
+const icosaCircumradius = Math.max(...icosaRaw.vertices.map(v => v.length()));
+const icosaVertices = icosaRaw.vertices.map(v => v.clone().multiplyScalar(scale / icosaCircumradius));
+```
+
+**Key insight:** When combining Quadray-native and Cartesian components, normalize both to the SAME circumradius to ensure proper vertex overlap for projection hull calculations.
+
+See also: `rt-quadray-polyhedra.js` for Quadray-native implementations
+
 ### Adjacency-Based Edge Computation
 
 For polyhedra where edges aren't obvious, compute from vertex relationships:

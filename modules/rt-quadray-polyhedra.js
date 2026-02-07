@@ -870,6 +870,186 @@ export const QuadrayPolyhedra = {
       },
     };
   },
+
+  /**
+   * Compound Polyhedra: Truncated Tetrahedron + Tetrahedron (7-gon Projection)
+   * Combines truncated tetrahedron (12v) + tetrahedron (4v) = 16 vertices
+   *
+   * This compound produces 7-hull projections at specific viewing angles,
+   * providing an alternative to the 9-hull currently produced by truncated
+   * tetrahedron alone (which has 2 collinear vertices creating visual 5-gon).
+   *
+   * Spread parameters: Python (0, 0.04, 0.4) → JS (0, 0.4, 0.04) (swap s2↔s3)
+   *
+   * @param {number} scale - Uniform scale factor
+   * @param {Object} options - Configuration options
+   * @returns {Object} - {vertices, edges, faces, metadata, primeProjections}
+   */
+  compoundTruncTetTetrahedron: async (scale = 1, options = {}) => {
+    const { normalize = true } = options;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 1. TRUNCATED TETRAHEDRON VERTICES (12) - From Quadray {2,1,0,0} permutations
+    // ═══════════════════════════════════════════════════════════════════════
+    const truncTetWXYZ = [];
+    const coordSets = [
+      [2, 1, 0, 0], [2, 0, 1, 0], [2, 0, 0, 1], // W=2
+      [1, 2, 0, 0], [0, 2, 1, 0], [0, 2, 0, 1], // X=2
+      [1, 0, 2, 0], [0, 1, 2, 0], [0, 0, 2, 1], // Y=2
+      [1, 0, 0, 2], [0, 1, 0, 2], [0, 0, 1, 2], // Z=2
+    ];
+    coordSets.forEach(c => truncTetWXYZ.push(c));
+
+    const truncTetNormalized = truncTetWXYZ.map(coords =>
+      normalize ? zeroSumNormalize(coords) : coords
+    );
+
+    // First pass: compute raw vertices to find circumradius
+    const truncTetRaw = truncTetNormalized.map(([w, x, y, z]) =>
+      wxyzToCartesian(w, x, y, z, 1.0) // Unit scale first
+    );
+
+    // Calculate truncated tet circumradius
+    let truncTetCircumradius = 0;
+    truncTetRaw.forEach(v => {
+      const r = v.length();
+      if (r > truncTetCircumradius) truncTetCircumradius = r;
+    });
+
+    // Normalize to unit circumradius, then apply user scale
+    const truncTetVertices = truncTetRaw.map(v =>
+      v.clone().multiplyScalar(scale / truncTetCircumradius)
+    );
+
+    // Edges for truncated tetrahedron (indices 0-11)
+    const truncTetEdges = [];
+    for (let i = 0; i < 12; i++) {
+      for (let j = i + 1; j < 12; j++) {
+        const vi = truncTetWXYZ[i];
+        const vj = truncTetWXYZ[j];
+        let diffs = 0, diffSum = 0;
+        for (let k = 0; k < 4; k++) {
+          if (vi[k] !== vj[k]) { diffs++; diffSum += Math.abs(vi[k] - vj[k]); }
+        }
+        if (diffs === 2 && diffSum === 2) truncTetEdges.push([i, j]);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 2. TETRAHEDRON (4 vertices) - Call actual Polyhedra.tetrahedron()
+    // Uses TESTED geometry from rt-polyhedra.js
+    // CRITICAL: Normalize to SAME circumradius as truncated tetrahedron!
+    // ═══════════════════════════════════════════════════════════════════════
+    const Polyhedra = await getPolyhedra();
+    const tetRaw = Polyhedra.tetrahedron(1.0, { silent: true }); // Unit scale, suppress logging
+
+    // Calculate tetrahedron circumradius
+    let tetCircumradius = 0;
+    tetRaw.vertices.forEach(v => {
+      const r = v.length();
+      if (r > tetCircumradius) tetCircumradius = r;
+    });
+
+    // Normalize to unit circumradius, then apply user scale (SAME as trunc tet!)
+    const tetVertices = tetRaw.vertices.map(v =>
+      v.clone().multiplyScalar(scale / tetCircumradius)
+    );
+    const tetEdgesLocal = tetRaw.edges;
+    const tetFacesLocal = tetRaw.faces;
+
+    console.log(`  [Compound Scale] TruncTet circumradius: ${truncTetCircumradius.toFixed(4)}, Tet: ${tetCircumradius.toFixed(4)}`);
+    console.log(`  [Compound Scale] Both normalized to circumradius: ${scale.toFixed(4)}`);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 3. COMBINE VERTEX SETS (16 total)
+    // ═══════════════════════════════════════════════════════════════════════
+    const vertices = [...truncTetVertices, ...tetVertices];
+
+    // Offset tetrahedron edge indices by 12 (truncated tet has 12 vertices)
+    const tetEdges = tetEdgesLocal.map(([a, b]) => [a + 12, b + 12]);
+
+    const edges = [...truncTetEdges, ...tetEdges];
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 4. FACES FOR BOTH COMPONENTS (with CCW winding for outward normals)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Truncated tetrahedron faces (indices 0-11)
+    // 4 triangular faces (one per original tet vertex)
+    const truncTetTriangles = [
+      [0, 1, 2],   // Near W
+      [3, 4, 5],   // Near X
+      [6, 7, 8],   // Near Y
+      [9, 10, 11], // Near Z
+    ];
+
+    // 4 hexagonal faces (one per original tet face)
+    const truncTetHexagons = [
+      [0, 3, 4, 7, 6, 1],     // WXY face (Z=0)
+      [0, 3, 5, 10, 9, 2],    // WXZ face (Y=0)
+      [1, 6, 8, 11, 9, 2],    // WYZ face (X=0)
+      [4, 7, 8, 11, 10, 5],   // XYZ face (W=0)
+    ];
+
+    // Offset tetrahedron face indices by 12
+    const tetFaces = tetFacesLocal.map(f => f.map(idx => idx + 12));
+
+    // Apply winding fix to all faces
+    const truncTetFaces = [
+      ...truncTetTriangles.map(f => fixWinding(f, vertices)),
+      ...truncTetHexagons.map(f => fixWinding(f, vertices)),
+    ];
+
+    const faces = [
+      ...truncTetFaces,
+      ...tetFaces.map(f => fixWinding(f, vertices)),
+    ];
+
+    console.log(
+      `[RT] Compound Polyhedra (Trunc Tet + Tetrahedron): ${vertices.length} vertices, ${edges.length} edges, ${faces.length} faces`
+    );
+    console.log(`  Truncated Tetrahedron: 12 vertices, 8 faces (4 tri + 4 hex)`);
+    console.log(`  Tetrahedron: 4 vertices, 4 faces (all triangular)`);
+    console.log(`  Prime projection target: 7-gon at s=(0, 0.4, 0.04)`);
+
+    return {
+      vertices,
+      edges,
+      faces,
+      // Component data for separate rendering with distinct colors
+      components: {
+        truncatedTetrahedron: {
+          vertices: truncTetVertices,
+          edges: truncTetEdges,
+          faces: truncTetFaces,
+        },
+        tetrahedron: {
+          vertices: tetVertices,
+          edges: tetEdgesLocal, // Local indices (0-3)
+          faces: tetFacesLocal, // Local indices (0-3)
+        },
+      },
+      truncTetWXYZ,
+      truncTetNormalized,
+      metadata: {
+        coordinateSystem: "mixed",
+        componentNames: ["truncatedTetrahedron", "tetrahedron"],
+        totalVertices: 16,
+        normalized: normalize,
+        scale: scale,
+        physicalMeaning: "Asymmetric compound for 7-gon projection",
+        discoveryDate: "2026-02-06",
+        primeProjections: {
+          heptagon: {
+            spreads: [0, 0.4, 0.04], // JS convention (swapped from Python)
+            spreadsAlt: [0, 0.04, 0.4], // Python convention
+            hullCount: 7,
+            note: "Heptagon - BYPASSES Gauss-Wantzel via 3D→2D projection",
+          },
+        },
+      },
+    };
+  },
 };
 
 // Export utilities for external use
