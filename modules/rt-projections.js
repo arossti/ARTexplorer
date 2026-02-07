@@ -504,9 +504,10 @@ export const RTProjections = {
       [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3],
     ];
 
-    // Tetrahedron: ODD parity vertices (matching working 7-gon)
+    // Tetrahedron: MUST match Polyhedra.tetrahedron() from rt-polyhedra.js
+    // These are 4 alternating cube vertices: (-,-,-), (+,+,-), (+,-,+), (-,+,+)
     const tetRaw = [
-      [1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1],
+      [-1, -1, -1], [1, 1, -1], [1, -1, 1], [-1, 1, 1],
     ];
 
     // Icosahedron: golden ratio vertices
