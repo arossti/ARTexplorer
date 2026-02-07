@@ -504,6 +504,11 @@ export const RTProjections = {
       [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3],
     ];
 
+    // Tetrahedron: ODD parity vertices (matching working 7-gon)
+    const tetRaw = [
+      [1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1],
+    ];
+
     // Icosahedron: golden ratio vertices
     const phi = (1 + Math.sqrt(5)) / 2;
     const icosaRaw = [
@@ -519,11 +524,14 @@ export const RTProjections = {
     };
 
     const truncTetVertices = truncTetRaw.map(normalize);
+    const tetVertices = tetRaw.map(normalize);
     const icosaVertices = icosaRaw.map(normalize);
 
     switch (compoundType) {
       case "truncatedTetrahedron":
         return truncTetVertices;
+      case "truncTetPlusTet":
+        return [...truncTetVertices, ...tetVertices];
       case "truncTetPlusIcosa":
         return [...truncTetVertices, ...icosaVertices];
       default:
