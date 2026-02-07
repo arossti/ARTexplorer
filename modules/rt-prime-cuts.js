@@ -45,11 +45,11 @@ const VERIFIED_PROJECTIONS = {
     name: "Hendecagon",
     compound: "truncTetPlusTet", // Same compound as 7-gon (NOT icosa!)
     vertexCount: 16,
-    spreads: [0, 0.28, 0.44], // From prime_compound_11gon JSON - verified working
+    spreads: [0, 0.2, 0.5], // Verified with JS-compatible compound (max angle 159.8°)
     expectedHull: 11,
-    source: "results/prime_compound_11gon_20260206_144804.json",
-    maxInteriorAngle: 170,
-    verified: "2026-02-06",
+    source: "Python js_trunctet_tet search 2026-02-07",
+    maxInteriorAngle: 160, // Best configuration - no near-collinear vertices
+    verified: "2026-02-07",
   },
   13: {
     name: "Tridecagon",
