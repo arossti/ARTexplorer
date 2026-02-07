@@ -480,9 +480,43 @@ function startARTexplorer(
       const targetId = this.dataset.target;
       const targetOptions = document.getElementById(targetId);
 
+      // Check if expanding or collapsing (before toggle)
+      const wasCollapsed = this.classList.contains("collapsed");
+
       // Toggle collapsed state
       this.classList.toggle("collapsed");
       targetOptions.classList.toggle("collapsed");
+
+      // Master toggle handling for grid sections
+      const gridMasterToggles = {
+        "central-angle-grids": {
+          label: "Central Angle Grids",
+          checkboxIds: ["planeIvmWX", "planeIvmWY", "planeIvmWZ", "planeIvmXY", "planeIvmXZ", "planeIvmYZ"]
+        },
+        "cartesian-planes": {
+          label: "Cartesian Planes",
+          checkboxIds: ["planeXY", "planeXZ", "planeYZ"]
+        },
+        "ivm-grids": {
+          label: "IVM Grids",
+          checkboxIds: ["planeQuadrayWX", "planeQuadrayWY", "planeQuadrayWZ", "planeQuadrayXY", "planeQuadrayXZ", "planeQuadrayYZ"]
+        }
+      };
+
+      if (gridMasterToggles[targetId]) {
+        const { label, checkboxIds } = gridMasterToggles[targetId];
+        const shouldEnable = wasCollapsed; // Expanding = turn all ON, Collapsing = turn all OFF
+
+        checkboxIds.forEach(id => {
+          const checkbox = document.getElementById(id);
+          if (checkbox && checkbox.checked !== shouldEnable) {
+            checkbox.checked = shouldEnable;
+            checkbox.dispatchEvent(new Event("change")); // Trigger visibility update
+          }
+        });
+
+        console.log(`[${label}] Master toggle: ${shouldEnable ? "ALL ON" : "ALL OFF"}`);
+      }
     });
   });
 
