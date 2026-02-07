@@ -82,6 +82,11 @@ export const simpleCheckboxBindings = [
 
   // Node shading
   { id: "nodeFlatShading", type: "checkbox" },
+
+  // Projection options
+  { id: "projectionShowRays", type: "checkbox" },
+  { id: "projectionShowInterior", type: "checkbox" },
+  { id: "projectionShowIdeal", type: "checkbox" },
 ];
 
 // ============================================================================
@@ -282,6 +287,13 @@ export const checkboxWithControlsBindings = [
     id: "showQuadrayCompoundTet",
     type: "checkbox-controls",
     controlsId: "quadray-compound-tet-controls",
+  },
+
+  // Projection with controls panel
+  {
+    id: "enableProjection",
+    type: "checkbox-controls",
+    controlsId: "projection-options",
   },
 ];
 
@@ -504,6 +516,13 @@ export const simpleSliderBindings = [
     id: "tetrahelix3CountSlider",
     type: "slider",
     valueId: "tetrahelix3CountDisplay",
+  },
+
+  // Projection plane distance slider
+  {
+    id: "projectionDistance",
+    type: "slider",
+    valueId: "projectionDistanceValue",
   },
 
   // Dodecahedron face tiling scale (for finding φ-ratio)

@@ -14,6 +14,7 @@
 
 import * as THREE from "three";
 import { QuadrayPolyhedra } from "./rt-quadray-polyhedra.js";
+import { RTProjections } from "./rt-projections.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VERIFIED PROJECTIONS REGISTRY
@@ -519,54 +520,13 @@ export const RTPrimeCuts = {
 
   /**
    * Compute 2D convex hull using Graham scan
+   * Delegates to RTProjections for the generic implementation.
+   *
    * @param {Array<{x,y}>} points - 2D points
    * @returns {Array<{x,y}>} Hull vertices in CCW order
    */
   _computeConvexHull2D: function (points) {
-    // Remove duplicates (within tolerance)
-    const unique = [];
-    const tol = 1e-8;
-    points.forEach(p => {
-      if (!unique.some(u => Math.abs(u.x - p.x) < tol && Math.abs(u.y - p.y) < tol)) {
-        unique.push(p);
-      }
-    });
-
-    if (unique.length < 3) return unique;
-
-    // Find lowest point (and leftmost if tie)
-    let lowest = 0;
-    for (let i = 1; i < unique.length; i++) {
-      if (unique[i].y < unique[lowest].y ||
-          (unique[i].y === unique[lowest].y && unique[i].x < unique[lowest].x)) {
-        lowest = i;
-      }
-    }
-    [unique[0], unique[lowest]] = [unique[lowest], unique[0]];
-    const pivot = unique[0];
-
-    // Sort by polar angle
-    const sorted = unique.slice(1).sort((a, b) => {
-      const angleA = Math.atan2(a.y - pivot.y, a.x - pivot.x);
-      const angleB = Math.atan2(b.y - pivot.y, b.x - pivot.x);
-      return angleA - angleB;
-    });
-
-    // Graham scan
-    const hull = [pivot];
-    for (const p of sorted) {
-      while (hull.length > 1) {
-        const a = hull[hull.length - 2];
-        const b = hull[hull.length - 1];
-        const cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
-        if (cross <= 0) hull.pop();
-        else break;
-      }
-      hull.push(p);
-    }
-
-    console.log(`   _computeConvexHull2D: ${unique.length} unique points → ${hull.length} hull vertices`);
-    return hull;
+    return RTProjections._computeConvexHull2D(points);
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -575,50 +535,13 @@ export const RTPrimeCuts = {
 
   /**
    * Extract world-space vertices from a polyhedron group
-   * Skips node spheres (userData.isVertexNode = true) to get only face mesh vertices
-   * Uses coarse tolerance to collapse triangulated mesh back to actual polyhedron vertices
+   * Delegates to RTProjections for the generic implementation.
    *
    * @param {THREE.Group} group - The polyhedron group
-   * @returns {Array<THREE.Vector3>} World-space vertices (12 for truncated tetrahedron)
+   * @returns {Array<THREE.Vector3>} World-space vertices
    */
   _getWorldVerticesFromGroup: function (group) {
-    const vertices = [];
-    const seen = new Set();
-
-    // Coarse tolerance (2 decimal places) to collapse triangulated mesh vertices
-    // back to the actual polyhedron vertices
-    const TOLERANCE_DECIMALS = 2;
-
-    group.traverse(obj => {
-      // Skip node spheres - they have userData.isVertexNode = true
-      if (obj.userData?.isVertexNode) {
-        return;
-      }
-
-      if (obj.geometry && obj.geometry.attributes?.position) {
-        const posAttr = obj.geometry.attributes.position;
-        obj.updateMatrixWorld(true);
-
-        for (let i = 0; i < posAttr.count; i++) {
-          const v = new THREE.Vector3(
-            posAttr.getX(i),
-            posAttr.getY(i),
-            posAttr.getZ(i)
-          );
-          v.applyMatrix4(obj.matrixWorld);
-
-          // Deduplicate using coarse tolerance
-          const key = `${v.x.toFixed(TOLERANCE_DECIMALS)},${v.y.toFixed(TOLERANCE_DECIMALS)},${v.z.toFixed(TOLERANCE_DECIMALS)}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            vertices.push(v);
-          }
-        }
-      }
-    });
-
-    console.log(`   _getWorldVerticesFromGroup: ${vertices.length} vertices (skipped node spheres)`);
-    return vertices;
+    return RTProjections._getWorldVerticesFromGroup(group);
   },
 
   /**
