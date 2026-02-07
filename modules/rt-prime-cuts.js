@@ -50,16 +50,16 @@ const PROJECTION_PRESETS = {
   heptagon: {
     name: "Heptagon (7-gon)",
     n: 7,
-    polyhedronType: "quadrayCompoundTet",
-    polyhedronCheckbox: "showQuadrayCompoundTet",
-    compound: "truncTetPlusTet",
-    vertexCount: 16,
-    spreads: [0, 0, 0.5],
+    polyhedronType: "quadrayTruncatedTet",
+    polyhedronCheckbox: "showQuadrayTruncatedTet",
+    compound: "truncatedTetrahedron",
+    vertexCount: 12,
+    spreads: [0.11, 0, 0.5],
     expectedHull: 7,
-    source: "results/prime_compound_search_20260206_144743.json",
+    source: "results/prime_breakthrough_*.json (Python search 2026-02)",
     maxInteriorAngle: 170,
-    verified: "2026-02-06",
-    description: "TruncTet+Tet compound → 7-vertex hull",
+    verified: "2026-02-07",
+    description: "Truncated Tetrahedron → 7-vertex hull at s=(0.11, 0, 0.5)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -68,23 +68,23 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0, 0, 0.5],
+      customSpreads: [0.11, 0, 0.5],
       presetName: "heptagon",
     },
   },
   hendecagon: {
     name: "Hendecagon (11-gon)",
     n: 11,
-    polyhedronType: "quadrayCompoundTet",
-    polyhedronCheckbox: "showQuadrayCompoundTet",
-    compound: "truncTetPlusTet",
-    vertexCount: 16,
-    spreads: [0, 0.2, 0.5],
+    polyhedronType: "quadrayCompound",
+    polyhedronCheckbox: "showQuadrayCompound",
+    compound: "truncTetPlusIcosa",
+    vertexCount: 24,
+    spreads: [0, 0.4, 0.2],
     expectedHull: 11,
-    source: "Python js_trunctet_tet search 2026-02-07",
-    maxInteriorAngle: 160,
+    source: "results/prime_breakthrough_*.json (Python search 2026-02)",
+    maxInteriorAngle: 170,
     verified: "2026-02-07",
-    description: "TruncTet+Tet compound → 11-vertex hull",
+    description: "TruncTet+Icosa compound → 11-vertex hull at s=(0, 0.4, 0.2)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -93,7 +93,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0, 0.2, 0.5],
+      customSpreads: [0, 0.4, 0.2],
       presetName: "hendecagon",
     },
   },
@@ -797,13 +797,12 @@ export const RTPrimeCuts = {
 
     switch (n) {
       case 7:
-        // 7-gon: REQUIRES TruncTet+Tet compound (16 vertices)
-        // Truncated tetrahedron alone produces 9-hull, NOT 7-hull!
-        // Same viewing angle as 5-gon, but tet vertices extend hull to 7
+        // 7-gon: Truncated tetrahedron at different viewing angle than 5-gon
+        // Python search found s=(0.11, 0, 0.5) produces exact 7-hull
         formulaText =
           "YELLOW: Actual 7-hull projection\n" +
-          "  Compound (TruncTet + Tet) 16v\n" +
-          "  s=(0, 0, 0.5) same as 5-gon\n" +
+          "  Truncated Tetrahedron (12v)\n" +
+          "  s=(0.11, 0, 0.5)\n" +
           "CYAN: Ideal regular heptagon\n" +
           "  Classical trig (for comparison)";
         break;
@@ -820,11 +819,11 @@ export const RTPrimeCuts = {
 
       case 11:
         // 11-gon: BREAKTHROUGH - Compound polyhedra
-        // Viewing spreads: s=(0, 0.4, 0.2)
+        // Python search verified: s=(0, 0.4, 0.2) from TruncTet+Icosa (24v)
         formulaText =
           "★ BREAKTHROUGH: Hendecagon (11-gon)\n" +
-          "  Compound (Trunc Tet + Icosa)\n" +
-          "  s=(0, 0.4, 0.2) → 24 vertices\n" +
+          "  Compound (Trunc Tet + Icosa) 24v\n" +
+          "  s=(0, 0.4, 0.2)\n" +
           "  Bypasses Gauss-Wantzel theorem!\n" +
           "  Quintic polynomial - NOT solvable by radicals";
         break;

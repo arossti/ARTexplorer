@@ -225,6 +225,7 @@ export const RTProjections = {
       showInterior,
       showIdealPolygon,
       rayColor,
+      spreads: options.spreads, // Pass custom spreads from presets
     });
 
     console.log("📐 Projection enabled for polyhedron");
@@ -501,8 +502,11 @@ export const RTProjections = {
     worldVertices.forEach((v) => center.add(v));
     center.divideScalar(worldVertices.length);
 
-    // Get projection plane basis from current axis
-    const spreads = RTProjections._axisToSpreads();
+    // Get projection plane basis - use custom spreads from preset/options if available
+    const spreads =
+      options.spreads ||
+      RTProjections.state.customSpreads ||
+      RTProjections._axisToSpreads();
     const { planeRight, planeUp, planeNormal } =
       RTProjections._getProjectionPlaneBasis(spreads);
 
