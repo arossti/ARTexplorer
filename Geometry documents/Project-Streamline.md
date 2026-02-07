@@ -294,3 +294,52 @@ The goal of Project-Streamline was "same definitions in both languages." But we 
 When these diverge (even subtly, as with circumradius calculation), the projection visualization doesn't match the scene geometry.
 
 **The fix isn't scaling—it's unification.** One vertex source, used everywhere.
+
+---
+
+## Next Steps (Feb 2026 Update)
+
+### Completed: Parametric Truncation
+
+Added `Polyhedra.truncatedTetrahedron(halfSize, truncation)` to base polyhedra:
+
+| Parameter | Result |
+|-----------|--------|
+| `t = 0` | Base tetrahedron (4 vertices) |
+| `t = 1/3` | Standard truncated tetrahedron (12 vertices) |
+| `t = 0.5` | Octahedron limit (6 vertices) |
+
+**Files modified:**
+- `modules/rt-polyhedra.js` - Added `truncatedTetrahedron()` function
+- `scripts/rt_polyhedra.py` - Matching Python implementation
+- `index.html` - Truncation toggle + slider in Tetrahedron UI
+- `modules/rt-ui-binding-defs.js` - Control bindings
+- `modules/rt-rendering.js` - Rendering integration
+
+This provides a **single source of truth** using base `Polyhedra.tetrahedron()` with truncation, avoiding Quadray-derived variants with normalization issues.
+
+### Remaining Work
+
+1. **Update prime projection presets** to use `Polyhedra.truncatedTetrahedron()` instead of hardcoded vertices or Quadray forms
+
+2. **Re-run Python search** with unified vertex definitions:
+   ```bash
+   python scripts/prime_search_streamlined.py \
+       --primes 5,7,11,13 \
+       --precision 2
+   ```
+
+3. **Verify hull counts** in JavaScript match Python results exactly
+
+4. **Update compound polyhedra** (TruncTet+Tet, TruncTet+Icosa) to use the new parametric truncation
+
+5. **Consider extending truncation** to dual tetrahedron for stella octangula variants
+
+### Architecture Notes
+
+The truncation slider demonstrates the continuous transformation:
+- Tetrahedron → Truncated Tetrahedron → Octahedron
+
+This is geometrically elegant: at `t=1/3`, the hexagonal faces are regular and meet the triangular cut faces at edge midpoints. At `t=0.5`, the cut faces meet at vertices, producing the octahedron (dual relationship).
+
+For prime polygon searches, use `t=1/3` with `half_size=3.0` to get the canonical [±1, ±1, ±3] vertex coordinates that match the original hardcoded definitions.
