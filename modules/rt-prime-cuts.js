@@ -15,6 +15,54 @@
 import * as THREE from "three";
 import { QuadrayPolyhedra } from "./rt-quadray-polyhedra.js";
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// VERIFIED PROJECTIONS REGISTRY
+// Single source of truth for all prime projection configurations.
+// Each entry must be verified against source JSON before use.
+// ═══════════════════════════════════════════════════════════════════════════════
+const VERIFIED_PROJECTIONS = {
+  5: {
+    name: "Pentagon",
+    compound: "truncatedTetrahedron",
+    vertexCount: 12,
+    spreads: [0, 0, 0.5],
+    expectedHull: 5,
+    source: "results/prime_projections_20260206_064451.json",
+    maxInteriorAngle: 170, // No 180° (collinear) allowed
+    verified: "2026-02-06",
+  },
+  7: {
+    name: "Heptagon",
+    compound: "truncTetPlusTet",
+    vertexCount: 16,
+    spreads: [0, 0, 0.5], // Same angle as 5-gon, tet extends hull
+    expectedHull: 7,
+    source: "results/prime_compound_search_20260206_144743.json",
+    maxInteriorAngle: 170,
+    verified: "2026-02-06",
+  },
+  11: {
+    name: "Hendecagon",
+    compound: "truncTetPlusIcosa",
+    vertexCount: 24,
+    spreads: [0, 0.2, 0.4], // Swapped from Python [0, 0.4, 0.2]
+    expectedHull: 11,
+    source: "results/prime_breakthrough_20260206_145052.json",
+    maxInteriorAngle: 170,
+    verified: "2026-02-06",
+  },
+  13: {
+    name: "Tridecagon",
+    compound: "truncTetPlusIcosa",
+    vertexCount: 24,
+    spreads: [0, 0.8, 0.6], // Swapped from Python [0, 0.6, 0.8]
+    expectedHull: 13,
+    source: "results/prime_breakthrough_20260206_145052.json",
+    maxInteriorAngle: 170,
+    verified: "2026-02-06",
+  },
+};
+
 export const RTPrimeCuts = {
   // ═══════════════════════════════════════════════════════════════════════════
   // STATE
@@ -416,24 +464,18 @@ export const RTPrimeCuts = {
    * @returns {{planeRight: THREE.Vector3, planeUp: THREE.Vector3, planeNormal: THREE.Vector3}}
    */
   _getProjectionPlaneBasis: function (n) {
-    // Get viewing spreads for this n-gon from breakthrough results
-    // Reference: results/prime_breakthrough_20260206_145052.json
+    // Get viewing spreads from VERIFIED_PROJECTIONS registry (single source of truth)
+    const config = VERIFIED_PROJECTIONS[n];
     let s1, s2, s3;
-    if (n === 5) {
-      s1 = 0; s2 = 0; s3 = 0.5; // Truncated tetrahedron (12v)
-    } else if (n === 7) {
-      // 7-gon REQUIRES TruncTet+Tet compound (16v) - truncated tet alone produces 9-hull!
-      // Source: results/prime_compound_search_20260206_144743.json
-      // Same viewing angle as 5-gon, but compound adds 2 vertices to hull boundary
-      s1 = 0; s2 = 0; s3 = 0.5; // TruncTet+Tet compound at 5-gon angle → 7-hull
-    } else if (n === 11) {
-      // Swap s2/s3 from Python [0, 0.4, 0.2] to match JS rotation order
-      s1 = 0; s2 = 0.2; s3 = 0.4; // Compound (trunc tet + icosa) - BREAKTHROUGH!
-    } else if (n === 13) {
-      // Swap s2/s3 from Python [0, 0.6, 0.8] to match JS rotation order
-      s1 = 0; s2 = 0.8; s3 = 0.6; // Compound (trunc tet + icosa) - BREAKTHROUGH!
+
+    if (config) {
+      [s1, s2, s3] = config.spreads;
+      // Note: config.compound indicates required polyhedron:
+      // - truncatedTetrahedron (12v): 5-gon
+      // - truncTetPlusTet (16v): 7-gon
+      // - truncTetPlusIcosa (24v): 11-gon, 13-gon
     } else {
-      // Default: XY plane
+      // Default: XY plane for unregistered n-gons
       return {
         planeRight: new THREE.Vector3(1, 0, 0),
         planeUp: new THREE.Vector3(0, 1, 0),
@@ -1063,5 +1105,211 @@ export const RTPrimeCuts = {
     if (infoContainer) {
       infoContainer.style.display = "none";
     }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VERIFICATION SYSTEM
+  // Validates that implemented projections match source data.
+  // Call verifyAllProjections() on init or via console to catch mismatches.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Get the verified projections registry
+   * @returns {Object} The VERIFIED_PROJECTIONS registry
+   */
+  getProjectionRegistry: function () {
+    return VERIFIED_PROJECTIONS;
+  },
+
+  /**
+   * Generate vertices for a compound type (for verification)
+   * @param {string} compoundType - "truncatedTetrahedron", "truncTetPlusTet", "truncTetPlusIcosa"
+   * @returns {Array<Array<number>>} Array of [x,y,z] vertices (normalized)
+   */
+  _getVerificationVertices: function (compoundType) {
+    // Truncated tetrahedron vertices (normalized)
+    const truncTetVertices = [
+      [3, 1, 1], [3, -1, -1], [1, 3, 1], [1, -3, -1],
+      [1, 1, 3], [1, -1, -3], [-3, 1, -1], [-3, -1, 1],
+      [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3]
+    ].map(v => {
+      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+      return [v[0]/len, v[1]/len, v[2]/len];
+    });
+
+    // Tetrahedron vertices (normalized, for TruncTet+Tet compound)
+    const tetVertices = [
+      [1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]
+    ].map(v => {
+      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+      return [v[0]/len, v[1]/len, v[2]/len];
+    });
+
+    // Icosahedron vertices (normalized, for TruncTet+Icosa compound)
+    const phi = (1 + Math.sqrt(5)) / 2;
+    const icosaVertices = [
+      [0, 1, phi], [0, 1, -phi], [0, -1, phi], [0, -1, -phi],
+      [1, phi, 0], [1, -phi, 0], [-1, phi, 0], [-1, -phi, 0],
+      [phi, 0, 1], [phi, 0, -1], [-phi, 0, 1], [-phi, 0, -1]
+    ].map(v => {
+      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+      return [v[0]/len, v[1]/len, v[2]/len];
+    });
+
+    switch (compoundType) {
+      case "truncatedTetrahedron":
+        return truncTetVertices;
+      case "truncTetPlusTet":
+        return [...truncTetVertices, ...tetVertices];
+      case "truncTetPlusIcosa":
+        return [...truncTetVertices, ...icosaVertices];
+      default:
+        console.error(`Unknown compound type: ${compoundType}`);
+        return [];
+    }
+  },
+
+  /**
+   * Project vertices and compute hull with interior angles
+   * @param {Array<Array<number>>} vertices - Array of [x,y,z] vertices
+   * @param {Array<number>} spreads - [s1, s2, s3] rotation spreads
+   * @returns {{hullCount: number, interiorAngles: Array<number>, maxAngle: number}}
+   */
+  _projectAndAnalyze: function (vertices, spreads) {
+    const [s1, s2, s3] = spreads;
+
+    // Build rotation matrix from spreads (ZYX Euler)
+    const sin1 = Math.sqrt(s1), cos1 = Math.sqrt(1 - s1);
+    const sin2 = Math.sqrt(s2), cos2 = Math.sqrt(1 - s2);
+    const sin3 = Math.sqrt(s3), cos3 = Math.sqrt(1 - s3);
+
+    const Rz = [[cos1, -sin1, 0], [sin1, cos1, 0], [0, 0, 1]];
+    const Ry = [[cos2, 0, sin2], [0, 1, 0], [-sin2, 0, cos2]];
+    const Rx = [[1, 0, 0], [0, cos3, -sin3], [0, sin3, cos3]];
+
+    const matMul = (A, B) => A.map((row, i) =>
+      B[0].map((_, j) => row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0))
+    );
+    const R = matMul(Rz, matMul(Ry, Rx));
+
+    // Project to 2D (XY plane after rotation)
+    const projected2D = vertices.map(v => ({
+      x: R[0][0]*v[0] + R[0][1]*v[1] + R[0][2]*v[2],
+      y: R[1][0]*v[0] + R[1][1]*v[1] + R[1][2]*v[2]
+    }));
+
+    // Compute convex hull
+    const hull = this._computeConvexHull2D(projected2D);
+
+    // Compute interior angles
+    const interiorAngles = [];
+    for (let i = 0; i < hull.length; i++) {
+      const prev = hull[(i - 1 + hull.length) % hull.length];
+      const curr = hull[i];
+      const next = hull[(i + 1) % hull.length];
+
+      const v1 = { x: prev.x - curr.x, y: prev.y - curr.y };
+      const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+
+      const dot = v1.x * v2.x + v1.y * v2.y;
+      const len1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+      const len2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+      const cosAng = Math.max(-1, Math.min(1, dot / (len1 * len2 + 1e-10)));
+      interiorAngles.push(Math.acos(cosAng) * 180 / Math.PI);
+    }
+
+    return {
+      hullCount: hull.length,
+      interiorAngles,
+      maxAngle: Math.max(...interiorAngles)
+    };
+  },
+
+  /**
+   * Verify a single projection configuration
+   * @param {number} n - Prime polygon sides (5, 7, 11, 13)
+   * @returns {{passed: boolean, details: Object}}
+   */
+  verifyProjection: function (n) {
+    const config = VERIFIED_PROJECTIONS[n];
+    if (!config) {
+      console.error(`❌ No verified projection for ${n}-gon`);
+      return { passed: false, details: { error: "No configuration found" } };
+    }
+
+    const vertices = this._getVerificationVertices(config.compound);
+    if (vertices.length !== config.vertexCount) {
+      console.error(`❌ ${n}-gon: Vertex count mismatch: ${vertices.length} vs expected ${config.vertexCount}`);
+      return { passed: false, details: { error: "Vertex count mismatch", got: vertices.length, expected: config.vertexCount } };
+    }
+
+    const result = this._projectAndAnalyze(vertices, config.spreads);
+
+    const hullOK = result.hullCount === config.expectedHull;
+    const anglesOK = result.maxAngle < config.maxInteriorAngle;
+    const passed = hullOK && anglesOK;
+
+    const status = passed ? "✓" : "✗";
+    const hullStatus = hullOK ? "✓" : `✗ got ${result.hullCount}`;
+    const angleStatus = anglesOK ? "✓" : `✗ max=${result.maxAngle.toFixed(1)}°`;
+
+    console.log(
+      `${status} ${n}-gon (${config.name}): ` +
+      `hull=${config.expectedHull} ${hullStatus}, ` +
+      `angles<${config.maxInteriorAngle}° ${angleStatus}`
+    );
+
+    if (!passed) {
+      console.log(`   Spreads: [${config.spreads.join(", ")}]`);
+      console.log(`   Source: ${config.source}`);
+      console.log(`   Interior angles: ${result.interiorAngles.map(a => a.toFixed(1)).join("°, ")}°`);
+    }
+
+    return {
+      passed,
+      details: {
+        n,
+        name: config.name,
+        compound: config.compound,
+        spreads: config.spreads,
+        expectedHull: config.expectedHull,
+        actualHull: result.hullCount,
+        maxInteriorAngle: result.maxAngle,
+        interiorAngles: result.interiorAngles,
+        source: config.source
+      }
+    };
+  },
+
+  /**
+   * Verify all registered projections
+   * Call on init (debug mode) or via console: RTPrimeCuts.verifyAllProjections()
+   * @returns {{allPassed: boolean, results: Object}}
+   */
+  verifyAllProjections: function () {
+    console.log("═══════════════════════════════════════════════════════════");
+    console.log("🔍 PRIME PROJECTION VERIFICATION");
+    console.log("═══════════════════════════════════════════════════════════");
+
+    const primes = Object.keys(VERIFIED_PROJECTIONS).map(Number).sort((a, b) => a - b);
+    const results = {};
+    let allPassed = true;
+
+    for (const n of primes) {
+      const result = this.verifyProjection(n);
+      results[n] = result;
+      if (!result.passed) allPassed = false;
+    }
+
+    console.log("═══════════════════════════════════════════════════════════");
+    if (allPassed) {
+      console.log(`✅ All ${primes.length} projections verified successfully`);
+    } else {
+      const failed = primes.filter(n => !results[n].passed);
+      console.error(`❌ ${failed.length}/${primes.length} projections FAILED: ${failed.join(", ")}`);
+    }
+    console.log("═══════════════════════════════════════════════════════════");
+
+    return { allPassed, results };
   },
 };
