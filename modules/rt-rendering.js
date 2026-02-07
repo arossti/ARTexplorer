@@ -20,6 +20,7 @@ import { Polyhedra } from "./rt-polyhedra.js";
 import { Primitives } from "./rt-primitives.js";
 import { PerformanceClock } from "./performance-clock.js";
 import { RTPapercut } from "./rt-papercut.js";
+import { RTPrimeCuts } from "./rt-prime-cuts.js";
 import { Grids } from "./rt-grids.js";
 import { Nodes } from "./rt-nodes.js";
 import { Helices } from "./rt-helices.js";
@@ -2584,7 +2585,7 @@ export function initScene(THREE, OrbitControls, RT) {
     } else {
       quadrayTruncatedTetGroup.visible = false;
       // Hide prime projection visualization when truncated tet is hidden
-      RTPapercut.showPrimePolygon(null, scene, camera);
+      RTPrimeCuts.showPrimePolygon(null, scene, camera);
     }
 
     // Quadray Stella Octangula (Star Tetrahedron - compound of two tetrahedra)
@@ -3701,7 +3702,7 @@ export function initScene(THREE, OrbitControls, RT) {
       "tridecagonProjection",
     ];
     if (!primeProjectionViews.includes(view)) {
-      RTPapercut.showPrimePolygon(null, scene, camera);
+      RTPrimeCuts.showPrimePolygon(null, scene, camera);
     }
 
     // Z-up coordinate system (CAD/BIM standard)
@@ -3829,7 +3830,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
         // Show prime polygon overlay
         // This demonstrates that hull vertices map to regular polygon at unit radius
-        RTPapercut.showPrimePolygon(polygonSides, scene, camera, 3.5);
+        RTPrimeCuts.showPrimePolygon(polygonSides, scene, camera, 3.5);
 
         console.log(`📐 ${preset.name}: spreads=(${s1}, ${s2}, ${s3})`);
         console.log(`   ${preset.description}`);
