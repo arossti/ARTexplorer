@@ -416,16 +416,19 @@ def get_js_compound_trunctet_tet_vertices():
     trunctet_verts = trunctet_verts_raw / trunctet_circumradius
 
     # ═══════════════════════════════════════════════════════════════════════
-    # 2. TETRAHEDRON (4 vertices) - Standard orientation (same as Polyhedra.tetrahedron)
+    # 2. TETRAHEDRON (4 vertices) - EVEN PARITY for 11-gon projection
+    # CRITICAL: Must use EVEN parity vertices (product of signs = +1)
+    # This is the DUAL of the standard tetrahedron which uses ODD parity.
+    # Using wrong parity limits max hull to 10 instead of 11!
     # ═══════════════════════════════════════════════════════════════════════
     tet_verts_raw = np.array([
-        [1, 1, 1],
-        [1, -1, -1],
-        [-1, 1, -1],
-        [-1, -1, 1]
-    ]) / np.sqrt(3)  # Inscribed in unit sphere
+        [1, 1, 1],     # Even parity: (+)(+)(+) = +1
+        [1, -1, -1],   # Even parity: (+)(-)(-)  = +1
+        [-1, 1, -1],   # Even parity: (-)(+)(-)  = +1
+        [-1, -1, 1],   # Even parity: (-)(-)(+)  = +1
+    ])  # Circumradius = sqrt(3) ≈ 1.732
 
-    # Calculate circumradius (should be 1.0)
+    # Calculate circumradius (should be sqrt(3) ≈ 1.732)
     tet_circumradius = np.max(np.linalg.norm(tet_verts_raw, axis=1))
 
     # Normalize to unit circumradius (same as trunctet)
