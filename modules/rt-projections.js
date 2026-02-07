@@ -79,20 +79,12 @@ export const RTProjections = {
     RTProjections.state.presetName = preset.name;
     RTProjections.state.customSpreads = preset.spreads || null;
 
-    // 5. Get override vertices for prime presets (matching Python search)
-    let overrideVertices = null;
-    if (preset.compound) {
-      overrideVertices = RTProjections._getPrimePresetVertices(preset.compound);
-      if (overrideVertices.length > 0) {
-        console.log(`📐 Using ${overrideVertices.length} hardcoded vertices for ${preset.compound}`);
-      }
-    }
-
-    // 6. Show projection with preset spreads and vertices
+    // 5. Show projection with preset spreads
+    // NOTE: Uses scene vertices directly via _getWorldVerticesFromGroup()
+    // No override vertices needed - single source of truth from scene polyhedra
     RTProjections.showProjection(targetGroup, {
       spreads: preset.spreads,
       showIdealPolygon: preset.projectionState?.showIdealPolygon ?? true,
-      vertices: overrideVertices,
     });
 
     // 7. Update StateManager (for export)
@@ -236,7 +228,6 @@ export const RTProjections = {
       showIdealPolygon,
       rayColor,
       spreads: options.spreads, // Pass custom spreads from presets
-      vertices: options.vertices, // Override vertices for prime presets
     });
 
     console.log("📐 Projection enabled for polyhedron");
@@ -485,89 +476,6 @@ export const RTProjections = {
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // PRIME PRESET VERTICES
-  // Hardcoded vertices matching Python search results (known-good orientations)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * Get vertices for a prime preset compound type
-   * These match the Python search vertices exactly for reproducible projections
-   *
-   * @param {string} compoundType - "truncatedTetrahedron", "truncTetPlusIcosa"
-   * @returns {Array<THREE.Vector3>} Normalized vertices as Vector3
-   */
-  _getPrimePresetVertices: function (compoundType) {
-    // ═══════════════════════════════════════════════════════════════════════
-    // EXACT COPIES FROM rt_polyhedra.py (Project-Streamline)
-    // These MUST match Python definitions for verified spreads to work
-    // ═══════════════════════════════════════════════════════════════════════
-
-    // Truncated tetrahedron: EXACT copy from rt-math.js:1768
-    // RT.ProjectionPolygons.heptagon.sourceVertices()
-    const truncTetRaw = [
-      [1, 1, 3], [1, 3, 1], [3, 1, 1],
-      [1, -1, -3], [1, -3, -1], [3, -1, -1],
-      [-1, 1, -3], [-1, 3, -1], [-3, 1, -1],
-      [-1, -1, 3], [-1, -3, 1], [-3, -1, 1],
-    ];
-
-    // Tetrahedron: EXACT copy from rt-polyhedra.js:122
-    // Polyhedra.tetrahedron() - alternating cube vertices scaled by 3
-    const tetRaw = [
-      [-3, -3, -3], [3, 3, -3], [3, -3, 3], [-3, 3, 3],
-    ];
-
-    // Icosahedron: EXACT construction from rt-polyhedra.js:310-386
-    // Uses PurePhi normalization: a = 1/sqrt(1+phi^2), b = phi/sqrt(1+phi^2)
-    const phi = (1 + Math.sqrt(5)) / 2;
-    const phiSq = phi + 1; // Identity: φ² = φ + 1 (EXACT, not phi*phi)
-    const onePlusPhiSq = 1 + phiSq; // = φ + 2 ≈ 3.618
-    const normFactor = 1 / Math.sqrt(onePlusPhiSq);
-    const a = normFactor;       // ≈ 0.5257
-    const b = phi * normFactor; // ≈ 0.8507
-
-    // Scale icosahedron to match truncated tetrahedron bounding sphere
-    // TruncTet bounding radius = sqrt(11) ≈ 3.317 (from vertex [1,1,3])
-    const targetRadius = Math.sqrt(11);
-    const icosaRadius = b; // Icosa bounding radius with normFactor=1
-    const icosaScale = targetRadius / icosaRadius;
-    const aScaled = a * icosaScale;
-    const bScaled = b * icosaScale;
-
-    const icosaRaw = [
-      // Rectangle 1: XZ plane (Y = ±a)
-      [0, aScaled, bScaled], [0, aScaled, -bScaled],
-      [0, -aScaled, bScaled], [0, -aScaled, -bScaled],
-      // Rectangle 2: YZ plane (X = ±a)
-      [aScaled, bScaled, 0], [aScaled, -bScaled, 0],
-      [-aScaled, bScaled, 0], [-aScaled, -bScaled, 0],
-      // Rectangle 3: XY plane (Z = ±a)
-      [bScaled, 0, aScaled], [bScaled, 0, -aScaled],
-      [-bScaled, 0, aScaled], [-bScaled, 0, -aScaled],
-    ];
-
-    // Convert to Vector3 WITHOUT normalizing - preserve relative scaling
-    // CRITICAL: Python uses these exact ratios. Normalizing breaks the projections.
-    const toVector3 = (v) => new THREE.Vector3(v[0], v[1], v[2]);
-
-    const truncTetVertices = truncTetRaw.map(toVector3);
-    const tetVertices = tetRaw.map(toVector3);
-    const icosaVertices = icosaRaw.map(toVector3);
-
-    switch (compoundType) {
-      case "truncatedTetrahedron":
-        return truncTetVertices;
-      case "truncTetPlusTet":
-        return [...truncTetVertices, ...tetVertices];
-      case "truncTetPlusIcosa":
-        return [...truncTetVertices, ...icosaVertices];
-      default:
-        console.warn(`⚠️ Unknown compound type: ${compoundType}`);
-        return [];
-    }
-  },
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // VISUALIZATION
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -580,16 +488,8 @@ export const RTProjections = {
   _createProjectionVisualization: function (polyhedronGroup, options) {
     const { showRays, showInterior, showIdealPolygon, rayColor } = options;
 
-    // Get vertices - use override vertices if provided (for prime presets with known-good orientations)
-    let worldVertices;
-    if (options.vertices && options.vertices.length > 0) {
-      // Use provided vertices (already in world space as THREE.Vector3)
-      worldVertices = options.vertices;
-      console.log(`📐 Using ${worldVertices.length} override vertices from preset`);
-    } else {
-      // Extract from polyhedron group
-      worldVertices = RTProjections._getWorldVerticesFromGroup(polyhedronGroup);
-    }
+    // Extract vertices directly from scene polyhedra - single source of truth
+    const worldVertices = RTProjections._getWorldVerticesFromGroup(polyhedronGroup);
 
     if (worldVertices.length === 0) {
       console.warn("⚠️ No vertices found in polyhedron group");
