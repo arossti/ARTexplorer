@@ -1,0 +1,273 @@
+"""
+rt_polyhedra.py
+Polyhedra Vertex Definitions - Direct Port from modules/rt-polyhedra.js and rt-math.js
+
+CRITICAL: These are EXACT COPIES of the JavaScript definitions.
+Do NOT re-derive or use "equivalent" constructions.
+This ensures Python search results work DIRECTLY in JavaScript without translation.
+
+References:
+- modules/rt-polyhedra.js:122 - Tetrahedron
+- modules/rt-math.js:1768 - Truncated Tetrahedron
+- modules/rt-polyhedra.js:370 - Icosahedron
+"""
+
+from typing import List
+from math import sqrt
+
+# Import RT constants from our ported library
+from rt_math import PHI, PHI_SQ, SQRT5
+
+
+# =============================================================================
+# POLYHEDRA VERTICES - EXACT COPIES FROM JAVASCRIPT
+# =============================================================================
+
+def tetrahedron(half_size: float = 1.0) -> List[List[float]]:
+    """
+    Tetrahedron inscribed in cube.
+    Uses alternating vertices (every other corner).
+
+    EXACT COPY from rt-polyhedra.js:122-127
+
+    Args:
+        half_size: Half the edge length of bounding cube (default 1.0)
+
+    Returns:
+        List of 4 vertices as [x, y, z]
+    """
+    s = half_size
+    return [
+        [-s, -s, -s],  # 0: (-, -, -)
+        [s, s, -s],    # 2: (+, +, -)
+        [s, -s, s],    # 5: (+, -, +)
+        [-s, s, s],    # 7: (-, +, +)
+    ]
+
+
+def truncated_tetrahedron() -> List[List[float]]:
+    """
+    Truncated tetrahedron vertices (12 vertices).
+    Edge length = 2 for convenience.
+
+    EXACT COPY from rt-math.js:1768-1782
+    (RT.ProjectionPolygons.heptagon.sourceVertices)
+
+    Returns:
+        List of 12 vertices as [x, y, z]
+    """
+    return [
+        # Truncation of tetrahedron at 1/3 edge length
+        [1, 1, 3],
+        [1, 3, 1],
+        [3, 1, 1],
+        [1, -1, -3],
+        [1, -3, -1],
+        [3, -1, -1],
+        [-1, 1, -3],
+        [-1, 3, -1],
+        [-3, 1, -1],
+        [-1, -1, 3],
+        [-1, -3, 1],
+        [-3, -1, 1],
+    ]
+
+
+def icosahedron(half_size: float = 1.0) -> List[List[float]]:
+    """
+    Icosahedron vertices (12 vertices).
+    Uses PurePhi-derived coordinates for maximum precision.
+
+    EXACT COPY of construction from rt-polyhedra.js:310-386
+
+    Vertices at three orthogonal golden rectangles:
+    - Rectangle 1 (XZ plane): [0, ±a, ±b]
+    - Rectangle 2 (YZ plane): [±a, ±b, 0]
+    - Rectangle 3 (XY plane): [±b, 0, ±a]
+
+    Where:
+    - a = 1 / sqrt(1 + phi^2)
+    - b = phi / sqrt(1 + phi^2)
+
+    Args:
+        half_size: Scale factor (default 1.0)
+
+    Returns:
+        List of 12 vertices as [x, y, z]
+    """
+    # PurePhi Method: 1 + φ² = 1 + (φ + 1) = φ + 2
+    # Or symbolically: 1 + φ² = (5 + √5)/2
+    one_plus_phi_sq = 1 + PHI_SQ  # = φ + 2 ≈ 3.618...
+
+    # Normalization factor
+    norm_factor = half_size / sqrt(one_plus_phi_sq)
+
+    # Scaled coordinates
+    a = 1.0 * norm_factor
+    b = PHI * norm_factor
+
+    # Z-up convention: Three orthogonal golden rectangles
+    return [
+        # Rectangle 1: XZ plane (Y = ±a) - VERTICAL front/back wall in Z-up
+        [0, a, b],    # 0
+        [0, a, -b],   # 1
+        [0, -a, b],   # 2
+        [0, -a, -b],  # 3
+        # Rectangle 2: YZ plane (X = ±a) - VERTICAL left/right wall in Z-up
+        [a, b, 0],    # 4
+        [a, -b, 0],   # 5
+        [-a, b, 0],   # 6
+        [-a, -b, 0],  # 7
+        # Rectangle 3: XY plane (Z = ±a) - HORIZONTAL ground plane in Z-up
+        [b, 0, a],    # 8
+        [b, 0, -a],   # 9
+        [-b, 0, a],   # 10
+        [-b, 0, -a],  # 11
+    ]
+
+
+# =============================================================================
+# COMPOUND POLYHEDRA FOR PRIME PROJECTIONS
+# =============================================================================
+
+def trunc_tet_plus_tet(half_size: float = 1.0) -> List[List[float]]:
+    """
+    TruncTet + Tetrahedron compound (16 vertices).
+    Used for 7-gon projections.
+
+    The tetrahedron is scaled to match truncated tetrahedron edge length.
+
+    Args:
+        half_size: Scale factor
+
+    Returns:
+        List of 16 vertices as [x, y, z]
+    """
+    # Truncated tetrahedron edge length = 2 (from vertex array)
+    # Tetrahedron inscribed in cube with half_size = 3 matches bounding sphere
+    trunc_verts = truncated_tetrahedron()
+    tet_verts = tetrahedron(half_size=3.0)
+
+    return trunc_verts + tet_verts
+
+
+def trunc_tet_plus_icosa(half_size: float = 1.0) -> List[List[float]]:
+    """
+    TruncTet + Icosahedron compound (24 vertices).
+    Used for 11-gon and 13-gon projections.
+
+    The icosahedron is scaled to match truncated tetrahedron bounding sphere.
+
+    Why 24 vertices enable prime hulls:
+    - TruncTet (12v) has 3-fold tetrahedral symmetry
+    - Icosahedron (12v) has 5-fold icosahedral symmetry
+    - 3-fold and 5-fold are incommensurate (gcd(3,5)=1)
+    - This symmetry breaking enables prime hull counts (11, 13)
+
+    Args:
+        half_size: Scale factor
+
+    Returns:
+        List of 24 vertices as [x, y, z]
+    """
+    trunc_verts = truncated_tetrahedron()
+
+    # Scale icosahedron to match truncated tetrahedron bounding sphere
+    # TruncTet bounding radius = sqrt(1^2 + 1^2 + 3^2) = sqrt(11)
+    # Icosahedron with half_size=1 has bounding radius = b = phi/sqrt(1+phi^2)
+    # Scale factor = sqrt(11) / b
+    target_radius = sqrt(11)  # TruncTet bounding
+    icosa_base = icosahedron(half_size=1.0)
+
+    # The icosahedron bounding radius with half_size=1 is:
+    # b = phi / sqrt(1 + phi^2) ≈ 0.8507
+    one_plus_phi_sq = 1 + PHI_SQ
+    icosa_radius = PHI / sqrt(one_plus_phi_sq)
+
+    scale = target_radius / icosa_radius
+
+    icosa_verts = [[v[0] * scale, v[1] * scale, v[2] * scale] for v in icosa_base]
+
+    return trunc_verts + icosa_verts
+
+
+# =============================================================================
+# CUBE DIAGONAL VIEWING AXES (equivalent to Quadray without translation)
+# =============================================================================
+
+VIEWING_AXES = {
+    # Cube diagonals = tetrahedral axes (equivalent to Quadray WXYZ)
+    'cube_diagonal_ppp': [1, 1, 1],      # +W equivalent (body diagonal)
+    'cube_diagonal_pmm': [1, -1, -1],    # +X equivalent
+    'cube_diagonal_mpm': [-1, 1, -1],    # +Y equivalent
+    'cube_diagonal_mmp': [-1, -1, 1],    # +Z equivalent
+}
+
+
+def normalize(v: List[float]) -> List[float]:
+    """Normalize a 3D vector to unit length."""
+    mag = sqrt(v[0]**2 + v[1]**2 + v[2]**2)
+    if mag == 0:
+        return [0, 0, 0]
+    return [v[0]/mag, v[1]/mag, v[2]/mag]
+
+
+def get_viewing_axis(name: str) -> List[float]:
+    """
+    Get a normalized viewing axis by name.
+
+    Args:
+        name: One of 'cube_diagonal_ppp', 'cube_diagonal_pmm',
+              'cube_diagonal_mpm', 'cube_diagonal_mmp'
+
+    Returns:
+        Normalized [x, y, z] axis vector
+    """
+    if name not in VIEWING_AXES:
+        raise ValueError(f"Unknown viewing axis: {name}")
+    return normalize(VIEWING_AXES[name])
+
+
+# =============================================================================
+# SELF-TEST
+# =============================================================================
+
+if __name__ == "__main__":
+    print("RT-Polyhedra Python Port - Self Test")
+    print("=" * 50)
+
+    # Test tetrahedron
+    tet = tetrahedron()
+    print(f"\nTetrahedron: {len(tet)} vertices")
+    for i, v in enumerate(tet):
+        print(f"  {i}: {v}")
+
+    # Test truncated tetrahedron
+    trunc = truncated_tetrahedron()
+    print(f"\nTruncated Tetrahedron: {len(trunc)} vertices")
+    print(f"  (vertices from rt-math.js:1768)")
+
+    # Test icosahedron
+    icosa = icosahedron()
+    print(f"\nIcosahedron: {len(icosa)} vertices")
+    # Verify bounding radius
+    max_r = max(sqrt(v[0]**2 + v[1]**2 + v[2]**2) for v in icosa)
+    print(f"  Max radius: {max_r:.10f}")
+    expected_b = PHI / sqrt(1 + PHI_SQ)
+    print(f"  Expected b: {expected_b:.10f}")
+
+    # Test compounds
+    tt_t = trunc_tet_plus_tet()
+    print(f"\nTruncTet + Tet: {len(tt_t)} vertices (for 7-gon)")
+
+    tt_i = trunc_tet_plus_icosa()
+    print(f"TruncTet + Icosa: {len(tt_i)} vertices (for 11/13-gon)")
+
+    # Test viewing axes
+    print(f"\nViewing Axes (cube diagonals):")
+    for name, axis in VIEWING_AXES.items():
+        norm = normalize(axis)
+        print(f"  {name}: {norm}")
+
+    print("\n" + "=" * 50)
+    print("Self-test complete!")
