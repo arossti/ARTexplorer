@@ -1,8 +1,10 @@
 # Project Streamline: Unified Python/JavaScript Prime Polygon Search
 
 **Created**: 2026-02-07
-**Status**: COMPLETE
+**Status**: COMPLETE (with post-mortem findings)
 **Goal**: Reproduce Prime-Projection-Conjecture.tex results in ARTexplorer without translation errors
+
+> **⚠️ Feb 2026 Discovery**: The display scaling issue stems from an **icosahedron circumradius miscalculation** in compound construction—NOT a Quadray translation problem. See [Post-Mortem](#post-mortem-display-scaling-discrepancy-feb-2026) for details.
 
 ---
 
@@ -190,3 +192,105 @@ python scripts/prime_search_streamlined.py \
 - **Literal vertex copies**: No re-derivation, no "equivalent" constructions
 - **Spread-based rotations**: Same math in both languages
 - **Minimal translation**: Search output → direct JavaScript input
+
+---
+
+## Post-Mortem: Display Scaling Discrepancy (Feb 2026)
+
+### Observed Problem
+
+Prime polygon presets (`_getPrimePresetVertices()` in `rt-projections.js`) produce **correct hull counts** but render at **wrong visual scale** compared to scene polyhedra.
+
+The "fix" proposed was display-only scaling after hull calculation. But this treats the symptom, not the cause.
+
+### Root Cause Investigation
+
+**Question**: Why do we need different vertex definitions at all? Hull counts are topological—uniform scaling should not change them.
+
+**Findings**:
+
+#### 1. Quadray→Cartesian Produces Identical Vertices
+
+The Quadray truncated tetrahedron `{2,1,0,0}` permutations convert to the SAME Cartesian vertices as the Python/preset definitions:
+
+| Quadray | Basis Expansion | Cartesian |
+|---------|-----------------|-----------|
+| `[2,1,0,0]` | `2(1,1,1) + 1(1,-1,-1)` | `(3,1,1)` |
+| `[2,0,1,0]` | `2(1,1,1) + 1(-1,1,-1)` | `(1,3,1)` |
+| `[2,0,0,1]` | `2(1,1,1) + 1(-1,-1,1)` | `(1,1,3)` |
+
+The 12 vertices match the Python set `{±1,±1,±3}` permutations—just enumerated differently.
+
+**Quadray basis vectors** (from `rt-quadray-polyhedra.js:43-48`):
+```javascript
+const QUADRAY_BASIS = {
+  w: new THREE.Vector3(1, 1, 1),   // cube diagonal (√3 length)
+  x: new THREE.Vector3(1, -1, -1),
+  y: new THREE.Vector3(-1, 1, -1),
+  z: new THREE.Vector3(-1, -1, 1),
+};
+```
+
+These are the **cube diagonals** as specified—no Quadray coordinate translation required.
+
+#### 2. The Actual Bug: Icosahedron Circumradius Miscalculation
+
+**Python/Preset code** (`rt_polyhedra.py:185`, `rt-projections.js:533`):
+```python
+icosa_radius = PHI / sqrt(one_plus_phi_sq)  # ≈ 0.8507
+```
+
+**But** the actual icosahedron vertices with standard normalization are at distance **1.0** from origin:
+```
+Vertex [0, a, b] where a = 1/√(1+φ²), b = φ/√(1+φ²)
+Distance = √(a² + b²) = √((1 + φ²)/(1 + φ²)) = 1.0
+```
+
+**Scene compound code** (`rt-quadray-polyhedra.js:764-771`):
+```javascript
+icosaRaw.vertices.forEach(v => {
+  const r = v.length();
+  if (r > icosaCircumradius) icosaCircumradius = r;
+});
+// icosaCircumradius = 1.0 (CORRECT)
+```
+
+**Result**:
+- Python/presets scale icosahedron by `√11 / 0.8507 ≈ 3.898` (WRONG radius assumption)
+- Scene compounds scale by `√11 / 1.0 ≈ 3.317` (CORRECT radius calculation)
+
+This means the compounds have **different relative proportions**, producing different hull counts.
+
+#### 3. Why the Bug "Works"
+
+The Python search found primes using the incorrect 0.8507 scaling. The spreads that produce 11-gon and 13-gon hulls depend on this specific (wrong) relative scaling between truncated tetrahedron and icosahedron.
+
+When scene compounds use the correct 1.0 scaling, the relative vertex positions change, and those spreads no longer produce the same hulls.
+
+### The Real Problem
+
+**It's not about display scaling—it's about compound construction consistency.**
+
+The preset vertices and scene compounds use fundamentally different icosahedron scaling:
+- Presets: `b ≈ 0.8507` (the φ-coordinate value, NOT the vertex distance)
+- Scene: `1.0` (the actual vertex distance from origin)
+
+### Resolution Options
+
+| Option | Description | Pros | Cons |
+|--------|-------------|------|------|
+| **A: Match preset bug** | Change scene compounds to use `b` as circumradius | Maintains found primes | Propagates incorrect math |
+| **B: Fix presets** | Use correct circumradius, re-run search | Mathematically correct | Loses current prime spreads |
+| **C: Use scene vertices** | Extract from scene polyhedra at runtime | Single source of truth | Requires new search |
+
+**Recommended**: Option C—use `_getWorldVerticesFromGroup()` (already exists at line 300) on the scene polyhedra, then search for prime-producing spreads with those ACTUAL vertices. This eliminates the parallel vertex definitions entirely.
+
+### Architectural Lesson
+
+The goal of Project-Streamline was "same definitions in both languages." But we created TWO parallel definitions:
+1. Hardcoded preset vertices for projection calculation
+2. Scene-rendered polyhedra from `rt-quadray-polyhedra.js`
+
+When these diverge (even subtly, as with circumradius calculation), the projection visualization doesn't match the scene geometry.
+
+**The fix isn't scaling—it's unification.** One vertex source, used everywhere.
