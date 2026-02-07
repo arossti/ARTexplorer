@@ -40,61 +40,49 @@ export { PerformanceClock };
  * Reference: Geometry documents/Prime-Projection-Conjecture.tex
  */
 export const CAMERA_PRESETS = {
-  // Prime projection discovery views
-  // Note: 7-gon from truncated tet alone was REMOVED (produces 9-hull, not 7-hull)
-  // Use heptagonProjectionTet (TruncTet+Tet compound) for true 7-gon projection
+  // ═══════════════════════════════════════════════════════════════════════
+  // PRIME PROJECTION VIEWS - Verified by Project-Streamline (2026-02-07)
+  // Source: prime_projections_verified.json
+  // ═══════════════════════════════════════════════════════════════════════
   pentagonProjection: {
     name: "5-gon Projection",
-    description: "Truncated tetrahedron axis view - verified 5-hull",
-    spreads: [0, 0, 0.5], // Pure 45° X rotation
+    description: "Truncated tetrahedron → 5-vertex hull",
+    spreads: [0.01, 0.5, 0], // Verified Project-Streamline
     recommendedForm: "quadrayTruncatedTetrahedron",
-    reference: "Gauss-Wantzel constructible (Fermat prime)",
+    reference: "prime_projections_verified.json (Project-Streamline)",
+    compound: ["truncatedTetrahedron"],
+    totalVertices: 12,
+    note: "Pentagon - Gauss-Wantzel constructible (Fermat prime)",
   },
-  // ═══════════════════════════════════════════════════════════════════════
-  // BREAKTHROUGH PROJECTIONS (Feb 2026)
-  // Compound polyhedra produce prime hulls beyond Gauss-Wantzel constructibility
-  // ═══════════════════════════════════════════════════════════════════════
-  hendecagonProjection: {
-    name: "11-gon Projection",
-    description: "Compound (truncated tet + tetrahedron) - NOT algebraically solvable!",
-    spreads: [0, 0.2, 0.5], // Verified with JS compound (max angle 159.8°)
-    recommendedForm: "quadrayTruncTetTet", // Same compound as 7-gon
-    reference: "Prime-Projection-Conjecture.tex §BREAKTHROUGH",
+  heptagonProjectionTet: {
+    name: "7-gon Projection",
+    description: "TruncTet+Tet compound → 7-vertex hull",
+    spreads: [0, 0.01, 0.14], // Verified Project-Streamline
+    recommendedForm: "quadrayCompoundTet",
+    reference: "prime_projections_verified.json (Project-Streamline)",
     compound: ["truncatedTetrahedron", "tetrahedron"],
     totalVertices: 16,
+    note: "Heptagon via tet-family compound - bypasses Gauss-Wantzel",
+  },
+  hendecagonProjection: {
+    name: "11-gon Projection",
+    description: "TruncTet+Icosa compound → 11-vertex hull",
+    spreads: [0, 0, 0.5], // Corrected circumradius (Feb 2026)
+    recommendedForm: "quadrayCompound",
+    reference: "prime_projections_corrected.json",
+    compound: ["truncatedTetrahedron", "icosahedron"],
+    totalVertices: 24,
     note: "Hendecagon requires quintic polynomial - bypassed via projection",
   },
   tridecagonProjection: {
     name: "13-gon Projection",
-    description: "Compound (truncated tet + icosahedron) - NOT algebraically solvable!",
-    spreads: [0, 0.6, 0.8], // Verified 13-hull
+    description: "TruncTet+Icosa compound → 13-vertex hull",
+    spreads: [0, 0.01, 0.96], // Corrected circumradius (Feb 2026)
     recommendedForm: "quadrayCompound",
-    reference: "Prime-Projection-Conjecture.tex §BREAKTHROUGH",
+    reference: "prime_projections_corrected.json",
     compound: ["truncatedTetrahedron", "icosahedron"],
     totalVertices: 24,
     note: "Tridecagon requires sextic polynomial - bypassed via projection",
-  },
-  // 7-gon from TruncTet+Tet compound (Feb 2026)
-  heptagonProjectionTet: {
-    name: "7-gon Projection (TruncTet+Tet)",
-    description: "Compound (truncated tet + tetrahedron) - true 7-hull via tet-family",
-    spreads: [0, 0, 0.5], // Same view angle as 5-gon, compound adds tet vertices to hull
-    recommendedForm: "quadrayCompoundTet",
-    reference: "results/prime_compound_search_20260206_144743.json",
-    compound: ["truncatedTetrahedron", "tetrahedron"],
-    totalVertices: 16,
-    note: "Heptagon via tet-family compound projection - bypasses Gauss-Wantzel",
-  },
-  // 11-gon from TruncTet+Tet compound (Feb 2026) - BREAKTHROUGH!
-  hendecagonProjectionTet: {
-    name: "11-gon Projection (TruncTet+Tet)",
-    description: "Compound (truncated tet + tetrahedron) - NOT algebraically solvable!",
-    spreads: [0, 0.2, 0.5], // Verified with JS compound (max angle 159.8°)
-    recommendedForm: "quadrayCompoundTet",
-    reference: "results/prime_compound_11gon_20260206_144804.json",
-    compound: ["truncatedTetrahedron", "tetrahedron"],
-    totalVertices: 16,
-    note: "Hendecagon requires quintic polynomial - bypassed via projection",
   },
 };
 
@@ -3762,8 +3750,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // Hide prime polygon overlay unless switching to a prime projection view
     const primeProjectionViews = [
       "pentagonProjection",
-      "heptagonProjectionTet", // 7-gon from TruncTet+Tet
-      "hendecagonProjectionTet", // 11-gon from TruncTet+Tet
+      "heptagonProjectionTet",
       "hendecagonProjection",
       "tridecagonProjection",
     ];
@@ -3858,14 +3845,12 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // ═══════════════════════════════════════════════════════════════════════
-      // PRIME PROJECTION VIEWS (Rational n-gon discovery)
+      // PRIME PROJECTION VIEWS - Verified by Project-Streamline (2026-02-07)
       // Uses CAMERA_PRESETS configuration for extensibility
-      // Reference: Geometry documents/Prime-Projection-Conjecture.tex
       // ═══════════════════════════════════════════════════════════════════════
 
-      case "heptagonProjectionTet": // 7-gon requires TruncTet+Tet compound
-      case "hendecagonProjectionTet": // 11-gon from TruncTet+Tet compound
       case "pentagonProjection":
+      case "heptagonProjectionTet":
       case "hendecagonProjection":
       case "tridecagonProjection": {
         const preset = CAMERA_PRESETS[view];
@@ -3889,9 +3874,8 @@ export function initScene(THREE, OrbitControls, RT) {
         // Determine polygon sides from preset name
         const polygonSidesMap = {
           pentagonProjection: 5,
-          heptagonProjectionTet: 7, // 7-gon from TruncTet+Tet
+          heptagonProjectionTet: 7,
           hendecagonProjection: 11,
-          hendecagonProjectionTet: 11, // 11-gon from TruncTet+Tet
           tridecagonProjection: 13,
         };
         const polygonSides = polygonSidesMap[view] || 5;

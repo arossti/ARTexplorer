@@ -174,15 +174,13 @@ def trunc_tet_plus_icosa(half_size: float = 1.0) -> List[List[float]]:
 
     # Scale icosahedron to match truncated tetrahedron bounding sphere
     # TruncTet bounding radius = sqrt(1^2 + 1^2 + 3^2) = sqrt(11)
-    # Icosahedron with half_size=1 has bounding radius = b = phi/sqrt(1+phi^2)
-    # Scale factor = sqrt(11) / b
+    # Icosahedron with half_size=1 has circumradius = 1.0 (verified: sqrt(a^2 + b^2) = 1)
     target_radius = sqrt(11)  # TruncTet bounding
     icosa_base = icosahedron(half_size=1.0)
 
-    # The icosahedron bounding radius with half_size=1 is:
-    # b = phi / sqrt(1 + phi^2) ≈ 0.8507
-    one_plus_phi_sq = 1 + PHI_SQ
-    icosa_radius = PHI / sqrt(one_plus_phi_sq)
+    # The icosahedron circumradius with half_size=1 is 1.0, NOT b=0.8507
+    # Proof: vertex [0, a, b] has distance sqrt(a^2 + b^2) = sqrt((1+φ²)/(1+φ²)) = 1.0
+    icosa_radius = 1.0
 
     scale = target_radius / icosa_radius
 
