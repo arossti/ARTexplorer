@@ -704,11 +704,7 @@ export const viewControlBindings = [
         onClick: renderingAPI => renderingAPI.setCameraPreset("quadqz"),
       },
       // Prime Projection Views (rational n-gon discovery)
-      {
-        id: "viewHeptagonProjection",
-        onClick: renderingAPI =>
-          renderingAPI.setCameraPreset("heptagonProjection"),
-      },
+      // Note: 7-gon removed from truncated tet - requires TruncTet+Tet compound (see viewHeptagonProjectionTet)
       {
         id: "viewPentagonProjection",
         onClick: renderingAPI =>
