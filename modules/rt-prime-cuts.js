@@ -17,51 +17,119 @@ import { QuadrayPolyhedra } from "./rt-quadray-polyhedra.js";
 import { RTProjections } from "./rt-projections.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// VERIFIED PROJECTIONS REGISTRY
+// PROJECTION PRESETS REGISTRY
 // Single source of truth for all prime projection configurations.
-// Each entry must be verified against source JSON before use.
+// Each entry is a complete preset compatible with RTProjections.applyPreset().
 // ═══════════════════════════════════════════════════════════════════════════════
-const VERIFIED_PROJECTIONS = {
-  5: {
-    name: "Pentagon",
+const PROJECTION_PRESETS = {
+  pentagon: {
+    name: "Pentagon (5-gon)",
+    n: 5,
+    polyhedronType: "quadrayTruncatedTet",
+    polyhedronCheckbox: "showQuadrayTruncatedTet",
     compound: "truncatedTetrahedron",
     vertexCount: 12,
     spreads: [0, 0, 0.5],
     expectedHull: 5,
     source: "results/prime_projections_20260206_064451.json",
-    maxInteriorAngle: 170, // No 180° (collinear) allowed
+    maxInteriorAngle: 170,
     verified: "2026-02-06",
+    description: "Truncated Tetrahedron → 5-vertex hull",
+    projectionState: {
+      enabled: true,
+      basis: "custom",
+      axis: null,
+      distance: 3,
+      showRays: true,
+      showInterior: false,
+      showIdealPolygon: true,
+      customSpreads: [0, 0, 0.5],
+      presetName: "pentagon",
+    },
   },
-  7: {
-    name: "Heptagon",
+  heptagon: {
+    name: "Heptagon (7-gon)",
+    n: 7,
+    polyhedronType: "quadrayCompoundTet",
+    polyhedronCheckbox: "showQuadrayCompoundTet",
     compound: "truncTetPlusTet",
     vertexCount: 16,
-    spreads: [0, 0, 0.5], // Same angle as 5-gon, tet extends hull
+    spreads: [0, 0, 0.5],
     expectedHull: 7,
     source: "results/prime_compound_search_20260206_144743.json",
     maxInteriorAngle: 170,
     verified: "2026-02-06",
+    description: "TruncTet+Tet compound → 7-vertex hull",
+    projectionState: {
+      enabled: true,
+      basis: "custom",
+      axis: null,
+      distance: 3,
+      showRays: true,
+      showInterior: false,
+      showIdealPolygon: true,
+      customSpreads: [0, 0, 0.5],
+      presetName: "heptagon",
+    },
   },
-  11: {
-    name: "Hendecagon",
-    compound: "truncTetPlusTet", // Same compound as 7-gon (NOT icosa!)
+  hendecagon: {
+    name: "Hendecagon (11-gon)",
+    n: 11,
+    polyhedronType: "quadrayCompoundTet",
+    polyhedronCheckbox: "showQuadrayCompoundTet",
+    compound: "truncTetPlusTet",
     vertexCount: 16,
-    spreads: [0, 0.2, 0.5], // Verified with JS-compatible compound (max angle 159.8°)
+    spreads: [0, 0.2, 0.5],
     expectedHull: 11,
     source: "Python js_trunctet_tet search 2026-02-07",
-    maxInteriorAngle: 160, // Best configuration - no near-collinear vertices
+    maxInteriorAngle: 160,
     verified: "2026-02-07",
+    description: "TruncTet+Tet compound → 11-vertex hull",
+    projectionState: {
+      enabled: true,
+      basis: "custom",
+      axis: null,
+      distance: 3,
+      showRays: true,
+      showInterior: false,
+      showIdealPolygon: true,
+      customSpreads: [0, 0.2, 0.5],
+      presetName: "hendecagon",
+    },
   },
-  13: {
-    name: "Tridecagon",
+  tridecagon: {
+    name: "Tridecagon (13-gon)",
+    n: 13,
+    polyhedronType: "quadrayCompoundIcosa",
+    polyhedronCheckbox: "showQuadrayCompoundIcosa",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0, 0.6, 0.8], // From prime_breakthrough - has 177.66° angle (near-degenerate)
+    spreads: [0, 0.6, 0.8],
     expectedHull: 13,
     source: "results/prime_breakthrough_20260206_145052.json",
-    maxInteriorAngle: 178, // Raised threshold - 177.66° in source data
-    verified: "2026-02-06", // NOTE: May need re-search for cleaner projection
+    maxInteriorAngle: 178,
+    verified: "2026-02-06",
+    description: "TruncTet+Icosa compound → 13-vertex hull",
+    projectionState: {
+      enabled: true,
+      basis: "custom",
+      axis: null,
+      distance: 3,
+      showRays: true,
+      showInterior: false,
+      showIdealPolygon: true,
+      customSpreads: [0, 0.6, 0.8],
+      presetName: "tridecagon",
+    },
   },
+};
+
+// Legacy lookup by n for backwards compatibility
+const VERIFIED_PROJECTIONS = {
+  5: PROJECTION_PRESETS.pentagon,
+  7: PROJECTION_PRESETS.heptagon,
+  11: PROJECTION_PRESETS.hendecagon,
+  13: PROJECTION_PRESETS.tridecagon,
 };
 
 export const RTPrimeCuts = {
@@ -83,6 +151,59 @@ export const RTPrimeCuts = {
   init: function (renderer, papercutRef = null) {
     RTPrimeCuts._renderer = renderer;
     RTPrimeCuts._papercutRef = papercutRef;
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PRESET API
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Get all available projection presets
+   * @returns {Object} PROJECTION_PRESETS registry
+   */
+  getPresets: function () {
+    return PROJECTION_PRESETS;
+  },
+
+  /**
+   * Get a specific preset by name
+   * @param {string} name - Preset name (pentagon, heptagon, hendecagon, tridecagon)
+   * @returns {Object|null} Preset configuration or null
+   */
+  getPreset: function (name) {
+    return PROJECTION_PRESETS[name] || null;
+  },
+
+  /**
+   * Get a preset by n (number of sides)
+   * @param {number} n - Number of polygon sides (5, 7, 11, 13)
+   * @returns {Object|null} Preset configuration or null
+   */
+  getPresetByN: function (n) {
+    return VERIFIED_PROJECTIONS[n] || null;
+  },
+
+  /**
+   * Get list of preset names
+   * @returns {Array<string>} Array of preset names
+   */
+  getPresetNames: function () {
+    return Object.keys(PROJECTION_PRESETS);
+  },
+
+  /**
+   * Apply a preset using RTProjections
+   * @param {string} name - Preset name
+   * @param {THREE.Scene} scene - Scene reference
+   * @returns {boolean} Success status
+   */
+  applyPreset: function (name, scene) {
+    const preset = PROJECTION_PRESETS[name];
+    if (!preset) {
+      console.warn(`⚠️ Preset not found: ${name}`);
+      return false;
+    }
+    return RTProjections.applyPreset(preset, scene);
   },
 
   // ═══════════════════════════════════════════════════════════════════════════

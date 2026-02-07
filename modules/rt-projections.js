@@ -36,6 +36,98 @@ export const RTProjections = {
   _activePolyhedron: null, // Currently projected polyhedron group
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // PRESET & STATE MANAGEMENT API
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Apply a built-in or user preset
+   * Uses same code path as importState() for consistency
+   *
+   * @param {Object} preset - Preset with projectionState
+   * @param {THREE.Scene} scene - Scene reference
+   */
+  applyPreset: function (preset, scene) {
+    // 1. Auto-enable required polyhedron (same as current prime-cuts behavior)
+    if (preset.polyhedronCheckbox) {
+      const checkbox = document.getElementById(preset.polyhedronCheckbox);
+      if (checkbox && !checkbox.checked) {
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+
+    // 2. Apply projection state (same format as importState)
+    if (preset.projectionState) {
+      Object.assign(RTProjections.state, preset.projectionState);
+    }
+
+    // 3. Find target polyhedron in scene
+    let targetGroup = null;
+    scene.traverse((obj) => {
+      if (obj.userData?.type === preset.polyhedronType) {
+        targetGroup = obj;
+      }
+    });
+
+    if (!targetGroup) {
+      console.warn(`⚠️ Polyhedron ${preset.polyhedronType} not found in scene`);
+      return false;
+    }
+
+    // 4. Store for state export
+    RTProjections.state.targetPolyhedronType = preset.polyhedronType;
+    RTProjections.state.presetName = preset.name;
+    RTProjections.state.customSpreads = preset.spreads || null;
+
+    // 5. Show projection with preset spreads
+    RTProjections.showProjection(targetGroup, {
+      spreads: preset.spreads,
+      showIdealPolygon: preset.projectionState?.showIdealPolygon ?? true,
+    });
+
+    // 6. Update StateManager (for export)
+    if (window.RTStateManager) {
+      window.RTStateManager.state.environment.projection = {
+        ...RTProjections.state,
+      };
+    }
+
+    console.log(`📐 Applied preset: ${preset.name}`);
+    return true;
+  },
+
+  /**
+   * Export current projection state (for RTFileHandler)
+   * @returns {Object} Projection state snapshot
+   */
+  exportState: function () {
+    return {
+      enabled: RTProjections.state.enabled,
+      basis: RTProjections.state.basis,
+      axis: RTProjections.state.axis,
+      distance: RTProjections.state.distance,
+      showRays: RTProjections.state.showRays,
+      showInterior: RTProjections.state.showInterior,
+      showIdealPolygon: RTProjections.state.showIdealPolygon,
+      customSpreads: RTProjections.state.customSpreads || null,
+      presetName: RTProjections.state.presetName || null,
+      targetPolyhedronType: RTProjections.state.targetPolyhedronType || null,
+    };
+  },
+
+  /**
+   * Import projection state (called from RTFileHandler.importState)
+   * @param {Object} projectionState - State to restore
+   */
+  importState: function (projectionState) {
+    if (!projectionState) return;
+    Object.assign(RTProjections.state, projectionState);
+
+    // If projection was enabled and we have a target type, try to re-apply
+    // This is handled by updateGeometry callback after all forms are restored
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // PUBLIC API
   // ═══════════════════════════════════════════════════════════════════════════
 

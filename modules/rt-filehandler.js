@@ -469,6 +469,22 @@ export const RTFileHandler = {
         colorPalette: this.stateManager.getColorPalette(),
         canvasBackground: this.stateManager.state.environment.canvasBackground,
         uiBackground: this.stateManager.state.environment.uiBackground,
+        // Projection state (from RTProjections if available)
+        projection: window.RTProjections
+          ? {
+              enabled: window.RTProjections.state.enabled,
+              basis: window.RTProjections.state.basis,
+              axis: window.RTProjections.state.axis,
+              distance: window.RTProjections.state.distance,
+              showRays: window.RTProjections.state.showRays,
+              showInterior: window.RTProjections.state.showInterior,
+              showIdealPolygon: window.RTProjections.state.showIdealPolygon,
+              customSpreads: window.RTProjections.state.customSpreads || null,
+              presetName: window.RTProjections.state.presetName || null,
+              targetPolyhedronType:
+                window.RTProjections.state.targetPolyhedronType || null,
+            }
+          : this.stateManager.state.environment.projection,
       },
 
       instances: this.stateManager.state.instances.map(instance => ({
@@ -1080,6 +1096,67 @@ export const RTFileHandler = {
         }
 
         console.log("✅ Environment backgrounds restored");
+      }
+
+      // Restore projection state
+      if (stateData.environment?.projection) {
+        const proj = stateData.environment.projection;
+
+        // Update RTProjections state if available
+        if (window.RTProjections) {
+          Object.assign(window.RTProjections.state, {
+            enabled: proj.enabled || false,
+            basis: proj.basis || "cartesian",
+            axis: proj.axis || "z",
+            distance: proj.distance || 3,
+            showRays: proj.showRays !== false,
+            showInterior: proj.showInterior || false,
+            showIdealPolygon: proj.showIdealPolygon || false,
+            customSpreads: proj.customSpreads || null,
+            presetName: proj.presetName || null,
+            targetPolyhedronType: proj.targetPolyhedronType || null,
+          });
+        }
+
+        // Update StateManager environment
+        this.stateManager.state.environment.projection = proj;
+
+        // Update UI elements
+        const enableCheckbox = document.getElementById("enableProjection");
+        if (enableCheckbox) enableCheckbox.checked = proj.enabled;
+
+        const distanceSlider = document.getElementById("projectionDistance");
+        const distanceValue = document.getElementById("projectionDistanceValue");
+        if (distanceSlider) distanceSlider.value = proj.distance;
+        if (distanceValue) distanceValue.textContent = proj.distance;
+
+        const showRaysCheckbox = document.getElementById("projectionShowRays");
+        if (showRaysCheckbox) showRaysCheckbox.checked = proj.showRays !== false;
+
+        const showInteriorCheckbox = document.getElementById("projectionShowInterior");
+        if (showInteriorCheckbox) showInteriorCheckbox.checked = proj.showInterior;
+
+        const showIdealCheckbox = document.getElementById("projectionShowIdeal");
+        if (showIdealCheckbox) showIdealCheckbox.checked = proj.showIdealPolygon;
+
+        // Update axis button highlighting
+        document.querySelectorAll(".projection-axis-btn").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+        const axisId =
+          proj.basis === "cartesian"
+            ? `projectionAxis${proj.axis.toUpperCase()}`
+            : `projectionAxis${proj.axis.toUpperCase()}`;
+        const axisBtn = document.getElementById(axisId);
+        if (axisBtn) axisBtn.classList.add("active");
+
+        // Show/hide projection controls panel
+        const projectionOptions = document.getElementById("projection-options");
+        if (projectionOptions) {
+          projectionOptions.style.display = proj.enabled ? "block" : "none";
+        }
+
+        console.log("✅ Projection state restored");
       }
 
       // Restore instances
