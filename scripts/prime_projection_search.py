@@ -549,6 +549,111 @@ def count_hull_vertices(points_2d):
     except Exception:
         return 0
 
+
+def compute_hull_geometry(points_2d):
+    """Compute detailed geometry of the 2D convex hull.
+
+    Returns dict with:
+    - hull_count: number of hull vertices
+    - hull_vertices: ordered 2D coordinates of hull vertices
+    - interior_angles: list of interior angles in degrees
+    - edge_lengths: list of edge lengths
+    - is_equiangular: True if all angles within 0.5° of mean
+    - is_equilateral: True if all edges within 1% of mean
+    - angle_variance: standard deviation of angles (degrees)
+    - edge_variance: coefficient of variation of edges (%)
+    - regularity_score: 0-1 measure of how regular the polygon is
+    """
+    result = {
+        'hull_count': 0,
+        'hull_vertices': [],
+        'interior_angles': [],
+        'edge_lengths': [],
+        'is_equiangular': False,
+        'is_equilateral': False,
+        'angle_variance': float('inf'),
+        'edge_variance': float('inf'),
+        'regularity_score': 0.0
+    }
+
+    if len(points_2d) < 3:
+        result['hull_count'] = len(points_2d)
+        return result
+
+    try:
+        # Remove duplicate points (within tolerance)
+        unique_points = np.unique(np.round(points_2d, 8), axis=0)
+
+        if len(unique_points) < 3:
+            result['hull_count'] = len(unique_points)
+            return result
+
+        hull = ConvexHull(unique_points)
+        hull_indices = hull.vertices
+        n = len(hull_indices)
+        result['hull_count'] = n
+
+        # Get ordered hull vertices
+        hull_pts = unique_points[hull_indices]
+        result['hull_vertices'] = hull_pts.tolist()
+
+        if n < 3:
+            return result
+
+        # Compute edge lengths
+        edge_lengths = []
+        for i in range(n):
+            p1 = hull_pts[i]
+            p2 = hull_pts[(i + 1) % n]
+            edge_lengths.append(np.linalg.norm(p2 - p1))
+        result['edge_lengths'] = [float(e) for e in edge_lengths]
+
+        # Compute interior angles
+        interior_angles = []
+        for i in range(n):
+            p_prev = hull_pts[(i - 1) % n]
+            p_curr = hull_pts[i]
+            p_next = hull_pts[(i + 1) % n]
+
+            v1 = p_prev - p_curr
+            v2 = p_next - p_curr
+
+            # Angle between vectors
+            cos_angle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-10)
+            cos_angle = np.clip(cos_angle, -1, 1)
+            angle_rad = np.arccos(cos_angle)
+            angle_deg = np.degrees(angle_rad)
+            interior_angles.append(angle_deg)
+        result['interior_angles'] = [float(a) for a in interior_angles]
+
+        # Check equi-angular (all angles within 0.5° of mean)
+        mean_angle = np.mean(interior_angles)
+        angle_variance = np.std(interior_angles)
+        result['angle_variance'] = float(angle_variance)
+        result['is_equiangular'] = angle_variance < 0.5
+
+        # Check equilateral (all edges within 1% of mean)
+        mean_edge = np.mean(edge_lengths)
+        edge_cv = 100 * np.std(edge_lengths) / (mean_edge + 1e-10)  # coefficient of variation %
+        result['edge_variance'] = float(edge_cv)
+        result['is_equilateral'] = edge_cv < 1.0
+
+        # Regularity score: 0-1 based on angle and edge uniformity
+        # Perfect regular polygon has score 1.0
+        ideal_angle = 180 * (n - 2) / n  # Interior angle of regular n-gon
+        angle_deviation = np.mean(np.abs(np.array(interior_angles) - ideal_angle))
+        angle_score = max(0, 1 - angle_deviation / 10)  # 10° deviation = 0 score
+
+        edge_score = max(0, 1 - edge_cv / 10)  # 10% CV = 0 score
+
+        result['regularity_score'] = float((angle_score + edge_score) / 2)
+
+        return result
+
+    except Exception as e:
+        result['error'] = str(e)
+        return result
+
 def is_prime(n):
     """Check if n is prime."""
     if n < 2:
@@ -599,8 +704,9 @@ def search_single_config(args):
     # Project to 2D
     projected = project_to_2d(rotated)
 
-    # Count hull vertices
-    hull_count = count_hull_vertices(projected)
+    # Compute hull geometry with detailed analysis
+    geometry = compute_hull_geometry(projected)
+    hull_count = geometry['hull_count']
 
     # Check if it's a target prime
     if hull_count in target_primes:
@@ -609,6 +715,14 @@ def search_single_config(args):
             'dimension': dim,
             'spreads': [float(s) for s in spreads],
             'hull_vertices': hull_count,
+            'hull_vertices_2d': geometry['hull_vertices'],
+            'interior_angles': geometry['interior_angles'],
+            'edge_lengths': geometry['edge_lengths'],
+            'is_equiangular': geometry['is_equiangular'],
+            'is_equilateral': geometry['is_equilateral'],
+            'angle_variance': geometry['angle_variance'],
+            'edge_variance': geometry['edge_variance'],
+            'regularity_score': geometry['regularity_score'],
             'projected_points': projected.tolist()
         }
 
@@ -695,7 +809,8 @@ def search_compound_config(args):
         rotated = vertices @ R.T
 
     projected = project_to_2d(rotated)
-    hull_count = count_hull_vertices(projected)
+    geometry = compute_hull_geometry(projected)
+    hull_count = geometry['hull_count']
 
     if hull_count in target_primes:
         return {
@@ -705,6 +820,14 @@ def search_compound_config(args):
             'relative_spread': float(relative_spread),
             'view_spreads': [float(s) for s in view_spreads],
             'hull_vertices': hull_count,
+            'hull_vertices_2d': geometry['hull_vertices'],
+            'interior_angles': geometry['interior_angles'],
+            'edge_lengths': geometry['edge_lengths'],
+            'is_equiangular': geometry['is_equiangular'],
+            'is_equilateral': geometry['is_equilateral'],
+            'angle_variance': geometry['angle_variance'],
+            'edge_variance': geometry['edge_variance'],
+            'regularity_score': geometry['regularity_score'],
             'projected_points': projected.tolist()
         }
 
@@ -874,14 +997,49 @@ def run_search(polyhedra=None, precision=4, target_primes=None,
 
     # Summary by prime
     prime_counts = {}
+    equiangular_findings = []
+    equilateral_findings = []
+    high_regularity_findings = []
+
     for finding in all_results['findings'] + all_results['compound_findings']:
         n = finding['hull_vertices']
         prime_counts[n] = prime_counts.get(n, 0) + 1
+
+        # Track special findings
+        if finding.get('is_equiangular', False):
+            equiangular_findings.append(finding)
+        if finding.get('is_equilateral', False):
+            equilateral_findings.append(finding)
+        if finding.get('regularity_score', 0) >= 0.9:
+            high_regularity_findings.append(finding)
 
     if prime_counts:
         print(f"\nFindings by prime n-gon:")
         for n in sorted(prime_counts.keys()):
             print(f"  {n}-gon: {prime_counts[n]} configurations")
+
+    # Highlight GOLD findings
+    if equiangular_findings:
+        print(f"\n★ GOLD: Equi-angular projections found: {len(equiangular_findings)}")
+        for f in equiangular_findings[:5]:  # Show first 5
+            poly = f.get('polyhedron', f.get('compound', 'unknown'))
+            spreads = f.get('spreads', f.get('view_spreads', []))
+            print(f"  {f['hull_vertices']}-gon from {poly} @ spreads {spreads}")
+            print(f"    Angle variance: {f.get('angle_variance', 'N/A'):.3f}°")
+
+    if equilateral_findings:
+        print(f"\n★ GOLD: Equal edge-length projections found: {len(equilateral_findings)}")
+        for f in equilateral_findings[:5]:  # Show first 5
+            poly = f.get('polyhedron', f.get('compound', 'unknown'))
+            spreads = f.get('spreads', f.get('view_spreads', []))
+            print(f"  {f['hull_vertices']}-gon from {poly} @ spreads {spreads}")
+            print(f"    Edge variance: {f.get('edge_variance', 'N/A'):.3f}%")
+
+    if high_regularity_findings:
+        print(f"\n★ High regularity (score ≥ 0.9): {len(high_regularity_findings)}")
+        for f in sorted(high_regularity_findings, key=lambda x: -x.get('regularity_score', 0))[:5]:
+            poly = f.get('polyhedron', f.get('compound', 'unknown'))
+            print(f"  {f['hull_vertices']}-gon from {poly}: score={f.get('regularity_score', 0):.3f}")
 
     return all_results
 

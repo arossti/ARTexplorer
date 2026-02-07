@@ -2,6 +2,7 @@
 // ========================================================================
 import { Polyhedra } from "./rt-polyhedra.js";
 import { RTPapercut } from "./rt-papercut.js";
+import { RTPrimeCuts } from "./rt-prime-cuts.js";
 import { RTViewManager } from "./rt-viewmanager.js";
 import { initQuadranceDemo } from "../demos/rt-quadrance-demo.js";
 import { initCrossDemo } from "../demos/rt-cross-demo.js";
@@ -153,7 +154,10 @@ function startARTexplorer(
     quadrayTetraDeformedGroup,
     quadrayCuboctahedronGroup,
     quadrayOctahedronGroup,
-    quadrayTruncatedTetGroup;
+    quadrayTruncatedTetGroup,
+    quadrayStellaOctangulaGroup,
+    quadrayCompoundGroup,
+    quadrayCompoundTetGroup;
   let cartesianGrid, ivmPlanes;
 
   // ========================================================================
@@ -2314,6 +2318,9 @@ function startARTexplorer(
       quadrayCuboctahedronGroup,
       quadrayOctahedronGroup,
       quadrayTruncatedTetGroup,
+      quadrayStellaOctangulaGroup,
+      quadrayCompoundGroup,
+      quadrayCompoundTetGroup,
       penroseTilingGroup,
     ];
 
@@ -2583,6 +2590,9 @@ function startARTexplorer(
       quadrayCuboctahedronGroup,
       quadrayOctahedronGroup,
       quadrayTruncatedTetGroup,
+      quadrayStellaOctangulaGroup,
+      quadrayCompoundGroup,
+      quadrayCompoundTetGroup,
       penroseTilingGroup,
     ];
 
@@ -4019,6 +4029,9 @@ function startARTexplorer(
     quadrayCuboctahedronGroup,
     quadrayOctahedronGroup,
     quadrayTruncatedTetGroup,
+    quadrayStellaOctangulaGroup,
+    quadrayCompoundGroup,
+    quadrayCompoundTetGroup,
     penroseTilingGroup,
   } = formGroups);
 
@@ -4132,6 +4145,12 @@ function startARTexplorer(
   // ========================================================================
   RTPapercut.init(scene, camera, renderer);
   window.RTPapercut = RTPapercut; // Global access for debugging
+
+  // ========================================================================
+  // RT-PRIMECUTS MODULE INITIALIZATION
+  // ========================================================================
+  RTPrimeCuts.init(renderer, RTPapercut);
+  window.RTPrimeCuts = RTPrimeCuts; // Global access for debugging
 
   // ========================================================================
   // RT-VIEWMANAGER MODULE INITIALIZATION

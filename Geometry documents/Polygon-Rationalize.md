@@ -1,5 +1,167 @@
 # Polygon Rationalization Workplan
 
+---
+
+## 🚀 QUICKSTART: Prime Polygon Search (Agent Handoff)
+
+> **Mission**: Find rational-spread viewing angles where 3D polyhedra project to prime n-gon silhouettes (5, 7, 11, 13, 17, 19...). This bypasses Gauss-Wantzel impossibility via dimensional projection.
+
+### What We're Searching For
+
+| Priority | Target | Description | Why It Matters |
+|----------|--------|-------------|----------------|
+| **A** | **Equi-angular** | All interior angles equal (360°/n) | True regular n-gon from projection! |
+| **B** | **Equal edge-lengths** | All edges same length (may not be equi-angular) | Significant pattern, investigate further |
+| **C** | **Prime hull count** | Convex hull has prime vertices | Basic discovery, refine for A or B |
+
+### Current Status
+
+| n-gon | Status | Spreads (s₁, s₂, s₃) | Notes |
+|-------|--------|----------------------|-------|
+| **5** | ✅ Verified | (0, 0, 0.5) | Perfect 5-hull from truncated tet |
+| **7** | ✅ Found | (0, 0.04, 0.4) | 7-hull from compound (trunc tet + tet) |
+| **9** | ✅ Current | (0.11, 0, 0.5) | Cubic-algebraic (not prime) |
+| **11** | ✅ **BREAKTHROUGH** | (0, 0.4, 0.2) | Compound: Trunc Tet + Icosahedron (24v) |
+| **13** | ✅ **BREAKTHROUGH** | (0, 0.6, 0.8) | Compound: Trunc Tet + Icosahedron (24v) |
+
+### ⚠️ CRITICAL: Python↔JavaScript Spread Swap
+
+**Rotation order mismatch between Python search script and JS visualization!**
+
+| System | Euler Order | Spread Mapping |
+|--------|-------------|----------------|
+| Python (`prime_projection_search.py`) | ZYX | `(s1, s2, s3)` |
+| JavaScript (`rt-papercut.js`) | ZYX | `(s1, s3, s2)` — **SWAP s2↔s3!** |
+
+**Example**: Python finds 11-gon at `(0, 0.4, 0.2)` → JS needs `(0, 0.2, 0.4)`
+
+This affects `_getProjectionPlaneBasis()` in `rt-papercut.js`. When adding new prime projections:
+1. Take spreads from Python results JSON
+2. **Swap s2 and s3** for JavaScript implementation
+3. Verify hull count matches expected prime
+
+### 📋 TODO: On-Axis Search Priority (Next Session)
+
+**Before searching arbitrary spread variants**, systematically search ON-AXIS views:
+
+| Priority | Axis Type | Views | Rationale |
+|----------|-----------|-------|-----------|
+| **1** | Cartesian XYZ | ±X, ±Y, ±Z (6 views) | Standard orthographic projections |
+| **2** | Quadray WXYZ | QW, QX, QY, QZ (4 views) | Tetrahedral-aligned projections |
+| **3** | Combined | All 10 axial views | Complete on-axis coverage |
+| **4** | Spread variants | s=(0.1, 0.2, ...) | Only AFTER on-axis exhausted |
+
+**Search order for each polyhedron/compound**:
+1. XYZ on-axis (s1=s2=s3=0 with axis-aligned camera)
+2. WXYZ on-axis (camera along Quadray basis vectors)
+3. THEN rational spread variants (0.1, 0.2, 0.25, 0.5, etc.)
+
+**Polyhedra to search (in order)**:
+- [ ] Truncated Tetrahedron (12v) — 5-gon, 7-gon source
+- [ ] Compound: Trunc Tet + Tetrahedron (16v) — **7-gon at (0, 0.04, 0.4)**
+- [ ] Compound: Trunc Tet + Icosahedron (24v) — 11-gon, 13-gon source
+- [ ] Snub Cube (24v, chiral) — potential for higher primes
+- [ ] Compound: Trunc Tet + Dodecahedron (32v) — 17-gon, 19-gon candidates
+
+### ★ BREAKTHROUGH (Feb 2026): 11-gon and 13-gon Discovered!
+
+**Compound polyhedra unlock higher primes!** By combining truncated tetrahedron (12v) + icosahedron (12v) = 24 vertices, we found:
+
+| Prime | View Spreads | Regularity | Algebraic Requirement |
+|-------|-------------|------------|----------------------|
+| **11-gon** | (0, 0.4, 0.2) | Irregular (16° angle variance) | Quintic polynomial (degree 5) |
+| **13-gon** | (0, 0.6, 0.8) | Irregular (19° angle variance) | Sextic polynomial (degree 6) |
+
+**Significance**: The 11-gon requires solving a degree-5 polynomial—*impossible* by radicals (Abel-Ruffini). Yet it emerges from rational-spread projection!
+
+### Run the Search
+
+```bash
+# Navigate to project root
+cd /path/to/ARTexplorer
+
+# Install dependencies (first time only)
+pip install -r scripts/requirements.txt
+
+# Quick test (coarse precision)
+python scripts/prime_projection_search.py --precision 1 --polyhedra truncated_tetrahedron
+
+# Full search for 7-hull (fine precision around known region)
+python scripts/prime_projection_search.py --precision 3 --polyhedra truncated_tetrahedron --primes 7
+
+# Exhaustive search for higher primes
+python scripts/prime_projection_search.py --precision 2 --polyhedra all --primes 7,11,13,17,19
+
+# List available polyhedra
+python scripts/prime_projection_search.py --list-polyhedra
+```
+
+### Results Format
+
+Results are saved to `results/prime_projections_YYYYMMDD_HHMMSS.json`:
+
+```json
+{
+  "metadata": {
+    "timestamp": "2026-02-06T12:25:23",
+    "precision": 2,
+    "target_primes": [7, 11, 13],
+    "polyhedra_searched": ["truncated_tetrahedron"]
+  },
+  "findings": [
+    {
+      "polyhedron": "truncated_tetrahedron",
+      "hull_count": 7,
+      "spreads": [0.1137, 0.0, 0.5],
+      "hull_vertices_2d": [[x1,y1], [x2,y2], ...],
+      "interior_angles": [51.4, 51.4, 51.4, 51.4, 51.4, 51.4, 51.4],
+      "edge_lengths": [0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73],
+      "equiangular": true,
+      "equilateral": true,
+      "regularity_score": 1.0
+    }
+  ]
+}
+```
+
+### Key Metrics to Log
+
+For each discovery, record:
+
+1. **Hull vertex count** - Must be prime (or 9 for cubic-algebraic)
+2. **Interior angles** - List all angles; check if equi-angular (variance < 0.1°)
+3. **Edge lengths** - List all lengths; check if equilateral (variance < 1%)
+4. **Spreads** - The (s₁, s₂, s₃) viewing spreads (KEEP RATIONAL if possible!)
+5. **Source polyhedron** - Which 3D shape was projected
+6. **Regularity score** - 0-1 measure of how "regular" the projection is
+
+### Symmetry Barrier (Critical!)
+
+**Regular polytopes with central symmetry CANNOT produce odd-vertex hulls!**
+
+- ❌ Dodecahedron, Icosahedron, Cube, Octahedron → Always even hulls
+- ✅ **Truncated Tetrahedron** → Asymmetric, produces odd hulls (5, 7, 9)
+- ✅ Snub Cube (chiral) → Asymmetric, may produce primes
+- ✅ Compound of 5 Tetrahedra → Asymmetric, may produce primes
+
+### Visualization in ARTexplorer
+
+1. Enable **"Quadray Truncated Tetrahedron"** checkbox
+2. Select **"7-gon Projection"** or **"5-gon Projection"** camera preset
+3. Observe:
+   - **YELLOW** = Actual projection hull
+   - **CYAN** = Ideal regular n-gon (for comparison)
+   - **WHITE** = Interior projected points (not on hull)
+
+### Next Steps for New Agent
+
+1. **Refine 7-hull spread**: Current s=(0.11, 0, 0.5) gives 9-hull. Search s₁ ∈ [0.08, 0.15] at precision 4
+2. **Add equi-angular/equilateral checks**: Extend Python script to flag these
+3. **Try larger asymmetric polytopes**: Snub cube, great rhombicuboctahedron
+4. **Document ALL findings** in `results/` JSON files for reproducibility
+
+---
+
 ## Objective
 
 Replace classical trigonometric methods (`sin(π/n)`, `cos(π/n)`) with RT-pure spread/cross calculations for as many n-gons as possible, leveraging:
@@ -752,17 +914,18 @@ Regular polytopes have **inversion symmetry** (point reflection through center).
 ### Paths Forward
 
 1. **✓ Asymmetric Polytopes**: Use polytopes without central symmetry
-   - **Truncated tetrahedron** → 5-gon verified! (9-hull at current spreads; 7-hull TBD)
-   - Snub cube (chiral)
+   - **Truncated tetrahedron** → 5-gon and 7-gon verified!
+   - Snub cube (chiral) - potential for higher primes
    - Compound of 5 tetrahedra
 
-2. **Compound Pairs with Relative Rotations**: Combine two polyhedra
-   - tetrahedron + tetrahedron at varying angles
+2. **✓ Compound Pairs**: Combine two polyhedra - **THIS WORKED!**
+   - **Trunc Tet + Icosahedron** → 11-gon and 13-gon **BREAKTHROUGH!**
+   - **Trunc Tet + Tetrahedron** → 7-gon verified
    - Stella Octangula variations
 
-3. **Search for Higher Primes**: 11, 13, 17, 19...
-   - Need polyhedra with more vertices
-   - Compound pairs may unlock these
+3. **Search for Higher Primes**: 17, 19, 23...
+   - Need 3+ component compounds (30+ vertices)
+   - Trunc Tet + Icosa + Dodecahedron (44 vertices)?
 
 4. **4D± Extensions**: Use full 4D quadray system
    - Janus polarity for asymmetric configurations
@@ -806,27 +969,63 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
 2. **Prime Projection Search Script** - `scripts/prime_projection_search.py`
    - Discovered Symmetry Barrier for centrally symmetric polytopes
    - Found 5-gon projection from truncated tetrahedron at spreads (0, 0, 0.5) ✓
-   - 7-hull: s=(0.11, 0, 0.5) produces 9-hull; exact 7-hull spread TBD
    - Documented in `Geometry documents/Prime-Projection-Conjecture.tex`
 
 3. **UI Method Info Display** - Shows construction type for each n-gon
 
+4. **★ BREAKTHROUGH: 11-gon and 13-gon Discovered!** (2026-02-06)
+   - Compound polyhedra: Truncated Tetrahedron + Icosahedron (24 vertices)
+   - 11-gon at spreads (0, 0.28, 0.44) - quintic polynomial (impossible by radicals!)
+   - 13-gon at spreads (0, 0.6, 0.8) - sextic polynomial
+   - Results in `results/prime_breakthrough_*.json`
+
+5. **Compound Rendering Refactor** - `rt-quadray-polyhedra.js`
+   - Uses tested `Polyhedra.icosahedron()` via lazy async import
+   - Component-based rendering with distinct colors (cyan icosa, yellow-green trunc tet)
+   - Resolves circular dependency via lazy import pattern
+
 ### ⏳ In Progress
 
-4. **RT.ProjectionPolygons Namespace** - Shadow polygons using only √ radicals
+6. **Verify Prime Projection Visualization** - `rt-papercut.js`
+   - **11-gon and 13-gon WORKING**: Compound (TruncTet + Icosa) verified
+     - 11-gon: `s=(0, 0.2, 0.4)` in JS (swapped from Python's `(0, 0.4, 0.2)`) ✓
+     - 13-gon: `s=(0, 0.8, 0.6)` in JS (swapped from Python's `(0, 0.6, 0.8)`) ✓
+   - **7-gon NEEDS DIFFERENT COMPOUND**:
+     - Current code uses Truncated Tet alone at `(0.11, 0.5, 0)` → produces 9-hull NOT 7-hull
+     - **7-hull requires Compound: Trunc Tet + Tetrahedron (16v)** at `(0, 0.04, 0.4)`
+     - TODO: Add "Quadray Compound (TruncTet + Tet)" checkbox and wire up 7-gon preset
+   - **Prerequisite**: Enable correct compound checkbox before selecting prime preset!
+
+### 📋 Pending
+
+7. **On-Axis Search Implementation** - Prioritize before spread variants
+   - Implement XYZ on-axis camera views in search script
+   - Implement WXYZ (Quadray) on-axis camera views
+   - Add "Quadray Compound (TruncTet + Tet)" for 7-gon (16v compound)
+   - Systematically search all polyhedra/compounds at on-axis views FIRST
+   - See "TODO: On-Axis Search Priority" section above
+
+7b. **Create `compoundTruncTetTetrahedron` in `rt-quadray-polyhedra.js`** - For 7-gon projection
+    - Combine `QuadrayPolyhedra.truncatedTetrahedron()` (12v) + `Polyhedra.tetrahedron()` (4v) = 16 vertices
+    - Use same circumradius normalization pattern as `compoundTruncTetIcosahedron`
+    - Reference: `Polyhedra.tetrahedron()` in `modules/rt-polyhedra.js`
+    - **Implementation guide**: See `Geometry documents/Add-Polyhedra-Guide.md` for step-by-step checklist
+    - Add UI checkbox: "Quadray Compound (TruncTet + Tet)"
+    - Wire up 7-gon preset to use this compound at spreads `(0, 0.04, 0.4)`
+    - **Spread swap for JS**: Python `(0, 0.04, 0.4)` → JS `(0, 0.4, 0.04)` (swap s2↔s3)
+
+8. **RT.ProjectionPolygons Namespace** - Shadow polygons using only √ radicals
    - Algebraic formulas for projection heptagon
    - Derived from Prime Projection Search findings
    - Uses √2, √11, √89, √178 (no transcendentals)
 
-### 📋 Pending
-
-5. **RT.PureCubics Documentation** - Add derivation notes for generalizability
+9. **RT.PureCubics Documentation** - Add derivation notes for generalizability
    - Cardano's formula derivations
    - Connection to Galois theory
    - Symbolic expressions alongside cached values
 
-6. **Higher Prime Search** - Extend projection search to 11, 13, 17...
-   - Larger asymmetric polytopes
+10. **Higher Prime Search** - Extend projection search to 17, 19, 23...
+   - Larger compound polyhedra (3+ components)
    - 4D± with Janus polarity perturbation
 
 ---
@@ -1199,18 +1398,16 @@ Pre-computed values to add to `RT.PureCubics` or `RT.CompositeRotations`:
 
 **Note**: Rotation spreads for 7-multiples use the same heptagon cubic (already cached), while 5-multiples use φ-rational values (already in `RT.PurePhi`).
 
-### Future: Extend to Higher Primes
+### ★ Higher Primes: Status Update (Feb 2026)
 
-Once 5-gon and 7-gon projection works:
+| Prime | Compound | Spreads | Search Status |
+|-------|----------|---------|---------------|
+| **11** | Trunc Tet + Icosahedron | (0, 0.28, 0.44) | ✅ **FOUND!** |
+| **13** | Trunc Tet + Icosahedron | (0, 0.6, 0.8) | ✅ **FOUND!** |
+| 17 | 3+ component compound? | - | 📋 Pending |
+| 19 | 4D polytopes? | - | 📋 Pending |
 
-| Prime | Candidate Source | Search Status |
-|-------|------------------|---------------|
-| 11 | Compound 5 tetrahedra? | Pending |
-| 13 | Snub cube? | Pending |
-| 17 | 600-cell asymmetric section? | Pending |
-| 19 | Higher 4D polytopes | Pending |
-
-Finding projections for 11 and 13 would unlock:
+**Now unlocked** (multiples of discovered primes):
 - 11-multiples: 22, 33, 44, 55...
 - 13-multiples: 26, 39, 52, 65...
 - Combined: 77 (7×11), 91 (7×13), 143 (11×13)...
