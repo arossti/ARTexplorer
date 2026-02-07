@@ -3,6 +3,7 @@
 import { Polyhedra } from "./rt-polyhedra.js";
 import { RTPapercut } from "./rt-papercut.js";
 import { RTPrimeCuts } from "./rt-prime-cuts.js";
+import { RTProjections } from "./rt-projections.js";
 import { RTViewManager } from "./rt-viewmanager.js";
 import { initQuadranceDemo } from "../demos/rt-quadrance-demo.js";
 import { initCrossDemo } from "../demos/rt-cross-demo.js";
@@ -4187,6 +4188,12 @@ function startARTexplorer(
   window.RTPrimeCuts = RTPrimeCuts; // Global access for debugging
 
   // ========================================================================
+  // RT-PROJECTIONS MODULE INITIALIZATION
+  // ========================================================================
+  RTProjections.init(scene, camera, renderer);
+  window.RTProjections = RTProjections; // Global access for debugging
+
+  // ========================================================================
   // RT-VIEWMANAGER MODULE INITIALIZATION
   // ========================================================================
   RTViewManager.init({
@@ -4233,6 +4240,105 @@ function startARTexplorer(
       });
     }
   });
+
+  // Wire up projection axis selector buttons (mirrors cutplane pattern)
+  const projectionAxisButtons = [
+    // Cartesian basis
+    { id: "projectionAxisX", basis: "cartesian", axis: "x" },
+    { id: "projectionAxisY", basis: "cartesian", axis: "y" },
+    { id: "projectionAxisZ", basis: "cartesian", axis: "z" },
+    // Tetrahedral basis
+    { id: "projectionAxisQW", basis: "tetrahedral", axis: "qw" },
+    { id: "projectionAxisQX", basis: "tetrahedral", axis: "qx" },
+    { id: "projectionAxisQY", basis: "tetrahedral", axis: "qy" },
+    { id: "projectionAxisQZ", basis: "tetrahedral", axis: "qz" },
+  ];
+
+  // Track active projection axis button for persistent highlighting
+  let activeProjectionButton = document.getElementById("projectionAxisZ"); // Z is default
+
+  projectionAxisButtons.forEach(({ id, basis, axis }) => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener("click", () => {
+        // Remove active class from previously active button
+        if (activeProjectionButton) {
+          activeProjectionButton.classList.remove("active");
+        }
+
+        // Add active class to clicked button
+        btn.classList.add("active");
+        activeProjectionButton = btn;
+
+        // Update projection axis
+        RTProjections.setProjectionAxis(basis, axis);
+      });
+    }
+  });
+
+  // Wire up projection enable checkbox
+  const enableProjectionCheckbox = document.getElementById("enableProjection");
+  if (enableProjectionCheckbox) {
+    enableProjectionCheckbox.addEventListener("change", () => {
+      if (enableProjectionCheckbox.checked) {
+        // Find the first visible polyhedron to project
+        let targetPolyhedron = null;
+        scene.traverse(obj => {
+          if (!targetPolyhedron && obj.visible && obj.userData?.type) {
+            // Look for quadray polyhedra or standard polyhedra
+            if (obj.userData.type.startsWith("quadray") ||
+                ["tetrahedron", "cube", "octahedron", "icosahedron", "dodecahedron"].includes(obj.userData.type)) {
+              targetPolyhedron = obj;
+            }
+          }
+        });
+
+        if (targetPolyhedron) {
+          RTProjections.showProjection(targetPolyhedron);
+        } else {
+          console.warn("⚠️ No visible polyhedron found for projection");
+        }
+      } else {
+        RTProjections.hideProjection();
+      }
+    });
+  }
+
+  // Wire up projection distance slider
+  const projectionDistanceSlider = document.getElementById("projectionDistance");
+  if (projectionDistanceSlider) {
+    projectionDistanceSlider.addEventListener("input", () => {
+      const value = parseFloat(projectionDistanceSlider.value);
+      const valueDisplay = document.getElementById("projectionDistanceValue");
+      if (valueDisplay) valueDisplay.textContent = value;
+      RTProjections.setProjectionDistance(value);
+    });
+  }
+
+  // Wire up projection option checkboxes
+  const projectionShowRays = document.getElementById("projectionShowRays");
+  if (projectionShowRays) {
+    projectionShowRays.addEventListener("change", () => {
+      RTProjections.state.showRays = projectionShowRays.checked;
+      RTProjections.updateProjection();
+    });
+  }
+
+  const projectionShowInterior = document.getElementById("projectionShowInterior");
+  if (projectionShowInterior) {
+    projectionShowInterior.addEventListener("change", () => {
+      RTProjections.state.showInterior = projectionShowInterior.checked;
+      RTProjections.updateProjection();
+    });
+  }
+
+  const projectionShowIdeal = document.getElementById("projectionShowIdeal");
+  if (projectionShowIdeal) {
+    projectionShowIdeal.addEventListener("change", () => {
+      RTProjections.state.showIdealPolygon = projectionShowIdeal.checked;
+      RTProjections.updateProjection();
+    });
+  }
 
   // ========================================================================
   // KEYBOARD SHORTCUTS (ESC, Delete, Undo/Redo)
