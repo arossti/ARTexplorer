@@ -749,6 +749,19 @@ export const viewControlBindings = [
           renderingAPI.setCameraPreset("heptagonProjectionTet");
         },
       },
+      // 11-gon from TruncTet+Tet compound (Feb 2026) - BREAKTHROUGH!
+      {
+        id: "viewHendecagonProjectionTet",
+        onClick: renderingAPI => {
+          // Auto-enable TruncTet+Tet compound form for 11-gon projection
+          const compoundCheckbox = document.getElementById("showQuadrayCompoundTet");
+          if (compoundCheckbox && !compoundCheckbox.checked) {
+            compoundCheckbox.checked = true;
+            compoundCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          renderingAPI.setCameraPreset("hendecagonProjectionTet");
+        },
+      },
     ],
   },
 ];

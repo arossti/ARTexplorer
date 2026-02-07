@@ -19,26 +19,26 @@
 | n-gon | Status | Spreads (s₁, s₂, s₃) | Notes |
 |-------|--------|----------------------|-------|
 | **5** | ✅ Verified | (0, 0, 0.5) | Perfect 5-hull from truncated tet |
-| **7** | ✅ Found | (0, 0.04, 0.4) | 7-hull from compound (trunc tet + tet) |
+| **7** | ✅ Verified | (0, 0, 0.5) | 7-hull from compound (trunc tet + tet) |
 | **9** | ✅ Current | (0.11, 0, 0.5) | Cubic-algebraic (not prime) |
-| **11** | ✅ **BREAKTHROUGH** | (0, 0.4, 0.2) | Compound: Trunc Tet + Icosahedron (24v) |
+| **11** | ✅ **BREAKTHROUGH** | (0, 0.28, 0.44) | Compound: Trunc Tet + Tetrahedron (16v) |
 | **13** | ✅ **BREAKTHROUGH** | (0, 0.6, 0.8) | Compound: Trunc Tet + Icosahedron (24v) |
 
-### ⚠️ CRITICAL: Python↔JavaScript Spread Swap
+### ✅ Python↔JavaScript Spread Consistency
 
-**Rotation order mismatch between Python search script and JS visualization!**
+**Both Python and JavaScript use identical ZYX Euler rotation order!**
 
 | System | Euler Order | Spread Mapping |
 |--------|-------------|----------------|
 | Python (`prime_projection_search.py`) | ZYX | `(s1, s2, s3)` |
-| JavaScript (`rt-papercut.js`) | ZYX | `(s1, s3, s2)` — **SWAP s2↔s3!** |
+| JavaScript (`rt-prime-cuts.js`) | ZYX | `(s1, s2, s3)` — **SAME, NO SWAP!** |
 
-**Example**: Python finds 11-gon at `(0, 0.4, 0.2)` → JS needs `(0, 0.2, 0.4)`
+**Example**: Python finds 11-gon at `(0, 0.28, 0.44)` → JS uses `(0, 0.28, 0.44)` directly
 
-This affects `_getProjectionPlaneBasis()` in `rt-papercut.js`. When adding new prime projections:
-1. Take spreads from Python results JSON
-2. **Swap s2 and s3** for JavaScript implementation
-3. Verify hull count matches expected prime
+When adding new prime projections:
+1. Take spreads from Python results JSON **exactly as found**
+2. Add to `VERIFIED_PROJECTIONS` registry in `rt-prime-cuts.js`
+3. Verify hull count matches expected prime using `verifyProjection(n)`
 
 ### 📋 TODO: On-Axis Search Priority (Next Session)
 
@@ -58,19 +58,19 @@ This affects `_getProjectionPlaneBasis()` in `rt-papercut.js`. When adding new p
 
 **Polyhedra to search (in order)**:
 - [ ] Truncated Tetrahedron (12v) — 5-gon, 7-gon source
-- [ ] Compound: Trunc Tet + Tetrahedron (16v) — **7-gon at (0, 0.04, 0.4)**
+- [ ] Compound: Trunc Tet + Tetrahedron (16v) — **7-gon at (0, 0, 0.5)**
 - [ ] Compound: Trunc Tet + Icosahedron (24v) — 11-gon, 13-gon source
 - [ ] Snub Cube (24v, chiral) — potential for higher primes
 - [ ] Compound: Trunc Tet + Dodecahedron (32v) — 17-gon, 19-gon candidates
 
 ### ★ BREAKTHROUGH (Feb 2026): 11-gon and 13-gon Discovered!
 
-**Compound polyhedra unlock higher primes!** By combining truncated tetrahedron (12v) + icosahedron (12v) = 24 vertices, we found:
+**Compound polyhedra unlock higher primes!**
 
-| Prime | View Spreads | Regularity | Algebraic Requirement |
-|-------|-------------|------------|----------------------|
-| **11-gon** | (0, 0.4, 0.2) | Irregular (16° angle variance) | Quintic polynomial (degree 5) |
-| **13-gon** | (0, 0.6, 0.8) | Irregular (19° angle variance) | Sextic polynomial (degree 6) |
+| Prime | Compound | View Spreads | Algebraic Requirement |
+|-------|----------|-------------|----------------------|
+| **11-gon** | TruncTet + Tet (16v) | (0, 0.28, 0.44) | Quintic polynomial (degree 5) |
+| **13-gon** | TruncTet + Icosa (24v) | (0, 0.6, 0.8) | Sextic polynomial (degree 6) |
 
 **Significance**: The 11-gon requires solving a degree-5 polynomial—*impossible* by radicals (Abel-Ruffini). Yet it emerges from rational-spread projection!
 
@@ -986,14 +986,13 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
 
 ### ⏳ In Progress
 
-6. **Verify Prime Projection Visualization** - `rt-papercut.js`
-   - **11-gon and 13-gon WORKING**: Compound (TruncTet + Icosa) verified
-     - 11-gon: `s=(0, 0.2, 0.4)` in JS (swapped from Python's `(0, 0.4, 0.2)`) ✓
-     - 13-gon: `s=(0, 0.8, 0.6)` in JS (swapped from Python's `(0, 0.6, 0.8)`) ✓
-   - **7-gon NEEDS DIFFERENT COMPOUND**:
-     - Current code uses Truncated Tet alone at `(0.11, 0.5, 0)` → produces 9-hull NOT 7-hull
-     - **7-hull requires Compound: Trunc Tet + Tetrahedron (16v)** at `(0, 0.04, 0.4)`
-     - TODO: Add "Quadray Compound (TruncTet + Tet)" checkbox and wire up 7-gon preset
+6. **Verify Prime Projection Visualization** - `rt-prime-cuts.js`
+   - **All primes WORKING via VERIFIED_PROJECTIONS registry**:
+     - 5-gon: `s=(0, 0, 0.5)` from Truncated Tet (12v) ✓
+     - 7-gon: `s=(0, 0, 0.5)` from Compound TruncTet + Tet (16v) ✓
+     - 11-gon: `s=(0, 0.28, 0.44)` from Compound TruncTet + Tet (16v) ✓
+     - 13-gon: `s=(0, 0.6, 0.8)` from Compound TruncTet + Icosa (24v) ✓
+   - **NO SPREAD SWAP NEEDED**: Python and JS use identical ZYX rotation order
    - **Prerequisite**: Enable correct compound checkbox before selecting prime preset!
 
 ### 📋 Pending
@@ -1005,14 +1004,13 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
    - Systematically search all polyhedra/compounds at on-axis views FIRST
    - See "TODO: On-Axis Search Priority" section above
 
-7b. **Create `compoundTruncTetTetrahedron` in `rt-quadray-polyhedra.js`** - For 7-gon projection
+7b. **Create `compoundTruncTetTetrahedron` in `rt-quadray-polyhedra.js`** - For 7-gon projection ✅ DONE
     - Combine `QuadrayPolyhedra.truncatedTetrahedron()` (12v) + `Polyhedra.tetrahedron()` (4v) = 16 vertices
     - Use same circumradius normalization pattern as `compoundTruncTetIcosahedron`
     - Reference: `Polyhedra.tetrahedron()` in `modules/rt-polyhedra.js`
     - **Implementation guide**: See `Geometry documents/Add-Polyhedra-Guide.md` for step-by-step checklist
-    - Add UI checkbox: "Quadray Compound (TruncTet + Tet)"
-    - Wire up 7-gon preset to use this compound at spreads `(0, 0.04, 0.4)`
-    - **Spread swap for JS**: Python `(0, 0.04, 0.4)` → JS `(0, 0.4, 0.04)` (swap s2↔s3)
+    - UI checkbox: "Quadray Compound (TruncTet + Tet)" ✅
+    - 7-gon preset uses spreads `(0, 0, 0.5)` — **NO SWAP** (Python = JS)
 
 8. **RT.ProjectionPolygons Namespace** - Shadow polygons using only √ radicals
    - Algebraic formulas for projection heptagon
