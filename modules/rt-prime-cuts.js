@@ -50,16 +50,16 @@ const PROJECTION_PRESETS = {
   heptagon: {
     name: "Heptagon (7-gon)",
     n: 7,
-    polyhedronType: "quadrayTruncatedTet",
-    polyhedronCheckbox: "showQuadrayTruncatedTet",
-    compound: "truncatedTetrahedron",
-    vertexCount: 12,
-    spreads: [0.11, 0, 0.5],
+    polyhedronType: "quadrayCompoundTet",
+    polyhedronCheckbox: "showQuadrayCompoundTet",
+    compound: "truncTetPlusTet",
+    vertexCount: 16,
+    spreads: [0, 0, 0.5],
     expectedHull: 7,
-    source: "results/prime_breakthrough_*.json (Python search 2026-02)",
+    source: "results/prime_compound_search_20260206_144743.json",
     maxInteriorAngle: 170,
-    verified: "2026-02-07",
-    description: "Truncated Tetrahedron → 7-vertex hull at s=(0.11, 0, 0.5)",
+    verified: "2026-02-06",
+    description: "TruncTet+Tet compound → 7-vertex hull at s=(0, 0, 0.5)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -68,7 +68,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0.11, 0, 0.5],
+      customSpreads: [0, 0, 0.5],
       presetName: "heptagon",
     },
   },
@@ -797,12 +797,12 @@ export const RTPrimeCuts = {
 
     switch (n) {
       case 7:
-        // 7-gon: Truncated tetrahedron at different viewing angle than 5-gon
-        // Python search found s=(0.11, 0, 0.5) produces exact 7-hull
+        // 7-gon: TruncTet+Tet compound at same angle as 5-gon
+        // The 4 tet vertices extend the 5-hull to 7-hull
         formulaText =
           "YELLOW: Actual 7-hull projection\n" +
-          "  Truncated Tetrahedron (12v)\n" +
-          "  s=(0.11, 0, 0.5)\n" +
+          "  Compound (TruncTet + Tet) 16v\n" +
+          "  s=(0, 0, 0.5) same as 5-gon\n" +
           "CYAN: Ideal regular heptagon\n" +
           "  Classical trig (for comparison)";
         break;
