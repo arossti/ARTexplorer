@@ -420,13 +420,12 @@ export const RTPrimeCuts = {
     // Reference: results/prime_breakthrough_20260206_145052.json
     let s1, s2, s3;
     if (n === 5) {
-      s1 = 0; s2 = 0; s3 = 0.5; // Truncated tetrahedron
+      s1 = 0; s2 = 0; s3 = 0.5; // Truncated tetrahedron (12v)
     } else if (n === 7) {
-      // TODO: 7-gon needs compound (TruncTet + Tet, 16v) NOT truncated tet alone!
-      // Current spreads (0.11, 0.5, 0) produce 9-hull from trunc tet alone
-      // For true 7-hull: use compound at Python (0, 0.04, 0.4) → JS (0, 0.4, 0.04)
+      // 7-gon REQUIRES TruncTet+Tet compound (16v) - truncated tet alone produces 9-hull!
+      // Spreads from Python (0, 0.04, 0.4) → JS rotation order (0, 0.4, 0.04)
       // See: Geometry documents/Polygon-Rationalize.md item 7b
-      s1 = 0.11; s2 = 0.5; s3 = 0; // TEMP: produces 9-hull (7-hull needs compound)
+      s1 = 0; s2 = 0.4; s3 = 0.04; // TruncTet+Tet compound only
     } else if (n === 11) {
       // Swap s2/s3 from Python [0, 0.4, 0.2] to match JS rotation order
       s1 = 0; s2 = 0.2; s3 = 0.4; // Compound (trunc tet + icosa) - BREAKTHROUGH!
@@ -629,12 +628,15 @@ export const RTPrimeCuts = {
     });
 
     // Get viewing spreads for this n-gon
-    // 7-hull: s=(0.11, 0, 0.5), 5-gon: s=(0, 0, 0.5)
+    // 5-gon: s=(0, 0, 0.5) from truncated tetrahedron (12v)
+    // 7-gon: requires TruncTet+Tet compound - not supported here (use showPrimePolygon)
     let s1, s2, s3;
-    if (n === 7) {
-      s1 = 0.11; s2 = 0; s3 = 0.5;
-    } else if (n === 5) {
+    if (n === 5) {
       s1 = 0; s2 = 0; s3 = 0.5;
+    } else if (n === 7) {
+      // 7-gon requires compound - this function only handles truncated tet
+      console.warn("⚠️ 7-gon requires TruncTet+Tet compound, using fallback");
+      return this._createRegularPolygonVerticesFallback(n, radius, camera);
     } else {
       // Fallback: no projection defined, use regular polygon
       console.warn("⚠️ No projection defined for", n, "-gon, using regular polygon");
@@ -752,12 +754,12 @@ export const RTPrimeCuts = {
     });
 
     // Get viewing spreads
+    // Note: 7-gon requires compound, this function only handles truncated tet (5-gon)
     let s1, s2, s3;
-    if (n === 7) {
-      s1 = 0.11; s2 = 0; s3 = 0.5;
-    } else if (n === 5) {
+    if (n === 5) {
       s1 = 0; s2 = 0; s3 = 0.5;
     } else {
+      // Default/fallback - no rotation
       s1 = 0; s2 = 0; s3 = 0;
     }
 
@@ -996,13 +998,13 @@ export const RTPrimeCuts = {
 
     switch (n) {
       case 7:
-        // 7-gon preset: ACTUAL projection from truncated tetrahedron
-        // Quadray coords: {2,1,0,0} permutations (12 vertices, ALL RATIONAL)
-        // Current spreads s=(0.11, 0, 0.5) produce 9-hull; exact 7-hull TBD
+        // 7-gon: REQUIRES TruncTet+Tet compound (16 vertices)
+        // Truncated tetrahedron alone produces 9-hull, NOT 7-hull!
+        // Spreads: s=(0, 0.4, 0.04) from compound
         formulaText =
-          "YELLOW: Actual projection hull\n" +
-          "  Quadray {2,1,0,0}/3 → s=(0.11,0,½)\n" +
-          "  9 vertices (7-hull spread TBD)\n" +
+          "YELLOW: Actual 7-hull projection\n" +
+          "  Compound (TruncTet + Tet) 16v\n" +
+          "  s=(0, 0.4, 0.04)\n" +
           "CYAN: Ideal regular heptagon\n" +
           "  Classical trig (for comparison)";
         break;

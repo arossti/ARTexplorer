@@ -41,13 +41,8 @@ export { PerformanceClock };
  */
 export const CAMERA_PRESETS = {
   // Prime projection discovery views
-  heptagonProjection: {
-    name: "7-gon Projection",
-    description: "Truncated tetrahedron projection (9-hull at current spreads; 7 TBD)",
-    spreads: [0.11, 0, 0.5], // (s1, s2, s3) via ZYX rotation - produces 9-hull
-    recommendedForm: "quadrayTruncatedTetrahedron",
-    reference: "Prime-Projection-Conjecture.tex §8.4",
-  },
+  // Note: 7-gon from truncated tet alone was REMOVED (produces 9-hull, not 7-hull)
+  // Use heptagonProjectionTet (TruncTet+Tet compound) for true 7-gon projection
   pentagonProjection: {
     name: "5-gon Projection",
     description: "Truncated tetrahedron axis view - verified 5-hull",
@@ -3756,7 +3751,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // Hide prime polygon overlay unless switching to a prime projection view
     const primeProjectionViews = [
       "pentagonProjection",
-      "heptagonProjection",
+      "heptagonProjectionTet", // 7-gon requires TruncTet+Tet compound
       "hendecagonProjection",
       "tridecagonProjection",
     ];
@@ -3856,8 +3851,7 @@ export function initScene(THREE, OrbitControls, RT) {
       // Reference: Geometry documents/Prime-Projection-Conjecture.tex
       // ═══════════════════════════════════════════════════════════════════════
 
-      case "heptagonProjection":
-      case "heptagonProjectionTet":
+      case "heptagonProjectionTet": // 7-gon requires TruncTet+Tet compound
       case "pentagonProjection":
       case "hendecagonProjection":
       case "tridecagonProjection": {
@@ -3882,8 +3876,7 @@ export function initScene(THREE, OrbitControls, RT) {
         // Determine polygon sides from preset name
         const polygonSidesMap = {
           pentagonProjection: 5,
-          heptagonProjection: 7,
-          heptagonProjectionTet: 7,
+          heptagonProjectionTet: 7, // 7-gon only from compound
           hendecagonProjection: 11,
           tridecagonProjection: 13,
         };
