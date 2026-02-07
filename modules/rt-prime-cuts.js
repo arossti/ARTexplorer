@@ -29,12 +29,12 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showQuadrayTruncatedTet",
     compound: "truncatedTetrahedron",
     vertexCount: 12,
-    spreads: [0, 0, 0.5],
+    spreads: [0.01, 0.5, 0],  // Verified by Project-Streamline
     expectedHull: 5,
-    source: "results/prime_projections_20260206_064451.json",
+    source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
     maxInteriorAngle: 170,
-    verified: "2026-02-06",
-    description: "Truncated Tetrahedron → 5-vertex hull",
+    verified: "2026-02-07",
+    description: "Truncated Tetrahedron → 5-vertex hull at s=(0.01, 0.5, 0)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -43,7 +43,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0, 0, 0.5],
+      customSpreads: [0.01, 0.5, 0],
       presetName: "pentagon",
     },
   },
@@ -54,12 +54,12 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showQuadrayCompoundTet",
     compound: "truncTetPlusTet",
     vertexCount: 16,
-    spreads: [0, 0, 0.5],
+    spreads: [0, 0.01, 0.14],  // Verified by Project-Streamline
     expectedHull: 7,
-    source: "results/prime_compound_search_20260206_144743.json",
+    source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
     maxInteriorAngle: 170,
-    verified: "2026-02-06",
-    description: "TruncTet+Tet compound → 7-vertex hull at s=(0, 0, 0.5)",
+    verified: "2026-02-07",
+    description: "TruncTet+Tet compound → 7-vertex hull at s=(0, 0.01, 0.14)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -68,7 +68,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0, 0, 0.5],
+      customSpreads: [0, 0.01, 0.14],
       presetName: "heptagon",
     },
   },
@@ -79,12 +79,12 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showQuadrayCompound",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0, 0.4, 0.2],
+    spreads: [0, 0.01, 0.1],  // Verified by Project-Streamline
     expectedHull: 11,
-    source: "results/prime_breakthrough_*.json (Python search 2026-02)",
+    source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
     maxInteriorAngle: 170,
     verified: "2026-02-07",
-    description: "TruncTet+Icosa compound → 11-vertex hull at s=(0, 0.4, 0.2)",
+    description: "TruncTet+Icosa compound → 11-vertex hull at s=(0, 0.01, 0.1)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -93,7 +93,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0, 0.4, 0.2],
+      customSpreads: [0, 0.01, 0.1],
       presetName: "hendecagon",
     },
   },
@@ -104,12 +104,12 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showQuadrayCompound",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0, 0.6, 0.8],
+    spreads: [0, 0.01, 0.14],  // Verified by Project-Streamline
     expectedHull: 13,
-    source: "results/prime_breakthrough_20260206_145052.json",
+    source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
     maxInteriorAngle: 178,
-    verified: "2026-02-06",
-    description: "TruncTet+Icosa compound → 13-vertex hull",
+    verified: "2026-02-07",
+    description: "TruncTet+Icosa compound → 13-vertex hull at s=(0, 0.01, 0.14)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -118,7 +118,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0, 0.6, 0.8],
+      customSpreads: [0, 0.01, 0.14],
       presetName: "tridecagon",
     },
   },
@@ -1067,5 +1067,137 @@ export const RTPrimeCuts = {
     console.log("═══════════════════════════════════════════════════════════");
 
     return { allPassed, results };
+  },
+
+  /**
+   * Search for spreads that produce a target hull count
+   * Uses SCENE vertices (extracted from visible polyhedron)
+   * Call via console: RTPrimeCuts.searchSpreads(13)
+   *
+   * @param {number} targetHull - Target hull vertex count (e.g., 13)
+   * @param {Object} options - Search options
+   * @returns {Array<Object>} Array of {spreads, hullCount} matches
+   */
+  searchSpreads: function (targetHull, options = {}) {
+    const {
+      step = 0.1,
+      minSpread = 0,
+      maxSpread = 1,
+      polyhedronType = "quadrayCompound"
+    } = options;
+
+    console.log(`🔍 Searching for ${targetHull}-gon spreads...`);
+    console.log(`   Step: ${step}, Range: [${minSpread}, ${maxSpread}]`);
+
+    // Get scene from RTProjections
+    const scene = RTProjections._scene;
+    if (!scene) {
+      console.error(`⚠️ Scene not available - RTProjections not initialized`);
+      return [];
+    }
+
+    // Find polyhedron in scene
+    let targetGroup = null;
+    scene.traverse((obj) => {
+      if (obj.userData?.type === polyhedronType) {
+        targetGroup = obj;
+      }
+    });
+
+    if (!targetGroup) {
+      console.error(`⚠️ Polyhedron ${polyhedronType} not found in scene. Make sure it's visible.`);
+      return [];
+    }
+
+    // Extract vertices from scene
+    const vertices = RTProjections._getWorldVerticesFromGroup(targetGroup);
+    console.log(`   Found ${vertices.length} vertices from scene`);
+
+    // Convert to array format for projection
+    const vertexArray = vertices.map(v => [v.x, v.y, v.z]);
+
+    const matches = [];
+    let tested = 0;
+
+    for (let s1 = minSpread; s1 <= maxSpread; s1 += step) {
+      for (let s2 = minSpread; s2 <= maxSpread; s2 += step) {
+        for (let s3 = minSpread; s3 <= maxSpread; s3 += step) {
+          const spreads = [s1, s2, s3];
+          const result = this._projectAndAnalyze(vertexArray, spreads);
+          tested++;
+
+          if (result.hullCount === targetHull) {
+            matches.push({
+              spreads: spreads.map(s => Math.round(s * 100) / 100),
+              hullCount: result.hullCount,
+              maxAngle: result.maxAngle.toFixed(1)
+            });
+            console.log(`   ✓ Found: s=(${spreads.map(s => s.toFixed(2)).join(", ")}) → ${result.hullCount}-gon, max∠=${result.maxAngle.toFixed(1)}°`);
+          }
+        }
+      }
+    }
+
+    console.log(`   Tested ${tested} combinations, found ${matches.length} matches`);
+    return matches;
+  },
+
+  /**
+   * Analyze what hull counts are achievable with current scene vertices
+   * Call via console: RTPrimeCuts.analyzeHullDistribution()
+   */
+  analyzeHullDistribution: function (options = {}) {
+    const {
+      step = 0.1,
+      polyhedronType = "quadrayCompound"
+    } = options;
+
+    console.log(`📊 Analyzing hull distribution for ${polyhedronType}...`);
+
+    const scene = RTProjections._scene;
+    if (!scene) {
+      console.error(`⚠️ Scene not available`);
+      return;
+    }
+
+    let targetGroup = null;
+    scene.traverse((obj) => {
+      if (obj.userData?.type === polyhedronType) {
+        targetGroup = obj;
+      }
+    });
+
+    if (!targetGroup) {
+      console.error(`⚠️ Polyhedron ${polyhedronType} not found`);
+      return;
+    }
+
+    const vertices = RTProjections._getWorldVerticesFromGroup(targetGroup);
+    const vertexArray = vertices.map(v => [v.x, v.y, v.z]);
+    console.log(`   Vertices: ${vertices.length}`);
+
+    const hullCounts = {};
+    let tested = 0;
+
+    for (let s1 = 0; s1 <= 1; s1 += step) {
+      for (let s2 = 0; s2 <= 1; s2 += step) {
+        for (let s3 = 0; s3 <= 1; s3 += step) {
+          const result = this._projectAndAnalyze(vertexArray, [s1, s2, s3]);
+          const count = result.hullCount;
+          hullCounts[count] = (hullCounts[count] || 0) + 1;
+          tested++;
+        }
+      }
+    }
+
+    console.log(`   Tested ${tested} orientations:`);
+    const sorted = Object.entries(hullCounts).sort((a, b) => Number(a[0]) - Number(b[0]));
+    for (const [hull, count] of sorted) {
+      const pct = (100 * count / tested).toFixed(1);
+      const bar = "█".repeat(Math.ceil(count / 20));
+      console.log(`   ${hull.padStart(2)}-gon: ${count.toString().padStart(4)} (${pct}%) ${bar}`);
+    }
+
+    return hullCounts;
   },
 };
