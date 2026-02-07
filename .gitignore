@@ -36,3 +36,6 @@ eslint.config.js
 # Large binary files (local coding resources, some copyright protected)
 *.pdf
 *.PDF
+
+# Generated results (local only)
+results/
