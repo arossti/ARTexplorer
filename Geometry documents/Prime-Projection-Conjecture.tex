@@ -37,10 +37,10 @@
 \newtheorem{proposition}{Proposition}
 \newtheorem{corollary}{Corollary}
 
-\title{The 4D± Prime Projection Conjecture -- v3.0 (Feb 2026)\\
+\title{The 4D± Prime Projection Conjecture\\
 \large Rational-Spread Projections of Higher-Dimensional Polytopes\\
 as a Source of Non-Constructible Prime n-Gons\\[0.5em]
-\normalsize\textcolor{green!50!black}{★ BREAKTHROUGH: 11-gon and 13-gon Projections Discovered}}
+\normalsize v3.0 -- February 2026}
 
 \author{Andrew Thomson\\
 \small Open Building / ARTexplorer Project\\
@@ -186,6 +186,186 @@ Penrose tilings are not 2D objects that violate the crystallographic restriction
 This suggests a profound possibility: constraints on constructibility in 2D might be circumvented by working in higher dimensions and projecting down.
 
 %==============================================================================
+\section{Foundations: Projection Geometry of Polyhedra}
+%==============================================================================
+
+Before proceeding to our conjecture, we establish the classical mathematical foundations governing how polyhedra project to 2D. These results---analogous to Euler's $V - E + F = 2$ for polyhedral topology---constrain what regular polygons can emerge from orthographic projection.
+
+\subsection{The Shadow Bound: Euler for Projections}
+
+Just as Euler's formula relates the vertices, edges, and faces of any convex polyhedron, we can state bounds on projection hull counts.
+
+\begin{definition}[Projection Hull]
+For a convex polyhedron $P$ with vertex set $V$ and an orthographic projection direction $\vec{d}$, the \textbf{projection hull} $H(P, \vec{d})$ is the convex hull of the projected vertices in 2D. The \textbf{hull count} $h = |H|$ is the number of vertices on the hull boundary.
+\end{definition}
+
+\begin{theorem}[Shadow Bound]
+For a convex polyhedron with $V$ vertices projected orthographically to 2D:
+\begin{equation}
+3 \leq h \leq V
+\end{equation}
+where $h$ is the hull vertex count.
+\end{theorem}
+
+\begin{proof}
+The lower bound ($h \geq 3$) follows from the convex hull of any finite point set in 2D having at least 3 vertices (a triangle). The upper bound ($h \leq V$) is achieved when all vertices project to the hull boundary---e.g., viewing a prism along its axis.
+\end{proof}
+
+\subsection{The Ring Projection Principle}
+
+When projecting along a rotational symmetry axis, vertices organize into ``rings'' that determine the achievable regular polygons.
+
+\begin{definition}[Vertex Ring]
+For a polyhedron with $k$-fold rotational symmetry about axis $\vec{a}$, a \textbf{vertex ring} is a set of $k$ vertices related by $360°/k$ rotations about $\vec{a}$, all at equal distance from the axis and equal height along it.
+\end{definition}
+
+\begin{theorem}[Ring Stacking Theorem]
+When projecting a polyhedron along a $k$-fold symmetry axis, the maximum regular $n$-gon achievable from the projection satisfies:
+\begin{equation}
+n = k \times m
+\end{equation}
+where $m$ is the number of complete vertex rings whose angular positions combine to form a regular $(km)$-gon---i.e., rings offset by exactly $360°/(km)$ from each other.
+\end{theorem}
+
+\begin{observation}[Ring Alignment]
+Two rings of $k$ vertices each, offset by $360°/(2k) = 180°/k$, project to a regular $2k$-gon. Three rings offset by $120°/k$ project to a regular $3k$-gon. The key constraint: rings must be angularly aligned at precise multiples of $360°/(km)$.
+\end{observation}
+
+\subsection{Maximum Regular Projections: Platonic Solids}
+
+Applying the Ring Stacking Theorem to the five Platonic solids:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccccl}
+\toprule
+\textbf{Solid} & $V$ & \textbf{Best Axis} & \textbf{On Axis} & \textbf{Off Axis} & \textbf{Rings} & \textbf{Max Regular $n$} \\
+\midrule
+Tetrahedron & 4 & 3-fold (vertex) & 1 & 3 & $1 \times 3$ & \textbf{3} (triangle) \\
+Cube & 8 & 3-fold (diagonal) & 2 & 6 & $2 \times 3$ @ 60° & \textbf{6} (hexagon) \\
+Octahedron & 6 & 3-fold (face) & 0 & 6 & $2 \times 3$ @ 60° & \textbf{6} (hexagon) \\
+Dodecahedron & 20 & 5-fold (face) & 0 & 20$\to$10 hull & $2 \times 5$ @ 36° & \textbf{10} (decagon) \\
+Icosahedron & 12 & 5-fold (vertex) & 2 & 10 & $2 \times 5$ @ 36° & \textbf{10} (decagon) \\
+\bottomrule
+\end{tabular}
+\caption{Maximum regular polygon projections for Platonic solids. Dual pairs (cube/octahedron, dodecahedron/icosahedron) share the same maximum due to identical symmetry groups.}
+\label{tab:platonic-projections}
+\end{table}
+
+\begin{observation}[The Cube's Hexagonal Shadow]
+The cube (8 vertices) achieves its maximum regular projection---a \textbf{hexagon}---when viewed along the body diagonal $[1,1,1]$:
+\begin{itemize}
+    \item 2 vertices lie on the viewing axis (opposite corners at origin and $(1,1,1)$)
+    \item 6 vertices form two staggered triangles at heights $1/3$ and $2/3$ along the diagonal
+    \item These triangles are offset by 60°, combining to project as a regular hexagon
+\end{itemize}
+No viewing angle produces a regular polygon with more than 6 vertices from the cube.
+\end{observation}
+
+\subsection{Maximum Regular Projections: Archimedean Solids}
+
+The 13 Archimedean solids inherit rotational symmetry from their parent Platonic solids but have more vertices, enabling larger regular projections.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccccl}
+\toprule
+\textbf{Solid} & $V$ & \textbf{Symmetry} & \textbf{Best Axis} & \textbf{Max Regular $n$} & \textbf{Notes} \\
+\midrule
+Truncated Tetrahedron & 12 & $T_d$ & 3-fold & \textbf{6} & $2 \times 3$ rings \\
+Cuboctahedron & 12 & $O_h$ & 4-fold & \textbf{8} & $2 \times 4$ @ 45° \\
+Truncated Cube & 24 & $O_h$ & 3-fold & \textbf{12} & $4 \times 3$ @ 30° \\
+Truncated Octahedron & 24 & $O_h$ & 3-fold & \textbf{12} & $4 \times 3$ @ 30° \\
+Rhombicuboctahedron & 24 & $O_h$ & 4-fold & \textbf{8} & $2 \times 4$ primary \\
+Snub Cube & 24 & $O$ (chiral) & 4-fold & \textbf{8} & No central symmetry! \\
+Icosidodecahedron & 30 & $I_h$ & 5-fold & \textbf{10} & $2 \times 5$ primary \\
+Truncated Dodecahedron & 60 & $I_h$ & 5-fold & \textbf{20} & $4 \times 5$ @ 18° \\
+Truncated Icosahedron & 60 & $I_h$ & 5-fold & \textbf{20} & $4 \times 5$ @ 18° \\
+Rhombicosidodecahedron & 60 & $I_h$ & 5-fold & \textbf{10} & $2 \times 5$ primary \\
+Great Rhombicosidodecahedron & 120 & $I_h$ & 5-fold & \textbf{20} & $4 \times 5$ @ 18° \\
+Snub Dodecahedron & 60 & $I$ (chiral) & 5-fold & \textbf{10} & No central symmetry! \\
+\bottomrule
+\end{tabular}
+\caption{Maximum regular polygon projections for Archimedean solids. Chiral solids (snub cube, snub dodecahedron) lack central symmetry---critical for prime projections.}
+\label{tab:archimedean-projections}
+\end{table}
+
+\subsection{The Symmetry Bound on Maximum Regular $n$}
+
+\begin{theorem}[Symmetry Ceiling]
+For a polyhedron with rotational symmetry group $G$, let $k_{\max}$ be the maximum order of any rotational symmetry axis. Then the maximum regular $n$-gon achievable by projection satisfies:
+\begin{equation}
+n \leq k_{\max} \times \left\lfloor \frac{V - v_{\text{axis}}}{k_{\max}} \right\rfloor
+\end{equation}
+where $v_{\text{axis}}$ is the number of vertices lying on the $k_{\max}$-fold axis.
+\end{theorem}
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Symmetry Group} & \textbf{Polyhedra} & $k_{\max}$ & \textbf{Theoretical Max} & \textbf{Achieved} \\
+\midrule
+Tetrahedral $T_d$ & Tetrahedron, Trunc.\ Tet. & 3 & 6 & 6 \\
+Octahedral $O_h$ & Cube, Octahedron, Trunc.\ Cube & 4 & 12 & 12 \\
+Icosahedral $I_h$ & Dodeca., Icosa., Trunc.\ Icosa. & 5 & 20 & 20 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{The Regularity vs.\ Hull Count Distinction}
+
+\begin{tcolorbox}[colback=yellow!5, colframe=yellow!50!black, title=\textbf{Critical Distinction}]
+The theorems above concern \textbf{regular} $n$-gon projections---where all projected vertices lie on a circle at equal angular spacing.
+
+The \textbf{hull count} (number of vertices on the convex hull boundary) is a weaker property. A projection can have $n$ hull vertices without forming a regular $n$-gon:
+\begin{itemize}
+    \item \textbf{Regular $n$-gon}: All interior angles equal $(180° - 360°/n)$, all edges equal length
+    \item \textbf{$n$-hull}: Convex hull has $n$ vertices---possibly irregular (unequal angles/edges)
+\end{itemize}
+
+Our prime projection search targets \textbf{hull counts}, not regular polygons. The 7-hull from truncated tetrahedron has interior angles ranging from 70.5° to 180°---far from the regular heptagon's uniform 128.57° angles.
+\end{tcolorbox}
+
+\subsection{The Central Symmetry Barrier (Revisited)}
+
+These foundational results inform the Symmetry Barrier theorem stated later:
+
+\begin{theorem}[Central Symmetry $\Rightarrow$ Even Hull]
+\label{thm:central-symmetry}
+If a polyhedron has central (inversion) symmetry, then \textbf{all} hull counts from orthographic projection are even.
+\end{theorem}
+
+\begin{proof}
+For every vertex $v$ on the hull, its antipodal partner $-v$ either:
+\begin{enumerate}
+    \item Also lies on the hull (adding an even contribution), or
+    \item Projects to a point collinear with $v$ and the center (symmetric exclusion/inclusion)
+\end{enumerate}
+In either case, hull vertices come in pairs, giving even count.
+\end{proof}
+
+\begin{corollary}[Central Symmetry Blocks Primes]
+Polyhedra with central symmetry (all Platonic solids except tetrahedron, most Archimedean solids) cannot produce prime hull counts greater than 2 from any viewing angle.
+\end{corollary}
+
+This is why the \textbf{truncated tetrahedron} (no central symmetry) and \textbf{chiral solids} (snub cube, snub dodecahedron) are the key candidates for prime projection search.
+
+\subsection{Summary: Foundational Bounds}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!40!black, title=\textbf{Projection Geometry Foundations}]
+\textbf{Established facts constraining our search:}
+\begin{enumerate}
+    \item \textbf{Shadow Bound}: $3 \leq h \leq V$ for any projection hull
+    \item \textbf{Ring Stacking}: Max regular $n$-gon $= k \times m$ (axis order $\times$ aligned rings)
+    \item \textbf{Symmetry Ceiling}: Max $n$ bounded by rotation group order
+    \item \textbf{Central Symmetry Barrier}: Inversion symmetry $\Rightarrow$ even hull counts only
+    \item \textbf{Hull $\neq$ Regular}: Prime hulls exist but are irregular projections
+\end{enumerate}
+
+These principles are as fundamental to projection geometry as Euler's $V - E + F = 2$ is to polyhedral topology.
+\end{tcolorbox}
+
+%==============================================================================
 \section{The 4D± Prime Projection Conjecture}
 %==============================================================================
 
@@ -233,14 +413,76 @@ Both values are \textbf{exact rationals}---the tetrahedral geometry is inherentl
 
 If we construct polyhedra rationally in 4D and project to 2D at carefully chosen \textbf{rational spread rotations}, the visible vertex silhouette might form a prime $n$-gon---even though that $n$-gon is ``non-constructible'' in purely 2D terms.
 
-The search involves:
+\subsubsection{Candidate Pre-filtering}
+
+Before searching, we eliminate polyhedra that \textbf{cannot} produce prime hulls. By the Central Symmetry Barrier (Theorem~\ref{thm:central-symmetry}), any polyhedron with inversion symmetry (centrosymmetric) projects only even-sided hulls. This eliminates:
+\begin{itemize}
+    \item All Platonic solids except tetrahedron (4 vertices---insufficient)
+    \item Most Archimedean solids (those with central symmetry)
+    \item All prisms and antiprisms with even symmetry
+\end{itemize}
+
+Remaining candidates include asymmetric and chiral polyhedra:
+\begin{itemize}
+    \item \textbf{Truncated tetrahedron} (12 vertices, no inversion symmetry)
+    \item \textbf{Snub cube} (24 vertices, chiral)
+    \item \textbf{Snub dodecahedron} (60 vertices, chiral)
+    \item \textbf{Compound polyhedra} formed from asymmetric combinations
+\end{itemize}
+
+\subsubsection{Three-Phase Search Protocol}
+
+\textbf{Phase 1: On-Axis Views} (Exhaustive coverage of special directions)
+
+\begin{table}[h]
+\centering
+\begin{tabular}{clcl}
+\toprule
+\textbf{Priority} & \textbf{Axis Type} & \textbf{Views} & \textbf{Rationale} \\
+\midrule
+1 & Cartesian XYZ & $\pm X, \pm Y, \pm Z$ (6 views) & Standard orthographic \\
+2 & Quadray WXYZ & QW, QX, QY, QZ (4 views) & Tetrahedral-aligned \\
+\bottomrule
+\end{tabular}
+\caption{On-axis viewing directions (Phase 1)}
+\end{table}
+
+The Quadray axes offer non-obvious viewing angles that Cartesian projections miss. The truncated tetrahedron, for instance, has purely rational Quadray coordinates (permutations of $\{2,1,0,0\}$), making Quadray viewing angles particularly natural for this form.
+
+\textbf{Phase 2: Rational Spread Grid Search}
+
+For candidates showing promising on-axis results (hull count near target prime):
+\begin{lstlisting}[language=Python, caption=Phase 2 grid search]
+for s1 in [0.0001, 0.0002, ..., 1.0000]:   # 4 decimal places
+    for s2 in [0.0001, 0.0002, ..., 1.0000]:
+        for s3 in [0.0001, 0.0002, ..., 1.0000]:
+            R = rotation_from_spreads(s1, s2, s3)
+            hull_count = project_and_count(vertices, R)
+            if is_prime(hull_count): record(s1, s2, s3, hull_count)
+\end{lstlisting}
+
+With 4 decimal places, we search $10000^3 \approx 10^{12}$ configurations per polyhedron. In practice, we use adaptive sampling: coarse grid first (2dp), then refine promising regions.
+
+\textbf{Phase 3: Fine Refinement} (Local optimization)
+
+For each spread tuple $(s_1, s_2, s_3)$ that produces target prime hull:
+\begin{itemize}
+    \item Search $\pm 0.001$ neighborhood at precision $10^{-4}$
+    \item Optimize for \textbf{regularity score}: minimize edge and angle variance
+    \item Record ``most regular'' prime hull projection
+\end{itemize}
+
+\subsubsection{Pipeline Summary}
+
 \begin{enumerate}
     \item Generating 3D/4D polyhedra with rational vertex coordinates
-    \item Rotating by rational spread values $s \in [0, 1]$
+    \item \textbf{Pre-filtering}: Eliminate centrosymmetric candidates (Central Symmetry Barrier)
+    \item \textbf{Phase 1}: Search all 10 on-axis views (6 Cartesian + 4 Quadray)
+    \item \textbf{Phase 2}: Grid search rational spreads at increasing precision
     \item Projecting to 2D (orthographic)
     \item Computing the convex hull boundary
-    \item Counting hull vertices
-    \item Checking for prime counts
+    \item Counting hull vertices and checking for prime counts
+    \item \textbf{Phase 3}: Refine to maximize regularity score
 \end{enumerate}
 
 %==============================================================================

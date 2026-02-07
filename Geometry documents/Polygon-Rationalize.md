@@ -1501,23 +1501,134 @@ The Quadray formulation maintains rationality longer than Cartesian, deferring r
 
 ---
 
+## Foundations: Projection Geometry of Polyhedra
+
+> These results—analogous to Euler's V - E + F = 2 for polyhedral topology—constrain what regular polygons can emerge from orthographic projection. They are **established mathematical facts** that ground our prime projection search.
+
+### The Shadow Bound (Euler for Projections)
+
+**Definition (Projection Hull)**: For a convex polyhedron P with vertex set V and projection direction d̂, the projection hull H(P, d̂) is the convex hull of the projected vertices in 2D. The hull count h = |H| is the number of vertices on the hull boundary.
+
+**Theorem (Shadow Bound)**: For a convex polyhedron with V vertices projected orthographically to 2D:
+
+```
+3 ≤ h ≤ V
+```
+
+- Lower bound (h ≥ 3): Any 2D convex hull has at least 3 vertices (triangle)
+- Upper bound (h ≤ V): Achieved when all vertices project to the hull boundary (e.g., prism along axis)
+
+### The Ring Stacking Theorem
+
+When projecting along a rotational symmetry axis, vertices organize into "rings" that determine achievable regular polygons.
+
+**Definition (Vertex Ring)**: For a polyhedron with k-fold rotational symmetry about axis â, a vertex ring is a set of k vertices related by 360°/k rotations about â, all at equal distance from the axis and equal height along it.
+
+**Theorem (Ring Stacking)**: When projecting a polyhedron along a k-fold symmetry axis, the maximum regular n-gon achievable satisfies:
+
+```
+n = k × m
+```
+
+where m is the number of complete vertex rings offset by exactly 360°/(km) from each other.
+
+**Key Insight**: Two rings of k vertices, offset by 180°/k, project to a regular 2k-gon. Three rings offset by 120°/k project to a regular 3k-gon.
+
+### Maximum Regular Projections: Platonic Solids
+
+| Solid | V | Best Axis | On Axis | Off Axis | Rings | Max Regular n |
+|-------|---|-----------|---------|----------|-------|---------------|
+| Tetrahedron | 4 | 3-fold (vertex) | 1 | 3 | 1×3 | **3** (triangle) |
+| Cube | 8 | 3-fold (diagonal) | 2 | 6 | 2×3 @ 60° | **6** (hexagon) |
+| Octahedron | 6 | 3-fold (face) | 0 | 6 | 2×3 @ 60° | **6** (hexagon) |
+| Dodecahedron | 20 | 5-fold (face) | 0 | 20→10 hull | 2×5 @ 36° | **10** (decagon) |
+| Icosahedron | 12 | 5-fold (vertex) | 2 | 10 | 2×5 @ 36° | **10** (decagon) |
+
+**Note**: Dual pairs (cube↔octahedron, dodecahedron↔icosahedron) share max projection due to identical symmetry groups.
+
+**Example: The Cube's Hexagonal Shadow**
+- Cube (8 vertices) viewed along body diagonal [1,1,1]:
+- 2 vertices on axis (opposite corners)
+- 6 vertices form two staggered triangles at heights 1/3 and 2/3
+- Triangles offset by 60° → project as regular hexagon
+- **No viewing angle produces a regular polygon > 6 from the cube**
+
+### Maximum Regular Projections: Archimedean Solids
+
+| Solid | V | Symmetry | Best Axis | Max Regular n | Notes |
+|-------|---|----------|-----------|---------------|-------|
+| Truncated Tetrahedron | 12 | T_d | 3-fold | **6** | 2×3 rings, **NO central symmetry!** |
+| Cuboctahedron | 12 | O_h | 4-fold | **8** | 2×4 @ 45° |
+| Truncated Cube | 24 | O_h | 3-fold | **12** | 4×3 @ 30° |
+| Truncated Octahedron | 24 | O_h | 3-fold | **12** | 4×3 @ 30° |
+| Rhombicuboctahedron | 24 | O_h | 4-fold | **8** | 2×4 primary |
+| Snub Cube | 24 | O (chiral) | 4-fold | **8** | **NO central symmetry!** |
+| Icosidodecahedron | 30 | I_h | 5-fold | **10** | 2×5 primary |
+| Truncated Dodecahedron | 60 | I_h | 5-fold | **20** | 4×5 @ 18° |
+| Truncated Icosahedron | 60 | I_h | 5-fold | **20** | 4×5 @ 18° |
+| Rhombicosidodecahedron | 60 | I_h | 5-fold | **10** | 2×5 primary |
+| Great Rhombicosidodecahedron | 120 | I_h | 5-fold | **20** | 4×5 @ 18° |
+| Snub Dodecahedron | 60 | I (chiral) | 5-fold | **10** | **NO central symmetry!** |
+
+### Symmetry Ceiling Theorem
+
+**Theorem**: For a polyhedron with rotational symmetry group G, let k_max be the maximum rotation order. Then the maximum regular n-gon achievable satisfies:
+
+```
+n ≤ k_max × ⌊(V - v_axis) / k_max⌋
+```
+
+where v_axis is the number of vertices on the k_max-fold axis.
+
+| Symmetry Group | Polyhedra | k_max | Theoretical Max | Achieved |
+|----------------|-----------|-------|-----------------|----------|
+| Tetrahedral T_d | Tetrahedron, Trunc. Tet. | 3 | 6 | 6 |
+| Octahedral O_h | Cube, Octahedron, Trunc. Cube | 4 | 12 | 12 |
+| Icosahedral I_h | Dodeca., Icosa., Trunc. Icosa. | 5 | 20 | 20 |
+
+### Critical Distinction: Regular n-gon vs n-Hull
+
+> ⚠️ **The theorems above concern REGULAR n-gon projections** (equal angles, equal edges on a circle).
+>
+> **Hull count** is weaker—a projection can have n hull vertices without being regular:
+> - **Regular n-gon**: All interior angles = (180° - 360°/n), all edges equal
+> - **n-hull**: Convex hull has n vertices—possibly irregular
+>
+> Our prime projection search targets **hull counts**, not regular polygons. The 7-hull from truncated tetrahedron has angles from 70.5° to 180°—far from the regular heptagon's 128.57°.
+
+### Central Symmetry Barrier (Formal Statement)
+
+**Theorem**: If a polyhedron has central (inversion) symmetry, then **all** hull counts from orthographic projection are even.
+
+**Proof**: For every hull vertex v, its antipode -v either:
+1. Also lies on the hull (paired contribution), or
+2. Projects collinear with v and center (symmetric exclusion)
+
+In either case, hull vertices come in pairs → even count.
+
+**Corollary**: Polyhedra with central symmetry cannot produce prime hull counts > 2.
+
+This is why **truncated tetrahedron** (no central symmetry) and **chiral solids** (snub cube, snub dodecahedron) are key candidates for prime projection search.
+
+### Summary: Foundational Bounds
+
+> **Established facts constraining our search:**
+>
+> 1. **Shadow Bound**: 3 ≤ h ≤ V for any projection hull
+> 2. **Ring Stacking**: Max regular n-gon = k × m (axis order × aligned rings)
+> 3. **Symmetry Ceiling**: Max n bounded by rotation group order
+> 4. **Central Symmetry Barrier**: Inversion symmetry ⇒ even hull counts only
+> 5. **Hull ≠ Regular**: Prime hulls exist but are irregular projections
+>
+> These principles are as fundamental to projection geometry as Euler's V - E + F = 2 is to polyhedral topology.
+
+---
+
 ## The Shadow Bound Theorem: Search Candidate Selection
 
 ### Motivation
 
 When projecting a convex polyhedron to 2D, the convex hull of the projected vertices forms the "shadow boundary." Understanding the bounds on this hull count guides our search for prime n-gon projections.
-
-### The Shadow Bound
-
-**Observation**: For a convex polyhedron with V vertices projected orthographically to 2D, the hull vertex count H satisfies:
-
-```
-3 ≤ H ≤ V
-```
-
-The lower bound (H ≥ 3) is trivial—any 2D projection of a 3D convex body has at least triangular extent.
-
-The upper bound (H ≤ V) is achieved when the viewing direction places all vertices on the silhouette boundary (e.g., viewing a prism along its axis).
 
 ### Empirical Hull Ranges
 
