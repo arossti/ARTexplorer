@@ -546,18 +546,13 @@ export const RTProjections = {
       [-bScaled, 0, aScaled], [-bScaled, 0, -aScaled],
     ];
 
-    // Normalize helper (for truncTet and tet which aren't pre-scaled)
-    const normalize = (v) => {
-      const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-      return new THREE.Vector3(v[0] / len, v[1] / len, v[2] / len);
-    };
+    // Convert to Vector3 WITHOUT normalizing - preserve relative scaling
+    // CRITICAL: Python uses these exact ratios. Normalizing breaks the projections.
+    const toVector3 = (v) => new THREE.Vector3(v[0], v[1], v[2]);
 
-    // Convert icosa to Vector3 (already properly scaled, just convert)
-    const icosaToVector = (v) => new THREE.Vector3(v[0], v[1], v[2]).normalize();
-
-    const truncTetVertices = truncTetRaw.map(normalize);
-    const tetVertices = tetRaw.map(normalize);
-    const icosaVertices = icosaRaw.map(icosaToVector);
+    const truncTetVertices = truncTetRaw.map(toVector3);
+    const tetVertices = tetRaw.map(toVector3);
+    const icosaVertices = icosaRaw.map(toVector3);
 
     switch (compoundType) {
       case "truncatedTetrahedron":
