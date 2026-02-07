@@ -697,8 +697,16 @@ export const RTProjections = {
   _updateProjectionInfo: function (hullCount, totalVertices) {
     const infoEl = document.getElementById("projectionInfo");
     if (infoEl) {
-      const { basis, axis } = RTProjections.state;
-      const axisLabel = basis === "cartesian" ? axis.toUpperCase() : axis.toUpperCase();
+      const { axis, presetName } = RTProjections.state;
+      // Handle custom spreads (presets) where axis is null
+      let axisLabel;
+      if (axis === null && presetName) {
+        axisLabel = `Custom (${presetName})`;
+      } else if (axis) {
+        axisLabel = axis.toUpperCase();
+      } else {
+        axisLabel = "Custom";
+      }
       infoEl.textContent = `Axis: ${axisLabel} | Hull: ${hullCount} vertices (${totalVertices} source)`;
     }
   },

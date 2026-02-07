@@ -100,8 +100,8 @@ const PROJECTION_PRESETS = {
   tridecagon: {
     name: "Tridecagon (13-gon)",
     n: 13,
-    polyhedronType: "quadrayCompoundIcosa",
-    polyhedronCheckbox: "showQuadrayCompoundIcosa",
+    polyhedronType: "quadrayCompound",
+    polyhedronCheckbox: "showQuadrayCompound",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
     spreads: [0, 0.6, 0.8],
@@ -213,345 +213,56 @@ export const RTPrimeCuts = {
   /**
    * Show or hide the prime projection visualization
    *
-   * VISUALIZATION COMPONENTS:
-   * 1. Finds the actual Quadray Truncated Tetrahedron in the scene
-   * 2. Draws projection RAYS from each vertex toward the projection plane
-   * 3. Shows projection plane at a distance with YELLOW (actual) and CYAN (ideal) polygons
-   * 4. NO cutplane activation (projection ≠ section cut)
+   * SIMPLIFIED: Now delegates to RTProjections.applyPreset() for all visualization.
+   * Maintains backwards compatibility with existing n-based API.
    *
-   * @param {number|null} n - Number of sides (7, 5, etc.) or null to hide
+   * @param {number|null} n - Number of sides (5, 7, 11, 13) or null to hide
    * @param {THREE.Scene} scene - Scene to add/remove visualization from
-   * @param {THREE.Camera} camera - Camera reference
-   * @param {number} planeDistance - Distance from polyhedron center to projection plane (default: 5)
+   * @param {THREE.Camera} camera - Camera reference (kept for API compatibility)
+   * @param {number} planeDistance - Distance from polyhedron center (default: 5)
    */
   showPrimePolygon: async function (n, scene, camera, planeDistance = 5) {
-    console.log("🔍 showPrimePolygon called with:", { n, scene: !!scene, camera: !!camera, planeDistance });
+    console.log("🔍 showPrimePolygon called with:", { n, planeDistance });
 
-    // Validate inputs
+    // Validate scene
     if (!scene) {
       console.error("❌ showPrimePolygon: scene is undefined!");
       return;
     }
-    if (!camera) {
-      console.error("❌ showPrimePolygon: camera is undefined!");
-      return;
-    }
 
-    // Remove existing visualization if any
-    if (RTPrimeCuts._primePolygonGroup) {
-      console.log("🧹 Removing existing projection visualization");
-      scene.remove(RTPrimeCuts._primePolygonGroup);
-      RTPrimeCuts._primePolygonGroup.traverse(child => {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) child.material.dispose();
-      });
-      RTPrimeCuts._primePolygonGroup = null;
-    }
-
-    // If n is null, just hide (already removed above)
+    // If n is null, hide the projection
     if (!n) {
+      RTProjections.hideProjection();
       RTPrimeCuts._primePolygonVisible = false;
       RTPrimeCuts._hideProjectionInfo();
       console.log("📐 Prime projection visualization hidden");
       return;
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // GET VERTICES FOR PROJECTION
-    // For 5-gon: Use truncated tetrahedron from scene (12 vertices)
-    // For 7-gon, 11-gon: Use TruncTet+Tet compound (16 vertices)
-    // For 13-gon: Use TruncTet+Icosa compound (24 vertices)
-    // ═══════════════════════════════════════════════════════════════════════
-    let worldVertices = [];
-    // Check for TruncTet+Icosa compound (13-gon ONLY - 11-gon uses TruncTet+Tet!)
-    const isCompoundIcosaProjection = (n === 13);
+    // Look up preset by n
+    const preset = VERIFIED_PROJECTIONS[n];
+    if (!preset) {
+      console.warn(`⚠️ No preset found for ${n}-gon projection`);
+      RTPrimeCuts._hideProjectionInfo();
+      return;
+    }
 
-    // Check for TruncTet+Tet compound (7-gon AND 11-gon)
-    let compoundTetGroup = null;
-    scene.traverse(obj => {
-      if (obj.userData?.type === "quadrayCompoundTet") {
-        compoundTetGroup = obj;
-      }
-    });
-    const isCompoundTetProjection = ((n === 7 || n === 11) && compoundTetGroup && compoundTetGroup.visible);
+    // Update distance in preset state if provided
+    if (planeDistance !== 5) {
+      preset.projectionState.distance = planeDistance;
+    }
 
-    if (isCompoundIcosaProjection) {
-      // Find the actual compound polyhedron in the scene (same as 5/7-gon approach)
-      let compoundGroup = null;
-      scene.traverse(obj => {
-        if (obj.userData?.type === "quadrayCompound") {
-          compoundGroup = obj;
-        }
-      });
+    // Delegate to RTProjections.applyPreset()
+    const success = RTProjections.applyPreset(preset, scene);
 
-      if (!compoundGroup || !compoundGroup.visible) {
-        console.warn("⚠️ Quadray Compound not found or not visible in scene");
-        console.log("   Please enable 'Quadray Compound (TruncTet + Icosa)' checkbox first");
-        RTPrimeCuts._hideProjectionInfo();
-        return;
-      }
-
-      worldVertices = RTPrimeCuts._getWorldVerticesFromGroup(compoundGroup);
-      if (worldVertices.length === 0) {
-        // Fallback to generating vertices if extraction fails
-        console.warn("⚠️ Could not extract vertices from compound, generating programmatically");
-        worldVertices = await RTPrimeCuts._generateCompoundVertices();
-      }
-      console.log("   Found", worldVertices.length, "vertices from compound (trunc tet + icosa)");
-    } else if (isCompoundTetProjection) {
-      // Use TruncTet+Tet compound for 7-gon projection
-      worldVertices = RTPrimeCuts._getWorldVerticesFromGroup(compoundTetGroup);
-      if (worldVertices.length === 0) {
-        console.error("❌ Could not extract vertices from TruncTet+Tet compound");
-        RTPrimeCuts._hideProjectionInfo();
-        return;
-      }
-      console.log("   Found", worldVertices.length, "vertices from compound (trunc tet + tet)");
+    if (success) {
+      RTPrimeCuts._primePolygonVisible = true;
+      RTPrimeCuts._updateProjectionInfo(n);
+      console.log(`📐 ${preset.name} projection applied via RTProjections`);
     } else {
-      // Find the actual truncated tetrahedron in the scene (using userData.type)
-      let truncTetGroup = null;
-      scene.traverse(obj => {
-        if (obj.userData?.type === "quadrayTruncatedTet") {
-          truncTetGroup = obj;
-        }
-      });
-
-      if (!truncTetGroup || !truncTetGroup.visible) {
-        console.warn("⚠️ Quadray Truncated Tetrahedron not found or not visible in scene");
-        console.log("   Please enable 'Quadray Truncated Tetrahedron' checkbox first");
-        RTPrimeCuts._hideProjectionInfo();
-        return;
-      }
-
-      worldVertices = RTPrimeCuts._getWorldVerticesFromGroup(truncTetGroup);
-      if (worldVertices.length === 0) {
-        console.error("❌ Could not extract vertices from truncated tetrahedron");
-        return;
-      }
-      console.log("   Found", worldVertices.length, "vertices from scene mesh");
+      RTPrimeCuts._primePolygonVisible = false;
+      RTPrimeCuts._hideProjectionInfo();
     }
-
-    console.log("🔨 Creating projection visualization for", n, "-hull");
-    const group = new THREE.Group();
-    group.name = `primeProjection-${n}`;
-
-    // Get center of the polyhedron
-    const center = new THREE.Vector3();
-    worldVertices.forEach(v => center.add(v));
-    center.divideScalar(worldVertices.length);
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // COMPUTE PROJECTION PLANE BASIS from viewing spreads
-    // ═══════════════════════════════════════════════════════════════════════
-    const { planeRight, planeUp, planeNormal } = RTPrimeCuts._getProjectionPlaneBasis(n);
-    console.log("   Projection direction:", planeNormal.x.toFixed(3), planeNormal.y.toFixed(3), planeNormal.z.toFixed(3));
-
-    // Projection plane is at distance along the normal from center
-    const planeCenter = center.clone().addScaledVector(planeNormal, planeDistance);
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // PROJECT VERTICES TO THE PLANE
-    // Track component membership: first 12 = truncated tet, next 12 = icosahedron
-    // ═══════════════════════════════════════════════════════════════════════
-    const projectedPoints = []; // 2D coordinates in plane space
-    const projected3D = []; // 3D world positions on plane
-
-    worldVertices.forEach((vertex, i) => {
-      // Project vertex onto plane along planeNormal direction
-      const toVertex = vertex.clone().sub(planeCenter);
-      const distAlongNormal = toVertex.dot(planeNormal);
-      const projectedPoint = vertex.clone().addScaledVector(planeNormal, -distAlongNormal);
-
-      // Convert to 2D plane coordinates
-      const localPoint = projectedPoint.clone().sub(planeCenter);
-      const x = localPoint.dot(planeRight);
-      const y = localPoint.dot(planeUp);
-
-      // Track component: first 12 = truncated tet (yellow-green), rest = secondary (cyan)
-      // Secondary component: icosahedron for TruncTet+Icosa, tetrahedron for TruncTet+Tet
-      const isAnyCompound = isCompoundIcosaProjection || isCompoundTetProjection;
-      const secondaryComponent = isCompoundTetProjection ? "tetrahedron" : "icosahedron";
-      const component = (isAnyCompound && i >= 12) ? secondaryComponent : "truncatedTet";
-      projectedPoints.push({ x, y, vertex3D: vertex, projected3D: projectedPoint, component, index: i });
-      projected3D.push(projectedPoint);
-    });
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 1. PROJECTION RAYS - Color-coded by component
-    //    Yellow-green for truncated tetrahedron, Cyan for icosahedron
-    // ═══════════════════════════════════════════════════════════════════════
-    const truncTetRayMaterial = new THREE.LineBasicMaterial({
-      color: 0xaaff00, // Yellow-green (matches trunc tet mesh color)
-      transparent: true,
-      opacity: 0.5,
-      depthTest: true,
-    });
-    const icosaRayMaterial = new THREE.LineBasicMaterial({
-      color: 0x00ffff, // Cyan (matches icosahedron mesh color)
-      transparent: true,
-      opacity: 0.5,
-      depthTest: true,
-    });
-
-    let truncTetCount = 0, icosaCount = 0;
-    projectedPoints.forEach((p, i) => {
-      const rayMaterial = p.component === "icosahedron" ? icosaRayMaterial : truncTetRayMaterial;
-      const rayGeometry = new THREE.BufferGeometry().setFromPoints([p.vertex3D, p.projected3D]);
-      const ray = new THREE.Line(rayGeometry, rayMaterial);
-      ray.name = `projectionRay-${p.component}-${i}`;
-      group.add(ray);
-      if (p.component === "icosahedron") icosaCount++; else truncTetCount++;
-    });
-    console.log(`   ✓ Added ${projectedPoints.length} projection rays (${truncTetCount} trunc tet, ${icosaCount} icosa)`);
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 2. COMPUTE CONVEX HULL of projected points
-    // ═══════════════════════════════════════════════════════════════════════
-    const hull2D = RTPrimeCuts._computeConvexHull2D(projectedPoints.map(p => ({ x: p.x, y: p.y })));
-    console.log("   ✓ Hull has", hull2D.length, "vertices (expected:", n, ")");
-
-    // Convert hull back to 3D
-    const hullVertices3D = hull2D.map(p => {
-      return planeCenter.clone()
-        .addScaledVector(planeRight, p.x)
-        .addScaledVector(planeUp, p.y);
-    });
-    hullVertices3D.push(hullVertices3D[0].clone()); // Close the loop
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 3. ACTUAL HULL (YELLOW polygon) - Simple hairline
-    // ═══════════════════════════════════════════════════════════════════════
-    const actualGeometry = new THREE.BufferGeometry().setFromPoints(hullVertices3D);
-    const actualMaterial = new THREE.LineBasicMaterial({
-      color: 0xffff00,
-      transparent: true,
-      opacity: 0.95,
-      depthTest: true,
-    });
-    const actualLine = new THREE.Line(actualGeometry, actualMaterial);
-    actualLine.renderOrder = 1000;
-    actualLine.name = "actualHull";
-    group.add(actualLine);
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 4. IDEAL REGULAR POLYGON (CYAN) for comparison - Simple hairline
-    // ═══════════════════════════════════════════════════════════════════════
-    // Calculate radius from hull for matching scale
-    let maxRadius = 0;
-    hull2D.forEach(p => {
-      const r = Math.sqrt(p.x * p.x + p.y * p.y);
-      if (r > maxRadius) maxRadius = r;
-    });
-
-    const idealVertices = [];
-    for (let i = 0; i <= n; i++) {
-      const angle = (2 * Math.PI * i) / n;
-      const x = maxRadius * Math.cos(angle);
-      const y = maxRadius * Math.sin(angle);
-      idealVertices.push(
-        planeCenter.clone()
-          .addScaledVector(planeRight, x)
-          .addScaledVector(planeUp, y)
-      );
-    }
-
-    const idealGeometry = new THREE.BufferGeometry().setFromPoints(idealVertices);
-    const idealMaterial = new THREE.LineBasicMaterial({
-      color: 0x00ffff,
-      transparent: true,
-      opacity: 0.6,
-      depthTest: true,
-    });
-    const idealLine = new THREE.Line(idealGeometry, idealMaterial);
-    idealLine.renderOrder = 999;
-    idealLine.name = "idealPolygon";
-    group.add(idealLine);
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 5. VERTEX NODES on hull and projected points
-    // ═══════════════════════════════════════════════════════════════════════
-    const nodeRadius = 0.04;
-    const nodeGeometry = new THREE.SphereGeometry(nodeRadius, 12, 12);
-
-    // Yellow nodes at hull vertices
-    const hullNodeMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffff00,
-      transparent: true,
-      opacity: 0.9,
-    });
-
-    for (let i = 0; i < hullVertices3D.length - 1; i++) {
-      const node = new THREE.Mesh(nodeGeometry, hullNodeMaterial.clone());
-      node.position.copy(hullVertices3D[i]);
-      node.name = `hullNode-${i}`;
-      group.add(node);
-    }
-
-    // Cyan nodes at ideal vertices
-    const idealNodeMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00ffff,
-      transparent: true,
-      opacity: 0.6,
-    });
-
-    for (let i = 0; i < idealVertices.length - 1; i++) {
-      const node = new THREE.Mesh(nodeGeometry.clone(), idealNodeMaterial.clone());
-      node.position.copy(idealVertices[i]);
-      node.name = `idealNode-${i}`;
-      group.add(node);
-    }
-
-    // Component-colored nodes at all projected points (showing interior vs hull)
-    // Yellow-green for truncated tet, cyan for icosahedron
-    const truncTetProjNodeMaterial = new THREE.MeshBasicMaterial({
-      color: 0xaaff00, // Yellow-green (matches trunc tet)
-      transparent: true,
-      opacity: 0.6,
-    });
-    const icosaProjNodeMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00ffff, // Cyan (matches icosahedron)
-      transparent: true,
-      opacity: 0.6,
-    });
-    const smallNodeGeom = new THREE.SphereGeometry(nodeRadius * 0.5, 8, 8);
-
-    projectedPoints.forEach((p, i) => {
-      const nodeMaterial = p.component === "icosahedron" ? icosaProjNodeMaterial : truncTetProjNodeMaterial;
-      const node = new THREE.Mesh(smallNodeGeom, nodeMaterial.clone());
-      node.position.copy(p.projected3D);
-      node.name = `projectedPoint-${p.component}-${i}`;
-      group.add(node);
-    });
-
-    console.log("   ✓ Added vertex nodes (yellow=hull, yellow-green=trunc tet proj, cyan=icosa proj)");
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // FINAL SETUP
-    // ═══════════════════════════════════════════════════════════════════════
-    scene.add(group);
-    RTPrimeCuts._primePolygonGroup = group;
-    RTPrimeCuts._primePolygonVisible = true;
-
-    let sourceDesc;
-    if (isCompoundIcosaProjection) {
-      sourceDesc = `${worldVertices.length} vertices from Compound (TruncTet + Icosa)`;
-    } else if (isCompoundTetProjection) {
-      sourceDesc = `${worldVertices.length} vertices from Compound (TruncTet + Tet)`;
-    } else {
-      sourceDesc = `${worldVertices.length} vertices from Quadray Truncated Tetrahedron`;
-    }
-    console.log(`📐 Projection visualization complete:`);
-    console.log(`   Source: ${sourceDesc}`);
-    console.log(`   Projection: ${hull2D.length}-vertex hull (YELLOW) vs ${n}-vertex ideal (CYAN)`);
-    console.log(`   Plane distance: ${planeDistance} units from polyhedron center`);
-    if (isCompoundIcosaProjection) {
-      console.log(`   Components: Yellow-green rays/nodes = TruncTet (12v), Cyan rays/nodes = Icosa (12v)`);
-    } else if (isCompoundTetProjection) {
-      console.log(`   Components: Yellow-green rays/nodes = TruncTet (12v), Cyan rays/nodes = Tet (4v)`);
-    }
-
-    // Update UI info display
-    RTPrimeCuts._updateProjectionInfo(n);
   },
 
   /**

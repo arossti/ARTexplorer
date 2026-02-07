@@ -690,9 +690,156 @@ Keep prime-specific code:
 
 ---
 
+## Phase 5: Prime Preset Hull Calibration
+
+### Problem Statement
+
+After Phase 4 generalization, the prime polygon presets are **not producing the expected hull vertex counts**:
+
+| Preset | Expected Hull | Actual Hull | Polyhedron | Spreads |
+|--------|--------------|-------------|------------|---------|
+| Pentagon | 5 | 8 | quadrayTruncatedTet | [0, 0, 0.5] |
+| Heptagon | 7 | 8 | quadrayCompoundTet | [0, 0, 0.5] |
+| Hendecagon | 11 | 8 | quadrayCompoundTet | [0, 0.2, 0.5] |
+| Tridecagon | 13 | 10 | quadrayCompound | [0, 0.6, 0.8] |
+
+### Root Cause Analysis
+
+**Issue 1: Custom spreads not being used**
+
+The `RTProjections.showProjection()` function calls `_axisToSpreads()` which reads from `state.axis`, but presets set `axis: null` and rely on `customSpreads`. The visualization code path ignores `customSpreads`.
+
+**Issue 2: Preset spreads may differ from Python search results**
+
+The spreads in `PROJECTION_PRESETS` may not exactly match the verified spreads from the Python search scripts. Need to cross-reference:
+
+- `results/prime_projections_*.json` files
+- `results/prime_compound_search_*.json` files
+- `Geometry documents/Polygon-Rationalize.md` discoveries
+
+### Diagnostic Approach
+
+Add console logging to trace the projection pipeline:
+
+```javascript
+// In RTProjections.showProjection(), add:
+console.log(`📐 showProjection called with options:`, options);
+console.log(`   customSpreads from options:`, options.spreads);
+console.log(`   state.customSpreads:`, RTProjections.state.customSpreads);
+
+// In _createProjectionVisualization(), add:
+console.log(`📐 Using spreads:`, spreads);
+console.log(`   Basis vectors: right=${planeRight}, up=${planeUp}, normal=${planeNormal}`);
+```
+
+### Fix Strategy
+
+**Code Fix 1**: Pass spreads through options to `_createProjectionVisualization`
+
+In `showProjection()` (line ~223), pass spreads through:
+```javascript
+// In showProjection(), change:
+RTProjections._createProjectionVisualization(polyhedronGroup, {
+  showRays,
+  showInterior,
+  showIdealPolygon,
+  rayColor,
+  spreads: options.spreads,  // ADD THIS LINE
+});
+```
+
+**Code Fix 2**: Use custom spreads in visualization
+
+In `_createProjectionVisualization()` (line ~505), change:
+```javascript
+// BEFORE (line 505):
+const spreads = RTProjections._axisToSpreads();
+
+// AFTER:
+const spreads = options.spreads || RTProjections.state.customSpreads || RTProjections._axisToSpreads();
+```
+
+**Data Fix**: Update PROJECTION_PRESETS in rt-prime-cuts.js with correct values from Python results.
+
+3. **Verify each preset against Python search results**:
+
+| n | Source File | Python Spreads | Compound | Vertices |
+|---|-------------|----------------|----------|----------|
+| 5 | `prime_breakthrough_*.json` | **[0, 0, 0.5]** | truncated_tetrahedron | 12 |
+| 7 | `prime_breakthrough_*.json` | **[0.11, 0, 0.5]** | truncated_tetrahedron | 12 |
+| 11 | `prime_breakthrough_*.json` | **[0, 0.4, 0.2]** | truncated_tet + icosahedron | 24 |
+| 13 | `prime_breakthrough_*.json` | **[0, 0.6, 0.8]** | truncated_tet + icosahedron | 24 |
+
+### Preset vs Python Discrepancies
+
+| Preset | Current Spreads | Python Spreads | Current Polyhedron | Python Polyhedron |
+|--------|-----------------|----------------|--------------------|--------------------|
+| pentagon | [0, 0, 0.5] ✅ | [0, 0, 0.5] | quadrayTruncatedTet (12v) ✅ | trunc_tet (12v) |
+| heptagon | [0, 0, 0.5] ❌ | [0.11, 0, 0.5] | quadrayCompoundTet (16v) ❌ | trunc_tet (12v) |
+| hendecagon | [0, 0.2, 0.5] ❌ | [0, 0.4, 0.2] | quadrayCompoundTet (16v) ❌ | trunc_tet+icosa (24v) |
+| tridecagon | [0, 0.6, 0.8] ✅ | [0, 0.6, 0.8] | quadrayCompound (24v) ✅ | trunc_tet+icosa (24v) |
+
+### Required Fixes
+
+**Heptagon (7-gon)**:
+- Change spreads from `[0, 0, 0.5]` to `[0.11, 0, 0.5]`
+- Change polyhedron from `quadrayCompoundTet` to `quadrayTruncatedTet`
+- Python verified: 7-hull from truncated tetrahedron alone at s=(0.11, 0, 0.5)
+
+**Hendecagon (11-gon)**:
+- Change spreads from `[0, 0.2, 0.5]` to `[0, 0.4, 0.2]`
+- Change polyhedron from `quadrayCompoundTet` to `quadrayCompound` (TruncTet+Icosa, 24v)
+- Python verified: 11-hull from compound at s=(0, 0.4, 0.2)
+
+### Verification Commands
+
+Run in browser console to test each preset:
+
+```javascript
+// Test pentagon
+RTPrimeCuts.verifyProjection(5);
+
+// Test all presets
+RTPrimeCuts.verifyAllProjections();
+
+// Manual spread test
+const group = /* get polyhedron from scene */;
+RTProjections.showProjection(group, {
+  spreads: [0, 0, 0.5],
+  showIdealPolygon: true
+});
+```
+
+### Phase 5 Checklist
+
+- [ ] Add diagnostic logging to RTProjections
+- [ ] Fix `showProjection()` to accept custom spreads from options
+- [ ] Fix `_createProjectionVisualization()` to use custom spreads
+- [ ] Cross-reference Python search results for correct spreads
+- [ ] Update PROJECTION_PRESETS with verified spreads
+- [ ] Verify pentagon produces 5-hull
+- [ ] Verify heptagon produces 7-hull
+- [ ] Verify hendecagon produces 11-hull
+- [ ] Verify tridecagon produces 13-hull
+- [ ] Console verification passes: `RTPrimeCuts.verifyAllProjections()`
+
+### Python Search Result References
+
+Prime polygon projections were discovered via brute-force search in Python. Key files:
+
+- **Pentagon (5)**: Truncated tetrahedron alone, specific orientation
+- **Heptagon (7)**: TruncTet + Tet compound at s=(0, 0, 0.5)
+- **Hendecagon (11)**: TruncTet + Tet compound at s=(0, 0.2, 0.5)
+- **Tridecagon (13)**: TruncTet + Icosa compound at s=(0, 0.6, 0.8)
+
+See `Geometry documents/Prime-Projection-Conjecture.tex` for mathematical background.
+
+---
+
 ## References
 
 - **Source of generic code**: `modules/rt-prime-cuts.js`
 - **UI pattern template**: `modules/rt-papercut.js` (axis selection)
 - **Quadray coordinates**: `modules/rt-math.js` (Quadray.basisVectors)
 - **Prime projection research**: `Geometry documents/Polygon-Rationalize.md`
+- **Prime projection conjecture**: `Geometry documents/Prime-Projection-Conjecture.tex`
