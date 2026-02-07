@@ -40,7 +40,7 @@
 \title{The 4D± Prime Projection Conjecture\\
 \large Rational-Spread Projections of Higher-Dimensional Polytopes\\
 as a Source of Non-Constructible Prime n-Gons\\[0.5em]
-\normalsize v3.0 -- February 2026}
+\normalsize v3.1 -- February 2026}
 
 \author{Andrew Thomson\\
 \small Open Building / ARTexplorer Project\\
@@ -55,11 +55,12 @@ as a Source of Non-Constructible Prime n-Gons\\[0.5em]
 \begin{abstract}
 This paper presents the \textbf{4D± Prime Projection Conjecture}: that prime-sided polygons (7, 11, 13, 19...), which are non-constructible in 2D under the Gauss-Wantzel theorem, might emerge as rational-spread projections of higher-dimensional polytope structures. We describe the problem of irrational polygon construction, introduce a computational search methodology using rational spread values, and report experimental findings. Key results include the discovery of the \textbf{Symmetry Barrier}---regular polytopes with central symmetry always project to even-sided hull boundaries---and its resolution through \textbf{asymmetric polytopes} and \textbf{compound polyhedra}.
 
-\textbf{Breakthrough findings (v3.0, Feb 2026):}
+\textbf{Breakthrough findings (v3.1, Feb 2026):}
 \begin{itemize}
-    \item \textbf{5-gon and 7-gon}: Truncated tetrahedron at rational spreads $(0, 0, \frac{1}{2})$ and $(0.11, 0, \frac{1}{2})$
-    \item \textbf{11-gon}: Compound of truncated tetrahedron + icosahedron at spreads $(0, 0.4, 0.2)$
-    \item \textbf{13-gon}: Same compound at spreads $(0, 0.6, 0.8)$
+    \item \textbf{5-gon}: Truncated tetrahedron at spreads $(0.01, 0.5, 0)$ --- 145 projections found
+    \item \textbf{7-gon}: Truncated tet + tetrahedron (16v) at spreads $(0, 0.01, 0.14)$ --- 438,406 projections found
+    \item \textbf{11-gon}: Truncated tet + icosahedron (24v) at spreads $(0, 0.01, 0.1)$ --- 36,360 projections found
+    \item \textbf{13-gon}: Same compound at spreads $(0, 0.01, 0.14)$ --- 4,347 projections found
 \end{itemize}
 
 These primes (7, 11, 13) require cubic, quintic, and sextic polynomials respectively---beyond algebraic solvability---yet emerge naturally from rational-spread projections of 3D compound polyhedra.
@@ -682,13 +683,15 @@ The search for higher primes required combining asymmetric polyhedra into \textb
 \toprule
 \textbf{Prime} & \textbf{Spreads $(s_1, s_2, s_3)$} & \textbf{Hull} & \textbf{Algebraic Requirement} \\
 \midrule
-\textbf{11-gon} & $(0, 0.4, 0.2)$ & 11 & Quintic polynomial (degree 5) \\
-\textbf{13-gon} & $(0, 0.6, 0.8)$ & 13 & Sextic polynomial (degree 6) \\
+\textbf{11-gon} & $(0, 0.01, 0.1)$ & 11 & Quintic polynomial (degree 5) \\
+\textbf{13-gon} & $(0, 0.01, 0.14)$ & 13 & Sextic polynomial (degree 6) \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 \textbf{Significance}: The 11-gon (hendecagon) requires solving a degree-5 polynomial---\emph{impossible} by radicals (Abel-Ruffini theorem). The 13-gon (tridecagon) requires degree-6. Yet both emerge from rational-spread projections!
+
+\textbf{Note (v3.1):} These verified spreads were found using unified Python/JS definitions (Project-Streamline). The Python search outputs JSON that works \emph{directly} in JavaScript without coordinate translation.
 \end{tcolorbox}
 
 \subsubsection{Compound Configuration}
@@ -869,23 +872,21 @@ All code, data, and results are available in the ARTexplorer Git repository for 
 \begin{lstlisting}[language=bash, caption=Key files and directories]
 ARTexplorer/
 |-- scripts/
-|   |-- prime_projection_search.py    # Main search script (Python 3.9+)
-|   |-- requirements.txt              # NumPy, SciPy dependencies
+|   |-- rt_math.py                        # RT functions ported from rt-math.js
+|   |-- rt_polyhedra.py                   # Exact vertex copies from rt-polyhedra.js
+|   |-- prime_search_streamlined.py       # Unified search (Project-Streamline)
 |
-|-- results/
-|   |-- prime_breakthrough_20260206_145052.json      # Verified 5,7,11,13-gon findings
-|   |-- prime_projections_20260206_122523.json       # Full search data (~27MB)
-|   |-- prime_compound_11gon_20260206_144804.json    # 11-gon detailed analysis
+|-- prime_projections_verified.json       # All verified 5,7,11,13-gon findings
 |
 |-- Geometry documents/
 |   |-- Prime-Projection-Conjecture.tex   # This whitepaper
-|   |-- Polygon-Rationalize.md            # Quickstart guide for agents
-|   |-- Logs.md                           # Working notes and debug output
+|   |-- Project-Streamline.md             # Unified Python/JS methodology
+|   |-- Polygon-Rationalize.md            # RT polygon theory reference
 |
 |-- modules/
-|   |-- rt-math.js                        # Rational Trig core (RT.PureCubics, etc.)
-|   |-- rt-polyhedra.js                   # Polyhedra generation
-|   |-- rt-papercut.js                    # Projection overlay visualization
+|   |-- rt-math.js                        # Source of truth: RT functions
+|   |-- rt-polyhedra.js                   # Source of truth: Polyhedra definitions
+|   |-- rt-projections.js                 # Projection visualization
 \end{lstlisting}
 
 \subsection{Running the Search}
@@ -893,26 +894,19 @@ ARTexplorer/
 \begin{lstlisting}[language=bash, caption=Reproducing the breakthrough results]
 # Clone the repository
 git clone https://github.com/arossti/ARTexplorer.git
-cd ARTexplorer
+cd ARTexplorer/scripts
 
-# Install Python dependencies
-pip install numpy scipy
+# Quick verification of known primes (precision 1 = coarse grid)
+python prime_search_streamlined.py --primes 5,7 --precision 1 --verify
 
-# Quick verification of known primes
-python scripts/prime_projection_search.py \
-    --precision 2 \
-    --polyhedra truncated_tetrahedron \
-    --primes 5,7
+# Full search for all primes (precision 2 = ~1M configs per poly)
+python prime_search_streamlined.py --primes 5,7,11,13 --precision 2 --verify
 
-# Full compound search for 11,13-gon (takes ~10 minutes)
-python scripts/prime_projection_search.py \
-    --precision 2 \
-    --include-compounds \
-    --primes 7,11,13
-
-# List all available polyhedra
-python scripts/prime_projection_search.py --list-polyhedra
+# Output: JSON with spreads that work DIRECTLY in JavaScript
+# No coordinate translation needed - same vertex definitions
 \end{lstlisting}
+
+\textbf{Key insight (Project-Streamline):} The Python scripts now use \emph{identical} vertex definitions to JavaScript, ported directly from \texttt{rt-math.js} and \texttt{rt-polyhedra.js}. This eliminates the coordinate translation errors that previously caused mismatches between search results and visualization.
 
 \subsection{Results JSON Schema}
 
@@ -956,15 +950,15 @@ Each results file contains:
 \centering
 \begin{tabular}{cllcl}
 \toprule
-\textbf{Prime} & \textbf{Compound} & \textbf{Spreads} & \textbf{Vertices} & \textbf{File} \\
+\textbf{Prime} & \textbf{Compound} & \textbf{Spreads} & \textbf{Vertices} & \textbf{Projections} \\
 \midrule
-5 & Truncated Tet & $(0, 0, 0.5)$ & 12 & \texttt{prime\_breakthrough*.json} \\
-7 & Truncated Tet & $(0.11, 0, 0.5)$ & 12 & \texttt{prime\_breakthrough*.json} \\
-11 & Trunc Tet + Icosa & $(0, 0.4, 0.2)$ & 24 & \texttt{prime\_breakthrough*.json} \\
-13 & Trunc Tet + Icosa & $(0, 0.6, 0.8)$ & 24 & \texttt{prime\_breakthrough*.json} \\
+5 & Truncated Tet & $(0.01, 0.5, 0)$ & 12 & 145 \\
+7 & Trunc Tet + Tet & $(0, 0.01, 0.14)$ & 16 & 438,406 \\
+11 & Trunc Tet + Icosa & $(0, 0.01, 0.1)$ & 24 & 36,360 \\
+13 & Trunc Tet + Icosa & $(0, 0.01, 0.14)$ & 24 & 4,347 \\
 \bottomrule
 \end{tabular}
-\caption{Verified prime projection configurations with source files}
+\caption{Verified prime projection configurations from \texttt{prime\_projections\_verified.json}}
 \end{table}
 
 \subsection{Interactive Visualization}
@@ -1348,7 +1342,8 @@ emerge as shadows from the tetrahedron's light.''}
 \begin{itemize}[noitemsep]
     \item v1.0 (Jan 2026): Initial conjecture and symmetry barrier discovery
     \item v2.0 (Feb 2026): 5-gon and 7-gon projections verified
-    \item \textbf{v3.0 (Feb 2026): 11-gon and 13-gon breakthrough via compound polyhedra}
+    \item v3.0 (Feb 2026): 11-gon and 13-gon breakthrough via compound polyhedra
+    \item \textbf{v3.1 (Feb 2026): Project-Streamline---unified Python/JS definitions, verified spreads}
 \end{itemize}
 
 \end{document}

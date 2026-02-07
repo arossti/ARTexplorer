@@ -497,36 +497,67 @@ export const RTProjections = {
    * @returns {Array<THREE.Vector3>} Normalized vertices as Vector3
    */
   _getPrimePresetVertices: function (compoundType) {
-    // Truncated tetrahedron: permutations of (3,1,1) with even parity
+    // ═══════════════════════════════════════════════════════════════════════
+    // EXACT COPIES FROM rt_polyhedra.py (Project-Streamline)
+    // These MUST match Python definitions for verified spreads to work
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Truncated tetrahedron: EXACT copy from rt-math.js:1768
+    // RT.ProjectionPolygons.heptagon.sourceVertices()
     const truncTetRaw = [
-      [3, 1, 1], [3, -1, -1], [1, 3, 1], [1, -3, -1],
-      [1, 1, 3], [1, -1, -3], [-3, 1, -1], [-3, -1, 1],
-      [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3],
+      [1, 1, 3], [1, 3, 1], [3, 1, 1],
+      [1, -1, -3], [1, -3, -1], [3, -1, -1],
+      [-1, 1, -3], [-1, 3, -1], [-3, 1, -1],
+      [-1, -1, 3], [-1, -3, 1], [-3, -1, 1],
     ];
 
-    // Tetrahedron: MUST match Polyhedra.tetrahedron() from rt-polyhedra.js
-    // These are 4 alternating cube vertices: (-,-,-), (+,+,-), (+,-,+), (-,+,+)
+    // Tetrahedron: EXACT copy from rt-polyhedra.js:122
+    // Polyhedra.tetrahedron() - alternating cube vertices scaled by 3
     const tetRaw = [
-      [-1, -1, -1], [1, 1, -1], [1, -1, 1], [-1, 1, 1],
+      [-3, -3, -3], [3, 3, -3], [3, -3, 3], [-3, 3, 3],
     ];
 
-    // Icosahedron: golden ratio vertices
+    // Icosahedron: EXACT construction from rt-polyhedra.js:310-386
+    // Uses PurePhi normalization: a = 1/sqrt(1+phi^2), b = phi/sqrt(1+phi^2)
     const phi = (1 + Math.sqrt(5)) / 2;
+    const phiSq = phi + 1; // Identity: φ² = φ + 1 (EXACT, not phi*phi)
+    const onePlusPhiSq = 1 + phiSq; // = φ + 2 ≈ 3.618
+    const normFactor = 1 / Math.sqrt(onePlusPhiSq);
+    const a = normFactor;       // ≈ 0.5257
+    const b = phi * normFactor; // ≈ 0.8507
+
+    // Scale icosahedron to match truncated tetrahedron bounding sphere
+    // TruncTet bounding radius = sqrt(11) ≈ 3.317 (from vertex [1,1,3])
+    const targetRadius = Math.sqrt(11);
+    const icosaRadius = b; // Icosa bounding radius with normFactor=1
+    const icosaScale = targetRadius / icosaRadius;
+    const aScaled = a * icosaScale;
+    const bScaled = b * icosaScale;
+
     const icosaRaw = [
-      [0, 1, phi], [0, 1, -phi], [0, -1, phi], [0, -1, -phi],
-      [1, phi, 0], [1, -phi, 0], [-1, phi, 0], [-1, -phi, 0],
-      [phi, 0, 1], [phi, 0, -1], [-phi, 0, 1], [-phi, 0, -1],
+      // Rectangle 1: XZ plane (Y = ±a)
+      [0, aScaled, bScaled], [0, aScaled, -bScaled],
+      [0, -aScaled, bScaled], [0, -aScaled, -bScaled],
+      // Rectangle 2: YZ plane (X = ±a)
+      [aScaled, bScaled, 0], [aScaled, -bScaled, 0],
+      [-aScaled, bScaled, 0], [-aScaled, -bScaled, 0],
+      // Rectangle 3: XY plane (Z = ±a)
+      [bScaled, 0, aScaled], [bScaled, 0, -aScaled],
+      [-bScaled, 0, aScaled], [-bScaled, 0, -aScaled],
     ];
 
-    // Normalize helper
+    // Normalize helper (for truncTet and tet which aren't pre-scaled)
     const normalize = (v) => {
       const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
       return new THREE.Vector3(v[0] / len, v[1] / len, v[2] / len);
     };
 
+    // Convert icosa to Vector3 (already properly scaled, just convert)
+    const icosaToVector = (v) => new THREE.Vector3(v[0], v[1], v[2]).normalize();
+
     const truncTetVertices = truncTetRaw.map(normalize);
     const tetVertices = tetRaw.map(normalize);
-    const icosaVertices = icosaRaw.map(normalize);
+    const icosaVertices = icosaRaw.map(icosaToVector);
 
     switch (compoundType) {
       case "truncatedTetrahedron":
