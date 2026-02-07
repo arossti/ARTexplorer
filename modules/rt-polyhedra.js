@@ -201,6 +201,269 @@ export const Polyhedra = {
   },
 
   /**
+   * Truncated Tetrahedron with parametric truncation
+   * Single source of truth for Python/JavaScript parity in prime polygon search.
+   *
+   * Truncation parameter t ∈ [0, 0.5]:
+   * - t = 0: Base tetrahedron (4 vertices)
+   * - t = 1/3: Standard truncated tetrahedron (12 vertices)
+   * - t = 0.5: Octahedron limit (6 vertices)
+   *
+   * GEOMETRY:
+   * Each tetrahedron vertex is cut by a plane, creating a triangular face.
+   * The cut points lie at distance t along each edge from the original vertex.
+   * At t=1/3, the triangular cut faces are equilateral and meet the original
+   * faces (now hexagons) at their midpoints.
+   *
+   * TOPOLOGY:
+   * - t < 1/3: 4 vertices (small cuts, still tetrahedron topology)
+   * - t = 1/3: 12 vertices, 8 faces (4 triangles + 4 hexagons), 18 edges
+   * - t = 0.5: 6 vertices (cuts meet at edge midpoints = octahedron)
+   *
+   * @param {number} halfSize - Scale factor (base tetrahedron bounding cube half-size)
+   * @param {number} truncation - Truncation parameter t ∈ [0, 0.5] (default: 1/3)
+   * @param {Object} options - {silent: boolean} - Skip logging for utility uses
+   * @returns {Object} - {vertices, edges, faces}
+   */
+  truncatedTetrahedron: (halfSize = 1, truncation = 1 / 3, options = {}) => {
+    const t = Math.max(0, Math.min(0.5, truncation)); // Clamp to valid range
+    const s = halfSize;
+
+    // Base tetrahedron vertices (inscribed in cube)
+    const baseVerts = [
+      [-s, -s, -s], // V0
+      [s, s, -s], // V1
+      [s, -s, s], // V2
+      [-s, s, s], // V3
+    ];
+
+    // Edge connectivity (all pairs for complete graph K4)
+    const baseEdges = [
+      [0, 1],
+      [0, 2],
+      [0, 3],
+      [1, 2],
+      [1, 3],
+      [2, 3],
+    ];
+
+    // Special case: t = 0 returns base tetrahedron
+    if (t < 0.001) {
+      const vertices = baseVerts.map(v => new THREE.Vector3(v[0], v[1], v[2]));
+      const edges = baseEdges;
+      const faces = [
+        [0, 1, 2],
+        [0, 3, 1],
+        [0, 2, 3],
+        [1, 3, 2],
+      ];
+      if (!options.silent) {
+        console.log(`Truncated Tetrahedron: t=0 (base tetrahedron), 4 vertices`);
+      }
+      return { vertices, edges, faces };
+    }
+
+    // Special case: t = 0.5 returns octahedron
+    if (t > 0.499) {
+      // Edge midpoints become octahedron vertices
+      const vertices = baseEdges.map(([i, j]) => {
+        const v1 = baseVerts[i];
+        const v2 = baseVerts[j];
+        return new THREE.Vector3(
+          (v1[0] + v2[0]) / 2,
+          (v1[1] + v2[1]) / 2,
+          (v1[2] + v2[2]) / 2
+        );
+      });
+
+      // Octahedron topology (each original tet face becomes an oct face)
+      const edges = [
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [1, 2],
+        [1, 3],
+        [1, 5],
+        [2, 4],
+        [2, 5],
+        [3, 4],
+        [3, 5],
+        [4, 5],
+      ];
+      const faces = [
+        [0, 1, 2],
+        [0, 2, 4],
+        [0, 4, 3],
+        [0, 3, 1],
+        [5, 2, 1],
+        [5, 4, 2],
+        [5, 3, 4],
+        [5, 1, 3],
+      ];
+
+      if (!options.silent) {
+        console.log(
+          `Truncated Tetrahedron: t=0.5 (octahedron limit), 6 vertices`
+        );
+      }
+      return { vertices, edges, faces };
+    }
+
+    // General case: truncated tetrahedron with 12 vertices
+    // For each edge, place two cut points at t and (1-t) from each endpoint
+    const vertices = [];
+    const vertexMap = new Map(); // Map edge+position to vertex index
+
+    // Helper to get or create a truncation vertex
+    const getVertex = (edgeIdx, fromEnd) => {
+      // fromEnd: 0 means at t from start, 1 means at t from end
+      const key = `${edgeIdx}-${fromEnd}`;
+      if (vertexMap.has(key)) return vertexMap.get(key);
+
+      const [i, j] = baseEdges[edgeIdx];
+      const v1 = fromEnd === 0 ? baseVerts[i] : baseVerts[j];
+      const v2 = fromEnd === 0 ? baseVerts[j] : baseVerts[i];
+
+      const vertex = new THREE.Vector3(
+        v1[0] + t * (v2[0] - v1[0]),
+        v1[1] + t * (v2[1] - v1[1]),
+        v1[2] + t * (v2[2] - v1[2])
+      );
+
+      const idx = vertices.length;
+      vertices.push(vertex);
+      vertexMap.set(key, idx);
+      return idx;
+    };
+
+    // Create vertices: for each base vertex, get the 3 truncation points
+    // Vertex adjacency in K4: each vertex connects to all others
+    const vertexEdges = [
+      [0, 1, 2], // V0 connects via edges 0, 1, 2
+      [0, 3, 4], // V1 connects via edges 0, 3, 4
+      [1, 3, 5], // V2 connects via edges 1, 3, 5
+      [2, 4, 5], // V3 connects via edges 2, 4, 5
+    ];
+
+    // For each base vertex, which end of each edge is it?
+    const vertexEnds = [
+      [0, 0, 0], // V0 is start of edges 0, 1, 2
+      [1, 0, 0], // V1 is end of edge 0, start of edges 3, 4
+      [1, 1, 0], // V2 is end of edges 1, 3, start of edge 5
+      [1, 1, 1], // V3 is end of edges 2, 4, 5
+    ];
+
+    // Create the 12 truncation vertices (3 per base vertex)
+    const truncVerts = [];
+    for (let v = 0; v < 4; v++) {
+      truncVerts[v] = [];
+      for (let e = 0; e < 3; e++) {
+        const edgeIdx = vertexEdges[v][e];
+        const fromEnd = vertexEnds[v][e];
+        truncVerts[v][e] = getVertex(edgeIdx, fromEnd);
+      }
+    }
+
+    // Build faces:
+    // - 4 triangular faces (one per original vertex, from truncation cuts)
+    // - 4 hexagonal faces (one per original face, modified by truncation)
+
+    // Triangular faces at each truncated vertex
+    const triangleFaces = [
+      [truncVerts[0][0], truncVerts[0][1], truncVerts[0][2]], // At V0
+      [truncVerts[1][0], truncVerts[1][2], truncVerts[1][1]], // At V1 (reversed for outward normal)
+      [truncVerts[2][0], truncVerts[2][1], truncVerts[2][2]], // At V2
+      [truncVerts[3][0], truncVerts[3][2], truncVerts[3][1]], // At V3 (reversed for outward normal)
+    ];
+
+    // Hexagonal faces (original tetrahedron faces, now hexagons)
+    // Original tet faces: [0,1,2], [0,3,1], [0,2,3], [1,3,2]
+    // Each hexagon connects truncation points around the original face
+
+    // Face 0-1-2: connects truncation points from V0, V1, V2
+    // V0's points on edges to V1, V2 = truncVerts[0][0], truncVerts[0][1]
+    // V1's points on edges to V0, V2 = truncVerts[1][0], truncVerts[1][1]
+    // V2's points on edges to V0, V1 = truncVerts[2][0], truncVerts[2][1]
+    const hexFace012 = [
+      truncVerts[0][0], // V0→V1
+      truncVerts[1][0], // V1→V0
+      truncVerts[1][1], // V1→V2
+      truncVerts[2][1], // V2→V1
+      truncVerts[2][0], // V2→V0
+      truncVerts[0][1], // V0→V2
+    ];
+
+    // Face 0-3-1: V0, V3, V1
+    const hexFace031 = [
+      truncVerts[0][2], // V0→V3
+      truncVerts[3][0], // V3→V0
+      truncVerts[3][1], // V3→V1
+      truncVerts[1][2], // V1→V3
+      truncVerts[1][0], // V1→V0
+      truncVerts[0][0], // V0→V1
+    ];
+
+    // Face 0-2-3: V0, V2, V3
+    const hexFace023 = [
+      truncVerts[0][1], // V0→V2
+      truncVerts[2][0], // V2→V0
+      truncVerts[2][2], // V2→V3
+      truncVerts[3][2], // V3→V2
+      truncVerts[3][0], // V3→V0
+      truncVerts[0][2], // V0→V3
+    ];
+
+    // Face 1-3-2: V1, V3, V2
+    const hexFace132 = [
+      truncVerts[1][2], // V1→V3
+      truncVerts[3][1], // V3→V1
+      truncVerts[3][2], // V3→V2
+      truncVerts[2][2], // V2→V3
+      truncVerts[2][1], // V2→V1
+      truncVerts[1][1], // V1→V2
+    ];
+
+    const faces = [
+      ...triangleFaces,
+      hexFace012,
+      hexFace031,
+      hexFace023,
+      hexFace132,
+    ];
+
+    // Build edges from face perimeters
+    const edgeSet = new Set();
+    const addEdge = (a, b) => {
+      const key = a < b ? `${a},${b}` : `${b},${a}`;
+      edgeSet.add(key);
+    };
+
+    faces.forEach(face => {
+      for (let i = 0; i < face.length; i++) {
+        addEdge(face[i], face[(i + 1) % face.length]);
+      }
+    });
+
+    const edges = Array.from(edgeSet).map(e => e.split(",").map(Number));
+
+    // RT VALIDATION
+    if (!options.silent) {
+      const sampleQ = RT.quadrance(
+        vertices[edges[0][0]],
+        vertices[edges[0][1]]
+      );
+      const validation = RT.validateEdges(vertices, edges, sampleQ);
+      const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+      console.log(
+        `Truncated Tetrahedron: t=${t.toFixed(4)}, ${vertices.length} vertices, Max Q error=${maxError.toExponential(2)}`
+      );
+    }
+
+    return { vertices, edges, faces };
+  },
+
+  /**
    * Geodesic Dual Tetrahedron with projection options
    * Derives from base tetrahedron via inversion, then applies geodesic subdivision
    * Implements reciprocal complementary color scheme (uses base solid color for geodesic)

@@ -2021,9 +2021,21 @@ export function initScene(THREE, OrbitControls, RT) {
       cubeMatrixGroup.visible = false;
     }
 
-    // Tetrahedron (Yellow)
+    // Tetrahedron (Yellow) - with optional truncation
     if (document.getElementById("showTetrahedron").checked) {
-      const tetra = Polyhedra.tetrahedron(scale);
+      let tetra;
+
+      // Check if truncation is enabled
+      const truncCheckbox = document.getElementById("showTruncatedTetrahedron");
+      if (truncCheckbox && truncCheckbox.checked) {
+        // Get truncation value from slider
+        const truncSlider = document.getElementById("truncationTetraSlider");
+        const truncation = truncSlider ? parseFloat(truncSlider.value) : 1 / 3;
+        tetra = Polyhedra.truncatedTetrahedron(scale, truncation);
+      } else {
+        tetra = Polyhedra.tetrahedron(scale);
+      }
+
       renderPolyhedron(
         tetrahedronGroup,
         tetra,
