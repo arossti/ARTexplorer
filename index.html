@@ -2107,6 +2107,50 @@
                 </div>
               </div>
             </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayCompoundTet" />
+                Quadray Compound (TruncTet + Tet)
+              </label>
+              <div
+                id="quadray-compound-tet-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="quadrayCompoundTetNormalize"
+                      checked
+                    />
+                    Zero-Sum Normalize
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    16-vertex compound for 7-gon projections<br />
+                    Truncated Tetrahedron (12v) + Tetrahedron (4v)
+                  </p>
+                  <!-- Prime Projection View for TruncTet+Tet Compound -->
+                  <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333">
+                    <label class="label-section" style="font-size: 11px; color: #7bed9f">★ 7-gon Projection</label>
+                    <div class="button-grid-2col" style="margin-top: 6px">
+                      <button
+                        class="toggle-btn variant-special"
+                        id="viewHeptagonProjectionTet"
+                        title="7-gon: TruncTet+Tet compound at s=(0,0.4,0.04)"
+                        style="background: linear-gradient(135deg, #7bed9f 0%, #26de81 100%); color: #000"
+                      >
+                        7-gon
+                      </button>
+                    </div>
+                    <p class="info-text" style="font-size: 8px; margin-top: 4px; color: #7bed9f">
+                      Heptagon via tet-family compound projection
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <!-- END SECTION 3B: POLYHEDRA -->

@@ -92,9 +92,19 @@ export const RTPrimeCuts = {
     // For 11/13-gon: Generate compound polyhedra (24 vertices) - BREAKTHROUGH!
     // ═══════════════════════════════════════════════════════════════════════
     let worldVertices = [];
-    const isCompoundProjection = (n === 11 || n === 13);
+    // Check for TruncTet+Icosa compound (11-gon, 13-gon)
+    const isCompoundIcosaProjection = (n === 11 || n === 13);
 
-    if (isCompoundProjection) {
+    // Check for TruncTet+Tet compound (7-gon alternative)
+    let compoundTetGroup = null;
+    scene.traverse(obj => {
+      if (obj.userData?.type === "quadrayCompoundTet") {
+        compoundTetGroup = obj;
+      }
+    });
+    const isCompoundTetProjection = (n === 7 && compoundTetGroup && compoundTetGroup.visible);
+
+    if (isCompoundIcosaProjection) {
       // Find the actual compound polyhedron in the scene (same as 5/7-gon approach)
       let compoundGroup = null;
       scene.traverse(obj => {
@@ -117,6 +127,15 @@ export const RTPrimeCuts = {
         worldVertices = await RTPrimeCuts._generateCompoundVertices();
       }
       console.log("   Found", worldVertices.length, "vertices from compound (trunc tet + icosa)");
+    } else if (isCompoundTetProjection) {
+      // Use TruncTet+Tet compound for 7-gon projection
+      worldVertices = RTPrimeCuts._getWorldVerticesFromGroup(compoundTetGroup);
+      if (worldVertices.length === 0) {
+        console.error("❌ Could not extract vertices from TruncTet+Tet compound");
+        RTPrimeCuts._hideProjectionInfo();
+        return;
+      }
+      console.log("   Found", worldVertices.length, "vertices from compound (trunc tet + tet)");
     } else {
       // Find the actual truncated tetrahedron in the scene (using userData.type)
       let truncTetGroup = null;
@@ -177,8 +196,11 @@ export const RTPrimeCuts = {
       const x = localPoint.dot(planeRight);
       const y = localPoint.dot(planeUp);
 
-      // Track component: first 12 = truncated tet (yellow-green), rest = icosahedron (cyan)
-      const component = (isCompoundProjection && i >= 12) ? "icosahedron" : "truncatedTet";
+      // Track component: first 12 = truncated tet (yellow-green), rest = secondary (cyan)
+      // Secondary component: icosahedron for TruncTet+Icosa, tetrahedron for TruncTet+Tet
+      const isAnyCompound = isCompoundIcosaProjection || isCompoundTetProjection;
+      const secondaryComponent = isCompoundTetProjection ? "tetrahedron" : "icosahedron";
+      const component = (isAnyCompound && i >= 12) ? secondaryComponent : "truncatedTet";
       projectedPoints.push({ x, y, vertex3D: vertex, projected3D: projectedPoint, component, index: i });
       projected3D.push(projectedPoint);
     });
@@ -339,15 +361,22 @@ export const RTPrimeCuts = {
     RTPrimeCuts._primePolygonGroup = group;
     RTPrimeCuts._primePolygonVisible = true;
 
-    const sourceDesc = isCompoundProjection
-      ? `${worldVertices.length} vertices from Compound (TruncTet + Icosa)`
-      : `${worldVertices.length} vertices from Quadray Truncated Tetrahedron`;
+    let sourceDesc;
+    if (isCompoundIcosaProjection) {
+      sourceDesc = `${worldVertices.length} vertices from Compound (TruncTet + Icosa)`;
+    } else if (isCompoundTetProjection) {
+      sourceDesc = `${worldVertices.length} vertices from Compound (TruncTet + Tet)`;
+    } else {
+      sourceDesc = `${worldVertices.length} vertices from Quadray Truncated Tetrahedron`;
+    }
     console.log(`📐 Projection visualization complete:`);
     console.log(`   Source: ${sourceDesc}`);
     console.log(`   Projection: ${hull2D.length}-vertex hull (YELLOW) vs ${n}-vertex ideal (CYAN)`);
     console.log(`   Plane distance: ${planeDistance} units from polyhedron center`);
-    if (isCompoundProjection) {
+    if (isCompoundIcosaProjection) {
       console.log(`   Components: Yellow-green rays/nodes = TruncTet (12v), Cyan rays/nodes = Icosa (12v)`);
+    } else if (isCompoundTetProjection) {
+      console.log(`   Components: Yellow-green rays/nodes = TruncTet (12v), Cyan rays/nodes = Tet (4v)`);
     }
 
     // Update UI info display

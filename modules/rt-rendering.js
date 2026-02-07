@@ -79,6 +79,17 @@ export const CAMERA_PRESETS = {
     totalVertices: 24,
     note: "Tridecagon requires sextic polynomial - bypassed via projection",
   },
+  // 7-gon from TruncTet+Tet compound (Feb 2026)
+  heptagonProjectionTet: {
+    name: "7-gon Projection (TruncTet+Tet)",
+    description: "Compound (truncated tet + tetrahedron) - true 7-hull via tet-family",
+    spreads: [0, 0.4, 0.04], // JS convention (swapped from Python's (0, 0.04, 0.4))
+    recommendedForm: "quadrayCompoundTet",
+    reference: "Polygon-Rationalize.md §7b",
+    compound: ["truncatedTetrahedron", "tetrahedron"],
+    totalVertices: 16,
+    note: "Heptagon via tet-family compound projection - bypasses Gauss-Wantzel",
+  },
 };
 
 // Module-level color palette (source of truth for all polyhedron colors)
@@ -111,6 +122,7 @@ const colorPalette = {
   quadrayTruncatedTet: 0x9acd32, // Yellow-green (7-gon projection source)
   quadrayStellaOctangula: 0xff6b9d, // Pink-coral (Star Tetrahedron / Merkaba)
   quadrayCompound: 0xffaa55, // Orange-gold (Compound Trunc Tet + Icosa for 11/13-gon)
+  quadrayCompoundTet: 0x7bed9f, // Mint-green (Compound Trunc Tet + Tet for 7-gon)
   // Primitives
   point: 0xff00ff, // Fuchsia/bright pink - highly visible coordinate exploration point
   line: 0xff0000, // Red - 1D primitive
@@ -155,7 +167,8 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayOctahedronGroup,
     quadrayTruncatedTetGroup,
     quadrayStellaOctangulaGroup,
-    quadrayCompoundGroup; // Quadray demonstrators
+    quadrayCompoundGroup,
+    quadrayCompoundTetGroup; // Quadray demonstrators
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
@@ -366,6 +379,9 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayCompoundGroup = new THREE.Group();
     quadrayCompoundGroup.userData.type = "quadrayCompound";
 
+    quadrayCompoundTetGroup = new THREE.Group();
+    quadrayCompoundTetGroup.userData.type = "quadrayCompoundTet";
+
     scene.add(pointGroup);
     scene.add(lineGroup);
     scene.add(polygonGroup);
@@ -406,6 +422,7 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(quadrayTruncatedTetGroup);
     scene.add(quadrayStellaOctangulaGroup);
     scene.add(quadrayCompoundGroup);
+    scene.add(quadrayCompoundTetGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -2652,6 +2669,48 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayCompoundGroup.visible = false;
     }
 
+    // Quadray Compound (Truncated Tetrahedron + Tetrahedron) for 7-gon projections
+    if (document.getElementById("showQuadrayCompoundTet")?.checked) {
+      const normalize =
+        document.getElementById("quadrayCompoundTetNormalize")?.checked ?? true;
+      // Async compound generator - render components with distinct colors
+      Polyhedra.quadrayCompoundTruncTetTet(scale, {
+        normalize: normalize,
+      }).then(compound => {
+        // Clear existing group
+        while (quadrayCompoundTetGroup.children.length > 0) {
+          quadrayCompoundTetGroup.remove(quadrayCompoundTetGroup.children[0]);
+        }
+        // Render truncated tetrahedron component with its color
+        const truncTetSubGroup = new THREE.Group();
+        truncTetSubGroup.userData.type = "truncatedTetrahedron";
+        renderPolyhedron(
+          truncTetSubGroup,
+          compound.components.truncatedTetrahedron,
+          colorPalette.quadrayTruncatedTet,
+          opacity
+        );
+        quadrayCompoundTetGroup.add(truncTetSubGroup);
+        // Render tetrahedron component with its default color (yellow) for contrast
+        const tetSubGroup = new THREE.Group();
+        tetSubGroup.userData.type = "tetrahedron";
+        renderPolyhedron(
+          tetSubGroup,
+          compound.components.tetrahedron,
+          colorPalette.tetrahedron,
+          opacity
+        );
+        quadrayCompoundTetGroup.add(tetSubGroup);
+        quadrayCompoundTetGroup.userData.parameters = {
+          normalize: normalize,
+          wxyz: compound.truncTetNormalized,
+        };
+        quadrayCompoundTetGroup.visible = true;
+      });
+    } else {
+      quadrayCompoundTetGroup.visible = false;
+    }
+
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
     if (document.getElementById("showRhombicDodecMatrix").checked) {
       const matrixSize = parseInt(
@@ -3798,6 +3857,7 @@ export function initScene(THREE, OrbitControls, RT) {
       // ═══════════════════════════════════════════════════════════════════════
 
       case "heptagonProjection":
+      case "heptagonProjectionTet":
       case "pentagonProjection":
       case "hendecagonProjection":
       case "tridecagonProjection": {
@@ -3823,6 +3883,7 @@ export function initScene(THREE, OrbitControls, RT) {
         const polygonSidesMap = {
           pentagonProjection: 5,
           heptagonProjection: 7,
+          heptagonProjectionTet: 7,
           hendecagonProjection: 11,
           tridecagonProjection: 13,
         };
@@ -4018,6 +4079,9 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayCuboctahedronGroup,
       quadrayOctahedronGroup,
       quadrayTruncatedTetGroup,
+      quadrayStellaOctangulaGroup,
+      quadrayCompoundGroup,
+      quadrayCompoundTetGroup,
       tetrahelix1Group,
       tetrahelix2Group,
       tetrahelix3Group,

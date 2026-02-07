@@ -278,6 +278,11 @@ export const checkboxWithControlsBindings = [
     type: "checkbox-controls",
     controlsId: "quadray-compound-controls",
   },
+  {
+    id: "showQuadrayCompoundTet",
+    type: "checkbox-controls",
+    controlsId: "quadray-compound-tet-controls",
+  },
 ];
 
 // ============================================================================
@@ -733,6 +738,19 @@ export const viewControlBindings = [
             compoundCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
           }
           renderingAPI.setCameraPreset("tridecagonProjection");
+        },
+      },
+      // 7-gon from TruncTet+Tet compound (Feb 2026)
+      {
+        id: "viewHeptagonProjectionTet",
+        onClick: renderingAPI => {
+          // Auto-enable TruncTet+Tet compound form for 7-gon projection
+          const compoundCheckbox = document.getElementById("showQuadrayCompoundTet");
+          if (compoundCheckbox && !compoundCheckbox.checked) {
+            compoundCheckbox.checked = true;
+            compoundCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          renderingAPI.setCameraPreset("heptagonProjectionTet");
         },
       },
     ],

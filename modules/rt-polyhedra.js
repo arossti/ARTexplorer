@@ -1538,6 +1538,7 @@ export const Polyhedra = {
   quadrayTruncatedTetrahedron: QuadrayPolyhedra.truncatedTetrahedron,
   quadrayStellaOctangula: QuadrayPolyhedra.stellaOctangula,
   quadrayCompoundTruncTetIcosa: QuadrayPolyhedra.compoundTruncTetIcosahedron,
+  quadrayCompoundTruncTetTet: QuadrayPolyhedra.compoundTruncTetTetrahedron,
 };
 
 /**
