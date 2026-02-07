@@ -56,12 +56,12 @@ export const CAMERA_PRESETS = {
   // ═══════════════════════════════════════════════════════════════════════
   hendecagonProjection: {
     name: "11-gon Projection",
-    description: "Compound (truncated tet + icosahedron) - NOT algebraically solvable!",
-    spreads: [0, 0.4, 0.2], // Verified 11-hull
-    recommendedForm: "quadrayCompound",
+    description: "Compound (truncated tet + tetrahedron) - NOT algebraically solvable!",
+    spreads: [0, 0.28, 0.44], // From prime_compound_11gon JSON - verified 11-hull
+    recommendedForm: "quadrayTruncTetTet", // Same compound as 7-gon
     reference: "Prime-Projection-Conjecture.tex §BREAKTHROUGH",
-    compound: ["truncatedTetrahedron", "icosahedron"],
-    totalVertices: 24,
+    compound: ["truncatedTetrahedron", "tetrahedron"],
+    totalVertices: 16,
     note: "Hendecagon requires quintic polynomial - bypassed via projection",
   },
   tridecagonProjection: {
@@ -84,6 +84,17 @@ export const CAMERA_PRESETS = {
     compound: ["truncatedTetrahedron", "tetrahedron"],
     totalVertices: 16,
     note: "Heptagon via tet-family compound projection - bypasses Gauss-Wantzel",
+  },
+  // 11-gon from TruncTet+Tet compound (Feb 2026) - BREAKTHROUGH!
+  hendecagonProjectionTet: {
+    name: "11-gon Projection (TruncTet+Tet)",
+    description: "Compound (truncated tet + tetrahedron) - NOT algebraically solvable!",
+    spreads: [0, 0.28, 0.44], // From prime_compound_11gon JSON - verified 11-hull
+    recommendedForm: "quadrayCompoundTet",
+    reference: "results/prime_compound_11gon_20260206_144804.json",
+    compound: ["truncatedTetrahedron", "tetrahedron"],
+    totalVertices: 16,
+    note: "Hendecagon requires quintic polynomial - bypassed via projection",
   },
 };
 
@@ -3751,7 +3762,8 @@ export function initScene(THREE, OrbitControls, RT) {
     // Hide prime polygon overlay unless switching to a prime projection view
     const primeProjectionViews = [
       "pentagonProjection",
-      "heptagonProjectionTet", // 7-gon requires TruncTet+Tet compound
+      "heptagonProjectionTet", // 7-gon from TruncTet+Tet
+      "hendecagonProjectionTet", // 11-gon from TruncTet+Tet
       "hendecagonProjection",
       "tridecagonProjection",
     ];
@@ -3852,6 +3864,7 @@ export function initScene(THREE, OrbitControls, RT) {
       // ═══════════════════════════════════════════════════════════════════════
 
       case "heptagonProjectionTet": // 7-gon requires TruncTet+Tet compound
+      case "hendecagonProjectionTet": // 11-gon from TruncTet+Tet compound
       case "pentagonProjection":
       case "hendecagonProjection":
       case "tridecagonProjection": {
@@ -3876,8 +3889,9 @@ export function initScene(THREE, OrbitControls, RT) {
         // Determine polygon sides from preset name
         const polygonSidesMap = {
           pentagonProjection: 5,
-          heptagonProjectionTet: 7, // 7-gon only from compound
+          heptagonProjectionTet: 7, // 7-gon from TruncTet+Tet
           hendecagonProjection: 11,
+          hendecagonProjectionTet: 11, // 11-gon from TruncTet+Tet
           tridecagonProjection: 13,
         };
         const polygonSides = polygonSidesMap[view] || 5;
