@@ -57,7 +57,7 @@ export const CAMERA_PRESETS = {
   hendecagonProjection: {
     name: "11-gon Projection",
     description: "Compound (truncated tet + tetrahedron) - NOT algebraically solvable!",
-    spreads: [0, 0.28, 0.44], // From prime_compound_11gon JSON - verified 11-hull
+    spreads: [0, 0.2, 0.5], // Verified with JS compound (max angle 159.8°)
     recommendedForm: "quadrayTruncTetTet", // Same compound as 7-gon
     reference: "Prime-Projection-Conjecture.tex §BREAKTHROUGH",
     compound: ["truncatedTetrahedron", "tetrahedron"],
@@ -89,7 +89,7 @@ export const CAMERA_PRESETS = {
   hendecagonProjectionTet: {
     name: "11-gon Projection (TruncTet+Tet)",
     description: "Compound (truncated tet + tetrahedron) - NOT algebraically solvable!",
-    spreads: [0, 0.28, 0.44], // From prime_compound_11gon JSON - verified 11-hull
+    spreads: [0, 0.2, 0.5], // Verified with JS compound (max angle 159.8°)
     recommendedForm: "quadrayCompoundTet",
     reference: "results/prime_compound_11gon_20260206_144804.json",
     compound: ["truncatedTetrahedron", "tetrahedron"],

@@ -21,7 +21,7 @@
 | **5** | ✅ Verified | (0, 0, 0.5) | Perfect 5-hull from truncated tet |
 | **7** | ✅ Verified | (0, 0, 0.5) | 7-hull from compound (trunc tet + tet) |
 | **9** | ✅ Current | (0.11, 0, 0.5) | Cubic-algebraic (not prime) |
-| **11** | ✅ **BREAKTHROUGH** | (0, 0.28, 0.44) | Compound: Trunc Tet + Tetrahedron (16v) |
+| **11** | ✅ **BREAKTHROUGH** | (0, 0.2, 0.5) | Compound: Trunc Tet + Tetrahedron (16v) |
 | **13** | ✅ **BREAKTHROUGH** | (0, 0.6, 0.8) | Compound: Trunc Tet + Icosahedron (24v) |
 
 ### ✅ Python↔JavaScript Spread Consistency
@@ -33,7 +33,7 @@
 | Python (`prime_projection_search.py`) | ZYX | `(s1, s2, s3)` |
 | JavaScript (`rt-prime-cuts.js`) | ZYX | `(s1, s2, s3)` — **SAME, NO SWAP!** |
 
-**Example**: Python finds 11-gon at `(0, 0.28, 0.44)` → JS uses `(0, 0.28, 0.44)` directly
+**Example**: Python finds 11-gon at `(0, 0.2, 0.5)` → JS uses `(0, 0.2, 0.5)` directly
 
 When adding new prime projections:
 1. Take spreads from Python results JSON **exactly as found**
@@ -69,7 +69,7 @@ When adding new prime projections:
 
 | Prime | Compound | View Spreads | Algebraic Requirement |
 |-------|----------|-------------|----------------------|
-| **11-gon** | TruncTet + Tet (16v) | (0, 0.28, 0.44) | Quintic polynomial (degree 5) |
+| **11-gon** | TruncTet + Tet (16v) | (0, 0.2, 0.5) | Quintic polynomial (degree 5) |
 | **13-gon** | TruncTet + Icosa (24v) | (0, 0.6, 0.8) | Sextic polynomial (degree 6) |
 
 **Significance**: The 11-gon requires solving a degree-5 polynomial—*impossible* by radicals (Abel-Ruffini). Yet it emerges from rational-spread projection!
@@ -975,7 +975,7 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
 
 4. **★ BREAKTHROUGH: 11-gon and 13-gon Discovered!** (2026-02-06)
    - Compound polyhedra: Truncated Tetrahedron + Icosahedron (24 vertices)
-   - 11-gon at spreads (0, 0.28, 0.44) - quintic polynomial (impossible by radicals!)
+   - 11-gon at spreads (0, 0.2, 0.5) - quintic polynomial (impossible by radicals!)
    - 13-gon at spreads (0, 0.6, 0.8) - sextic polynomial
    - Results in `results/prime_breakthrough_*.json`
 
@@ -990,7 +990,7 @@ python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra dodecahed
    - **All primes WORKING via VERIFIED_PROJECTIONS registry**:
      - 5-gon: `s=(0, 0, 0.5)` from Truncated Tet (12v) ✓
      - 7-gon: `s=(0, 0, 0.5)` from Compound TruncTet + Tet (16v) ✓
-     - 11-gon: `s=(0, 0.28, 0.44)` from Compound TruncTet + Tet (16v) ✓
+     - 11-gon: `s=(0, 0.2, 0.5)` from Compound TruncTet + Tet (16v) ✓
      - 13-gon: `s=(0, 0.6, 0.8)` from Compound TruncTet + Icosa (24v) ✓
    - **NO SPREAD SWAP NEEDED**: Python and JS use identical ZYX rotation order
    - **Prerequisite**: Enable correct compound checkbox before selecting prime preset!
@@ -1400,7 +1400,7 @@ Pre-computed values to add to `RT.PureCubics` or `RT.CompositeRotations`:
 
 | Prime | Compound | Spreads | Search Status |
 |-------|----------|---------|---------------|
-| **11** | Trunc Tet + Icosahedron | (0, 0.28, 0.44) | ✅ **FOUND!** |
+| **11** | Trunc Tet + Tet | (0, 0.2, 0.5) | ✅ **FOUND!** |
 | **13** | Trunc Tet + Icosahedron | (0, 0.6, 0.8) | ✅ **FOUND!** |
 | 17 | 3+ component compound? | - | 📋 Pending |
 | 19 | 4D polytopes? | - | 📋 Pending |
