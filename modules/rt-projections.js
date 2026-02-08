@@ -56,6 +56,18 @@ export const RTProjections = {
       }
     }
 
+    // 1a. Disable conflicting Quadray polyhedra when using base polyhedra
+    // This prevents visual confusion from having both rendered
+    if (preset.polyhedronType === "tetrahedron") {
+      // Using base tetrahedron - disable Quadray TruncTet
+      const quadrayTruncTet = document.getElementById("showQuadrayTruncatedTet");
+      if (quadrayTruncTet && quadrayTruncTet.checked) {
+        quadrayTruncTet.checked = false;
+        quadrayTruncTet.dispatchEvent(new Event("change", { bubbles: true }));
+        console.log("📐 Disabled Quadray TruncTet (using base tetrahedron)");
+      }
+    }
+
     // 1b. Force truncation to required value for prime projections
     // Prime spreads were found at t=1/3, so we must ensure scene geometry matches
     if (preset.requiredTruncation !== undefined) {
