@@ -58,7 +58,7 @@ export const CAMERA_PRESETS = {
     name: "7-gon Projection",
     description: "TruncTet+Tet compound → 7-vertex hull",
     spreads: [0, 0.01, 0.14], // Verified Project-Streamline
-    recommendedForm: "quadrayCompoundTet",
+    recommendedForm: "primeCompoundTet",
     reference: "prime_projections_verified.json (Project-Streamline)",
     compound: ["truncatedTetrahedron", "tetrahedron"],
     totalVertices: 16,
@@ -68,7 +68,7 @@ export const CAMERA_PRESETS = {
     name: "11-gon Projection",
     description: "TruncTet+Icosa compound → 11-vertex hull",
     spreads: [0, 0, 0.5], // Corrected circumradius (Feb 2026)
-    recommendedForm: "quadrayCompound",
+    recommendedForm: "primeCompoundIcosa",
     reference: "prime_projections_corrected.json",
     compound: ["truncatedTetrahedron", "icosahedron"],
     totalVertices: 24,
@@ -78,7 +78,7 @@ export const CAMERA_PRESETS = {
     name: "13-gon Projection",
     description: "TruncTet+Icosa compound → 13-vertex hull",
     spreads: [0, 0.01, 0.96], // Corrected circumradius (Feb 2026)
-    recommendedForm: "quadrayCompound",
+    recommendedForm: "primeCompoundIcosa",
     reference: "prime_projections_corrected.json",
     compound: ["truncatedTetrahedron", "icosahedron"],
     totalVertices: 24,
@@ -115,8 +115,6 @@ const colorPalette = {
   quadrayOctahedron: 0x66ffaa, // Sea green (Quadray octahedron)
   quadrayTruncatedTet: 0x9acd32, // Yellow-green (7-gon projection source)
   quadrayStellaOctangula: 0xff6b9d, // Pink-coral (Star Tetrahedron / Merkaba)
-  quadrayCompound: 0xffaa55, // Orange-gold (Compound Trunc Tet + Icosa for 11/13-gon)
-  quadrayCompoundTet: 0x7bed9f, // Mint-green (Compound Trunc Tet + Tet for 7-gon)
   // Primitives
   point: 0xff00ff, // Fuchsia/bright pink - highly visible coordinate exploration point
   line: 0xff0000, // Red - 1D primitive
@@ -160,9 +158,7 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayCuboctahedronGroup,
     quadrayOctahedronGroup,
     quadrayTruncatedTetGroup,
-    quadrayStellaOctangulaGroup,
-    quadrayCompoundGroup,
-    quadrayCompoundTetGroup; // Quadray demonstrators
+    quadrayStellaOctangulaGroup; // Quadray demonstrators
   let primeTruncTetGroup, primeCompoundTetGroup, primeCompoundIcosaGroup; // Prime polygon projection polyhedra (base geometry)
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
@@ -371,12 +367,6 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayStellaOctangulaGroup = new THREE.Group();
     quadrayStellaOctangulaGroup.userData.type = "quadrayStellaOctangula";
 
-    quadrayCompoundGroup = new THREE.Group();
-    quadrayCompoundGroup.userData.type = "quadrayCompound";
-
-    quadrayCompoundTetGroup = new THREE.Group();
-    quadrayCompoundTetGroup.userData.type = "quadrayCompoundTet";
-
     // Prime polygon projection polyhedra (base geometry - no Quadray normalization)
     primeTruncTetGroup = new THREE.Group();
     primeTruncTetGroup.userData.type = "primeTruncTet";
@@ -426,8 +416,6 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(quadrayOctahedronGroup);
     scene.add(quadrayTruncatedTetGroup);
     scene.add(quadrayStellaOctangulaGroup);
-    scene.add(quadrayCompoundGroup);
-    scene.add(quadrayCompoundTetGroup);
     // Prime polygon projection polyhedra
     scene.add(primeTruncTetGroup);
     scene.add(primeCompoundTetGroup);
@@ -2649,94 +2637,6 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayStellaOctangulaGroup.visible = false;
     }
 
-    // Compound (Truncated Tetrahedron + Icosahedron) for 11/13-gon projections
-    // Uses BASE Polyhedra functions - NO Quadray normalization
-    // Same scale as Python search for exact vertex parity
-    if (document.getElementById("showQuadrayCompound")?.checked) {
-      // Clear existing group
-      while (quadrayCompoundGroup.children.length > 0) {
-        quadrayCompoundGroup.remove(quadrayCompoundGroup.children[0]);
-      }
-
-      // Use base compound function - matches Python rt_polyhedra.py exactly
-      // Scale factor applied uniformly to maintain relative proportions
-      const compound = Polyhedra.compoundTruncTetIcosa(scale, 1 / 3);
-
-      // Render truncated tetrahedron component
-      const truncTetSubGroup = new THREE.Group();
-      truncTetSubGroup.userData.type = "truncatedTetrahedron";
-      renderPolyhedron(
-        truncTetSubGroup,
-        compound.components.truncatedTetrahedron,
-        colorPalette.quadrayTruncatedTet,
-        opacity
-      );
-      quadrayCompoundGroup.add(truncTetSubGroup);
-
-      // Render icosahedron component
-      const icosaSubGroup = new THREE.Group();
-      icosaSubGroup.userData.type = "icosahedron";
-      renderPolyhedron(
-        icosaSubGroup,
-        compound.components.icosahedron,
-        colorPalette.icosahedron,
-        opacity
-      );
-      quadrayCompoundGroup.add(icosaSubGroup);
-
-      quadrayCompoundGroup.userData.parameters = {
-        scale: scale,
-        truncation: 1 / 3,
-        metadata: compound.metadata,
-      };
-      quadrayCompoundGroup.visible = true;
-    } else {
-      quadrayCompoundGroup.visible = false;
-    }
-
-    // Compound (Truncated Tetrahedron + Tetrahedron) for 7-gon projections
-    // Uses BASE Polyhedra functions - NO Quadray normalization
-    if (document.getElementById("showQuadrayCompoundTet")?.checked) {
-      // Clear existing group
-      while (quadrayCompoundTetGroup.children.length > 0) {
-        quadrayCompoundTetGroup.remove(quadrayCompoundTetGroup.children[0]);
-      }
-
-      // Use base compound function - matches Python rt_polyhedra.py exactly
-      const compound = Polyhedra.compoundTruncTetTet(scale, 1 / 3);
-
-      // Render truncated tetrahedron component
-      const truncTetSubGroup = new THREE.Group();
-      truncTetSubGroup.userData.type = "truncatedTetrahedron";
-      renderPolyhedron(
-        truncTetSubGroup,
-        compound.components.truncatedTetrahedron,
-        colorPalette.quadrayTruncatedTet,
-        opacity
-      );
-      quadrayCompoundTetGroup.add(truncTetSubGroup);
-
-      // Render tetrahedron component
-      const tetSubGroup = new THREE.Group();
-      tetSubGroup.userData.type = "tetrahedron";
-      renderPolyhedron(
-        tetSubGroup,
-        compound.components.tetrahedron,
-        colorPalette.tetrahedron,
-        opacity
-      );
-      quadrayCompoundTetGroup.add(tetSubGroup);
-
-      quadrayCompoundTetGroup.userData.parameters = {
-        scale: scale,
-        truncation: 1 / 3,
-        metadata: compound.metadata,
-      };
-      quadrayCompoundTetGroup.visible = true;
-    } else {
-      quadrayCompoundTetGroup.visible = false;
-    }
-
     // ========== PRIME POLYGON PROJECTION POLYHEDRA ==========
     // These use BASE Polyhedra functions (no Quadray normalization)
     // Single source of truth for prime hull projections
@@ -4225,8 +4125,6 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayOctahedronGroup,
       quadrayTruncatedTetGroup,
       quadrayStellaOctangulaGroup,
-      quadrayCompoundGroup,
-      quadrayCompoundTetGroup,
       tetrahelix1Group,
       tetrahelix2Group,
       tetrahelix3Group,

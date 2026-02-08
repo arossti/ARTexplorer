@@ -1979,8 +1979,6 @@ export const Polyhedra = {
   quadrayOctahedron: QuadrayPolyhedra.octahedron,
   quadrayTruncatedTetrahedron: QuadrayPolyhedra.truncatedTetrahedron,
   quadrayStellaOctangula: QuadrayPolyhedra.stellaOctangula,
-  quadrayCompoundTruncTetIcosa: QuadrayPolyhedra.compoundTruncTetIcosahedron,
-  quadrayCompoundTruncTetTet: QuadrayPolyhedra.compoundTruncTetTetrahedron,
 };
 
 /**

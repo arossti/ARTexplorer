@@ -156,9 +156,7 @@ function startARTexplorer(
     quadrayCuboctahedronGroup,
     quadrayOctahedronGroup,
     quadrayTruncatedTetGroup,
-    quadrayStellaOctangulaGroup,
-    quadrayCompoundGroup,
-    quadrayCompoundTetGroup;
+    quadrayStellaOctangulaGroup;
   let cartesianGrid, ivmPlanes;
 
   // ========================================================================
@@ -702,6 +700,22 @@ function startARTexplorer(
 
   // Make rotorDemo globally accessible for debugging
   window.getRotorDemo = () => rotorDemo;
+
+  // Prime Projections Demo - Floating preset panel
+  document
+    .getElementById("open-prime-projections-demo")
+    .addEventListener("click", e => {
+      e.preventDefault();
+      const isVisible = window.RTPrimeCuts.togglePanel();
+      const link = e.target;
+      if (isVisible) {
+        link.style.color = "#0f0";
+        link.textContent = "Prime Projections \u2713";
+      } else {
+        link.style.color = "#7ab8ff";
+        link.textContent = "Prime Projections";
+      }
+    });
 
   // ========================================================================
   // GUMBALL TOOL FUNCTIONALITY
@@ -2454,8 +2468,6 @@ function startARTexplorer(
       quadrayOctahedronGroup,
       quadrayTruncatedTetGroup,
       quadrayStellaOctangulaGroup,
-      quadrayCompoundGroup,
-      quadrayCompoundTetGroup,
       penroseTilingGroup,
     ];
 
@@ -2726,8 +2738,6 @@ function startARTexplorer(
       quadrayOctahedronGroup,
       quadrayTruncatedTetGroup,
       quadrayStellaOctangulaGroup,
-      quadrayCompoundGroup,
-      quadrayCompoundTetGroup,
       penroseTilingGroup,
     ];
 
@@ -4177,8 +4187,6 @@ function startARTexplorer(
     quadrayOctahedronGroup,
     quadrayTruncatedTetGroup,
     quadrayStellaOctangulaGroup,
-    quadrayCompoundGroup,
-    quadrayCompoundTetGroup,
     penroseTilingGroup,
   } = formGroups);
 
