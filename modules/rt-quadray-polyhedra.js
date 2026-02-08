@@ -228,7 +228,9 @@ export const QuadrayPolyhedra = {
       `[RT] Deformed Quadray Tetrahedron: Z stretched by ${zStretch}x`
     );
     console.log(`  With zero-sum: Z normalizes - deformation LOST`);
-    console.log(`  Without zero-sum: Z stays at (0,0,0,${zStretch}) - PRESERVED`);
+    console.log(
+      `  Without zero-sum: Z stays at (0,0,0,${zStretch}) - PRESERVED`
+    );
 
     // Return WITHOUT normalization to preserve deformation
     return QuadrayPolyhedra.tetrahedron(scale, {
@@ -263,7 +265,9 @@ export const QuadrayPolyhedra = {
     console.log(
       `  Vertices: (0,1,1,1) permutations (single inactive coordinate)`
     );
-    console.log(`  Relationship: dual = base inverted through origin + (1,1,1,1)`);
+    console.log(
+      `  Relationship: dual = base inverted through origin + (1,1,1,1)`
+    );
 
     return QuadrayPolyhedra.tetrahedron(scale, {
       normalize: normalize,
@@ -304,21 +308,38 @@ export const QuadrayPolyhedra = {
 
     // Octahedron edges: vertices are adjacent if they share exactly one coordinate
     const edges = [
-      [0, 1], [0, 2], [0, 3], [0, 4], // From WX
-      [1, 2], [1, 3], [1, 5], // From WY
-      [2, 4], [2, 5], // From WZ
-      [3, 4], [3, 5], // From XY
+      [0, 1],
+      [0, 2],
+      [0, 3],
+      [0, 4], // From WX
+      [1, 2],
+      [1, 3],
+      [1, 5], // From WY
+      [2, 4],
+      [2, 5], // From WZ
+      [3, 4],
+      [3, 5], // From XY
       [4, 5], // From XZ to YZ
     ];
 
     // 8 triangular faces (all vertices with exactly one common coordinate)
     const faces = [
-      [0, 1, 3], [0, 3, 4], [0, 4, 2], [0, 2, 1],
-      [5, 1, 2], [5, 2, 4], [5, 4, 3], [5, 3, 1],
+      [0, 1, 3],
+      [0, 3, 4],
+      [0, 4, 2],
+      [0, 2, 1],
+      [5, 1, 2],
+      [5, 2, 4],
+      [5, 4, 3],
+      [5, 3, 1],
     ].map(f => fixWinding(f, vertices));
 
-    console.log(`[RT] Quadray Octahedron: normalize=${normalize}, scale=${scale}`);
-    console.log(`  WXYZ: {1,1,0,0} permutations - 6 vertices (tet edge midpoints)`);
+    console.log(
+      `[RT] Quadray Octahedron: normalize=${normalize}, scale=${scale}`
+    );
+    console.log(
+      `  WXYZ: {1,1,0,0} permutations - 6 vertices (tet edge midpoints)`
+    );
 
     return {
       vertices,
@@ -388,15 +409,31 @@ export const QuadrayPolyhedra = {
     // OR form edges of the hexagonal faces
     const edges = [
       // Triangular face edges (near each original tet vertex)
-      [0, 1], [1, 2], [2, 0], // Near W
-      [3, 4], [4, 5], [5, 3], // Near X
-      [6, 7], [7, 8], [8, 6], // Near Y
-      [9, 10], [10, 11], [11, 9], // Near Z
+      [0, 1],
+      [1, 2],
+      [2, 0], // Near W
+      [3, 4],
+      [4, 5],
+      [5, 3], // Near X
+      [6, 7],
+      [7, 8],
+      [8, 6], // Near Y
+      [9, 10],
+      [10, 11],
+      [11, 9], // Near Z
       // Hexagonal face edges (connecting triangles)
-      [0, 3], [1, 6], [2, 9], // From W triangle
-      [3, 7], [4, 1], [5, 10], // From X triangle
-      [6, 4], [7, 11], [8, 2], // From Y triangle
-      [9, 5], [10, 8], [11, 6], // From Z triangle - wait, need to verify
+      [0, 3],
+      [1, 6],
+      [2, 9], // From W triangle
+      [3, 7],
+      [4, 1],
+      [5, 10], // From X triangle
+      [6, 4],
+      [7, 11],
+      [8, 2], // From Y triangle
+      [9, 5],
+      [10, 8],
+      [11, 6], // From Z triangle - wait, need to verify
     ];
 
     // Actually, let me compute edges properly via adjacency
@@ -447,7 +484,8 @@ export const QuadrayPolyhedra = {
     ];
 
     // RT VALIDATION
-    const sampleQ = vertices.length > 1 ? RT.quadrance(vertices[0], vertices[1]) : 0;
+    const sampleQ =
+      vertices.length > 1 ? RT.quadrance(vertices[0], vertices[1]) : 0;
 
     console.log(
       `[RT] Quadray Truncated Tetrahedron: normalize=${normalize}, scale=${scale}`
@@ -513,7 +551,10 @@ export const QuadrayPolyhedra = {
     // Combine vertices (base: 0-3, dual: 4-7)
     const vertices = [...baseTet.vertices, ...dualTet.vertices];
     const wxyz_raw = [...baseTet.wxyz_raw, ...dualTet.wxyz_raw];
-    const wxyz_normalized = [...baseTet.wxyz_normalized, ...dualTet.wxyz_normalized];
+    const wxyz_normalized = [
+      ...baseTet.wxyz_normalized,
+      ...dualTet.wxyz_normalized,
+    ];
 
     // Combine edges (offset dual edges by 4)
     const edges = [
@@ -544,7 +585,8 @@ export const QuadrayPolyhedra = {
         pattern: "tetrahedron + dualTetrahedron compound",
         normalized: normalize,
         scale: scale,
-        physicalMeaning: "Star Tetrahedron (Merkaba) - compound of two tetrahedra",
+        physicalMeaning:
+          "Star Tetrahedron (Merkaba) - compound of two tetrahedra",
         vertexCount: 8,
         note: "Composed from existing Quadray tetrahedron generators",
       },
@@ -570,13 +612,21 @@ export const QuadrayPolyhedra = {
     // All 12 unique permutations of {2, 1, 1, 0}
     const wxyz_raw = [
       // "2" in W position
-      [2, 1, 1, 0], [2, 1, 0, 1], [2, 0, 1, 1],
+      [2, 1, 1, 0],
+      [2, 1, 0, 1],
+      [2, 0, 1, 1],
       // "2" in X position
-      [1, 2, 1, 0], [1, 2, 0, 1], [0, 2, 1, 1],
+      [1, 2, 1, 0],
+      [1, 2, 0, 1],
+      [0, 2, 1, 1],
       // "2" in Y position
-      [1, 1, 2, 0], [1, 0, 2, 1], [0, 1, 2, 1],
+      [1, 1, 2, 0],
+      [1, 0, 2, 1],
+      [0, 1, 2, 1],
       // "2" in Z position
-      [1, 1, 0, 2], [1, 0, 1, 2], [0, 1, 1, 2],
+      [1, 1, 0, 2],
+      [1, 0, 1, 2],
+      [0, 1, 1, 2],
     ];
 
     const wxyz_normalized = wxyz_raw.map(coords =>
@@ -600,8 +650,10 @@ export const QuadrayPolyhedra = {
           if (vi[k] === vj[k]) matches++;
         }
         if (matches === 2) {
-          const pos2_i = vi.indexOf(2), pos2_j = vj.indexOf(2);
-          const pos0_i = vi.indexOf(0), pos0_j = vj.indexOf(0);
+          const pos2_i = vi.indexOf(2),
+            pos2_j = vj.indexOf(2);
+          const pos0_i = vi.indexOf(0),
+            pos0_j = vj.indexOf(0);
           const bothSwap = pos2_i !== pos2_j && pos0_i !== pos0_j;
           if (!bothSwap) {
             adjList.get(i).push(j);
@@ -625,11 +677,16 @@ export const QuadrayPolyhedra = {
       const neighbors = adjList.get(i);
       for (let j = 0; j < neighbors.length; j++) {
         for (let k = j + 1; k < neighbors.length; k++) {
-          const n1 = neighbors[j], n2 = neighbors[k];
+          const n1 = neighbors[j],
+            n2 = neighbors[k];
           if (adjList.get(n1).includes(n2)) {
             const tri = [i, n1, n2].sort((a, b) => a - b);
             const key = tri.join(",");
-            if (!triangleFaces.some(f => f.sort((a, b) => a - b).join(",") === key)) {
+            if (
+              !triangleFaces.some(
+                f => f.sort((a, b) => a - b).join(",") === key
+              )
+            ) {
               triangleFaces.push([i, n1, n2]);
             }
           }
@@ -649,7 +706,11 @@ export const QuadrayPolyhedra = {
           const sq = [common[0], i, common[1], j];
           const sorted = [...sq].sort((a, b) => a - b);
           const key = sorted.join(",");
-          if (!squareFaces.some(f => [...f].sort((a, b) => a - b).join(",") === key)) {
+          if (
+            !squareFaces.some(
+              f => [...f].sort((a, b) => a - b).join(",") === key
+            )
+          ) {
             squareFaces.push(sq);
           }
         }
@@ -666,7 +727,9 @@ export const QuadrayPolyhedra = {
       `[RT] Quadray Cuboctahedron (VE): normalize=${normalize}, scale=${scale}`
     );
     console.log(`  WXYZ: {2,1,1,0} permutations - 12 vertices`);
-    console.log(`  Edges: ${edges.length}, Faces: ${faces.length} (8 tri + 6 sq)`);
+    console.log(
+      `  Edges: ${edges.length}, Faces: ${faces.length} (8 tri + 6 sq)`
+    );
 
     return {
       vertices,
@@ -709,10 +772,18 @@ export const QuadrayPolyhedra = {
     // ═══════════════════════════════════════════════════════════════════════
     const truncTetWXYZ = [];
     const coordSets = [
-      [2, 1, 0, 0], [2, 0, 1, 0], [2, 0, 0, 1], // W=2
-      [1, 2, 0, 0], [0, 2, 1, 0], [0, 2, 0, 1], // X=2
-      [1, 0, 2, 0], [0, 1, 2, 0], [0, 0, 2, 1], // Y=2
-      [1, 0, 0, 2], [0, 1, 0, 2], [0, 0, 1, 2], // Z=2
+      [2, 1, 0, 0],
+      [2, 0, 1, 0],
+      [2, 0, 0, 1], // W=2
+      [1, 2, 0, 0],
+      [0, 2, 1, 0],
+      [0, 2, 0, 1], // X=2
+      [1, 0, 2, 0],
+      [0, 1, 2, 0],
+      [0, 0, 2, 1], // Y=2
+      [1, 0, 0, 2],
+      [0, 1, 0, 2],
+      [0, 0, 1, 2], // Z=2
     ];
     coordSets.forEach(c => truncTetWXYZ.push(c));
 
@@ -721,8 +792,8 @@ export const QuadrayPolyhedra = {
     );
 
     // First pass: compute raw vertices to find circumradius
-    const truncTetRaw = truncTetNormalized.map(([w, x, y, z]) =>
-      wxyzToCartesian(w, x, y, z, 1.0) // Unit scale first
+    const truncTetRaw = truncTetNormalized.map(
+      ([w, x, y, z]) => wxyzToCartesian(w, x, y, z, 1.0) // Unit scale first
     );
 
     // Calculate truncated tet circumradius
@@ -743,9 +814,13 @@ export const QuadrayPolyhedra = {
       for (let j = i + 1; j < 12; j++) {
         const vi = truncTetWXYZ[i];
         const vj = truncTetWXYZ[j];
-        let diffs = 0, diffSum = 0;
+        let diffs = 0,
+          diffSum = 0;
         for (let k = 0; k < 4; k++) {
-          if (vi[k] !== vj[k]) { diffs++; diffSum += Math.abs(vi[k] - vj[k]); }
+          if (vi[k] !== vj[k]) {
+            diffs++;
+            diffSum += Math.abs(vi[k] - vj[k]);
+          }
         }
         if (diffs === 2 && diffSum === 2) truncTetEdges.push([i, j]);
       }
@@ -773,8 +848,12 @@ export const QuadrayPolyhedra = {
     const icosaEdgesLocal = icosaRaw.edges;
     const icosaFacesLocal = icosaRaw.faces;
 
-    console.log(`  [Compound Scale] TruncTet circumradius: ${truncTetCircumradius.toFixed(4)}, Icosa: ${icosaCircumradius.toFixed(4)}`);
-    console.log(`  [Compound Scale] Both normalized to circumradius: ${scale.toFixed(4)}`);
+    console.log(
+      `  [Compound Scale] TruncTet circumradius: ${truncTetCircumradius.toFixed(4)}, Icosa: ${icosaCircumradius.toFixed(4)}`
+    );
+    console.log(
+      `  [Compound Scale] Both normalized to circumradius: ${scale.toFixed(4)}`
+    );
 
     // ═══════════════════════════════════════════════════════════════════════
     // 3. COMBINE VERTEX SETS (24 total)
@@ -793,18 +872,18 @@ export const QuadrayPolyhedra = {
     // Truncated tetrahedron faces (indices 0-11)
     // 4 triangular faces (one per original tet vertex)
     const truncTetTriangles = [
-      [0, 1, 2],   // Near W
-      [3, 4, 5],   // Near X
-      [6, 7, 8],   // Near Y
+      [0, 1, 2], // Near W
+      [3, 4, 5], // Near X
+      [6, 7, 8], // Near Y
       [9, 10, 11], // Near Z
     ];
 
     // 4 hexagonal faces (one per original tet face)
     const truncTetHexagons = [
-      [0, 3, 4, 7, 6, 1],     // WXY face (Z=0)
-      [0, 3, 5, 10, 9, 2],    // WXZ face (Y=0)
-      [1, 6, 8, 11, 9, 2],    // WYZ face (X=0)
-      [4, 7, 8, 11, 10, 5],   // XYZ face (W=0)
+      [0, 3, 4, 7, 6, 1], // WXY face (Z=0)
+      [0, 3, 5, 10, 9, 2], // WXZ face (Y=0)
+      [1, 6, 8, 11, 9, 2], // WYZ face (X=0)
+      [4, 7, 8, 11, 10, 5], // XYZ face (W=0)
     ];
 
     // Offset icosahedron face indices by 12
@@ -824,9 +903,13 @@ export const QuadrayPolyhedra = {
     console.log(
       `[RT] Compound Polyhedra (Trunc Tet + Icosahedron): ${vertices.length} vertices, ${edges.length} edges, ${faces.length} faces`
     );
-    console.log(`  Truncated Tetrahedron: 12 vertices, 8 faces (4 tri + 4 hex)`);
+    console.log(
+      `  Truncated Tetrahedron: 12 vertices, 8 faces (4 tri + 4 hex)`
+    );
     console.log(`  Icosahedron: 12 vertices, 20 faces (all triangular)`);
-    console.log(`  Prime projection targets: 11-gon at s=(0,0.4,0.2), 13-gon at s=(0,0.6,0.8)`);
+    console.log(
+      `  Prime projection targets: 11-gon at s=(0,0.4,0.2), 13-gon at s=(0,0.6,0.8)`
+    );
 
     return {
       vertices,
@@ -893,10 +976,18 @@ export const QuadrayPolyhedra = {
     // ═══════════════════════════════════════════════════════════════════════
     const truncTetWXYZ = [];
     const coordSets = [
-      [2, 1, 0, 0], [2, 0, 1, 0], [2, 0, 0, 1], // W=2
-      [1, 2, 0, 0], [0, 2, 1, 0], [0, 2, 0, 1], // X=2
-      [1, 0, 2, 0], [0, 1, 2, 0], [0, 0, 2, 1], // Y=2
-      [1, 0, 0, 2], [0, 1, 0, 2], [0, 0, 1, 2], // Z=2
+      [2, 1, 0, 0],
+      [2, 0, 1, 0],
+      [2, 0, 0, 1], // W=2
+      [1, 2, 0, 0],
+      [0, 2, 1, 0],
+      [0, 2, 0, 1], // X=2
+      [1, 0, 2, 0],
+      [0, 1, 2, 0],
+      [0, 0, 2, 1], // Y=2
+      [1, 0, 0, 2],
+      [0, 1, 0, 2],
+      [0, 0, 1, 2], // Z=2
     ];
     coordSets.forEach(c => truncTetWXYZ.push(c));
 
@@ -905,8 +996,8 @@ export const QuadrayPolyhedra = {
     );
 
     // First pass: compute raw vertices to find circumradius
-    const truncTetRaw = truncTetNormalized.map(([w, x, y, z]) =>
-      wxyzToCartesian(w, x, y, z, 1.0) // Unit scale first
+    const truncTetRaw = truncTetNormalized.map(
+      ([w, x, y, z]) => wxyzToCartesian(w, x, y, z, 1.0) // Unit scale first
     );
 
     // Calculate truncated tet circumradius
@@ -927,9 +1018,13 @@ export const QuadrayPolyhedra = {
       for (let j = i + 1; j < 12; j++) {
         const vi = truncTetWXYZ[i];
         const vj = truncTetWXYZ[j];
-        let diffs = 0, diffSum = 0;
+        let diffs = 0,
+          diffSum = 0;
         for (let k = 0; k < 4; k++) {
-          if (vi[k] !== vj[k]) { diffs++; diffSum += Math.abs(vi[k] - vj[k]); }
+          if (vi[k] !== vj[k]) {
+            diffs++;
+            diffSum += Math.abs(vi[k] - vj[k]);
+          }
         }
         if (diffs === 2 && diffSum === 2) truncTetEdges.push([i, j]);
       }
@@ -957,8 +1052,12 @@ export const QuadrayPolyhedra = {
     const tetEdgesLocal = tetRaw.edges;
     const tetFacesLocal = tetRaw.faces;
 
-    console.log(`  [Compound Scale] TruncTet circumradius: ${truncTetCircumradius.toFixed(4)}, Tet: ${tetCircumradius.toFixed(4)}`);
-    console.log(`  [Compound Scale] Both normalized to circumradius: ${scale.toFixed(4)}`);
+    console.log(
+      `  [Compound Scale] TruncTet circumradius: ${truncTetCircumradius.toFixed(4)}, Tet: ${tetCircumradius.toFixed(4)}`
+    );
+    console.log(
+      `  [Compound Scale] Both normalized to circumradius: ${scale.toFixed(4)}`
+    );
 
     // ═══════════════════════════════════════════════════════════════════════
     // 3. COMBINE VERTEX SETS (16 total)
@@ -977,18 +1076,18 @@ export const QuadrayPolyhedra = {
     // Truncated tetrahedron faces (indices 0-11)
     // 4 triangular faces (one per original tet vertex)
     const truncTetTriangles = [
-      [0, 1, 2],   // Near W
-      [3, 4, 5],   // Near X
-      [6, 7, 8],   // Near Y
+      [0, 1, 2], // Near W
+      [3, 4, 5], // Near X
+      [6, 7, 8], // Near Y
       [9, 10, 11], // Near Z
     ];
 
     // 4 hexagonal faces (one per original tet face)
     const truncTetHexagons = [
-      [0, 3, 4, 7, 6, 1],     // WXY face (Z=0)
-      [0, 3, 5, 10, 9, 2],    // WXZ face (Y=0)
-      [1, 6, 8, 11, 9, 2],    // WYZ face (X=0)
-      [4, 7, 8, 11, 10, 5],   // XYZ face (W=0)
+      [0, 3, 4, 7, 6, 1], // WXY face (Z=0)
+      [0, 3, 5, 10, 9, 2], // WXZ face (Y=0)
+      [1, 6, 8, 11, 9, 2], // WYZ face (X=0)
+      [4, 7, 8, 11, 10, 5], // XYZ face (W=0)
     ];
 
     // Offset tetrahedron face indices by 12
@@ -1008,7 +1107,9 @@ export const QuadrayPolyhedra = {
     console.log(
       `[RT] Compound Polyhedra (Trunc Tet + Tetrahedron): ${vertices.length} vertices, ${edges.length} edges, ${faces.length} faces`
     );
-    console.log(`  Truncated Tetrahedron: 12 vertices, 8 faces (4 tri + 4 hex)`);
+    console.log(
+      `  Truncated Tetrahedron: 12 vertices, 8 faces (4 tri + 4 hex)`
+    );
     console.log(`  Tetrahedron: 4 vertices, 4 faces (all triangular)`);
     console.log(`  Prime projection target: 7-gon at s=(0, 0.4, 0.04)`);
 

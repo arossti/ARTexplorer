@@ -350,6 +350,9 @@ The interface consists of several control panels:
 │   ├── rt-controls.js          ← Gumball interaction
 │   ├── rt-coordinates.js       ← Coordinate input/display handling
 │   ├── rt-papercut.js          ← Cutplane/slicing, print mode
+│   ├── rt-projections.js       ← Generalized projection visualization
+│   ├── rt-prime-cuts.js        ← Prime n-gon projection presets
+│   ├── rt-quadray-polyhedra.js ← Quadray-native polyhedra & compounds
 │   ├── rt-snap-geometry.js     ← Snap geometry utilities
 │   ├── rt-state-manager.js     ← State persistence
 │   ├── rt-filehandler.js       ← Import/export (JSON, glTF)
@@ -403,6 +406,9 @@ The interface consists of several control panels:
 - `rt-matrix-radial.js`: IVM spatial array generation for radial arrangements
 - `rt-helices.js`: Tetrahelix generation and rendering
 - `rt-quadray-rotor.js`: Spread-Quadray Rotor implementation (gimbal-lock-free rotation)
+- `rt-quadray-polyhedra.js`: Quadray-native polyhedra and compound polyhedra (for prime projection research)
+- `rt-projections.js`: Generalized projection visualization for any polyhedron
+- `rt-prime-cuts.js`: Prime n-gon projection presets (5, 7, 11, 13-gon from polyhedra projections)
 - `rt-snap-geometry.js`: Snap geometry utilities for vertex/edge/face snapping
 
 **Scene Infrastructure:**

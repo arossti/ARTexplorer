@@ -1102,16 +1102,24 @@ export const RTPapercut = {
   // ═══════════════════════════════════════════════════════════════════════════
 
   // Shadow state properties (delegate to RTPrimeCuts)
-  get _primePolygonGroup() { return RTPrimeCuts._primePolygonGroup; },
-  set _primePolygonGroup(val) { RTPrimeCuts._primePolygonGroup = val; },
-  get _primePolygonVisible() { return RTPrimeCuts._primePolygonVisible; },
-  set _primePolygonVisible(val) { RTPrimeCuts._primePolygonVisible = val; },
+  get _primePolygonGroup() {
+    return RTPrimeCuts._primePolygonGroup;
+  },
+  set _primePolygonGroup(val) {
+    RTPrimeCuts._primePolygonGroup = val;
+  },
+  get _primePolygonVisible() {
+    return RTPrimeCuts._primePolygonVisible;
+  },
+  set _primePolygonVisible(val) {
+    RTPrimeCuts._primePolygonVisible = val;
+  },
 
   // Shadow public API (delegate to RTPrimeCuts)
-  showPrimePolygon: function(n, scene, camera, planeDistance = 5) {
+  showPrimePolygon: function (n, scene, camera, planeDistance = 5) {
     return RTPrimeCuts.showPrimePolygon(n, scene, camera, planeDistance);
   },
-  updatePrimePolygonOrientation: function(scene, camera) {
+  updatePrimePolygonOrientation: function (scene, camera) {
     return RTPrimeCuts.updatePrimePolygonOrientation(scene, camera);
   },
 
@@ -1119,7 +1127,7 @@ export const RTPapercut = {
    * Initialize prime projection module with renderer reference
    * Called from rt-init.js after scene setup
    */
-  initPrimeCuts: function(renderer) {
+  initPrimeCuts: function (renderer) {
     RTPrimeCuts.init(renderer, RTPapercut);
   },
 };

@@ -99,6 +99,19 @@ export const RTStateManager = {
       // Background colors
       canvasBackground: "0x1A1A1A", // Canvas/scene background
       uiBackground: "0x2A2A2A", // UI panel background
+      // Projection state (mirrors RTProjections.state)
+      projection: {
+        enabled: false,
+        basis: "cartesian", // 'cartesian' | 'tetrahedral'
+        axis: "z", // 'x','y','z' | 'qw','qx','qy','qz'
+        distance: 3,
+        showRays: true,
+        showInterior: false,
+        showIdealPolygon: false,
+        customSpreads: null, // [s1, s2, s3] or null for axis-based
+        presetName: null, // "pentagon", "heptagon", etc. or null
+        targetPolyhedronType: null, // userData.type of projected polyhedron
+      },
     },
   },
 

@@ -668,12 +668,20 @@ export const PenroseTiling = {
     // Actually, construct from known geometry:
     // Child has its acute vertex at V0, rotated +36° from parent
     const child1Verts = [V0, A, P, D];
-    const child1 = PenroseTiling._rhombusFromVerts("thick-rhombus", child1Verts, newQ);
+    const child1 = PenroseTiling._rhombusFromVerts(
+      "thick-rhombus",
+      child1Verts,
+      newQ
+    );
 
     // Child thick rhombus #2: centered near V2-V1 corner
     // Vertices: V2 (acute), C, Q, B
     const child2Verts = [V2, C, Q, B];
-    const child2 = PenroseTiling._rhombusFromVerts("thick-rhombus", child2Verts, newQ);
+    const child2 = PenroseTiling._rhombusFromVerts(
+      "thick-rhombus",
+      child2Verts,
+      newQ
+    );
 
     // Child thin rhombus: fills the gap between thick children
     // Vertices: A, B, Q, P (the central region)
@@ -681,7 +689,11 @@ export const PenroseTiling = {
     // Here A and B become the obtuse (144°) vertices
     // P and Q become the acute (36°) vertices
     const child3Verts = [P, A, Q, C]; // Reorder for thin: acute at 0,2
-    const child3 = PenroseTiling._rhombusFromVerts("thin-rhombus", child3Verts, newQ);
+    const child3 = PenroseTiling._rhombusFromVerts(
+      "thin-rhombus",
+      child3Verts,
+      newQ
+    );
 
     console.log(
       `[RT] Thick deflate: parent at (${tile.position.x.toFixed(2)}, ${tile.position.y.toFixed(2)}) → ` +
@@ -726,7 +738,11 @@ export const PenroseTiling = {
     // Child thick rhombus: near V0
     // Vertices: V0 (acute of parent becomes acute of child), A, P, B
     const child1Verts = [V0, A, P, B];
-    const child1 = PenroseTiling._rhombusFromVerts("thick-rhombus", child1Verts, newQ);
+    const child1 = PenroseTiling._rhombusFromVerts(
+      "thick-rhombus",
+      child1Verts,
+      newQ
+    );
 
     // Child thin rhombus: fills remaining space
     // Vertices: P, A (becomes obtuse), V2, ... need to work out
@@ -735,7 +751,11 @@ export const PenroseTiling = {
     const C = lerp(V2, V1, invPhi); // On V2-V1
     const D = lerp(V2, V3, invPhi); // On V2-V3
     const child2Verts = [P, C, V2, D]; // Thin: acute at P and V2
-    const child2 = PenroseTiling._rhombusFromVerts("thin-rhombus", child2Verts, newQ);
+    const child2 = PenroseTiling._rhombusFromVerts(
+      "thin-rhombus",
+      child2Verts,
+      newQ
+    );
 
     console.log(
       `[RT] Thin deflate: parent at (${tile.position.x.toFixed(2)}, ${tile.position.y.toFixed(2)}) → ` +
@@ -772,7 +792,9 @@ export const PenroseTiling = {
       }
     }
 
-    console.log(`[RT] Penrose deflate: ${tiles.length} tiles → ${newTiles.length} tiles`);
+    console.log(
+      `[RT] Penrose deflate: ${tiles.length} tiles → ${newTiles.length} tiles`
+    );
     return newTiles;
   },
 
@@ -822,7 +844,7 @@ export const PenroseTiling = {
           position: { x: 0, y: 0 },
         }));
 
-      case "cartwheel":
+      case "cartwheel": {
         // Classic Penrose cartwheel pattern
         // 5 thick + 5 thin rhombi arranged concentrically
         const thickTiles = rotationSteps.map(n => ({
@@ -840,16 +862,38 @@ export const PenroseTiling = {
           ring: 1,
         }));
         return [...thickTiles, ...thinTiles];
+      }
 
       case "single-thick":
-        return [{ type: "thick-rhombus", quadrance, rotationN36: 0, position: { x: 0, y: 0 } }];
+        return [
+          {
+            type: "thick-rhombus",
+            quadrance,
+            rotationN36: 0,
+            position: { x: 0, y: 0 },
+          },
+        ];
 
       case "single-thin":
-        return [{ type: "thin-rhombus", quadrance, rotationN36: 0, position: { x: 0, y: 0 } }];
+        return [
+          {
+            type: "thin-rhombus",
+            quadrance,
+            rotationN36: 0,
+            position: { x: 0, y: 0 },
+          },
+        ];
 
       default:
         console.warn(`[RT] Unknown Penrose seed: ${seed}, using single-thick`);
-        return [{ type: "thick-rhombus", quadrance, rotationN36: 0, position: { x: 0, y: 0 } }];
+        return [
+          {
+            type: "thick-rhombus",
+            quadrance,
+            rotationN36: 0,
+            position: { x: 0, y: 0 },
+          },
+        ];
     }
   },
 
