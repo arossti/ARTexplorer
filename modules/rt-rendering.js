@@ -3227,6 +3227,9 @@ export function initScene(THREE, OrbitControls, RT) {
         window.RTProjections.showProjection(projTarget, {
           spreads: window.RTProjections.state.customSpreads,
         });
+      } else {
+        // No valid target visible - clean up stale projection
+        window.RTProjections.hideProjection();
       }
     }
 
