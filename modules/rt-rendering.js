@@ -2083,9 +2083,21 @@ export function initScene(THREE, OrbitControls, RT) {
       opacity,
     });
 
-    // Dual Tetrahedron (Magenta - reciprocal complementary: matches geodesic octahedron)
+    // Dual Tetrahedron (Magenta) - with optional truncation
     if (document.getElementById("showDualTetrahedron").checked) {
-      const dualTetra = Polyhedra.dualTetrahedron(scale);
+      let dualTetra;
+
+      // Check if truncation is enabled
+      const truncDualCheckbox = document.getElementById("showTruncatedDualTetrahedron");
+      if (truncDualCheckbox && truncDualCheckbox.checked) {
+        // Get truncation value from slider
+        const truncDualSlider = document.getElementById("truncationDualTetraSlider");
+        const truncation = truncDualSlider ? parseFloat(truncDualSlider.value) : 1 / 3;
+        dualTetra = Polyhedra.truncatedDualTetrahedron(scale, truncation);
+      } else {
+        dualTetra = Polyhedra.dualTetrahedron(scale);
+      }
+
       renderPolyhedron(
         dualTetrahedronGroup,
         dualTetra,
@@ -2667,15 +2679,16 @@ export function initScene(THREE, OrbitControls, RT) {
       primeTruncTetGroup.visible = false;
     }
 
-    // Prime Compound (TruncTet + Tet) for 7-gon
+    // Prime Compound (TruncTet + DualTet) for 7-gon
+    // Uses dual tet with unit-sphere normalization for robust hull projection
     if (document.getElementById("showPrimeCompoundTet")?.checked) {
       // Clear existing group
       while (primeCompoundTetGroup.children.length > 0) {
         primeCompoundTetGroup.remove(primeCompoundTetGroup.children[0]);
       }
 
-      // Use base compound function - matches Python rt_polyhedra.py exactly
-      const compound = Polyhedra.compoundTruncTetTet(scale, 1 / 3);
+      // Dual tet compound: all vertices on unit sphere × scale
+      const compound = Polyhedra.compoundTruncTetDualTet(scale, 1 / 3);
 
       // Render truncated tetrahedron component
       const truncTetSubGroup = new THREE.Group();
@@ -2688,16 +2701,16 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       primeCompoundTetGroup.add(truncTetSubGroup);
 
-      // Render tetrahedron component
-      const tetSubGroup = new THREE.Group();
-      tetSubGroup.userData.type = "tetrahedron";
+      // Render dual tetrahedron component
+      const dualTetSubGroup = new THREE.Group();
+      dualTetSubGroup.userData.type = "dualTetrahedron";
       renderPolyhedron(
-        tetSubGroup,
-        compound.components.tetrahedron,
+        dualTetSubGroup,
+        compound.components.dualTetrahedron,
         colorPalette.tetrahedron,
         opacity
       );
-      primeCompoundTetGroup.add(tetSubGroup);
+      primeCompoundTetGroup.add(dualTetSubGroup);
 
       primeCompoundTetGroup.userData = {
         type: "primeCompoundTet",

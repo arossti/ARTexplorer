@@ -180,6 +180,11 @@ export const checkboxWithControlsBindings = [
     siblingCheckboxId: "showGeodesicDualTetrahedron",
   },
   {
+    id: "showTruncatedDualTetrahedron",
+    type: "checkbox-controls",
+    controlsId: "truncation-dual-tetra-controls",
+  },
+  {
     id: "showOctahedron",
     type: "checkbox-controls",
     controlsId: "geodesic-octa-all",
@@ -399,6 +404,19 @@ export const simpleSliderBindings = [
     id: "truncationTetraSlider",
     type: "slider",
     valueId: "truncationTetraValue",
+    formatValue: v => {
+      const t = parseFloat(v);
+      if (t < 0.01) return "0";
+      if (Math.abs(t - 1 / 3) < 0.02) return "⅓";
+      if (t > 0.49) return "½";
+      return t.toFixed(2);
+    },
+  },
+  // Truncation slider (dual tetrahedron → truncated dual tet → octahedron)
+  {
+    id: "truncationDualTetraSlider",
+    type: "slider",
+    valueId: "truncationDualTetraValue",
     formatValue: v => {
       const t = parseFloat(v);
       if (t < 0.01) return "0";

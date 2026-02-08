@@ -1573,6 +1573,30 @@
                     </div>
                   </div>
                 </div>
+                <!-- Truncation controls for Dual Tetrahedron -->
+                <div class="geodesic-nested" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="showTruncatedDualTetrahedron" />
+                    Truncate (0 → ½)
+                  </label>
+                  <div id="truncation-dual-tetra-controls" class="geodesic-nested" style="display: none">
+                    <div class="geodesic-frequency-container slider-container">
+                      <label class="geodesic-frequency-label">t:</label>
+                      <input
+                        type="range"
+                        id="truncationDualTetraSlider"
+                        min="0"
+                        max="0.5"
+                        step="0.01"
+                        value="0.333"
+                      />
+                      <span class="slider-value" id="truncationDualTetraValue">⅓</span>
+                    </div>
+                    <p class="info-text" style="font-size: 9px; margin-top: 4px">
+                      t=0: Dual Tet • t=⅓: Truncated Dual Tet • t=½: Octahedron
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
