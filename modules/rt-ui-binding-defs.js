@@ -555,10 +555,12 @@ export const simpleSliderBindings = [
   },
 
   // Projection plane distance slider
+  // Does NOT trigger updateGeometry - handled by RTProjections.setProjectionDistance() in rt-init.js
   {
     id: "projectionDistance",
     type: "slider",
     valueId: "projectionDistanceValue",
+    updateGeometry: false,
   },
 
   // Dodecahedron face tiling scale (for finding φ-ratio)
