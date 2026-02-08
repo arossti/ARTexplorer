@@ -30,13 +30,13 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showTetrahedron",
     compound: "truncatedTetrahedron",
     vertexCount: 12,
-    spreads: [0.01, 0.5, 0],  // Verified by Project-Streamline
-    requiredTruncation: 1/3,  // Spreads only valid at t=1/3 - forces truncation checkbox+slider
+    spreads: [0, 0.5, 0],  // NEW: Found with base geometry (prime_search_streamlined.py)
+    requiredTruncation: 1/3,  // Forces truncation checkbox+slider
     expectedHull: 5,
-    source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
+    source: "prime_projections_20260207_215921.json (base geometry)",
     maxInteriorAngle: 170,
     verified: "2026-02-07",
-    description: "Truncated Tetrahedron → 5-vertex hull at s=(0.01, 0.5, 0)",
+    description: "Truncated Tetrahedron → 5-vertex hull at s=(0, 0.5, 0)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -45,7 +45,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0.01, 0.5, 0],
+      customSpreads: [0, 0.5, 0],
       presetName: "pentagon",
     },
   },
