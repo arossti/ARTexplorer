@@ -34,12 +34,14 @@ from rt_math import (
 )
 from rt_polyhedra import (
     truncated_tetrahedron,
+    truncated_dual_tetrahedron,
     trunc_tet_plus_tet,
     trunc_tet_plus_dual_tet,
     trunc_tet_plus_icosa,
     tetrahedron,
     dual_tetrahedron,
-    icosahedron
+    icosahedron,
+    variable_stella_compound
 )
 
 
@@ -373,6 +375,151 @@ def search_for_prime(
     return results
 
 
+# =============================================================================
+# STELLA OCTANGULA SEARCH (variable truncation compound)
+# =============================================================================
+
+# Truncation grid: algebraically meaningful values
+TRUNCATION_GRID = [
+    {'value': 0.0,   'label': '0',   'desc': 'base tet (4v)'},
+    {'value': 1/6,   'label': '1/6', 'desc': 'light truncation (12v)'},
+    {'value': 1/4,   'label': '1/4', 'desc': 'quarter truncation (12v)'},
+    {'value': 1/3,   'label': '1/3', 'desc': 'standard truncation (12v)'},
+    {'value': 5/12,  'label': '5/12','desc': 'deep truncation (12v)'},
+    {'value': 0.5,   'label': '1/2', 'desc': 'octahedron limit (6v)'},
+]
+
+
+def search_stella_for_prime(
+    target_prime: int,
+    rational_tier: int = 1,
+    precision: int = 2,
+    verbose: bool = False
+) -> List[Dict]:
+    """
+    Search variable stella octangula compound for a target prime-gon hull.
+
+    Searches over 5 parameters: (t1, t2, s1, s2, s3) where t1/t2 are
+    independent truncation parameters for base/dual tetrahedra.
+
+    Args:
+        target_prime: Target number of hull vertices (any prime)
+        rational_tier: Tier for rational spread grid (0 = decimal)
+        precision: Decimal places (used when rational_tier=0)
+        verbose: Print progress
+
+    Returns:
+        List of result dicts sorted by regularity score
+    """
+    # Choose spread grid
+    if rational_tier > 0:
+        rational_entries = generate_rational_spread_grid(rational_tier)
+        spread_values = [e['value'] for e in rational_entries]
+        label_map = {e['value']: e['label'] for e in rational_entries}
+        spread_desc = f"rational tier {rational_tier} ({len(spread_values)} values)"
+    else:
+        spread_values = generate_spread_grid(precision)
+        label_map = None
+        spread_desc = f"decimal precision={precision} ({len(spread_values)} values)"
+
+    trunc_values = TRUNCATION_GRID
+    total = len(trunc_values) ** 2 * len(spread_values) ** 3
+
+    if verbose:
+        print(f"\nStella Octangula Search for {target_prime}-gon")
+        print(f"  Truncation grid: {[t['label'] for t in trunc_values]}")
+        print(f"  Spread grid: {spread_desc}")
+        verts_desc = [f"({t1['label']},{t2['label']})→{len(variable_stella_compound(t1['value'], t2['value']))}v"
+                      for t1 in trunc_values for t2 in trunc_values]
+        print(f"  Vertex counts: {', '.join(dict.fromkeys(verts_desc))}")
+        print(f"  Search space: {len(trunc_values)}² × {len(spread_values)}³ = {total:,}")
+
+    results = []
+    checked = 0
+
+    for t1_entry in trunc_values:
+        t1 = t1_entry['value']
+        for t2_entry in trunc_values:
+            t2 = t2_entry['value']
+
+            # Generate vertices for this truncation pair
+            vertices = variable_stella_compound(t1, t2)
+            n_verts = len(vertices)
+
+            # Skip if fewer vertices than target prime
+            if n_verts < target_prime:
+                checked += len(spread_values) ** 3
+                continue
+
+            for s1 in spread_values:
+                for s2 in spread_values:
+                    for s3 in spread_values:
+                        checked += 1
+
+                        hull_count = count_hull_vertices(vertices, s1, s2, s3)
+
+                        if hull_count == target_prime:
+                            hull_pts = get_hull_points(vertices, s1, s2, s3)
+                            geometry = compute_hull_geometry(hull_pts)
+
+                            result = {
+                                't1': t1,
+                                't2': t2,
+                                't1_label': t1_entry['label'],
+                                't2_label': t2_entry['label'],
+                                'n_vertices': n_verts,
+                                's1': s1,
+                                's2': s2,
+                                's3': s3,
+                                'hull_count': hull_count,
+                                'regularity_score': geometry['regularity_score'],
+                                'angle_variance': geometry['angle_variance'],
+                                'edge_variance': geometry['edge_variance'],
+                                'is_equiangular': geometry['is_equiangular'],
+                                'is_equilateral': geometry['is_equilateral'],
+                                'interior_angles': geometry['interior_angles'],
+                                'edge_lengths': geometry['edge_lengths'],
+                            }
+
+                            if label_map is not None:
+                                result['s1_rational'] = label_map.get(s1, str(s1))
+                                result['s2_rational'] = label_map.get(s2, str(s2))
+                                result['s3_rational'] = label_map.get(s3, str(s3))
+
+                            results.append(result)
+
+                            if verbose:
+                                tag = ""
+                                if geometry['is_equiangular'] and geometry['is_equilateral']:
+                                    tag = " ★ GOLD"
+                                elif geometry['is_equiangular']:
+                                    tag = " ★ EQUIANGULAR"
+                                elif geometry['is_equilateral']:
+                                    tag = " ★ EQUILATERAL"
+                                slbl = (f"s=({label_map.get(s1,'?')}, {label_map.get(s2,'?')}, {label_map.get(s3,'?')})"
+                                        if label_map else f"s=({s1}, {s2}, {s3})")
+                                print(f"  FOUND: t=({t1_entry['label']},{t2_entry['label']}) {n_verts}v"
+                                      f" {slbl} → {hull_count}-gon"
+                                      f" (reg={geometry['regularity_score']:.3f}){tag}")
+
+                        if verbose and checked % 10000 == 0:
+                            pct = 100 * checked / total
+                            print(f"  Progress: {pct:.1f}% ({checked:,}/{total:,})", end='\r')
+
+    results.sort(key=lambda r: r['regularity_score'], reverse=True)
+
+    if verbose:
+        print(f"  Complete: {len(results)} matches in {total:,} searches" + " " * 20)
+        if results:
+            best = results[0]
+            slbl = (f"s=({best.get('s1_rational','?')}, {best.get('s2_rational','?')}, {best.get('s3_rational','?')})"
+                    if 's1_rational' in best else f"s=({best['s1']}, {best['s2']}, {best['s3']})")
+            print(f"  Best: t=({best['t1_label']},{best['t2_label']}) {best['n_vertices']}v"
+                  f" {slbl} (regularity={best['regularity_score']:.4f})")
+
+    return results
+
+
 def verify_result(result: Dict, target_prime: int) -> bool:
     """
     Verify that a search result produces the expected hull count.
@@ -438,6 +585,11 @@ def main():
         help='Path A: search over rational spreads up to TIER (1=RT-pure, 2=φ, 3=algebraic)'
     )
     parser.add_argument(
+        '--stella',
+        action='store_true',
+        help='Stella mode: search variable stella octangula compound (t1, t2, s1, s2, s3)'
+    )
+    parser.add_argument(
         '--verbose', '-v',
         action='store_true',
         help='Verbose output'
@@ -448,6 +600,121 @@ def main():
     # Parse primes
     primes = [int(p.strip()) for p in args.primes.split(',')]
 
+    # =====================================================================
+    # STELLA MODE: variable stella octangula compound search
+    # =====================================================================
+    if args.stella:
+        print("=" * 60)
+        print("Stella Octangula Variable Compound Search")
+        print("=" * 60)
+        print(f"Target primes: {primes}")
+        print(f"Mode: Variable truncation (t1, t2) × spread grid")
+        print()
+
+        all_results = {
+            'metadata': {
+                'timestamp': datetime.now().isoformat(),
+                'mode': 'stella',
+                'rational_tier': args.rational if args.rational > 0 else None,
+                'precision': args.precision,
+                'truncation_grid': [t['label'] for t in TRUNCATION_GRID],
+                'source': 'prime_search_streamlined.py --stella',
+            },
+            'primes': {}
+        }
+
+        for prime in primes:
+            results = search_stella_for_prime(
+                target_prime=prime,
+                rational_tier=args.rational,
+                precision=args.precision,
+                verbose=args.verbose
+            )
+
+            total_found = len(results)
+            if args.top > 0:
+                results = results[:args.top]
+
+            all_results['primes'][str(prime)] = {
+                'config': {
+                    'name': f'{prime}-gon',
+                    'polyhedra': 'variable_stella_compound',
+                    'description': f'Variable stella octangula → {prime}-gon hull'
+                },
+                'results': results,
+                'count': len(results),
+                'total_found': total_found,
+            }
+
+        # Summary
+        print("\n" + "=" * 60)
+        print("STELLA SEARCH SUMMARY (ranked by regularity)")
+        print("=" * 60)
+
+        for prime_str, data in all_results['primes'].items():
+            count = data['total_found']
+            shown = data['count']
+            print(f"\n  {prime_str}-gon: {count} projections found")
+
+            if count == 0:
+                continue
+
+            # Count specials
+            gold = sum(1 for r in data['results']
+                       if r.get('is_equiangular') and r.get('is_equilateral'))
+            equiang = sum(1 for r in data['results'] if r.get('is_equiangular'))
+            equilat = sum(1 for r in data['results'] if r.get('is_equilateral'))
+
+            if gold > 0:
+                print(f"  ★ GOLD: {gold} equiangular + equilateral!")
+            if equiang > gold:
+                print(f"  ★ Equiangular: {equiang}")
+            if equilat > gold:
+                print(f"  ★ Equilateral: {equilat}")
+
+            # Group by truncation pair to show diversity
+            trunc_pairs = {}
+            for r in data['results']:
+                key = (r['t1_label'], r['t2_label'])
+                if key not in trunc_pairs:
+                    trunc_pairs[key] = r
+            print(f"  Truncation pairs with hits: {len(trunc_pairs)}")
+
+            show_n = min(10, shown)
+            for i, r in enumerate(data['results'][:show_n]):
+                tag = ""
+                if r.get('is_equiangular') and r.get('is_equilateral'):
+                    tag = " ★ GOLD"
+                elif r.get('is_equiangular'):
+                    tag = " ★ equiangular"
+                elif r.get('is_equilateral'):
+                    tag = " ★ equilateral"
+                slbl = (f"s=({r.get('s1_rational','?')}, {r.get('s2_rational','?')}, {r.get('s3_rational','?')})"
+                        if 's1_rational' in r else f"s=({r['s1']}, {r['s2']}, {r['s3']})")
+                print(f"    #{i+1}: t=({r['t1_label']},{r['t2_label']}) {r['n_vertices']}v"
+                      f" {slbl}"
+                      f" (reg={r['regularity_score']:.4f},"
+                      f" ang={r['angle_variance']:.2f}°,"
+                      f" edge={r['edge_variance']:.2f}%){tag}")
+            if shown > show_n:
+                print(f"    ... and {shown - show_n} more")
+
+        # Write output
+        if args.output:
+            output_file = args.output
+        else:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            output_file = f'stella_search_{timestamp}.json'
+
+        with open(output_file, 'w') as f:
+            json.dump(all_results, f, indent=2)
+
+        print(f"\nResults written to: {output_file}")
+        return
+
+    # =====================================================================
+    # STANDARD MODE: fixed polyhedra search
+    # =====================================================================
     print("=" * 60)
     print("Prime Polygon Hull Search (Project-Streamline)")
     print("=" * 60)
