@@ -48,6 +48,51 @@ This is itself a meaningful result: the 13-gon requires the √5 (golden ratio) 
 
 No sin, cos, tan, or π appears anywhere in the chain.
 
+### 5-gon Geometric Invariant
+
+**Discovered 2026-02-08**: The truncated tetrahedron's 5-gon projection is a **geometric invariant** — every single 5-gon hit across both Tier 3 rational (53 hits) and decimal precision-2 (70 hits) searches produces **identical geometry**:
+
+- **Regularity**: 0.4231 (invariant)
+- **Angle variance**: 20.02° (invariant)
+- **Edge variance**: 32.71% (invariant)
+- **3 distinct angles**: 70.5°, 109.5°, 125.3° (regular pentagon = 108.0°)
+- **3 distinct edge lengths**: 0.8165, 0.9428, 1.6330
+
+Not one result is better or worse — whichever 5 vertices land on the hull, they always form the same shape. The s2 parameter is often free (many hits at s=(1/2, *, 1)), confirming this is a structural property of the TruncTet's Td symmetry, not an optimizable parameter.
+
+**The truncated tetrahedron alone cannot produce an equiangular pentagon.**
+
+### Variable Stella Octangula Search
+
+**Tested 2026-02-08** via `prime_search_streamlined.py --stella --rational 2`.
+
+To search beyond the TruncTet alone, we implemented a **variable stella octangula compound**: two independently truncated tetrahedra (base + dual) with parameters `(t1, t2)`, unit-sphere normalized. This creates a family of even-vertex polyhedra:
+
+| (t1, t2) | Vertices | Description |
+|-----------|----------|-------------|
+| (0, 0) | 4+4 = **8** | Raw stella octangula |
+| (1/3, 0) | 12+4 = **16** | Current 7-gon compound |
+| (1/4, 5/12) | 12+12 = **24** | Asymmetric double truncation |
+| (1/3, 1/3) | 12+12 = **24** | Symmetric double truncation |
+| (1/2, 1/2) | 6+6 = **12** | Double octahedron limit |
+
+Key insight: vertex counts are always **even** — "finding primes from non-primes."
+
+**Results** (Tier 2 rational, 246,924 configurations):
+
+| Prime | Best from Stella | Reg | vs Current Best | Genuine? |
+|-------|-----------------|-----|-----------------|----------|
+| **5** | t=(0,0) 8v, s=(3/8, 5/8, 1) | 0.278 | Worse (0.423 from TruncTet) | Yes |
+| **7** | t=(1/3,0) 16v, s=(9/10, 1/3, 3/5) | 0.877 | Better (was 0.861) | **Yes** |
+| **11** | t=(1/4,5/12) 24v, s=(1/2, 0, 1/3) | 0.591 | — | **No** (180° vertex) |
+| **13** | t=(1/3,5/12) 24v, s=(7/8, 7/8, 9/10) | 0.280 | Worse (0.346 from TruncTet+Icosa) | Mixed |
+
+**Critical finding**: ALL stella 11-gon results have a **degenerate 180° interior angle** — a collinear point the hull algorithm kept due to floating-point. These are actually 10-gons, not genuine 11-gons. The TruncTet+Icosa compound remains the only genuine source of 11-gon and 13-gon projections.
+
+**7-gon improvement**: The stella search found s=(9/10, 1/3, 3/5) at reg=0.877, slightly better than our current s=(1/2, 1/2, 1/2) at reg=0.861. However, the new spreads are Tier 2 (denominator 10), while the current result is Tier 1. This is a regularity-vs-algebraic-simplicity trade-off.
+
+**Implementation**: `variable_stella_compound(t1, t2)` in `rt_polyhedra.py`; `--stella` flag in `prime_search_streamlined.py`. Searches over `(t1, t2, s1, s2, s3)` with configurable truncation and spread grids.
+
 ---
 
 ## The Historical Argument
@@ -160,7 +205,8 @@ We are not starting from scratch. The ARTexplorer codebase already provides:
 - `RT.QuadrayPolyhedra` — integer/rational Quadray vertex definitions
 
 **JavaScript (`modules/rt-polyhedra.js`)**:
-- `truncatedTetrahedron()` — 12 vertices, Cartesian (integer at half_size=3)
+- `truncatedTetrahedron()` — 12 vertices, parametric truncation t ∈ [0, 0.5]
+- `truncatedDualTetrahedron()` — 12 vertices, parametric truncation (negated)
 - `dualTetrahedron()` — 4 vertices, integer (±1, ±1, ±1)
 - `compoundTruncTetDualTet()` — 16 vertices, unit-sphere normalized
 - `compoundTruncTetIcosa()` — 24 vertices for 11/13-gon
@@ -168,7 +214,11 @@ We are not starting from scratch. The ARTexplorer codebase already provides:
 **Python (`scripts/`)**:
 - `rt_math.py` — direct port of JS RT functions including `project_to_plane()`
 - `rt_polyhedra.py` — direct port of JS polyhedra with identical vertex definitions
+  - `variable_stella_compound(t1, t2)` — variable stella octangula with independent truncation
+  - `truncated_dual_tetrahedron()` — port of JS `truncatedDualTetrahedron()`
 - `prime_search_streamlined.py` — grid search with regularity scoring
+  - `--stella` flag: 5-parameter search over `(t1, t2, s1, s2, s3)`
+  - `--rational TIER`: algebraically significant spread grid
 
 **Visualization (`modules/rt-projections.js`, `rt-prime-cuts.js`)**:
 - `PROJECTION_PRESETS` registry — single source of truth for all presets
