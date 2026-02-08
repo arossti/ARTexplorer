@@ -2182,58 +2182,6 @@
               </div>
             </div>
 
-            <!-- Prime Projection Preset Buttons -->
-            <div style="margin-top: 10px; padding: 10px; background: rgba(255,217,61,0.1); border-radius: 6px">
-              <label class="label-section" style="font-size: 11px; color: #ffd93d">Prime Projection Presets</label>
-              <p class="info-text" style="font-size: 9px; margin-bottom: 8px">
-                Click to apply preset: enables polyhedron + projection view
-              </p>
-              <div class="button-grid-2col" style="gap: 6px">
-                <button
-                  class="toggle-btn variant-special"
-                  id="primePentagonBtn"
-                  title="5-gon: Truncated Tetrahedron at s=(0, 0.5, 0)"
-                  style="background: linear-gradient(135deg, #7bed9f 0%, #26de81 100%); color: #000"
-                >
-                  5-gon
-                </button>
-                <button
-                  class="toggle-btn variant-special"
-                  id="primeHeptagonBtn"
-                  title="7-gon: TruncTet+Tet compound at s=(0, 0.01, 0.14)"
-                  style="background: linear-gradient(135deg, #7bed9f 0%, #26de81 100%); color: #000"
-                >
-                  7-gon
-                </button>
-                <button
-                  class="toggle-btn variant-special"
-                  id="primeHendecagonBtn"
-                  title="11-gon: TruncTet+Icosa at s=(0, 0.01, 0.1)"
-                  style="background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%); color: #000"
-                >
-                  11-gon
-                </button>
-                <button
-                  class="toggle-btn variant-special"
-                  id="primeTridecagonBtn"
-                  title="13-gon: TruncTet+Icosa at s=(0, 0.01, 0.14)"
-                  style="background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%); color: #000"
-                >
-                  13-gon
-                </button>
-              </div>
-              <p class="info-text" style="font-size: 8px; margin-top: 6px; color: #888">
-                <span style="color: #7bed9f">Green</span>: Fermat/constructible |
-                <span style="color: #ff6b6b">Red</span>: Gauss-Wantzel bypass
-              </p>
-              <!-- Prime Projection Formula Info -->
-              <div
-                id="primeProjectionInfo2"
-                style="font-size: 10px; color: #00ffff; margin-top: 8px; display: none"
-              >
-                <span id="primeProjectionFormula2"></span>
-              </div>
-            </div>
           </div>
         </div>
         <!-- END SECTION 3B: POLYHEDRA -->
@@ -3947,6 +3895,18 @@
                   Spread-Quadray Rotors
                 </a>
                 <span style="color: #888"> - gimbal-lock-free rotation</span>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-prime-projections-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Prime Projections
+                </a>
+                <span style="color: #888">
+                  - Gauss-Wantzel bypass presets</span
+                >
               </li>
             </ul>
           </div>

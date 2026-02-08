@@ -149,6 +149,8 @@ export const RTPrimeCuts = {
   _primePolygonVisible: false,
   _renderer: null,
   _papercutRef: null, // Reference to RTPapercut for cutplane callbacks
+  _panel: null,
+  _panelVisible: false,
 
   /**
    * Initialize with renderer reference
@@ -159,6 +161,278 @@ export const RTPrimeCuts = {
   init: function (renderer, papercutRef = null) {
     RTPrimeCuts._renderer = renderer;
     RTPrimeCuts._papercutRef = papercutRef;
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FLOATING PANEL (Math Demo modal)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Create the floating Prime Projections panel
+   * Buttons are built dynamically from PROJECTION_PRESETS for extensibility
+   */
+  createPanel: function () {
+    if (document.getElementById("prime-projections-panel")) {
+      this._panel = document.getElementById("prime-projections-panel");
+      this._panel.style.display = "block";
+      return;
+    }
+
+    // Build buttons dynamically from PROJECTION_PRESETS
+    const presetKeys = Object.keys(PROJECTION_PRESETS);
+    let buttonsHTML = "";
+    for (const key of presetKeys) {
+      const preset = PROJECTION_PRESETS[key];
+      // Fermat primes (3, 5, 17, 257, 65537) are constructible
+      const isConstructible = [3, 5, 17].includes(preset.n);
+      const gradient = isConstructible
+        ? "linear-gradient(135deg, #7bed9f 0%, #26de81 100%)"
+        : "linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%)";
+      buttonsHTML += `<button class="pp-btn" data-preset="${key}"
+        title="${preset.description}"
+        style="background: ${gradient}; color: #000">
+        ${preset.n}-gon</button>`;
+    }
+
+    const panel = document.createElement("div");
+    panel.id = "prime-projections-panel";
+    panel.innerHTML = `
+      <style>
+        #prime-projections-panel {
+          position: fixed;
+          top: 10px;
+          left: 10px;
+          background: rgba(0, 0, 0, 0.85);
+          color: #fff;
+          font-family: 'Courier New', monospace;
+          font-size: 12px;
+          padding: 15px;
+          border-radius: 8px;
+          min-width: 240px;
+          max-width: 280px;
+          z-index: 1000;
+          border: 1px solid #444;
+        }
+        #prime-projections-panel .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+          border-bottom: 1px solid #444;
+          padding-bottom: 5px;
+          cursor: move;
+          user-select: none;
+        }
+        #prime-projections-panel .header:hover {
+          background: rgba(255, 255, 255, 0.05);
+          margin: -5px -5px 10px -5px;
+          padding: 5px 5px 10px 5px;
+          border-radius: 4px 4px 0 0;
+        }
+        #prime-projections-panel .header h3 {
+          margin: 0;
+          color: #ffd93d;
+          font-size: 13px;
+        }
+        #prime-projections-panel .header h3::before {
+          content: '\\22EE\\22EE ';
+          color: #666;
+          margin-right: 4px;
+        }
+        #prime-projections-panel .close-btn {
+          background: #f44;
+          color: #fff;
+          border: none;
+          border-radius: 3px;
+          width: 20px;
+          height: 20px;
+          padding: 0;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: bold;
+          line-height: 20px;
+          text-align: center;
+          flex-shrink: 0;
+        }
+        #prime-projections-panel .close-btn:hover {
+          background: #f66;
+        }
+        #prime-projections-panel .btn-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6px;
+          margin-bottom: 8px;
+        }
+        #prime-projections-panel .pp-btn {
+          border: none;
+          border-radius: 4px;
+          padding: 8px 12px;
+          font-weight: bold;
+          font-size: 12px;
+          cursor: pointer;
+          font-family: 'Courier New', monospace;
+        }
+        #prime-projections-panel .pp-btn:hover {
+          filter: brightness(1.2);
+        }
+        #prime-projections-panel .pp-btn.active {
+          box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+          outline: 2px solid #fff;
+        }
+      </style>
+      <div class="header">
+        <h3>PRIME PROJECTIONS</h3>
+        <button class="close-btn" id="pp-close">\u2715</button>
+      </div>
+      <p style="font-size: 9px; color: #888; margin: 0 0 8px 0">
+        Click to apply preset: enables polyhedron + projection view
+      </p>
+      <div class="btn-grid">${buttonsHTML}</div>
+      <p style="font-size: 8px; margin: 0; color: #888">
+        <span style="color: #7bed9f">Green</span>: Fermat/constructible |
+        <span style="color: #ff6b6b">Red</span>: Gauss-Wantzel bypass
+      </p>
+      <div id="primeProjectionInfo"
+        style="font-size: 10px; color: #00ffff; margin-top: 8px; display: none">
+        <span id="primeProjectionFormula"></span>
+      </div>
+    `;
+
+    document.body.appendChild(panel);
+    this._panel = panel;
+
+    // Wire close button
+    document.getElementById("pp-close").addEventListener("click", () => {
+      this.hidePanel();
+    });
+
+    // Wire preset buttons
+    panel.querySelectorAll(".pp-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const presetName = btn.dataset.preset;
+        this._applyPresetFromPanel(presetName);
+        // Highlight active button
+        panel
+          .querySelectorAll(".pp-btn")
+          .forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    // Make panel draggable
+    this._setupPanelDrag(panel);
+  },
+
+  /**
+   * Apply a preset from the floating panel
+   * Centralizes the disable-all/enable-one/apply logic
+   */
+  _applyPresetFromPanel: function (presetName) {
+    const preset = PROJECTION_PRESETS[presetName];
+    if (!preset) return;
+
+    // Helper to disable a checkbox if checked
+    const disable = id => {
+      const cb = document.getElementById(id);
+      if (cb?.checked) {
+        cb.checked = false;
+        cb.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    };
+
+    // Disable all prime + Quadray polyhedra for clean switch
+    disable("showPrimeTruncTet");
+    disable("showPrimeCompoundTet");
+    disable("showPrimeCompoundIcosa");
+    disable("showQuadrayTruncatedTet");
+    disable("showQuadrayCompound");
+    disable("showQuadrayCompoundTet");
+
+    // For 11/13-gon switching (same checkbox), hide projection first
+    if (window.RTProjections) {
+      window.RTProjections.hideProjection();
+    }
+
+    // Enable the correct polyhedron checkbox
+    const checkbox = document.getElementById(preset.polyhedronCheckbox);
+    if (checkbox && !checkbox.checked) {
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    // Apply preset via RTPrimeCuts
+    if (window.RTProjections?._scene) {
+      this.applyPreset(presetName, window.RTProjections._scene);
+    }
+  },
+
+  /**
+   * Make panel draggable via header
+   * Viewport-constrained, follows rotor demo pattern
+   */
+  _setupPanelDrag: function (panel) {
+    const header = panel.querySelector(".header");
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    const onMouseDown = e => {
+      if (e.target.classList.contains("close-btn")) return;
+      isDragging = true;
+      const rect = panel.getBoundingClientRect();
+      dragOffsetX = e.clientX - rect.left;
+      dragOffsetY = e.clientY - rect.top;
+      panel.style.left = rect.left + "px";
+      panel.style.top = rect.top + "px";
+      panel.style.right = "auto";
+      e.preventDefault();
+    };
+
+    const onMouseMove = e => {
+      if (!isDragging) return;
+      const newX = e.clientX - dragOffsetX;
+      const newY = e.clientY - dragOffsetY;
+      const maxX = window.innerWidth - panel.offsetWidth;
+      const maxY = window.innerHeight - panel.offsetHeight;
+      panel.style.left = Math.max(0, Math.min(newX, maxX)) + "px";
+      panel.style.top = Math.max(0, Math.min(newY, maxY)) + "px";
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+    };
+
+    header.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  },
+
+  showPanel: function () {
+    if (!this._panel) this.createPanel();
+    this._panel.style.display = "block";
+    this._panelVisible = true;
+  },
+
+  hidePanel: function () {
+    if (this._panel) {
+      this._panel.style.display = "none";
+    }
+    this._panelVisible = false;
+    // Update the Math Demos link
+    const link = document.getElementById("open-prime-projections-demo");
+    if (link) {
+      link.style.color = "#7ab8ff";
+      link.textContent = "Prime Projections";
+    }
+  },
+
+  togglePanel: function () {
+    if (this._panelVisible) {
+      this.hidePanel();
+    } else {
+      this.showPanel();
+    }
+    return this._panelVisible;
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
