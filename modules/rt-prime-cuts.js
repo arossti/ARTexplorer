@@ -30,6 +30,7 @@ const PROJECTION_PRESETS = {
     compound: "truncatedTetrahedron",
     vertexCount: 12,
     spreads: [0.01, 0.5, 0],  // Verified by Project-Streamline
+    requiredTruncation: 1/3,  // Spreads only valid at t=1/3
     expectedHull: 5,
     source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
     maxInteriorAngle: 170,
@@ -55,6 +56,7 @@ const PROJECTION_PRESETS = {
     compound: "truncTetPlusTet",
     vertexCount: 16,
     spreads: [0, 0.01, 0.14],  // Verified by Project-Streamline
+    requiredTruncation: 1/3,  // Spreads only valid at t=1/3
     expectedHull: 7,
     source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
     maxInteriorAngle: 170,
@@ -80,6 +82,7 @@ const PROJECTION_PRESETS = {
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
     spreads: [0, 0.01, 0.1],  // Verified by Project-Streamline
+    requiredTruncation: 1/3,  // Spreads only valid at t=1/3
     expectedHull: 11,
     source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
     maxInteriorAngle: 170,
@@ -105,6 +108,7 @@ const PROJECTION_PRESETS = {
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
     spreads: [0, 0.01, 0.14],  // Verified by Project-Streamline
+    requiredTruncation: 1/3,  // Spreads only valid at t=1/3
     expectedHull: 13,
     source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
     maxInteriorAngle: 178,

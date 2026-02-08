@@ -56,6 +56,34 @@ export const RTProjections = {
       }
     }
 
+    // 1b. Force truncation to required value for prime projections
+    // Prime spreads were found at t=1/3, so we must ensure scene geometry matches
+    if (preset.requiredTruncation !== undefined) {
+      const truncCheckbox = document.getElementById("showTruncatedTetrahedron");
+      const truncSlider = document.getElementById("truncationTetraSlider");
+
+      if (truncCheckbox && truncSlider) {
+        // Enable truncation if not already
+        if (!truncCheckbox.checked) {
+          truncCheckbox.checked = true;
+          truncCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+
+        // Set slider to required value
+        truncSlider.value = preset.requiredTruncation;
+        truncSlider.dispatchEvent(new Event("input", { bubbles: true }));
+
+        // Update display value
+        const truncValue = document.getElementById("truncationTetraValue");
+        if (truncValue) {
+          const t = preset.requiredTruncation;
+          truncValue.textContent = Math.abs(t - 1/3) < 0.02 ? "⅓" : t.toFixed(2);
+        }
+
+        console.log(`📐 Forced truncation to t=${preset.requiredTruncation} for ${preset.name}`);
+      }
+    }
+
     // 2. Apply projection state (same format as importState)
     if (preset.projectionState) {
       Object.assign(RTProjections.state, preset.projectionState);
