@@ -773,10 +773,14 @@ export const viewControlBindings = [
         id: "viewHendecagonProjection",
         onClick: renderingAPI => {
           // Auto-enable compound form for 11-gon projection
-          const compoundCheckbox = document.getElementById("showQuadrayCompound");
+          const compoundCheckbox = document.getElementById(
+            "showQuadrayCompound"
+          );
           if (compoundCheckbox && !compoundCheckbox.checked) {
             compoundCheckbox.checked = true;
-            compoundCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+            compoundCheckbox.dispatchEvent(
+              new Event("change", { bubbles: true })
+            );
           }
           renderingAPI.setCameraPreset("hendecagonProjection");
         },
@@ -785,10 +789,14 @@ export const viewControlBindings = [
         id: "viewTridecagonProjection",
         onClick: renderingAPI => {
           // Auto-enable compound form for 13-gon projection
-          const compoundCheckbox = document.getElementById("showQuadrayCompound");
+          const compoundCheckbox = document.getElementById(
+            "showQuadrayCompound"
+          );
           if (compoundCheckbox && !compoundCheckbox.checked) {
             compoundCheckbox.checked = true;
-            compoundCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+            compoundCheckbox.dispatchEvent(
+              new Event("change", { bubbles: true })
+            );
           }
           renderingAPI.setCameraPreset("tridecagonProjection");
         },
@@ -798,10 +806,14 @@ export const viewControlBindings = [
         id: "viewHeptagonProjectionTet",
         onClick: renderingAPI => {
           // Auto-enable TruncTet+Tet compound form for 7-gon projection
-          const compoundCheckbox = document.getElementById("showQuadrayCompoundTet");
+          const compoundCheckbox = document.getElementById(
+            "showQuadrayCompoundTet"
+          );
           if (compoundCheckbox && !compoundCheckbox.checked) {
             compoundCheckbox.checked = true;
-            compoundCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+            compoundCheckbox.dispatchEvent(
+              new Event("change", { bubbles: true })
+            );
           }
           renderingAPI.setCameraPreset("heptagonProjectionTet");
         },
@@ -811,10 +823,14 @@ export const viewControlBindings = [
         id: "viewHendecagonProjectionTet",
         onClick: renderingAPI => {
           // Auto-enable TruncTet+Icosa compound form for 11-gon projection
-          const compoundCheckbox = document.getElementById("showQuadrayCompound");
+          const compoundCheckbox = document.getElementById(
+            "showQuadrayCompound"
+          );
           if (compoundCheckbox && !compoundCheckbox.checked) {
             compoundCheckbox.checked = true;
-            compoundCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+            compoundCheckbox.dispatchEvent(
+              new Event("change", { bubbles: true })
+            );
           }
           renderingAPI.setCameraPreset("hendecagonProjection");
         },
@@ -831,7 +847,10 @@ export const viewControlBindings = [
           // Helper to disable a checkbox if checked
           const disable = id => {
             const cb = document.getElementById(id);
-            if (cb?.checked) { cb.checked = false; cb.dispatchEvent(new Event("change", { bubbles: true })); }
+            if (cb?.checked) {
+              cb.checked = false;
+              cb.dispatchEvent(new Event("change", { bubbles: true }));
+            }
           };
           // Disable all other prime and Quadray forms for clean switch
           disable("showPrimeCompoundTet");
@@ -847,7 +866,10 @@ export const viewControlBindings = [
           }
           // Apply preset via RTPrimeCuts
           if (window.RTPrimeCuts && window.RTProjections?._scene) {
-            window.RTPrimeCuts.applyPreset("pentagon", window.RTProjections._scene);
+            window.RTPrimeCuts.applyPreset(
+              "pentagon",
+              window.RTProjections._scene
+            );
           }
         },
       },
@@ -857,7 +879,10 @@ export const viewControlBindings = [
           // Helper to disable a checkbox if checked
           const disable = id => {
             const cb = document.getElementById(id);
-            if (cb?.checked) { cb.checked = false; cb.dispatchEvent(new Event("change", { bubbles: true })); }
+            if (cb?.checked) {
+              cb.checked = false;
+              cb.dispatchEvent(new Event("change", { bubbles: true }));
+            }
           };
           // Disable all other prime and Quadray forms for clean switch
           disable("showPrimeTruncTet");
@@ -873,7 +898,10 @@ export const viewControlBindings = [
           }
           // Apply preset via RTPrimeCuts
           if (window.RTPrimeCuts && window.RTProjections?._scene) {
-            window.RTPrimeCuts.applyPreset("heptagon", window.RTProjections._scene);
+            window.RTPrimeCuts.applyPreset(
+              "heptagon",
+              window.RTProjections._scene
+            );
           }
         },
       },
@@ -883,7 +911,10 @@ export const viewControlBindings = [
           // Helper to disable a checkbox if checked
           const disable = id => {
             const cb = document.getElementById(id);
-            if (cb?.checked) { cb.checked = false; cb.dispatchEvent(new Event("change", { bubbles: true })); }
+            if (cb?.checked) {
+              cb.checked = false;
+              cb.dispatchEvent(new Event("change", { bubbles: true }));
+            }
           };
           // Disable all other prime and Quadray forms for clean switch
           disable("showPrimeTruncTet");
@@ -903,7 +934,10 @@ export const viewControlBindings = [
           }
           // Apply preset via RTPrimeCuts
           if (window.RTPrimeCuts && window.RTProjections?._scene) {
-            window.RTPrimeCuts.applyPreset("hendecagon", window.RTProjections._scene);
+            window.RTPrimeCuts.applyPreset(
+              "hendecagon",
+              window.RTProjections._scene
+            );
           }
         },
       },
@@ -913,7 +947,10 @@ export const viewControlBindings = [
           // Helper to disable a checkbox if checked
           const disable = id => {
             const cb = document.getElementById(id);
-            if (cb?.checked) { cb.checked = false; cb.dispatchEvent(new Event("change", { bubbles: true })); }
+            if (cb?.checked) {
+              cb.checked = false;
+              cb.dispatchEvent(new Event("change", { bubbles: true }));
+            }
           };
           // Disable all other prime and Quadray forms for clean switch
           disable("showPrimeTruncTet");
@@ -933,7 +970,10 @@ export const viewControlBindings = [
           }
           // Apply preset via RTPrimeCuts
           if (window.RTPrimeCuts && window.RTProjections?._scene) {
-            window.RTPrimeCuts.applyPreset("tridecagon", window.RTProjections._scene);
+            window.RTPrimeCuts.applyPreset(
+              "tridecagon",
+              window.RTProjections._scene
+            );
           }
         },
       },

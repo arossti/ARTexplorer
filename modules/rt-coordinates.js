@@ -20,7 +20,7 @@ export const RTCoordinates = {
   // ========================================================================
   // STATE
   // ========================================================================
-  mode: 'absolute', // 'absolute' | 'relative' | 'group-centre'
+  mode: "absolute", // 'absolute' | 'relative' | 'group-centre'
   groupCentroid: null, // Calculated centroid for group-centre mode
 
   // DOM element cache (populated by init())
@@ -50,34 +50,34 @@ export const RTCoordinates = {
     // Cache all coordinate DOM elements
     this.elements = {
       // Position XYZ
-      coordX: document.getElementById('coordX'),
-      coordY: document.getElementById('coordY'),
-      coordZ: document.getElementById('coordZ'),
+      coordX: document.getElementById("coordX"),
+      coordY: document.getElementById("coordY"),
+      coordZ: document.getElementById("coordZ"),
       // Position QWXYZ (Quadray)
-      coordQW: document.getElementById('coordQW'),
-      coordQX: document.getElementById('coordQX'),
-      coordQY: document.getElementById('coordQY'),
-      coordQZ: document.getElementById('coordQZ'),
+      coordQW: document.getElementById("coordQW"),
+      coordQX: document.getElementById("coordQX"),
+      coordQY: document.getElementById("coordQY"),
+      coordQZ: document.getElementById("coordQZ"),
       // Rotation XYZ (degrees)
-      rotXDegrees: document.getElementById('rotXDegrees'),
-      rotYDegrees: document.getElementById('rotYDegrees'),
-      rotZDegrees: document.getElementById('rotZDegrees'),
+      rotXDegrees: document.getElementById("rotXDegrees"),
+      rotYDegrees: document.getElementById("rotYDegrees"),
+      rotZDegrees: document.getElementById("rotZDegrees"),
       // Rotation XYZ (spread)
-      rotXSpread: document.getElementById('rotXSpread'),
-      rotYSpread: document.getElementById('rotYSpread'),
-      rotZSpread: document.getElementById('rotZSpread'),
+      rotXSpread: document.getElementById("rotXSpread"),
+      rotYSpread: document.getElementById("rotYSpread"),
+      rotZSpread: document.getElementById("rotZSpread"),
       // Rotation QWXYZ (degrees) - Quadray rotation
-      rotQWDegrees: document.getElementById('rotQWDegrees'),
-      rotQXDegrees: document.getElementById('rotQXDegrees'),
-      rotQYDegrees: document.getElementById('rotQYDegrees'),
-      rotQZDegrees: document.getElementById('rotQZDegrees'),
+      rotQWDegrees: document.getElementById("rotQWDegrees"),
+      rotQXDegrees: document.getElementById("rotQXDegrees"),
+      rotQYDegrees: document.getElementById("rotQYDegrees"),
+      rotQZDegrees: document.getElementById("rotQZDegrees"),
       // Rotation QWXYZ (spread)
-      rotQWSpread: document.getElementById('rotQWSpread'),
-      rotQXSpread: document.getElementById('rotQXSpread'),
-      rotQYSpread: document.getElementById('rotQYSpread'),
-      rotQZSpread: document.getElementById('rotQZSpread'),
+      rotQWSpread: document.getElementById("rotQWSpread"),
+      rotQXSpread: document.getElementById("rotQXSpread"),
+      rotQYSpread: document.getElementById("rotQYSpread"),
+      rotQZSpread: document.getElementById("rotQZSpread"),
       // Scale (uniform)
-      coordScale: document.getElementById('coordScale'),
+      coordScale: document.getElementById("coordScale"),
     };
 
     // Verify critical elements exist
@@ -86,10 +86,12 @@ export const RTCoordinates = {
       .map(([key]) => key);
 
     if (missing.length > 0) {
-      console.warn(`⚠️ RTCoordinates: Missing DOM elements: ${missing.join(', ')}`);
+      console.warn(
+        `⚠️ RTCoordinates: Missing DOM elements: ${missing.join(", ")}`
+      );
     }
 
-    console.log('✅ RTCoordinates initialized');
+    console.log("✅ RTCoordinates initialized");
     return this;
   },
 
@@ -107,13 +109,13 @@ export const RTCoordinates = {
 
     if (!pos) {
       // Clear display if no position
-      this.elements.coordX.value = '0.0000';
-      this.elements.coordY.value = '0.0000';
-      this.elements.coordZ.value = '0.0000';
-      this.elements.coordQW.value = '0.0000';
-      this.elements.coordQX.value = '0.0000';
-      this.elements.coordQY.value = '0.0000';
-      this.elements.coordQZ.value = '0.0000';
+      this.elements.coordX.value = "0.0000";
+      this.elements.coordY.value = "0.0000";
+      this.elements.coordZ.value = "0.0000";
+      this.elements.coordQW.value = "0.0000";
+      this.elements.coordQX.value = "0.0000";
+      this.elements.coordQY.value = "0.0000";
+      this.elements.coordQZ.value = "0.0000";
       return;
     }
 
@@ -141,9 +143,9 @@ export const RTCoordinates = {
     if (!this.elements?.rotXDegrees) return;
 
     // Convert radians to degrees
-    const radToDeg = rad => (rad * 180 / Math.PI);
+    const radToDeg = rad => (rad * 180) / Math.PI;
     const degToSpread = deg => {
-      const rad = deg * Math.PI / 180;
+      const rad = (deg * Math.PI) / 180;
       return Math.pow(Math.sin(rad), 2);
     };
 
@@ -155,9 +157,15 @@ export const RTCoordinates = {
 
       // Update XYZ spread (sin²θ)
       if (this.elements.rotXSpread) {
-        this.elements.rotXSpread.value = degToSpread(radToDeg(rotation.x)).toFixed(4);
-        this.elements.rotYSpread.value = degToSpread(radToDeg(rotation.y)).toFixed(4);
-        this.elements.rotZSpread.value = degToSpread(radToDeg(rotation.z)).toFixed(4);
+        this.elements.rotXSpread.value = degToSpread(
+          radToDeg(rotation.x)
+        ).toFixed(4);
+        this.elements.rotYSpread.value = degToSpread(
+          radToDeg(rotation.y)
+        ).toFixed(4);
+        this.elements.rotZSpread.value = degToSpread(
+          radToDeg(rotation.z)
+        ).toFixed(4);
       }
     }
 
@@ -191,7 +199,7 @@ export const RTCoordinates = {
     if (!this.elements?.coordScale) return;
 
     if (scale === null || scale === undefined) {
-      this.elements.coordScale.value = '1.0000';
+      this.elements.coordScale.value = "1.0000";
       return;
     }
 
@@ -219,8 +227,8 @@ export const RTCoordinates = {
    */
   setMode(newMode, selectedObjects = []) {
     // Validate Group Centre requires 2+ objects
-    if (newMode === 'group-centre' && selectedObjects.length < 2) {
-      console.warn('⚠️ Group Centre requires 2+ selected objects');
+    if (newMode === "group-centre" && selectedObjects.length < 2) {
+      console.warn("⚠️ Group Centre requires 2+ selected objects");
       return false;
     }
 
@@ -228,7 +236,7 @@ export const RTCoordinates = {
     this.mode = newMode;
 
     // Calculate group centroid if switching to group-centre mode
-    if (newMode === 'group-centre') {
+    if (newMode === "group-centre") {
       this.groupCentroid = this.calculateGroupCentroid(selectedObjects);
     } else {
       this.groupCentroid = null;
@@ -272,8 +280,10 @@ export const RTCoordinates = {
    * @returns {THREE.Vector3} Position to use as rotation pivot
    */
   getRotationCenter(editingBasis, selectedObjects) {
-    if (this.mode === 'group-centre') {
-      return this.calculateGroupCentroid(selectedObjects) || editingBasis?.position;
+    if (this.mode === "group-centre") {
+      return (
+        this.calculateGroupCentroid(selectedObjects) || editingBasis?.position
+      );
     }
     // Absolute or Relative: use editingBasis position (primary object or node)
     return editingBasis?.position || new this.deps.THREE.Vector3(0, 0, 0);
@@ -290,7 +300,12 @@ export const RTCoordinates = {
    */
   getDisplayValues(object) {
     if (!object || !this.deps?.RTStateManager) {
-      return { position: null, rotation: null, quadrayRotation: null, scale: null };
+      return {
+        position: null,
+        rotation: null,
+        quadrayRotation: null,
+        scale: null,
+      };
     }
 
     const instanceId = object.userData?.instanceId;
@@ -300,22 +315,22 @@ export const RTCoordinates = {
         position: object.position.clone(),
         rotation: object.rotation.clone(),
         quadrayRotation: null,
-        scale: object.scale.x // Assume uniform scale
+        scale: object.scale.x, // Assume uniform scale
       };
     }
 
     const instance = this.deps.RTStateManager.getInstance(instanceId);
     if (!instance) {
-      console.warn('⚠️ No StateManager record for object');
+      console.warn("⚠️ No StateManager record for object");
       return {
         position: object.position.clone(),
         rotation: object.rotation.clone(),
         quadrayRotation: null,
-        scale: object.scale.x
+        scale: object.scale.x,
       };
     }
 
-    if (this.mode === 'absolute') {
+    if (this.mode === "absolute") {
       // Return world transforms from StateManager
       // StateManager stores transforms in instance.transform.position/rotation/scale/quadrayRotation
       const transform = instance.transform;
@@ -330,16 +345,20 @@ export const RTCoordinates = {
               transform.rotation.x || 0,
               transform.rotation.y || 0,
               transform.rotation.z || 0,
-              transform.rotation.order || 'XYZ'
+              transform.rotation.order || "XYZ"
             )
           : object.rotation.clone(),
         // Absolute mode: show cumulative Quadray rotations from StateManager
-        quadrayRotation: transform?.quadrayRotation || { qw: 0, qx: 0, qy: 0, qz: 0 },
+        quadrayRotation: transform?.quadrayRotation || {
+          qw: 0,
+          qx: 0,
+          qy: 0,
+          qz: 0,
+        },
         // Uniform scale from StateManager (assume x = y = z)
-        scale: transform?.scale?.x || 1
+        scale: transform?.scale?.x || 1,
       };
-
-    } else if (this.mode === 'relative') {
+    } else if (this.mode === "relative") {
       // Relative mode: object's own centre is the origin
       // Position is always 0,0,0 (you ARE the origin)
       // Rotation/scale show how transformed from Form's identity
@@ -349,10 +368,9 @@ export const RTCoordinates = {
         rotation: object.rotation.clone(),
         // Relative mode: Quadray is tool mode, show zeros
         quadrayRotation: { qw: 0, qx: 0, qy: 0, qz: 0 },
-        scale: object.scale.x
+        scale: object.scale.x,
       };
-
-    } else if (this.mode === 'group-centre') {
+    } else if (this.mode === "group-centre") {
       // Return centroid position (rotation N/A for group centre display)
       const selected = this.deps.getSelectedPolyhedra?.() || [];
       const centroid = this.calculateGroupCentroid(selected);
@@ -360,11 +378,16 @@ export const RTCoordinates = {
         position: centroid || object.position.clone(),
         rotation: null,
         quadrayRotation: null,
-        scale: null // Scale N/A for group centre
+        scale: null, // Scale N/A for group centre
       };
     }
 
-    return { position: null, rotation: null, quadrayRotation: null, scale: null };
+    return {
+      position: null,
+      rotation: null,
+      quadrayRotation: null,
+      scale: null,
+    };
   },
 
   // ========================================================================
@@ -379,7 +402,7 @@ export const RTCoordinates = {
   setupInputHandlers(callbacks) {
     // TODO: Move coordinate input handlers from rt-init.js
     // This will be implemented in Phase 3
-    console.log('📝 RTCoordinates input handlers: TODO');
+    console.log("📝 RTCoordinates input handlers: TODO");
   },
 
   // ========================================================================
@@ -393,17 +416,17 @@ export const RTCoordinates = {
   setupModeToggles() {
     const self = this;
 
-    document.querySelectorAll('[data-coord-mode]').forEach(btn => {
-      btn.addEventListener('click', function() {
+    document.querySelectorAll("[data-coord-mode]").forEach(btn => {
+      btn.addEventListener("click", function () {
         const newMode = this.dataset.coordMode;
         const selected = self.deps?.getSelectedPolyhedra?.() || [];
 
         if (self.setMode(newMode, selected)) {
           // Update button states
-          document.querySelectorAll('[data-coord-mode]').forEach(b => {
-            b.classList.remove('active');
+          document.querySelectorAll("[data-coord-mode]").forEach(b => {
+            b.classList.remove("active");
           });
-          this.classList.add('active');
+          this.classList.add("active");
 
           // Update display based on new mode
           if (selected.length > 0) {
@@ -411,7 +434,10 @@ export const RTCoordinates = {
             self.updatePositionDisplay(displayValues.position);
             self.updateScaleDisplay(displayValues.scale);
             if (displayValues.rotation || displayValues.quadrayRotation) {
-              self.updateRotationDisplay(displayValues.rotation, displayValues.quadrayRotation);
+              self.updateRotationDisplay(
+                displayValues.rotation,
+                displayValues.quadrayRotation
+              );
             }
           }
 
@@ -423,7 +449,7 @@ export const RTCoordinates = {
       });
     });
 
-    console.log('✅ RTCoordinates mode toggles bound');
+    console.log("✅ RTCoordinates mode toggles bound");
   },
 
   // ========================================================================
@@ -436,26 +462,27 @@ export const RTCoordinates = {
    * @param {number} selectionCount - Number of selected objects
    */
   updateGroupCentreButtonState(selectionCount) {
-    const groupBtn = document.getElementById('coordModeGroupCentre');
+    const groupBtn = document.getElementById("coordModeGroupCentre");
     if (!groupBtn) return;
 
     if (selectionCount >= 2) {
       // Enable the button
       groupBtn.disabled = false;
-      groupBtn.title = 'Coordinates relative to group centroid';
+      groupBtn.title = "Coordinates relative to group centroid";
     } else {
       // Disable the button
       groupBtn.disabled = true;
-      groupBtn.title = 'Coordinates relative to group centroid (requires 2+ selected)';
+      groupBtn.title =
+        "Coordinates relative to group centroid (requires 2+ selected)";
 
       // If Group Centre was active, switch to Absolute
-      if (this.mode === 'group-centre') {
-        this.setMode('absolute', []);
-        document.querySelectorAll('[data-coord-mode]').forEach(b => {
-          b.classList.remove('active');
+      if (this.mode === "group-centre") {
+        this.setMode("absolute", []);
+        document.querySelectorAll("[data-coord-mode]").forEach(b => {
+          b.classList.remove("active");
         });
-        document.getElementById('coordModeAbsolute')?.classList.add('active');
-        console.log('📍 Group Centre disabled - switched to Absolute');
+        document.getElementById("coordModeAbsolute")?.classList.add("active");
+        console.log("📍 Group Centre disabled - switched to Absolute");
       }
     }
   },
@@ -476,7 +503,10 @@ export const RTCoordinates = {
       this.updatePositionDisplay(displayValues.position);
       this.updateScaleDisplay(displayValues.scale);
       if (displayValues.rotation || displayValues.quadrayRotation) {
-        this.updateRotationDisplay(displayValues.rotation, displayValues.quadrayRotation);
+        this.updateRotationDisplay(
+          displayValues.rotation,
+          displayValues.quadrayRotation
+        );
       }
     } else {
       this.clearDisplay();

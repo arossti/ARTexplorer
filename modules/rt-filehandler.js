@@ -319,23 +319,39 @@ export const RTFileHandler = {
       tetrahelix3Count: parseInt(
         document.getElementById("tetrahelix3CountSlider")?.value || "10"
       ),
-      tetrahelix3StrandA: document.getElementById("tetrahelix3StrandA")?.checked || false,
-      tetrahelix3StrandB: document.getElementById("tetrahelix3StrandB")?.checked || false,
-      tetrahelix3StrandC: document.getElementById("tetrahelix3StrandC")?.checked || false,
-      tetrahelix3StrandD: document.getElementById("tetrahelix3StrandD")?.checked || false,
-      tetrahelix3StrandE: document.getElementById("tetrahelix3StrandE")?.checked || false,
-      tetrahelix3StrandF: document.getElementById("tetrahelix3StrandF")?.checked || false,
-      tetrahelix3StrandG: document.getElementById("tetrahelix3StrandG")?.checked || false,
-      tetrahelix3StrandH: document.getElementById("tetrahelix3StrandH")?.checked || false,
+      tetrahelix3StrandA:
+        document.getElementById("tetrahelix3StrandA")?.checked || false,
+      tetrahelix3StrandB:
+        document.getElementById("tetrahelix3StrandB")?.checked || false,
+      tetrahelix3StrandC:
+        document.getElementById("tetrahelix3StrandC")?.checked || false,
+      tetrahelix3StrandD:
+        document.getElementById("tetrahelix3StrandD")?.checked || false,
+      tetrahelix3StrandE:
+        document.getElementById("tetrahelix3StrandE")?.checked || false,
+      tetrahelix3StrandF:
+        document.getElementById("tetrahelix3StrandF")?.checked || false,
+      tetrahelix3StrandG:
+        document.getElementById("tetrahelix3StrandG")?.checked || false,
+      tetrahelix3StrandH:
+        document.getElementById("tetrahelix3StrandH")?.checked || false,
       // Tetrahelix 3 chirality (checked = RH, unchecked = LH)
-      tetrahelix3ChiralA: document.getElementById("tetrahelix3ChiralA")?.checked !== false,
-      tetrahelix3ChiralB: document.getElementById("tetrahelix3ChiralB")?.checked !== false,
-      tetrahelix3ChiralC: document.getElementById("tetrahelix3ChiralC")?.checked !== false,
-      tetrahelix3ChiralD: document.getElementById("tetrahelix3ChiralD")?.checked !== false,
-      tetrahelix3ChiralE: document.getElementById("tetrahelix3ChiralE")?.checked !== false,
-      tetrahelix3ChiralF: document.getElementById("tetrahelix3ChiralF")?.checked !== false,
-      tetrahelix3ChiralG: document.getElementById("tetrahelix3ChiralG")?.checked !== false,
-      tetrahelix3ChiralH: document.getElementById("tetrahelix3ChiralH")?.checked !== false,
+      tetrahelix3ChiralA:
+        document.getElementById("tetrahelix3ChiralA")?.checked !== false,
+      tetrahelix3ChiralB:
+        document.getElementById("tetrahelix3ChiralB")?.checked !== false,
+      tetrahelix3ChiralC:
+        document.getElementById("tetrahelix3ChiralC")?.checked !== false,
+      tetrahelix3ChiralD:
+        document.getElementById("tetrahelix3ChiralD")?.checked !== false,
+      tetrahelix3ChiralE:
+        document.getElementById("tetrahelix3ChiralE")?.checked !== false,
+      tetrahelix3ChiralF:
+        document.getElementById("tetrahelix3ChiralF")?.checked !== false,
+      tetrahelix3ChiralG:
+        document.getElementById("tetrahelix3ChiralG")?.checked !== false,
+      tetrahelix3ChiralH:
+        document.getElementById("tetrahelix3ChiralH")?.checked !== false,
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -749,12 +765,16 @@ export const RTFileHandler = {
           if (checkbox) checkbox.checked = sliders.tetrahelix2DirMinus;
         }
         // Legacy: handle old tetrahelix2Direction radio format during import
-        if (sliders.tetrahelix2Direction !== undefined &&
-            sliders.tetrahelix2DirPlus === undefined) {
+        if (
+          sliders.tetrahelix2Direction !== undefined &&
+          sliders.tetrahelix2DirPlus === undefined
+        ) {
           const plusCheckbox = document.getElementById("tetrahelix2DirPlus");
           const minusCheckbox = document.getElementById("tetrahelix2DirMinus");
-          if (plusCheckbox) plusCheckbox.checked = sliders.tetrahelix2Direction === "+";
-          if (minusCheckbox) minusCheckbox.checked = sliders.tetrahelix2Direction === "-";
+          if (plusCheckbox)
+            plusCheckbox.checked = sliders.tetrahelix2Direction === "+";
+          if (minusCheckbox)
+            minusCheckbox.checked = sliders.tetrahelix2Direction === "-";
         }
         if (sliders.tetrahelix2Strands !== undefined) {
           const radio = document.querySelector(
@@ -1126,21 +1146,30 @@ export const RTFileHandler = {
         if (enableCheckbox) enableCheckbox.checked = proj.enabled;
 
         const distanceSlider = document.getElementById("projectionDistance");
-        const distanceValue = document.getElementById("projectionDistanceValue");
+        const distanceValue = document.getElementById(
+          "projectionDistanceValue"
+        );
         if (distanceSlider) distanceSlider.value = proj.distance;
         if (distanceValue) distanceValue.textContent = proj.distance;
 
         const showRaysCheckbox = document.getElementById("projectionShowRays");
-        if (showRaysCheckbox) showRaysCheckbox.checked = proj.showRays !== false;
+        if (showRaysCheckbox)
+          showRaysCheckbox.checked = proj.showRays !== false;
 
-        const showInteriorCheckbox = document.getElementById("projectionShowInterior");
-        if (showInteriorCheckbox) showInteriorCheckbox.checked = proj.showInterior;
+        const showInteriorCheckbox = document.getElementById(
+          "projectionShowInterior"
+        );
+        if (showInteriorCheckbox)
+          showInteriorCheckbox.checked = proj.showInterior;
 
-        const showIdealCheckbox = document.getElementById("projectionShowIdeal");
-        if (showIdealCheckbox) showIdealCheckbox.checked = proj.showIdealPolygon;
+        const showIdealCheckbox = document.getElementById(
+          "projectionShowIdeal"
+        );
+        if (showIdealCheckbox)
+          showIdealCheckbox.checked = proj.showIdealPolygon;
 
         // Update axis button highlighting
-        document.querySelectorAll(".projection-axis-btn").forEach((btn) => {
+        document.querySelectorAll(".projection-axis-btn").forEach(btn => {
           btn.classList.remove("active");
         });
         const axisId =

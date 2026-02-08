@@ -124,15 +124,17 @@ export class QuadrayRotor {
     // We use polarity to track which hemisphere
 
     const cosTheta = polarity * Math.sqrt(c);
-    const spreadHalf = (1 - cosTheta) / 2;  // sin²(θ/2)
-    const crossHalf = (1 + cosTheta) / 2;   // cos²(θ/2)
+    const spreadHalf = (1 - cosTheta) / 2; // sin²(θ/2)
+    const crossHalf = (1 + cosTheta) / 2; // cos²(θ/2)
 
     // Extract sin(θ/2) and cos(θ/2) - deferred sqrt
     const sinHalf = Math.sqrt(spreadHalf);
     const cosHalf = Math.sqrt(crossHalf);
 
     // Normalize axis vector
-    const axisLen = Math.sqrt(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z);
+    const axisLen = Math.sqrt(
+      axis.x * axis.x + axis.y * axis.y + axis.z * axis.z
+    );
     if (axisLen < 1e-10) {
       // Zero axis = identity rotation
       return new QuadrayRotor(1, 0, 0, 0, polarity);
@@ -200,7 +202,9 @@ export class QuadrayRotor {
    * @returns {number} w² + x² + y² + z²
    */
   normSquared() {
-    return this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z;
+    return (
+      this.w * this.w + this.x * this.x + this.y * this.y + this.z * this.z
+    );
   }
 
   /**
@@ -242,10 +246,14 @@ export class QuadrayRotor {
    */
   multiply(other) {
     // Hamilton product - pure polynomial multiplication (RT-PURE!)
-    const w = this.w * other.w - this.x * other.x - this.y * other.y - this.z * other.z;
-    const x = this.w * other.x + this.x * other.w + this.y * other.z - this.z * other.y;
-    const y = this.w * other.y - this.x * other.z + this.y * other.w + this.z * other.x;
-    const z = this.w * other.z + this.x * other.y - this.y * other.x + this.z * other.w;
+    const w =
+      this.w * other.w - this.x * other.x - this.y * other.y - this.z * other.z;
+    const x =
+      this.w * other.x + this.x * other.w + this.y * other.z - this.z * other.y;
+    const y =
+      this.w * other.y - this.x * other.z + this.y * other.w + this.z * other.x;
+    const z =
+      this.w * other.z + this.x * other.y - this.y * other.x + this.z * other.w;
 
     // Polarity: XOR-like behavior (this IS different from quaternions)
     // Quaternions handle double-cover implicitly; we make it explicit
@@ -285,16 +293,28 @@ export class QuadrayRotor {
     const { w, x, y, z } = n;
 
     // Pre-compute products (all polynomial - RT-PURE!)
-    const xx = x * x, yy = y * y, zz = z * z;
-    const xy = x * y, xz = x * z, yz = y * z;
-    const wx = w * x, wy = w * y, wz = w * z;
+    const xx = x * x,
+      yy = y * y,
+      zz = z * z;
+    const xy = x * y,
+      xz = x * z,
+      yz = y * z;
+    const wx = w * x,
+      wy = w * y,
+      wz = w * z;
 
     // Rotation matrix from rotor components (pure polynomial algebra)
     // Column-major order for THREE.js Matrix3
     return [
-      1 - 2 * (yy + zz), 2 * (xy + wz), 2 * (xz - wy),     // Column 0
-      2 * (xy - wz), 1 - 2 * (xx + zz), 2 * (yz + wx),     // Column 1
-      2 * (xz + wy), 2 * (yz - wx), 1 - 2 * (xx + yy)      // Column 2
+      1 - 2 * (yy + zz),
+      2 * (xy + wz),
+      2 * (xz - wy), // Column 0
+      2 * (xy - wz),
+      1 - 2 * (xx + zz),
+      2 * (yz + wx), // Column 1
+      2 * (xz + wy),
+      2 * (yz - wx),
+      1 - 2 * (xx + yy), // Column 2
     ];
   }
 
@@ -310,10 +330,22 @@ export class QuadrayRotor {
 
     // Set rotation portion of 4x4 matrix
     m4.set(
-      m3[0], m3[3], m3[6], 0,
-      m3[1], m3[4], m3[7], 0,
-      m3[2], m3[5], m3[8], 0,
-      0, 0, 0, 1
+      m3[0],
+      m3[3],
+      m3[6],
+      0,
+      m3[1],
+      m3[4],
+      m3[7],
+      0,
+      m3[2],
+      m3[5],
+      m3[8],
+      0,
+      0,
+      0,
+      0,
+      1
     );
 
     return m4;
@@ -369,16 +401,21 @@ export class QuadrayRotor {
 
     // Use the Quadray conversion if initialized
     if (Quadray.basisVectors) {
-      const pos = { x: axis.x, y: axis.y, z: axis.z, dot: (v) => axis.x * v.x + axis.y * v.y + axis.z * v.z };
+      const pos = {
+        x: axis.x,
+        y: axis.y,
+        z: axis.z,
+        dot: v => axis.x * v.x + axis.y * v.y + axis.z * v.z,
+      };
       return Quadray.fromCartesian(pos);
     }
 
     // Fallback: project onto canonical quadray basis
     const sqrt3 = Math.sqrt(3);
-    const basisA = { x: 1/sqrt3, y: 1/sqrt3, z: 1/sqrt3 };
-    const basisB = { x: 1/sqrt3, y: -1/sqrt3, z: -1/sqrt3 };
-    const basisC = { x: -1/sqrt3, y: 1/sqrt3, z: -1/sqrt3 };
-    const basisD = { x: -1/sqrt3, y: -1/sqrt3, z: 1/sqrt3 };
+    const basisA = { x: 1 / sqrt3, y: 1 / sqrt3, z: 1 / sqrt3 };
+    const basisB = { x: 1 / sqrt3, y: -1 / sqrt3, z: -1 / sqrt3 };
+    const basisC = { x: -1 / sqrt3, y: 1 / sqrt3, z: -1 / sqrt3 };
+    const basisD = { x: -1 / sqrt3, y: -1 / sqrt3, z: 1 / sqrt3 };
 
     const dotA = axis.x * basisA.x + axis.y * basisA.y + axis.z * basisA.z;
     const dotB = axis.x * basisB.x + axis.y * basisB.y + axis.z * basisB.z;
@@ -391,7 +428,7 @@ export class QuadrayRotor {
       qx: dotA - mean,
       qz: dotB - mean,
       qy: dotC - mean,
-      qw: dotD - mean
+      qw: dotD - mean,
     };
   }
 
@@ -461,10 +498,16 @@ export class QuadrayRotor {
     let dot = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z;
 
     // If negative dot, negate one quaternion to take shorter path
-    let bw = b.w, bx = b.x, by = b.y, bz = b.z;
+    let bw = b.w,
+      bx = b.x,
+      by = b.y,
+      bz = b.z;
     if (dot < 0) {
       dot = -dot;
-      bw = -bw; bx = -bx; by = -by; bz = -bz;
+      bw = -bw;
+      bx = -bx;
+      by = -by;
+      bz = -bz;
     }
 
     // If very close, use linear interpolation
@@ -496,7 +539,7 @@ export class QuadrayRotor {
    * @returns {string} Formatted rotor string
    */
   toString() {
-    const sign = this.polarity > 0 ? '+' : '-';
+    const sign = this.polarity > 0 ? "+" : "-";
     return `QuadrayRotor(${this.w.toFixed(4)}, ${this.x.toFixed(4)}, ${this.y.toFixed(4)}, ${this.z.toFixed(4)}, ${sign})`;
   }
 
@@ -520,8 +563,8 @@ export class QuadrayRotor {
 export class QuadrayRotorState {
   constructor() {
     this.orientation = QuadrayRotor.identity();
-    this.angularVelocity = 0;  // rad/s
-    this.axis = { x: 0, y: 0, z: 1 };  // Current rotation axis
+    this.angularVelocity = 0; // rad/s
+    this.axis = { x: 0, y: 0, z: 1 }; // Current rotation axis
     this.lastTime = null;
   }
 
@@ -553,7 +596,7 @@ export class QuadrayRotorState {
     this.lastTime = currentTime;
 
     if (Math.abs(this.angularVelocity) < 1e-10) {
-      return;  // No rotation
+      return; // No rotation
     }
 
     // RT-JUSTIFIED: Frame update converts angular velocity to spread for rotor
@@ -600,7 +643,7 @@ export class QuadrayRotorState {
         x: this.orientation.x,
         y: this.orientation.y,
         z: this.orientation.z,
-        polarity: this.orientation.polarity
+        polarity: this.orientation.polarity,
       },
       // Axis in both coordinate systems
       axisXYZ: axis,
@@ -613,10 +656,10 @@ export class QuadrayRotorState {
       angularVelocity: {
         radiansPerSecond: this.angularVelocity,
         rpm: rpm,
-        degreesPerSecond: degsPerSec
+        degreesPerSecond: degsPerSec,
       },
       // Gimbal lock proximity (for comparison display)
-      gimbalLockProximity: gimbalProximity
+      gimbalLockProximity: gimbalProximity,
     };
   }
 }
@@ -625,15 +668,15 @@ export class QuadrayRotorState {
  * Utility: Calculate spread for common angles (RT-pure where possible)
  */
 export const CommonSpreads = {
-  deg0: 0,           // sin²(0°) = 0
-  deg30: 0.25,       // sin²(30°) = 1/4
-  deg45: 0.5,        // sin²(45°) = 1/2
-  deg60: 0.75,       // sin²(60°) = 3/4
-  deg90: 1,          // sin²(90°) = 1
-  deg120: 0.75,      // sin²(120°) = 3/4
-  deg135: 0.5,       // sin²(135°) = 1/2
-  deg150: 0.25,      // sin²(150°) = 1/4
-  deg180: 0,         // sin²(180°) = 0
+  deg0: 0, // sin²(0°) = 0
+  deg30: 0.25, // sin²(30°) = 1/4
+  deg45: 0.5, // sin²(45°) = 1/2
+  deg60: 0.75, // sin²(60°) = 3/4
+  deg90: 1, // sin²(90°) = 1
+  deg120: 0.75, // sin²(120°) = 3/4
+  deg135: 0.5, // sin²(135°) = 1/2
+  deg150: 0.25, // sin²(150°) = 1/4
+  deg180: 0, // sin²(180°) = 0
 
   /**
    * Get spread for arbitrary angle
@@ -644,5 +687,5 @@ export const CommonSpreads = {
   fromDegrees(degrees) {
     const radians = (degrees * Math.PI) / 180;
     return Math.sin(radians) ** 2;
-  }
+  },
 };
