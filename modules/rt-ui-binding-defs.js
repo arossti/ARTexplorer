@@ -83,10 +83,10 @@ export const simpleCheckboxBindings = [
   // Node shading
   { id: "nodeFlatShading", type: "checkbox" },
 
-  // Projection options
-  { id: "projectionShowRays", type: "checkbox" },
-  { id: "projectionShowInterior", type: "checkbox" },
-  { id: "projectionShowIdeal", type: "checkbox" },
+  // Projection options - do NOT trigger updateGeometry (handled by RTProjections.updateProjection in rt-init.js)
+  { id: "projectionShowRays", type: "checkbox", updateGeometry: false },
+  { id: "projectionShowInterior", type: "checkbox", updateGeometry: false },
+  { id: "projectionShowIdeal", type: "checkbox", updateGeometry: false },
 ];
 
 // ============================================================================
