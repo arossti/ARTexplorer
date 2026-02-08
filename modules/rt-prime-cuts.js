@@ -25,13 +25,12 @@ const PROJECTION_PRESETS = {
   pentagon: {
     name: "Pentagon (5-gon)",
     n: 5,
-    // Use base tetrahedron with truncation (single source of truth)
-    polyhedronType: "tetrahedron",
-    polyhedronCheckbox: "showTetrahedron",
+    // Use base truncated tetrahedron (single source of truth - no Quadray)
+    polyhedronType: "primeTruncTet",
+    polyhedronCheckbox: "showPrimeTruncTet",
     compound: "truncatedTetrahedron",
     vertexCount: 12,
-    spreads: [0, 0.5, 0],  // NEW: Found with base geometry (prime_search_streamlined.py)
-    requiredTruncation: 1/3,  // Forces truncation checkbox+slider
+    spreads: [0, 0.5, 0],  // Found with base geometry (prime_search_streamlined.py)
     expectedHull: 5,
     source: "prime_projections_20260207_215921.json (base geometry)",
     maxInteriorAngle: 170,
@@ -52,16 +51,16 @@ const PROJECTION_PRESETS = {
   heptagon: {
     name: "Heptagon (7-gon)",
     n: 7,
-    polyhedronType: "quadrayCompoundTet",
-    polyhedronCheckbox: "showQuadrayCompoundTet",
+    // Use base compound (single source of truth - no Quadray)
+    polyhedronType: "primeCompoundTet",
+    polyhedronCheckbox: "showPrimeCompoundTet",
     compound: "truncTetPlusTet",
     vertexCount: 16,
-    spreads: [0, 0.01, 0.14],  // Verified by Project-Streamline
-    requiredTruncation: 1/3,  // Spreads only valid at t=1/3
+    spreads: [0, 0.01, 0.14],  // NOTE: May need re-searching with base geometry
     expectedHull: 7,
-    source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
+    source: "prime_projections_verified.json (needs verification with base geometry)",
     maxInteriorAngle: 170,
-    verified: "2026-02-07",
+    verified: "pending",
     description: "TruncTet+Tet compound → 7-vertex hull at s=(0, 0.01, 0.14)",
     projectionState: {
       enabled: true,
@@ -78,16 +77,16 @@ const PROJECTION_PRESETS = {
   hendecagon: {
     name: "Hendecagon (11-gon)",
     n: 11,
-    polyhedronType: "quadrayCompound",
-    polyhedronCheckbox: "showQuadrayCompound",
+    // Use base compound (single source of truth - no Quadray)
+    polyhedronType: "primeCompoundIcosa",
+    polyhedronCheckbox: "showPrimeCompoundIcosa",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0, 0.01, 0.1],  // Verified by Project-Streamline
-    requiredTruncation: 1/3,  // Spreads only valid at t=1/3
+    spreads: [0, 0.01, 0.1],  // NOTE: Likely needs re-searching (icosa scaling was wrong)
     expectedHull: 11,
-    source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
+    source: "prime_projections_verified.json (needs verification with base geometry)",
     maxInteriorAngle: 170,
-    verified: "2026-02-07",
+    verified: "pending",
     description: "TruncTet+Icosa compound → 11-vertex hull at s=(0, 0.01, 0.1)",
     projectionState: {
       enabled: true,
@@ -104,16 +103,16 @@ const PROJECTION_PRESETS = {
   tridecagon: {
     name: "Tridecagon (13-gon)",
     n: 13,
-    polyhedronType: "quadrayCompound",
-    polyhedronCheckbox: "showQuadrayCompound",
+    // Use base compound (single source of truth - no Quadray)
+    polyhedronType: "primeCompoundIcosa",
+    polyhedronCheckbox: "showPrimeCompoundIcosa",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0, 0.01, 0.14],  // Verified by Project-Streamline
-    requiredTruncation: 1/3,  // Spreads only valid at t=1/3
+    spreads: [0, 0.01, 0.14],  // NOTE: Likely needs re-searching (icosa scaling was wrong)
     expectedHull: 13,
-    source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
+    source: "prime_projections_verified.json (needs verification with base geometry)",
     maxInteriorAngle: 178,
-    verified: "2026-02-07",
+    verified: "pending",
     description: "TruncTet+Icosa compound → 13-vertex hull at s=(0, 0.01, 0.14)",
     projectionState: {
       enabled: true,

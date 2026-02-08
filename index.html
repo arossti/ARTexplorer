@@ -2014,35 +2014,12 @@
                   </label>
                   <p class="info-text" style="font-size: 10px; margin-top: 5px">
                     {2,1,0,0} permutations — ALL rational!<br />
-                    Source of 5-gon projection (Fermat prime)
+                    <span style="color: #888">Quadray coordinate demonstrator</span>
                   </p>
-                  <!-- Prime Projection Views (specific to Truncated Tetrahedron) -->
-                  <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333">
-                    <label class="label-section" style="font-size: 11px">Prime Projection View</label>
-                    <p class="info-text" style="font-size: 9px; margin-bottom: 6px">
-                      Camera angle producing prime n-gon projection
-                    </p>
-                    <div class="button-grid-2col">
-                      <button
-                        class="toggle-btn variant-special"
-                        id="viewPentagonProjection"
-                        title="5-gon: Truncated tetrahedron at s=(0,0,0.5) - Fermat prime"
-                      >
-                        5-gon
-                      </button>
-                    </div>
-                    <p class="info-text" style="font-size: 8px; margin-top: 4px">
-                      5-gon from 12 vertices (truncated tetrahedron)<br />
-                      <span style="color: #7bed9f">7-gon requires TruncTet+Tet compound (16v)</span>
-                    </p>
-                    <!-- Prime Projection Formula Info -->
-                    <div
-                      id="primeProjectionInfo"
-                      style="font-size: 10px; color: #00ffff; margin-top: 8px; display: none"
-                    >
-                      <span id="primeProjectionFormula"></span>
-                    </div>
-                  </div>
+                  <p class="info-text" style="font-size: 9px; margin-top: 5px; color: #ffd93d">
+                    ★ For prime projections, use the dedicated<br />
+                    "Prime Polygon Projections" section below
+                  </p>
                 </div>
               </div>
             </div>
@@ -2094,26 +2071,13 @@
                     Zero-Sum Normalize
                   </label>
                   <p class="info-text" style="font-size: 10px; margin-top: 5px">
-                    24-vertex compound for 13-gon projections<br />
-                    Truncated Tetrahedron (12v) + Icosahedron (12v)
+                    24-vertex compound (Quadray coordinate demonstrator)<br />
+                    <span style="color: #888">TruncTet (12v) + Icosahedron (12v)</span>
                   </p>
-                  <!-- Prime Projection View for TruncTet+Icosa Compound -->
-                  <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333">
-                    <label class="label-section" style="font-size: 11px; color: #ffd93d">★ 13-gon Projection</label>
-                    <div class="button-grid-2col" style="margin-top: 6px">
-                      <button
-                        class="toggle-btn variant-special"
-                        id="viewTridecagonProjection"
-                        title="13-gon: TruncTet+Icosa at s=(0,0.6,0.8) - sextic polynomial!"
-                        style="background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%); color: #000"
-                      >
-                        13-gon
-                      </button>
-                    </div>
-                    <p class="info-text" style="font-size: 8px; margin-top: 4px; color: #ffd93d">
-                      Tridecagon at s=(0, 0.6, 0.8) - icosa extends hull
-                    </p>
-                  </div>
+                  <p class="info-text" style="font-size: 9px; margin-top: 5px; color: #ffd93d">
+                    ★ For prime projections, use the dedicated<br />
+                    "Prime Polygon Projections" section below
+                  </p>
                 </div>
               </div>
             </div>
@@ -2138,35 +2102,136 @@
                     Zero-Sum Normalize
                   </label>
                   <p class="info-text" style="font-size: 10px; margin-top: 5px">
-                    16-vertex compound for 7-gon and 11-gon projections<br />
-                    Truncated Tetrahedron (12v) + Tetrahedron (4v)
+                    16-vertex compound (Quadray coordinate demonstrator)<br />
+                    <span style="color: #888">TruncTet (12v) + Tetrahedron (4v)</span>
                   </p>
-                  <!-- Prime Projection Views for TruncTet+Tet Compound -->
-                  <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333">
-                    <label class="label-section" style="font-size: 11px; color: #7bed9f">★ Prime Projections (7 & 11)</label>
-                    <div class="button-grid-2col" style="margin-top: 6px">
-                      <button
-                        class="toggle-btn variant-special"
-                        id="viewHeptagonProjectionTet"
-                        title="7-gon: TruncTet+Tet compound at s=(0,0,0.5)"
-                        style="background: linear-gradient(135deg, #7bed9f 0%, #26de81 100%); color: #000"
-                      >
-                        7-gon
-                      </button>
-                      <button
-                        class="toggle-btn variant-special"
-                        id="viewHendecagonProjectionTet"
-                        title="11-gon: TruncTet+Tet at s=(0,0.2,0.5) - quintic polynomial!"
-                        style="background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%); color: #000"
-                      >
-                        11-gon
-                      </button>
-                    </div>
-                    <p class="info-text" style="font-size: 8px; margin-top: 4px; color: #7bed9f">
-                      Tet-family compound: 7 at s=(0,0,0.5), 11 at s=(0,0.2,0.5)
-                    </p>
-                  </div>
+                  <p class="info-text" style="font-size: 9px; margin-top: 5px; color: #ffd93d">
+                    ★ For prime projections, use the dedicated<br />
+                    "Prime Polygon Projections" section below
+                  </p>
                 </div>
+              </div>
+            </div>
+
+            <!-- ========== PRIME POLYGON PROJECTIONS ========== -->
+            <div class="matrix-divider">
+              <label class="matrix-divider-label" style="color: #ffd93d">★ Prime Polygon Projections</label>
+            </div>
+            <p class="info-text" style="font-size: 10px; margin: 5px 0 10px 0; color: #888">
+              Base polyhedra for prime hull projections (Gauss-Wantzel bypass).<br />
+              Single source of truth — no Quadray normalization.
+            </p>
+
+            <!-- Truncated Tetrahedron (5-gon) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPrimeTruncTet" />
+                Truncated Tetrahedron (5-gon)
+              </label>
+              <div
+                id="prime-trunc-tet-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    12 vertices → 5-gon hull at s=(0, 0.5, 0)<br />
+                    <span style="color: #7bed9f">Pentagon — Fermat prime, compass-constructible</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Compound TruncTet + Tet (7-gon) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPrimeCompoundTet" />
+                Compound (TruncTet + Tet)
+              </label>
+              <div
+                id="prime-compound-tet-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    16 vertices (12 + 4) → 7-gon hull<br />
+                    <span style="color: #7bed9f">Heptagon — NOT compass-constructible!</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Compound TruncTet + Icosa (11/13-gon) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPrimeCompoundIcosa" />
+                Compound (TruncTet + Icosa)
+              </label>
+              <div
+                id="prime-compound-icosa-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    24 vertices (12 + 12) → 11/13-gon hulls<br />
+                    <span style="color: #ff6b6b">★ Bypasses Gauss-Wantzel theorem!</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Prime Projection Preset Buttons -->
+            <div style="margin-top: 10px; padding: 10px; background: rgba(255,217,61,0.1); border-radius: 6px">
+              <label class="label-section" style="font-size: 11px; color: #ffd93d">Prime Projection Presets</label>
+              <p class="info-text" style="font-size: 9px; margin-bottom: 8px">
+                Click to apply preset: enables polyhedron + projection view
+              </p>
+              <div class="button-grid-2col" style="gap: 6px">
+                <button
+                  class="toggle-btn variant-special"
+                  id="primePentagonBtn"
+                  title="5-gon: Truncated Tetrahedron at s=(0, 0.5, 0)"
+                  style="background: linear-gradient(135deg, #7bed9f 0%, #26de81 100%); color: #000"
+                >
+                  5-gon
+                </button>
+                <button
+                  class="toggle-btn variant-special"
+                  id="primeHeptagonBtn"
+                  title="7-gon: TruncTet+Tet compound at s=(0, 0.01, 0.14)"
+                  style="background: linear-gradient(135deg, #7bed9f 0%, #26de81 100%); color: #000"
+                >
+                  7-gon
+                </button>
+                <button
+                  class="toggle-btn variant-special"
+                  id="primeHendecagonBtn"
+                  title="11-gon: TruncTet+Icosa at s=(0, 0.01, 0.1)"
+                  style="background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%); color: #000"
+                >
+                  11-gon
+                </button>
+                <button
+                  class="toggle-btn variant-special"
+                  id="primeTridecagonBtn"
+                  title="13-gon: TruncTet+Icosa at s=(0, 0.01, 0.14)"
+                  style="background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%); color: #000"
+                >
+                  13-gon
+                </button>
+              </div>
+              <p class="info-text" style="font-size: 8px; margin-top: 6px; color: #888">
+                <span style="color: #7bed9f">Green</span>: Fermat/constructible |
+                <span style="color: #ff6b6b">Red</span>: Gauss-Wantzel bypass
+              </p>
+              <!-- Prime Projection Formula Info -->
+              <div
+                id="primeProjectionInfo2"
+                style="font-size: 10px; color: #00ffff; margin-top: 8px; display: none"
+              >
+                <span id="primeProjectionFormula2"></span>
               </div>
             </div>
           </div>

@@ -330,40 +330,65 @@ Added `Polyhedra.compoundTruncTetTet()` and `Polyhedra.compoundTruncTetIcosa()` 
 - `modules/rt-rendering.js` - Compound checkboxes now use base functions
 - `modules/rt-prime-cuts.js` - Pentagon preset uses base tetrahedron
 
-### Current Status (Feb 2026 Testing)
+### Current Status (Feb 2026 - UI Reorganized!)
 
-**Observation:** Pentagon preset produces 9-gon hull instead of expected 5-gon.
+**✅ Pentagon (5-gon): WORKING**
 
-**Root cause:** The old spreads `[0.01, 0.5, 0]` were found with Quadray-normalized geometry. Now that we use base geometry (correct), the spreads are stale.
+Successfully verified with base geometry architecture:
+- Spreads: `[0, 0.5, 0]` (found with `prime_search_streamlined.py`)
+- Hull count: 5-gon (confirmed in console: `📐 Projection complete: 12 vertices → 5-gon hull`)
+- Uses dedicated prime polyhedra (`showPrimeTruncTet`)
 
-**What works:**
-- Projection rays correctly target base truncated tetrahedron vertices
-- Truncation slider properly forces t=1/3
-- Single source of truth architecture is in place
+**✅ UI Reorganization Complete**
 
-**What doesn't work:**
-- Quadray Truncated Tetrahedron still renders in scene (too large, different scale)
-- Hull counts don't match because spreads need re-searching
+Created dedicated "★ Prime Polygon Projections" section to eliminate Quadray/base geometry confusion:
+
+| New Checkbox | Polyhedron | Prime Hull | Rendering |
+|--------------|------------|------------|-----------|
+| `showPrimeTruncTet` | Truncated Tetrahedron (12v) | 5-gon | `Polyhedra.truncatedTetrahedron()` |
+| `showPrimeCompoundTet` | TruncTet + Tet (16v) | 7-gon | `Polyhedra.compoundTruncTetTet()` |
+| `showPrimeCompoundIcosa` | TruncTet + Icosa (24v) | 11/13-gon | `Polyhedra.compoundTruncTetIcosa()` |
+
+**Files modified:**
+- `index.html` - New "Prime Polygon Projections" section with preset buttons
+- `modules/rt-rendering.js` - Rendering for new prime checkboxes
+- `modules/rt-ui-binding-defs.js` - Bindings for new checkboxes and button handlers
+- `modules/rt-prime-cuts.js` - Updated presets to use new `polyhedronType` and `polyhedronCheckbox` values
+
+**Quadray Demonstrators now separate:**
+- Kept as pure coordinate system demonstrations
+- Prime projection buttons removed (redirected to dedicated section)
+- No confusion between Quadray-normalized and base geometry
+
+**⚠️ Known Bug: Projection Plane Distance**
+
+The projection plane distance from active forms is broken. When applying presets, the projection plane appears at incorrect distance. This was noticed during pentagon testing but is a separate issue from the hull count fix.
+
+**❓ Other Presets (Need Testing)**
+
+The old spreads may not work with corrected base geometry:
+
+| Preset | Compound | Spreads | Prognosis |
+|--------|----------|---------|-----------|
+| 7-gon | TruncTet+Tet | `[0, 0.01, 0.14]` | **MIGHT work** - both components were correctly scaled |
+| 11-gon | TruncTet+Icosa | `[0, 0.01, 0.1]` | **LIKELY BROKEN** - icosa scaling was wrong (0.8507 vs 1.0) |
+| 13-gon | TruncTet+Icosa | `[0, 0.01, 0.14]` | **LIKELY BROKEN** - same icosa scaling issue |
 
 ### HANDOFF: Remaining Work
 
-1. **CRITICAL: Remove Quadray TruncTet from prime projection pipeline**
-   - The `showQuadrayTruncatedTet` checkbox still renders the old Quadray form
-   - Prime presets should ONLY use base tetrahedron with truncation
-   - Remove or hide the Quadray TruncTet checkbox for prime projection use cases
-   - Files to modify: `rt-prime-cuts.js`, `rt-rendering.js`, potentially `index.html`
+1. ✅ **DONE: Pentagon (5-gon) fixed** - base geometry + new spreads working
+2. ✅ **DONE: UI reorganized** - dedicated Prime Polygon Projections section
 
-2. **Re-run Python search** with unified vertex definitions:
-   ```bash
-   python scripts/prime_search_streamlined.py \
-       --primes 5,7,11,13 \
-       --precision 2
-   ```
-   This will find NEW spreads that work with base geometry.
+3. **Test other presets** (7, 11, 13-gon):
+   - Click preset buttons in the new Prime Polygon Projections section
+   - Check console for hull counts
+   - If wrong, run new Python searches:
+     ```bash
+     cd scripts
+     python prime_search_streamlined.py --primes 7,11,13 --precision 2
+     ```
 
-3. **Update preset spreads** with results from step 2
-
-4. **Verify hull counts** in JavaScript match Python results exactly
+4. **Fix projection plane distance bug** - separate issue, lower priority
 
 ### Architecture Notes
 
