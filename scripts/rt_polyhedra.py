@@ -206,6 +206,24 @@ def icosahedron(half_size: float = 1.0) -> List[List[float]]:
 # COMPOUND POLYHEDRA FOR PRIME PROJECTIONS
 # =============================================================================
 
+def truncated_dual_tetrahedron(half_size: float = 1.0, truncation: float = 1/3) -> List[List[float]]:
+    """
+    Truncated dual tetrahedron: truncate the dual tet with parametric t.
+    EXACT MATCH of rt-polyhedra.js:478 truncatedDualTetrahedron()
+
+    Simply negates all vertices of truncated_tetrahedron(half_size, truncation).
+
+    Args:
+        half_size: Scale factor (base tetrahedron bounding cube half-size)
+        truncation: Truncation parameter t in [0, 0.5] (default: 1/3)
+
+    Returns:
+        List of vertices as [x, y, z] (4 at t=0, 12 at t=1/3, 6 at t=0.5)
+    """
+    base_verts = truncated_tetrahedron(half_size, truncation)
+    return [[-v[0], -v[1], -v[2]] for v in base_verts]
+
+
 def dual_tetrahedron(half_size: float = 1.0) -> List[List[float]]:
     """
     Dual (even parity) tetrahedron inscribed in cube.
@@ -322,6 +340,47 @@ def trunc_tet_plus_icosa(half_size: float = 1.0) -> List[List[float]]:
     icosa_verts = [[v[0] * scale, v[1] * scale, v[2] * scale] for v in icosa_base]
 
     return trunc_verts + icosa_verts
+
+
+def variable_stella_compound(t1: float = 1/3, t2: float = 0.0,
+                              half_size: float = 1.0) -> List[List[float]]:
+    """
+    Variable stella octangula compound: two independently truncated tetrahedra,
+    unit-sphere normalized.
+
+    The stella octangula is the compound of base tet + dual tet.
+    With independent truncation parameters t1 and t2, we get a rich
+    family of even-vertex polyhedra:
+      (0, 0)     → 4+4  =  8v  (raw stella octangula)
+      (1/3, 0)   → 12+4 = 16v  (current 7-gon compound)
+      (1/3, 1/3) → 12+12= 24v  (double truncated stella)
+      (0.5, 0.5) → 6+6  = 12v  (double octahedron limit)
+      (0.5, 0)   → 6+4  = 10v
+      (0, 1/3)   → 4+12 = 16v
+
+    All vertices normalized to unit sphere then scaled by half_size.
+    This ensures robust hull counts regardless of truncation parameters.
+
+    Args:
+        t1: Truncation of base tetrahedron [0, 0.5]
+        t2: Truncation of dual tetrahedron [0, 0.5]
+        half_size: Output radius (default 1.0)
+
+    Returns:
+        List of vertices as [x, y, z], all on sphere of radius half_size
+    """
+    # Generate vertices for each truncated tet
+    # Use half_size=3 for base tet (gives integer-like coords at t=1/3)
+    # Use half_size=1 for dual tet (matches existing compound pattern)
+    base_verts = truncated_tetrahedron(half_size=3.0, truncation=t1)
+    dual_verts = truncated_dual_tetrahedron(half_size=3.0, truncation=t2)
+
+    # Normalize all to unit sphere, then scale
+    all_verts = [_normalize_vertex(v) for v in base_verts] + \
+                [_normalize_vertex(v) for v in dual_verts]
+
+    return [[v[0] * half_size, v[1] * half_size, v[2] * half_size]
+            for v in all_verts]
 
 
 # =============================================================================
