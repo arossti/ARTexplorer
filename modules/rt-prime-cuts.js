@@ -29,12 +29,14 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showPrimeTruncTet",
     compound: "truncatedTetrahedron",
     vertexCount: 12,
-    spreads: [0, 0.5, 0], // Found with base geometry (prime_search_streamlined.py)
+    spreads: [0, 0.5, 0], // Rational: s=(0, 1/2, 0), Tier 1
     expectedHull: 5,
-    source: "prime_projections_20260207_215921.json (base geometry)",
+    source: "Path A rational search tier 1, s₂=1/2, regularity=0.4231",
     maxInteriorAngle: 170,
-    verified: "2026-02-07",
-    description: "Truncated Tetrahedron → 5-vertex hull at s=(0, 0.5, 0)",
+    verified: "2026-02-08",
+    description: "Truncated Tetrahedron → 5-vertex hull at s=(0, 1/2, 0)",
+    rationalSpreads: ["0", "1/2", "0"],
+    rationalTier: 1,
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -55,13 +57,15 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showPrimeCompoundTet",
     compound: "truncTetPlusDualTet",
     vertexCount: 16,
-    spreads: [0, 0, 0.5], // Verified robust at all scales + Float32
+    spreads: [0.5, 0.5, 0.5], // Rational: s=(1/2, 1/2, 1/2), Tier 1, all spreads equal!
     expectedHull: 7,
-    source: "compoundTruncTetDualTet unit-sphere normalized, min_cross=0.353",
+    source: "Path A rational search tier 1, all s=1/2, regularity=0.8605",
     maxInteriorAngle: 170,
     verified: "2026-02-08",
     description:
-      "TruncTet+DualTet compound → 7-vertex hull at s=(0, 0, 0.5)",
+      "TruncTet+DualTet compound → 7-vertex hull at s=(1/2, 1/2, 1/2)",
+    rationalSpreads: ["1/2", "1/2", "1/2"],
+    rationalTier: 1,
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -70,25 +74,27 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0, 0, 0.5],
+      customSpreads: [0.5, 0.5, 0.5],
       presetName: "heptagon",
     },
   },
   hendecagon: {
     name: "Hendecagon (11-gon)",
     n: 11,
-    // Use base compound (single source of truth - no Quadray)
+    // Tier 1 rational spreads — denominators {2, 4} only, √2/√3 radicals
     polyhedronType: "primeCompoundIcosa",
     polyhedronCheckbox: "showPrimeCompoundIcosa",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0.34, 0.54, 0.2], // Column-projection search 2026-02-08
+    spreads: [0.75, 0.25, 0.5], // Rational: s=(3/4, 1/4, 1/2), Tier 1
     expectedHull: 11,
-    source: "prime_search_streamlined.py precision=2, regularity=0.5050",
+    source: "Path A rational search tier 1, s=(3/4,1/4,1/2), regularity=0.4901",
     maxInteriorAngle: 170,
     verified: "2026-02-08",
     description:
-      "TruncTet+Icosa compound → 11-vertex hull at s=(0.34, 0.54, 0.2)",
+      "TruncTet+Icosa compound → 11-vertex hull at s=(3/4, 1/4, 1/2)",
+    rationalSpreads: ["3/4", "1/4", "1/2"],
+    rationalTier: 1,
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -97,25 +103,27 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0.34, 0.54, 0.2],
+      customSpreads: [0.75, 0.25, 0.5],
       presetName: "hendecagon",
     },
   },
   tridecagon: {
     name: "Tridecagon (13-gon)",
     n: 13,
-    // Use base compound (single source of truth - no Quadray)
+    // Tier 3 rational spreads — denominators {10, 20, 25}, √5 radical family
     polyhedronType: "primeCompoundIcosa",
     polyhedronCheckbox: "showPrimeCompoundIcosa",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0.96, 0.99, 0.99], // Column-projection search 2026-02-08
+    spreads: [0.9, 0.96, 0.95], // Rational: s=(9/10, 24/25, 19/20), Tier 3
     expectedHull: 13,
-    source: "prime_search_streamlined.py precision=2, regularity=0.3516",
+    source: "Path A rational search tier 3, s=(9/10,24/25,19/20), regularity=0.3462",
     maxInteriorAngle: 178,
     verified: "2026-02-08",
     description:
-      "TruncTet+Icosa compound → 13-vertex hull at s=(0.96, 0.99, 0.99)",
+      "TruncTet+Icosa compound → 13-vertex hull at s=(9/10, 24/25, 19/20)",
+    rationalSpreads: ["9/10", "24/25", "19/20"],
+    rationalTier: 3,
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -124,7 +132,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0.96, 0.99, 0.99],
+      customSpreads: [0.9, 0.96, 0.95],
       presetName: "tridecagon",
     },
   },
