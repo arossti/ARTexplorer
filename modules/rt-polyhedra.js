@@ -258,7 +258,9 @@ export const Polyhedra = {
         [1, 3, 2],
       ];
       if (!options.silent) {
-        console.log(`Truncated Tetrahedron: t=0 (base tetrahedron), 4 vertices`);
+        console.log(
+          `Truncated Tetrahedron: t=0 (base tetrahedron), 4 vertices`
+        );
       }
       return { vertices, edges, faces };
     }
@@ -772,8 +774,8 @@ export const Polyhedra = {
 
     // Combine faces with offset for tetrahedron indices
     const truncTetFaces = truncTet.faces;
-    const tetFacesOffset = tet.faces.map((face) =>
-      face.map((i) => i + truncTetVertices.length)
+    const tetFacesOffset = tet.faces.map(face =>
+      face.map(i => i + truncTetVertices.length)
     );
     const faces = [...truncTetFaces, ...tetFacesOffset];
 
@@ -835,7 +837,7 @@ export const Polyhedra = {
     // Calculate truncated tetrahedron bounding radius
     // With scale=3 and t=1/3: vertices at [1,1,3] → radius = sqrt(11)
     let truncTetRadius = 0;
-    truncTetVertices.forEach((v) => {
+    truncTetVertices.forEach(v => {
       const r = v.length();
       if (r > truncTetRadius) truncTetRadius = r;
     });
@@ -848,7 +850,7 @@ export const Polyhedra = {
 
     // Scale icosahedron to match truncated tetrahedron bounding sphere
     const icosaScale = truncTetRadius / icosaRadius;
-    const icosaVertices = icosa.vertices.map((v) =>
+    const icosaVertices = icosa.vertices.map(v =>
       v.clone().multiplyScalar(icosaScale)
     );
 
@@ -865,8 +867,8 @@ export const Polyhedra = {
 
     // Combine faces with offset for icosahedron indices
     const truncTetFaces = truncTet.faces;
-    const icosaFacesOffset = icosa.faces.map((face) =>
-      face.map((i) => i + truncTetVertices.length)
+    const icosaFacesOffset = icosa.faces.map(face =>
+      face.map(i => i + truncTetVertices.length)
     );
     const faces = [...truncTetFaces, ...icosaFacesOffset];
 

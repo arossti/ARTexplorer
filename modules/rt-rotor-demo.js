@@ -13,7 +13,11 @@
  * @requires rt-math.js
  */
 
-import { QuadrayRotor, QuadrayRotorState, CommonSpreads } from "./rt-quadray-rotor.js";
+import {
+  QuadrayRotor,
+  QuadrayRotorState,
+  CommonSpreads,
+} from "./rt-quadray-rotor.js";
 import { RT, Quadray } from "./rt-math.js";
 
 /**
@@ -32,24 +36,24 @@ const DEMO_CONFIG = {
 
   // Interaction
   rotationSensitivity: 0.01,
-  velocityDecay: 0.995,  // Slower decay for longer spin
+  velocityDecay: 0.995, // Slower decay for longer spin
 
   // Auto-spin settings
-  defaultSpinRPM: 60,  // Start spinning at 60 RPM
-  defaultSpinAxis: { x: 0, y: 0, z: 1 },  // Spin around Z-axis
+  defaultSpinRPM: 60, // Start spinning at 60 RPM
+  defaultSpinAxis: { x: 0, y: 0, z: 1 }, // Spin around Z-axis
 
   // Axis handle settings
-  axisHandleRadius: 0.25,  // Sphere radius at axis tip
-  axisHandleDistance: 3.5,  // Distance from origin to handle
-  handleHoverScale: 1.3,   // Scale when hovering
-  pulseSpeed: 4,           // Pulse frequency when in danger zone
+  axisHandleRadius: 0.25, // Sphere radius at axis tip
+  axisHandleDistance: 3.5, // Distance from origin to handle
+  handleHoverScale: 1.3, // Scale when hovering
+  pulseSpeed: 4, // Pulse frequency when in danger zone
 
   // Colors
   colors: {
     outerRing: 0x888888,
     middleRing: 0x00ff00,
     innerDisk: 0x4488ff,
-    axisIndicator: 0x00ffff,  // Bright cyan for visibility
+    axisIndicator: 0x00ffff, // Bright cyan for visibility
     lockZoneDanger: 0xff0000,
     warningRings: [0xffff00, 0xff8800, 0xff4400],
     quadrayHandles: [0xff0000, 0x00ff00, 0x0000ff, 0xffff00],
@@ -58,8 +62,8 @@ const DEMO_CONFIG = {
     handleSafe: 0x00ff00,
     handleCaution: 0xffff00,
     handleWarning: 0xff8800,
-    handleDanger: 0xff0000
-  }
+    handleDanger: 0xff0000,
+  },
 };
 
 /**
@@ -77,8 +81,8 @@ export class RotorDemo {
   constructor(scene, THREE, camera, controls) {
     this.scene = scene;
     this.THREE = THREE;
-    this.camera = camera;  // Store camera for raycasting
-    this.controls = controls;  // Store controls to disable during drag
+    this.camera = camera; // Store camera for raycasting
+    this.controls = controls; // Store controls to disable during drag
     this.enabled = false;
 
     // State management
@@ -86,7 +90,7 @@ export class RotorDemo {
 
     // 3D objects
     this.demoGroup = null;
-    this.spinningObject = null;  // The geodesic tetrahedron (flat projection)
+    this.spinningObject = null; // The geodesic tetrahedron (flat projection)
     this.gimbalLockZones = null;
     this.handles = null;
 
@@ -99,14 +103,14 @@ export class RotorDemo {
     this.lastMousePos = null;
 
     // Rotation mode: 'quadray' (default) or 'euler'
-    this.rotationMode = 'quadray';
+    this.rotationMode = "quadray";
 
     // Spinning shape: 'tetrahedron' (default) or 'octahedron'
-    this.spinningShape = 'tetrahedron';
+    this.spinningShape = "tetrahedron";
 
     // Euler angle accumulator (for euler mode)
     this.eulerAngles = { x: 0, y: 0, z: 0 };
-    this.eulerGlitchAccumulator = 0;  // Simulates gimbal lock jitter
+    this.eulerGlitchAccumulator = 0; // Simulates gimbal lock jitter
 
     // Saved scene state (to restore on exit)
     this.savedSceneState = null;
@@ -117,17 +121,17 @@ export class RotorDemo {
     this.axisHandleNegMaterial = null;
     this.isDraggingHandle = false;
     this.handleHovered = false;
-    this.hoveredAxisHandle = null;  // Which axis handle is hovered
-    this.dragPlane = null;  // Plane for constraining drag
+    this.hoveredAxisHandle = null; // Which axis handle is hovered
+    this.dragPlane = null; // Plane for constraining drag
     this.raycaster = null;
     this.mouse = new THREE.Vector2();
-    this.pulseTime = 0;  // For pulsing effect
+    this.pulseTime = 0; // For pulsing effect
 
     // Rotation handle state (Phase 6.5)
     this.hoveredRotorHandle = null;
-    this.activeRotorHandle = null;  // Currently dragged rotation handle
-    this.dragStarted = false;  // Prevents axis jump on initial click
-    this.lastDragMouse = null;  // For delta-based dragging
+    this.activeRotorHandle = null; // Currently dragged rotation handle
+    this.dragStarted = false; // Prevents axis jump on initial click
+    this.lastDragMouse = null; // For delta-based dragging
   }
 
   /**
@@ -135,36 +139,45 @@ export class RotorDemo {
    */
   saveSceneState() {
     // Save geodesic tetrahedron projection radio button state
-    const projectionRadios = document.querySelectorAll('input[name="geodesicTetraProjection"]');
-    let savedProjection = 'spherical';  // default
+    const projectionRadios = document.querySelectorAll(
+      'input[name="geodesicTetraProjection"]'
+    );
+    let savedProjection = "spherical"; // default
     projectionRadios.forEach(radio => {
       if (radio.checked) savedProjection = radio.value;
     });
 
     this.savedSceneState = {
       // Checkbox states
-      showCube: document.getElementById('showCube')?.checked,
-      showDualTetrahedron: document.getElementById('showDualTetrahedron')?.checked,
+      showCube: document.getElementById("showCube")?.checked,
+      showDualTetrahedron: document.getElementById("showDualTetrahedron")
+        ?.checked,
       // Geodesic Tetrahedron
-      showGeodesicTetrahedron: document.getElementById('showGeodesicTetrahedron')?.checked,
-      geodesicTetraFrequency: document.getElementById('geodesicTetraFrequency')?.value,
+      showGeodesicTetrahedron: document.getElementById(
+        "showGeodesicTetrahedron"
+      )?.checked,
+      geodesicTetraFrequency: document.getElementById("geodesicTetraFrequency")
+        ?.value,
       geodesicTetraProjection: savedProjection,
       // Geodesic Octahedron
-      showGeodesicOctahedron: document.getElementById('showGeodesicOctahedron')?.checked,
-      geodesicOctaFrequency: document.getElementById('geodesicOctaFrequency')?.value,
+      showGeodesicOctahedron: document.getElementById("showGeodesicOctahedron")
+        ?.checked,
+      geodesicOctaFrequency: document.getElementById("geodesicOctaFrequency")
+        ?.value,
       // Other settings
-      showCartesianBasis: document.getElementById('showCartesianBasis')?.checked,
-      showQuadray: document.getElementById('showQuadray')?.checked,
-      showCartesianGrid: document.getElementById('showCartesianGrid')?.checked,
+      showCartesianBasis:
+        document.getElementById("showCartesianBasis")?.checked,
+      showQuadray: document.getElementById("showQuadray")?.checked,
+      showCartesianGrid: document.getElementById("showCartesianGrid")?.checked,
       // Central Angle Grid planes (IVM)
-      planeIvmWX: document.getElementById('planeIvmWX')?.checked,
-      planeIvmWY: document.getElementById('planeIvmWY')?.checked,
-      planeIvmWZ: document.getElementById('planeIvmWZ')?.checked,
-      planeIvmXY: document.getElementById('planeIvmXY')?.checked,
-      planeIvmXZ: document.getElementById('planeIvmXZ')?.checked,
-      planeIvmYZ: document.getElementById('planeIvmYZ')?.checked,
+      planeIvmWX: document.getElementById("planeIvmWX")?.checked,
+      planeIvmWY: document.getElementById("planeIvmWY")?.checked,
+      planeIvmWZ: document.getElementById("planeIvmWZ")?.checked,
+      planeIvmXY: document.getElementById("planeIvmXY")?.checked,
+      planeIvmXZ: document.getElementById("planeIvmXZ")?.checked,
+      planeIvmYZ: document.getElementById("planeIvmYZ")?.checked,
     };
-    console.log('📦 Saved scene state for demo');
+    console.log("📦 Saved scene state for demo");
   }
 
   /**
@@ -179,44 +192,46 @@ export class RotorDemo {
     const restore = (id, value) => {
       const el = document.getElementById(id);
       if (el && value !== undefined) {
-        if (el.type === 'checkbox') {
+        if (el.type === "checkbox") {
           el.checked = value;
         } else {
           el.value = value;
         }
-        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
       }
     };
 
-    restore('showCube', state.showCube);
-    restore('showDualTetrahedron', state.showDualTetrahedron);
+    restore("showCube", state.showCube);
+    restore("showDualTetrahedron", state.showDualTetrahedron);
     // Geodesic Tetrahedron
-    restore('showGeodesicTetrahedron', state.showGeodesicTetrahedron);
-    restore('geodesicTetraFrequency', state.geodesicTetraFrequency);
+    restore("showGeodesicTetrahedron", state.showGeodesicTetrahedron);
+    restore("geodesicTetraFrequency", state.geodesicTetraFrequency);
     // Restore tetra projection radio button
     if (state.geodesicTetraProjection) {
-      const radio = document.querySelector(`input[name="geodesicTetraProjection"][value="${state.geodesicTetraProjection}"]`);
+      const radio = document.querySelector(
+        `input[name="geodesicTetraProjection"][value="${state.geodesicTetraProjection}"]`
+      );
       if (radio) {
         radio.checked = true;
-        radio.dispatchEvent(new Event('change', { bubbles: true }));
+        radio.dispatchEvent(new Event("change", { bubbles: true }));
       }
     }
     // Geodesic Octahedron
-    restore('showGeodesicOctahedron', state.showGeodesicOctahedron);
-    restore('geodesicOctaFrequency', state.geodesicOctaFrequency);
+    restore("showGeodesicOctahedron", state.showGeodesicOctahedron);
+    restore("geodesicOctaFrequency", state.geodesicOctaFrequency);
     // Other settings
-    restore('showCartesianBasis', state.showCartesianBasis);
-    restore('showQuadray', state.showQuadray);
-    restore('showCartesianGrid', state.showCartesianGrid);
+    restore("showCartesianBasis", state.showCartesianBasis);
+    restore("showQuadray", state.showQuadray);
+    restore("showCartesianGrid", state.showCartesianGrid);
     // Central Angle Grid planes (IVM)
-    restore('planeIvmWX', state.planeIvmWX);
-    restore('planeIvmWY', state.planeIvmWY);
-    restore('planeIvmWZ', state.planeIvmWZ);
-    restore('planeIvmXY', state.planeIvmXY);
-    restore('planeIvmXZ', state.planeIvmXZ);
-    restore('planeIvmYZ', state.planeIvmYZ);
+    restore("planeIvmWX", state.planeIvmWX);
+    restore("planeIvmWY", state.planeIvmWY);
+    restore("planeIvmWZ", state.planeIvmWZ);
+    restore("planeIvmXY", state.planeIvmXY);
+    restore("planeIvmXZ", state.planeIvmXZ);
+    restore("planeIvmYZ", state.planeIvmYZ);
 
-    console.log('📦 Restored scene state after demo');
+    console.log("📦 Restored scene state after demo");
     this.savedSceneState = null;
   }
 
@@ -229,7 +244,7 @@ export class RotorDemo {
       const el = document.getElementById(id);
       if (el) {
         el.checked = value;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
       }
     };
 
@@ -237,41 +252,45 @@ export class RotorDemo {
       const el = document.getElementById(id);
       if (el) {
         el.value = value;
-        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event("input", { bubbles: true }));
       }
     };
 
     const setRadio = (name, value) => {
-      const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      const radio = document.querySelector(
+        `input[name="${name}"][value="${value}"]`
+      );
       if (radio) {
         radio.checked = true;
-        radio.dispatchEvent(new Event('change', { bubbles: true }));
+        radio.dispatchEvent(new Event("change", { bubbles: true }));
       }
     };
 
     // Hide default geometry
-    setCheckbox('showCube', false);
-    setCheckbox('showDualTetrahedron', false);
+    setCheckbox("showCube", false);
+    setCheckbox("showDualTetrahedron", false);
 
     // Hide grids for cleaner view
-    setCheckbox('showCartesianBasis', false);
-    setCheckbox('showQuadray', false);
-    setCheckbox('showCartesianGrid', false);
+    setCheckbox("showCartesianBasis", false);
+    setCheckbox("showQuadray", false);
+    setCheckbox("showCartesianGrid", false);
     // Hide Central Angle Grid planes (IVM)
-    setCheckbox('planeIvmWX', false);
-    setCheckbox('planeIvmWY', false);
-    setCheckbox('planeIvmWZ', false);
-    setCheckbox('planeIvmXY', false);
-    setCheckbox('planeIvmXZ', false);
-    setCheckbox('planeIvmYZ', false);
+    setCheckbox("planeIvmWX", false);
+    setCheckbox("planeIvmWY", false);
+    setCheckbox("planeIvmWZ", false);
+    setCheckbox("planeIvmXY", false);
+    setCheckbox("planeIvmXZ", false);
+    setCheckbox("planeIvmYZ", false);
 
     // Show Geodesic Tetrahedron 3F with flat projection as the spinning object
     // (Flat projection lets users correlate spinning object with WXYZ handles)
-    setCheckbox('showGeodesicTetrahedron', true);
-    setValue('geodesicTetraFrequency', '3');
-    setRadio('geodesicTetraProjection', 'off');  // 'off' = flat (no spherical projection)
+    setCheckbox("showGeodesicTetrahedron", true);
+    setValue("geodesicTetraFrequency", "3");
+    setRadio("geodesicTetraProjection", "off"); // 'off' = flat (no spherical projection)
 
-    console.log('🎬 Configured scene for rotor demo (Geodesic Tetrahedron 3F flat)');
+    console.log(
+      "🎬 Configured scene for rotor demo (Geodesic Tetrahedron 3F flat)"
+    );
   }
 
   /**
@@ -312,15 +331,22 @@ export class RotorDemo {
     if (this.spinningObject) return;
 
     // Look for the appropriate geodesic shape by userData.type (as set in rt-rendering.js)
-    const targetType = this.spinningShape === 'octahedron' ? 'geodesicOctahedron' : 'geodesicTetrahedron';
-    const shapeName = this.spinningShape === 'octahedron' ? 'octahedron' : 'tetrahedron';
+    const targetType =
+      this.spinningShape === "octahedron"
+        ? "geodesicOctahedron"
+        : "geodesicTetrahedron";
+    const shapeName =
+      this.spinningShape === "octahedron" ? "octahedron" : "tetrahedron";
 
-    this.scene.traverse((obj) => {
+    this.scene.traverse(obj => {
       if (obj.userData?.type === targetType) {
         // Only use it if it has children (geometry has been generated)
         if (obj.children && obj.children.length > 0) {
           this.spinningObject = obj;
-          console.log(`🎯 Found geodesic ${shapeName} for spinning! Children:`, obj.children.length);
+          console.log(
+            `🎯 Found geodesic ${shapeName} for spinning! Children:`,
+            obj.children.length
+          );
         }
       }
     });
@@ -328,19 +354,22 @@ export class RotorDemo {
     // Debug: if still not found, log what groups exist
     if (!this.spinningObject) {
       let foundGroups = [];
-      this.scene.traverse((obj) => {
-        if (obj.type === 'Group' && obj.children.length > 0) {
+      this.scene.traverse(obj => {
+        if (obj.type === "Group" && obj.children.length > 0) {
           foundGroups.push({
-            name: obj.name || 'unnamed',
-            type: obj.userData?.type || 'no-type',
+            name: obj.name || "unnamed",
+            type: obj.userData?.type || "no-type",
             children: obj.children.length,
-            visible: obj.visible
+            visible: obj.visible,
           });
         }
       });
       // Only log once per second to avoid spam
       if (!this._lastDebugLog || Date.now() - this._lastDebugLog > 1000) {
-        console.log('🔍 Looking for spinning object. Available groups:', foundGroups.slice(0, 10));
+        console.log(
+          "🔍 Looking for spinning object. Available groups:",
+          foundGroups.slice(0, 10)
+        );
         this._lastDebugLog = Date.now();
       }
     }
@@ -417,11 +446,11 @@ export class RotorDemo {
     const axisLength = DEMO_CONFIG.axisHandleDistance;
     const axisGeom = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(0, 0, -axisLength),
-      new THREE.Vector3(0, 0, axisLength)
+      new THREE.Vector3(0, 0, axisLength),
     ]);
     const axisMat = new THREE.LineBasicMaterial({
       color: DEMO_CONFIG.colors.axisIndicator,
-      linewidth: 2
+      linewidth: 2,
     });
     const axisLine = new THREE.Line(axisGeom, axisMat);
     axisLine.name = "AxisIndicator";
@@ -461,16 +490,16 @@ export class RotorDemo {
 
     // Material with emissive for glow effect
     this.axisHandleMaterial = new THREE.MeshBasicMaterial({
-      color: DEMO_CONFIG.colors.handleSafe,  // Start green (safe)
+      color: DEMO_CONFIG.colors.handleSafe, // Start green (safe)
       transparent: true,
-      opacity: 0.9
+      opacity: 0.9,
     });
 
     this.axisHandle = new THREE.Mesh(handleGeom, this.axisHandleMaterial);
     this.axisHandle.name = "AxisHandle";
     this.axisHandle.userData = {
       isDraggable: true,
-      isAxisHandle: true
+      isAxisHandle: true,
     };
 
     // Position at tip of current axis (default Z)
@@ -486,15 +515,18 @@ export class RotorDemo {
     // Also create the opposite handle (at negative axis) - same size and interactive
     const handleGeom2 = new THREE.SphereGeometry(radius, 24, 24);
     this.axisHandleNegMaterial = new THREE.MeshBasicMaterial({
-      color: DEMO_CONFIG.colors.handleSafe,  // Same color as main handle
+      color: DEMO_CONFIG.colors.handleSafe, // Same color as main handle
       transparent: true,
-      opacity: 0.9
+      opacity: 0.9,
     });
-    this.axisHandleNeg = new THREE.Mesh(handleGeom2, this.axisHandleNegMaterial);
+    this.axisHandleNeg = new THREE.Mesh(
+      handleGeom2,
+      this.axisHandleNegMaterial
+    );
     this.axisHandleNeg.name = "AxisHandleNeg";
     this.axisHandleNeg.userData = {
       isDraggable: true,
-      isAxisHandle: true  // Same flag so it responds to hover/drag
+      isAxisHandle: true, // Same flag so it responds to hover/drag
     };
     this.axisHandleNeg.position.set(
       -axis.x * distance,
@@ -503,7 +535,9 @@ export class RotorDemo {
     );
     this.demoGroup.add(this.axisHandleNeg);
 
-    console.log('🎯 Created draggable axis handles (both ends) - drag to change spin axis!');
+    console.log(
+      "🎯 Created draggable axis handles (both ends) - drag to change spin axis!"
+    );
   }
 
   /**
@@ -511,33 +545,33 @@ export class RotorDemo {
    */
   setupHandleInteraction() {
     // Get the canvas/renderer element
-    const canvas = document.querySelector('canvas');
+    const canvas = document.querySelector("canvas");
     if (!canvas) {
-      console.warn('⚠️ No canvas found for handle interaction');
+      console.warn("⚠️ No canvas found for handle interaction");
       return;
     }
 
     // Mouse move handler (for hover and drag)
-    this._onMouseMove = (event) => {
+    this._onMouseMove = event => {
       if (!this.enabled) return;
       this.handleMouseMove(event);
     };
 
     // Mouse down handler
-    this._onMouseDown = (event) => {
+    this._onMouseDown = event => {
       if (!this.enabled) return;
       this.handleMouseDown(event);
     };
 
     // Mouse up handler
-    this._onMouseUp = (event) => {
+    this._onMouseUp = event => {
       if (!this.enabled) return;
       this.handleMouseUp(event);
     };
 
-    canvas.addEventListener('mousemove', this._onMouseMove);
-    canvas.addEventListener('mousedown', this._onMouseDown);
-    canvas.addEventListener('mouseup', this._onMouseUp);
+    canvas.addEventListener("mousemove", this._onMouseMove);
+    canvas.addEventListener("mousedown", this._onMouseDown);
+    canvas.addEventListener("mouseup", this._onMouseUp);
 
     // Store canvas ref for cleanup
     this._canvas = canvas;
@@ -548,9 +582,9 @@ export class RotorDemo {
    */
   cleanupHandleInteraction() {
     if (this._canvas) {
-      this._canvas.removeEventListener('mousemove', this._onMouseMove);
-      this._canvas.removeEventListener('mousedown', this._onMouseDown);
-      this._canvas.removeEventListener('mouseup', this._onMouseUp);
+      this._canvas.removeEventListener("mousemove", this._onMouseMove);
+      this._canvas.removeEventListener("mousedown", this._onMouseDown);
+      this._canvas.removeEventListener("mouseup", this._onMouseUp);
     }
   }
 
@@ -596,7 +630,7 @@ export class RotorDemo {
 
     // Add visible rotation handles only
     if (this.rotationHandles) {
-      this.rotationHandles.traverse((obj) => {
+      this.rotationHandles.traverse(obj => {
         if (obj.userData && obj.userData.isRotorHandle && obj.visible) {
           hitTargets.push(obj);
         }
@@ -618,15 +652,15 @@ export class RotorDemo {
         // Axis handle hover (either end)
         if (!this.handleHovered) {
           this.handleHovered = true;
-          this.hoveredAxisHandle = hit;  // Track which one
+          this.hoveredAxisHandle = hit; // Track which one
           hit.scale.setScalar(DEMO_CONFIG.handleHoverScale);
-          this._canvas.style.cursor = 'grab';
+          this._canvas.style.cursor = "grab";
         }
       } else if (hit.userData.isRotorHandle) {
         // Rotation handle hover - brighten it
         this.hoveredRotorHandle = hit;
         hit.material.opacity = 0.9;
-        this._canvas.style.cursor = 'pointer';
+        this._canvas.style.cursor = "pointer";
         this.handleHovered = false;
         this.hoveredAxisHandle = null;
         if (this.axisHandle) this.axisHandle.scale.setScalar(1);
@@ -640,7 +674,7 @@ export class RotorDemo {
         if (this.axisHandle) this.axisHandle.scale.setScalar(1);
         if (this.axisHandleNeg) this.axisHandleNeg.scale.setScalar(1);
       }
-      this._canvas.style.cursor = 'default';
+      this._canvas.style.cursor = "default";
     }
   }
 
@@ -651,9 +685,9 @@ export class RotorDemo {
     // Check for rotation handle drag (Phase 6.5 - drags spin axis)
     if (this.hoveredRotorHandle) {
       this.isDraggingHandle = true;
-      this.dragStarted = false;  // Don't move axis until first mousemove
+      this.dragStarted = false; // Don't move axis until first mousemove
       this.activeRotorHandle = this.hoveredRotorHandle;
-      this._canvas.style.cursor = 'grabbing';
+      this._canvas.style.cursor = "grabbing";
 
       // CRITICAL: Disable orbit controls during drag
       if (this.controls) {
@@ -669,7 +703,7 @@ export class RotorDemo {
         this.dragPlane = new THREE.Plane(cameraDir.negate(), 0);
       }
 
-      console.log('🖱️ Started dragging rotation handle (orbit disabled)');
+      console.log("🖱️ Started dragging rotation handle (orbit disabled)");
       return;
     }
 
@@ -677,9 +711,9 @@ export class RotorDemo {
     if (!this.handleHovered) return;
 
     this.isDraggingHandle = true;
-    this.dragStarted = false;  // Don't move axis until first mousemove
-    this.activeRotorHandle = null;  // Using axis handle, not rotation handle
-    this._canvas.style.cursor = 'grabbing';
+    this.dragStarted = false; // Don't move axis until first mousemove
+    this.activeRotorHandle = null; // Using axis handle, not rotation handle
+    this._canvas.style.cursor = "grabbing";
 
     // CRITICAL: Disable orbit controls during drag
     // Otherwise camera rotates while we're trying to drag the handle
@@ -696,7 +730,7 @@ export class RotorDemo {
       this.dragPlane = new THREE.Plane(cameraDir.negate(), 0);
     }
 
-    console.log('🖱️ Started dragging axis handle (orbit disabled)');
+    console.log("🖱️ Started dragging axis handle (orbit disabled)");
   }
 
   /**
@@ -706,14 +740,15 @@ export class RotorDemo {
     if (this.isDraggingHandle) {
       this.isDraggingHandle = false;
       this.activeRotorHandle = null;
-      this._canvas.style.cursor = this.handleHovered || this.hoveredRotorHandle ? 'grab' : 'default';
+      this._canvas.style.cursor =
+        this.handleHovered || this.hoveredRotorHandle ? "grab" : "default";
 
       // Re-enable orbit controls when done dragging
       if (this.controls) {
         this.controls.enabled = true;
       }
 
-      console.log('🖱️ Stopped dragging handle (orbit re-enabled)');
+      console.log("🖱️ Stopped dragging handle (orbit re-enabled)");
     }
   }
 
@@ -762,28 +797,40 @@ export class RotorDemo {
       const angleRadians = (deltaX - deltaY) * sensitivity;
 
       // Create rotation quaternion around the handle's basis axis
-      const rotationQuat = new THREE.Quaternion().setFromAxisAngle(basisAxis, angleRadians);
+      const rotationQuat = new THREE.Quaternion().setFromAxisAngle(
+        basisAxis,
+        angleRadians
+      );
 
       // Apply rotation to the spin axis
       axisVec.applyQuaternion(rotationQuat);
-
     } else {
       // ================================================================
       // SPHERE HANDLE: Free rotation using camera-relative movement
       // ================================================================
       const cameraRight = new THREE.Vector3();
       const cameraUp = new THREE.Vector3();
-      camera.matrixWorld.extractBasis(cameraRight, cameraUp, new THREE.Vector3());
+      camera.matrixWorld.extractBasis(
+        cameraRight,
+        cameraUp,
+        new THREE.Vector3()
+      );
 
       const sensitivity = 2.0;
 
       if (Math.abs(deltaX) > 0.0001) {
-        const rotX = new THREE.Quaternion().setFromAxisAngle(cameraUp, -deltaX * sensitivity);
+        const rotX = new THREE.Quaternion().setFromAxisAngle(
+          cameraUp,
+          -deltaX * sensitivity
+        );
         axisVec.applyQuaternion(rotX);
       }
 
       if (Math.abs(deltaY) > 0.0001) {
-        const rotY = new THREE.Quaternion().setFromAxisAngle(cameraRight, deltaY * sensitivity);
+        const rotY = new THREE.Quaternion().setFromAxisAngle(
+          cameraRight,
+          deltaY * sensitivity
+        );
         axisVec.applyQuaternion(rotY);
       }
     }
@@ -839,7 +886,7 @@ export class RotorDemo {
     }
 
     // Also update the axis line color
-    const axisLine = this.demoGroup?.getObjectByName('AxisIndicator');
+    const axisLine = this.demoGroup?.getObjectByName("AxisIndicator");
     if (axisLine && axisLine.material) {
       axisLine.material.color.copy(color);
     }
@@ -852,7 +899,7 @@ export class RotorDemo {
     if (this.demoGroup) {
       this.scene.remove(this.demoGroup);
       // Dispose geometries and materials
-      this.demoGroup.traverse((obj) => {
+      this.demoGroup.traverse(obj => {
         if (obj.geometry) obj.geometry.dispose();
         if (obj.material) {
           if (Array.isArray(obj.material)) {
@@ -886,18 +933,23 @@ export class RotorDemo {
     const outerRingMat = new THREE.MeshBasicMaterial({
       color: DEMO_CONFIG.colors.outerRing,
       transparent: true,
-      opacity: 0.6
+      opacity: 0.6,
     });
     const outerRing = new THREE.Mesh(outerRingGeom, outerRingMat);
     outerRing.name = "OuterRing";
     group.add(outerRing);
 
     // Middle ring (tilt indicator) - XZ plane
-    const middleRingGeom = new THREE.TorusGeometry(radius * 0.85, thickness, 16, 64);
+    const middleRingGeom = new THREE.TorusGeometry(
+      radius * 0.85,
+      thickness,
+      16,
+      64
+    );
     const middleRingMat = new THREE.MeshBasicMaterial({
       color: DEMO_CONFIG.colors.middleRing,
       transparent: true,
-      opacity: 0.5
+      opacity: 0.5,
     });
     const middleRing = new THREE.Mesh(middleRingGeom, middleRingMat);
     // RT-JUSTIFIED: THREE.js rotation API requires radians
@@ -906,11 +958,16 @@ export class RotorDemo {
     group.add(middleRing);
 
     // Inner ring (roll indicator) - YZ plane
-    const innerRingGeom = new THREE.TorusGeometry(radius * 0.7, thickness, 16, 64);
+    const innerRingGeom = new THREE.TorusGeometry(
+      radius * 0.7,
+      thickness,
+      16,
+      64
+    );
     const innerRingMat = new THREE.MeshBasicMaterial({
       color: DEMO_CONFIG.colors.innerDisk,
       transparent: true,
-      opacity: 0.5
+      opacity: 0.5,
     });
     const innerRing = new THREE.Mesh(innerRingGeom, innerRingMat);
     // RT-JUSTIFIED: THREE.js rotation API requires radians
@@ -924,7 +981,7 @@ export class RotorDemo {
       color: DEMO_CONFIG.colors.innerDisk,
       transparent: true,
       opacity: DEMO_CONFIG.diskOpacity,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
     });
     const disk = new THREE.Mesh(diskGeom, diskMat);
     disk.name = "CentralDisk";
@@ -932,7 +989,9 @@ export class RotorDemo {
 
     // Direction marker (arrow on disk)
     const arrowGeom = new THREE.ConeGeometry(0.2, 0.6, 8);
-    const arrowMat = new THREE.MeshBasicMaterial({ color: DEMO_CONFIG.colors.axisIndicator });
+    const arrowMat = new THREE.MeshBasicMaterial({
+      color: DEMO_CONFIG.colors.axisIndicator,
+    });
     const arrow = new THREE.Mesh(arrowGeom, arrowMat);
     arrow.position.set(0, radius * 0.3, 0.1);
     // RT-JUSTIFIED: THREE.js rotation API requires radians
@@ -943,11 +1002,11 @@ export class RotorDemo {
     // Axis indicator line (current rotation axis)
     const axisGeom = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(0, 0, -radius * 1.2),
-      new THREE.Vector3(0, 0, radius * 1.2)
+      new THREE.Vector3(0, 0, radius * 1.2),
     ]);
     const axisMat = new THREE.LineBasicMaterial({
       color: DEMO_CONFIG.colors.axisIndicator,
-      linewidth: 2
+      linewidth: 2,
     });
     const axisLine = new THREE.Line(axisGeom, axisMat);
     axisLine.name = "AxisIndicator";
@@ -975,7 +1034,7 @@ export class RotorDemo {
       transparent: true,
       opacity: 0.15,
       side: THREE.DoubleSide,
-      depthTest: false
+      depthTest: false,
     });
 
     // RT-JUSTIFIED: THREE.js rotation API requires radians for axis alignment
@@ -998,25 +1057,30 @@ export class RotorDemo {
     // cos²(60°) = 0.25, cos²(75°) ≈ 0.067, cos²(85°) ≈ 0.0076
     // sin(60°) ≈ 0.866, sin(75°) ≈ 0.966, sin(85°) ≈ 0.996
     const warningRingParams = [
-      { angleDeg: 60, cosVal: 0.5, sinVal: 0.866 },      // cos(60°), sin(60°)
-      { angleDeg: 75, cosVal: 0.259, sinVal: 0.966 },    // cos(75°), sin(75°)
-      { angleDeg: 85, cosVal: 0.087, sinVal: 0.996 }     // cos(85°), sin(85°)
+      { angleDeg: 60, cosVal: 0.5, sinVal: 0.866 }, // cos(60°), sin(60°)
+      { angleDeg: 75, cosVal: 0.259, sinVal: 0.966 }, // cos(75°), sin(75°)
+      { angleDeg: 85, cosVal: 0.087, sinVal: 0.996 }, // cos(85°), sin(85°)
     ];
 
     warningRingParams.forEach((params, i) => {
       const ringRadius = radius * params.cosVal;
-      const ringHeight = height * params.sinVal / 1.571;  // 90° in radians ≈ 1.571
+      const ringHeight = (height * params.sinVal) / 1.571; // 90° in radians ≈ 1.571
 
-      const ringGeom = new THREE.TorusGeometry(ringRadius, 0.02 + i * 0.01, 8, 64);
+      const ringGeom = new THREE.TorusGeometry(
+        ringRadius,
+        0.02 + i * 0.01,
+        8,
+        64
+      );
       const ringMat = new THREE.MeshBasicMaterial({
         color: DEMO_CONFIG.colors.warningRings[i],
         transparent: true,
-        opacity: 0.3 + i * 0.1
+        opacity: 0.3 + i * 0.1,
       });
 
       // North warning ring
       const northRing = new THREE.Mesh(ringGeom, ringMat);
-      northRing.position.y = ringHeight * (params.angleDeg / 90) * height / 2;
+      northRing.position.y = (ringHeight * (params.angleDeg / 90) * height) / 2;
       // RT-JUSTIFIED: THREE.js rotation API requires radians
       northRing.rotation.x = -Math.PI / 2;
       northRing.name = `NorthWarning${params.angleDeg}`;
@@ -1024,7 +1088,8 @@ export class RotorDemo {
 
       // South warning ring
       const southRing = new THREE.Mesh(ringGeom.clone(), ringMat.clone());
-      southRing.position.y = -ringHeight * (params.angleDeg / 90) * height / 2;
+      southRing.position.y =
+        (-ringHeight * (params.angleDeg / 90) * height) / 2;
       // RT-JUSTIFIED: THREE.js rotation API requires radians
       southRing.rotation.x = Math.PI / 2;
       southRing.name = `SouthWarning${params.angleDeg}`;
@@ -1045,7 +1110,7 @@ export class RotorDemo {
 
     // Size handles to match the spinning octahedron (scale ~1.0)
     // Small enough to be close to the object, easy to grab for axis dragging
-    const handleRadius = 1.2;  // Slightly larger than octahedron scale=1
+    const handleRadius = 1.2; // Slightly larger than octahedron scale=1
     const tubeRadius = 0.04;
 
     // Initialize Quadray basis vectors if needed
@@ -1061,9 +1126,9 @@ export class RotorDemo {
         tubeRadius,
         DEMO_CONFIG.colors.quadrayHandles[i],
         {
-          basisType: 'quadray',
+          basisType: "quadray",
           basisIndex: i,
-          basisName: ['QX', 'QZ', 'QY', 'QW'][i]
+          basisName: ["QX", "QZ", "QY", "QW"][i],
         }
       );
       group.add(handle);
@@ -1073,19 +1138,19 @@ export class RotorDemo {
     const cartesianAxes = [
       new THREE.Vector3(1, 0, 0),
       new THREE.Vector3(0, 1, 0),
-      new THREE.Vector3(0, 0, 1)
+      new THREE.Vector3(0, 0, 1),
     ];
 
     cartesianAxes.forEach((vec, i) => {
       const handle = this.createTorusHandle(
         vec,
-        handleRadius,  // Same size as Quadray handles
+        handleRadius, // Same size as Quadray handles
         tubeRadius,
         DEMO_CONFIG.colors.cartesianHandles[i],
         {
-          basisType: 'cartesian',
+          basisType: "cartesian",
           basisIndex: i,
-          basisName: ['X', 'Y', 'Z'][i]
+          basisName: ["X", "Y", "Z"][i],
         }
       );
       group.add(handle);
@@ -1104,22 +1169,25 @@ export class RotorDemo {
   updateRotationHandleVisibility(handles = this.rotationHandles) {
     if (!handles) return;
 
-    const isQuadrayMode = this.rotationMode === 'quadray';
-    let quadrayCount = 0, cartesianCount = 0;
+    const isQuadrayMode = this.rotationMode === "quadray";
+    let quadrayCount = 0,
+      cartesianCount = 0;
 
-    handles.traverse((obj) => {
+    handles.traverse(obj => {
       if (obj.userData && obj.userData.isRotorHandle) {
-        if (obj.userData.basisType === 'quadray') {
+        if (obj.userData.basisType === "quadray") {
           obj.visible = isQuadrayMode;
           quadrayCount++;
-        } else if (obj.userData.basisType === 'cartesian') {
+        } else if (obj.userData.basisType === "cartesian") {
           obj.visible = !isQuadrayMode;
           cartesianCount++;
         }
       }
     });
 
-    console.log(`🔄 Handle visibility: ${isQuadrayMode ? 'Quadray' : 'Euler'} mode - showing ${isQuadrayMode ? quadrayCount : cartesianCount} handles`);
+    console.log(
+      `🔄 Handle visibility: ${isQuadrayMode ? "Quadray" : "Euler"} mode - showing ${isQuadrayMode ? quadrayCount : cartesianCount} handles`
+    );
   }
 
   /**
@@ -1133,21 +1201,24 @@ export class RotorDemo {
       color: color,
       transparent: true,
       opacity: 0.4,
-      depthTest: false
+      depthTest: false,
     });
 
     const handle = new THREE.Mesh(geom, mat);
 
     // Orient torus perpendicular to axis
     const defaultNormal = new THREE.Vector3(0, 0, 1);
-    const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultNormal, axis);
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(
+      defaultNormal,
+      axis
+    );
     handle.setRotationFromQuaternion(quaternion);
 
     // Store metadata for interaction
     handle.userData = {
       ...userData,
       basisAxis: axis.clone(),
-      isRotorHandle: true
+      isRotorHandle: true,
     };
 
     handle.name = `Handle_${userData.basisName}`;
@@ -1160,14 +1231,14 @@ export class RotorDemo {
    */
   createInfoPanel() {
     // Check if panel already exists
-    if (document.getElementById('rotor-info-panel')) {
-      this.infoPanel = document.getElementById('rotor-info-panel');
-      this.infoPanel.style.display = 'block';
+    if (document.getElementById("rotor-info-panel")) {
+      this.infoPanel = document.getElementById("rotor-info-panel");
+      this.infoPanel.style.display = "block";
       return;
     }
 
-    const panel = document.createElement('div');
-    panel.id = 'rotor-info-panel';
+    const panel = document.createElement("div");
+    panel.id = "rotor-info-panel";
     panel.innerHTML = `
       <style>
         #rotor-info-panel {
@@ -1432,57 +1503,57 @@ export class RotorDemo {
     this.infoPanel = panel;
 
     // Wire up button event listeners
-    document.getElementById('rp-close').addEventListener('click', () => {
+    document.getElementById("rp-close").addEventListener("click", () => {
       this.disable();
       // Also update the link in Math Demos
-      const link = document.getElementById('open-rotor-demo');
+      const link = document.getElementById("open-rotor-demo");
       if (link) {
-        link.style.color = '#7ab8ff';
-        link.textContent = 'Spread-Quadray Rotors';
+        link.style.color = "#7ab8ff";
+        link.textContent = "Spread-Quadray Rotors";
       }
     });
 
-    document.getElementById('rp-reset').addEventListener('click', () => {
+    document.getElementById("rp-reset").addEventListener("click", () => {
       this.reset();
       this.startSpinning();
     });
 
-    document.getElementById('rp-spin').addEventListener('click', () => {
+    document.getElementById("rp-spin").addEventListener("click", () => {
       this.startSpinning();
     });
 
-    document.getElementById('rp-stop').addEventListener('click', () => {
+    document.getElementById("rp-stop").addEventListener("click", () => {
       this.rotorState.setVelocity(0, { x: 0, y: 0, z: 1 });
     });
 
     // Mode toggle buttons
-    document.getElementById('rp-mode-quadray').addEventListener('click', () => {
-      this.setRotationMode('quadray');
+    document.getElementById("rp-mode-quadray").addEventListener("click", () => {
+      this.setRotationMode("quadray");
     });
-    document.getElementById('rp-mode-euler').addEventListener('click', () => {
-      this.setRotationMode('euler');
+    document.getElementById("rp-mode-euler").addEventListener("click", () => {
+      this.setRotationMode("euler");
     });
 
     // Shape toggle buttons
-    document.getElementById('rp-shape-tetra').addEventListener('click', () => {
-      this.setSpinningShape('tetrahedron');
+    document.getElementById("rp-shape-tetra").addEventListener("click", () => {
+      this.setSpinningShape("tetrahedron");
     });
-    document.getElementById('rp-shape-octa').addEventListener('click', () => {
-      this.setSpinningShape('octahedron');
+    document.getElementById("rp-shape-octa").addEventListener("click", () => {
+      this.setSpinningShape("octahedron");
     });
 
     // Native F,G,H rotation buttons (Phase 6.2)
-    document.getElementById('rp-fgh-w').addEventListener('click', () => {
-      this.applyNativeQuadrayRotation('W');
+    document.getElementById("rp-fgh-w").addEventListener("click", () => {
+      this.applyNativeQuadrayRotation("W");
     });
-    document.getElementById('rp-fgh-x').addEventListener('click', () => {
-      this.applyNativeQuadrayRotation('X');
+    document.getElementById("rp-fgh-x").addEventListener("click", () => {
+      this.applyNativeQuadrayRotation("X");
     });
-    document.getElementById('rp-fgh-y').addEventListener('click', () => {
-      this.applyNativeQuadrayRotation('Y');
+    document.getElementById("rp-fgh-y").addEventListener("click", () => {
+      this.applyNativeQuadrayRotation("Y");
     });
-    document.getElementById('rp-fgh-z').addEventListener('click', () => {
-      this.applyNativeQuadrayRotation('Z');
+    document.getElementById("rp-fgh-z").addEventListener("click", () => {
+      this.applyNativeQuadrayRotation("Z");
     });
 
     // Make panel draggable by header
@@ -1493,14 +1564,14 @@ export class RotorDemo {
    * Setup drag functionality for the info panel
    */
   setupPanelDrag(panel) {
-    const header = panel.querySelector('.header');
+    const header = panel.querySelector(".header");
     let isDragging = false;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
 
-    const onMouseDown = (e) => {
+    const onMouseDown = e => {
       // Don't drag if clicking the close button
-      if (e.target.classList.contains('close-btn')) return;
+      if (e.target.classList.contains("close-btn")) return;
 
       isDragging = true;
       const rect = panel.getBoundingClientRect();
@@ -1508,14 +1579,14 @@ export class RotorDemo {
       dragOffsetY = e.clientY - rect.top;
 
       // Switch from right/top to left/top positioning for drag
-      panel.style.left = rect.left + 'px';
-      panel.style.top = rect.top + 'px';
-      panel.style.right = 'auto';
+      panel.style.left = rect.left + "px";
+      panel.style.top = rect.top + "px";
+      panel.style.right = "auto";
 
       e.preventDefault();
     };
 
-    const onMouseMove = (e) => {
+    const onMouseMove = e => {
       if (!isDragging) return;
 
       const newX = e.clientX - dragOffsetX;
@@ -1525,23 +1596,23 @@ export class RotorDemo {
       const maxX = window.innerWidth - panel.offsetWidth;
       const maxY = window.innerHeight - panel.offsetHeight;
 
-      panel.style.left = Math.max(0, Math.min(newX, maxX)) + 'px';
-      panel.style.top = Math.max(0, Math.min(newY, maxY)) + 'px';
+      panel.style.left = Math.max(0, Math.min(newX, maxX)) + "px";
+      panel.style.top = Math.max(0, Math.min(newY, maxY)) + "px";
     };
 
     const onMouseUp = () => {
       isDragging = false;
     };
 
-    header.addEventListener('mousedown', onMouseDown);
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+    header.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
 
     // Store cleanup function
     this._panelDragCleanup = () => {
-      header.removeEventListener('mousedown', onMouseDown);
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
+      header.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
     };
   }
 
@@ -1553,12 +1624,14 @@ export class RotorDemo {
     const currentAxis = { ...this.rotorState.axis };
 
     // Add nudge component
-    if (axis === 'x') currentAxis.x += amount;
-    if (axis === 'y') currentAxis.y += amount;
-    if (axis === 'z') currentAxis.z += amount;
+    if (axis === "x") currentAxis.x += amount;
+    if (axis === "y") currentAxis.y += amount;
+    if (axis === "z") currentAxis.z += amount;
 
     // Renormalize
-    const len = Math.sqrt(currentAxis.x ** 2 + currentAxis.y ** 2 + currentAxis.z ** 2);
+    const len = Math.sqrt(
+      currentAxis.x ** 2 + currentAxis.y ** 2 + currentAxis.z ** 2
+    );
     if (len > 0.001) {
       currentAxis.x /= len;
       currentAxis.y /= len;
@@ -1568,12 +1641,16 @@ export class RotorDemo {
     this.rotorState.axis = currentAxis;
 
     // Log the nudge for visibility
-    console.log(`🎯 Nudged axis toward ${axis.toUpperCase()}: (${currentAxis.x.toFixed(3)}, ${currentAxis.y.toFixed(3)}, ${currentAxis.z.toFixed(3)})`);
+    console.log(
+      `🎯 Nudged axis toward ${axis.toUpperCase()}: (${currentAxis.x.toFixed(3)}, ${currentAxis.y.toFixed(3)}, ${currentAxis.z.toFixed(3)})`
+    );
 
     // Check gimbal lock proximity
     const proximity = this.calculateEulerGimbalProximity(currentAxis);
     if (proximity > 0.5) {
-      console.log(`⚠️ Gimbal Lock Proximity: ${(proximity * 100).toFixed(0)}% - ${this.rotationMode === 'euler' ? 'EULER MODE WILL STRUGGLE!' : 'Quadray Rotor handles this smoothly'}`);
+      console.log(
+        `⚠️ Gimbal Lock Proximity: ${(proximity * 100).toFixed(0)}% - ${this.rotationMode === "euler" ? "EULER MODE WILL STRUGGLE!" : "Quadray Rotor handles this smoothly"}`
+      );
     }
   }
 
@@ -1595,26 +1672,30 @@ export class RotorDemo {
     this.rotationMode = mode;
 
     // Update button styles
-    const quadrayBtn = document.getElementById('rp-mode-quadray');
-    const eulerBtn = document.getElementById('rp-mode-euler');
-    const statusEl = document.getElementById('rp-mode-status');
+    const quadrayBtn = document.getElementById("rp-mode-quadray");
+    const eulerBtn = document.getElementById("rp-mode-euler");
+    const statusEl = document.getElementById("rp-mode-status");
 
-    if (mode === 'quadray') {
-      quadrayBtn.style.background = '#353';
-      quadrayBtn.style.borderColor = '#8f8';
-      eulerBtn.style.background = '#333';
-      eulerBtn.style.borderColor = '#0ff';
-      statusEl.style.color = '#8f8';
-      statusEl.textContent = 'Mode: Quadray Rotor (gimbal-lock free)';
-      console.log('✅ Switched to Quadray Rotor mode - smooth rotation guaranteed');
+    if (mode === "quadray") {
+      quadrayBtn.style.background = "#353";
+      quadrayBtn.style.borderColor = "#8f8";
+      eulerBtn.style.background = "#333";
+      eulerBtn.style.borderColor = "#0ff";
+      statusEl.style.color = "#8f8";
+      statusEl.textContent = "Mode: Quadray Rotor (gimbal-lock free)";
+      console.log(
+        "✅ Switched to Quadray Rotor mode - smooth rotation guaranteed"
+      );
     } else {
-      quadrayBtn.style.background = '#333';
-      quadrayBtn.style.borderColor = '#0ff';
-      eulerBtn.style.background = '#533';
-      eulerBtn.style.borderColor = '#f88';
-      statusEl.style.color = '#f88';
-      statusEl.textContent = 'Mode: Euler XYZ (gimbal lock possible!)';
-      console.log('⚠️ Switched to Euler XYZ mode - watch for gimbal lock when Y-axis approaches ±90°');
+      quadrayBtn.style.background = "#333";
+      quadrayBtn.style.borderColor = "#0ff";
+      eulerBtn.style.background = "#533";
+      eulerBtn.style.borderColor = "#f88";
+      statusEl.style.color = "#f88";
+      statusEl.textContent = "Mode: Euler XYZ (gimbal lock possible!)";
+      console.log(
+        "⚠️ Switched to Euler XYZ mode - watch for gimbal lock when Y-axis approaches ±90°"
+      );
     }
 
     // Update rotation handle visibility (Phase 6.5)
@@ -1637,7 +1718,7 @@ export class RotorDemo {
       const el = document.getElementById(id);
       if (el) {
         el.checked = value;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
       }
     };
 
@@ -1645,15 +1726,17 @@ export class RotorDemo {
       const el = document.getElementById(id);
       if (el) {
         el.value = value;
-        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event("input", { bubbles: true }));
       }
     };
 
     const setRadio = (name, value) => {
-      const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      const radio = document.querySelector(
+        `input[name="${name}"][value="${value}"]`
+      );
       if (radio) {
         radio.checked = true;
-        radio.dispatchEvent(new Event('change', { bubbles: true }));
+        radio.dispatchEvent(new Event("change", { bubbles: true }));
       }
     };
 
@@ -1661,35 +1744,35 @@ export class RotorDemo {
     this.spinningObject = null;
 
     // Update button styles
-    const tetraBtn = document.getElementById('rp-shape-tetra');
-    const octaBtn = document.getElementById('rp-shape-octa');
-    const statusEl = document.getElementById('rp-shape-status');
+    const tetraBtn = document.getElementById("rp-shape-tetra");
+    const octaBtn = document.getElementById("rp-shape-octa");
+    const statusEl = document.getElementById("rp-shape-status");
 
-    if (shape === 'tetrahedron') {
+    if (shape === "tetrahedron") {
       // Show Tetrahedron, hide Octahedron
-      setCheckbox('showGeodesicOctahedron', false);
-      setCheckbox('showGeodesicTetrahedron', true);
-      setValue('geodesicTetraFrequency', '3');
-      setRadio('geodesicTetraProjection', 'off');  // flat projection
+      setCheckbox("showGeodesicOctahedron", false);
+      setCheckbox("showGeodesicTetrahedron", true);
+      setValue("geodesicTetraFrequency", "3");
+      setRadio("geodesicTetraProjection", "off"); // flat projection
 
-      tetraBtn.style.background = '#353';
-      tetraBtn.style.borderColor = '#8f8';
-      octaBtn.style.background = '#333';
-      octaBtn.style.borderColor = '#0ff';
-      statusEl.textContent = 'Tetrahedron: vertices align with WXYZ handles';
-      console.log('🔺 Switched to Geodesic Tetrahedron 3F (flat)');
+      tetraBtn.style.background = "#353";
+      tetraBtn.style.borderColor = "#8f8";
+      octaBtn.style.background = "#333";
+      octaBtn.style.borderColor = "#0ff";
+      statusEl.textContent = "Tetrahedron: vertices align with WXYZ handles";
+      console.log("🔺 Switched to Geodesic Tetrahedron 3F (flat)");
     } else {
       // Show Octahedron, hide Tetrahedron
-      setCheckbox('showGeodesicTetrahedron', false);
-      setCheckbox('showGeodesicOctahedron', true);
-      setValue('geodesicOctaFrequency', '3');
+      setCheckbox("showGeodesicTetrahedron", false);
+      setCheckbox("showGeodesicOctahedron", true);
+      setValue("geodesicOctaFrequency", "3");
 
-      tetraBtn.style.background = '#333';
-      tetraBtn.style.borderColor = '#0ff';
-      octaBtn.style.background = '#353';
-      octaBtn.style.borderColor = '#8f8';
-      statusEl.textContent = 'Octahedron: more spherical appearance';
-      console.log('🔷 Switched to Geodesic Octahedron 3F');
+      tetraBtn.style.background = "#333";
+      tetraBtn.style.borderColor = "#0ff";
+      octaBtn.style.background = "#353";
+      octaBtn.style.borderColor = "#8f8";
+      statusEl.textContent = "Octahedron: more spherical appearance";
+      console.log("🔷 Switched to Geodesic Octahedron 3F");
     }
 
     // Wait a frame for the new object to be created, then restore rotation
@@ -1706,7 +1789,7 @@ export class RotorDemo {
    */
   removeInfoPanel() {
     if (this.infoPanel) {
-      this.infoPanel.style.display = 'none';
+      this.infoPanel.style.display = "none";
     }
   }
 
@@ -1719,54 +1802,59 @@ export class RotorDemo {
     const state = this.rotorState.getDisplayState();
 
     // Angular velocity
-    document.getElementById('rp-rpm').textContent = state.angularVelocity.rpm.toFixed(1);
-    document.getElementById('rp-rads').textContent = state.angularVelocity.radiansPerSecond.toFixed(2);
-    document.getElementById('rp-degs').textContent = state.angularVelocity.degreesPerSecond.toFixed(1);
+    document.getElementById("rp-rpm").textContent =
+      state.angularVelocity.rpm.toFixed(1);
+    document.getElementById("rp-rads").textContent =
+      state.angularVelocity.radiansPerSecond.toFixed(2);
+    document.getElementById("rp-degs").textContent =
+      state.angularVelocity.degreesPerSecond.toFixed(1);
 
     // Axis
     const ax = state.axisXYZ;
-    document.getElementById('rp-axis-xyz').textContent =
+    document.getElementById("rp-axis-xyz").textContent =
       `(${ax.x.toFixed(3)}, ${ax.y.toFixed(3)}, ${ax.z.toFixed(3)})`;
 
     const aq = state.axisWXYZ;
-    document.getElementById('rp-axis-wxyz').textContent =
+    document.getElementById("rp-axis-wxyz").textContent =
       `(${aq.qw.toFixed(2)}, ${aq.qx.toFixed(2)}, ${aq.qy.toFixed(2)}, ${aq.qz.toFixed(2)})`;
 
-    document.getElementById('rp-angle').textContent = `${state.angleDeg.toFixed(1)}°`;
+    document.getElementById("rp-angle").textContent =
+      `${state.angleDeg.toFixed(1)}°`;
 
     // Rotor components
-    document.getElementById('rp-w').textContent = state.rotor.w.toFixed(4);
-    document.getElementById('rp-x').textContent = state.rotor.x.toFixed(4);
-    document.getElementById('rp-y').textContent = state.rotor.y.toFixed(4);
-    document.getElementById('rp-z').textContent = state.rotor.z.toFixed(4);
-    document.getElementById('rp-polarity').textContent = state.rotor.polarity > 0 ? '+1' : '-1';
+    document.getElementById("rp-w").textContent = state.rotor.w.toFixed(4);
+    document.getElementById("rp-x").textContent = state.rotor.x.toFixed(4);
+    document.getElementById("rp-y").textContent = state.rotor.y.toFixed(4);
+    document.getElementById("rp-z").textContent = state.rotor.z.toFixed(4);
+    document.getElementById("rp-polarity").textContent =
+      state.rotor.polarity > 0 ? "+1" : "-1";
 
     // Spread/Cross
-    document.getElementById('rp-spread').textContent = state.spread.toFixed(4);
-    document.getElementById('rp-cross').textContent = state.cross.toFixed(4);
+    document.getElementById("rp-spread").textContent = state.spread.toFixed(4);
+    document.getElementById("rp-cross").textContent = state.cross.toFixed(4);
 
     // Gimbal lock proximity
     const proximity = state.gimbalLockProximity;
     const pctText = `${(proximity * 100).toFixed(0)}%`;
-    document.getElementById('rp-lock-pct').textContent = pctText;
+    document.getElementById("rp-lock-pct").textContent = pctText;
 
-    const fill = document.getElementById('rp-lock-fill');
+    const fill = document.getElementById("rp-lock-fill");
     fill.style.width = pctText;
 
     // Color based on proximity
     const hue = (1 - proximity) * 120;
     fill.style.backgroundColor = `hsl(${hue}, 80%, 50%)`;
 
-    const statusEl = document.getElementById('rp-lock-status');
+    const statusEl = document.getElementById("rp-lock-status");
     if (proximity < 0.3) {
-      statusEl.textContent = 'SAFE';
-      statusEl.className = 'value status-safe';
+      statusEl.textContent = "SAFE";
+      statusEl.className = "value status-safe";
     } else if (proximity < 0.7) {
-      statusEl.textContent = 'CAUTION';
-      statusEl.className = 'value status-caution';
+      statusEl.textContent = "CAUTION";
+      statusEl.className = "value status-caution";
     } else {
-      statusEl.textContent = 'DANGER';
-      statusEl.className = 'value status-danger';
+      statusEl.textContent = "DANGER";
+      statusEl.className = "value status-danger";
     }
 
     // Update gimbal message text based on mode and proximity
@@ -1787,25 +1875,25 @@ export class RotorDemo {
 
     // In Quadray mode: dim/hide the zones (no gimbal lock!)
     // In Euler mode: show zones based on proximity
-    const isEulerMode = this.rotationMode === 'euler';
+    const isEulerMode = this.rotationMode === "euler";
 
-    this.gimbalLockZones.traverse((child) => {
+    this.gimbalLockZones.traverse(child => {
       if (child.material) {
         const baseName = child.name;
         if (isEulerMode) {
           // Euler mode: warnings intensify with proximity
-          if (baseName.includes('LockZone')) {
+          if (baseName.includes("LockZone")) {
             child.material.opacity = 0.15 + proximity * 0.4;
-          } else if (baseName.includes('Warning')) {
+          } else if (baseName.includes("Warning")) {
             child.material.opacity = 0.3 + proximity * 0.3;
           }
         } else {
           // Quadray mode: zones barely visible (just for reference)
           // They're "irrelevant" because Quadray doesn't have gimbal lock
-          if (baseName.includes('LockZone')) {
-            child.material.opacity = 0.05;  // Very faint
-          } else if (baseName.includes('Warning')) {
-            child.material.opacity = 0.1;   // Very faint
+          if (baseName.includes("LockZone")) {
+            child.material.opacity = 0.05; // Very faint
+          } else if (baseName.includes("Warning")) {
+            child.material.opacity = 0.1; // Very faint
           }
         }
       }
@@ -1818,35 +1906,37 @@ export class RotorDemo {
    * In Euler mode: warning text that flashes yellow/red based on proximity
    */
   updateGimbalMessage(proximity) {
-    const messageEl = document.getElementById('rp-gimbal-message');
+    const messageEl = document.getElementById("rp-gimbal-message");
     if (!messageEl) return;
 
-    const isEulerMode = this.rotationMode === 'euler';
+    const isEulerMode = this.rotationMode === "euler";
 
     if (!isEulerMode) {
       // Quadray mode - always safe, show encouraging message
       if (proximity > 0.3) {
-        messageEl.textContent = 'Euler would struggle here — Quadray handles it smoothly!';
-        messageEl.style.color = '#8f8';
+        messageEl.textContent =
+          "Euler would struggle here — Quadray handles it smoothly!";
+        messageEl.style.color = "#8f8";
       } else {
-        messageEl.textContent = 'Quadray mode: no gimbal lock possible';
-        messageEl.style.color = '#888';
+        messageEl.textContent = "Quadray mode: no gimbal lock possible";
+        messageEl.style.color = "#888";
       }
-      messageEl.className = '';  // Remove flash animations
+      messageEl.className = ""; // Remove flash animations
     } else {
       // Euler mode - show warnings based on proximity
       if (proximity < 0.3) {
-        messageEl.textContent = 'Euler XYZ: Safe zone';
-        messageEl.style.color = '#888';
-        messageEl.className = '';
+        messageEl.textContent = "Euler XYZ: Safe zone";
+        messageEl.style.color = "#888";
+        messageEl.className = "";
       } else if (proximity < 0.7) {
-        messageEl.textContent = '⚠️ Approaching gimbal lock zone!';
-        messageEl.style.color = '#ff0';
-        messageEl.className = 'gimbal-text-flash-caution';
+        messageEl.textContent = "⚠️ Approaching gimbal lock zone!";
+        messageEl.style.color = "#ff0";
+        messageEl.className = "gimbal-text-flash-caution";
       } else {
-        messageEl.textContent = '🔒 GIMBAL LOCK DANGER — Euler angles unstable!';
-        messageEl.style.color = '#f00';
-        messageEl.className = 'gimbal-text-flash-danger';
+        messageEl.textContent =
+          "🔒 GIMBAL LOCK DANGER — Euler angles unstable!";
+        messageEl.style.color = "#f00";
+        messageEl.className = "gimbal-text-flash-danger";
       }
     }
   }
@@ -1860,7 +1950,7 @@ export class RotorDemo {
 
     const THREE = this.THREE;
 
-    if (this.rotationMode === 'quadray') {
+    if (this.rotationMode === "quadray") {
       // === QUADRAY ROTOR MODE ===
       // Smooth, gimbal-lock-free rotation
       const rotor = this.rotorState.orientation.normalize();
@@ -1889,8 +1979,8 @@ export class RotorDemo {
 
         if (Math.abs(sinY) > 0.9999) {
           // GIMBAL LOCK! X and Z rotations become indistinguishable
-          eulerY = Math.sign(sinY) * Math.PI / 2;
-          eulerX = 0;  // Arbitrarily set X to 0
+          eulerY = (Math.sign(sinY) * Math.PI) / 2;
+          eulerX = 0; // Arbitrarily set X to 0
           eulerZ = Math.atan2(-matrix[1], matrix[4]);
 
           // Add visible jitter to show instability
@@ -1901,7 +1991,9 @@ export class RotorDemo {
 
           // Log gimbal lock event (throttled)
           if (!this._lastGimbalLog || Date.now() - this._lastGimbalLog > 500) {
-            console.log('🔒 GIMBAL LOCK! Euler angles unstable - X and Z conflated');
+            console.log(
+              "🔒 GIMBAL LOCK! Euler angles unstable - X and Z conflated"
+            );
             this._lastGimbalLog = Date.now();
           }
         } else {
@@ -1914,19 +2006,29 @@ export class RotorDemo {
         }
 
         // Apply Euler angles (with potential gimbal lock artifacts)
-        this.spinningObject.rotation.set(eulerX, eulerY, eulerZ, 'XYZ');
+        this.spinningObject.rotation.set(eulerX, eulerY, eulerZ, "XYZ");
       }
     }
 
     // Update the axis indicator in the demo group
     if (this.demoGroup) {
-      const axisLine = this.demoGroup.getObjectByName('AxisIndicator');
+      const axisLine = this.demoGroup.getObjectByName("AxisIndicator");
       if (axisLine) {
         const spinAxis = this.rotorState.axis;
-        const length = DEMO_CONFIG.axisHandleDistance;  // Match handle position
+        const length = DEMO_CONFIG.axisHandleDistance; // Match handle position
         const positions = axisLine.geometry.attributes.position;
-        positions.setXYZ(0, -spinAxis.x * length, -spinAxis.y * length, -spinAxis.z * length);
-        positions.setXYZ(1, spinAxis.x * length, spinAxis.y * length, spinAxis.z * length);
+        positions.setXYZ(
+          0,
+          -spinAxis.x * length,
+          -spinAxis.y * length,
+          -spinAxis.z * length
+        );
+        positions.setXYZ(
+          1,
+          spinAxis.x * length,
+          spinAxis.y * length,
+          spinAxis.z * length
+        );
         positions.needsUpdate = true;
       }
     }
@@ -1936,7 +2038,7 @@ export class RotorDemo {
    * Start the animation loop
    */
   startAnimation() {
-    const animate = (time) => {
+    const animate = time => {
       if (!this.enabled) return;
 
       // Keep trying to find spinning object until we get it
@@ -1986,7 +2088,7 @@ export class RotorDemo {
     // Update color based on gimbal lock proximity AND rotation mode
     // KEY INSIGHT: In Quadray mode, there's no gimbal lock - always green!
     const rawProximity = this.calculateEulerGimbalProximity(axis);
-    const isEulerMode = this.rotationMode === 'euler';
+    const isEulerMode = this.rotationMode === "euler";
 
     // In Quadray mode: always safe (green). In Euler mode: show warnings.
     const proximity = isEulerMode ? rawProximity : 0;
@@ -1997,7 +2099,7 @@ export class RotorDemo {
     color.setHSL(hue / 360, 0.9, 0.5);
 
     // Also update the axis line color
-    const axisLine = this.demoGroup?.getObjectByName('AxisIndicator');
+    const axisLine = this.demoGroup?.getObjectByName("AxisIndicator");
     if (axisLine && axisLine.material) {
       axisLine.material.color.copy(color);
     }
@@ -2005,7 +2107,7 @@ export class RotorDemo {
     // Apply animation to both handles using helper function
     const handles = [
       { mesh: this.axisHandle, material: this.axisHandleMaterial },
-      { mesh: this.axisHandleNeg, material: this.axisHandleNegMaterial }
+      { mesh: this.axisHandleNeg, material: this.axisHandleNegMaterial },
     ];
 
     // Pulsing effect when in danger zone (proximity > 0.6) - ONLY in Euler mode
@@ -2082,7 +2184,7 @@ export class RotorDemo {
       this.rotorState.applyIncrement(spreadDelta, axis, polarity);
 
       // Also set some angular velocity for continuous rotation
-      const velocity = spreadDelta * 10;  // Scale up for visual effect
+      const velocity = spreadDelta * 10; // Scale up for visual effect
       this.rotorState.setVelocity(velocity * polarity, axis);
     }
   }
@@ -2118,13 +2220,13 @@ export class RotorDemo {
    */
   applyNativeQuadrayRotation(axis) {
     // RT-JUSTIFIED: 30° = π/6 radians for fghCoeffs input
-    const theta = Math.PI / 6;  // 30° per click
+    const theta = Math.PI / 6; // 30° per click
 
     // Get F,G,H coefficients for display
     const { F, G, H } = RT.QuadrayRotation.fghCoeffs(theta);
 
     // Update F,G,H display in info panel
-    const fghDisplay = document.getElementById('rp-fgh-coeffs');
+    const fghDisplay = document.getElementById("rp-fgh-coeffs");
     if (fghDisplay) {
       fghDisplay.textContent = `(${F.toFixed(3)}, ${G.toFixed(3)}, ${H.toFixed(3)})`;
     }
@@ -2132,10 +2234,10 @@ export class RotorDemo {
     // Quadray basis vectors in Cartesian coordinates
     const sqrt3 = Math.sqrt(3);
     const quadrayAxes = {
-      W: { x: 1/sqrt3, y: 1/sqrt3, z: 1/sqrt3 },
-      X: { x: 1/sqrt3, y: -1/sqrt3, z: -1/sqrt3 },
-      Y: { x: -1/sqrt3, y: 1/sqrt3, z: -1/sqrt3 },
-      Z: { x: -1/sqrt3, y: -1/sqrt3, z: 1/sqrt3 }
+      W: { x: 1 / sqrt3, y: 1 / sqrt3, z: 1 / sqrt3 },
+      X: { x: 1 / sqrt3, y: -1 / sqrt3, z: -1 / sqrt3 },
+      Y: { x: -1 / sqrt3, y: 1 / sqrt3, z: -1 / sqrt3 },
+      Z: { x: -1 / sqrt3, y: -1 / sqrt3, z: 1 / sqrt3 },
     };
 
     // Get the Cartesian axis for the selected Quadray basis
@@ -2148,7 +2250,9 @@ export class RotorDemo {
     // Log the rotation with F,G,H values
     console.log(`🔄 Native F,G,H rotation: Q${axis}-axis @ 30°`);
     console.log(`   F=${F.toFixed(6)}, G=${G.toFixed(6)}, H=${H.toFixed(6)}`);
-    console.log(`   Pattern: ${axis === 'W' || axis === 'Y' ? 'Right-circulant' : 'Left-circulant'}`);
+    console.log(
+      `   Pattern: ${axis === "W" || axis === "Y" ? "Right-circulant" : "Left-circulant"}`
+    );
   }
 
   /**

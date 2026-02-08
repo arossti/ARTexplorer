@@ -30,7 +30,7 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showPrimeTruncTet",
     compound: "truncatedTetrahedron",
     vertexCount: 12,
-    spreads: [0, 0.5, 0],  // Found with base geometry (prime_search_streamlined.py)
+    spreads: [0, 0.5, 0], // Found with base geometry (prime_search_streamlined.py)
     expectedHull: 5,
     source: "prime_projections_20260207_215921.json (base geometry)",
     maxInteriorAngle: 170,
@@ -56,9 +56,10 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showPrimeCompoundTet",
     compound: "truncTetPlusTet",
     vertexCount: 16,
-    spreads: [0, 0.01, 0.14],  // NOTE: May need re-searching with base geometry
+    spreads: [0, 0.01, 0.14], // NOTE: May need re-searching with base geometry
     expectedHull: 7,
-    source: "prime_projections_verified.json (needs verification with base geometry)",
+    source:
+      "prime_projections_verified.json (needs verification with base geometry)",
     maxInteriorAngle: 170,
     verified: "pending",
     description: "TruncTet+Tet compound → 7-vertex hull at s=(0, 0.01, 0.14)",
@@ -82,9 +83,10 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showPrimeCompoundIcosa",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0, 0.01, 0.1],  // NOTE: Likely needs re-searching (icosa scaling was wrong)
+    spreads: [0, 0.01, 0.1], // NOTE: Likely needs re-searching (icosa scaling was wrong)
     expectedHull: 11,
-    source: "prime_projections_verified.json (needs verification with base geometry)",
+    source:
+      "prime_projections_verified.json (needs verification with base geometry)",
     maxInteriorAngle: 170,
     verified: "pending",
     description: "TruncTet+Icosa compound → 11-vertex hull at s=(0, 0.01, 0.1)",
@@ -108,12 +110,14 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showPrimeCompoundIcosa",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0, 0.01, 0.14],  // NOTE: Likely needs re-searching (icosa scaling was wrong)
+    spreads: [0, 0.01, 0.14], // NOTE: Likely needs re-searching (icosa scaling was wrong)
     expectedHull: 13,
-    source: "prime_projections_verified.json (needs verification with base geometry)",
+    source:
+      "prime_projections_verified.json (needs verification with base geometry)",
     maxInteriorAngle: 178,
     verified: "pending",
-    description: "TruncTet+Icosa compound → 13-vertex hull at s=(0, 0.01, 0.14)",
+    description:
+      "TruncTet+Icosa compound → 13-vertex hull at s=(0, 0.01, 0.14)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -280,7 +284,8 @@ export const RTPrimeCuts = {
     }
 
     // Extract n from group name
-    const match = RTPrimeCuts._primePolygonGroup.name.match(/primePolygon-(\d+)/);
+    const match =
+      RTPrimeCuts._primePolygonGroup.name.match(/primePolygon-(\d+)/);
     if (!match) return;
 
     const n = parseInt(match[1]);
@@ -323,19 +328,37 @@ export const RTPrimeCuts = {
 
     // Build rotation matrix from spreads (ZYX Euler)
     // sin(θ) = √s, cos(θ) = √(1-s)
-    const sin1 = Math.sqrt(s1), cos1 = Math.sqrt(1 - s1);
-    const sin2 = Math.sqrt(s2), cos2 = Math.sqrt(1 - s2);
-    const sin3 = Math.sqrt(s3), cos3 = Math.sqrt(1 - s3);
+    const sin1 = Math.sqrt(s1),
+      cos1 = Math.sqrt(1 - s1);
+    const sin2 = Math.sqrt(s2),
+      cos2 = Math.sqrt(1 - s2);
+    const sin3 = Math.sqrt(s3),
+      cos3 = Math.sqrt(1 - s3);
 
     // ZYX rotation matrices
-    const Rz = [[cos1, -sin1, 0], [sin1, cos1, 0], [0, 0, 1]];
-    const Ry = [[cos2, 0, sin2], [0, 1, 0], [-sin2, 0, cos2]];
-    const Rx = [[1, 0, 0], [0, cos3, -sin3], [0, sin3, cos3]];
+    const Rz = [
+      [cos1, -sin1, 0],
+      [sin1, cos1, 0],
+      [0, 0, 1],
+    ];
+    const Ry = [
+      [cos2, 0, sin2],
+      [0, 1, 0],
+      [-sin2, 0, cos2],
+    ];
+    const Rx = [
+      [1, 0, 0],
+      [0, cos3, -sin3],
+      [0, sin3, cos3],
+    ];
 
     // Matrix multiply helper
-    const matMul = (A, B) => A.map((row, i) =>
-      B[0].map((_, j) => row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0))
-    );
+    const matMul = (A, B) =>
+      A.map((row, i) =>
+        B[0].map((_, j) =>
+          row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0)
+        )
+      );
     const R = matMul(Rz, matMul(Ry, Rx));
 
     // Transform basis vectors
@@ -344,12 +367,24 @@ export const RTPrimeCuts = {
     // planeUp = R * (0,1,0)
     const planeUp = new THREE.Vector3(R[0][1], R[1][1], R[2][1]).normalize();
     // planeNormal = R * (0,0,1) - this is the viewing direction
-    const planeNormal = new THREE.Vector3(R[0][2], R[1][2], R[2][2]).normalize();
+    const planeNormal = new THREE.Vector3(
+      R[0][2],
+      R[1][2],
+      R[2][2]
+    ).normalize();
 
-    console.log(`📐 Projection plane for ${n}-gon: spreads=(${s1}, ${s2}, ${s3})`);
-    console.log(`   Right: (${planeRight.x.toFixed(3)}, ${planeRight.y.toFixed(3)}, ${planeRight.z.toFixed(3)})`);
-    console.log(`   Up: (${planeUp.x.toFixed(3)}, ${planeUp.y.toFixed(3)}, ${planeUp.z.toFixed(3)})`);
-    console.log(`   Normal: (${planeNormal.x.toFixed(3)}, ${planeNormal.y.toFixed(3)}, ${planeNormal.z.toFixed(3)})`);
+    console.log(
+      `📐 Projection plane for ${n}-gon: spreads=(${s1}, ${s2}, ${s3})`
+    );
+    console.log(
+      `   Right: (${planeRight.x.toFixed(3)}, ${planeRight.y.toFixed(3)}, ${planeRight.z.toFixed(3)})`
+    );
+    console.log(
+      `   Up: (${planeUp.x.toFixed(3)}, ${planeUp.y.toFixed(3)}, ${planeUp.z.toFixed(3)})`
+    );
+    console.log(
+      `   Normal: (${planeNormal.x.toFixed(3)}, ${planeNormal.y.toFixed(3)}, ${planeNormal.z.toFixed(3)})`
+    );
 
     return { planeRight, planeUp, planeNormal };
   },
@@ -391,8 +426,12 @@ export const RTPrimeCuts = {
    */
   _generateCompoundVertices: async function () {
     // Reuse the existing compound generator from rt-quadray-polyhedra.js
-    const compound = await QuadrayPolyhedra.compoundTruncTetIcosahedron(1, { normalize: true });
-    console.log(`   _generateCompoundVertices: ${compound.vertices.length} vertices (reusing QuadrayPolyhedra)`);
+    const compound = await QuadrayPolyhedra.compoundTruncTetIcosahedron(1, {
+      normalize: true,
+    });
+    console.log(
+      `   _generateCompoundVertices: ${compound.vertices.length} vertices (reusing QuadrayPolyhedra)`
+    );
     return compound.vertices;
   },
 
@@ -410,24 +449,39 @@ export const RTPrimeCuts = {
    * @returns {Array<THREE.Vector3>} Polygon vertices from ACTUAL projection
    */
   _createProjectionHullVertices: function (n, radius, camera) {
-    console.log("📐 _createProjectionHullVertices: ACTUAL projection for", n, "-hull");
+    console.log(
+      "📐 _createProjectionHullVertices: ACTUAL projection for",
+      n,
+      "-hull"
+    );
 
     // Get view plane basis vectors
     const viewDir = new THREE.Vector3();
     camera.getWorldDirection(viewDir);
     const up = camera.up.clone().normalize();
     const right = new THREE.Vector3().crossVectors(viewDir, up).normalize();
-    const planeUp = new THREE.Vector3().crossVectors(right, viewDir).normalize();
+    const planeUp = new THREE.Vector3()
+      .crossVectors(right, viewDir)
+      .normalize();
 
     // Truncated tetrahedron vertices (normalized, from rt-math.js)
     // These are permutations of (3,1,1) with even parity, normalized
     const truncTetVertices = [
-      [3, 1, 1], [3, -1, -1], [1, 3, 1], [1, -3, -1],
-      [1, 1, 3], [1, -1, -3], [-3, 1, -1], [-3, -1, 1],
-      [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3]
+      [3, 1, 1],
+      [3, -1, -1],
+      [1, 3, 1],
+      [1, -3, -1],
+      [1, 1, 3],
+      [1, -1, -3],
+      [-3, 1, -1],
+      [-3, -1, 1],
+      [-1, 3, -1],
+      [-1, -3, 1],
+      [-1, 1, -3],
+      [-1, -1, 3],
     ].map(v => {
-      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-      return [v[0]/len, v[1]/len, v[2]/len];
+      const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+      return [v[0] / len, v[1] / len, v[2] / len];
     });
 
     // Get viewing spreads for this n-gon
@@ -435,38 +489,62 @@ export const RTPrimeCuts = {
     // 7-gon: requires TruncTet+Tet compound - not supported here (use showPrimePolygon)
     let s1, s2, s3;
     if (n === 5) {
-      s1 = 0; s2 = 0; s3 = 0.5;
+      s1 = 0;
+      s2 = 0;
+      s3 = 0.5;
     } else if (n === 7) {
       // 7-gon requires compound - this function only handles truncated tet
       console.warn("⚠️ 7-gon requires TruncTet+Tet compound, using fallback");
       return this._createRegularPolygonVerticesFallback(n, radius, camera);
     } else {
       // Fallback: no projection defined, use regular polygon
-      console.warn("⚠️ No projection defined for", n, "-gon, using regular polygon");
+      console.warn(
+        "⚠️ No projection defined for",
+        n,
+        "-gon, using regular polygon"
+      );
       return this._createRegularPolygonVerticesFallback(n, radius, camera);
     }
 
     // Build rotation matrix from spreads (ZYX Euler)
     // sin(θ) = √s, cos(θ) = √(1-s)
-    const sin1 = Math.sqrt(s1), cos1 = Math.sqrt(1 - s1);
-    const sin2 = Math.sqrt(s2), cos2 = Math.sqrt(1 - s2);
-    const sin3 = Math.sqrt(s3), cos3 = Math.sqrt(1 - s3);
+    const sin1 = Math.sqrt(s1),
+      cos1 = Math.sqrt(1 - s1);
+    const sin2 = Math.sqrt(s2),
+      cos2 = Math.sqrt(1 - s2);
+    const sin3 = Math.sqrt(s3),
+      cos3 = Math.sqrt(1 - s3);
 
     // Rotation matrices
-    const Rz = [[cos1, -sin1, 0], [sin1, cos1, 0], [0, 0, 1]];
-    const Ry = [[cos2, 0, sin2], [0, 1, 0], [-sin2, 0, cos2]];
-    const Rx = [[1, 0, 0], [0, cos3, -sin3], [0, sin3, cos3]];
+    const Rz = [
+      [cos1, -sin1, 0],
+      [sin1, cos1, 0],
+      [0, 0, 1],
+    ];
+    const Ry = [
+      [cos2, 0, sin2],
+      [0, 1, 0],
+      [-sin2, 0, cos2],
+    ];
+    const Rx = [
+      [1, 0, 0],
+      [0, cos3, -sin3],
+      [0, sin3, cos3],
+    ];
 
     // Matrix multiply helper
-    const matMul = (A, B) => A.map((row, i) =>
-      B[0].map((_, j) => row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0))
-    );
+    const matMul = (A, B) =>
+      A.map((row, i) =>
+        B[0].map((_, j) =>
+          row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0)
+        )
+      );
     const R = matMul(Rz, matMul(Ry, Rx));
 
     // Apply rotation and project to 2D
     const projected2D = truncTetVertices.map(v => {
-      const rx = R[0][0]*v[0] + R[0][1]*v[1] + R[0][2]*v[2];
-      const ry = R[1][0]*v[0] + R[1][1]*v[1] + R[1][2]*v[2];
+      const rx = R[0][0] * v[0] + R[0][1] * v[1] + R[0][2] * v[2];
+      const ry = R[1][0] * v[0] + R[1][1] * v[1] + R[1][2] * v[2];
       return { x: rx, y: ry };
     });
 
@@ -486,7 +564,7 @@ export const RTPrimeCuts = {
       const len1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
       const len2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
       const cosAng = Math.max(-1, Math.min(1, dot / (len1 * len2)));
-      angles.push(Math.round(Math.acos(cosAng) * 180 / Math.PI));
+      angles.push(Math.round((Math.acos(cosAng) * 180) / Math.PI));
     }
     console.log("   Interior angles:", angles.join("°, ") + "°");
 
@@ -513,7 +591,11 @@ export const RTPrimeCuts = {
     // Close the loop
     vertices.push(vertices[0].clone());
 
-    console.log("   ✓ ACTUAL projection hull with", hull.length, "vertices (irregular!)");
+    console.log(
+      "   ✓ ACTUAL projection hull with",
+      hull.length,
+      "vertices (irregular!)"
+    );
     return vertices;
   },
 
@@ -525,14 +607,20 @@ export const RTPrimeCuts = {
     camera.getWorldDirection(viewDir);
     const up = camera.up.clone().normalize();
     const right = new THREE.Vector3().crossVectors(viewDir, up).normalize();
-    const planeUp = new THREE.Vector3().crossVectors(right, viewDir).normalize();
+    const planeUp = new THREE.Vector3()
+      .crossVectors(right, viewDir)
+      .normalize();
 
     const vertices = [];
     for (let i = 0; i <= n; i++) {
       const angle = (2 * Math.PI * i) / n;
       const x = radius * Math.cos(angle);
       const y = radius * Math.sin(angle);
-      vertices.push(new THREE.Vector3().addScaledVector(right, x).addScaledVector(planeUp, y));
+      vertices.push(
+        new THREE.Vector3()
+          .addScaledVector(right, x)
+          .addScaledVector(planeUp, y)
+      );
     }
     return vertices;
   },
@@ -545,45 +633,81 @@ export const RTPrimeCuts = {
    * @param {THREE.Vector3} planeUp - Plane's Y axis
    * @returns {Array<THREE.Vector3>} Vertices in 3D space
    */
-  _createProjectionHullVerticesFixed: function (n, radius, planeRight, planeUp) {
+  _createProjectionHullVerticesFixed: function (
+    n,
+    radius,
+    planeRight,
+    planeUp
+  ) {
     // Truncated tetrahedron vertices (normalized)
     const truncTetVertices = [
-      [3, 1, 1], [3, -1, -1], [1, 3, 1], [1, -3, -1],
-      [1, 1, 3], [1, -1, -3], [-3, 1, -1], [-3, -1, 1],
-      [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3]
+      [3, 1, 1],
+      [3, -1, -1],
+      [1, 3, 1],
+      [1, -3, -1],
+      [1, 1, 3],
+      [1, -1, -3],
+      [-3, 1, -1],
+      [-3, -1, 1],
+      [-1, 3, -1],
+      [-1, -3, 1],
+      [-1, 1, -3],
+      [-1, -1, 3],
     ].map(v => {
-      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-      return [v[0]/len, v[1]/len, v[2]/len];
+      const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+      return [v[0] / len, v[1] / len, v[2] / len];
     });
 
     // Get viewing spreads
     // Note: 7-gon requires compound, this function only handles truncated tet (5-gon)
     let s1, s2, s3;
     if (n === 5) {
-      s1 = 0; s2 = 0; s3 = 0.5;
+      s1 = 0;
+      s2 = 0;
+      s3 = 0.5;
     } else {
       // Default/fallback - no rotation
-      s1 = 0; s2 = 0; s3 = 0;
+      s1 = 0;
+      s2 = 0;
+      s3 = 0;
     }
 
     // Build rotation matrix from spreads
-    const sin1 = Math.sqrt(s1), cos1 = Math.sqrt(1 - s1);
-    const sin2 = Math.sqrt(s2), cos2 = Math.sqrt(1 - s2);
-    const sin3 = Math.sqrt(s3), cos3 = Math.sqrt(1 - s3);
+    const sin1 = Math.sqrt(s1),
+      cos1 = Math.sqrt(1 - s1);
+    const sin2 = Math.sqrt(s2),
+      cos2 = Math.sqrt(1 - s2);
+    const sin3 = Math.sqrt(s3),
+      cos3 = Math.sqrt(1 - s3);
 
-    const Rz = [[cos1, -sin1, 0], [sin1, cos1, 0], [0, 0, 1]];
-    const Ry = [[cos2, 0, sin2], [0, 1, 0], [-sin2, 0, cos2]];
-    const Rx = [[1, 0, 0], [0, cos3, -sin3], [0, sin3, cos3]];
+    const Rz = [
+      [cos1, -sin1, 0],
+      [sin1, cos1, 0],
+      [0, 0, 1],
+    ];
+    const Ry = [
+      [cos2, 0, sin2],
+      [0, 1, 0],
+      [-sin2, 0, cos2],
+    ];
+    const Rx = [
+      [1, 0, 0],
+      [0, cos3, -sin3],
+      [0, sin3, cos3],
+    ];
 
-    const matMul = (A, B) => A.map((row, i) =>
-      B[0].map((_, j) => row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0))
-    );
+    const matMul = (A, B) =>
+      A.map((row, i) =>
+        B[0].map((_, j) =>
+          row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0)
+        )
+      );
     const R = matMul(Rz, matMul(Ry, Rx));
 
     // Apply rotation and project to 2D (in rotated frame)
     const projected2D = truncTetVertices.map(v => {
-      const rx = R[0][0]*v[0] + R[0][1]*v[1] + R[0][2]*v[2];
-      const ry = R[1][0]*v[0] + R[1][1]*v[1] + R[1][2]*v[2];
+      const rx = R[0][0] * v[0] + R[0][1] * v[1] + R[0][2] * v[2];
+      const ry = R[1][0] * v[0] + R[1][1] * v[1] + R[1][2] * v[2];
       return { x: rx, y: ry };
     });
 
@@ -623,7 +747,12 @@ export const RTPrimeCuts = {
    * @param {THREE.Vector3} planeUp - Plane's Y axis
    * @returns {Array<THREE.Vector3>} Vertices in 3D space
    */
-  _createRegularPolygonVerticesFixed: function (n, radius, planeRight, planeUp) {
+  _createRegularPolygonVerticesFixed: function (
+    n,
+    radius,
+    planeRight,
+    planeUp
+  ) {
     const vertices = [];
     for (let i = 0; i <= n; i++) {
       const angle = (2 * Math.PI * i) / n;
@@ -655,7 +784,9 @@ export const RTPrimeCuts = {
     // Get reference to RTPapercut for state updates
     const papercut = RTPrimeCuts._papercutRef;
     if (!papercut) {
-      console.warn("⚠️ RTPapercut reference not set, cutplane integration unavailable");
+      console.warn(
+        "⚠️ RTPapercut reference not set, cutplane integration unavailable"
+      );
       return;
     }
 
@@ -717,7 +848,9 @@ export const RTPrimeCuts = {
       papercut._generateIntersectionEdges(scene, plane);
     }
 
-    console.log(`   ✓ Cutplane active with normal: (${planeNormal.x.toFixed(3)}, ${planeNormal.y.toFixed(3)}, ${planeNormal.z.toFixed(3)})`);
+    console.log(
+      `   ✓ Cutplane active with normal: (${planeNormal.x.toFixed(3)}, ${planeNormal.y.toFixed(3)}, ${planeNormal.z.toFixed(3)})`
+    );
   },
 
   /**
@@ -843,13 +976,14 @@ export const RTPrimeCuts = {
           "  Sextic polynomial - NOT solvable by radicals";
         break;
 
-      default:
+      default: {
         // Generic n-gon info
         const s = Math.pow(Math.sin(Math.PI / n), 2);
         formulaText =
           `YELLOW: Actual projection (irregular)\n` +
           `CYAN: Ideal regular ${n}-gon\n` +
           `  s = sin²(π/${n}) ≈ ${s.toFixed(4)}`;
+      }
     }
 
     formulaSpan.textContent = formulaText;
@@ -889,31 +1023,52 @@ export const RTPrimeCuts = {
   _getVerificationVertices: function (compoundType) {
     // Truncated tetrahedron vertices (normalized)
     const truncTetVertices = [
-      [3, 1, 1], [3, -1, -1], [1, 3, 1], [1, -3, -1],
-      [1, 1, 3], [1, -1, -3], [-3, 1, -1], [-3, -1, 1],
-      [-1, 3, -1], [-1, -3, 1], [-1, 1, -3], [-1, -1, 3]
+      [3, 1, 1],
+      [3, -1, -1],
+      [1, 3, 1],
+      [1, -3, -1],
+      [1, 1, 3],
+      [1, -1, -3],
+      [-3, 1, -1],
+      [-3, -1, 1],
+      [-1, 3, -1],
+      [-1, -3, 1],
+      [-1, 1, -3],
+      [-1, -1, 3],
     ].map(v => {
-      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-      return [v[0]/len, v[1]/len, v[2]/len];
+      const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+      return [v[0] / len, v[1] / len, v[2] / len];
     });
 
     // Tetrahedron vertices (normalized, for TruncTet+Tet compound)
     const tetVertices = [
-      [1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]
+      [1, 1, 1],
+      [1, -1, -1],
+      [-1, 1, -1],
+      [-1, -1, 1],
     ].map(v => {
-      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-      return [v[0]/len, v[1]/len, v[2]/len];
+      const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+      return [v[0] / len, v[1] / len, v[2] / len];
     });
 
     // Icosahedron vertices (normalized, for TruncTet+Icosa compound)
     const phi = (1 + Math.sqrt(5)) / 2;
     const icosaVertices = [
-      [0, 1, phi], [0, 1, -phi], [0, -1, phi], [0, -1, -phi],
-      [1, phi, 0], [1, -phi, 0], [-1, phi, 0], [-1, -phi, 0],
-      [phi, 0, 1], [phi, 0, -1], [-phi, 0, 1], [-phi, 0, -1]
+      [0, 1, phi],
+      [0, 1, -phi],
+      [0, -1, phi],
+      [0, -1, -phi],
+      [1, phi, 0],
+      [1, -phi, 0],
+      [-1, phi, 0],
+      [-1, -phi, 0],
+      [phi, 0, 1],
+      [phi, 0, -1],
+      [-phi, 0, 1],
+      [-phi, 0, -1],
     ].map(v => {
-      const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-      return [v[0]/len, v[1]/len, v[2]/len];
+      const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+      return [v[0] / len, v[1] / len, v[2] / len];
     });
 
     switch (compoundType) {
@@ -939,23 +1094,41 @@ export const RTPrimeCuts = {
     const [s1, s2, s3] = spreads;
 
     // Build rotation matrix from spreads (ZYX Euler)
-    const sin1 = Math.sqrt(s1), cos1 = Math.sqrt(1 - s1);
-    const sin2 = Math.sqrt(s2), cos2 = Math.sqrt(1 - s2);
-    const sin3 = Math.sqrt(s3), cos3 = Math.sqrt(1 - s3);
+    const sin1 = Math.sqrt(s1),
+      cos1 = Math.sqrt(1 - s1);
+    const sin2 = Math.sqrt(s2),
+      cos2 = Math.sqrt(1 - s2);
+    const sin3 = Math.sqrt(s3),
+      cos3 = Math.sqrt(1 - s3);
 
-    const Rz = [[cos1, -sin1, 0], [sin1, cos1, 0], [0, 0, 1]];
-    const Ry = [[cos2, 0, sin2], [0, 1, 0], [-sin2, 0, cos2]];
-    const Rx = [[1, 0, 0], [0, cos3, -sin3], [0, sin3, cos3]];
+    const Rz = [
+      [cos1, -sin1, 0],
+      [sin1, cos1, 0],
+      [0, 0, 1],
+    ];
+    const Ry = [
+      [cos2, 0, sin2],
+      [0, 1, 0],
+      [-sin2, 0, cos2],
+    ];
+    const Rx = [
+      [1, 0, 0],
+      [0, cos3, -sin3],
+      [0, sin3, cos3],
+    ];
 
-    const matMul = (A, B) => A.map((row, i) =>
-      B[0].map((_, j) => row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0))
-    );
+    const matMul = (A, B) =>
+      A.map((row, i) =>
+        B[0].map((_, j) =>
+          row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0)
+        )
+      );
     const R = matMul(Rz, matMul(Ry, Rx));
 
     // Project to 2D (XY plane after rotation)
     const projected2D = vertices.map(v => ({
-      x: R[0][0]*v[0] + R[0][1]*v[1] + R[0][2]*v[2],
-      y: R[1][0]*v[0] + R[1][1]*v[1] + R[1][2]*v[2]
+      x: R[0][0] * v[0] + R[0][1] * v[1] + R[0][2] * v[2],
+      y: R[1][0] * v[0] + R[1][1] * v[1] + R[1][2] * v[2],
     }));
 
     // Compute convex hull
@@ -975,13 +1148,13 @@ export const RTPrimeCuts = {
       const len1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
       const len2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
       const cosAng = Math.max(-1, Math.min(1, dot / (len1 * len2 + 1e-10)));
-      interiorAngles.push(Math.acos(cosAng) * 180 / Math.PI);
+      interiorAngles.push((Math.acos(cosAng) * 180) / Math.PI);
     }
 
     return {
       hullCount: hull.length,
       interiorAngles,
-      maxAngle: Math.max(...interiorAngles)
+      maxAngle: Math.max(...interiorAngles),
     };
   },
 
@@ -999,8 +1172,17 @@ export const RTPrimeCuts = {
 
     const vertices = this._getVerificationVertices(config.compound);
     if (vertices.length !== config.vertexCount) {
-      console.error(`❌ ${n}-gon: Vertex count mismatch: ${vertices.length} vs expected ${config.vertexCount}`);
-      return { passed: false, details: { error: "Vertex count mismatch", got: vertices.length, expected: config.vertexCount } };
+      console.error(
+        `❌ ${n}-gon: Vertex count mismatch: ${vertices.length} vs expected ${config.vertexCount}`
+      );
+      return {
+        passed: false,
+        details: {
+          error: "Vertex count mismatch",
+          got: vertices.length,
+          expected: config.vertexCount,
+        },
+      };
     }
 
     const result = this._projectAndAnalyze(vertices, config.spreads);
@@ -1015,14 +1197,16 @@ export const RTPrimeCuts = {
 
     console.log(
       `${status} ${n}-gon (${config.name}): ` +
-      `hull=${config.expectedHull} ${hullStatus}, ` +
-      `angles<${config.maxInteriorAngle}° ${angleStatus}`
+        `hull=${config.expectedHull} ${hullStatus}, ` +
+        `angles<${config.maxInteriorAngle}° ${angleStatus}`
     );
 
     if (!passed) {
       console.log(`   Spreads: [${config.spreads.join(", ")}]`);
       console.log(`   Source: ${config.source}`);
-      console.log(`   Interior angles: ${result.interiorAngles.map(a => a.toFixed(1)).join("°, ")}°`);
+      console.log(
+        `   Interior angles: ${result.interiorAngles.map(a => a.toFixed(1)).join("°, ")}°`
+      );
     }
 
     return {
@@ -1036,8 +1220,8 @@ export const RTPrimeCuts = {
         actualHull: result.hullCount,
         maxInteriorAngle: result.maxAngle,
         interiorAngles: result.interiorAngles,
-        source: config.source
-      }
+        source: config.source,
+      },
     };
   },
 
@@ -1051,7 +1235,9 @@ export const RTPrimeCuts = {
     console.log("🔍 PRIME PROJECTION VERIFICATION");
     console.log("═══════════════════════════════════════════════════════════");
 
-    const primes = Object.keys(VERIFIED_PROJECTIONS).map(Number).sort((a, b) => a - b);
+    const primes = Object.keys(VERIFIED_PROJECTIONS)
+      .map(Number)
+      .sort((a, b) => a - b);
     const results = {};
     let allPassed = true;
 
@@ -1066,7 +1252,9 @@ export const RTPrimeCuts = {
       console.log(`✅ All ${primes.length} projections verified successfully`);
     } else {
       const failed = primes.filter(n => !results[n].passed);
-      console.error(`❌ ${failed.length}/${primes.length} projections FAILED: ${failed.join(", ")}`);
+      console.error(
+        `❌ ${failed.length}/${primes.length} projections FAILED: ${failed.join(", ")}`
+      );
     }
     console.log("═══════════════════════════════════════════════════════════");
 
@@ -1087,7 +1275,7 @@ export const RTPrimeCuts = {
       step = 0.1,
       minSpread = 0,
       maxSpread = 1,
-      polyhedronType = "quadrayCompound"
+      polyhedronType = "quadrayCompound",
     } = options;
 
     console.log(`🔍 Searching for ${targetHull}-gon spreads...`);
@@ -1102,14 +1290,16 @@ export const RTPrimeCuts = {
 
     // Find polyhedron in scene
     let targetGroup = null;
-    scene.traverse((obj) => {
+    scene.traverse(obj => {
       if (obj.userData?.type === polyhedronType) {
         targetGroup = obj;
       }
     });
 
     if (!targetGroup) {
-      console.error(`⚠️ Polyhedron ${polyhedronType} not found in scene. Make sure it's visible.`);
+      console.error(
+        `⚠️ Polyhedron ${polyhedronType} not found in scene. Make sure it's visible.`
+      );
       return [];
     }
 
@@ -1134,15 +1324,19 @@ export const RTPrimeCuts = {
             matches.push({
               spreads: spreads.map(s => Math.round(s * 100) / 100),
               hullCount: result.hullCount,
-              maxAngle: result.maxAngle.toFixed(1)
+              maxAngle: result.maxAngle.toFixed(1),
             });
-            console.log(`   ✓ Found: s=(${spreads.map(s => s.toFixed(2)).join(", ")}) → ${result.hullCount}-gon, max∠=${result.maxAngle.toFixed(1)}°`);
+            console.log(
+              `   ✓ Found: s=(${spreads.map(s => s.toFixed(2)).join(", ")}) → ${result.hullCount}-gon, max∠=${result.maxAngle.toFixed(1)}°`
+            );
           }
         }
       }
     }
 
-    console.log(`   Tested ${tested} combinations, found ${matches.length} matches`);
+    console.log(
+      `   Tested ${tested} combinations, found ${matches.length} matches`
+    );
     return matches;
   },
 
@@ -1151,10 +1345,7 @@ export const RTPrimeCuts = {
    * Call via console: RTPrimeCuts.analyzeHullDistribution()
    */
   analyzeHullDistribution: function (options = {}) {
-    const {
-      step = 0.1,
-      polyhedronType = "quadrayCompound"
-    } = options;
+    const { step = 0.1, polyhedronType = "quadrayCompound" } = options;
 
     console.log(`📊 Analyzing hull distribution for ${polyhedronType}...`);
 
@@ -1165,7 +1356,7 @@ export const RTPrimeCuts = {
     }
 
     let targetGroup = null;
-    scene.traverse((obj) => {
+    scene.traverse(obj => {
       if (obj.userData?.type === polyhedronType) {
         targetGroup = obj;
       }
@@ -1195,11 +1386,15 @@ export const RTPrimeCuts = {
     }
 
     console.log(`   Tested ${tested} orientations:`);
-    const sorted = Object.entries(hullCounts).sort((a, b) => Number(a[0]) - Number(b[0]));
+    const sorted = Object.entries(hullCounts).sort(
+      (a, b) => Number(a[0]) - Number(b[0])
+    );
     for (const [hull, count] of sorted) {
-      const pct = (100 * count / tested).toFixed(1);
+      const pct = ((100 * count) / tested).toFixed(1);
       const bar = "█".repeat(Math.ceil(count / 20));
-      console.log(`   ${hull.padStart(2)}-gon: ${count.toString().padStart(4)} (${pct}%) ${bar}`);
+      console.log(
+        `   ${hull.padStart(2)}-gon: ${count.toString().padStart(4)} (${pct}%) ${bar}`
+      );
     }
 
     return hullCounts;

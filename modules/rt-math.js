@@ -1556,7 +1556,7 @@ export const RT = {
        * @returns {number} cos(80°) ≈ 0.1736481776669303
        */
       cos80: (() => {
-        const cos40 = 0.7660444431189780;
+        const cos40 = 0.766044443118978;
         const cached = 2 * cos40 * cos40 - 1;
         return () => cached;
       })(),
@@ -1566,7 +1566,7 @@ export const RT = {
        * @returns {number} sin(80°) ≈ 0.9848077530122080
        */
       sin80: (() => {
-        const cos40 = 0.7660444431189780;
+        const cos40 = 0.766044443118978;
         const sin40 = 0.6427876096865394;
         const cached = 2 * sin40 * cos40;
         return () => cached;
@@ -1879,20 +1879,20 @@ export const RT = {
        */
       rationalityAdvantage: () => ({
         sourcePolyhedron: {
-          quadray: '12 vertices, ALL rational (2/3, 1/3, 0, 0)',
-          cartesian: '12 vertices, requires √2 for edge lengths',
+          quadray: "12 vertices, ALL rational (2/3, 1/3, 0, 0)",
+          cartesian: "12 vertices, requires √2 for edge lengths",
         },
         viewingAngle: {
-          method: 'Spread specification (rational: 11/100, 0, 1/2)',
-          note: 'Identical in both coordinate systems',
+          method: "Spread specification (rational: 11/100, 0, 1/2)",
+          note: "Identical in both coordinate systems",
         },
         rotationCoeffs: {
-          quadray: 'F,G,H use only √s (algebraic in spread)',
-          cartesian: 'sin/cos are transcendental in general',
+          quadray: "F,G,H use only √s (algebraic in spread)",
+          cartesian: "sin/cos are transcendental in general",
         },
         finalProjection: {
-          note: 'Both convert to 2D at projection boundary',
-          radicals: '√2, √11, √89, √178 (algebraic, not transcendental)',
+          note: "Both convert to 2D at projection boundary",
+          radicals: "√2, √11, √89, √178 (algebraic, not transcendental)",
         },
       }),
     },
@@ -1919,7 +1919,11 @@ export const RT = {
      * Source polyhedra for projection experiments
      * Only asymmetric polyhedra (no central inversion) can produce odd hull counts
      */
-    asymmetricPolyhedra: ['truncated_tetrahedron', 'snub_cube', 'compound_5_tetrahedra'],
+    asymmetricPolyhedra: [
+      "truncated_tetrahedron",
+      "snub_cube",
+      "compound_5_tetrahedra",
+    ],
   },
 
   /**
@@ -1992,21 +1996,81 @@ export const RT = {
      */
     truncatedTetrahedronRational: () => [
       // Near W vertex
-      { w: { n: 2, d: 3 }, x: { n: 1, d: 3 }, y: { n: 0, d: 1 }, z: { n: 0, d: 1 } },
-      { w: { n: 2, d: 3 }, x: { n: 0, d: 1 }, y: { n: 1, d: 3 }, z: { n: 0, d: 1 } },
-      { w: { n: 2, d: 3 }, x: { n: 0, d: 1 }, y: { n: 0, d: 1 }, z: { n: 1, d: 3 } },
+      {
+        w: { n: 2, d: 3 },
+        x: { n: 1, d: 3 },
+        y: { n: 0, d: 1 },
+        z: { n: 0, d: 1 },
+      },
+      {
+        w: { n: 2, d: 3 },
+        x: { n: 0, d: 1 },
+        y: { n: 1, d: 3 },
+        z: { n: 0, d: 1 },
+      },
+      {
+        w: { n: 2, d: 3 },
+        x: { n: 0, d: 1 },
+        y: { n: 0, d: 1 },
+        z: { n: 1, d: 3 },
+      },
       // Near X vertex
-      { w: { n: 1, d: 3 }, x: { n: 2, d: 3 }, y: { n: 0, d: 1 }, z: { n: 0, d: 1 } },
-      { w: { n: 0, d: 1 }, x: { n: 2, d: 3 }, y: { n: 1, d: 3 }, z: { n: 0, d: 1 } },
-      { w: { n: 0, d: 1 }, x: { n: 2, d: 3 }, y: { n: 0, d: 1 }, z: { n: 1, d: 3 } },
+      {
+        w: { n: 1, d: 3 },
+        x: { n: 2, d: 3 },
+        y: { n: 0, d: 1 },
+        z: { n: 0, d: 1 },
+      },
+      {
+        w: { n: 0, d: 1 },
+        x: { n: 2, d: 3 },
+        y: { n: 1, d: 3 },
+        z: { n: 0, d: 1 },
+      },
+      {
+        w: { n: 0, d: 1 },
+        x: { n: 2, d: 3 },
+        y: { n: 0, d: 1 },
+        z: { n: 1, d: 3 },
+      },
       // Near Y vertex
-      { w: { n: 1, d: 3 }, x: { n: 0, d: 1 }, y: { n: 2, d: 3 }, z: { n: 0, d: 1 } },
-      { w: { n: 0, d: 1 }, x: { n: 1, d: 3 }, y: { n: 2, d: 3 }, z: { n: 0, d: 1 } },
-      { w: { n: 0, d: 1 }, x: { n: 0, d: 1 }, y: { n: 2, d: 3 }, z: { n: 1, d: 3 } },
+      {
+        w: { n: 1, d: 3 },
+        x: { n: 0, d: 1 },
+        y: { n: 2, d: 3 },
+        z: { n: 0, d: 1 },
+      },
+      {
+        w: { n: 0, d: 1 },
+        x: { n: 1, d: 3 },
+        y: { n: 2, d: 3 },
+        z: { n: 0, d: 1 },
+      },
+      {
+        w: { n: 0, d: 1 },
+        x: { n: 0, d: 1 },
+        y: { n: 2, d: 3 },
+        z: { n: 1, d: 3 },
+      },
       // Near Z vertex
-      { w: { n: 1, d: 3 }, x: { n: 0, d: 1 }, y: { n: 0, d: 1 }, z: { n: 2, d: 3 } },
-      { w: { n: 0, d: 1 }, x: { n: 1, d: 3 }, y: { n: 0, d: 1 }, z: { n: 2, d: 3 } },
-      { w: { n: 0, d: 1 }, x: { n: 0, d: 1 }, y: { n: 1, d: 3 }, z: { n: 2, d: 3 } },
+      {
+        w: { n: 1, d: 3 },
+        x: { n: 0, d: 1 },
+        y: { n: 0, d: 1 },
+        z: { n: 2, d: 3 },
+      },
+      {
+        w: { n: 0, d: 1 },
+        x: { n: 1, d: 3 },
+        y: { n: 0, d: 1 },
+        z: { n: 2, d: 3 },
+      },
+      {
+        w: { n: 0, d: 1 },
+        x: { n: 0, d: 1 },
+        y: { n: 1, d: 3 },
+        z: { n: 2, d: 3 },
+      },
     ],
 
     /**
@@ -2242,24 +2306,24 @@ export const RT = {
      */
     rationalityComparison: () => ({
       tetrahedron: {
-        quadray: 'Integer: (1,0,0,0)',
-        cartesian: 'Irrational: (1,1,1)/√3',
-        advantage: 'Quadray',
+        quadray: "Integer: (1,0,0,0)",
+        cartesian: "Irrational: (1,1,1)/√3",
+        advantage: "Quadray",
       },
       truncatedTetrahedron: {
-        quadray: 'Rational: (2,1,0,0)/3',
-        cartesian: 'Irrational: requires √2',
-        advantage: 'Quadray',
+        quadray: "Rational: (2,1,0,0)/3",
+        cartesian: "Irrational: requires √2",
+        advantage: "Quadray",
       },
       basisAngle: {
-        quadray: 'Spread 8/9 (rational)',
-        cartesian: 'cos⁻¹(-1/3) (transcendental)',
-        advantage: 'Quadray',
+        quadray: "Spread 8/9 (rational)",
+        cartesian: "cos⁻¹(-1/3) (transcendental)",
+        advantage: "Quadray",
       },
       ivmLattice: {
-        quadray: 'Native integer coordinates',
-        cartesian: 'Requires √2, √3 conversions',
-        advantage: 'Quadray',
+        quadray: "Native integer coordinates",
+        cartesian: "Requires √2, √3 conversions",
+        advantage: "Quadray",
       },
     }),
   },
@@ -2729,7 +2793,7 @@ export const Quadray = {
    */
   fromCartesian: pos => {
     if (!Quadray.basisVectors) {
-      console.warn('⚠️ Quadray.basisVectors not initialized');
+      console.warn("⚠️ Quadray.basisVectors not initialized");
       return { qw: 0, qx: 0, qy: 0, qz: 0 };
     }
 

@@ -60,7 +60,9 @@ export const RTProjections = {
     // This prevents visual confusion from having both rendered
     if (preset.polyhedronType === "tetrahedron") {
       // Using base tetrahedron - disable Quadray TruncTet
-      const quadrayTruncTet = document.getElementById("showQuadrayTruncatedTet");
+      const quadrayTruncTet = document.getElementById(
+        "showQuadrayTruncatedTet"
+      );
       if (quadrayTruncTet && quadrayTruncTet.checked) {
         quadrayTruncTet.checked = false;
         quadrayTruncTet.dispatchEvent(new Event("change", { bubbles: true }));
@@ -89,10 +91,13 @@ export const RTProjections = {
         const truncValue = document.getElementById("truncationTetraValue");
         if (truncValue) {
           const t = preset.requiredTruncation;
-          truncValue.textContent = Math.abs(t - 1/3) < 0.02 ? "⅓" : t.toFixed(2);
+          truncValue.textContent =
+            Math.abs(t - 1 / 3) < 0.02 ? "⅓" : t.toFixed(2);
         }
 
-        console.log(`📐 Forced truncation to t=${preset.requiredTruncation} for ${preset.name}`);
+        console.log(
+          `📐 Forced truncation to t=${preset.requiredTruncation} for ${preset.name}`
+        );
       }
     }
 
@@ -103,7 +108,7 @@ export const RTProjections = {
 
     // 3. Find target polyhedron in scene
     let targetGroup = null;
-    scene.traverse((obj) => {
+    scene.traverse(obj => {
       if (obj.userData?.type === preset.polyhedronType) {
         targetGroup = obj;
       }
@@ -244,7 +249,8 @@ export const RTProjections = {
 
     // Merge options with state
     const showRays = options.showRays ?? RTProjections.state.showRays;
-    const showInterior = options.showInterior ?? RTProjections.state.showInterior;
+    const showInterior =
+      options.showInterior ?? RTProjections.state.showInterior;
     const showIdealPolygon =
       options.showIdealPolygon ?? RTProjections.state.showIdealPolygon;
 
@@ -252,7 +258,7 @@ export const RTProjections = {
     let rayColor = options.rayColor;
     if (!rayColor) {
       // Try to get color from polyhedron material
-      polyhedronGroup.traverse((obj) => {
+      polyhedronGroup.traverse(obj => {
         if (!rayColor && obj.material && obj.material.color) {
           rayColor = obj.material.color.getHex();
         }
@@ -279,7 +285,7 @@ export const RTProjections = {
   hideProjection: function () {
     if (RTProjections._projectionGroup && RTProjections._scene) {
       RTProjections._scene.remove(RTProjections._projectionGroup);
-      RTProjections._projectionGroup.traverse((child) => {
+      RTProjections._projectionGroup.traverse(child => {
         if (child.geometry) child.geometry.dispose();
         if (child.material) child.material.dispose();
       });
@@ -303,7 +309,7 @@ export const RTProjections = {
     // Remove existing visualization
     if (RTProjections._projectionGroup && RTProjections._scene) {
       RTProjections._scene.remove(RTProjections._projectionGroup);
-      RTProjections._projectionGroup.traverse((child) => {
+      RTProjections._projectionGroup.traverse(child => {
         if (child.geometry) child.geometry.dispose();
         if (child.material) child.material.dispose();
       });
@@ -338,7 +344,7 @@ export const RTProjections = {
     // back to the actual polyhedron vertices
     const TOLERANCE_DECIMALS = 2;
 
-    group.traverse((obj) => {
+    group.traverse(obj => {
       // Skip node spheres - they have userData.isVertexNode = true
       if (obj.userData?.isVertexNode) {
         return;
@@ -380,9 +386,11 @@ export const RTProjections = {
     // Remove duplicates (within tolerance)
     const unique = [];
     const tol = 1e-8;
-    points.forEach((p) => {
+    points.forEach(p => {
       if (
-        !unique.some((u) => Math.abs(u.x - p.x) < tol && Math.abs(u.y - p.y) < tol)
+        !unique.some(
+          u => Math.abs(u.x - p.x) < tol && Math.abs(u.y - p.y) < tol
+        )
       ) {
         unique.push(p);
       }
@@ -465,7 +473,9 @@ export const RTProjections = {
     // Matrix multiply helper
     const matMul = (A, B) =>
       A.map((row, i) =>
-        B[0].map((_, j) => row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0))
+        B[0].map((_, j) =>
+          row.reduce((sum, _, k) => sum + A[i][k] * B[k][j], 0)
+        )
       );
     const R = matMul(Rz, matMul(Ry, Rx));
 
@@ -475,7 +485,11 @@ export const RTProjections = {
     // planeUp = R * (0,1,0)
     const planeUp = new THREE.Vector3(R[0][1], R[1][1], R[2][1]).normalize();
     // planeNormal = R * (0,0,1) - this is the viewing direction
-    const planeNormal = new THREE.Vector3(R[0][2], R[1][2], R[2][2]).normalize();
+    const planeNormal = new THREE.Vector3(
+      R[0][2],
+      R[1][2],
+      R[2][2]
+    ).normalize();
 
     return { planeRight, planeUp, planeNormal };
   },
@@ -531,7 +545,8 @@ export const RTProjections = {
     const { showRays, showInterior, showIdealPolygon, rayColor } = options;
 
     // Extract vertices directly from scene polyhedra - single source of truth
-    const worldVertices = RTProjections._getWorldVerticesFromGroup(polyhedronGroup);
+    const worldVertices =
+      RTProjections._getWorldVerticesFromGroup(polyhedronGroup);
 
     if (worldVertices.length === 0) {
       console.warn("⚠️ No vertices found in polyhedron group");
@@ -544,7 +559,7 @@ export const RTProjections = {
 
     // Get center of the polyhedron
     const center = new THREE.Vector3();
-    worldVertices.forEach((v) => center.add(v));
+    worldVertices.forEach(v => center.add(v));
     center.divideScalar(worldVertices.length);
 
     // Get projection plane basis - use custom spreads from preset/options if available
@@ -613,11 +628,11 @@ export const RTProjections = {
     // 2. COMPUTE CONVEX HULL of projected points
     // ═══════════════════════════════════════════════════════════════════════
     const hull2D = RTProjections._computeConvexHull2D(
-      projectedPoints.map((p) => ({ x: p.x, y: p.y }))
+      projectedPoints.map(p => ({ x: p.x, y: p.y }))
     );
 
     // Convert hull back to 3D
-    const hullVertices3D = hull2D.map((p) => {
+    const hullVertices3D = hull2D.map(p => {
       return planeCenter
         .clone()
         .addScaledVector(planeRight, p.x)
@@ -628,7 +643,9 @@ export const RTProjections = {
     // ═══════════════════════════════════════════════════════════════════════
     // 3. ACTUAL HULL (YELLOW polygon)
     // ═══════════════════════════════════════════════════════════════════════
-    const actualGeometry = new THREE.BufferGeometry().setFromPoints(hullVertices3D);
+    const actualGeometry = new THREE.BufferGeometry().setFromPoints(
+      hullVertices3D
+    );
     const actualMaterial = new THREE.LineBasicMaterial({
       color: 0xffff00,
       transparent: true,
@@ -646,7 +663,7 @@ export const RTProjections = {
     if (showIdealPolygon) {
       // Calculate radius from hull for matching scale
       let maxRadius = 0;
-      hull2D.forEach((p) => {
+      hull2D.forEach(p => {
         const r = Math.sqrt(p.x * p.x + p.y * p.y);
         if (r > maxRadius) maxRadius = r;
       });
@@ -665,7 +682,9 @@ export const RTProjections = {
         );
       }
 
-      const idealGeometry = new THREE.BufferGeometry().setFromPoints(idealVertices);
+      const idealGeometry = new THREE.BufferGeometry().setFromPoints(
+        idealVertices
+      );
       const idealMaterial = new THREE.LineBasicMaterial({
         color: 0x00ffff,
         transparent: true,
@@ -701,9 +720,11 @@ export const RTProjections = {
     // Interior nodes (if enabled)
     if (showInterior) {
       // Find which projected points are NOT on hull
-      const hullSet = new Set(hull2D.map((p) => `${p.x.toFixed(6)},${p.y.toFixed(6)}`));
+      const hullSet = new Set(
+        hull2D.map(p => `${p.x.toFixed(6)},${p.y.toFixed(6)}`)
+      );
       const interiorPoints = projectedPoints.filter(
-        (p) => !hullSet.has(`${p.x.toFixed(6)},${p.y.toFixed(6)}`)
+        p => !hullSet.has(`${p.x.toFixed(6)},${p.y.toFixed(6)}`)
       );
 
       const interiorNodeMaterial = new THREE.MeshBasicMaterial({
@@ -714,7 +735,10 @@ export const RTProjections = {
       const smallNodeGeom = new THREE.SphereGeometry(nodeRadius * 0.5, 8, 8);
 
       interiorPoints.forEach((p, i) => {
-        const node = new THREE.Mesh(smallNodeGeom, interiorNodeMaterial.clone());
+        const node = new THREE.Mesh(
+          smallNodeGeom,
+          interiorNodeMaterial.clone()
+        );
         node.position.copy(p.projected3D);
         node.name = `interiorNode-${i}`;
         group.add(node);
@@ -767,7 +791,8 @@ export const RTProjections = {
     const infoEl = document.getElementById("projectionInfo");
     if (infoEl && !RTProjections.state.enabled) {
       const { basis, axis } = RTProjections.state;
-      const axisLabel = basis === "cartesian" ? axis.toUpperCase() : axis.toUpperCase();
+      const axisLabel =
+        basis === "cartesian" ? axis.toUpperCase() : axis.toUpperCase();
       infoEl.textContent = `Axis: ${axisLabel} | Hull: -- vertices`;
     }
   },

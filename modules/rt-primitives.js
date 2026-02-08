@@ -542,15 +542,15 @@ export const Primitives = {
     // 9 vertices at 40° intervals: 0°, 40°, 80°, 120°, 160°, 200°, 240°, 280°, 320°
     // Angles derived from cubic 8x³ - 6x - 1 = 0 (cos 20°)
     const vertices = [
-      new THREE.Vector3(R, 0, 0),                      // 0°
-      new THREE.Vector3(R * cos40, R * sin40, 0),     // 40°
-      new THREE.Vector3(R * cos80, R * sin80, 0),     // 80°
-      new THREE.Vector3(-R / 2, (R * sqrt3) / 2, 0),  // 120° (RT-pure √3)
-      new THREE.Vector3(-R * cos20, R * sin20, 0),    // 160° = 180° - 20°
-      new THREE.Vector3(-R * cos20, -R * sin20, 0),   // 200° = 180° + 20°
+      new THREE.Vector3(R, 0, 0), // 0°
+      new THREE.Vector3(R * cos40, R * sin40, 0), // 40°
+      new THREE.Vector3(R * cos80, R * sin80, 0), // 80°
+      new THREE.Vector3(-R / 2, (R * sqrt3) / 2, 0), // 120° (RT-pure √3)
+      new THREE.Vector3(-R * cos20, R * sin20, 0), // 160° = 180° - 20°
+      new THREE.Vector3(-R * cos20, -R * sin20, 0), // 200° = 180° + 20°
       new THREE.Vector3(-R / 2, (-R * sqrt3) / 2, 0), // 240° (RT-pure √3)
-      new THREE.Vector3(R * cos80, -R * sin80, 0),    // 280° = 360° - 80°
-      new THREE.Vector3(R * cos40, -R * sin40, 0),    // 320° = 360° - 40°
+      new THREE.Vector3(R * cos80, -R * sin80, 0), // 280° = 360° - 80°
+      new THREE.Vector3(R * cos40, -R * sin40, 0), // 320° = 360° - 40°
     ];
 
     const edges = [];

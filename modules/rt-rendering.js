@@ -163,9 +163,7 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayStellaOctangulaGroup,
     quadrayCompoundGroup,
     quadrayCompoundTetGroup; // Quadray demonstrators
-  let primeTruncTetGroup,
-    primeCompoundTetGroup,
-    primeCompoundIcosaGroup; // Prime polygon projection polyhedra (base geometry)
+  let primeTruncTetGroup, primeCompoundTetGroup, primeCompoundIcosaGroup; // Prime polygon projection polyhedra (base geometry)
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
@@ -2631,7 +2629,8 @@ export function initScene(THREE, OrbitControls, RT) {
     // Quadray Stella Octangula (Star Tetrahedron - compound of two tetrahedra)
     if (document.getElementById("showQuadrayStellaOctangula")?.checked) {
       const normalize =
-        document.getElementById("quadrayStellaOctangulaNormalize")?.checked ?? true;
+        document.getElementById("quadrayStellaOctangulaNormalize")?.checked ??
+        true;
       const stellaOcta = Polyhedra.quadrayStellaOctangula(scale, {
         normalize: normalize,
       });
@@ -2802,7 +2801,11 @@ export function initScene(THREE, OrbitControls, RT) {
 
       primeCompoundTetGroup.userData = {
         type: "primeCompoundTet",
-        parameters: { scale: scale, truncation: 1 / 3, metadata: compound.metadata },
+        parameters: {
+          scale: scale,
+          truncation: 1 / 3,
+          metadata: compound.metadata,
+        },
       };
       primeCompoundTetGroup.visible = true;
     } else {
@@ -2843,7 +2846,11 @@ export function initScene(THREE, OrbitControls, RT) {
 
       primeCompoundIcosaGroup.userData = {
         type: "primeCompoundIcosa",
-        parameters: { scale: scale, truncation: 1 / 3, metadata: compound.metadata },
+        parameters: {
+          scale: scale,
+          truncation: 1 / 3,
+          metadata: compound.metadata,
+        },
       };
       primeCompoundIcosaGroup.visible = true;
     } else {
@@ -3802,7 +3809,9 @@ export function initScene(THREE, OrbitControls, RT) {
         quadrayTruncTet.edges.length,
         quadrayTruncTet.faces.length
       );
-      const triangles = quadrayTruncTet.faces.filter(f => f.length === 3).length;
+      const triangles = quadrayTruncTet.faces.filter(
+        f => f.length === 3
+      ).length;
       const hexagons = quadrayTruncTet.faces.filter(f => f.length === 6).length;
       html += `<div style="margin-top: 10px;"><strong>Quadray Truncated Tetrahedron:</strong></div>`;
       html += `<div>WXYZ: {2,1,0,0} permutations (ALL rational!)</div>`;
