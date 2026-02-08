@@ -965,6 +965,40 @@ export const basisVisibilityBindings = [
 ];
 
 // ============================================================================
+// REFRESH BUTTONS - Momentary action buttons for refreshing visualizations
+// ============================================================================
+
+export const refreshButtonBindings = [
+  {
+    id: "refreshProjection",
+    type: "button",
+    onClick: () => {
+      if (window.RTProjections && window.RTProjections.state.enabled) {
+        window.RTProjections.updateProjection();
+        console.log("📐 Projection refreshed");
+      } else {
+        console.log("📐 No active projection to refresh");
+      }
+    },
+  },
+  {
+    id: "refreshCutPlane",
+    type: "button",
+    onClick: () => {
+      if (window.RTPapercut && window.RTPapercut.state.cutplaneEnabled) {
+        window.RTPapercut.updateCutplane(
+          window.RTPapercut.state.cutplaneValue,
+          window.RTPapercut._scene
+        );
+        console.log("✂️ Cut plane refreshed");
+      } else {
+        console.log("✂️ No active cut plane to refresh");
+      }
+    },
+  },
+];
+
+// ============================================================================
 // COMBINED EXPORTS
 // ============================================================================
 
@@ -982,6 +1016,7 @@ export const allBindings = [
   ...geodesicProjectionBindings,
   ...viewControlBindings,
   ...basisVisibilityBindings,
+  ...refreshButtonBindings,
 ];
 
 /**
@@ -997,6 +1032,7 @@ export function getBindingStats() {
     geodesicProjections: geodesicProjectionBindings.length,
     viewControls: viewControlBindings.length,
     basisVisibility: basisVisibilityBindings.length,
+    refreshButtons: refreshButtonBindings.length,
     total: allBindings.length,
   };
 }

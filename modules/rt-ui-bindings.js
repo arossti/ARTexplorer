@@ -130,6 +130,8 @@ export class RTUIBindings {
         return this._bindCheckboxWithControls(element, binding);
       case "slider":
         return this._bindSlider(element, binding);
+      case "button":
+        return this._bindButton(element, binding);
       default:
         console.warn(`⚠️ RTUIBindings: Unknown binding type: ${binding.type}`);
         return false;
@@ -226,6 +228,18 @@ export class RTUIBindings {
       });
     }
 
+    return true;
+  }
+
+  /**
+   * Bind a simple action button (momentary, not toggle)
+   */
+  _bindButton(element, binding) {
+    element.addEventListener("click", () => {
+      if (binding.onClick) {
+        binding.onClick(this.renderingAPI, this.RT, this.Quadray);
+      }
+    });
     return true;
   }
 
