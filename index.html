@@ -3453,10 +3453,13 @@
               </label>
             </div>
             <div class="control-item">
-              <label class="checkbox-label">
-                <input type="checkbox" id="enableCutPlane" />
-                Enable Cut Plane
-              </label>
+              <div class="toggle-with-refresh">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="enableCutPlane" />
+                  Enable Cut Plane
+                </label>
+                <button id="refreshCutPlane" class="refresh-btn">Refresh</button>
+              </div>
             </div>
             <div class="control-item">
               <label class="checkbox-label">
@@ -3707,10 +3710,13 @@
           <div id="projections-section" class="section-content collapsed">
             <!-- Enable Projection -->
             <div class="control-item">
-              <label class="checkbox-label">
-                <input type="checkbox" id="enableProjection" />
-                Enable Projection
-              </label>
+              <div class="toggle-with-refresh">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="enableProjection" />
+                  Enable Projection
+                </label>
+                <button id="refreshProjection" class="refresh-btn">Refresh</button>
+              </div>
             </div>
 
             <div id="projection-options" style="display: none">
