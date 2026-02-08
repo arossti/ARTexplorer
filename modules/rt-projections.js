@@ -310,8 +310,10 @@ export const RTProjections = {
       RTProjections._projectionGroup = null;
     }
 
-    // Recreate with current settings
-    RTProjections.showProjection(RTProjections._activePolyhedron);
+    // Recreate with current settings, explicitly preserving custom spreads
+    RTProjections.showProjection(RTProjections._activePolyhedron, {
+      spreads: RTProjections.state.customSpreads,
+    });
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
