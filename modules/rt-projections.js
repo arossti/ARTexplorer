@@ -283,6 +283,7 @@ export const RTProjections = {
    * Hide and cleanup projection visualization
    */
   hideProjection: function () {
+    const wasActive = !!RTProjections._projectionGroup;
     if (RTProjections._projectionGroup && RTProjections._scene) {
       RTProjections._scene.remove(RTProjections._projectionGroup);
       RTProjections._projectionGroup.traverse(child => {
@@ -294,7 +295,9 @@ export const RTProjections = {
 
     RTProjections.state.enabled = false;
     RTProjections._activePolyhedron = null;
-    console.log("📐 Projection hidden");
+    if (wasActive) {
+      console.log("📐 Projection hidden");
+    }
   },
 
   /**

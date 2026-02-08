@@ -50,18 +50,18 @@ const PROJECTION_PRESETS = {
   heptagon: {
     name: "Heptagon (7-gon)",
     n: 7,
-    // Use base compound (single source of truth - no Quadray)
+    // Uses DUAL tet compound with unit-sphere normalization for robust hull
     polyhedronType: "primeCompoundTet",
     polyhedronCheckbox: "showPrimeCompoundTet",
-    compound: "truncTetPlusTet",
+    compound: "truncTetPlusDualTet",
     vertexCount: 16,
-    spreads: [0, 0.01, 0.14], // NOTE: May need re-searching with base geometry
+    spreads: [0, 0, 0.5], // Verified robust at all scales + Float32
     expectedHull: 7,
-    source:
-      "prime_projections_verified.json (needs verification with base geometry)",
+    source: "compoundTruncTetDualTet unit-sphere normalized, min_cross=0.353",
     maxInteriorAngle: 170,
-    verified: "pending",
-    description: "TruncTet+Tet compound → 7-vertex hull at s=(0, 0.01, 0.14)",
+    verified: "2026-02-08",
+    description:
+      "TruncTet+DualTet compound → 7-vertex hull at s=(0, 0, 0.5)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -70,7 +70,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0, 0.01, 0.14],
+      customSpreads: [0, 0, 0.5],
       presetName: "heptagon",
     },
   },
@@ -82,13 +82,13 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showPrimeCompoundIcosa",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0, 0.01, 0.1], // NOTE: Likely needs re-searching (icosa scaling was wrong)
+    spreads: [0.34, 0.54, 0.2], // Column-projection search 2026-02-08
     expectedHull: 11,
-    source:
-      "prime_projections_verified.json (needs verification with base geometry)",
+    source: "prime_search_streamlined.py precision=2, regularity=0.5050",
     maxInteriorAngle: 170,
-    verified: "pending",
-    description: "TruncTet+Icosa compound → 11-vertex hull at s=(0, 0.01, 0.1)",
+    verified: "2026-02-08",
+    description:
+      "TruncTet+Icosa compound → 11-vertex hull at s=(0.34, 0.54, 0.2)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -97,7 +97,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0, 0.01, 0.1],
+      customSpreads: [0.34, 0.54, 0.2],
       presetName: "hendecagon",
     },
   },
@@ -109,14 +109,13 @@ const PROJECTION_PRESETS = {
     polyhedronCheckbox: "showPrimeCompoundIcosa",
     compound: "truncTetPlusIcosa",
     vertexCount: 24,
-    spreads: [0, 0.01, 0.14], // NOTE: Likely needs re-searching (icosa scaling was wrong)
+    spreads: [0.96, 0.99, 0.99], // Column-projection search 2026-02-08
     expectedHull: 13,
-    source:
-      "prime_projections_verified.json (needs verification with base geometry)",
+    source: "prime_search_streamlined.py precision=2, regularity=0.3516",
     maxInteriorAngle: 178,
-    verified: "pending",
+    verified: "2026-02-08",
     description:
-      "TruncTet+Icosa compound → 13-vertex hull at s=(0, 0.01, 0.14)",
+      "TruncTet+Icosa compound → 13-vertex hull at s=(0.96, 0.99, 0.99)",
     projectionState: {
       enabled: true,
       basis: "custom",
@@ -125,7 +124,7 @@ const PROJECTION_PRESETS = {
       showRays: true,
       showInterior: false,
       showIdealPolygon: true,
-      customSpreads: [0, 0.01, 0.14],
+      customSpreads: [0.96, 0.99, 0.99],
       presetName: "tridecagon",
     },
   },
@@ -501,22 +500,25 @@ export const RTPrimeCuts = {
    * @param {number} planeDistance - Distance from polyhedron center (default: 5)
    */
   showPrimePolygon: async function (n, scene, camera, planeDistance = 5) {
-    console.log("🔍 showPrimePolygon called with:", { n, planeDistance });
-
     // Validate scene
     if (!scene) {
       console.error("❌ showPrimePolygon: scene is undefined!");
       return;
     }
 
-    // If n is null, hide the projection
+    // If n is null, hide the projection (only log if actually visible)
     if (!n) {
+      const wasVisible = RTPrimeCuts._primePolygonVisible;
       RTProjections.hideProjection();
       RTPrimeCuts._primePolygonVisible = false;
       RTPrimeCuts._hideProjectionInfo();
-      console.log("📐 Prime projection visualization hidden");
+      if (wasVisible) {
+        console.log("📐 Prime projection visualization hidden");
+      }
       return;
     }
+
+    console.log("🔍 showPrimePolygon called with:", { n, planeDistance });
 
     // Look up preset by n
     const preset = VERIFIED_PROJECTIONS[n];
