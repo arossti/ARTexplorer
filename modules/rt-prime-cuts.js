@@ -500,22 +500,25 @@ export const RTPrimeCuts = {
    * @param {number} planeDistance - Distance from polyhedron center (default: 5)
    */
   showPrimePolygon: async function (n, scene, camera, planeDistance = 5) {
-    console.log("🔍 showPrimePolygon called with:", { n, planeDistance });
-
     // Validate scene
     if (!scene) {
       console.error("❌ showPrimePolygon: scene is undefined!");
       return;
     }
 
-    // If n is null, hide the projection
+    // If n is null, hide the projection (only log if actually visible)
     if (!n) {
+      const wasVisible = RTPrimeCuts._primePolygonVisible;
       RTProjections.hideProjection();
       RTPrimeCuts._primePolygonVisible = false;
       RTPrimeCuts._hideProjectionInfo();
-      console.log("📐 Prime projection visualization hidden");
+      if (wasVisible) {
+        console.log("📐 Prime projection visualization hidden");
+      }
       return;
     }
+
+    console.log("🔍 showPrimePolygon called with:", { n, planeDistance });
 
     // Look up preset by n
     const preset = VERIFIED_PROJECTIONS[n];
