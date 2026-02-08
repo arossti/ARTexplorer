@@ -2088,11 +2088,17 @@ export function initScene(THREE, OrbitControls, RT) {
       let dualTetra;
 
       // Check if truncation is enabled
-      const truncDualCheckbox = document.getElementById("showTruncatedDualTetrahedron");
+      const truncDualCheckbox = document.getElementById(
+        "showTruncatedDualTetrahedron"
+      );
       if (truncDualCheckbox && truncDualCheckbox.checked) {
         // Get truncation value from slider
-        const truncDualSlider = document.getElementById("truncationDualTetraSlider");
-        const truncation = truncDualSlider ? parseFloat(truncDualSlider.value) : 1 / 3;
+        const truncDualSlider = document.getElementById(
+          "truncationDualTetraSlider"
+        );
+        const truncation = truncDualSlider
+          ? parseFloat(truncDualSlider.value)
+          : 1 / 3;
         dualTetra = Polyhedra.truncatedDualTetrahedron(scale, truncation);
       } else {
         dualTetra = Polyhedra.dualTetrahedron(scale);
