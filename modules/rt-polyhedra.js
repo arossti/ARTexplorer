@@ -733,6 +733,183 @@ export const Polyhedra = {
     return { vertices, edges, faces, faceSpread };
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COMPOUND POLYHEDRA FOR PRIME PROJECTIONS
+  // Single source of truth using base Polyhedra functions
+  // Matches Python rt_polyhedra.py for Python/JavaScript parity
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * TruncTet + Tetrahedron compound (16 vertices)
+   * Used for 7-gon projections
+   *
+   * Combines truncated tetrahedron (12v) + tetrahedron (4v)
+   * Both at half_size=3 with t=1/3 truncation produces [±1,±1,±3] vertices
+   *
+   * @param {number} scale - Scale factor (default 1.0, use 3.0 for canonical coords)
+   * @param {number} truncation - Truncation parameter (default 1/3)
+   * @returns {Object} {vertices, edges, faces, components}
+   */
+  compoundTruncTetTet: (scale = 3, truncation = 1 / 3) => {
+    // Get truncated tetrahedron vertices
+    const truncTet = Polyhedra.truncatedTetrahedron(scale, truncation);
+    const truncTetVertices = truncTet.vertices;
+
+    // Get tetrahedron vertices at same scale
+    const tet = Polyhedra.tetrahedron(scale);
+    const tetVertices = tet.vertices;
+
+    // Combine vertices: TruncTet (0-11) + Tet (12-15)
+    const vertices = [...truncTetVertices, ...tetVertices];
+
+    // Combine edges with offset for tetrahedron indices
+    const truncTetEdges = truncTet.edges;
+    const tetEdgesOffset = tet.edges.map(([i, j]) => [
+      i + truncTetVertices.length,
+      j + truncTetVertices.length,
+    ]);
+    const edges = [...truncTetEdges, ...tetEdgesOffset];
+
+    // Combine faces with offset for tetrahedron indices
+    const truncTetFaces = truncTet.faces;
+    const tetFacesOffset = tet.faces.map((face) =>
+      face.map((i) => i + truncTetVertices.length)
+    );
+    const faces = [...truncTetFaces, ...tetFacesOffset];
+
+    return {
+      vertices,
+      edges,
+      faces,
+      components: {
+        truncatedTetrahedron: {
+          vertices: truncTetVertices,
+          edges: truncTetEdges,
+          faces: truncTetFaces,
+          vertexOffset: 0,
+        },
+        tetrahedron: {
+          vertices: tetVertices,
+          edges: tet.edges,
+          faces: tet.faces,
+          vertexOffset: truncTetVertices.length,
+        },
+      },
+      metadata: {
+        totalVertices: 16,
+        scale: scale,
+        truncation: truncation,
+        primeProjections: {
+          heptagon: {
+            spreads: [0, 0.01, 0.14],
+            expectedHull: 7,
+            verified: "2026-02-07",
+          },
+        },
+      },
+    };
+  },
+
+  /**
+   * TruncTet + Icosahedron compound (24 vertices)
+   * Used for 11-gon and 13-gon projections
+   *
+   * Combines truncated tetrahedron (12v) + icosahedron (12v)
+   * Icosahedron is scaled to match truncated tetrahedron bounding sphere
+   *
+   * Why 24 vertices enable prime hulls:
+   * - TruncTet (12v) has 3-fold tetrahedral symmetry
+   * - Icosahedron (12v) has 5-fold icosahedral symmetry
+   * - 3-fold and 5-fold are incommensurate (gcd(3,5)=1)
+   * - This symmetry breaking enables prime hull counts (11, 13)
+   *
+   * @param {number} scale - Scale factor (default 3.0 for canonical coords)
+   * @param {number} truncation - Truncation parameter (default 1/3)
+   * @returns {Object} {vertices, edges, faces, components}
+   */
+  compoundTruncTetIcosa: (scale = 3, truncation = 1 / 3) => {
+    // Get truncated tetrahedron vertices
+    const truncTet = Polyhedra.truncatedTetrahedron(scale, truncation);
+    const truncTetVertices = truncTet.vertices;
+
+    // Calculate truncated tetrahedron bounding radius
+    // With scale=3 and t=1/3: vertices at [1,1,3] → radius = sqrt(11)
+    let truncTetRadius = 0;
+    truncTetVertices.forEach((v) => {
+      const r = v.length();
+      if (r > truncTetRadius) truncTetRadius = r;
+    });
+
+    // Get icosahedron at unit scale
+    // Icosahedron with halfSize=1 has circumradius = 1.0
+    // (verified: vertex [0, a, b] has distance sqrt(a² + b²) = 1.0)
+    const icosa = Polyhedra.icosahedron(1.0);
+    const icosaRadius = 1.0;
+
+    // Scale icosahedron to match truncated tetrahedron bounding sphere
+    const icosaScale = truncTetRadius / icosaRadius;
+    const icosaVertices = icosa.vertices.map((v) =>
+      v.clone().multiplyScalar(icosaScale)
+    );
+
+    // Combine vertices: TruncTet (0-11) + Icosa (12-23)
+    const vertices = [...truncTetVertices, ...icosaVertices];
+
+    // Combine edges with offset for icosahedron indices
+    const truncTetEdges = truncTet.edges;
+    const icosaEdgesOffset = icosa.edges.map(([i, j]) => [
+      i + truncTetVertices.length,
+      j + truncTetVertices.length,
+    ]);
+    const edges = [...truncTetEdges, ...icosaEdgesOffset];
+
+    // Combine faces with offset for icosahedron indices
+    const truncTetFaces = truncTet.faces;
+    const icosaFacesOffset = icosa.faces.map((face) =>
+      face.map((i) => i + truncTetVertices.length)
+    );
+    const faces = [...truncTetFaces, ...icosaFacesOffset];
+
+    return {
+      vertices,
+      edges,
+      faces,
+      components: {
+        truncatedTetrahedron: {
+          vertices: truncTetVertices,
+          edges: truncTetEdges,
+          faces: truncTetFaces,
+          vertexOffset: 0,
+        },
+        icosahedron: {
+          vertices: icosaVertices,
+          edges: icosa.edges,
+          faces: icosa.faces,
+          vertexOffset: truncTetVertices.length,
+        },
+      },
+      metadata: {
+        totalVertices: 24,
+        scale: scale,
+        truncation: truncation,
+        truncTetRadius: truncTetRadius,
+        icosaScale: icosaScale,
+        primeProjections: {
+          hendecagon: {
+            spreads: [0, 0.01, 0.1],
+            expectedHull: 11,
+            verified: "2026-02-07",
+          },
+          tridecagon: {
+            spreads: [0, 0.01, 0.14],
+            expectedHull: 13,
+            verified: "2026-02-07",
+          },
+        },
+      },
+    };
+  },
+
   /**
    * Dual Icosahedron (face dual of dodecahedron)
    * Vertices positioned at dodecahedron face centers
