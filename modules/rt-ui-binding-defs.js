@@ -283,17 +283,6 @@ export const checkboxWithControlsBindings = [
     type: "checkbox-controls",
     controlsId: "quadray-stella-octangula-controls",
   },
-  {
-    id: "showQuadrayCompound",
-    type: "checkbox-controls",
-    controlsId: "quadray-compound-controls",
-  },
-  {
-    id: "showQuadrayCompoundTet",
-    type: "checkbox-controls",
-    controlsId: "quadray-compound-tet-controls",
-  },
-
   // Prime Polygon Projection polyhedra (base geometry)
   {
     id: "showPrimeTruncTet",
@@ -766,74 +755,6 @@ export const viewControlBindings = [
         id: "viewPentagonProjection",
         onClick: renderingAPI =>
           renderingAPI.setCameraPreset("pentagonProjection"),
-      },
-      // BREAKTHROUGH: Compound polyhedra projections (Feb 2026)
-      // These auto-enable the Quadray Compound form so rays cast from visible vertices
-      {
-        id: "viewHendecagonProjection",
-        onClick: renderingAPI => {
-          // Auto-enable compound form for 11-gon projection
-          const compoundCheckbox = document.getElementById(
-            "showQuadrayCompound"
-          );
-          if (compoundCheckbox && !compoundCheckbox.checked) {
-            compoundCheckbox.checked = true;
-            compoundCheckbox.dispatchEvent(
-              new Event("change", { bubbles: true })
-            );
-          }
-          renderingAPI.setCameraPreset("hendecagonProjection");
-        },
-      },
-      {
-        id: "viewTridecagonProjection",
-        onClick: renderingAPI => {
-          // Auto-enable compound form for 13-gon projection
-          const compoundCheckbox = document.getElementById(
-            "showQuadrayCompound"
-          );
-          if (compoundCheckbox && !compoundCheckbox.checked) {
-            compoundCheckbox.checked = true;
-            compoundCheckbox.dispatchEvent(
-              new Event("change", { bubbles: true })
-            );
-          }
-          renderingAPI.setCameraPreset("tridecagonProjection");
-        },
-      },
-      // 7-gon from TruncTet+Tet compound (Feb 2026)
-      {
-        id: "viewHeptagonProjectionTet",
-        onClick: renderingAPI => {
-          // Auto-enable TruncTet+Tet compound form for 7-gon projection
-          const compoundCheckbox = document.getElementById(
-            "showQuadrayCompoundTet"
-          );
-          if (compoundCheckbox && !compoundCheckbox.checked) {
-            compoundCheckbox.checked = true;
-            compoundCheckbox.dispatchEvent(
-              new Event("change", { bubbles: true })
-            );
-          }
-          renderingAPI.setCameraPreset("heptagonProjectionTet");
-        },
-      },
-      // 11-gon from TruncTet+Icosa compound (Project-Streamline verified)
-      {
-        id: "viewHendecagonProjectionTet",
-        onClick: renderingAPI => {
-          // Auto-enable TruncTet+Icosa compound form for 11-gon projection
-          const compoundCheckbox = document.getElementById(
-            "showQuadrayCompound"
-          );
-          if (compoundCheckbox && !compoundCheckbox.checked) {
-            compoundCheckbox.checked = true;
-            compoundCheckbox.dispatchEvent(
-              new Event("change", { bubbles: true })
-            );
-          }
-          renderingAPI.setCameraPreset("hendecagonProjection");
-        },
       },
       // Prime Projection Preset buttons moved to floating modal in rt-prime-cuts.js
       // Buttons are now created dynamically by RTPrimeCuts.createPanel()

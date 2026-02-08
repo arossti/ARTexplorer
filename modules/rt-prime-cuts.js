@@ -13,7 +13,6 @@
  */
 
 import * as THREE from "three";
-import { QuadrayPolyhedra } from "./rt-quadray-polyhedra.js";
 import { RTProjections } from "./rt-projections.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -345,8 +344,6 @@ export const RTPrimeCuts = {
     disable("showPrimeCompoundTet");
     disable("showPrimeCompoundIcosa");
     disable("showQuadrayTruncatedTet");
-    disable("showQuadrayCompound");
-    disable("showQuadrayCompoundTet");
 
     // For 11/13-gon switching (same checkbox), hide projection first
     if (window.RTProjections) {
@@ -687,26 +684,6 @@ export const RTPrimeCuts = {
    */
   _getWorldVerticesFromGroup: function (group) {
     return RTProjections._getWorldVerticesFromGroup(group);
-  },
-
-  /**
-   * Generate compound polyhedra vertices (truncated tetrahedron + icosahedron)
-   * Used for 13-gon projections - BREAKTHROUGH compound that bypasses Gauss-Wantzel!
-   * Note: 11-gon uses TruncTet+Tet (16v), NOT this Icosa compound (24v)
-   *
-   * Reuses QuadrayPolyhedra.compoundTruncTetIcosahedron for consistency.
-   *
-   * @returns {Promise<Array<THREE.Vector3>>} 24 vertices (12 from trunc tet + 12 from icosahedron)
-   */
-  _generateCompoundVertices: async function () {
-    // Reuse the existing compound generator from rt-quadray-polyhedra.js
-    const compound = await QuadrayPolyhedra.compoundTruncTetIcosahedron(1, {
-      normalize: true,
-    });
-    console.log(
-      `   _generateCompoundVertices: ${compound.vertices.length} vertices (reusing QuadrayPolyhedra)`
-    );
-    return compound.vertices;
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1549,7 +1526,7 @@ export const RTPrimeCuts = {
       step = 0.1,
       minSpread = 0,
       maxSpread = 1,
-      polyhedronType = "quadrayCompound",
+      polyhedronType = "primeCompoundIcosa",
     } = options;
 
     console.log(`🔍 Searching for ${targetHull}-gon spreads...`);
@@ -1619,7 +1596,7 @@ export const RTPrimeCuts = {
    * Call via console: RTPrimeCuts.analyzeHullDistribution()
    */
   analyzeHullDistribution: function (options = {}) {
-    const { step = 0.1, polyhedronType = "quadrayCompound" } = options;
+    const { step = 0.1, polyhedronType = "primeCompoundIcosa" } = options;
 
     console.log(`📊 Analyzing hull distribution for ${polyhedronType}...`);
 
