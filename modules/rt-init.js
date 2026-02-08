@@ -3,6 +3,7 @@
 import { Polyhedra } from "./rt-polyhedra.js";
 import { RTPapercut } from "./rt-papercut.js";
 import { RTPrimeCuts } from "./rt-prime-cuts.js";
+import { RTProjections } from "./rt-projections.js";
 import { RTViewManager } from "./rt-viewmanager.js";
 import { initQuadranceDemo } from "../demos/rt-quadrance-demo.js";
 import { initCrossDemo } from "../demos/rt-cross-demo.js";
@@ -200,12 +201,12 @@ function startARTexplorer(
 
     // Callback to reposition editingBasis when mode changes to group-centre
     RTCoordinates.onModeChangeCallback = (mode, centroid) => {
-      if (mode === 'group-centre' && centroid && editingBasis) {
+      if (mode === "group-centre" && centroid && editingBasis) {
         editingBasis.position.copy(centroid);
       }
     };
 
-    console.log('🆕 COORDINATE MODULE: Active');
+    console.log("🆕 COORDINATE MODULE: Active");
   }
 
   // ========================================================================
@@ -259,7 +260,14 @@ function startARTexplorer(
   });
 
   // Central Angle (IVM) plane checkboxes
-  ["planeIvmWX", "planeIvmWY", "planeIvmWZ", "planeIvmXY", "planeIvmXZ", "planeIvmYZ"].forEach(id => {
+  [
+    "planeIvmWX",
+    "planeIvmWY",
+    "planeIvmWZ",
+    "planeIvmXY",
+    "planeIvmXZ",
+    "planeIvmYZ",
+  ].forEach(id => {
     const checkbox = document.getElementById(id);
     if (checkbox) {
       checkbox.addEventListener("change", function () {
@@ -480,9 +488,59 @@ function startARTexplorer(
       const targetId = this.dataset.target;
       const targetOptions = document.getElementById(targetId);
 
+      // Check if expanding or collapsing (before toggle)
+      const wasCollapsed = this.classList.contains("collapsed");
+
       // Toggle collapsed state
       this.classList.toggle("collapsed");
       targetOptions.classList.toggle("collapsed");
+
+      // Master toggle handling for grid sections
+      const gridMasterToggles = {
+        "central-angle-grids": {
+          label: "Central Angle Grids",
+          checkboxIds: [
+            "planeIvmWX",
+            "planeIvmWY",
+            "planeIvmWZ",
+            "planeIvmXY",
+            "planeIvmXZ",
+            "planeIvmYZ",
+          ],
+        },
+        "cartesian-planes": {
+          label: "Cartesian Planes",
+          checkboxIds: ["planeXY", "planeXZ", "planeYZ"],
+        },
+        "ivm-grids": {
+          label: "IVM Grids",
+          checkboxIds: [
+            "planeQuadrayWX",
+            "planeQuadrayWY",
+            "planeQuadrayWZ",
+            "planeQuadrayXY",
+            "planeQuadrayXZ",
+            "planeQuadrayYZ",
+          ],
+        },
+      };
+
+      if (gridMasterToggles[targetId]) {
+        const { label, checkboxIds } = gridMasterToggles[targetId];
+        const shouldEnable = wasCollapsed; // Expanding = turn all ON, Collapsing = turn all OFF
+
+        checkboxIds.forEach(id => {
+          const checkbox = document.getElementById(id);
+          if (checkbox && checkbox.checked !== shouldEnable) {
+            checkbox.checked = shouldEnable;
+            checkbox.dispatchEvent(new Event("change")); // Trigger visibility update
+          }
+        });
+
+        console.log(
+          `[${label}] Master toggle: ${shouldEnable ? "ALL ON" : "ALL OFF"}`
+        );
+      }
     });
   });
 
@@ -818,10 +876,17 @@ function startARTexplorer(
           const firstVertex = selectedVertices[0];
 
           // Check for Group Centre mode first (requires 2+ selected)
-          if (USE_COORDINATE_MODULE && RTCoordinates.getMode() === 'group-centre' && selected.length >= 2) {
+          if (
+            USE_COORDINATE_MODULE &&
+            RTCoordinates.getMode() === "group-centre" &&
+            selected.length >= 2
+          ) {
             // GROUP CENTRE: Use calculated centroid of all selected objects
             basisPosition = RTCoordinates.calculateGroupCentroid(selected);
-          } else if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+          } else if (
+            RTStateManager.isVertexMode() &&
+            firstVertex?.getWorldPosition
+          ) {
             // NODE-BASED ORIGIN: Use first selected node's world position
             const nodeWorldPos = new THREE.Vector3();
             firstVertex.getWorldPosition(nodeWorldPos);
@@ -1001,8 +1066,17 @@ function startARTexplorer(
 
     const newTransform = {
       position: { x: poly.position.x, y: poly.position.y, z: poly.position.z },
-      rotation: { x: poly.rotation.x, y: poly.rotation.y, z: poly.rotation.z, order: poly.rotation.order },
-      scale: options.scale || { x: poly.scale.x, y: poly.scale.y, z: poly.scale.z },
+      rotation: {
+        x: poly.rotation.x,
+        y: poly.rotation.y,
+        z: poly.rotation.z,
+        order: poly.rotation.order,
+      },
+      scale: options.scale || {
+        x: poly.scale.x,
+        y: poly.scale.y,
+        z: poly.scale.z,
+      },
     };
 
     // Include quadrayRotation if provided
@@ -1078,7 +1152,9 @@ function startARTexplorer(
           // Apply position change and persist to StateManager
           selected.forEach(poly => {
             poly.position[axis] = value;
-            console.log(`📍 Moved ${axis.toUpperCase()} to ${value.toFixed(4)}`);
+            console.log(
+              `📍 Moved ${axis.toUpperCase()} to ${value.toFixed(4)}`
+            );
             persistTransformToState(poly);
           });
 
@@ -1156,19 +1232,27 @@ function startARTexplorer(
             // ABSOLUTE MODE: Use all four values as zero-sum position
             // ================================================================
             // Get all QWXYZ values from UI fields
-            const qwValue = parseFloat(document.getElementById("coordQW").value);
-            const qxValue = parseFloat(document.getElementById("coordQX").value);
-            const qyValue = parseFloat(document.getElementById("coordQY").value);
-            const qzValue = parseFloat(document.getElementById("coordQZ").value);
+            const qwValue = parseFloat(
+              document.getElementById("coordQW").value
+            );
+            const qxValue = parseFloat(
+              document.getElementById("coordQX").value
+            );
+            const qyValue = parseFloat(
+              document.getElementById("coordQY").value
+            );
+            const qzValue = parseFloat(
+              document.getElementById("coordQZ").value
+            );
 
             // Build array in basisVector order (A=0, B=1, C=2, D=3) using AXIS_INDEX
             // AXIS_INDEX: { qw: 3, qx: 0, qy: 2, qz: 1 }
             // toCartesian expects (a, b, c, d) = basisVector indices (0, 1, 2, 3)
             let basisOrderQuadray = [0, 0, 0, 0];
-            basisOrderQuadray[Quadray.AXIS_INDEX.qw] = qwValue;  // D = index 3
-            basisOrderQuadray[Quadray.AXIS_INDEX.qx] = qxValue;  // A = index 0
-            basisOrderQuadray[Quadray.AXIS_INDEX.qy] = qyValue;  // C = index 2
-            basisOrderQuadray[Quadray.AXIS_INDEX.qz] = qzValue;  // B = index 1
+            basisOrderQuadray[Quadray.AXIS_INDEX.qw] = qwValue; // D = index 3
+            basisOrderQuadray[Quadray.AXIS_INDEX.qx] = qxValue; // A = index 0
+            basisOrderQuadray[Quadray.AXIS_INDEX.qy] = qyValue; // C = index 2
+            basisOrderQuadray[Quadray.AXIS_INDEX.qz] = qzValue; // B = index 1
 
             // Convert to Cartesian using basisVector-ordered array
             const newPos = Quadray.toCartesian(
@@ -1236,7 +1320,9 @@ function startARTexplorer(
           // Apply rotation and persist to StateManager
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
-            console.log(`🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`);
+            console.log(
+              `🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`
+            );
             persistTransformToState(poly);
           });
 
@@ -1254,10 +1340,20 @@ function startARTexplorer(
     // Correct color-to-axis mapping: W=Yellow(3), X=Red(0), Y=Blue(2), Z=Green(1)
     // quadrayKey maps basisIndex to the quadrayRotation object key
     const rotInputs = [
-      { id: "rotQWDegrees", basisIndex: 3, name: "W (Yellow)", quadrayKey: "qw" },
+      {
+        id: "rotQWDegrees",
+        basisIndex: 3,
+        name: "W (Yellow)",
+        quadrayKey: "qw",
+      },
       { id: "rotQXDegrees", basisIndex: 0, name: "X (Red)", quadrayKey: "qx" },
       { id: "rotQYDegrees", basisIndex: 2, name: "Y (Blue)", quadrayKey: "qy" },
-      { id: "rotQZDegrees", basisIndex: 1, name: "Z (Green)", quadrayKey: "qz" },
+      {
+        id: "rotQZDegrees",
+        basisIndex: 1,
+        name: "Z (Green)",
+        quadrayKey: "qz",
+      },
     ];
 
     rotInputs.forEach(({ id, basisIndex, name, quadrayKey }) => {
@@ -1281,17 +1377,31 @@ function startARTexplorer(
           // Apply rotation and persist to StateManager (with cumulative Quadray tracking)
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
-            console.log(`🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`);
+            console.log(
+              `🔄 Rotated ${degrees.toFixed(2)}° around ${name} axis`
+            );
 
             // Calculate cumulative Quadray rotation
             if (poly.userData?.instanceId) {
-              const instance = RTStateManager.getInstance(poly.userData.instanceId);
-              const existingQuadray = instance?.transform?.quadrayRotation || { qw: 0, qx: 0, qy: 0, qz: 0 };
+              const instance = RTStateManager.getInstance(
+                poly.userData.instanceId
+              );
+              const existingQuadray = instance?.transform?.quadrayRotation || {
+                qw: 0,
+                qx: 0,
+                qy: 0,
+                qz: 0,
+              };
               const newQuadrayRotation = { ...existingQuadray };
-              newQuadrayRotation[quadrayKey] = (existingQuadray[quadrayKey] || 0) + degrees;
+              newQuadrayRotation[quadrayKey] =
+                (existingQuadray[quadrayKey] || 0) + degrees;
 
-              persistTransformToState(poly, { quadrayRotation: newQuadrayRotation });
-              console.log(`📐 Quadray ${quadrayKey.toUpperCase()}: ${newQuadrayRotation[quadrayKey].toFixed(2)}° (cumulative)`);
+              persistTransformToState(poly, {
+                quadrayRotation: newQuadrayRotation,
+              });
+              console.log(
+                `📐 Quadray ${quadrayKey.toUpperCase()}: ${newQuadrayRotation[quadrayKey].toFixed(2)}° (cumulative)`
+              );
             }
           });
 
@@ -1334,7 +1444,9 @@ function startARTexplorer(
           // Apply rotation and persist to StateManager
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
-            console.log(`🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`);
+            console.log(
+              `🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`
+            );
             persistTransformToState(poly);
           });
 
@@ -1352,7 +1464,12 @@ function startARTexplorer(
     // Correct color-to-axis mapping: W=Yellow(3), X=Red(0), Y=Blue(2), Z=Green(1)
     // quadrayKey maps basisIndex to the quadrayRotation object key
     const rotInputs = [
-      { id: "rotQWSpread", basisIndex: 3, name: "W (Yellow)", quadrayKey: "qw" },
+      {
+        id: "rotQWSpread",
+        basisIndex: 3,
+        name: "W (Yellow)",
+        quadrayKey: "qw",
+      },
       { id: "rotQXSpread", basisIndex: 0, name: "X (Red)", quadrayKey: "qx" },
       { id: "rotQYSpread", basisIndex: 2, name: "Y (Blue)", quadrayKey: "qy" },
       { id: "rotQZSpread", basisIndex: 1, name: "Z (Green)", quadrayKey: "qz" },
@@ -1381,17 +1498,31 @@ function startARTexplorer(
           // Apply rotation and persist to StateManager (with cumulative Quadray tracking)
           selected.forEach(poly => {
             poly.rotateOnWorldAxis(axis, radians);
-            console.log(`🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`);
+            console.log(
+              `🔄 Rotated spread ${spread.toFixed(2)} (${degrees.toFixed(2)}°) around ${name} axis`
+            );
 
             // Calculate cumulative Quadray rotation
             if (poly.userData?.instanceId) {
-              const instance = RTStateManager.getInstance(poly.userData.instanceId);
-              const existingQuadray = instance?.transform?.quadrayRotation || { qw: 0, qx: 0, qy: 0, qz: 0 };
+              const instance = RTStateManager.getInstance(
+                poly.userData.instanceId
+              );
+              const existingQuadray = instance?.transform?.quadrayRotation || {
+                qw: 0,
+                qx: 0,
+                qy: 0,
+                qz: 0,
+              };
               const newQuadrayRotation = { ...existingQuadray };
-              newQuadrayRotation[quadrayKey] = (existingQuadray[quadrayKey] || 0) + degrees;
+              newQuadrayRotation[quadrayKey] =
+                (existingQuadray[quadrayKey] || 0) + degrees;
 
-              persistTransformToState(poly, { quadrayRotation: newQuadrayRotation });
-              console.log(`📐 Quadray ${quadrayKey.toUpperCase()}: ${newQuadrayRotation[quadrayKey].toFixed(2)}° (cumulative)`);
+              persistTransformToState(poly, {
+                quadrayRotation: newQuadrayRotation,
+              });
+              console.log(
+                `📐 Quadray ${quadrayKey.toUpperCase()}: ${newQuadrayRotation[quadrayKey].toFixed(2)}° (cumulative)`
+              );
             }
           });
 
@@ -1430,8 +1561,12 @@ function startARTexplorer(
           poly.scale.set(newScale, newScale, newScale);
           poly.userData.currentScale = newScale;
 
-          console.log(`📐 Scaled ${poly.userData.isInstance ? "Instance" : "Form"}: ${newScale.toFixed(4)}`);
-          persistTransformToState(poly, { scale: { x: newScale, y: newScale, z: newScale } });
+          console.log(
+            `📐 Scaled ${poly.userData.isInstance ? "Instance" : "Form"}: ${newScale.toFixed(4)}`
+          );
+          persistTransformToState(poly, {
+            scale: { x: newScale, y: newScale, z: newScale },
+          });
         });
 
         // Update footer display
@@ -3457,8 +3592,14 @@ function startARTexplorer(
             // Project rotation center to screen space
             // When Group Centre mode is active, use calculated centroid instead of editingBasis
             let rotationCenter;
-            if (USE_COORDINATE_MODULE && RTCoordinates.getMode() === 'group-centre') {
-              rotationCenter = RTCoordinates.getRotationCenter(editingBasis, selectedPolyhedra);
+            if (
+              USE_COORDINATE_MODULE &&
+              RTCoordinates.getMode() === "group-centre"
+            ) {
+              rotationCenter = RTCoordinates.getRotationCenter(
+                editingBasis,
+                selectedPolyhedra
+              );
             } else {
               rotationCenter = editingBasis
                 ? editingBasis.position
@@ -3660,7 +3801,10 @@ function startARTexplorer(
             if (editingBasis) {
               const selectedVertices = RTStateManager.getSelectedVertices();
               const firstVertex = selectedVertices[0];
-              if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+              if (
+                RTStateManager.isVertexMode() &&
+                firstVertex?.getWorldPosition
+              ) {
                 // NODE-BASED: Follow the selected node's world position after snap
                 const nodeWorldPos = new THREE.Vector3();
                 firstVertex.getWorldPosition(nodeWorldPos);
@@ -3776,7 +3920,10 @@ function startARTexplorer(
               if (editingBasis) {
                 const selectedVertices = RTStateManager.getSelectedVertices();
                 const firstVertex = selectedVertices[0];
-                if (RTStateManager.isVertexMode() && firstVertex?.getWorldPosition) {
+                if (
+                  RTStateManager.isVertexMode() &&
+                  firstVertex?.getWorldPosition
+                ) {
                   // NODE-BASED: Follow the selected node's world position
                   const nodeWorldPos = new THREE.Vector3();
                   firstVertex.getWorldPosition(nodeWorldPos);
@@ -4153,6 +4300,12 @@ function startARTexplorer(
   window.RTPrimeCuts = RTPrimeCuts; // Global access for debugging
 
   // ========================================================================
+  // RT-PROJECTIONS MODULE INITIALIZATION
+  // ========================================================================
+  RTProjections.init(scene, camera, renderer);
+  window.RTProjections = RTProjections; // Global access for debugging
+
+  // ========================================================================
   // RT-VIEWMANAGER MODULE INITIALIZATION
   // ========================================================================
   RTViewManager.init({
@@ -4199,6 +4352,116 @@ function startARTexplorer(
       });
     }
   });
+
+  // Wire up projection axis selector buttons (mirrors cutplane pattern)
+  const projectionAxisButtons = [
+    // Cartesian basis
+    { id: "projectionAxisX", basis: "cartesian", axis: "x" },
+    { id: "projectionAxisY", basis: "cartesian", axis: "y" },
+    { id: "projectionAxisZ", basis: "cartesian", axis: "z" },
+    // Tetrahedral basis
+    { id: "projectionAxisQW", basis: "tetrahedral", axis: "qw" },
+    { id: "projectionAxisQX", basis: "tetrahedral", axis: "qx" },
+    { id: "projectionAxisQY", basis: "tetrahedral", axis: "qy" },
+    { id: "projectionAxisQZ", basis: "tetrahedral", axis: "qz" },
+  ];
+
+  // Track active projection axis button for persistent highlighting
+  let activeProjectionButton = document.getElementById("projectionAxisZ"); // Z is default
+
+  projectionAxisButtons.forEach(({ id, basis, axis }) => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener("click", () => {
+        // Remove active class from previously active button
+        if (activeProjectionButton) {
+          activeProjectionButton.classList.remove("active");
+        }
+
+        // Add active class to clicked button
+        btn.classList.add("active");
+        activeProjectionButton = btn;
+
+        // Update projection axis
+        RTProjections.setProjectionAxis(basis, axis);
+      });
+    }
+  });
+
+  // Wire up projection enable checkbox
+  const enableProjectionCheckbox = document.getElementById("enableProjection");
+  if (enableProjectionCheckbox) {
+    enableProjectionCheckbox.addEventListener("change", () => {
+      if (enableProjectionCheckbox.checked) {
+        // Find the first visible polyhedron to project
+        let targetPolyhedron = null;
+        scene.traverse(obj => {
+          if (!targetPolyhedron && obj.visible && obj.userData?.type) {
+            // Look for quadray polyhedra or standard polyhedra
+            if (
+              obj.userData.type.startsWith("quadray") ||
+              [
+                "tetrahedron",
+                "cube",
+                "octahedron",
+                "icosahedron",
+                "dodecahedron",
+              ].includes(obj.userData.type)
+            ) {
+              targetPolyhedron = obj;
+            }
+          }
+        });
+
+        if (targetPolyhedron) {
+          RTProjections.showProjection(targetPolyhedron);
+        } else {
+          console.warn("⚠️ No visible polyhedron found for projection");
+        }
+      } else {
+        RTProjections.hideProjection();
+      }
+    });
+  }
+
+  // Wire up projection distance slider
+  const projectionDistanceSlider =
+    document.getElementById("projectionDistance");
+  if (projectionDistanceSlider) {
+    projectionDistanceSlider.addEventListener("input", () => {
+      const value = parseFloat(projectionDistanceSlider.value);
+      const valueDisplay = document.getElementById("projectionDistanceValue");
+      if (valueDisplay) valueDisplay.textContent = value;
+      RTProjections.setProjectionDistance(value);
+    });
+  }
+
+  // Wire up projection option checkboxes
+  const projectionShowRays = document.getElementById("projectionShowRays");
+  if (projectionShowRays) {
+    projectionShowRays.addEventListener("change", () => {
+      RTProjections.state.showRays = projectionShowRays.checked;
+      RTProjections.updateProjection();
+    });
+  }
+
+  const projectionShowInterior = document.getElementById(
+    "projectionShowInterior"
+  );
+  if (projectionShowInterior) {
+    projectionShowInterior.addEventListener("change", () => {
+      RTProjections.state.showInterior = projectionShowInterior.checked;
+      RTProjections.updateProjection();
+    });
+  }
+
+  const projectionShowIdeal = document.getElementById("projectionShowIdeal");
+  if (projectionShowIdeal) {
+    projectionShowIdeal.addEventListener("change", () => {
+      RTProjections.state.showIdealPolygon = projectionShowIdeal.checked;
+      RTProjections.updateProjection();
+    });
+  }
 
   // ========================================================================
   // KEYBOARD SHORTCUTS (ESC, Delete, Undo/Redo)

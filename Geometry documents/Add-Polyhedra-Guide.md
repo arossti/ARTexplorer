@@ -1076,5 +1076,65 @@ For RT-pure forms with Q ↔ L conversion:
 
 ---
 
+## Projection Visualization Modules (Feb 2026)
+
+When adding polyhedra that may be used for prime polygon projection research, be aware of these specialized modules:
+
+### Module Overview
+
+| Module | Purpose | Key Functions |
+|--------|---------|---------------|
+| `rt-projections.js` | Generic projection for any polyhedron | `showProjection()`, `applyPreset()`, `hideProjection()` |
+| `rt-prime-cuts.js` | Prime n-gon presets (5, 7, 11, 13) | `showPrimePolygon()`, `getPreset()` |
+
+### RTProjections API
+
+```javascript
+// Show projection for any polyhedron
+RTProjections.showProjection(polyhedronGroup, {
+  showRays: true,        // Draw projection rays
+  showInterior: false,   // Show interior vertices
+  showIdealPolygon: true // Show ideal n-gon overlay
+});
+
+// Apply a prime polygon preset
+RTProjections.applyPreset(preset, scene);
+
+// Hide projection visualization
+RTProjections.hideProjection();
+```
+
+### Adding a Prime Projection Preset
+
+To add a new prime n-gon projection, update the `PROJECTION_PRESETS` registry in `rt-prime-cuts.js`:
+
+```javascript
+const PROJECTION_PRESETS = {
+  // Existing: pentagon, heptagon, hendecagon, tridecagon
+  newPrime: {
+    name: "17-gon (Heptadecagon)",
+    n: 17,
+    polyhedronType: "myNewCompound",       // userData.type
+    polyhedronCheckbox: "showMyNewCompound", // HTML element id
+    spreads: [s1, s2, s3],                 // ZYX Euler rotation spreads
+    expectedHull: 17,
+    projectionState: {
+      enabled: true,
+      basis: "custom",
+      showIdealPolygon: true,
+      customSpreads: [s1, s2, s3],
+      presetName: "newPrime",
+    },
+  },
+};
+```
+
+### Related Documentation
+
+- `Geometry documents/Project-Projection.md` - Full implementation workplan for projection system
+- `Geometry documents/Polygon-Rationalize.md` - Prime polygon research and spread configurations
+
+---
+
 _Last updated: February 2026_
 _Contributors: Andy & Claude_

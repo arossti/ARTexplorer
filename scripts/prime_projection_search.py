@@ -355,6 +355,171 @@ def get_snub_cube_vertices():
     verts = np.unique(np.round(verts, 10), axis=0)
     return verts / np.max(np.linalg.norm(verts, axis=1))
 
+# ============================================================================
+# JS-COMPATIBLE COMPOUND: TruncTet + Tetrahedron (from rt-quadray-polyhedra.js)
+# ============================================================================
+
+def get_js_compound_trunctet_tet_vertices():
+    """Compound of Truncated Tetrahedron + Tetrahedron - JS COMPATIBLE.
+
+    This produces IDENTICAL vertices to the JavaScript implementation in
+    rt-quadray-polyhedra.js `compoundTruncTetTetrahedron()`.
+
+    Uses:
+    - Quadray basis vectors: W=(1,1,1), X=(1,-1,-1), Y=(-1,1,-1), Z=(-1,-1,1)
+    - Zero-sum normalization for Quadray coords
+    - Both components normalized to same circumradius
+
+    16 vertices total (12 + 4) - for 7-gon and 11-gon projections.
+    """
+    # Quadray basis vectors (same as JS QUADRAY_BASIS)
+    BASIS_W = np.array([1, 1, 1])
+    BASIS_X = np.array([1, -1, -1])
+    BASIS_Y = np.array([-1, 1, -1])
+    BASIS_Z = np.array([-1, -1, 1])
+
+    def zero_sum_normalize(wxyz):
+        """Apply zero-sum normalization to Quadray coordinate."""
+        w, x, y, z = wxyz
+        avg = (w + x + y + z) / 4
+        return [w - avg, x - avg, y - avg, z - avg]
+
+    def wxyz_to_cartesian(w, x, y, z, scale=1.0):
+        """Convert Quadray WXYZ to Cartesian XYZ (same as JS)."""
+        return (w * scale * BASIS_W +
+                x * scale * BASIS_X +
+                y * scale * BASIS_Y +
+                z * scale * BASIS_Z)
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # 1. TRUNCATED TETRAHEDRON (12 vertices) - Quadray {2,1,0,0} permutations
+    # ═══════════════════════════════════════════════════════════════════════
+    trunctet_wxyz_raw = [
+        [2, 1, 0, 0], [2, 0, 1, 0], [2, 0, 0, 1],  # W=2
+        [1, 2, 0, 0], [0, 2, 1, 0], [0, 2, 0, 1],  # X=2
+        [1, 0, 2, 0], [0, 1, 2, 0], [0, 0, 2, 1],  # Y=2
+        [1, 0, 0, 2], [0, 1, 0, 2], [0, 0, 1, 2],  # Z=2
+    ]
+
+    # Apply zero-sum normalization
+    trunctet_wxyz_normalized = [zero_sum_normalize(c) for c in trunctet_wxyz_raw]
+
+    # Convert to Cartesian
+    trunctet_verts_raw = np.array([
+        wxyz_to_cartesian(*c, scale=1.0) for c in trunctet_wxyz_normalized
+    ])
+
+    # Calculate circumradius
+    trunctet_circumradius = np.max(np.linalg.norm(trunctet_verts_raw, axis=1))
+
+    # Normalize to unit circumradius
+    trunctet_verts = trunctet_verts_raw / trunctet_circumradius
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # 2. TETRAHEDRON (4 vertices) - EVEN PARITY for 11-gon projection
+    # CRITICAL: Must use EVEN parity vertices (product of signs = +1)
+    # This is the DUAL of the standard tetrahedron which uses ODD parity.
+    # Using wrong parity limits max hull to 10 instead of 11!
+    # ═══════════════════════════════════════════════════════════════════════
+    tet_verts_raw = np.array([
+        [1, 1, 1],     # Even parity: (+)(+)(+) = +1
+        [1, -1, -1],   # Even parity: (+)(-)(-)  = +1
+        [-1, 1, -1],   # Even parity: (-)(+)(-)  = +1
+        [-1, -1, 1],   # Even parity: (-)(-)(+)  = +1
+    ])  # Circumradius = sqrt(3) ≈ 1.732
+
+    # Calculate circumradius (should be sqrt(3) ≈ 1.732)
+    tet_circumradius = np.max(np.linalg.norm(tet_verts_raw, axis=1))
+
+    # Normalize to unit circumradius (same as trunctet)
+    tet_verts = tet_verts_raw / tet_circumradius
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # 3. COMBINE (16 total vertices)
+    # ═══════════════════════════════════════════════════════════════════════
+    combined = np.vstack([trunctet_verts, tet_verts])
+
+    print(f"  [JS Compound] TruncTet circumradius: {trunctet_circumradius:.4f}, Tet: {tet_circumradius:.4f}")
+    print(f"  [JS Compound] Both normalized to unit circumradius")
+    print(f"  [JS Compound] Total vertices: {len(combined)} (12 trunc tet + 4 tet)")
+
+    return combined
+
+
+def get_js_compound_trunctet_icosa_vertices():
+    """Compound of Truncated Tetrahedron + Icosahedron - JS COMPATIBLE.
+
+    This produces IDENTICAL vertices to the JavaScript implementation in
+    rt-quadray-polyhedra.js `compoundTruncTetIcosahedron()`.
+
+    24 vertices total (12 + 12) - for 13-gon projections.
+    """
+    # Quadray basis vectors (same as JS QUADRAY_BASIS)
+    BASIS_W = np.array([1, 1, 1])
+    BASIS_X = np.array([1, -1, -1])
+    BASIS_Y = np.array([-1, 1, -1])
+    BASIS_Z = np.array([-1, -1, 1])
+
+    def zero_sum_normalize(wxyz):
+        """Apply zero-sum normalization to Quadray coordinate."""
+        w, x, y, z = wxyz
+        avg = (w + x + y + z) / 4
+        return [w - avg, x - avg, y - avg, z - avg]
+
+    def wxyz_to_cartesian(w, x, y, z, scale=1.0):
+        """Convert Quadray WXYZ to Cartesian XYZ (same as JS)."""
+        return (w * scale * BASIS_W +
+                x * scale * BASIS_X +
+                y * scale * BASIS_Y +
+                z * scale * BASIS_Z)
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # 1. TRUNCATED TETRAHEDRON (12 vertices) - Quadray {2,1,0,0} permutations
+    # ═══════════════════════════════════════════════════════════════════════
+    trunctet_wxyz_raw = [
+        [2, 1, 0, 0], [2, 0, 1, 0], [2, 0, 0, 1],  # W=2
+        [1, 2, 0, 0], [0, 2, 1, 0], [0, 2, 0, 1],  # X=2
+        [1, 0, 2, 0], [0, 1, 2, 0], [0, 0, 2, 1],  # Y=2
+        [1, 0, 0, 2], [0, 1, 0, 2], [0, 0, 1, 2],  # Z=2
+    ]
+
+    # Apply zero-sum normalization
+    trunctet_wxyz_normalized = [zero_sum_normalize(c) for c in trunctet_wxyz_raw]
+
+    # Convert to Cartesian
+    trunctet_verts_raw = np.array([
+        wxyz_to_cartesian(*c, scale=1.0) for c in trunctet_wxyz_normalized
+    ])
+
+    # Calculate circumradius
+    trunctet_circumradius = np.max(np.linalg.norm(trunctet_verts_raw, axis=1))
+
+    # Normalize to unit circumradius
+    trunctet_verts = trunctet_verts_raw / trunctet_circumradius
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # 2. ICOSAHEDRON (12 vertices) - Golden ratio construction
+    # ═══════════════════════════════════════════════════════════════════════
+    icosa_verts_raw = get_icosahedron_vertices()  # Already normalized
+
+    # Calculate circumradius
+    icosa_circumradius = np.max(np.linalg.norm(icosa_verts_raw, axis=1))
+
+    # Normalize to unit circumradius (same as trunctet)
+    icosa_verts = icosa_verts_raw / icosa_circumradius
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # 3. COMBINE (24 total vertices)
+    # ═══════════════════════════════════════════════════════════════════════
+    combined = np.vstack([trunctet_verts, icosa_verts])
+
+    print(f"  [JS Compound] TruncTet circumradius: {trunctet_circumradius:.4f}, Icosa: {icosa_circumradius:.4f}")
+    print(f"  [JS Compound] Both normalized to unit circumradius")
+    print(f"  [JS Compound] Total vertices: {len(combined)} (12 trunc tet + 12 icosa)")
+
+    return combined
+
+
 # Compound polyhedra registry
 COMPOUNDS = {
     'stella_octangula': (get_stella_octangula_vertices, 3),
@@ -363,6 +528,9 @@ COMPOUNDS = {
     'compound_icosa_dodeca': (get_compound_icosa_dodeca_vertices, 3),
     'truncated_tetrahedron': (get_truncated_tetrahedron_vertices, 3),
     'snub_cube': (get_snub_cube_vertices, 3),
+    # JS-compatible compounds (EXACT match to rt-quadray-polyhedra.js)
+    'js_trunctet_tet': (get_js_compound_trunctet_tet_vertices, 3),
+    'js_trunctet_icosa': (get_js_compound_trunctet_icosa_vertices, 3),
 }
 
 # Merge compounds into main registry
@@ -1047,6 +1215,55 @@ def run_search(polyhedra=None, precision=4, target_primes=None,
 # COMMAND LINE INTERFACE
 # ============================================================================
 
+def verify_projection(poly_name, spreads, expected_hull=None):
+    """Quick verification of a specific projection configuration.
+
+    Args:
+        poly_name: Name of polyhedron or compound
+        spreads: (s1, s2, s3) spread values
+        expected_hull: Expected hull count (optional)
+
+    Returns:
+        Hull count and geometry dict
+    """
+    if poly_name not in POLYHEDRA:
+        print(f"Error: Unknown polyhedron '{poly_name}'")
+        return None
+
+    fn, dim = POLYHEDRA[poly_name]
+    vertices = fn()
+
+    print(f"\n{'='*60}")
+    print(f"Verifying: {poly_name} at spreads {spreads}")
+    print(f"{'='*60}")
+    print(f"  Vertices: {len(vertices)}")
+
+    if dim == 3:
+        R = rotation_matrix_3d(*spreads[:3])
+        if R is None:
+            print("  Error: Invalid rotation matrix")
+            return None
+        rotated = vertices @ R.T
+    else:
+        print("  Error: Only 3D supported for quick verify")
+        return None
+
+    projected = project_to_2d(rotated)
+    geometry = compute_hull_geometry(projected)
+
+    print(f"  Hull count: {geometry['hull_count']}")
+    if expected_hull:
+        match = "✓ MATCH" if geometry['hull_count'] == expected_hull else "✗ MISMATCH"
+        print(f"  Expected: {expected_hull} → {match}")
+
+    print(f"  Interior angles: {[f'{a:.1f}°' for a in geometry['interior_angles']]}")
+    print(f"  Angle variance: {geometry['angle_variance']:.2f}°")
+    print(f"  Edge variance: {geometry['edge_variance']:.2f}%")
+    print(f"  Regularity: {geometry['regularity_score']:.3f}")
+
+    return geometry['hull_count'], geometry
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Search for prime n-gon projections from polyhedra',
@@ -1141,7 +1358,26 @@ Symmetry-Breaking Strategy:
         help='Include pre-defined compound polyhedra in search'
     )
 
+    parser.add_argument(
+        '--verify',
+        type=str,
+        default=None,
+        help='Quick verify: polyhedron,s1,s2,s3[,expected_hull]. E.g. js_trunctet_tet,0,0.28,0.44,11'
+    )
+
     args = parser.parse_args()
+
+    # Quick verification mode
+    if args.verify:
+        parts = args.verify.split(',')
+        if len(parts) < 4:
+            print("Error: --verify requires polyhedron,s1,s2,s3[,expected]")
+            return
+        poly_name = parts[0].strip()
+        spreads = (float(parts[1]), float(parts[2]), float(parts[3]))
+        expected = int(parts[4]) if len(parts) > 4 else None
+        verify_projection(poly_name, spreads, expected)
+        return
 
     if args.list_polyhedra:
         print("\nRegular Polyhedra (central symmetry → even hull counts):")

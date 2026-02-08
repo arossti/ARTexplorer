@@ -319,23 +319,39 @@ export const RTFileHandler = {
       tetrahelix3Count: parseInt(
         document.getElementById("tetrahelix3CountSlider")?.value || "10"
       ),
-      tetrahelix3StrandA: document.getElementById("tetrahelix3StrandA")?.checked || false,
-      tetrahelix3StrandB: document.getElementById("tetrahelix3StrandB")?.checked || false,
-      tetrahelix3StrandC: document.getElementById("tetrahelix3StrandC")?.checked || false,
-      tetrahelix3StrandD: document.getElementById("tetrahelix3StrandD")?.checked || false,
-      tetrahelix3StrandE: document.getElementById("tetrahelix3StrandE")?.checked || false,
-      tetrahelix3StrandF: document.getElementById("tetrahelix3StrandF")?.checked || false,
-      tetrahelix3StrandG: document.getElementById("tetrahelix3StrandG")?.checked || false,
-      tetrahelix3StrandH: document.getElementById("tetrahelix3StrandH")?.checked || false,
+      tetrahelix3StrandA:
+        document.getElementById("tetrahelix3StrandA")?.checked || false,
+      tetrahelix3StrandB:
+        document.getElementById("tetrahelix3StrandB")?.checked || false,
+      tetrahelix3StrandC:
+        document.getElementById("tetrahelix3StrandC")?.checked || false,
+      tetrahelix3StrandD:
+        document.getElementById("tetrahelix3StrandD")?.checked || false,
+      tetrahelix3StrandE:
+        document.getElementById("tetrahelix3StrandE")?.checked || false,
+      tetrahelix3StrandF:
+        document.getElementById("tetrahelix3StrandF")?.checked || false,
+      tetrahelix3StrandG:
+        document.getElementById("tetrahelix3StrandG")?.checked || false,
+      tetrahelix3StrandH:
+        document.getElementById("tetrahelix3StrandH")?.checked || false,
       // Tetrahelix 3 chirality (checked = RH, unchecked = LH)
-      tetrahelix3ChiralA: document.getElementById("tetrahelix3ChiralA")?.checked !== false,
-      tetrahelix3ChiralB: document.getElementById("tetrahelix3ChiralB")?.checked !== false,
-      tetrahelix3ChiralC: document.getElementById("tetrahelix3ChiralC")?.checked !== false,
-      tetrahelix3ChiralD: document.getElementById("tetrahelix3ChiralD")?.checked !== false,
-      tetrahelix3ChiralE: document.getElementById("tetrahelix3ChiralE")?.checked !== false,
-      tetrahelix3ChiralF: document.getElementById("tetrahelix3ChiralF")?.checked !== false,
-      tetrahelix3ChiralG: document.getElementById("tetrahelix3ChiralG")?.checked !== false,
-      tetrahelix3ChiralH: document.getElementById("tetrahelix3ChiralH")?.checked !== false,
+      tetrahelix3ChiralA:
+        document.getElementById("tetrahelix3ChiralA")?.checked !== false,
+      tetrahelix3ChiralB:
+        document.getElementById("tetrahelix3ChiralB")?.checked !== false,
+      tetrahelix3ChiralC:
+        document.getElementById("tetrahelix3ChiralC")?.checked !== false,
+      tetrahelix3ChiralD:
+        document.getElementById("tetrahelix3ChiralD")?.checked !== false,
+      tetrahelix3ChiralE:
+        document.getElementById("tetrahelix3ChiralE")?.checked !== false,
+      tetrahelix3ChiralF:
+        document.getElementById("tetrahelix3ChiralF")?.checked !== false,
+      tetrahelix3ChiralG:
+        document.getElementById("tetrahelix3ChiralG")?.checked !== false,
+      tetrahelix3ChiralH:
+        document.getElementById("tetrahelix3ChiralH")?.checked !== false,
       // Planar matrix size sliders
       cubeMatrixSizeSlider: parseInt(
         document.getElementById("cubeMatrixSizeSlider")?.value || "1"
@@ -469,6 +485,22 @@ export const RTFileHandler = {
         colorPalette: this.stateManager.getColorPalette(),
         canvasBackground: this.stateManager.state.environment.canvasBackground,
         uiBackground: this.stateManager.state.environment.uiBackground,
+        // Projection state (from RTProjections if available)
+        projection: window.RTProjections
+          ? {
+              enabled: window.RTProjections.state.enabled,
+              basis: window.RTProjections.state.basis,
+              axis: window.RTProjections.state.axis,
+              distance: window.RTProjections.state.distance,
+              showRays: window.RTProjections.state.showRays,
+              showInterior: window.RTProjections.state.showInterior,
+              showIdealPolygon: window.RTProjections.state.showIdealPolygon,
+              customSpreads: window.RTProjections.state.customSpreads || null,
+              presetName: window.RTProjections.state.presetName || null,
+              targetPolyhedronType:
+                window.RTProjections.state.targetPolyhedronType || null,
+            }
+          : this.stateManager.state.environment.projection,
       },
 
       instances: this.stateManager.state.instances.map(instance => ({
@@ -733,12 +765,16 @@ export const RTFileHandler = {
           if (checkbox) checkbox.checked = sliders.tetrahelix2DirMinus;
         }
         // Legacy: handle old tetrahelix2Direction radio format during import
-        if (sliders.tetrahelix2Direction !== undefined &&
-            sliders.tetrahelix2DirPlus === undefined) {
+        if (
+          sliders.tetrahelix2Direction !== undefined &&
+          sliders.tetrahelix2DirPlus === undefined
+        ) {
           const plusCheckbox = document.getElementById("tetrahelix2DirPlus");
           const minusCheckbox = document.getElementById("tetrahelix2DirMinus");
-          if (plusCheckbox) plusCheckbox.checked = sliders.tetrahelix2Direction === "+";
-          if (minusCheckbox) minusCheckbox.checked = sliders.tetrahelix2Direction === "-";
+          if (plusCheckbox)
+            plusCheckbox.checked = sliders.tetrahelix2Direction === "+";
+          if (minusCheckbox)
+            minusCheckbox.checked = sliders.tetrahelix2Direction === "-";
         }
         if (sliders.tetrahelix2Strands !== undefined) {
           const radio = document.querySelector(
@@ -1080,6 +1116,76 @@ export const RTFileHandler = {
         }
 
         console.log("✅ Environment backgrounds restored");
+      }
+
+      // Restore projection state
+      if (stateData.environment?.projection) {
+        const proj = stateData.environment.projection;
+
+        // Update RTProjections state if available
+        if (window.RTProjections) {
+          Object.assign(window.RTProjections.state, {
+            enabled: proj.enabled || false,
+            basis: proj.basis || "cartesian",
+            axis: proj.axis || "z",
+            distance: proj.distance || 3,
+            showRays: proj.showRays !== false,
+            showInterior: proj.showInterior || false,
+            showIdealPolygon: proj.showIdealPolygon || false,
+            customSpreads: proj.customSpreads || null,
+            presetName: proj.presetName || null,
+            targetPolyhedronType: proj.targetPolyhedronType || null,
+          });
+        }
+
+        // Update StateManager environment
+        this.stateManager.state.environment.projection = proj;
+
+        // Update UI elements
+        const enableCheckbox = document.getElementById("enableProjection");
+        if (enableCheckbox) enableCheckbox.checked = proj.enabled;
+
+        const distanceSlider = document.getElementById("projectionDistance");
+        const distanceValue = document.getElementById(
+          "projectionDistanceValue"
+        );
+        if (distanceSlider) distanceSlider.value = proj.distance;
+        if (distanceValue) distanceValue.textContent = proj.distance;
+
+        const showRaysCheckbox = document.getElementById("projectionShowRays");
+        if (showRaysCheckbox)
+          showRaysCheckbox.checked = proj.showRays !== false;
+
+        const showInteriorCheckbox = document.getElementById(
+          "projectionShowInterior"
+        );
+        if (showInteriorCheckbox)
+          showInteriorCheckbox.checked = proj.showInterior;
+
+        const showIdealCheckbox = document.getElementById(
+          "projectionShowIdeal"
+        );
+        if (showIdealCheckbox)
+          showIdealCheckbox.checked = proj.showIdealPolygon;
+
+        // Update axis button highlighting
+        document.querySelectorAll(".projection-axis-btn").forEach(btn => {
+          btn.classList.remove("active");
+        });
+        const axisId =
+          proj.basis === "cartesian"
+            ? `projectionAxis${proj.axis.toUpperCase()}`
+            : `projectionAxis${proj.axis.toUpperCase()}`;
+        const axisBtn = document.getElementById(axisId);
+        if (axisBtn) axisBtn.classList.add("active");
+
+        // Show/hide projection controls panel
+        const projectionOptions = document.getElementById("projection-options");
+        if (projectionOptions) {
+          projectionOptions.style.display = proj.enabled ? "block" : "none";
+        }
+
+        console.log("✅ Projection state restored");
       }
 
       // Restore instances

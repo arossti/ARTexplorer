@@ -40,55 +40,49 @@ export { PerformanceClock };
  * Reference: Geometry documents/Prime-Projection-Conjecture.tex
  */
 export const CAMERA_PRESETS = {
-  // Prime projection discovery views
-  heptagonProjection: {
-    name: "7-gon Projection",
-    description: "Truncated tetrahedron projection (9-hull at current spreads; 7 TBD)",
-    spreads: [0.11, 0, 0.5], // (s1, s2, s3) via ZYX rotation - produces 9-hull
-    recommendedForm: "quadrayTruncatedTetrahedron",
-    reference: "Prime-Projection-Conjecture.tex §8.4",
-  },
+  // ═══════════════════════════════════════════════════════════════════════
+  // PRIME PROJECTION VIEWS - Verified by Project-Streamline (2026-02-07)
+  // Source: prime_projections_verified.json
+  // ═══════════════════════════════════════════════════════════════════════
   pentagonProjection: {
     name: "5-gon Projection",
-    description: "Truncated tetrahedron axis view - verified 5-hull",
-    spreads: [0, 0, 0.5], // Pure 45° X rotation
+    description: "Truncated tetrahedron → 5-vertex hull",
+    spreads: [0.01, 0.5, 0], // Verified Project-Streamline
     recommendedForm: "quadrayTruncatedTetrahedron",
-    reference: "Gauss-Wantzel constructible (Fermat prime)",
+    reference: "prime_projections_verified.json (Project-Streamline)",
+    compound: ["truncatedTetrahedron"],
+    totalVertices: 12,
+    note: "Pentagon - Gauss-Wantzel constructible (Fermat prime)",
   },
-  // ═══════════════════════════════════════════════════════════════════════
-  // BREAKTHROUGH PROJECTIONS (Feb 2026)
-  // Compound polyhedra produce prime hulls beyond Gauss-Wantzel constructibility
-  // ═══════════════════════════════════════════════════════════════════════
+  heptagonProjectionTet: {
+    name: "7-gon Projection",
+    description: "TruncTet+Tet compound → 7-vertex hull",
+    spreads: [0, 0.01, 0.14], // Verified Project-Streamline
+    recommendedForm: "quadrayCompoundTet",
+    reference: "prime_projections_verified.json (Project-Streamline)",
+    compound: ["truncatedTetrahedron", "tetrahedron"],
+    totalVertices: 16,
+    note: "Heptagon via tet-family compound - bypasses Gauss-Wantzel",
+  },
   hendecagonProjection: {
     name: "11-gon Projection",
-    description: "Compound (truncated tet + icosahedron) - NOT algebraically solvable!",
-    spreads: [0, 0.4, 0.2], // Verified 11-hull
+    description: "TruncTet+Icosa compound → 11-vertex hull",
+    spreads: [0, 0, 0.5], // Corrected circumradius (Feb 2026)
     recommendedForm: "quadrayCompound",
-    reference: "Prime-Projection-Conjecture.tex §BREAKTHROUGH",
+    reference: "prime_projections_corrected.json",
     compound: ["truncatedTetrahedron", "icosahedron"],
     totalVertices: 24,
     note: "Hendecagon requires quintic polynomial - bypassed via projection",
   },
   tridecagonProjection: {
     name: "13-gon Projection",
-    description: "Compound (truncated tet + icosahedron) - NOT algebraically solvable!",
-    spreads: [0, 0.6, 0.8], // Verified 13-hull
+    description: "TruncTet+Icosa compound → 13-vertex hull",
+    spreads: [0, 0.01, 0.96], // Corrected circumradius (Feb 2026)
     recommendedForm: "quadrayCompound",
-    reference: "Prime-Projection-Conjecture.tex §BREAKTHROUGH",
+    reference: "prime_projections_corrected.json",
     compound: ["truncatedTetrahedron", "icosahedron"],
     totalVertices: 24,
     note: "Tridecagon requires sextic polynomial - bypassed via projection",
-  },
-  // 7-gon from TruncTet+Tet compound (Feb 2026)
-  heptagonProjectionTet: {
-    name: "7-gon Projection (TruncTet+Tet)",
-    description: "Compound (truncated tet + tetrahedron) - true 7-hull via tet-family",
-    spreads: [0, 0.4, 0.04], // JS convention (swapped from Python's (0, 0.04, 0.4))
-    recommendedForm: "quadrayCompoundTet",
-    reference: "Polygon-Rationalize.md §7b",
-    compound: ["truncatedTetrahedron", "tetrahedron"],
-    totalVertices: 16,
-    note: "Heptagon via tet-family compound projection - bypasses Gauss-Wantzel",
   },
 };
 
@@ -169,6 +163,7 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayStellaOctangulaGroup,
     quadrayCompoundGroup,
     quadrayCompoundTetGroup; // Quadray demonstrators
+  let primeTruncTetGroup, primeCompoundTetGroup, primeCompoundIcosaGroup; // Prime polygon projection polyhedra (base geometry)
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
@@ -382,6 +377,16 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayCompoundTetGroup = new THREE.Group();
     quadrayCompoundTetGroup.userData.type = "quadrayCompoundTet";
 
+    // Prime polygon projection polyhedra (base geometry - no Quadray normalization)
+    primeTruncTetGroup = new THREE.Group();
+    primeTruncTetGroup.userData.type = "primeTruncTet";
+
+    primeCompoundTetGroup = new THREE.Group();
+    primeCompoundTetGroup.userData.type = "primeCompoundTet";
+
+    primeCompoundIcosaGroup = new THREE.Group();
+    primeCompoundIcosaGroup.userData.type = "primeCompoundIcosa";
+
     scene.add(pointGroup);
     scene.add(lineGroup);
     scene.add(polygonGroup);
@@ -423,6 +428,10 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(quadrayStellaOctangulaGroup);
     scene.add(quadrayCompoundGroup);
     scene.add(quadrayCompoundTetGroup);
+    // Prime polygon projection polyhedra
+    scene.add(primeTruncTetGroup);
+    scene.add(primeCompoundTetGroup);
+    scene.add(primeCompoundIcosaGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -2027,9 +2036,21 @@ export function initScene(THREE, OrbitControls, RT) {
       cubeMatrixGroup.visible = false;
     }
 
-    // Tetrahedron (Yellow)
+    // Tetrahedron (Yellow) - with optional truncation
     if (document.getElementById("showTetrahedron").checked) {
-      const tetra = Polyhedra.tetrahedron(scale);
+      let tetra;
+
+      // Check if truncation is enabled
+      const truncCheckbox = document.getElementById("showTruncatedTetrahedron");
+      if (truncCheckbox && truncCheckbox.checked) {
+        // Get truncation value from slider
+        const truncSlider = document.getElementById("truncationTetraSlider");
+        const truncation = truncSlider ? parseFloat(truncSlider.value) : 1 / 3;
+        tetra = Polyhedra.truncatedTetrahedron(scale, truncation);
+      } else {
+        tetra = Polyhedra.tetrahedron(scale);
+      }
+
       renderPolyhedron(
         tetrahedronGroup,
         tetra,
@@ -2608,7 +2629,8 @@ export function initScene(THREE, OrbitControls, RT) {
     // Quadray Stella Octangula (Star Tetrahedron - compound of two tetrahedra)
     if (document.getElementById("showQuadrayStellaOctangula")?.checked) {
       const normalize =
-        document.getElementById("quadrayStellaOctangulaNormalize")?.checked ?? true;
+        document.getElementById("quadrayStellaOctangulaNormalize")?.checked ??
+        true;
       const stellaOcta = Polyhedra.quadrayStellaOctangula(scale, {
         normalize: normalize,
       });
@@ -2627,88 +2649,212 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayStellaOctangulaGroup.visible = false;
     }
 
-    // Quadray Compound (Truncated Tetrahedron + Icosahedron) for 11/13-gon projections
+    // Compound (Truncated Tetrahedron + Icosahedron) for 11/13-gon projections
+    // Uses BASE Polyhedra functions - NO Quadray normalization
+    // Same scale as Python search for exact vertex parity
     if (document.getElementById("showQuadrayCompound")?.checked) {
-      const normalize =
-        document.getElementById("quadrayCompoundNormalize")?.checked ?? true;
-      // Async compound generator - render components with distinct colors
-      Polyhedra.quadrayCompoundTruncTetIcosa(scale, {
-        normalize: normalize,
-      }).then(compound => {
-        // Clear existing group
-        while (quadrayCompoundGroup.children.length > 0) {
-          quadrayCompoundGroup.remove(quadrayCompoundGroup.children[0]);
-        }
-        // Render truncated tetrahedron component with its color
-        const truncTetSubGroup = new THREE.Group();
-        truncTetSubGroup.userData.type = "truncatedTetrahedron";
-        renderPolyhedron(
-          truncTetSubGroup,
-          compound.components.truncatedTetrahedron,
-          colorPalette.quadrayTruncatedTet,
-          opacity
-        );
-        quadrayCompoundGroup.add(truncTetSubGroup);
-        // Render icosahedron component with its default color (cyan) for contrast
-        const icosaSubGroup = new THREE.Group();
-        icosaSubGroup.userData.type = "icosahedron";
-        renderPolyhedron(
-          icosaSubGroup,
-          compound.components.icosahedron,
-          colorPalette.icosahedron,
-          opacity
-        );
-        quadrayCompoundGroup.add(icosaSubGroup);
-        quadrayCompoundGroup.userData.parameters = {
-          normalize: normalize,
-          wxyz: compound.truncTetNormalized,
-        };
-        quadrayCompoundGroup.visible = true;
-      });
+      // Clear existing group
+      while (quadrayCompoundGroup.children.length > 0) {
+        quadrayCompoundGroup.remove(quadrayCompoundGroup.children[0]);
+      }
+
+      // Use base compound function - matches Python rt_polyhedra.py exactly
+      // Scale factor applied uniformly to maintain relative proportions
+      const compound = Polyhedra.compoundTruncTetIcosa(scale, 1 / 3);
+
+      // Render truncated tetrahedron component
+      const truncTetSubGroup = new THREE.Group();
+      truncTetSubGroup.userData.type = "truncatedTetrahedron";
+      renderPolyhedron(
+        truncTetSubGroup,
+        compound.components.truncatedTetrahedron,
+        colorPalette.quadrayTruncatedTet,
+        opacity
+      );
+      quadrayCompoundGroup.add(truncTetSubGroup);
+
+      // Render icosahedron component
+      const icosaSubGroup = new THREE.Group();
+      icosaSubGroup.userData.type = "icosahedron";
+      renderPolyhedron(
+        icosaSubGroup,
+        compound.components.icosahedron,
+        colorPalette.icosahedron,
+        opacity
+      );
+      quadrayCompoundGroup.add(icosaSubGroup);
+
+      quadrayCompoundGroup.userData.parameters = {
+        scale: scale,
+        truncation: 1 / 3,
+        metadata: compound.metadata,
+      };
+      quadrayCompoundGroup.visible = true;
     } else {
       quadrayCompoundGroup.visible = false;
     }
 
-    // Quadray Compound (Truncated Tetrahedron + Tetrahedron) for 7-gon projections
+    // Compound (Truncated Tetrahedron + Tetrahedron) for 7-gon projections
+    // Uses BASE Polyhedra functions - NO Quadray normalization
     if (document.getElementById("showQuadrayCompoundTet")?.checked) {
-      const normalize =
-        document.getElementById("quadrayCompoundTetNormalize")?.checked ?? true;
-      // Async compound generator - render components with distinct colors
-      Polyhedra.quadrayCompoundTruncTetTet(scale, {
-        normalize: normalize,
-      }).then(compound => {
-        // Clear existing group
-        while (quadrayCompoundTetGroup.children.length > 0) {
-          quadrayCompoundTetGroup.remove(quadrayCompoundTetGroup.children[0]);
-        }
-        // Render truncated tetrahedron component with its color
-        const truncTetSubGroup = new THREE.Group();
-        truncTetSubGroup.userData.type = "truncatedTetrahedron";
-        renderPolyhedron(
-          truncTetSubGroup,
-          compound.components.truncatedTetrahedron,
-          colorPalette.quadrayTruncatedTet,
-          opacity
-        );
-        quadrayCompoundTetGroup.add(truncTetSubGroup);
-        // Render tetrahedron component with its default color (yellow) for contrast
-        const tetSubGroup = new THREE.Group();
-        tetSubGroup.userData.type = "tetrahedron";
-        renderPolyhedron(
-          tetSubGroup,
-          compound.components.tetrahedron,
-          colorPalette.tetrahedron,
-          opacity
-        );
-        quadrayCompoundTetGroup.add(tetSubGroup);
-        quadrayCompoundTetGroup.userData.parameters = {
-          normalize: normalize,
-          wxyz: compound.truncTetNormalized,
-        };
-        quadrayCompoundTetGroup.visible = true;
-      });
+      // Clear existing group
+      while (quadrayCompoundTetGroup.children.length > 0) {
+        quadrayCompoundTetGroup.remove(quadrayCompoundTetGroup.children[0]);
+      }
+
+      // Use base compound function - matches Python rt_polyhedra.py exactly
+      const compound = Polyhedra.compoundTruncTetTet(scale, 1 / 3);
+
+      // Render truncated tetrahedron component
+      const truncTetSubGroup = new THREE.Group();
+      truncTetSubGroup.userData.type = "truncatedTetrahedron";
+      renderPolyhedron(
+        truncTetSubGroup,
+        compound.components.truncatedTetrahedron,
+        colorPalette.quadrayTruncatedTet,
+        opacity
+      );
+      quadrayCompoundTetGroup.add(truncTetSubGroup);
+
+      // Render tetrahedron component
+      const tetSubGroup = new THREE.Group();
+      tetSubGroup.userData.type = "tetrahedron";
+      renderPolyhedron(
+        tetSubGroup,
+        compound.components.tetrahedron,
+        colorPalette.tetrahedron,
+        opacity
+      );
+      quadrayCompoundTetGroup.add(tetSubGroup);
+
+      quadrayCompoundTetGroup.userData.parameters = {
+        scale: scale,
+        truncation: 1 / 3,
+        metadata: compound.metadata,
+      };
+      quadrayCompoundTetGroup.visible = true;
     } else {
       quadrayCompoundTetGroup.visible = false;
+    }
+
+    // ========== PRIME POLYGON PROJECTION POLYHEDRA ==========
+    // These use BASE Polyhedra functions (no Quadray normalization)
+    // Single source of truth for prime hull projections
+
+    // Prime Truncated Tetrahedron (5-gon)
+    if (document.getElementById("showPrimeTruncTet")?.checked) {
+      // Clear existing group
+      while (primeTruncTetGroup.children.length > 0) {
+        primeTruncTetGroup.remove(primeTruncTetGroup.children[0]);
+      }
+
+      // Use base truncated tetrahedron - matches Python rt_polyhedra.py exactly
+      const truncTet = Polyhedra.truncatedTetrahedron(scale, 1 / 3);
+
+      renderPolyhedron(
+        primeTruncTetGroup,
+        truncTet,
+        colorPalette.quadrayTruncatedTet, // Reuse color
+        opacity
+      );
+
+      primeTruncTetGroup.userData = {
+        type: "primeTruncTet",
+        parameters: { scale: scale, truncation: 1 / 3 },
+      };
+      primeTruncTetGroup.visible = true;
+    } else {
+      primeTruncTetGroup.visible = false;
+    }
+
+    // Prime Compound (TruncTet + Tet) for 7-gon
+    if (document.getElementById("showPrimeCompoundTet")?.checked) {
+      // Clear existing group
+      while (primeCompoundTetGroup.children.length > 0) {
+        primeCompoundTetGroup.remove(primeCompoundTetGroup.children[0]);
+      }
+
+      // Use base compound function - matches Python rt_polyhedra.py exactly
+      const compound = Polyhedra.compoundTruncTetTet(scale, 1 / 3);
+
+      // Render truncated tetrahedron component
+      const truncTetSubGroup = new THREE.Group();
+      truncTetSubGroup.userData.type = "truncatedTetrahedron";
+      renderPolyhedron(
+        truncTetSubGroup,
+        compound.components.truncatedTetrahedron,
+        colorPalette.quadrayTruncatedTet,
+        opacity
+      );
+      primeCompoundTetGroup.add(truncTetSubGroup);
+
+      // Render tetrahedron component
+      const tetSubGroup = new THREE.Group();
+      tetSubGroup.userData.type = "tetrahedron";
+      renderPolyhedron(
+        tetSubGroup,
+        compound.components.tetrahedron,
+        colorPalette.tetrahedron,
+        opacity
+      );
+      primeCompoundTetGroup.add(tetSubGroup);
+
+      primeCompoundTetGroup.userData = {
+        type: "primeCompoundTet",
+        parameters: {
+          scale: scale,
+          truncation: 1 / 3,
+          metadata: compound.metadata,
+        },
+      };
+      primeCompoundTetGroup.visible = true;
+    } else {
+      primeCompoundTetGroup.visible = false;
+    }
+
+    // Prime Compound (TruncTet + Icosa) for 11/13-gon
+    if (document.getElementById("showPrimeCompoundIcosa")?.checked) {
+      // Clear existing group
+      while (primeCompoundIcosaGroup.children.length > 0) {
+        primeCompoundIcosaGroup.remove(primeCompoundIcosaGroup.children[0]);
+      }
+
+      // Use base compound function - matches Python rt_polyhedra.py exactly
+      const compound = Polyhedra.compoundTruncTetIcosa(scale, 1 / 3);
+
+      // Render truncated tetrahedron component
+      const truncTetSubGroup = new THREE.Group();
+      truncTetSubGroup.userData.type = "truncatedTetrahedron";
+      renderPolyhedron(
+        truncTetSubGroup,
+        compound.components.truncatedTetrahedron,
+        colorPalette.quadrayTruncatedTet,
+        opacity
+      );
+      primeCompoundIcosaGroup.add(truncTetSubGroup);
+
+      // Render icosahedron component
+      const icosaSubGroup = new THREE.Group();
+      icosaSubGroup.userData.type = "icosahedron";
+      renderPolyhedron(
+        icosaSubGroup,
+        compound.components.icosahedron,
+        colorPalette.icosahedron,
+        opacity
+      );
+      primeCompoundIcosaGroup.add(icosaSubGroup);
+
+      primeCompoundIcosaGroup.userData = {
+        type: "primeCompoundIcosa",
+        parameters: {
+          scale: scale,
+          truncation: 1 / 3,
+          metadata: compound.metadata,
+        },
+      };
+      primeCompoundIcosaGroup.visible = true;
+    } else {
+      primeCompoundIcosaGroup.visible = false;
     }
 
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
@@ -3663,7 +3809,9 @@ export function initScene(THREE, OrbitControls, RT) {
         quadrayTruncTet.edges.length,
         quadrayTruncTet.faces.length
       );
-      const triangles = quadrayTruncTet.faces.filter(f => f.length === 3).length;
+      const triangles = quadrayTruncTet.faces.filter(
+        f => f.length === 3
+      ).length;
       const hexagons = quadrayTruncTet.faces.filter(f => f.length === 6).length;
       html += `<div style="margin-top: 10px;"><strong>Quadray Truncated Tetrahedron:</strong></div>`;
       html += `<div>WXYZ: {2,1,0,0} permutations (ALL rational!)</div>`;
@@ -3756,7 +3904,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // Hide prime polygon overlay unless switching to a prime projection view
     const primeProjectionViews = [
       "pentagonProjection",
-      "heptagonProjection",
+      "heptagonProjectionTet",
       "hendecagonProjection",
       "tridecagonProjection",
     ];
@@ -3851,14 +3999,12 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // ═══════════════════════════════════════════════════════════════════════
-      // PRIME PROJECTION VIEWS (Rational n-gon discovery)
+      // PRIME PROJECTION VIEWS - Verified by Project-Streamline (2026-02-07)
       // Uses CAMERA_PRESETS configuration for extensibility
-      // Reference: Geometry documents/Prime-Projection-Conjecture.tex
       // ═══════════════════════════════════════════════════════════════════════
 
-      case "heptagonProjection":
-      case "heptagonProjectionTet":
       case "pentagonProjection":
+      case "heptagonProjectionTet":
       case "hendecagonProjection":
       case "tridecagonProjection": {
         const preset = CAMERA_PRESETS[view];
@@ -3882,7 +4028,6 @@ export function initScene(THREE, OrbitControls, RT) {
         // Determine polygon sides from preset name
         const polygonSidesMap = {
           pentagonProjection: 5,
-          heptagonProjection: 7,
           heptagonProjectionTet: 7,
           hendecagonProjection: 11,
           tridecagonProjection: 13,

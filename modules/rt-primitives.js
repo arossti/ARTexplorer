@@ -532,30 +532,24 @@ export const Primitives = {
     const sqrt3 = RT.PureRadicals.sqrt3();
 
     // Cached cubic-derived values from RT.PureCubics.nonagon
+    const cos20 = RT.PureCubics.nonagon.cos20();
+    const sin20 = RT.PureCubics.nonagon.sin20();
     const cos40 = RT.PureCubics.nonagon.cos40();
     const sin40 = RT.PureCubics.nonagon.sin40();
     const cos80 = RT.PureCubics.nonagon.cos80();
     const sin80 = RT.PureCubics.nonagon.sin80();
 
     // 9 vertices at 40° intervals: 0°, 40°, 80°, 120°, 160°, 200°, 240°, 280°, 320°
+    // Angles derived from cubic 8x³ - 6x - 1 = 0 (cos 20°)
     const vertices = [
-      // Triangle 1 vertices (RT-pure √3)
       new THREE.Vector3(R, 0, 0), // 0°
-      // Triangle 2 vertex
       new THREE.Vector3(R * cos40, R * sin40, 0), // 40°
-      // Triangle 3 vertex
       new THREE.Vector3(R * cos80, R * sin80, 0), // 80°
-      // Triangle 1 vertex (RT-pure √3)
-      new THREE.Vector3(-R / 2, (R * sqrt3) / 2, 0), // 120°
-      // Triangle 2 vertex (160° = 120° + 40°, or cos(160°) = -cos(20°), sin(160°) = sin(20°))
-      new THREE.Vector3(-R * cos40, R * sin40, 0), // 160° = 180° - 20°
-      // Triangle 3 vertex (200° = 120° + 80°)
-      new THREE.Vector3(-R * cos80, -R * sin80, 0), // 200° = 180° + 20°
-      // Triangle 1 vertex (RT-pure √3)
-      new THREE.Vector3(-R / 2, (-R * sqrt3) / 2, 0), // 240°
-      // Triangle 2 vertex (280° = 240° + 40°)
+      new THREE.Vector3(-R / 2, (R * sqrt3) / 2, 0), // 120° (RT-pure √3)
+      new THREE.Vector3(-R * cos20, R * sin20, 0), // 160° = 180° - 20°
+      new THREE.Vector3(-R * cos20, -R * sin20, 0), // 200° = 180° + 20°
+      new THREE.Vector3(-R / 2, (-R * sqrt3) / 2, 0), // 240° (RT-pure √3)
       new THREE.Vector3(R * cos80, -R * sin80, 0), // 280° = 360° - 80°
-      // Triangle 3 vertex (320° = 240° + 80°)
       new THREE.Vector3(R * cos40, -R * sin40, 0), // 320° = 360° - 40°
     ];
 
