@@ -40,7 +40,7 @@
 \title{The 4D± Prime Projection Conjecture\\
 \large Rational-Spread Projections of Higher-Dimensional Polytopes\\
 as a Source of Non-Constructible Prime n-Gons\\[0.5em]
-\normalsize v3.1 -- February 2026}
+\normalsize v4.0 -- February 2026}
 
 \author{Andrew Thomson\\
 \small Open Building / ARTexplorer Project\\
@@ -55,15 +55,15 @@ as a Source of Non-Constructible Prime n-Gons\\[0.5em]
 \begin{abstract}
 This paper presents the \textbf{4D± Prime Projection Conjecture}: that prime-sided polygons (7, 11, 13, 19...), which are non-constructible in 2D under the Gauss-Wantzel theorem, might emerge as rational-spread projections of higher-dimensional polytope structures. We describe the problem of irrational polygon construction, introduce a computational search methodology using rational spread values, and report experimental findings. Key results include the discovery of the \textbf{Symmetry Barrier}---regular polytopes with central symmetry always project to even-sided hull boundaries---and its resolution through \textbf{asymmetric polytopes} and \textbf{compound polyhedra}.
 
-\textbf{Breakthrough findings (v3.1, Feb 2026):}
+\textbf{Breakthrough findings (v4.0, Feb 2026):}
 \begin{itemize}
-    \item \textbf{5-gon}: Truncated tetrahedron at spreads $(0.01, 0.5, 0)$ --- 145 projections found
-    \item \textbf{7-gon}: Truncated tet + tetrahedron (16v) at spreads $(0, 0.01, 0.14)$ --- 438,406 projections found
-    \item \textbf{11-gon}: Truncated tet + icosahedron (24v) at spreads $(0, 0.01, 0.1)$ --- 36,360 projections found
-    \item \textbf{13-gon}: Same compound at spreads $(0, 0.01, 0.14)$ --- 4,347 projections found
+    \item \textbf{5-gon}: Truncated tetrahedron at $s=(0, \frac{1}{2}, 0)$ --- Tier~1 rational, $\sqrt{2}$ family
+    \item \textbf{7-gon}: TruncTet + DualTet (16v) at $s=(\frac{1}{2}, \frac{1}{2}, \frac{1}{2})$ --- Tier~1, all spreads equal
+    \item \textbf{11-gon}: TruncTet + Icosahedron (24v) at $s=(\frac{3}{4}, \frac{1}{4}, \frac{1}{2})$ --- Tier~1, $\sqrt{2}/\sqrt{3}$ family
+    \item \textbf{13-gon}: Same compound at $s=(\frac{9}{10}, \frac{24}{25}, \frac{19}{20})$ --- Tier~3, $\sqrt{5}$ family
 \end{itemize}
 
-These primes (7, 11, 13) require cubic, quintic, and sextic polynomials respectively---beyond algebraic solvability---yet emerge naturally from rational-spread projections of 3D compound polyhedra.
+All four primes emerge at \textbf{exact rational spreads}---not decimal approximations. The first three (5, 7, 11) use only Tier~1 denominators $\{2, 3, 4\}$, with rotation matrices expressible entirely in cached $\sqrt{2}$ and $\sqrt{3}$ radicals. The 13-gon requires the $\sqrt{5}$ (golden ratio) family. No sin, cos, tan, or $\pi$ appears anywhere in the pipeline.
 \end{abstract}
 
 \tableofcontents
@@ -450,19 +450,24 @@ Remaining candidates include asymmetric and chiral polyhedra:
 
 The Quadray axes offer non-obvious viewing angles that Cartesian projections miss. The truncated tetrahedron, for instance, has purely rational Quadray coordinates (permutations of $\{2,1,0,0\}$), making Quadray viewing angles particularly natural for this form.
 
-\textbf{Phase 2: Rational Spread Grid Search}
+\textbf{Phase 2: Rational Spread Grid Search (Path A)}
 
-For candidates showing promising on-axis results (hull count near target prime):
-\begin{lstlisting}[language=Python, caption=Phase 2 grid search]
-for s1 in [0.0001, 0.0002, ..., 1.0000]:   # 4 decimal places
-    for s2 in [0.0001, 0.0002, ..., 1.0000]:
-        for s3 in [0.0001, 0.0002, ..., 1.0000]:
+Instead of searching over uniform decimal grids, we search over \textbf{algebraically significant rationals} organized in tiers:
+
+\begin{lstlisting}[language=Python, caption=Path A rational tier search]
+# Tier 1 (RT-pure): q in {2, 3, 4}  -> 7 spread values
+# Tier 2 (phi):     q in {5, 8, 10}  -> 19 spread values
+# Tier 3 (algebraic): q in {6, 9, 12, 16, 20, 25} -> 67 values
+
+for s1 in rational_spreads:      # e.g. 0, 1/4, 1/3, 1/2, 2/3, 3/4, 1
+    for s2 in rational_spreads:
+        for s3 in rational_spreads:
             R = rotation_from_spreads(s1, s2, s3)
             hull_count = project_and_count(vertices, R)
             if is_prime(hull_count): record(s1, s2, s3, hull_count)
 \end{lstlisting}
 
-With 4 decimal places, we search $10000^3 \approx 10^{12}$ configurations per polyhedron. In practice, we use adaptive sampling: coarse grid first (2dp), then refine promising regions.
+Tier~1 searches $7^3 = 343$ configurations per polyhedron; Tier~3 searches $67^3 \approx 300{,}000$. This is far smaller than the decimal grid ($101^3 \approx 10^6$) but targets algebraically meaningful spreads whose rotation matrices are expressible in cached radicals ($\sqrt{2}$, $\sqrt{3}$, $\sqrt{5}$).
 
 \textbf{Phase 3: Fine Refinement} (Local optimization)
 
@@ -492,23 +497,22 @@ For each spread tuple $(s_1, s_2, s_3)$ that produces target prime hull:
 
 \subsection{The Prime Projection Search Script}
 
-We developed a Python-based search tool (\texttt{scripts/prime\_projection\_search.py}) using NumPy and SciPy for efficient computation.
+We developed a Python-based search tool (\texttt{scripts/prime\_search\_streamlined.py}) using RT-pure modules ported directly from JavaScript (\texttt{rt\_math.py}, \texttt{rt\_polyhedra.py}).
 
 \begin{lstlisting}[language=Python, caption=Core search algorithm (pseudocode)]
-def search_polyhedron(poly_name, precision, target_primes):
-    vertices = get_polyhedron_vertices(poly_name)
-    spreads = generate_rational_spreads(precision)  # 0.00, 0.01, ..., 1.00
+def search_for_prime(target_prime, rational_tier=0):
+    vertices = PRIME_CONFIGS[target_prime]['vertices']()
 
-    for spread_tuple in product(spreads, repeat=num_rotation_params):
-        R = rotation_matrix_from_spreads(spread_tuple)
-        rotated = vertices @ R.T
-        projected = project_to_2d(rotated)
+    if rational_tier > 0:
+        spreads = generate_rational_spread_grid(rational_tier)
+    else:
+        spreads = generate_spread_grid(precision)
 
-        hull = ConvexHull(projected)
-        hull_count = len(hull.vertices)
-
-        if hull_count in target_primes:
-            record_finding(poly_name, spread_tuple, hull_count)
+    for s1, s2, s3 in product(spreads, repeat=3):
+        hull_count = count_hull_vertices(vertices, s1, s2, s3)
+        if hull_count == target_prime:
+            geometry = compute_hull_geometry(get_hull_points(...))
+            record(s1, s2, s3, hull_count, geometry)
 \end{lstlisting}
 
 \subsection{Polyhedra Library}
@@ -640,23 +644,21 @@ Exhaustive search on the truncated tetrahedron (12 vertices) with precision 0.05
 \caption{Hull count distribution for truncated tetrahedron projections}
 \end{table}
 
-\begin{tcolorbox}[colback=green!5, colframe=green!40!black, title=\textbf{Key Discovery: 7-gon Projection Found}]
-The \textbf{heptagon (7-gon)} is NOT compass-constructible under Gauss-Wantzel (requires solving a cubic equation). Yet it emerges as a rational-spread projection of the truncated tetrahedron:
+\begin{tcolorbox}[colback=green!5, colframe=green!40!black, title=\textbf{Key Discovery: 7-gon Projection at Rational Spreads}]
+The \textbf{heptagon (7-gon)} is NOT compass-constructible under Gauss-Wantzel (requires solving a cubic equation). Yet it emerges as a rational-spread projection of the TruncTet+DualTet compound:
 
 \begin{center}
-\begin{tabular}{ccc}
+\begin{tabular}{cccc}
 \toprule
-\textbf{Prime} & \textbf{Spreads $(s_1, s_2, s_3)$} & \textbf{Polyhedron} \\
+\textbf{Prime} & \textbf{Rational Spreads} & \textbf{Polyhedron} & \textbf{Tier} \\
 \midrule
-5-gon & $(0, 0, 0.5)$ & Truncated Tetrahedron \\
-5-gon & $(0, 0.5, 0)$ & Truncated Tetrahedron \\
-\textbf{7-gon} & $(0.15, 0, 0.5)$ & Truncated Tetrahedron \\
-\textbf{7-gon} & $(0.15, 0.5, 0)$ & Truncated Tetrahedron \\
+5-gon & $(0, \frac{1}{2}, 0)$ & Truncated Tetrahedron (12v) & 1 \\
+\textbf{7-gon} & $(\frac{1}{2}, \frac{1}{2}, \frac{1}{2})$ & TruncTet+DualTet (16v) & 1 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The viewing angle at spread $(0.15, 0, 0.5)$ produces a \textbf{heptagonal silhouette} from a 12-vertex Archimedean solid!
+The 7-gon at $s=(\frac{1}{2}, \frac{1}{2}, \frac{1}{2})$---all three spreads equal and rational---produces a \textbf{heptagonal hull} with regularity 0.861. The rotation matrix is pure $\sqrt{2}/2$ throughout, cached in \texttt{RT.PureRadicals}.
 \end{tcolorbox}
 
 \subsection{Interpretation}
@@ -675,23 +677,23 @@ This does not violate Gauss-Wantzel: we are not \emph{constructing} a heptagon i
 
 The search for higher primes required combining asymmetric polyhedra into \textbf{compound structures}. The key insight: combining the truncated tetrahedron (no central symmetry) with other polyhedra produces hulls with more than 12 vertices, enabling prime counts beyond the single-polyhedron limit.
 
-\begin{tcolorbox}[colback=green!5, colframe=green!40!black, title=\textbf{MAJOR DISCOVERY: 11-gon and 13-gon Projections}]
+\begin{tcolorbox}[colback=green!5, colframe=green!40!black, title=\textbf{MAJOR DISCOVERY: 11-gon and 13-gon at Rational Spreads}]
 \textbf{Compound: Truncated Tetrahedron + Icosahedron} (24 vertices)
 
 \begin{center}
-\begin{tabular}{cccl}
+\begin{tabular}{ccccl}
 \toprule
-\textbf{Prime} & \textbf{Spreads $(s_1, s_2, s_3)$} & \textbf{Hull} & \textbf{Algebraic Requirement} \\
+\textbf{Prime} & \textbf{Rational Spreads} & \textbf{Tier} & \textbf{Radical Family} & \textbf{Algebraic Req.} \\
 \midrule
-\textbf{11-gon} & $(0, 0.01, 0.1)$ & 11 & Quintic polynomial (degree 5) \\
-\textbf{13-gon} & $(0, 0.01, 0.14)$ & 13 & Sextic polynomial (degree 6) \\
+\textbf{11-gon} & $(\frac{3}{4}, \frac{1}{4}, \frac{1}{2})$ & 1 & $\sqrt{2}, \sqrt{3}$ & Quintic (degree 5) \\
+\textbf{13-gon} & $(\frac{9}{10}, \frac{24}{25}, \frac{19}{20})$ & 3 & $\sqrt{5}$ family & Sextic (degree 6) \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\textbf{Significance}: The 11-gon (hendecagon) requires solving a degree-5 polynomial---\emph{impossible} by radicals (Abel-Ruffini theorem). The 13-gon (tridecagon) requires degree-6. Yet both emerge from rational-spread projections!
+\textbf{Significance}: The 11-gon uses \textbf{Tier~1 rational spreads}---denominators $\{2, 4\}$ only---the same $\sqrt{2}/\sqrt{3}$ radical family as the 5-gon and 7-gon. A non-constructible prime polygon emerges from the simplest possible algebraic spreads.
 
-\textbf{Note (v3.1):} These verified spreads were found using unified Python/JS definitions (Project-Streamline). The Python search outputs JSON that works \emph{directly} in JavaScript without coordinate translation.
+\textbf{Note (v4.0):} Rational spreads found via \texttt{--rational TIER} search in \texttt{prime\_search\_streamlined.py}. Results carry exact rational labels (e.g.\ ``3/4'') and work directly in JavaScript \texttt{PROJECTION\_PRESETS}.
 \end{tcolorbox}
 
 \subsubsection{Compound Configuration}
@@ -727,27 +729,30 @@ The relative rotation between the two polyhedra is $s_{\text{rel}} = 0$ (aligned
 
 \subsubsection{Geometry of the 11-gon Projection}
 
-At spreads $s = (0, 0.4, 0.2)$, the 24-vertex compound projects to an 11-vertex convex hull:
+At rational spreads $s = (\frac{3}{4}, \frac{1}{4}, \frac{1}{2})$, the 24-vertex compound projects to an 11-vertex convex hull:
 
 \begin{itemize}
-    \item \textbf{Interior angles}: Range from 112° to 178° (variance: 16.17°)
-    \item \textbf{Edge lengths}: Range from 0.19 to 0.97 (variance: 48.44\%)
-    \item \textbf{Regularity score}: 0.0 (highly irregular)
-    \item \textbf{Status}: \emph{Not} equi-angular, \emph{not} equilateral
+    \item \textbf{Regularity score}: 0.490 (Tier~1 rational)
+    \item \textbf{Angle variance}: 11.00°
+    \item \textbf{Edge variance}: 37.03\%
+    \item \textbf{Rational tier}: 1---denominators $\{2, 4\}$ only
+    \item \textbf{Radical family}: $\sqrt{1/4} = 1/2$, $\sqrt{3/4} = \sqrt{3}/2$, $\sqrt{1/2} = \sqrt{2}/2$---all cached
 \end{itemize}
 
-Like the 7-gon, this is an \emph{irregular} 11-gon emerging from projection, not a regular hendecagon.
+Alternative Tier~3 result: $s = (\frac{1}{2}, \frac{9}{20}, \frac{1}{3})$ achieves regularity 0.504, nearly matching the decimal grid search best.
 
 \subsubsection{Geometry of the 13-gon Projection}
 
-At spreads $s = (0, 0.6, 0.8)$, the compound projects to a 13-vertex convex hull:
+At rational spreads $s = (\frac{9}{10}, \frac{24}{25}, \frac{19}{20})$, the compound projects to a 13-vertex convex hull:
 
 \begin{itemize}
-    \item \textbf{Interior angles}: Range from 115° to 178° (variance: 19.07°)
-    \item \textbf{Edge lengths}: Range from 0.16 to 0.69 (variance: 41.18\%)
-    \item \textbf{Regularity score}: 0.0 (highly irregular)
-    \item \textbf{Status}: \emph{Not} equi-angular, \emph{not} equilateral
+    \item \textbf{Regularity score}: 0.346 (Tier~3 rational)
+    \item \textbf{Angle variance}: 15.22°
+    \item \textbf{Edge variance}: 43.46\%
+    \item \textbf{Rational tier}: 3---denominators $\{10, 20, 25\}$, $\sqrt{5}$ family
 \end{itemize}
+
+The 13-gon does \emph{not} appear at Tier~1 rationals---this is itself a meaningful result, suggesting it inherently requires the golden ratio radical family.
 
 \subsubsection{Alternative Compound: 2× Truncated Tetrahedron}
 
@@ -802,7 +807,7 @@ Finding 11-gon, 13-gon, 17-gon, etc. requires:
     \item Potentially 4D polytopes with asymmetric structure
 \end{enumerate}
 
-\textbf{Update (v3.0):} This strategy proved successful! The compound approach (truncated tetrahedron + icosahedron) yielded both 11-gon and 13-gon projections. The search for 17-gon and higher primes continues with larger compounds.
+\textbf{Update (v4.0):} The compound approach proved successful---TruncTet+DualTet yields 7-gon, TruncTet+Icosa yields 11-gon and 13-gon. All at exact rational spreads. The search for 17-gon and higher primes continues with larger compounds and the rational tier framework.
 
 %==============================================================================
 \section{Implementation Details}
@@ -811,23 +816,20 @@ Finding 11-gon, 13-gon, 17-gon, etc. requires:
 \subsection{Script Usage}
 
 \begin{lstlisting}[language=bash, caption=Command-line examples]
-# Install dependencies
-pip install -r scripts/requirements.txt
+cd ARTexplorer/scripts
 
-# List available polyhedra
-python scripts/prime_projection_search.py --list-polyhedra
+# Tier 1 rational search (RT-pure: denominators 2,3,4)
+python prime_search_streamlined.py --primes 5,7,11 --rational 1 -v
 
-# Quick test with coarse precision
-python scripts/prime_projection_search.py --precision 1 --polyhedra truncated_tetrahedron
+# Tier 3 rational search (algebraic: 67 spread values)
+python prime_search_streamlined.py --primes 11,13 --rational 3 --top 10 -v
 
-# Full search on asymmetric polyhedra
-python scripts/prime_projection_search.py --polyhedra truncated_tetrahedron,snub_cube --precision 2
+# Legacy decimal grid search (precision 2 = 101 values per axis)
+python prime_search_streamlined.py --primes 5,7 --precision 2 --verify
 
-# Search compound pairs with relative rotations
-python scripts/prime_projection_search.py --compounds tetrahedron:tetrahedron --precision 2
-
-# Target specific primes
-python scripts/prime_projection_search.py --primes 7,11,13 --polyhedra truncated_tetrahedron
+# Full rational search with JSON output
+python prime_search_streamlined.py --primes 5,7,11,13 --rational 3 \
+    --output rational_results.json -v
 \end{lstlisting}
 
 \subsection{Output Format}
@@ -874,19 +876,18 @@ ARTexplorer/
 |-- scripts/
 |   |-- rt_math.py                        # RT functions ported from rt-math.js
 |   |-- rt_polyhedra.py                   # Exact vertex copies from rt-polyhedra.js
-|   |-- prime_search_streamlined.py       # Unified search (Project-Streamline)
-|
-|-- prime_projections_verified.json       # All verified 5,7,11,13-gon findings
+|   |-- prime_search_streamlined.py       # Unified search with --rational TIER
 |
 |-- Geometry documents/
 |   |-- Prime-Projection-Conjecture.tex   # This whitepaper
-|   |-- Project-Streamline.md             # Unified Python/JS methodology
+|   |-- Rational-Primes.md               # Path A/B/C rationalization strategy
 |   |-- Polygon-Rationalize.md            # RT polygon theory reference
 |
 |-- modules/
 |   |-- rt-math.js                        # Source of truth: RT functions
 |   |-- rt-polyhedra.js                   # Source of truth: Polyhedra definitions
 |   |-- rt-projections.js                 # Projection visualization
+|   |-- rt-prime-cuts.js                  # PROJECTION_PRESETS registry
 \end{lstlisting}
 
 \subsection{Running the Search}
@@ -896,50 +897,46 @@ ARTexplorer/
 git clone https://github.com/arossti/ARTexplorer.git
 cd ARTexplorer/scripts
 
-# Quick verification of known primes (precision 1 = coarse grid)
-python prime_search_streamlined.py --primes 5,7 --precision 1 --verify
+# Reproduce Tier 1 rational results (5, 7, 11-gon)
+python prime_search_streamlined.py --primes 5,7,11 --rational 1 --verify -v
 
-# Full search for all primes (precision 2 = ~1M configs per poly)
-python prime_search_streamlined.py --primes 5,7,11,13 --precision 2 --verify
+# Reproduce Tier 3 rational results (13-gon)
+python prime_search_streamlined.py --primes 13 --rational 3 --top 5 --verify -v
 
-# Output: JSON with spreads that work DIRECTLY in JavaScript
-# No coordinate translation needed - same vertex definitions
+# Full rational search for all primes
+python prime_search_streamlined.py --primes 5,7,11,13 --rational 3 \
+    --output rational_verified.json --verify -v
 \end{lstlisting}
 
-\textbf{Key insight (Project-Streamline):} The Python scripts now use \emph{identical} vertex definitions to JavaScript, ported directly from \texttt{rt-math.js} and \texttt{rt-polyhedra.js}. This eliminates the coordinate translation errors that previously caused mismatches between search results and visualization.
+\textbf{Key insight (Path A):} The \texttt{--rational TIER} flag searches over algebraically significant rationals with small denominators. Results carry exact rational labels (e.g.\ ``3/4'') and work directly in JavaScript \texttt{PROJECTION\_PRESETS}. Python and JavaScript use identical vertex definitions ported from \texttt{rt-math.js} and \texttt{rt-polyhedra.js}.
 
 \subsection{Results JSON Schema}
 
 Each results file contains:
 
-\begin{lstlisting}[language=json, caption=JSON output schema (v3.0)]
+\begin{lstlisting}[language=json, caption=JSON output schema (v4.0 rational mode)]
 {
   "metadata": {
     "timestamp": "ISO-8601 timestamp",
     "precision": 2,
-    "target_primes": [5, 7, 11, 13],
-    "polyhedra_searched": ["truncated_tetrahedron"],
-    "key_insight": "Asymmetric compounds produce prime hulls"
+    "rational_tier": 3,
+    "mode": "rational_tier_3",
+    "source": "prime_search_streamlined.py"
   },
-  "findings": [
-    {
-      "prime": 11,
-      "hull_count": 11,
-      "compound": "truncated_tetrahedron + icosahedron",
-      "vertices": 24,
-      "view_spreads": [0.0, 0.4, 0.2],
-      "hull_vertices_2d": [[x1,y1], ...],
-      "interior_angles": [deg1, deg2, ...],
-      "edge_lengths": [len1, len2, ...],
-      "regularity_score": 0.0,
-      "angle_variance_deg": 16.17,
-      "edge_variance_pct": 48.44,
-      "verified": true
+  "primes": {
+    "11": {
+      "config": { "name": "hendecagon", "polyhedra": "trunc_tet_plus_icosa" },
+      "results": [
+        {
+          "s1": 0.75, "s2": 0.25, "s3": 0.5,
+          "s1_rational": "3/4", "s2_rational": "1/4", "s3_rational": "1/2",
+          "hull_count": 11,
+          "regularity_score": 0.4901,
+          "angle_variance": 11.00,
+          "edge_variance": 37.03
+        }
+      ]
     }
-  ],
-  "summary": {
-    "primes_found": [5, 7, 11, 13],
-    "next_targets": [17, 19, 23, 29]
   }
 }
 \end{lstlisting}
@@ -948,17 +945,17 @@ Each results file contains:
 
 \begin{table}[h]
 \centering
-\begin{tabular}{cllcl}
+\begin{tabular}{clllcl}
 \toprule
-\textbf{Prime} & \textbf{Compound} & \textbf{Spreads} & \textbf{Vertices} & \textbf{Projections} \\
+\textbf{Prime} & \textbf{Compound} & \textbf{Rational Spreads} & \textbf{Tier} & \textbf{V} & \textbf{Regularity} \\
 \midrule
-5 & Truncated Tet & $(0.01, 0.5, 0)$ & 12 & 145 \\
-7 & Trunc Tet + Tet & $(0, 0.01, 0.14)$ & 16 & 438,406 \\
-11 & Trunc Tet + Icosa & $(0, 0.01, 0.1)$ & 24 & 36,360 \\
-13 & Trunc Tet + Icosa & $(0, 0.01, 0.14)$ & 24 & 4,347 \\
+5 & Truncated Tet & $(0, \frac{1}{2}, 0)$ & 1 & 12 & 0.423 \\
+7 & TruncTet + DualTet & $(\frac{1}{2}, \frac{1}{2}, \frac{1}{2})$ & 1 & 16 & 0.861 \\
+11 & TruncTet + Icosa & $(\frac{3}{4}, \frac{1}{4}, \frac{1}{2})$ & 1 & 24 & 0.490 \\
+13 & TruncTet + Icosa & $(\frac{9}{10}, \frac{24}{25}, \frac{19}{20})$ & 3 & 24 & 0.346 \\
 \bottomrule
 \end{tabular}
-\caption{Verified prime projection configurations from \texttt{prime\_projections\_verified.json}}
+\caption{Verified prime projection configurations at rational spreads (Path A, \texttt{prime\_search\_streamlined.py --rational})}
 \end{table}
 
 \subsection{Interactive Visualization}
@@ -981,7 +978,7 @@ The ARTexplorer web application provides interactive verification:
            Projections as a Source of Non-Constructible Prime n-Gons},
   year = {2026},
   howpublished = {\url{https://github.com/arossti/ARTexplorer}},
-  note = {v3.0, February 2026. DOI: 10.13140/RG.2.2.23043.98089}
+  note = {v4.0, February 2026. DOI: 10.13140/RG.2.2.23043.98089}
 }
 \end{lstlisting}
 
@@ -1009,14 +1006,14 @@ Our prime projections follow the same principle: the truncated tetrahedron is a 
 
 \subsection{Implications for Rational Trigonometry}
 
-The viewing angles that produce prime projections are specified in terms of \textbf{rational spreads}:
+The viewing angles that produce prime projections are specified in terms of \textbf{exact rational spreads}:
 \begin{equation}
-s_1 = 0.15 = \frac{3}{20}, \quad s_2 = 0, \quad s_3 = 0.5 = \frac{1}{2}
+\text{7-gon:} \quad s_1 = s_2 = s_3 = \frac{1}{2} \qquad \text{11-gon:} \quad s = \left(\frac{3}{4}, \frac{1}{4}, \frac{1}{2}\right)
 \end{equation}
 
-These are exact rational values, not approximations. The 7-gon emerges from a purely rational viewing specification applied to a polyhedron with rational vertex coordinates.
+These are not decimal approximations---they are exact rationals with small denominators from $\{2, 3, 4\}$. The rotation matrices require only $\sqrt{2}/2$ and $\sqrt{3}/2$, both cached in \texttt{RT.PureRadicals}. No transcendental function is evaluated anywhere in the pipeline from vertex definition through projection.
 
-This aligns with Wildberger's program: avoiding transcendental functions while retaining geometric expressiveness.
+This is a strong validation of Wildberger's program: the entire prime polygon discovery---vertices, rotations, projections---operates within the algebraic framework of Rational Trigonometry.
 
 \subsection{Claims of Novelty}
 
@@ -1027,14 +1024,7 @@ To preempt misunderstanding, we clarify what this work does and does not claim.
 \begin{itemize}
     \item \textbf{We do not ``solve'' the Gauss-Wantzel impossibility.} The heptagon remains non-constructible with compass and straightedge. Our projections do not change this classical result.
 
-    \item \textbf{We do not claim that projection yields a ``true'' regular heptagon.} The 7-vertex hull boundary has significant geometric irregularities:
-    \begin{itemize}
-        \item Interior angles: $109.5°$, $125.3°$, $125.3°$, $109.5°$, $180°$, $70.5°$, $180°$
-        \item Collinear vertices: 2 of 7 hull vertices have $180°$ angles (lie on edges)
-        \item Visual silhouette: 5-gon (only 5 non-collinear corners visible)
-        \item Edge variance: $\sim$15\% (6 edges at 0.7385, 1 edge at 0.8528)
-    \end{itemize}
-    The projection produces a convex hull with 7 vertices and 7 edges, but 2 vertices are collinear---they lie on the straight edges of the visual boundary. The visual silhouette is therefore a \emph{5-gon with 2 extra points on its edges}, not a true heptagon.
+    \item \textbf{We do not claim that projection yields a perfectly regular heptagon.} The 7-vertex hull from TruncTet+DualTet at $s=(\frac{1}{2}, \frac{1}{2}, \frac{1}{2})$ achieves regularity 0.861 (angle variance 4.4°, edge variance 8.2\%)---substantially more regular than earlier single-polyhedron results, but still not a perfect regular heptagon. The compound approach and rational spreads yield much better geometry than previous decimal-search results.
 
     \item \textbf{We do not claim priority on dimensional projection methods.} De Bruijn's 1981 work on Penrose tilings established that ``forbidden'' symmetries can emerge via projection from higher dimensions. Our work extends this insight to prime vertex counts.
 
@@ -1046,7 +1036,7 @@ To preempt misunderstanding, we clarify what this work does and does not claim.
 \begin{enumerate}
     \item \textbf{The Symmetry Barrier theorem and its resolution.} We identify why centrally symmetric polytopes \emph{cannot} produce prime projections (all hull counts are even), and demonstrate that asymmetric polytopes like the truncated tetrahedron \emph{can}.
 
-    \item \textbf{Rational-spread parameterization of projection angles.} Prior projection work (e.g., quasicrystals) typically uses irrational ``golden angle'' orientations. We demonstrate that \emph{rational} spread values---specifically $s = (11/100, 0, 1/2)$---suffice to produce 7-hull counts from asymmetric polyhedra.
+    \item \textbf{Rational-spread parameterization of projection angles.} Prior projection work (e.g., quasicrystals) typically uses irrational ``golden angle'' orientations. We demonstrate that \emph{Tier~1 rational} spread values---specifically $s = (1/2, 1/2, 1/2)$ for the 7-gon and $s = (3/4, 1/4, 1/2)$ for the 11-gon---suffice to produce prime hull counts. These use only denominators $\{2, 4\}$ and radicals $\sqrt{2}, \sqrt{3}$.
 
     \item \textbf{The 4D± Quadray formulation.} The truncated tetrahedron's vertices are \emph{all rational} in Quadray coordinates: permutations of $(2,1,0,0)/3$. This maintains algebraic exactness throughout the construction, with radicals entering only at the final projection step.
 
@@ -1191,26 +1181,26 @@ The prime projection discovery is implemented as an interactive demonstration in
 \subsubsection{Accessing the Demo}
 
 \begin{enumerate}
-    \item Navigate to \textbf{Section 3B: Polyhedra} in the left control panel
-    \item Enable \textbf{Quadray Truncated Tetrahedron} checkbox
-    \item Expand the controls to reveal \textbf{Prime Projection Views}
-    \item Click the \textbf{7-gon} or \textbf{5-gon} buttons to activate the projection overlay
+    \item Open the \textbf{Math Demos} menu in the application toolbar
+    \item Select \textbf{Prime Projections} to open the floating panel
+    \item Click any of the four preset buttons: \textbf{5-gon}, \textbf{7-gon}, \textbf{11-gon}, \textbf{13-gon}
+    \item Each button enables the correct compound polyhedron and applies the rational spread preset
 \end{enumerate}
 
-The cyan polygon overlay appears perpendicular to the camera view, demonstrating the prime n-gon that emerges from the polyhedron's projection at that viewing angle.
+The yellow hull / cyan ideal polygon / green ray visualization shows the prime n-gon that emerges from the polyhedron's projection at the rational spread viewing angle. Each preset's rational spreads are stored in \texttt{PROJECTION\_PRESETS} in \texttt{rt-prime-cuts.js}.
 
 \begin{figure}[p]
     \centering
     \includegraphics[width=0.85\linewidth]{5-gon.png}
     \vspace{0.3cm}
-    \caption{5-gon projection: Quadray Truncated Tetrahedron at spread view angle $s=(0,0,\frac{1}{2})$. The pentagon emerges as the convex hull boundary of the projected vertices.}
+    \caption{5-gon projection: Truncated Tetrahedron at rational spread $s=(0,\frac{1}{2},0)$. The pentagon emerges as the convex hull boundary of the projected vertices.}
     \label{fig:5gon-demo}
 
     \vspace{0.8cm}
 
     \includegraphics[width=0.85\linewidth]{7-gon.png}
     \vspace{0.3cm}
-    \caption{7-hull projection: Spread-rotated view at $s=(0.11,0,\frac{1}{2})$ produces a 7-vertex convex hull boundary. Note: 2 vertices are collinear (180° angles), edge variance $\sim$15\%.}
+    \caption{7-gon projection: TruncTet+DualTet compound at $s=(\frac{1}{2},\frac{1}{2},\frac{1}{2})$---all three rational spreads equal. Tier~1, regularity 0.861.}
     \label{fig:7gon-demo}
 \end{figure}
 
@@ -1218,49 +1208,48 @@ The cyan polygon overlay appears perpendicular to the camera view, demonstrating
 
 The UI displays condensed formulas explaining each projection's construction:
 
-\begin{tcolorbox}[colback=cyan!5, colframe=cyan!40!black, title=\textbf{7-hull Projection Formula}]
+\begin{tcolorbox}[colback=cyan!5, colframe=cyan!40!black, title=\textbf{7-gon Projection Formula (v4.0)}]
 \begin{verbatim}
-7-hull: Quadray {2,1,0,0}/3 → s=(0.11,0,½)
-Trunc Tet: 12v → 7-hull (2 collinear vertices)
+7-gon: TruncTet+DualTet (16v) → s=(½, ½, ½)
+Tier 1 rational, regularity 0.861
 \end{verbatim}
 
 \textbf{Interpretation:}
 \begin{itemize}
-    \item \textbf{Source}: Truncated tetrahedron with 12 vertices
-    \item \textbf{Quadray coordinates}: All permutations of $\{2,1,0,0\}$ scaled by $1/3$---\emph{purely rational}
-    \item \textbf{Viewing spreads}: $s_1 = 0.11 = 11/100$, $s_2 = 0$, $s_3 = 1/2$ (also valid: $s_1 = 0.89$)
-    \item \textbf{Hull reduction}: 12 vertices $\to$ 7-vertex boundary (5 project to interior)
-    \item \textbf{Hull geometry}: 7 vertices, 7 edges; but 2 vertices are collinear (180° angles)
-    \item \textbf{Visual silhouette}: 5-gon (only 5 non-collinear corners)
+    \item \textbf{Source}: Truncated tetrahedron (12v) + dual tetrahedron (4v), unit-sphere normalized
+    \item \textbf{Viewing spreads}: $s_1 = s_2 = s_3 = 1/2$---\emph{all spreads identical and rational}
+    \item \textbf{Rotation matrix}: Pure $\sqrt{2}/2$ entries, cached in \texttt{RT.PureRadicals}
+    \item \textbf{Hull reduction}: 16 vertices $\to$ 7-vertex boundary (9 project to interior)
+    \item \textbf{Tier}: 1 (RT-pure)---denominators $\{2\}$ only
 \end{itemize}
 \end{tcolorbox}
 
-\begin{tcolorbox}[colback=cyan!5, colframe=cyan!40!black, title=\textbf{5-gon Projection Formula}]
+\begin{tcolorbox}[colback=cyan!5, colframe=cyan!40!black, title=\textbf{11-gon Projection Formula (v4.0)}]
 \begin{verbatim}
-5-gon: Icosa axis → s=(0,0,½)
-φ-constructible: s = (5-√5)/8
+11-gon: TruncTet+Icosa (24v) → s=(¾, ¼, ½)
+Tier 1 rational, regularity 0.490
 \end{verbatim}
 
 \textbf{Interpretation:}
 \begin{itemize}
-    \item \textbf{Source}: Icosahedron/dodecahedron 5-fold axis view
-    \item \textbf{Viewing spreads}: $s_1 = 0$, $s_2 = 0$, $s_3 = 1/2$ (axis-aligned)
-    \item \textbf{Pentagon spread}: $s = \sin^2(\pi/5) = (5 - \sqrt{5})/8$
-    \item \textbf{Constructibility}: $\varphi$-constructible (Fermat prime, requires only $\sqrt{5}$)
+    \item \textbf{Source}: Truncated tetrahedron (12v) + icosahedron (12v), unit-sphere normalized
+    \item \textbf{Viewing spreads}: $s = (3/4, 1/4, 1/2)$---denominators $\{2, 4\}$
+    \item \textbf{Rotation entries}: $\sqrt{1/4} = 1/2$, $\sqrt{3/4} = \sqrt{3}/2$, $\sqrt{1/2} = \sqrt{2}/2$
+    \item \textbf{Significance}: Non-constructible 11-gon at the \emph{same radical family} as 5-gon and 7-gon
 \end{itemize}
 \end{tcolorbox}
 
 \subsubsection{Technical Implementation}
 
-The projection overlay is implemented in \texttt{modules/rt-papercut.js} using THREE.js Line2 geometry:
+The projection overlay is implemented in \texttt{modules/rt-projections.js} and \texttt{modules/rt-prime-cuts.js}:
 \begin{itemize}
-    \item \textbf{LineMaterial} with \texttt{worldUnits: true} for consistent line width
-    \item \textbf{renderOrder: 999} ensures the overlay renders on top of the polyhedron
-    \item \textbf{depthTest: false} makes the overlay always visible
-    \item Polygon vertices are computed in the camera's view plane using the current camera orientation
+    \item \texttt{PROJECTION\_PRESETS} registry in \texttt{rt-prime-cuts.js}---single source of truth for all 4 presets
+    \item Each preset stores \texttt{rationalSpreads} (e.g.\ \texttt{["1/2", "1/2", "1/2"]}) and \texttt{rationalTier}
+    \item Yellow hull / cyan ideal polygon / green projection rays visualization
+    \item Floating modal panel accessible from Math Demos menu
 \end{itemize}
 
-The camera presets are defined in \texttt{modules/rt-rendering.js} in the \texttt{setCameraPreset()} function, implementing the rational spread viewing angles discovered by the Python search script.
+Rational spread presets are applied via \texttt{RTProjections.applyPreset()}, which constructs the rotation matrix from the stored spread values.
 
 %==============================================================================
 \section{Conclusion}
@@ -1273,20 +1262,20 @@ We have demonstrated that:
 
     \item \textbf{The Symmetry Barrier can be broken}: Asymmetric polytopes (truncated tetrahedron) and compound polyhedra produce odd hull counts including prime counts.
 
-    \item \textbf{Prime projections exist for 5, 7, 11, and 13}:
+    \item \textbf{Prime projections exist at exact rational spreads for 5, 7, 11, and 13}:
     \begin{itemize}
-        \item \textbf{5-gon}: Truncated tetrahedron at $s=(0, 0, 0.5)$
-        \item \textbf{7-gon}: Truncated tetrahedron at $s=(0.11, 0, 0.5)$
-        \item \textbf{11-gon}: Truncated tet + icosahedron at $s=(0, 0.4, 0.2)$ \textcolor{green!50!black}{[NEW v3.0]}
-        \item \textbf{13-gon}: Truncated tet + icosahedron at $s=(0, 0.6, 0.8)$ \textcolor{green!50!black}{[NEW v3.0]}
+        \item \textbf{5-gon}: Truncated tetrahedron at $s=(0, \frac{1}{2}, 0)$ --- Tier~1
+        \item \textbf{7-gon}: TruncTet+DualTet at $s=(\frac{1}{2}, \frac{1}{2}, \frac{1}{2})$ --- Tier~1, all spreads equal
+        \item \textbf{11-gon}: TruncTet+Icosa at $s=(\frac{3}{4}, \frac{1}{4}, \frac{1}{2})$ --- Tier~1 \textcolor{green!50!black}{[NEW v4.0]}
+        \item \textbf{13-gon}: TruncTet+Icosa at $s=(\frac{9}{10}, \frac{24}{25}, \frac{19}{20})$ --- Tier~3 \textcolor{green!50!black}{[NEW v4.0]}
     \end{itemize}
 
-    \item \textbf{The 4D± Prime Projection Conjecture is substantially validated}: Prime n-gons up to 13 emerge from rational-spread projections of 3D polyhedra, even when those n-gons require quintic/sextic polynomials (beyond algebraic solvability by radicals).
+    \item \textbf{The rational tier structure is itself meaningful}: 5, 7, and 11 all emerge at Tier~1 (denominators $\{2, 3, 4\}$, radicals $\sqrt{2}, \sqrt{3}$), while 13 requires Tier~3 (introducing $\sqrt{5}$). This suggests a hierarchy of algebraic complexity among prime projections.
 
     \item \textbf{The compound strategy scales}: Combining asymmetric polyhedra breaks combined symmetry and increases maximum hull count, enabling discovery of higher primes.
 \end{enumerate}
 
-The search for higher primes (17, 19, 23...) continues using larger compounds.
+The search for higher primes (17, 19, 23...) continues using larger compounds and the rational tier framework.
 
 This work connects three mathematical traditions:
 \begin{itemize}
@@ -1343,7 +1332,8 @@ emerge as shadows from the tetrahedron's light.''}
     \item v1.0 (Jan 2026): Initial conjecture and symmetry barrier discovery
     \item v2.0 (Feb 2026): 5-gon and 7-gon projections verified
     \item v3.0 (Feb 2026): 11-gon and 13-gon breakthrough via compound polyhedra
-    \item \textbf{v3.1 (Feb 2026): Project-Streamline---unified Python/JS definitions, verified spreads}
+    \item v3.1 (Feb 2026): Project-Streamline---unified Python/JS definitions, verified spreads
+    \item \textbf{v4.0 (Feb 2026): Path A---all 4 primes at exact rational spreads; 5/7/11 at Tier~1}
 \end{itemize}
 
 \end{document}
