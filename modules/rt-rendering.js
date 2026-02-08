@@ -2633,86 +2633,90 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayStellaOctangulaGroup.visible = false;
     }
 
-    // Quadray Compound (Truncated Tetrahedron + Icosahedron) for 11/13-gon projections
+    // Compound (Truncated Tetrahedron + Icosahedron) for 11/13-gon projections
+    // Uses BASE Polyhedra functions - NO Quadray normalization
+    // Same scale as Python search for exact vertex parity
     if (document.getElementById("showQuadrayCompound")?.checked) {
-      const normalize =
-        document.getElementById("quadrayCompoundNormalize")?.checked ?? true;
-      // Async compound generator - render components with distinct colors
-      Polyhedra.quadrayCompoundTruncTetIcosa(scale, {
-        normalize: normalize,
-      }).then(compound => {
-        // Clear existing group
-        while (quadrayCompoundGroup.children.length > 0) {
-          quadrayCompoundGroup.remove(quadrayCompoundGroup.children[0]);
-        }
-        // Render truncated tetrahedron component with its color
-        const truncTetSubGroup = new THREE.Group();
-        truncTetSubGroup.userData.type = "truncatedTetrahedron";
-        renderPolyhedron(
-          truncTetSubGroup,
-          compound.components.truncatedTetrahedron,
-          colorPalette.quadrayTruncatedTet,
-          opacity
-        );
-        quadrayCompoundGroup.add(truncTetSubGroup);
-        // Render icosahedron component with its default color (cyan) for contrast
-        const icosaSubGroup = new THREE.Group();
-        icosaSubGroup.userData.type = "icosahedron";
-        renderPolyhedron(
-          icosaSubGroup,
-          compound.components.icosahedron,
-          colorPalette.icosahedron,
-          opacity
-        );
-        quadrayCompoundGroup.add(icosaSubGroup);
-        quadrayCompoundGroup.userData.parameters = {
-          normalize: normalize,
-          wxyz: compound.truncTetNormalized,
-        };
-        quadrayCompoundGroup.visible = true;
-      });
+      // Clear existing group
+      while (quadrayCompoundGroup.children.length > 0) {
+        quadrayCompoundGroup.remove(quadrayCompoundGroup.children[0]);
+      }
+
+      // Use base compound function - matches Python rt_polyhedra.py exactly
+      // Scale factor applied uniformly to maintain relative proportions
+      const compound = Polyhedra.compoundTruncTetIcosa(scale, 1 / 3);
+
+      // Render truncated tetrahedron component
+      const truncTetSubGroup = new THREE.Group();
+      truncTetSubGroup.userData.type = "truncatedTetrahedron";
+      renderPolyhedron(
+        truncTetSubGroup,
+        compound.components.truncatedTetrahedron,
+        colorPalette.quadrayTruncatedTet,
+        opacity
+      );
+      quadrayCompoundGroup.add(truncTetSubGroup);
+
+      // Render icosahedron component
+      const icosaSubGroup = new THREE.Group();
+      icosaSubGroup.userData.type = "icosahedron";
+      renderPolyhedron(
+        icosaSubGroup,
+        compound.components.icosahedron,
+        colorPalette.icosahedron,
+        opacity
+      );
+      quadrayCompoundGroup.add(icosaSubGroup);
+
+      quadrayCompoundGroup.userData.parameters = {
+        scale: scale,
+        truncation: 1 / 3,
+        metadata: compound.metadata,
+      };
+      quadrayCompoundGroup.visible = true;
     } else {
       quadrayCompoundGroup.visible = false;
     }
 
-    // Quadray Compound (Truncated Tetrahedron + Tetrahedron) for 7-gon projections
+    // Compound (Truncated Tetrahedron + Tetrahedron) for 7-gon projections
+    // Uses BASE Polyhedra functions - NO Quadray normalization
     if (document.getElementById("showQuadrayCompoundTet")?.checked) {
-      const normalize =
-        document.getElementById("quadrayCompoundTetNormalize")?.checked ?? true;
-      // Async compound generator - render components with distinct colors
-      Polyhedra.quadrayCompoundTruncTetTet(scale, {
-        normalize: normalize,
-      }).then(compound => {
-        // Clear existing group
-        while (quadrayCompoundTetGroup.children.length > 0) {
-          quadrayCompoundTetGroup.remove(quadrayCompoundTetGroup.children[0]);
-        }
-        // Render truncated tetrahedron component with its color
-        const truncTetSubGroup = new THREE.Group();
-        truncTetSubGroup.userData.type = "truncatedTetrahedron";
-        renderPolyhedron(
-          truncTetSubGroup,
-          compound.components.truncatedTetrahedron,
-          colorPalette.quadrayTruncatedTet,
-          opacity
-        );
-        quadrayCompoundTetGroup.add(truncTetSubGroup);
-        // Render tetrahedron component with its default color (yellow) for contrast
-        const tetSubGroup = new THREE.Group();
-        tetSubGroup.userData.type = "tetrahedron";
-        renderPolyhedron(
-          tetSubGroup,
-          compound.components.tetrahedron,
-          colorPalette.tetrahedron,
-          opacity
-        );
-        quadrayCompoundTetGroup.add(tetSubGroup);
-        quadrayCompoundTetGroup.userData.parameters = {
-          normalize: normalize,
-          wxyz: compound.truncTetNormalized,
-        };
-        quadrayCompoundTetGroup.visible = true;
-      });
+      // Clear existing group
+      while (quadrayCompoundTetGroup.children.length > 0) {
+        quadrayCompoundTetGroup.remove(quadrayCompoundTetGroup.children[0]);
+      }
+
+      // Use base compound function - matches Python rt_polyhedra.py exactly
+      const compound = Polyhedra.compoundTruncTetTet(scale, 1 / 3);
+
+      // Render truncated tetrahedron component
+      const truncTetSubGroup = new THREE.Group();
+      truncTetSubGroup.userData.type = "truncatedTetrahedron";
+      renderPolyhedron(
+        truncTetSubGroup,
+        compound.components.truncatedTetrahedron,
+        colorPalette.quadrayTruncatedTet,
+        opacity
+      );
+      quadrayCompoundTetGroup.add(truncTetSubGroup);
+
+      // Render tetrahedron component
+      const tetSubGroup = new THREE.Group();
+      tetSubGroup.userData.type = "tetrahedron";
+      renderPolyhedron(
+        tetSubGroup,
+        compound.components.tetrahedron,
+        colorPalette.tetrahedron,
+        opacity
+      );
+      quadrayCompoundTetGroup.add(tetSubGroup);
+
+      quadrayCompoundTetGroup.userData.parameters = {
+        scale: scale,
+        truncation: 1 / 3,
+        metadata: compound.metadata,
+      };
+      quadrayCompoundTetGroup.visible = true;
     } else {
       quadrayCompoundTetGroup.visible = false;
     }

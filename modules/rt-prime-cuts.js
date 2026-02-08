@@ -25,12 +25,13 @@ const PROJECTION_PRESETS = {
   pentagon: {
     name: "Pentagon (5-gon)",
     n: 5,
-    polyhedronType: "quadrayTruncatedTet",
-    polyhedronCheckbox: "showQuadrayTruncatedTet",
+    // Use base tetrahedron with truncation (single source of truth)
+    polyhedronType: "tetrahedron",
+    polyhedronCheckbox: "showTetrahedron",
     compound: "truncatedTetrahedron",
     vertexCount: 12,
     spreads: [0.01, 0.5, 0],  // Verified by Project-Streamline
-    requiredTruncation: 1/3,  // Spreads only valid at t=1/3
+    requiredTruncation: 1/3,  // Spreads only valid at t=1/3 - forces truncation checkbox+slider
     expectedHull: 5,
     source: "prime_projections_verified.json (Project-Streamline 2026-02-07)",
     maxInteriorAngle: 170,
