@@ -466,6 +466,40 @@ export const Polyhedra = {
   },
 
   /**
+   * Truncated Dual Tetrahedron with parametric truncation
+   * DRY: Derives from truncatedTetrahedron via vertex inversion (×-1)
+   * Same geometric relationship as dualTetrahedron → tetrahedron
+   *
+   * @param {number} halfSize - Scale factor (base tetrahedron bounding cube half-size)
+   * @param {number} truncation - Truncation parameter t ∈ [0, 0.5] (default: 1/3)
+   * @param {Object} options - {silent: boolean}
+   * @returns {Object} - {vertices, edges, faces}
+   */
+  truncatedDualTetrahedron: (halfSize = 1, truncation = 1 / 3, options = {}) => {
+    const base = Polyhedra.truncatedTetrahedron(halfSize, truncation, {
+      silent: true,
+    });
+
+    // Invert all vertices (multiply by -1) — same as dualTetrahedron pattern
+    const vertices = base.vertices.map(v => v.clone().multiplyScalar(-1));
+
+    // Reverse face winding to maintain outward normals after inversion
+    const faces = base.faces.map(face => [...face].reverse());
+
+    // Edges remain topologically identical
+    const edges = base.edges;
+
+    if (!options.silent) {
+      const t = Math.max(0, Math.min(0.5, truncation));
+      console.log(
+        `Truncated Dual Tetrahedron: t=${t.toFixed(4)}, ${vertices.length} vertices`
+      );
+    }
+
+    return { vertices, edges, faces };
+  },
+
+  /**
    * Geodesic Dual Tetrahedron with projection options
    * Derives from base tetrahedron via inversion, then applies geodesic subdivision
    * Implements reciprocal complementary color scheme (uses base solid color for geodesic)
@@ -806,6 +840,94 @@ export const Polyhedra = {
             spreads: [0, 0.01, 0.14],
             expectedHull: 7,
             verified: "2026-02-07",
+          },
+        },
+      },
+    };
+  },
+
+  /**
+   * TruncTet + Dual Tetrahedron compound (16 vertices, unit-sphere normalized)
+   * Used for robust 7-gon projections
+   *
+   * Key difference from compoundTruncTetTet:
+   * - Uses DUAL (even parity) tetrahedron instead of base (odd parity)
+   * - All 16 vertices normalized to unit sphere then scaled
+   * - This breaks the degeneracy that causes same-parity compound to fail
+   *
+   * Why dual tet works:
+   * - Base tet vertices: (-,-,-), (+,+,-), (+,-,+), (-,+,+) [ODD parity]
+   * - Dual tet vertices: (+,+,+), (-,-,+), (-,+,-), (+,-,-) [EVEN parity]
+   * - TruncTet is derived from base tet, so same-parity tet shares symmetry planes
+   * - Dual tet breaks those shared symmetry planes → robust prime hull counts
+   *
+   * Unit-sphere normalization ensures:
+   * - All vertices equidistant from origin → robust convex hull
+   * - Scale-invariant hull counts (no Float32 sensitivity)
+   * - Matches the original verified 7-gon pipeline
+   *
+   * @param {number} scale - Output radius (default 1.0)
+   * @param {number} truncation - Truncation parameter (default 1/3)
+   * @returns {Object} {vertices, edges, faces, components}
+   */
+  compoundTruncTetDualTet: (scale = 1, truncation = 1 / 3) => {
+    // Get canonical geometries (half_size=3 gives integer-like [±1,±1,±3] coords)
+    const truncTet = Polyhedra.truncatedTetrahedron(3, truncation, { silent: true });
+    const dualTet = Polyhedra.dualTetrahedron(1, { silent: true });
+
+    // Normalize all vertices to unit sphere, then scale to desired radius
+    // This ensures both components have equal reach from origin
+    const normalizeAndScale = v => v.clone().normalize().multiplyScalar(scale);
+
+    const truncTetVertices = truncTet.vertices.map(normalizeAndScale);
+    const dualTetVertices = dualTet.vertices.map(normalizeAndScale);
+
+    // Combine vertices: TruncTet (0-11) + DualTet (12-15)
+    const vertices = [...truncTetVertices, ...dualTetVertices];
+
+    // Combine edges with offset for dual tet indices
+    const truncTetEdges = truncTet.edges;
+    const dualTetEdgesOffset = dualTet.edges.map(([i, j]) => [
+      i + truncTetVertices.length,
+      j + truncTetVertices.length,
+    ]);
+    const edges = [...truncTetEdges, ...dualTetEdgesOffset];
+
+    // Combine faces with offset for dual tet indices
+    const truncTetFaces = truncTet.faces;
+    const dualTetFacesOffset = dualTet.faces.map(face =>
+      face.map(i => i + truncTetVertices.length)
+    );
+    const faces = [...truncTetFaces, ...dualTetFacesOffset];
+
+    return {
+      vertices,
+      edges,
+      faces,
+      components: {
+        truncatedTetrahedron: {
+          vertices: truncTetVertices,
+          edges: truncTetEdges,
+          faces: truncTetFaces,
+          vertexOffset: 0,
+        },
+        dualTetrahedron: {
+          vertices: dualTetVertices,
+          edges: dualTet.edges,
+          faces: dualTet.faces,
+          vertexOffset: truncTetVertices.length,
+        },
+      },
+      metadata: {
+        totalVertices: 16,
+        scale: scale,
+        truncation: truncation,
+        normalized: true,
+        primeProjections: {
+          heptagon: {
+            spreads: [0, 0, 0.5],
+            expectedHull: 7,
+            verified: "2026-02-08",
           },
         },
       },

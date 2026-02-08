@@ -316,10 +316,44 @@ def convex_hull_2d(points: List[Tuple[float, float]]) -> List[Tuple[float, float
     return hull
 
 
+def project_to_plane(vertices_3d: List[List[float]],
+                     s1: float, s2: float, s3: float) -> List[Tuple[float, float]]:
+    """
+    Project 3D vertices onto a 2D plane using column-based projection.
+    Matches JavaScript rt-projections.js: dot vertex with columns of R.
+
+    This is equivalent to R^T · v (transpose), NOT R · v.
+    The JS renderer extracts planeRight=col0(R), planeUp=col1(R) and
+    projects via vertex.dot(planeRight), vertex.dot(planeUp).
+
+    Args:
+        vertices_3d: List of [x, y, z] vertices
+        s1, s2, s3: Rotation spreads
+
+    Returns:
+        List of (x, y) 2D projected coordinates
+    """
+    R = rotation_matrix_from_spreads(s1, s2, s3)
+
+    # Column 0 of R = planeRight, Column 1 of R = planeUp
+    # (matches _getProjectionPlaneBasis in rt-projections.js)
+    col0 = [R[0][0], R[1][0], R[2][0]]  # planeRight
+    col1 = [R[0][1], R[1][1], R[2][1]]  # planeUp
+
+    points_2d = []
+    for v in vertices_3d:
+        x = v[0] * col0[0] + v[1] * col0[1] + v[2] * col0[2]
+        y = v[0] * col1[0] + v[1] * col1[1] + v[2] * col1[2]
+        points_2d.append((x, y))
+
+    return points_2d
+
+
 def count_hull_vertices(vertices_3d: List[List[float]],
                         s1: float, s2: float, s3: float) -> int:
     """
     Count the number of vertices on the convex hull of a projected polyhedron.
+    Uses column-based projection matching JavaScript rt-projections.js.
 
     Args:
         vertices_3d: List of [x, y, z] vertices
@@ -328,16 +362,8 @@ def count_hull_vertices(vertices_3d: List[List[float]],
     Returns:
         Number of vertices on the 2D convex hull
     """
-    # Apply rotation
-    matrix = rotation_matrix_from_spreads(s1, s2, s3)
-    rotated = [apply_rotation(v, matrix) for v in vertices_3d]
-
-    # Project to 2D
-    points_2d = [project_to_2d(v) for v in rotated]
-
-    # Compute hull
+    points_2d = project_to_plane(vertices_3d, s1, s2, s3)
     hull = convex_hull_2d(points_2d)
-
     return len(hull)
 
 
