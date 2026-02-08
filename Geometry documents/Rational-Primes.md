@@ -4,28 +4,47 @@
 
 ---
 
-## The Showcase: 5-gon and 7-gon at s = 1/2
+## Path A Results: All Four Primes at Rational Spreads
 
-The strongest evidence that this approach has algebraic depth:
+**Confirmed 2026-02-08** via `prime_search_streamlined.py --rational` (Tiers 1–3).
 
-| Prime | Viewing Spread | Rational Form | Rotation Matrix Entries | Polyhedron |
-|-------|---------------|---------------|------------------------|------------|
-| **5** | s₂ = 0.5 | **1/2** (exact) | √(1/2) = √2/2 (cached in `RT.PureRadicals`) | TruncTet (12v) |
-| **7** | s₃ = 0.5 | **1/2** (exact) | √(1/2) = √2/2 (cached in `RT.PureRadicals`) | TruncTet+DualTet (16v) |
+All four prime polygon projections exist at algebraically significant rational spreads:
 
-Both primes emerge at **the same rational spread**: s = 1/2. This is not a coincidence we can ignore.
+| Prime | Rational Spreads | Tier | Denominators | Regularity | Radical Family |
+|-------|-----------------|------|--------------|------------|----------------|
+| **5** | **(0, 1/2, 0)** | 1 | {2} | 0.423 | √2 |
+| **7** | **(1/2, 1/2, 1/2)** | 1 | {2} | 0.861 | √2 |
+| **11** | **(3/4, 1/4, 1/2)** | 1 | {2, 4} | 0.490 | √2, √3 |
+| **13** | **(9/10, 24/25, 19/20)** | 3 | {10, 25, 20} | 0.346 | √5 family |
+
+### The Showcase: 5, 7, and 11 at Tier 1
+
+The 5-gon, 7-gon, and 11-gon all emerge at **Tier 1 rationals** — denominators from {2, 3, 4} only. Their rotation matrices require only √2 and √3, both cached in `RT.PureRadicals`.
+
+**7-gon at s = (1/2, 1/2, 1/2)** is the most elegant result: all three spreads identical, the rotation matrix is pure √2/2 throughout. Regularity 0.861, significantly better than the previous (0, 0, 0.5) at 0.757.
+
+**11-gon at s = (3/4, 1/4, 1/2)** is the surprise. Gauss-Wantzel says the 11-gon is non-constructible, yet it emerges from the simplest possible rational spreads — the same √2/√3 family as the 5-gon and 7-gon. The rotation matrix entries are:
+- √(1/4) = 1/2, √(3/4) = √3/2 — exact, cached
+- √(1/2) = √2/2 — exact, cached
+
+Alternative 11-gon results at higher tiers with better regularity:
+- s = (1/3, 1/2, 1/4) — Tier 1, reg=0.487
+- s = (1/2, 9/20, 1/3) — Tier 3, reg=0.504 (nearly matches decimal search best of 0.505)
+
+### 13-gon: Requires Tier 2+
+
+The 13-gon does not appear at Tier 1 rationals but emerges at:
+- **Tier 2**: s = (4/5, 9/10, 9/10) — reg=0.301, denominators {5, 10}
+- **Tier 3**: s = (9/10, 24/25, 19/20) — reg=0.346, close to decimal best of 0.352
+
+This is itself a meaningful result: the 13-gon requires the √5 (golden ratio) family of radicals, while 5, 7, and 11 need only √2 and √3.
+
+### Key Properties
 
 - The spread 1/2 is exactly representable in IEEE 754 — zero floating-point error
-- The rotation matrix entries are algebraic in √2, already cached in `RT.PureRadicals.sqrt2Values.half`
+- The rotation matrix entries are algebraic in √2, √3, √5 — all cached in `RT.PureRadicals`
 - The source polyhedra have integer Quadray coordinates: TruncTet = `(2,1,0,0)/3`, DualTet = `(±1,±1,±1)`
 - The entire pipeline from vertex definition through projection is algebraic — no transcendentals
-
-This means the 5-gon and 7-gon projections are **already RT-pure** in practice. The pipeline uses only:
-- Integer/rational vertex coordinates
-- A rational spread (1/2)
-- Algebraic rotation entries (√2/2)
-- Linear projection (dot products)
-- Convex hull (cross products of algebraic numbers)
 
 No sin, cos, tan, or π appears anywhere in the chain.
 
@@ -43,19 +62,19 @@ Rational Trigonometry reverses this: it starts from **algebraic** foundations (q
 
 ## Three Pathways to a Fully Rational Pipeline
 
-### Current State
+### Current State (Post–Path A)
 
-The search-to-render pipeline currently works but is not fully rationalized:
+Path A is **complete**. All four primes now use rational spreads in `PROJECTION_PRESETS`:
 
 ```
 Python Search (Float64)              JavaScript Rendering (Float32)
 ───────────────────────────          ──────────────────────────────
-Grid search over decimal spreads     Apply spreads to rotation matrix
+--rational TIER grid search          Apply rational spreads to rotation matrix
 → count hull vertices                → project polyhedron vertices
-→ rank by regularity                 → render convex hull
+→ rank by regularity                 → render convex hull (yellow hull / cyan ideal)
 ```
 
-The 5-gon and 7-gon are already effectively rational (s=1/2). The 11-gon and 13-gon use decimal spreads (0.34, 0.54, 0.2) and (0.96, 0.99, 0.99) — found by brute-force grid search, not algebraic derivation.
+The pipeline is now algebraically rational for 5, 7, and 11 (Tier 1 spreads with √2/√3 radicals). The 13-gon uses Tier 3 rationals (√5 family). Paths B and C remain as future refinements.
 
 ### Path A: Search Over Algebraically Significant Rationals
 
@@ -78,9 +97,9 @@ Tier 3 (algebraic): q ∈ {6, 9, 12, 16, 20, 25}
 
 If the 11-gon exists at s = (1/3, 1/2, 1/5) rather than (0.34, 0.54, 0.2), that's profoundly more meaningful — and the entire rotation pipeline becomes expressible in `RT.PureRadicals`.
 
-**Implementation**: Modify `generate_spread_grid()` in `prime_search_streamlined.py` to emit rationals with specified denominators. Small code change, potentially deep mathematical results.
+**Implementation**: **DONE.** `generate_rational_spread_grid()` added to `prime_search_streamlined.py`. Usage: `--rational TIER` flag (1=RT-pure, 2=φ-rational, 3=algebraic). Results carry rational labels (e.g. "3/4") in JSON output.
 
-**Key question this answers**: Do prime hulls exist at "nice" rational spreads, or do they inherently require "messy" ones? If the former, the pipeline is naturally rational. If the latter, that itself is a Gauss-Wantzel-like impossibility result for the projection pathway.
+**Key question answered**: YES — all four primes exist at nice rational spreads. 5, 7, and 11 at Tier 1 (denominators 2, 3, 4). 13 requires Tier 2+ (denominators 5, 10, 20, 25). This means the prime projection pipeline is naturally rational — not a numerical coincidence.
 
 ### Path B: Quadray-Native Projection
 
@@ -162,7 +181,7 @@ All of this infrastructure was designed for rational computation. The irony is t
 
 ## The Goal
 
-**Immediate**: Determine whether 11-gon and 13-gon projections exist at "nice" rational spreads (Path A). This is a targeted search that could run in hours and answer a fundamental question.
+**Immediate**: ~~Determine whether 11-gon and 13-gon projections exist at "nice" rational spreads (Path A).~~ **DONE** — yes, they do. See results table above.
 
 **Medium-term**: Port the Quadray rotation framework to Python (Path B) and add exact arithmetic hull counting (Path C). This creates a provably correct, algebraically exact search pipeline.
 

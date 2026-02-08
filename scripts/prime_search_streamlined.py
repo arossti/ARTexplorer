@@ -20,6 +20,7 @@ import argparse
 import json
 import sys
 from datetime import datetime
+from fractions import Fraction
 from math import sqrt, acos, degrees, pi
 from typing import List, Dict, Optional, Tuple
 
@@ -92,6 +93,60 @@ def generate_spread_grid(precision: int) -> List[float]:
         values.append(round(current, precision))
         current += step
     return values
+
+
+# =============================================================================
+# PATH A: RATIONAL SPREAD GRID
+# =============================================================================
+
+# Tier 1 — RT-pure: denominators whose √s are expressible in cached radicals (√2, √3)
+# Tier 2 — φ-rational: introduces √5 (golden ratio family)
+# Tier 3 — algebraic: finer grid, still algebraically meaningful denominators
+RATIONAL_TIERS = {
+    1: [2, 3, 4],          # → √2, √3 family
+    2: [5, 8, 10],         # → √5, √2 family
+    3: [6, 9, 12, 16, 20, 25],  # finer algebraic grid
+}
+
+
+def generate_rational_spread_grid(max_tier: int = 3) -> List[Dict]:
+    """
+    Generate spread values from algebraically significant rationals.
+
+    Each entry is {value: float, label: "p/q", fraction: Fraction(p,q)}
+    so results carry their exact rational identity.
+
+    Args:
+        max_tier: Include tiers 1..max_tier (1=RT-pure, 2=φ-rational, 3=algebraic)
+
+    Returns:
+        Sorted list of {value, label, fraction} dicts, deduplicated
+    """
+    denominators = set()
+    for tier in range(1, max_tier + 1):
+        denominators.update(RATIONAL_TIERS.get(tier, []))
+
+    # Always include 0 and 1
+    seen = {}  # Fraction → label
+    seen[Fraction(0, 1)] = "0"
+    seen[Fraction(1, 1)] = "1"
+
+    for q in sorted(denominators):
+        for p in range(1, q):
+            frac = Fraction(p, q)
+            if frac not in seen:
+                seen[frac] = f"{frac.numerator}/{frac.denominator}"
+
+    # Sort by float value
+    entries = []
+    for frac, label in sorted(seen.items(), key=lambda x: float(x[0])):
+        entries.append({
+            'value': float(frac),
+            'label': label,
+            'fraction': frac,
+        })
+
+    return entries
 
 
 def compute_hull_geometry(hull_points: List[Tuple[float, float]]) -> Dict:
@@ -199,6 +254,7 @@ def get_hull_points(vertices_3d: List[List[float]],
 def search_for_prime(
     target_prime: int,
     precision: int = 2,
+    rational_tier: int = 0,
     verbose: bool = False
 ) -> List[Dict]:
     """
@@ -206,7 +262,8 @@ def search_for_prime(
 
     Args:
         target_prime: Target number of hull vertices (5, 7, 11, 13)
-        precision: Decimal places for spread search
+        precision: Decimal places for spread search (used when rational_tier=0)
+        rational_tier: If >0, use rational spread grid up to this tier (Path A)
         verbose: Print progress
 
     Returns:
@@ -219,19 +276,32 @@ def search_for_prime(
     vertices = config['vertices']()
     vertex_count = len(vertices)
 
+    # Choose grid mode
+    if rational_tier > 0:
+        rational_entries = generate_rational_spread_grid(rational_tier)
+        spread_values = [e['value'] for e in rational_entries]
+        label_map = {e['value']: e['label'] for e in rational_entries}
+        mode_desc = f"rational tier {rational_tier} ({len(spread_values)} values)"
+    else:
+        spread_values = generate_spread_grid(precision)
+        label_map = None
+        mode_desc = f"decimal precision={precision} ({len(spread_values)} values)"
+
     if verbose:
         print(f"\nSearching for {target_prime}-gon ({config['name']})")
         print(f"  Polyhedra: {config['polyhedra']} ({vertex_count} vertices)")
-        print(f"  Precision: {precision} decimal places")
+        print(f"  Grid: {mode_desc}")
+        if rational_tier > 0:
+            labels = [e['label'] for e in rational_entries]
+            print(f"  Spreads: {labels}")
 
-    spreads = generate_spread_grid(precision)
-    total_searches = len(spreads) ** 3
+    total_searches = len(spread_values) ** 3
     results = []
     checked = 0
 
-    for s1 in spreads:
-        for s2 in spreads:
-            for s3 in spreads:
+    for s1 in spread_values:
+        for s2 in spread_values:
+            for s3 in spread_values:
                 checked += 1
 
                 # Count hull vertices
@@ -253,6 +323,13 @@ def search_for_prime(
                         'is_equiangular': geometry['is_equiangular'],
                         'is_equilateral': geometry['is_equilateral'],
                     }
+
+                    # Attach rational labels if in rational mode
+                    if label_map is not None:
+                        result['s1_rational'] = label_map.get(s1, str(s1))
+                        result['s2_rational'] = label_map.get(s2, str(s2))
+                        result['s3_rational'] = label_map.get(s3, str(s3))
+
                     results.append(result)
 
                     if verbose:
@@ -263,7 +340,13 @@ def search_for_prime(
                             tag = " ★ EQUIANGULAR"
                         elif geometry['is_equilateral']:
                             tag = " ★ EQUILATERAL"
-                        print(f"  FOUND: s1={s1}, s2={s2}, s3={s3} → {hull_count}-gon"
+                        if label_map:
+                            lbl = (f"s=({label_map.get(s1,'?')},"
+                                   f" {label_map.get(s2,'?')},"
+                                   f" {label_map.get(s3,'?')})")
+                        else:
+                            lbl = f"s1={s1}, s2={s2}, s3={s3}"
+                        print(f"  FOUND: {lbl} → {hull_count}-gon"
                               f" (reg={geometry['regularity_score']:.3f}){tag}")
 
                 # Progress report
@@ -278,7 +361,13 @@ def search_for_prime(
         print(f"  Complete: {len(results)} matches found in {total_searches} searches")
         if results:
             best = results[0]
-            print(f"  Best: s1={best['s1']}, s2={best['s2']}, s3={best['s3']}"
+            if label_map:
+                lbl = (f"s=({best.get('s1_rational','?')},"
+                       f" {best.get('s2_rational','?')},"
+                       f" {best.get('s3_rational','?')})")
+            else:
+                lbl = f"s1={best['s1']}, s2={best['s2']}, s3={best['s3']}"
+            print(f"  Best: {lbl}"
                   f" (regularity={best['regularity_score']:.4f})")
 
     return results
@@ -342,6 +431,13 @@ def main():
         help='Only keep top N results per prime (by regularity score, 0 = all)'
     )
     parser.add_argument(
+        '--rational',
+        type=int,
+        default=0,
+        metavar='TIER',
+        help='Path A: search over rational spreads up to TIER (1=RT-pure, 2=φ, 3=algebraic)'
+    )
+    parser.add_argument(
         '--verbose', '-v',
         action='store_true',
         help='Verbose output'
@@ -356,7 +452,13 @@ def main():
     print("Prime Polygon Hull Search (Project-Streamline)")
     print("=" * 60)
     print(f"Target primes: {primes}")
-    print(f"Precision: {args.precision} decimal places")
+    if args.rational > 0:
+        grid = generate_rational_spread_grid(args.rational)
+        print(f"Mode: RATIONAL tier {args.rational} ({len(grid)} spread values)")
+        print(f"  Denominators: {sorted(set().union(*(RATIONAL_TIERS[t] for t in range(1, args.rational+1))))}")
+        print(f"  Search space: {len(grid)}³ = {len(grid)**3:,} triples per prime")
+    else:
+        print(f"Precision: {args.precision} decimal places")
     print(f"Using unified RT definitions from JavaScript")
     print()
 
@@ -365,6 +467,8 @@ def main():
         'metadata': {
             'timestamp': datetime.now().isoformat(),
             'precision': args.precision,
+            'rational_tier': args.rational if args.rational > 0 else None,
+            'mode': f'rational_tier_{args.rational}' if args.rational > 0 else f'decimal_p{args.precision}',
             'source': 'prime_search_streamlined.py',
             'note': 'Spreads work DIRECTLY in JavaScript rt-projections.js'
         },
@@ -379,6 +483,7 @@ def main():
         results = search_for_prime(
             target_prime=prime,
             precision=args.precision,
+            rational_tier=args.rational,
             verbose=args.verbose
         )
 
@@ -444,7 +549,12 @@ def main():
                 tag = " ★ equiangular"
             elif r.get('is_equilateral'):
                 tag = " ★ equilateral"
-            print(f"    #{i+1}: s1={r['s1']}, s2={r['s2']}, s3={r['s3']}"
+            # Show rational labels if available
+            if 's1_rational' in r:
+                lbl = f"s=({r['s1_rational']}, {r['s2_rational']}, {r['s3_rational']})"
+            else:
+                lbl = f"s1={r['s1']}, s2={r['s2']}, s3={r['s3']}"
+            print(f"    #{i+1}: {lbl}"
                   f" (reg={r['regularity_score']:.4f},"
                   f" ang_var={r['angle_variance']:.2f}°,"
                   f" edge_var={r['edge_variance']:.2f}%){tag}")
