@@ -156,9 +156,7 @@ function startARTexplorer(
     quadrayCuboctahedronGroup,
     quadrayOctahedronGroup,
     quadrayTruncatedTetGroup,
-    quadrayStellaOctangulaGroup,
-    quadrayCompoundGroup,
-    quadrayCompoundTetGroup;
+    quadrayStellaOctangulaGroup;
   let cartesianGrid, ivmPlanes;
 
   // ========================================================================
@@ -2470,8 +2468,6 @@ function startARTexplorer(
       quadrayOctahedronGroup,
       quadrayTruncatedTetGroup,
       quadrayStellaOctangulaGroup,
-      quadrayCompoundGroup,
-      quadrayCompoundTetGroup,
       penroseTilingGroup,
     ];
 
@@ -2742,8 +2738,6 @@ function startARTexplorer(
       quadrayOctahedronGroup,
       quadrayTruncatedTetGroup,
       quadrayStellaOctangulaGroup,
-      quadrayCompoundGroup,
-      quadrayCompoundTetGroup,
       penroseTilingGroup,
     ];
 
@@ -4193,8 +4187,6 @@ function startARTexplorer(
     quadrayOctahedronGroup,
     quadrayTruncatedTetGroup,
     quadrayStellaOctangulaGroup,
-    quadrayCompoundGroup,
-    quadrayCompoundTetGroup,
     penroseTilingGroup,
   } = formGroups);
 
