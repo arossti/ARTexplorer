@@ -318,9 +318,40 @@ Added `Polyhedra.truncatedTetrahedron(halfSize, truncation)` to base polyhedra:
 
 This provides a **single source of truth** using base `Polyhedra.tetrahedron()` with truncation, avoiding Quadray-derived variants with normalization issues.
 
-### Remaining Work
+### Completed: Base Compound Polyhedra (Feb 2026)
 
-1. **Update prime projection presets** to use `Polyhedra.truncatedTetrahedron()` instead of hardcoded vertices or Quadray forms
+Added `Polyhedra.compoundTruncTetTet()` and `Polyhedra.compoundTruncTetIcosa()` to rt-polyhedra.js:
+- Match Python `rt_polyhedra.py` exactly
+- No Quadray normalization
+- Icosahedron scaled to match TruncTet circumradius (√11)
+
+**Files modified:**
+- `modules/rt-polyhedra.js` - Added compound functions
+- `modules/rt-rendering.js` - Compound checkboxes now use base functions
+- `modules/rt-prime-cuts.js` - Pentagon preset uses base tetrahedron
+
+### Current Status (Feb 2026 Testing)
+
+**Observation:** Pentagon preset produces 9-gon hull instead of expected 5-gon.
+
+**Root cause:** The old spreads `[0.01, 0.5, 0]` were found with Quadray-normalized geometry. Now that we use base geometry (correct), the spreads are stale.
+
+**What works:**
+- Projection rays correctly target base truncated tetrahedron vertices
+- Truncation slider properly forces t=1/3
+- Single source of truth architecture is in place
+
+**What doesn't work:**
+- Quadray Truncated Tetrahedron still renders in scene (too large, different scale)
+- Hull counts don't match because spreads need re-searching
+
+### HANDOFF: Remaining Work
+
+1. **CRITICAL: Remove Quadray TruncTet from prime projection pipeline**
+   - The `showQuadrayTruncatedTet` checkbox still renders the old Quadray form
+   - Prime presets should ONLY use base tetrahedron with truncation
+   - Remove or hide the Quadray TruncTet checkbox for prime projection use cases
+   - Files to modify: `rt-prime-cuts.js`, `rt-rendering.js`, potentially `index.html`
 
 2. **Re-run Python search** with unified vertex definitions:
    ```bash
@@ -328,12 +359,11 @@ This provides a **single source of truth** using base `Polyhedra.tetrahedron()` 
        --primes 5,7,11,13 \
        --precision 2
    ```
+   This will find NEW spreads that work with base geometry.
 
-3. **Verify hull counts** in JavaScript match Python results exactly
+3. **Update preset spreads** with results from step 2
 
-4. **Update compound polyhedra** (TruncTet+Tet, TruncTet+Icosa) to use the new parametric truncation
-
-5. **Consider extending truncation** to dual tetrahedron for stella octangula variants
+4. **Verify hull counts** in JavaScript match Python results exactly
 
 ### Architecture Notes
 
