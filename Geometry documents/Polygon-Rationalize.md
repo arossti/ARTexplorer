@@ -2,133 +2,84 @@
 
 ---
 
-## 🚀 QUICKSTART: Prime Polygon Search (Agent Handoff)
+## QUICKSTART: Prime Polygon Search (Agent Handoff)
 
 > **Mission**: Find rational-spread viewing angles where 3D polyhedra project to prime n-gon silhouettes (5, 7, 11, 13, 17, 19...). This bypasses Gauss-Wantzel impossibility via dimensional projection.
+>
+> **Ultimate Goal**: Find projections that are **equiangular** (all interior angles equal). If a projection is equiangular, we can normalize for unit R (radius) and have a true alternative for prime polygons that bypasses Gauss-Wantzel. Equilateral projections are also equiangular for convex polygons.
 
-### What We're Searching For
+### Search Priority
 
 | Priority | Target | Description | Why It Matters |
 |----------|--------|-------------|----------------|
-| **A** | **Equi-angular** | All interior angles equal (360°/n) | True regular n-gon from projection! |
-| **B** | **Equal edge-lengths** | All edges same length (may not be equi-angular) | Significant pattern, investigate further |
-| **C** | **Prime hull count** | Convex hull has prime vertices | Basic discovery, refine for A or B |
+| **A** | **Equi-angular** | All interior angles equal ((n-2)×180°/n) | True regular n-gon from projection — bypasses Gauss-Wantzel! |
+| **B** | **Equilateral** | All edges same length (implies equiangular for convex) | Equivalent to A for convex projections |
+| **C** | **Prime hull count** | Convex hull has prime vertices | Basic discovery — refine for A or B |
 
-### Current Status (Project-Streamline Verified)
+### Current Pipeline (Single Source of Truth)
 
-| n-gon | Status | Spreads (s₁, s₂, s₃) | Polyhedron | Notes |
-|-------|--------|----------------------|------------|-------|
-| **5** | ✅ Verified | (0.01, 0.5, 0) | TruncTet (12v) | 145 projections |
-| **7** | ✅ Verified | (0, 0.01, 0.14) | TruncTet+Tet (16v) | 438,406 projections |
-| **11** | ✅ Verified | (0, 0.01, 0.1) | TruncTet+Icosa (24v) | 36,360 projections |
-| **13** | ✅ Verified | (0, 0.01, 0.14) | TruncTet+Icosa (24v) | 4,347 projections |
+The search-to-render pipeline is now unified:
 
-**Source of Truth**: `scripts/prime_search_streamlined.py` + `prime_projections_verified.json`
-
-### ✅ Single Source of Truth: Project-Streamline (Feb 2026)
-
-**RESOLVED**: Python and JavaScript now use **identical vertex definitions**.
-
-See `Geometry documents/Project-Streamline.md` for the unified approach:
-- Python scripts (`rt_math.py`, `rt_polyhedra.py`) are direct ports from JavaScript
-- Spread values from Python search work directly in JavaScript without translation
-- All verified spreads stored in `prime_projections_verified.json`
-
-When adding new prime projections:
-1. Run `python scripts/prime_search_streamlined.py --primes N --precision 2`
-2. Take spreads from JSON output **exactly as found**
-3. Add to `PROJECTION_PRESETS` in `rt-prime-cuts.js`
-
-### 📋 TODO: On-Axis Search Priority (Next Session)
-
-**Before searching arbitrary spread variants**, systematically search ON-AXIS views:
-
-| Priority | Axis Type | Views | Rationale |
-|----------|-----------|-------|-----------|
-| **1** | Cartesian XYZ | ±X, ±Y, ±Z (6 views) | Standard orthographic projections |
-| **2** | Quadray WXYZ | QW, QX, QY, QZ (4 views) | Tetrahedral-aligned projections |
-| **3** | Combined | All 10 axial views | Complete on-axis coverage |
-| **4** | Spread variants | s=(0.1, 0.2, ...) | Only AFTER on-axis exhausted |
-
-**Search order for each polyhedron/compound**:
-1. XYZ on-axis (s1=s2=s3=0 with axis-aligned camera)
-2. WXYZ on-axis (camera along Quadray basis vectors)
-3. THEN rational spread variants (0.1, 0.2, 0.25, 0.5, etc.)
-
-**Polyhedra to search (in order)**:
-- [ ] Truncated Tetrahedron (12v) — 5-gon, 7-gon source
-- [ ] Compound: Trunc Tet + Tetrahedron (16v) — **7-gon at (0, 0, 0.5)**
-- [ ] Compound: Trunc Tet + Icosahedron (24v) — 11-gon, 13-gon source
-- [ ] Snub Cube (24v, chiral) — potential for higher primes
-- [ ] Compound: Trunc Tet + Dodecahedron (32v) — 17-gon, 19-gon candidates
-
-### ★ BREAKTHROUGH (Feb 2026): 11-gon and 13-gon Discovered!
-
-**Compound polyhedra unlock higher primes!**
-
-| Prime | Compound | View Spreads | Algebraic Requirement |
-|-------|----------|-------------|----------------------|
-| **11-gon** | TruncTet + Icosa (24v) | (0, 0.01, 0.1) | Quintic polynomial (degree 5) |
-| **13-gon** | TruncTet + Icosa (24v) | (0, 0.01, 0.14) | Sextic polynomial (degree 6) |
-
-**Significance**: The 11-gon requires solving a degree-5 polynomial—*impossible* by radicals (Abel-Ruffini). Yet it emerges from rational-spread projection!
-
-### Run the Search
-
-```bash
-# Navigate to project root
-cd /path/to/ARTexplorer
-
-# Quick test (coarse precision)
-python scripts/prime_search_streamlined.py --primes 5,7 --precision 1
-
-# Full search for specific prime (fine precision)
-python scripts/prime_search_streamlined.py --primes 7 --precision 3
-
-# Search all supported primes with verification
-python scripts/prime_search_streamlined.py --primes 5,7,11,13 --precision 2 --verify
-
-# Results output to JSON with spreads usable directly in JavaScript
+```
+Python Search                    JavaScript Rendering
+─────────────────────────────    ─────────────────────────────
+rt_math.py        ←(ported from)→  modules/rt-math.js
+rt_polyhedra.py   ←(ported from)→  modules/rt-polyhedra.js
+prime_search_streamlined.py        modules/rt-prime-cuts.js
+         ↓                                  ↑
+    JSON results  ──(spreads)──→  PROJECTION_PRESETS registry
+                                           ↓
+                                  rt-projections.js (render)
 ```
 
-### Results Format
+**Key files:**
 
-Results are saved to `results/prime_projections_YYYYMMDD_HHMMSS.json`:
+| File | Role |
+|------|------|
+| `scripts/prime_search_streamlined.py` | Python search — finds spread parameters |
+| `scripts/rt_math.py` | RT functions (ported from rt-math.js) |
+| `scripts/rt_polyhedra.py` | Polyhedra vertices (ported from rt-polyhedra.js) |
+| `modules/rt-prime-cuts.js` | `PROJECTION_PRESETS` registry + floating demo modal |
+| `modules/rt-projections.js` | Generalized projection visualization |
+| `modules/rt-polyhedra.js` | Base polyhedra (single source for compounds) |
+| `modules/rt-rendering.js` | Camera presets, polyhedra rendering |
 
-```json
-{
-  "metadata": {
-    "timestamp": "2026-02-06T12:25:23",
-    "precision": 2,
-    "target_primes": [7, 11, 13],
-    "polyhedra_searched": ["truncated_tetrahedron"]
-  },
-  "findings": [
-    {
-      "polyhedron": "truncated_tetrahedron",
-      "hull_count": 7,
-      "spreads": [0.1137, 0.0, 0.5],
-      "hull_vertices_2d": [[x1,y1], [x2,y2], ...],
-      "interior_angles": [51.4, 51.4, 51.4, 51.4, 51.4, 51.4, 51.4],
-      "edge_lengths": [0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73],
-      "equiangular": true,
-      "equilateral": true,
-      "regularity_score": 1.0
-    }
-  ]
-}
-```
+**Deleted (Feb 2026):** Quadray compound functions in `rt-quadray-polyhedra.js` — base `Polyhedra.compoundTruncTetIcosa()` and `Polyhedra.compoundTruncTetDualTet()` are now the single source. The original `compoundTruncTetTet()` (same-parity tet) was superseded by `compoundTruncTetDualTet()` (dual/even-parity tet with unit-sphere normalization) for robust 7-gon hull counts.
 
-### Key Metrics to Log
+### Current Status
 
-For each discovery, record:
+| n-gon | Hull Status | Equiangularity | Spreads (s₁, s₂, s₃) | Polyhedron | Notes |
+|-------|-------------|----------------|----------------------|------------|-------|
+| **5** | ✅ Correct hull | reg=0.4231 | (0, 0.5, 0) | TruncTet (12v) | Irregular — needs equiangular search |
+| **7** | ✅ Correct hull | reg=0.28 | (0, 0, 0.5) | TruncTet+DualTet (16v, normalized) | Dual tet compound, unit-sphere normalized |
+| **11** | ✅ Correct hull | reg=0.5050 | (0.34, 0.54, 0.2) | TruncTet+Icosa (24v) | Column-projection search 2026-02-08 |
+| **13** | ✅ Correct hull | reg=0.3516 | (0.96, 0.99, 0.99) | TruncTet+Icosa (24v) | Column-projection search 2026-02-08 |
 
-1. **Hull vertex count** - Must be prime (or 9 for cubic-algebraic)
-2. **Interior angles** - List all angles; check if equi-angular (variance < 0.1°)
-3. **Edge lengths** - List all lengths; check if equilateral (variance < 1%)
-4. **Spreads** - The (s₁, s₂, s₃) viewing spreads (KEEP RATIONAL if possible!)
-5. **Source polyhedron** - Which 3D shape was projected
-6. **Regularity score** - 0-1 measure of how "regular" the projection is
+All four presets now produce correct hull counts (verified 2026-02-08 via `prime_search_streamlined.py` at precision 2). The 7-gon uses a dual (even-parity) tetrahedron compound with unit-sphere normalization for Float32-robust hull counts. Regularity scores are low — all shapes are far from equiangular/equilateral. Next step: precision 3+ search for improved regularity.
+
+### Planned Improvements
+
+1. ~~**Enhance `prime_search_streamlined.py`**~~ — ✅ Done. Added `compute_hull_geometry()` with regularity scoring
+2. ~~**Re-run search for 7, 11, 13-gon**~~ — ✅ Done. All presets updated with verified spreads (2026-02-08)
+3. **Search for more equiangular solutions** — Fine-grid (precision 3+) around best-scoring spreads
+4. **Algebraic analysis** — Derive exact spread values from the regularity-optimized results
+
+### How to Add New Primes
+
+1. Run `python scripts/prime_search_streamlined.py --primes N --precision 2 -v`
+2. Take best-scoring spreads from JSON output (ranked by regularity)
+3. Add to `PROJECTION_PRESETS` in `modules/rt-prime-cuts.js`
+4. Modal buttons auto-generate from the registry
+
+### Visualization in ARTexplorer
+
+1. Open **"Prime Projections"** from **Math Demos** menu (floating modal)
+2. Click preset button (5-gon, 7-gon, 11-gon, 13-gon)
+3. Observe:
+   - **YELLOW** = Actual projection hull (from 3D polyhedron vertices)
+   - **CYAN** = Ideal regular n-gon (for comparison)
+   - **GREEN** = Projection rays from polyhedron to plane
+   - Sidebar checkboxes still independently toggle base polyhedra
 
 ### Symmetry Barrier (Critical!)
 
@@ -138,22 +89,6 @@ For each discovery, record:
 - ✅ **Truncated Tetrahedron** → Asymmetric, produces odd hulls (5, 7, 9)
 - ✅ Snub Cube (chiral) → Asymmetric, may produce primes
 - ✅ Compound of 5 Tetrahedra → Asymmetric, may produce primes
-
-### Visualization in ARTexplorer
-
-1. Enable **"Quadray Truncated Tetrahedron"** checkbox
-2. Select **"7-gon Projection"** or **"5-gon Projection"** camera preset
-3. Observe:
-   - **YELLOW** = Actual projection hull
-   - **CYAN** = Ideal regular n-gon (for comparison)
-   - **WHITE** = Interior projected points (not on hull)
-
-### Next Steps for New Agent
-
-1. **Refine 7-hull spread**: Current s=(0.11, 0, 0.5) gives 9-hull. Search s₁ ∈ [0.08, 0.15] at precision 4
-2. **Add equi-angular/equilateral checks**: Extend Python script to flag these
-3. **Try larger asymmetric polytopes**: Snub cube, great rhombicuboctahedron
-4. **Document ALL findings** in `results/` JSON files for reproducibility
 
 ---
 
@@ -895,27 +830,27 @@ Regular polytopes have **inversion symmetry** (point reflection through center).
 | 8-gon | 55.6% | Even | |
 | **9-gon** | 43.8% | ODD (Cubic-algebraic) | Current at s=(0.11,0,0.5) |
 
-**Prime Projection Examples Found (Verified via Project-Streamline):**
+**Prime Projection Examples Found:**
 
-| Prime | Spreads (s₁, s₂, s₃) | Polyhedron | Projections |
-|-------|----------------------|------------|-------------|
-| **5-gon** | (0.01, 0.5, 0) | TruncTet (12v) | 145 |
-| **7-gon** | (0, 0.01, 0.14) | TruncTet+Tet (16v) | 438,406 |
-| **11-gon** | (0, 0.01, 0.1) | TruncTet+Icosa (24v) | 36,360 |
-| **13-gon** | (0, 0.01, 0.14) | TruncTet+Icosa (24v) | 4,347 |
+| Prime | Spreads (s₁, s₂, s₃) | Polyhedron | Status |
+|-------|----------------------|------------|--------|
+| **5-gon** | (0, 0.5, 0) | TruncTet (12v) | ✅ Correct hull (reg=0.4231) |
+| **7-gon** | (0, 0, 0.5) | TruncTet+DualTet (16v, normalized) | ✅ Correct hull (min_cross=0.353) |
+| **11-gon** | (0.34, 0.54, 0.2) | TruncTet+Icosa (24v) | ✅ Correct hull (reg=0.5050) |
+| **13-gon** | (0.96, 0.99, 0.99) | TruncTet+Icosa (24v) | ✅ Correct hull (reg=0.3516) |
 
-**All primes verified** with unified Python/JavaScript vertex definitions. The 7-gon is NOT compass-constructible (Gauss-Wantzel), yet emerges from rational-spread projection.
+**Note**: All presets verified 2026-02-08 using `prime_search_streamlined.py` at precision 2. The 7-gon uses dual (even-parity) tetrahedron with unit-sphere normalization — the original same-parity tet shared symmetry planes with TruncTet, causing degenerate hulls. All spreads verified against base `Polyhedra` functions matching the JS renderer.
 
 ### Paths Forward
 
 1. **✓ Asymmetric Polytopes**: Use polytopes without central symmetry
-   - **Truncated tetrahedron** → 5-gon and 7-gon verified!
+   - **Truncated tetrahedron** → 5-gon verified!
    - Snub cube (chiral) - potential for higher primes
    - Compound of 5 tetrahedra
 
-2. **✓ Compound Pairs**: Combine two polyhedra - **THIS WORKED!**
-   - **Trunc Tet + Icosahedron** → 11-gon and 13-gon **BREAKTHROUGH!**
-   - **Trunc Tet + Tetrahedron** → 7-gon verified
+2. **✓ Compound Pairs**: Combine two polyhedra — demonstrated for 7, 11, 13-gon
+   - **Trunc Tet + Dual Tet** (unit-sphere normalized) → 7-gon ✅ verified 2026-02-08 at s=(0, 0, 0.5) via `Polyhedra.compoundTruncTetDualTet()`
+   - **Trunc Tet + Icosahedron** → 11-gon ✅ at s=(0.34, 0.54, 0.2) and 13-gon ✅ at s=(0.96, 0.99, 0.99) via `Polyhedra.compoundTruncTetIcosa()`
    - Stella Octangula variations
 
 3. **Search for Higher Primes**: 17, 19, 23...
@@ -955,70 +890,70 @@ python scripts/prime_search_streamlined.py --primes 7 --precision 3 -v
    - Heptagon: cubic 8x³ - 4x² - 4x + 1 = 0 (cos 360°/7)
    - Cached sin/cos values for RT-pure rotation
 
-2. **Prime Projection Search Script** - `scripts/prime_projection_search.py`
-   - Discovered Symmetry Barrier for centrally symmetric polytopes
-   - Found 5-gon projection from truncated tetrahedron at spreads (0, 0, 0.5) ✓
+2. **Prime Projection Search Scripts**
+   - `scripts/prime_projection_search.py` (v1) — Discovered Symmetry Barrier, equiangularity scoring
+   - `scripts/prime_search_streamlined.py` (v2, active) — Unified search with JS-ported vertex defs
    - Documented in `Geometry documents/Prime-Projection-Conjecture.tex`
 
 3. **UI Method Info Display** - Shows construction type for each n-gon
 
-4. **★ BREAKTHROUGH: 11-gon and 13-gon Discovered!** (2026-02-06, verified 2026-02-07)
-   - Compound polyhedra: Truncated Tetrahedron + Icosahedron (24 vertices)
-   - 11-gon at spreads (0, 0.01, 0.1) - quintic polynomial (impossible by radicals!)
-   - 13-gon at spreads (0, 0.01, 0.14) - sextic polynomial
-   - Results in `prime_projections_verified.json`
-
-5. **Compound Rendering Refactor** - `rt-quadray-polyhedra.js`
-   - Uses tested `Polyhedra.icosahedron()` via lazy async import
-   - Component-based rendering with distinct colors (cyan icosa, yellow-green trunc tet)
-   - Resolves circular dependency via lazy import pattern
-
-6. **RTProjections Module Extraction** - `modules/rt-projections.js` ✅ NEW (2026-02-07)
+4. **RTProjections Module Extraction** - `modules/rt-projections.js` (2026-02-07)
    - Generalized projection visualization for ANY polyhedron
    - Extracted generic functions from `rt-prime-cuts.js` using Shadow & Swap pattern
    - Provides `applyPreset()`, `showProjection()`, `hideProjection()` API
    - See: `Geometry documents/Project-Projection.md` for implementation details
 
-7. **RTPrimeCuts Simplification** ✅ (2026-02-07)
-   - `showPrimePolygon(n)` now delegates to `RTProjections.applyPreset()`
-   - Reduced from ~330 lines to ~50 lines
+5. **RTPrimeCuts Simplification + Floating Modal** (2026-02-07/08)
+   - `showPrimePolygon(n)` delegates to `RTProjections.applyPreset()`
    - Uses `PROJECTION_PRESETS` registry for all prime polygon configurations
-   - **All primes WORKING via preset system** (Project-Streamline verified):
-     - 5-gon: `s=(0.01, 0.5, 0)` from TruncTet (12v) ✓
-     - 7-gon: `s=(0, 0.01, 0.14)` from TruncTet+Tet (16v) ✓
-     - 11-gon: `s=(0, 0.01, 0.1)` from TruncTet+Icosa (24v) ✓
-     - 13-gon: `s=(0, 0.01, 0.14)` from TruncTet+Icosa (24v) ✓
+   - Prime presets now in floating draggable modal from Math Demos menu
+   - Old sidebar preset buttons removed
 
-### ⏳ In Progress
+6. **Quadray Compound Code Removal** (2026-02-08)
+   - Deleted `compoundTruncTetIcosahedron` and `compoundTruncTetTetrahedron` from `rt-quadray-polyhedra.js`
+   - Base polyhedra `Polyhedra.compoundTruncTetIcosa()` and `Polyhedra.compoundTruncTetDualTet()` are now the single source
+   - Removed all compound checkbox UI, bindings, rendering groups, imports, and re-export aliases
+   - **Impact**: Old preset spreads found with Quadray compound vertices no longer match — 7/11/13-gon ALL BROKEN
+
+7. **Re-search All Broken Presets** (2026-02-08) ✅
+   - Discovered 7-gon was ALSO broken: old `(0, 0.01, 0.14)` returned 6-gon with base vertices
+   - Ran `prime_search_streamlined.py --precision 2` for 7, 11, 13-gon
+   - Updated `PROJECTION_PRESETS` in `rt-prime-cuts.js` with new verified spreads:
+   - 5-gon: `s=(0, 0.5, 0)` from TruncTet (12v) ✅ correct hull (reg=0.4231)
+   - 7-gon: `s=(0, 0, 0.5)` from TruncTet+DualTet (16v, normalized) ✅ correct hull (min_cross=0.353)
+   - 11-gon: `s=(0.34, 0.54, 0.2)` from TruncTet+Icosa (24v) ✅ correct hull (reg=0.5050)
+   - 13-gon: `s=(0.96, 0.99, 0.99)` from TruncTet+Icosa (24v) ✅ correct hull (reg=0.3516)
+
+8. **Enhance Search for Equiangularity** ✅ — Added `compute_hull_geometry()` to `prime_search_streamlined.py`
+   - Computes angle variance (std dev°), edge variance (CV%), regularity score (0-1)
+   - Flags `is_equiangular` (<0.5° std dev), `is_equilateral` (<1% CV), GOLD (both)
+   - Results ranked by regularity score (best first)
+
+9. **Dual Tet Compound Fix for 7-gon** (2026-02-08) ✅
+   - Original `compoundTruncTetTet()` used same-parity (ODD) tet — shared symmetry planes with TruncTet
+   - Hull vertices became nearly collinear (cross products ~1e-16), causing degenerate/wrong hull counts
+   - Created `compoundTruncTetDualTet()` using DUAL (even-parity) tet + unit-sphere normalization
+   - All 16 vertices normalized to equal radius before scaling — eliminates Float32/scale sensitivity
+   - Min cross product = 0.353 (robustly non-degenerate vs ~0 for same-parity)
+   - Python parity: added `dual_tetrahedron()` and `trunc_tet_plus_dual_tet()` to `rt_polyhedra.py`
+
+10. **Dual Tetrahedron Truncation UI** (2026-02-08) ✅
+    - Added "Quadray Truncated Dual Tet" checkbox to sidebar (mirrors existing Truncated Tet toggle)
+    - Added `truncatedDualTetrahedron()` to `rt-polyhedra.js` — internally truncates dual tet
+    - Verified quadrance exactness: `Expected Q=4.000000, Max error=0.00e+0`
 
 ### 📋 Pending
 
-7. **On-Axis Search Implementation** - Prioritize before spread variants
-   - Implement XYZ on-axis camera views in search script
-   - Implement WXYZ (Quadray) on-axis camera views
-   - Add "Quadray Compound (TruncTet + Tet)" for 7-gon (16v compound)
-   - Systematically search all polyhedra/compounds at on-axis views FIRST
-   - See "TODO: On-Axis Search Priority" section above
+11. **Precision 3+ Regularity Search** — Fine-grid around best-scoring spreads for all primes
+   - Current regularity scores are low (0.28–0.51) — far from equiangular
+   - No GOLD or equiangular results found at precision 2
 
-7b. **Create `compoundTruncTetTetrahedron` in `rt-quadray-polyhedra.js`** - For 7-gon projection ✅ DONE
-    - Combine `QuadrayPolyhedra.truncatedTetrahedron()` (12v) + `Polyhedra.tetrahedron()` (4v) = 16 vertices
-    - Use same circumradius normalization pattern as `compoundTruncTetIcosahedron`
-    - Reference: `Polyhedra.tetrahedron()` in `modules/rt-polyhedra.js`
-    - **Implementation guide**: See `Geometry documents/Add-Polyhedra-Guide.md` for step-by-step checklist
-    - UI checkbox: "Quadray Compound (TruncTet + Tet)" ✅
-    - 7-gon preset uses spreads `(0, 0, 0.5)` — **NO SWAP** (Python = JS)
-
-8. **RT.ProjectionPolygons Namespace** - Shadow polygons using only √ radicals
+12. **RT.ProjectionPolygons Namespace** - Shadow polygons using only √ radicals
    - Algebraic formulas for projection heptagon
    - Derived from Prime Projection Search findings
    - Uses √2, √11, √89, √178 (no transcendentals)
 
-9. **RT.PureCubics Documentation** - Add derivation notes for generalizability
-   - Cardano's formula derivations
-   - Connection to Galois theory
-   - Symbolic expressions alongside cached values
-
-10. **Higher Prime Search** - Extend projection search to 17, 19, 23...
+13. **Higher Prime Search** - Extend projection search to 17, 19, 23...
    - Larger compound polyhedra (3+ components)
    - 4D± with Janus polarity perturbation
 
@@ -1028,7 +963,7 @@ python scripts/prime_search_streamlined.py --primes 7 --precision 3 -v
 
 ### Objective
 
-Replace the current 5-gon and 7-gon generation methods in `rt-primitives.js` with our new **projection-based construction** from `rt-quadray-polyhedra.js` and `rt-math.js`.
+Replace the current 5-gon and 7-gon generation methods in `rt-primitives.js` with **projection-based construction** from base polyhedra in `rt-polyhedra.js` and `rt-math.js`.
 
 ### Current Implementation (To Be Replaced)
 
@@ -1039,70 +974,45 @@ Replace the current 5-gon and 7-gon generation methods in `rt-primitives.js` wit
 
 **Prism generation** (`rt-primitives.js:814-918`) calls `Primitives.polygon()` for bases, so updating the polygon generators automatically updates prisms.
 
-### Projection-Based Methods (Project-Streamline Verified)
+### Projection-Based Methods
 
 | n-gon | Source Polyhedron | Viewing Spreads | Status |
 |-------|-------------------|-----------------|--------|
-| **5-gon** | TruncTet (12v) | s = (0.01, 0.5, 0) | ✓ Verified (145 projections) |
-| **7-gon** | TruncTet+Tet (16v) | s = (0, 0.01, 0.14) | ✓ Verified (438,406 projections) |
-| **11-gon** | TruncTet+Icosa (24v) | s = (0, 0.01, 0.1) | ✓ Verified (36,360 projections) |
-| **13-gon** | TruncTet+Icosa (24v) | s = (0, 0.01, 0.14) | ✓ Verified (4,347 projections) |
+| **5-gon** | TruncTet (12v) | s = (0, 0.5, 0) | ✅ Correct hull (reg=0.4231) |
+| **7-gon** | TruncTet+DualTet (16v, normalized) | s = (0, 0, 0.5) | ✅ Correct hull (min_cross=0.353) |
+| **11-gon** | TruncTet+Icosa (24v) | s = (0.34, 0.54, 0.2) | ✅ Correct hull (reg=0.5050) |
+| **13-gon** | TruncTet+Icosa (24v) | s = (0.96, 0.99, 0.99) | ✅ Correct hull (reg=0.3516) |
 
-All spreads work directly in JavaScript `rt-prime-cuts.js` via `PROJECTION_PRESETS`.
+**Source**: Base polyhedra from `Polyhedra.compoundTruncTetIcosa()` and `Polyhedra.compoundTruncTetDualTet()` in `rt-polyhedra.js`.
+Spreads applied via `PROJECTION_PRESETS` in `rt-prime-cuts.js`.
 
 ---
 
-### Prime Projection Visualization (Updated 2026-02-06)
+### Prime Projection Visualization (Updated 2026-02-08)
 
-**CORRECTED APPROACH**: The UI overlay should demonstrate the projection operation visually:
+The visualization is rendered by `rt-projections.js` using the `PROJECTION_PRESETS` registry in `rt-prime-cuts.js`. Access via **Math Demos → Prime Projections** floating modal.
 
 #### Visualization Components
 
-1. **Source Polyhedron** (Truncated Tetrahedron)
+1. **Source Polyhedron** — base polyhedra from `rt-polyhedra.js`
+   - TruncTet (12v), TruncTet+DualTet (16v, normalized), or TruncTet+Icosa (24v)
    - Displayed at its actual position/scale/orientation in the scene
-   - Uses standard halfSize metric for rational coordinates
-   - 12 vertices from Quadray {2,1,0,0} permutations (ALL RATIONAL)
 
-2. **Projection Rays** (YELLOW lines)
-   - Rays emanating from each polyhedron vertex
-   - Rays travel in the viewing direction defined by spreads (Project-Streamline verified)
+2. **Projection Rays** (GREEN lines)
+   - Rays from each polyhedron vertex in the viewing direction defined by spreads
    - Shows HOW vertices project to the 2D plane
 
-3. **Projection Plane** (at distance from polyhedron)
-   - Positioned AWAY from the truncated tet (not overlapping)
+3. **Projection Plane** (at configurable distance from polyhedron)
    - Oriented perpendicular to viewing direction
    - Shows where rays intersect the plane
 
-4. **Projected Vertices** (YELLOW nodes)
-   - 12 points where rays hit the plane
-   - For 7-gon preset: currently **9** form the convex hull (spread refinement pending)
-   - For 5-gon preset: **5** form the convex hull ✓
+4. **Actual Hull** (YELLOW polygon)
+   - Convex hull of boundary vertices on the projection plane
+   - All four primes (5, 7, 11, 13) produce correct hull counts (verified 2026-02-08)
 
-5. **Actual Hull** (YELLOW polygon)
-   - Convex hull of the boundary vertices
-   - All primes (5, 7, 11, 13) verified working via Project-Streamline spreads
-
-6. **Ideal Comparison** (CYAN polygon)
-   - Regular heptagon using classical trig
-   - Same circumradius, for visual comparison
-   - Shows deviation from "perfect" regularity
-
-#### Scale and Orientation Matching
-
-The visualization MUST use the actual scene mesh:
-- Find the displayed Quadray Truncated Tetrahedron group
-- Extract its world transform (position, rotation, scale)
-- Use its ACTUAL vertices for projection
-- Match the overlay to the displayed geometry
-
-#### Rational HalfSize Selection
-
-For the truncated tetrahedron, use halfSize that maximizes rational output:
-- Quadray coords {2,1,0,0}/3 → Cartesian (3,1,1)/√11 (normalized)
-- Edge quadrance between adjacent vertices: Q = 8/11 (normalized)
-- For halfSize = h, edge quadrance Q = 8h²/11
-
-**Recommended**: Use halfSize = √(11/8) ≈ 1.172 for edge quadrance Q = 1
+5. **Ideal Comparison** (CYAN polygon)
+   - Regular n-gon using classical trig, same circumradius
+   - For visual comparison — shows deviation from "perfect" regularity
 
 #### Key Insight: Projection ≠ Section Cut
 
@@ -1110,15 +1020,16 @@ For the truncated tetrahedron, use halfSize that maximizes rational output:
 - **Projection** = viewing silhouette (convex hull of all vertices from a direction)
 - **Section cut** = plane intersection with faces (different polygon entirely)
 
-The 7-hull emerges from PROJECTION, not from cutting.
+The prime hull emerges from PROJECTION, not from cutting.
 
 ---
 
 **Key formulas already in `rt-math.js`:**
 - Pentagon α spread: `RT.PurePhi.pentagon.alpha()` = (5-√5)/8
 - Pentagon β spread: `RT.PurePhi.pentagon.beta()` = (5+√5)/8
-- Heptagon viewing spreads: `RT.ProjectionPolygons.heptagon.viewingSpreads()`
-- Quadray source vertices: `RT.ProjectionPolygons.heptagon.sourceVerticesQuadray()`
+- Spread-to-rotation: `rotation_matrix_from_spreads(s1, s2, s3)` → 3×3 rotation matrix
+- Convex hull: `convex_hull_2d(points)` → Andrew's monotone chain
+- Polyhedra vertices: `Polyhedra.truncatedTetrahedron()`, `Polyhedra.compoundTruncTetDualTet()`, `Polyhedra.compoundTruncTetIcosa()`
 
 ### Phase 1: Create Unified Projection Generator
 
@@ -1139,25 +1050,20 @@ function generateProjectionPolygon(n, circumradiusQ = 1) {
     throw new Error(`Projection polygon not available for n=${n}`);
   }
 
-  // 1. Get Quadray source vertices (ALL RATIONAL)
-  const quadrayVertices = config.sourceVerticesQuadray();
+  // 1. Get source vertices from base polyhedra (Cartesian)
+  const vertices = config.sourceVertices();
 
-  // 2. Convert to Cartesian for rotation
-  const cartesianVertices = quadrayVertices.map(([w, x, y, z]) =>
-    wxyzToCartesian(w, x, y, z, 1/3)  // Normalization factor
-  );
-
-  // 3. Apply spread-based rotation
+  // 2. Apply spread-based rotation
   const { s1, s2, s3 } = config.viewingSpreads();
-  const rotated = applySpreadRotations(cartesianVertices, s1, s2, s3);
+  const rotated = applySpreadRotations(vertices, s1, s2, s3);
 
-  // 4. Project to XY plane (drop Z)
+  // 3. Project to XY plane (drop Z)
   const projected2D = rotated.map(v => ({ x: v.x, y: v.y }));
 
-  // 5. Compute convex hull → n vertices on boundary
+  // 4. Compute convex hull → n vertices on boundary
   const hull = computeConvexHull(projected2D);
 
-  // 6. Scale to match circumradius quadrance
+  // 5. Scale to match circumradius quadrance
   const scaled = scaleToCircumradius(hull, circumradiusQ);
 
   return {
@@ -1167,7 +1073,7 @@ function generateProjectionPolygon(n, circumradiusQ = 1) {
       method: 'projection',
       sourcePolyhedron: config.name,
       spreads: { s1, s2, s3 },
-      coordinateSystem: 'quadray→cartesian→2D',
+      coordinateSystem: 'cartesian→rotated→2D',
       radicals: config.radicals(),
     }
   };
@@ -1176,16 +1082,15 @@ function generateProjectionPolygon(n, circumradiusQ = 1) {
 const PROJECTION_POLYGON_CONFIG = {
   5: {
     name: 'truncated_tetrahedron',
-    sourceVerticesQuadray: RT.ProjectionPolygons.pentagon.sourceVerticesQuadray ||
-                           RT.QuadrayPolyhedra.truncatedTetrahedron,
-    viewingSpreads: () => ({ s1: 0.01, s2: 0.5, s3: 0 }),  // Project-Streamline verified
+    sourceVertices: () => Polyhedra.truncatedTetrahedron(),  // 12 vertices
+    viewingSpreads: () => ({ s1: 0, s2: 0.5, s3: 0 }),
     radicals: () => ({ sqrt5: Math.sqrt(5) }),
   },
   7: {
-    name: 'truncated_tetrahedron',
-    sourceVerticesQuadray: RT.ProjectionPolygons.heptagon.sourceVerticesQuadray,
-    viewingSpreads: RT.ProjectionPolygons.heptagon.viewingSpreads,
-    radicals: RT.ProjectionPolygons.heptagon.radicals,
+    name: 'trunc_tet_plus_dual_tet',
+    sourceVertices: () => Polyhedra.compoundTruncTetDualTet(),   // 16 vertices (unit-sphere normalized)
+    viewingSpreads: () => ({ s1: 0, s2: 0, s3: 0.5 }),
+    radicals: () => ({ /* TBD */ }),
   },
 };
 ```
@@ -1220,8 +1125,8 @@ case 5: return 'φ-Rational (s = β)';
 case 7: return 'Cubic (cos 360°/7)';
 
 // AFTER (Project-Streamline verified):
-case 5: return 'Projection (TruncTet @ s=(0.01,0.5,0))';
-case 7: return 'Projection (TruncTet+Tet @ s=(0,0.01,0.14))';
+case 5: return 'Projection (TruncTet @ s=(0,0.5,0))';
+case 7: return 'Projection (TruncTet+DualTet @ s=(0,0,0.5))';
 ```
 
 ### Phase 4: Prism Auto-Update (No Changes Needed!)
@@ -1388,14 +1293,14 @@ Pre-computed values to add to `RT.PureCubics` or `RT.CompositeRotations`:
 
 **Note**: Rotation spreads for 7-multiples use the same heptagon cubic (already cached), while 5-multiples use φ-rational values (already in `RT.PurePhi`).
 
-### ★ Higher Primes: Status Update (Feb 2026, Project-Streamline Verified)
+### ★ Higher Primes: Status Update (Feb 2026)
 
 | Prime | Compound | Spreads | Search Status |
 |-------|----------|---------|---------------|
-| **5** | TruncTet (12v) | (0.01, 0.5, 0) | ✅ **VERIFIED** |
-| **7** | TruncTet + Tet (16v) | (0, 0.01, 0.14) | ✅ **VERIFIED** |
-| **11** | TruncTet + Icosa (24v) | (0, 0.01, 0.1) | ✅ **VERIFIED** |
-| **13** | TruncTet + Icosa (24v) | (0, 0.01, 0.14) | ✅ **VERIFIED** |
+| **5** | TruncTet (12v) | (0, 0.5, 0) | ✅ Correct hull (reg=0.4231) |
+| **7** | TruncTet + DualTet (16v, normalized) | (0, 0, 0.5) | ✅ Correct hull (min_cross=0.353) |
+| **11** | TruncTet + Icosa (24v) | (0.34, 0.54, 0.2) | ✅ Correct hull (reg=0.5050) |
+| **13** | TruncTet + Icosa (24v) | (0.96, 0.99, 0.99) | ✅ Correct hull (reg=0.3516) |
 | 17 | 3+ component compound? | - | 📋 Pending |
 | 19 | 4D polytopes? | - | 📋 Pending |
 
@@ -1470,12 +1375,15 @@ For rational spreads, the rotation remains algebraically exact until the √ ope
 
 ### Heptagon Projection in Quadray Terms
 
-The 7-gon projection from TruncTet+Tet compound at verified spreads (s₁=0, s₂=0.01, s₃=0.14):
+The 7-gon projection from TruncTet+DualTet compound (unit-sphere normalized) at verified spreads (s₁=0, s₂=0, s₃=0.5):
 
-1. **Source polyhedron**: Truncated tetrahedron with rational Quadray vertices
-2. **Viewing angle**: Specified by rational spreads (no transcendentals)
+1. **Source polyhedron**: Truncated tetrahedron + dual (even-parity) tetrahedron, all 16 vertices normalized to unit sphere
+2. **Viewing angle**: Specified by rational spreads (no transcendentals) — s₃=0.5 is exactly 1/2
 3. **Rotation matrix**: Computed from F, G, H coefficients
 4. **Result**: 7 hull vertices, each with algebraic coordinates
+5. **Robustness**: Min cross product = 0.353 (well above Float32 threshold)
+
+The dual tet breaks shared symmetry planes with the TruncTet (the original same-parity tet produced degenerate hulls). Unit-sphere normalization ensures all vertices have equal reach from origin, eliminating scale-dependent Float32 hull count changes.
 
 The Quadray formulation maintains rationality longer than Cartesian, deferring radical evaluation until the final projection step.
 
@@ -1705,10 +1613,10 @@ For each (s1, s2, s3) that produced target prime:
 
 | Prime | Hull Found? | Equilateral? | Equiangular? | Regularity Score |
 |-------|-------------|--------------|--------------|------------------|
-| 5-hull | ✓ Verified | TBD | TBD | Search pending |
-| 7-hull | ✓ Verified | TBD | TBD | Search pending |
-| 11-hull | ✓ Verified | TBD | TBD | Search pending |
-| 13-hull | ✓ Verified | TBD | TBD | Search pending |
+| 5-hull | ✅ Correct | No (edge CV 32.7%) | No (angle std 20.0°) | 0.4231 |
+| 7-hull | ✅ Correct | No | No | ~0.28 |
+| 11-hull | ✅ Correct | No | No | 0.5050 |
+| 13-hull | ✅ Correct | No | No | 0.3516 |
 
 **The fundamental incompatibility**: A regular n-gon requires n-fold rotational symmetry. Our source polyhedra have tetrahedral (3-fold, 4-fold) or icosahedral (5-fold) symmetry. There is **no viewing angle** that can make vertices from these symmetry groups project to a regular prime polygon (for primes other than 3 or 5).
 
@@ -1769,9 +1677,11 @@ After 48+ hours debugging the prime projection pipeline, we discovered discrepan
 
 2. **Key Insight**: JavaScript definitions are battle-tested; Python should match them exactly
 
-3. **Verified Results**:
-   - All primes (5, 7, 11, 13) now produce correct hull counts
-   - Spread values from Python work directly in JavaScript
+3. **Verified Results** (all four primes confirmed 2026-02-08 with base polyhedra):
+   - 5-gon, 7-gon, 11-gon, and 13-gon all produce correct hull counts
+   - Old spreads for 7/11/13-gon (found with Quadray compound vertices) were ALL broken after compound removal
+   - Re-searched all three at precision 2, updated `PROJECTION_PRESETS` with new verified spreads
+   - Spread values from Python work directly in JavaScript (same vertex definitions)
    - No translation or swap required
 
 ### Files Created
