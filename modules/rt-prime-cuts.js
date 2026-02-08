@@ -518,8 +518,6 @@ export const RTPrimeCuts = {
       return;
     }
 
-    console.log("🔍 showPrimePolygon called with:", { n, planeDistance });
-
     // Look up preset by n
     const preset = VERIFIED_PROJECTIONS[n];
     if (!preset) {
