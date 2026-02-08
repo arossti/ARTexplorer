@@ -39,3 +39,8 @@ eslint.config.js
 
 # Generated results (local only)
 results/
+
+# Whitepaper and reference materials (local resources only)
+Geometry Documents/Whitepaper LaTEX/
+Geometry Documents/Whitepaper Images/
+Geometry Documents/Wildberger References/
