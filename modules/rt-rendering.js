@@ -3200,6 +3200,36 @@ export function initScene(THREE, OrbitControls, RT) {
 
     updateGeometryStats();
 
+    // Auto-refresh projection if user has it enabled (check DOM checkbox as source of truth,
+    // since hideProjection() may have been called during the geometry rebuild cycle)
+    const projCheckbox = document.getElementById("enableProjection");
+    if (projCheckbox?.checked && window.RTProjections) {
+      // Re-find the current visible polyhedron (may have changed during rebuild)
+      let projTarget = null;
+      scene.traverse(obj => {
+        if (!projTarget && obj.visible && obj.userData?.type) {
+          if (
+            obj.userData.type.startsWith("quadray") ||
+            obj.userData.type.startsWith("geodesic") ||
+            [
+              "tetrahedron",
+              "cube",
+              "octahedron",
+              "icosahedron",
+              "dodecahedron",
+            ].includes(obj.userData.type)
+          ) {
+            projTarget = obj;
+          }
+        }
+      });
+      if (projTarget) {
+        window.RTProjections.showProjection(projTarget, {
+          spreads: window.RTProjections.state.customSpreads,
+        });
+      }
+    }
+
     // End performance timing
     PerformanceClock.endCalculation();
     PerformanceClock.updateDisplay(getUseRTNodeGeometry());
