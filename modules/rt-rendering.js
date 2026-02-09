@@ -173,10 +173,6 @@ export function initScene(THREE, OrbitControls, RT) {
   let penroseTilingGroup; // Penrose Tiling: Aperiodic tiling with golden ratio
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
-  // UCS (User Coordinate System) — scene orientation wrapper
-  let ucsGroup;
-  let currentUCSMode = "z-up";
-
   function initScene() {
     // Scene
     scene = new THREE.Scene();
@@ -225,11 +221,6 @@ export function initScene(THREE, OrbitControls, RT) {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
     directionalLight.position.set(5, 10, 7);
     scene.add(directionalLight);
-
-    // UCS wrapper — all geometry lives inside this group
-    ucsGroup = new THREE.Group();
-    ucsGroup.name = "ucsGroup";
-    scene.add(ucsGroup);
 
     // Create coordinate grids
     createCartesianGrid();
@@ -394,51 +385,51 @@ export function initScene(THREE, OrbitControls, RT) {
     primeGeoTetF4Group = new THREE.Group();
     primeGeoTetF4Group.userData.type = "primeGeoTetF4";
 
-    ucsGroup.add(pointGroup);
-    ucsGroup.add(lineGroup);
-    ucsGroup.add(polygonGroup);
-    ucsGroup.add(prismGroup);
-    ucsGroup.add(coneGroup);
-    ucsGroup.add(tetrahelix1Group);
-    ucsGroup.add(tetrahelix2Group);
-    ucsGroup.add(tetrahelix3Group);
-    ucsGroup.add(penroseTilingGroup);
-    ucsGroup.add(cubeGroup);
-    ucsGroup.add(tetrahedronGroup);
-    ucsGroup.add(dualTetrahedronGroup);
-    ucsGroup.add(octahedronGroup);
-    ucsGroup.add(icosahedronGroup);
-    ucsGroup.add(dodecahedronGroup);
-    ucsGroup.add(dualIcosahedronGroup);
-    ucsGroup.add(cuboctahedronGroup);
-    ucsGroup.add(rhombicDodecahedronGroup);
-    ucsGroup.add(geodesicIcosahedronGroup);
-    ucsGroup.add(geodesicTetrahedronGroup);
-    ucsGroup.add(geodesicOctahedronGroup);
-    ucsGroup.add(geodesicDualTetrahedronGroup);
-    ucsGroup.add(geodesicDualIcosahedronGroup);
-    ucsGroup.add(cubeMatrixGroup);
-    ucsGroup.add(tetMatrixGroup);
-    ucsGroup.add(octaMatrixGroup);
-    ucsGroup.add(cuboctaMatrixGroup);
-    ucsGroup.add(rhombicDodecMatrixGroup);
-    ucsGroup.add(radialCubeMatrixGroup);
-    ucsGroup.add(radialRhombicDodecMatrixGroup);
-    ucsGroup.add(radialTetMatrixGroup);
-    ucsGroup.add(radialOctMatrixGroup);
-    ucsGroup.add(radialVEMatrixGroup);
-    ucsGroup.add(quadrayTetrahedronGroup);
-    ucsGroup.add(quadrayTetraDeformedGroup);
-    ucsGroup.add(quadrayCuboctahedronGroup);
-    ucsGroup.add(quadrayOctahedronGroup);
-    ucsGroup.add(quadrayTruncatedTetGroup);
-    ucsGroup.add(quadrayStellaOctangulaGroup);
+    scene.add(pointGroup);
+    scene.add(lineGroup);
+    scene.add(polygonGroup);
+    scene.add(prismGroup);
+    scene.add(coneGroup);
+    scene.add(tetrahelix1Group);
+    scene.add(tetrahelix2Group);
+    scene.add(tetrahelix3Group);
+    scene.add(penroseTilingGroup);
+    scene.add(cubeGroup);
+    scene.add(tetrahedronGroup);
+    scene.add(dualTetrahedronGroup);
+    scene.add(octahedronGroup);
+    scene.add(icosahedronGroup);
+    scene.add(dodecahedronGroup);
+    scene.add(dualIcosahedronGroup);
+    scene.add(cuboctahedronGroup);
+    scene.add(rhombicDodecahedronGroup);
+    scene.add(geodesicIcosahedronGroup);
+    scene.add(geodesicTetrahedronGroup);
+    scene.add(geodesicOctahedronGroup);
+    scene.add(geodesicDualTetrahedronGroup);
+    scene.add(geodesicDualIcosahedronGroup);
+    scene.add(cubeMatrixGroup);
+    scene.add(tetMatrixGroup);
+    scene.add(octaMatrixGroup);
+    scene.add(cuboctaMatrixGroup);
+    scene.add(rhombicDodecMatrixGroup);
+    scene.add(radialCubeMatrixGroup);
+    scene.add(radialRhombicDodecMatrixGroup);
+    scene.add(radialTetMatrixGroup);
+    scene.add(radialOctMatrixGroup);
+    scene.add(radialVEMatrixGroup);
+    scene.add(quadrayTetrahedronGroup);
+    scene.add(quadrayTetraDeformedGroup);
+    scene.add(quadrayCuboctahedronGroup);
+    scene.add(quadrayOctahedronGroup);
+    scene.add(quadrayTruncatedTetGroup);
+    scene.add(quadrayStellaOctangulaGroup);
     // Prime polygon projection polyhedra
-    ucsGroup.add(primeTruncTetGroup);
-    ucsGroup.add(primeCompoundTetGroup);
-    ucsGroup.add(primeCompoundIcosaGroup);
-    ucsGroup.add(primeGeoTetF2Group);
-    ucsGroup.add(primeGeoTetF4Group);
+    scene.add(primeTruncTetGroup);
+    scene.add(primeCompoundTetGroup);
+    scene.add(primeCompoundIcosaGroup);
+    scene.add(primeGeoTetF2Group);
+    scene.add(primeGeoTetF4Group);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -499,7 +490,7 @@ export function initScene(THREE, OrbitControls, RT) {
     const divisions = sliderElement ? parseInt(sliderElement.value) : 10;
 
     // Delegate to Grids module
-    const result = Grids.createCartesianGrid(ucsGroup, divisions);
+    const result = Grids.createCartesianGrid(scene, divisions);
 
     // Store references for later use
     cartesianGrid = result.cartesianGrid;
@@ -515,7 +506,7 @@ export function initScene(THREE, OrbitControls, RT) {
    * Create SYMBOLIC Quadray basis vectors (WXYZ) - delegated to rt-grids.js
    */
   function createQuadrayBasis() {
-    quadrayBasis = Grids.createQuadrayBasis(ucsGroup);
+    quadrayBasis = Grids.createQuadrayBasis(scene);
   }
 
   // createIVMGrid - delegated to rt-grids.js (Grids.createIVMGrid)
@@ -529,7 +520,7 @@ export function initScene(THREE, OrbitControls, RT) {
     const tessellations = sliderElement ? parseInt(sliderElement.value) : 12;
 
     // Delegate to Grids module
-    const result = Grids.createIVMPlanes(ucsGroup, tessellations);
+    const result = Grids.createIVMPlanes(scene, tessellations);
 
     // Store references for later use
     ivmPlanes = result.ivmPlanes;
@@ -4234,7 +4225,7 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function rebuildQuadrayGrids(tessellations, visibilityState = {}) {
     const result = Grids.rebuildQuadrayGrids(
-      ucsGroup,
+      scene,
       ivmPlanes,
       tessellations,
       visibilityState
@@ -4255,7 +4246,7 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function rebuildCartesianGrids(divisions, visibilityState = {}) {
     const result = Grids.rebuildCartesianGrids(
-      ucsGroup,
+      scene,
       cartesianGrid,
       cartesianBasis,
       divisions,
@@ -5070,16 +5061,17 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   // ========================================================================
-  // UCS (User Coordinate System) — scene orientation
+  // UCS (User Coordinate System) — camera-based scene orientation
   // ========================================================================
 
+  let currentUCSMode = "z-up";
+
   /**
-   * Set UCS orientation — rotates ucsGroup so the chosen axis points "up" (screen vertical).
+   * Set UCS orientation by rotating the camera so the chosen axis appears vertical.
+   * Scene contents stay in native Z-up coordinates — only the viewpoint changes.
    * @param {string} mode - One of: 'z-up', 'y-up', 'x-up', 'qw-up', 'qx-up', 'qy-up', 'qz-up'
    */
   function setUCSOrientation(mode) {
-    const Z_UP = new THREE.Vector3(0, 0, 1);
-
     const orientations = {
       "z-up": new THREE.Vector3(0, 0, 1),
       "y-up": new THREE.Vector3(0, 1, 0),
@@ -5093,11 +5085,21 @@ export function initScene(THREE, OrbitControls, RT) {
     const desiredUp = orientations[mode];
     if (!desiredUp) return;
 
-    if (mode === "z-up") {
-      ucsGroup.quaternion.identity();
-    } else {
-      ucsGroup.quaternion.setFromUnitVectors(desiredUp.normalize(), Z_UP);
+    // Compute rotation from current up to desired up
+    const currentUp = camera.up.clone().normalize();
+    const newUp = desiredUp.clone().normalize();
+
+    if (currentUp.distanceTo(newUp) < 0.001) {
+      currentUCSMode = mode;
+      return; // Already there
     }
+
+    // Rotate camera position and up vector
+    const quat = new THREE.Quaternion().setFromUnitVectors(currentUp, newUp);
+    camera.position.applyQuaternion(quat);
+    camera.up.copy(newUp);
+    camera.lookAt(controls.target);
+    controls.update();
 
     currentUCSMode = mode;
     MetaLog.log(`UCS orientation set to: ${mode}`);
@@ -5124,14 +5126,11 @@ export function initScene(THREE, OrbitControls, RT) {
     setCartesianBasisVisible,
     setQuadrayBasisVisible,
 
-    // UCS orientation
-    setUCSOrientation,
-    getUCSGroup: () => ucsGroup,
-
     // Camera controls
     switchCameraType,
     setCameraPreset,
     resetCameraTarget,
+    setUCSOrientation,
 
     // Getters for THREE.js objects (needed by rt-init.js)
     getScene: () => scene,
