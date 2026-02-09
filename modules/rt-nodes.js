@@ -19,6 +19,7 @@
  */
 
 import { RT } from "./rt-math.js";
+import { MetaLog } from "./rt-metalog.js";
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -495,12 +496,14 @@ function getCachedNodeGeometry(
 
   if (useRT) {
     // RT Geodesic Icosahedron with user-selected frequency
+    // Suppress MetaLog — node spheres are internal geometry, not user-facing
+    MetaLog.suppress();
     const polyData = window.RTPolyhedra.geodesicIcosahedron(
       radius,
       geodesicFrequency,
-      "out",
-      { silent: true }
+      "out"
     );
+    MetaLog.unsuppress();
 
     nodeGeometry = new THREE.BufferGeometry();
     const positions = [];

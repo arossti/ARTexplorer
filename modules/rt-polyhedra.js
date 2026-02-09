@@ -183,7 +183,9 @@ export const Polyhedra = {
    */
   dualTetrahedron: (halfSize = 1, options = {}) => {
     // Get base tetrahedron geometry
+    MetaLog.suppress();
     const base = Polyhedra.tetrahedron(halfSize);
+    MetaLog.unsuppress();
 
     // Invert all vertices (multiply by -1)
     const vertices = base.vertices.map(v => v.clone().multiplyScalar(-1));
@@ -475,7 +477,9 @@ export const Polyhedra = {
    * @returns {Object} - {vertices, edges, faces}
    */
   truncatedDualTetrahedron: (halfSize = 1, truncation = 1 / 3, options = {}) => {
+    MetaLog.suppress();
     const base = Polyhedra.truncatedTetrahedron(halfSize, truncation);
+    MetaLog.unsuppress();
 
     // Invert all vertices (multiply by -1) — same as dualTetrahedron pattern
     const vertices = base.vertices.map(v => v.clone().multiplyScalar(-1));
@@ -510,7 +514,9 @@ export const Polyhedra = {
     options = {}
   ) => {
     // Get base geodesic tetrahedron (subdivided and projected)
+    MetaLog.suppress();
     const base = Polyhedra.geodesicTetrahedron(halfSize, frequency, projection);
+    MetaLog.unsuppress();
 
     // Invert all vertices (multiply by -1) to create dual
     const vertices = base.vertices.map(v => v.clone().multiplyScalar(-1));
@@ -779,6 +785,8 @@ export const Polyhedra = {
    * @returns {Object} {vertices, edges, faces, components}
    */
   compoundTruncTetTet: (scale = 3, truncation = 1 / 3) => {
+    // Suppress internal component logs — compound logs its own identity
+    MetaLog.suppress();
     // Get truncated tetrahedron vertices
     const truncTet = Polyhedra.truncatedTetrahedron(scale, truncation);
     const truncTetVertices = truncTet.vertices;
@@ -786,6 +794,7 @@ export const Polyhedra = {
     // Get tetrahedron vertices at same scale
     const tet = Polyhedra.tetrahedron(scale);
     const tetVertices = tet.vertices;
+    MetaLog.unsuppress();
 
     // Combine vertices: TruncTet (0-11) + Tet (12-15)
     const vertices = [...truncTetVertices, ...tetVertices];
@@ -863,9 +872,12 @@ export const Polyhedra = {
    * @returns {Object} {vertices, edges, faces, components}
    */
   compoundTruncTetDualTet: (scale = 1, truncation = 1 / 3) => {
+    // Suppress internal component logs — compound logs its own identity
+    MetaLog.suppress();
     // Get canonical geometries (half_size=3 gives integer-like [±1,±1,±3] coords)
     const truncTet = Polyhedra.truncatedTetrahedron(3, truncation);
     const dualTet = Polyhedra.dualTetrahedron(1);
+    MetaLog.unsuppress();
 
     // Normalize all vertices to unit sphere, then scale to desired radius
     // This ensures both components have equal reach from origin
@@ -944,6 +956,8 @@ export const Polyhedra = {
    * @returns {Object} {vertices, edges, faces, components}
    */
   compoundTruncTetIcosa: (scale = 3, truncation = 1 / 3) => {
+    // Suppress internal component logs — compound logs its own identity
+    MetaLog.suppress();
     // Get truncated tetrahedron vertices
     const truncTet = Polyhedra.truncatedTetrahedron(scale, truncation);
     const truncTetVertices = truncTet.vertices;
@@ -961,6 +975,7 @@ export const Polyhedra = {
     // (verified: vertex [0, a, b] has distance sqrt(a² + b²) = 1.0)
     const icosa = Polyhedra.icosahedron(1.0);
     const icosaRadius = 1.0;
+    MetaLog.unsuppress();
 
     // Scale icosahedron to match truncated tetrahedron bounding sphere
     const icosaScale = truncTetRadius / icosaRadius;
@@ -1069,7 +1084,9 @@ export const Polyhedra = {
     ]);
 
     // Get base icosahedron geometry at dual scale
+    MetaLog.suppress();
     const base = Polyhedra.icosahedron(dualRadius);
+    MetaLog.unsuppress();
 
     // Apply RT-pure Z-rotation: -90° clockwise
     // Spread s = sin²(-π/2) = 1 (exact integer!)
@@ -1118,11 +1135,13 @@ export const Polyhedra = {
     const dualRadius = phi.toDecimal() * halfSize;
 
     // Get base geodesic icosahedron (subdivided and projected)
+    MetaLog.suppress();
     const base = Polyhedra.geodesicIcosahedron(
       dualRadius,
       frequency,
       projection,
     );
+    MetaLog.unsuppress();
 
     // Apply RT-pure Z-rotation: -90° clockwise
     // Transform: (x,y,z) → (y,-x,z) using ONLY multiplication by {-1, 0, 1}
@@ -1316,7 +1335,9 @@ export const Polyhedra = {
     //                            3 = each edge trisected (3 segments), etc.
 
     // 1. Start with pure algebraic icosahedron
+    MetaLog.suppress();
     const base = Polyhedra.icosahedron(halfSize);
+    MetaLog.unsuppress();
 
     MetaLog.identity("Geodesic Icosahedron", "", {
       construction: `freq=${frequency}, projection=${projection}`,
@@ -1458,7 +1479,9 @@ export const Polyhedra = {
     //                            3 = each edge trisected (3 segments), etc.
 
     // 1. Start with pure algebraic tetrahedron
+    MetaLog.suppress();
     const base = Polyhedra.tetrahedron(halfSize);
+    MetaLog.unsuppress();
 
     MetaLog.identity("Geodesic Tetrahedron", "", {
       construction: `freq=${frequency}, projection=${projection}`,
@@ -1557,7 +1580,9 @@ export const Polyhedra = {
     //                            3 = each edge trisected (3 segments), etc.
 
     // 1. Start with pure algebraic octahedron
+    MetaLog.suppress();
     const base = Polyhedra.octahedron(halfSize);
+    MetaLog.unsuppress();
 
     MetaLog.identity("Geodesic Octahedron", "", {
       construction: `freq=${frequency}, projection=${projection}`,

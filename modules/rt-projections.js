@@ -13,6 +13,7 @@
  */
 
 import * as THREE from "three";
+import { MetaLog } from "./rt-metalog.js";
 
 export const RTProjections = {
   // ═══════════════════════════════════════════════════════════════════════════
@@ -190,7 +191,7 @@ export const RTProjections = {
     RTProjections._scene = scene;
     RTProjections._camera = camera;
     RTProjections._renderer = renderer;
-    console.log("📐 RTProjections initialized");
+    MetaLog.log(MetaLog.SUMMARY, "📐 RTProjections initialized");
   },
 
   /**

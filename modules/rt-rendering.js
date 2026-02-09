@@ -3260,6 +3260,9 @@ export function initScene(THREE, OrbitControls, RT) {
    * Update geometry statistics display
    */
   function updateGeometryStats() {
+    // Suppress MetaLog during stats rebuild — these Polyhedra calls exist
+    // only to extract V/E/F counts for the info panel, not to log geometry.
+    MetaLog.suppress();
     const stats = document.getElementById("polyhedraStats");
     let html = "";
 
@@ -3787,6 +3790,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     stats.innerHTML = html || "Select a polyhedron to see stats";
+    MetaLog.unsuppress();
   }
 
   /**

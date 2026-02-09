@@ -16,6 +16,9 @@
  * - Read from StateManager - bi-directional input modifies stored state
  * - Cache DOM elements to avoid repeated getElementById calls
  */
+
+import { MetaLog } from "./rt-metalog.js";
+
 export const RTCoordinates = {
   // ========================================================================
   // STATE
@@ -91,7 +94,7 @@ export const RTCoordinates = {
       );
     }
 
-    console.log("✅ RTCoordinates initialized");
+    MetaLog.log(MetaLog.SUMMARY, "✅ RTCoordinates initialized");
     return this;
   },
 
@@ -449,7 +452,7 @@ export const RTCoordinates = {
       });
     });
 
-    console.log("✅ RTCoordinates mode toggles bound");
+    MetaLog.log(MetaLog.SUMMARY, "✅ RTCoordinates mode toggles bound");
   },
 
   // ========================================================================
