@@ -131,6 +131,135 @@ Four new search polyhedra, all in the √2 radical family (no golden ratio):
 
 ---
 
+## Workplan: Math Demo Buttons + Prime Leaderboard
+
+### Concept
+
+The Math Demo floating panel (`PROJECTION_PRESETS` in `rt-prime-cuts.js`) currently has 4 buttons: 5-gon, 7-gon, 11-gon, 13-gon. All use compound polyhedra (TruncTet alone or TruncTet+DualTet/Icosa). The single-polyhedra search has found new results from geodesics, cuboctahedron, and rhombic dodecahedron that should be added as **additional preset buttons** alongside the existing ones.
+
+The **Leaderboard** tracks the best result for each prime across all sources, ranked by regularity and elegance:
+
+### Prime Polygon Leaderboard
+
+| Prime | Best Source | Type | Vertices | Spreads | Reg | Radical | Tier |
+|-------|-----------|------|----------|---------|-----|---------|------|
+| **5** | Trunc Tetrahedron | Single | 12 | (0, 1/2, 0) | 0.423 | √2 | 1 |
+| **7** | TruncTet+DualTet | Compound | 16 | (1/2, 1/2, 1/2) | 0.861 | √2 | 1 |
+| **7** | Rhombic Dodecahedron | **Single** | 14 | (1/2, 1/3, 1) | 0.521 | √2 | 1 |
+| **7** | Cuboctahedron | **Single** | 12 | (1/3, 2/3, 1/4) | 0.421 | √2 | 1 |
+| **7** | Geodesic Tet freq=2 | **Single** | 10 | (0, 1/3, 1/3) | 0.419 | √2,√3 | 1 |
+| **11** | TruncTet+Icosa | Compound | 24 | (3/4, 1/4, 1/2) | 0.490 | √2,√3 | 1 |
+| **11** | Geodesic Oct freq=2 | **Single** | 18 | (1/3, 3/4, 3/4) | 0.354 | √2 | 1 |
+| **13** | TruncTet+Icosa | Compound | 24 | (9/10, 24/25, 19/20) | 0.346 | √5 | 3 |
+| **13** | *(no single-poly yet)* | — | — | — | — | — | — |
+
+**Elegance ranking** (most to least compelling):
+1. Single polyhedra at Tier 1 > Single at Tier 2+ > Compound at Tier 1 > Compound at Tier 2+
+2. Fewer vertices > more vertices (7 from 10v geodesic tet is more elegant than 7 from 16v compound)
+3. √2-only > √2+√3 > √5/φ (simpler radical family)
+
+### Implementation Steps
+
+#### Phase 1: Verify + Run Extended Searches
+
+Before adding buttons, complete the search catalogue:
+
+1. **Verify geodesic oct 11-gon** — confirm no 180° interior angle at s=(1/3, 3/4, 3/4)
+2. **Search Tier 2/3** — run `--poly cuboctahedron,rhombicdodec,geodtet,geodoct --rational 2 --exact` and `--rational 3`
+3. **Search higher geodesic frequencies** — `--freq 3` (geodtet=20v, geodoct=38v) and `--freq 4` (34v, 66v)
+4. **Hunt 5-gon and 13-gon** from single polyhedra — the missing gaps in the leaderboard
+5. **Rank all results** by regularity AND equiangularity (max interior angle, angle variance)
+
+#### Phase 2: Add New Preset Entries to `rt-prime-cuts.js`
+
+For each single-polyhedra result that passes verification (no degenerate angles), add a new `PROJECTION_PRESETS` entry. The existing infrastructure already supports this — buttons are built dynamically from the registry.
+
+New presets (pending search completion):
+
+```
+PROJECTION_PRESETS = {
+  pentagon:    { ... },  // existing — TruncTet (single, only source)
+  heptagon:    { ... },  // existing — TruncTet+DualTet compound (best regularity)
+  hendecagon:  { ... },  // existing — TruncTet+Icosa compound (best regularity)
+  tridecagon:  { ... },  // existing — TruncTet+Icosa compound (only source)
+
+  // --- NEW: Single-polyhedra presets ---
+  heptagonRhombicDodec: {
+    name: "Heptagon (Rhombic Dodec)",
+    n: 7,
+    polyhedronType: "primeRhombicDodec",
+    polyhedronCheckbox: "showPrimeRhombicDodec",
+    compound: "rhombicDodecahedron",
+    vertexCount: 14,
+    spreads: [0.5, 1/3, 1.0],
+    ...
+  },
+  heptagonGeodesicTet: {
+    name: "Heptagon (Geodesic Tet)",
+    n: 7,
+    polyhedronType: "primeGeodesicTet",
+    polyhedronCheckbox: "showPrimeGeodesicTet",
+    compound: "geodesicTetrahedron",
+    vertexCount: 10,
+    spreads: [0, 1/3, 1/3],
+    ...
+  },
+  hendecagonGeodesicOct: {
+    name: "Hendecagon (Geodesic Oct)",
+    n: 11,
+    polyhedronType: "primeGeodesicOct",
+    polyhedronCheckbox: "showPrimeGeodesicOct",
+    compound: "geodesicOctahedron",
+    vertexCount: 18,
+    spreads: [1/3, 0.75, 0.75],
+    ...
+  },
+}
+```
+
+#### Phase 3: Wire New Polyhedra Groups in Rendering Pipeline
+
+For each new preset, add to the rendering pipeline following the established pattern:
+
+1. **`rt-rendering.js`**: Declare new THREE.Group (e.g. `primeRhombicDodecGroup`), initialize in scene setup, add rendering logic in update loop using existing `Polyhedra.rhombicDodecahedron()`, `Polyhedra.geodesicTetrahedron()`, `Polyhedra.geodesicOctahedron()`
+2. **`rt-ui-binding-defs.js`**: Add checkbox-controls binding for new checkbox IDs
+3. **`rt-init.js`**: Projection candidates whitelist already includes `"rhombicDodecahedron"` and types starting with `"geodesic"` — no changes needed
+4. **`rt-prime-cuts.js`**: Add disable/enable logic in `_applyPresetFromPanel()` for new checkbox IDs
+
+All JS polyhedra functions already exist: `Polyhedra.cuboctahedron()`, `Polyhedra.rhombicDodecahedron()`, `Polyhedra.geodesicTetrahedron()`, `Polyhedra.geodesicOctahedron()`. No new math code required.
+
+#### Phase 4: Update Panel UI
+
+The floating panel currently uses a 2-column grid for 4 buttons. With ~7 buttons, consider:
+
+- **Sectioned layout**: "Compound" section (existing 4) + "Single Polyhedra" section (new 3+)
+- **Color coding**: Green=constructible (5-gon), Red/Yellow=non-constructible compound, Blue=single-polyhedra
+- **Tooltip**: Show source polyhedron, vertex count, regularity, and radical family on hover
+- **Leaderboard star**: Mark the best result for each prime with a star/crown indicator
+
+#### Phase 5: Extended Search Programme
+
+Ongoing searches to fill gaps in the leaderboard:
+
+| Search | Command | Goal |
+|--------|---------|------|
+| Tier 2 all polys | `--poly all --rational 2 --exact` | Find 5-gon and 13-gon from single polyhedra |
+| Geodesic freq=3 | `--poly geodtet,geodoct --freq 3 --rational 1 --exact` | More vertices = more prime opportunities |
+| Geodesic freq=4 | `--poly geodtet,geodoct --freq 4 --rational 1 --exact` | 34v tet, 66v oct — rich hull landscapes |
+| Cuboctahedron deep | `--poly cuboctahedron --rational 3 --exact --primes 5,11,13` | Fuller's VE producing all primes? |
+| All primes 17,19,23 | `--poly all --rational 1 --exact --primes 17,19,23` | Beyond the initial four |
+
+### Success Criteria
+
+The workplan is complete when:
+- [ ] Every prime 5, 7, 11, 13 has at least one single-polyhedra result in the leaderboard (or is proven to require compounds)
+- [ ] All leaderboard results are verified with `--exact` (no degenerate 180° angles)
+- [ ] New preset buttons appear in the Math Demo panel for the best single-polyhedra results
+- [ ] The panel visually distinguishes compound vs single-polyhedra sources
+- [ ] Results are documented in this file with complete search provenance
+
+---
+
 ## The Historical Argument
 
 As Wildberger argues in *Divine Proportions* and Barbour in his work on absolute geometry: the reason mathematics papers over geometric relationships with sin/cos/tan is historical, not mathematical. The Greeks developed geometry without algebra — they had no notation for equations, no concept of variables, no polynomial theory. When Islamic and European mathematicians inherited Greek geometry, they grafted algebraic methods onto it, but kept the fundamentally transcendental framework (circular functions, π, angular measure).
