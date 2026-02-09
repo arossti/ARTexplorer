@@ -452,12 +452,14 @@ function startARTexplorer(
 
   perspectiveBtn.addEventListener("click", () => {
     renderingAPI.switchCameraType(false); // Switch to perspective
+    camera = renderingAPI.getCamera(); // Update local ref (ortho ≠ perspective)
     perspectiveBtn.classList.add("active");
     orthographicBtn.classList.remove("active");
   });
 
   orthographicBtn.addEventListener("click", () => {
     renderingAPI.switchCameraType(true); // Switch to orthographic
+    camera = renderingAPI.getCamera(); // Update local ref (ortho ≠ perspective)
     orthographicBtn.classList.add("active");
     perspectiveBtn.classList.remove("active");
   });
@@ -499,6 +501,7 @@ function startARTexplorer(
       activeViewButton = btn;
 
       renderingAPI.setCameraPreset(view);
+      camera = renderingAPI.getCamera(); // Preset may switch ortho/perspective
     });
   });
 
