@@ -139,24 +139,41 @@ The Math Demo floating panel (`PROJECTION_PRESETS` in `rt-prime-cuts.js`) curren
 
 The **Leaderboard** tracks the best result for each prime across all sources, ranked by regularity and elegance:
 
-### Prime Polygon Leaderboard
+### Prime Polygon Leaderboard (Verified — degeneracy-checked)
 
-| Prime | Best Source | Type | Vertices | Spreads | Reg | Radical | Tier |
-|-------|-----------|------|----------|---------|-----|---------|------|
-| **5** | Trunc Tetrahedron | Single | 12 | (0, 1/2, 0) | 0.423 | √2 | 1 |
-| **7** | TruncTet+DualTet | Compound | 16 | (1/2, 1/2, 1/2) | 0.861 | √2 | 1 |
-| **7** | Rhombic Dodecahedron | **Single** | 14 | (1/2, 1/3, 1) | 0.521 | √2 | 1 |
-| **7** | Cuboctahedron | **Single** | 12 | (1/3, 2/3, 1/4) | 0.421 | √2 | 1 |
-| **7** | Geodesic Tet freq=2 | **Single** | 10 | (0, 1/3, 1/3) | 0.419 | √2,√3 | 1 |
-| **11** | TruncTet+Icosa | Compound | 24 | (3/4, 1/4, 1/2) | 0.490 | √2,√3 | 1 |
-| **11** | Geodesic Oct freq=2 | **Single** | 18 | (1/3, 3/4, 3/4) | 0.354 | √2 | 1 |
-| **13** | TruncTet+Icosa | Compound | 24 | (9/10, 24/25, 19/20) | 0.346 | √5 | 3 |
-| **13** | *(no single-poly yet)* | — | — | — | — | — | — |
+**Degeneracy**: A hull vertex at 180° interior angle contributes nothing geometrically. All results below are verified non-degenerate (max angle < 179°) via Path C exact arithmetic.
+
+| Prime | Best Source | Type | V | Spreads | Reg | Max∠ | Tier | Status |
+|-------|-----------|------|---|---------|-----|------|------|--------|
+| **5** | Trunc Tetrahedron | Single | 12 | (0, 1/2, 0) | 0.423 | 144° | 1 | CLEAN |
+| **7** | TruncTet+DualTet | Compound | 16 | (1/2, 1/2, 1/2) | 0.861 | 136° | 1 | CLEAN |
+| **7** | Geodesic Tet f=2 | **Single** | 10 | (0, 1/3, 1/3) | 0.419 | 152° | 1 | CLEAN |
+| **11** | TruncTet+Icosa | Compound | 24 | (3/4, 1/4, 1/2) | 0.490 | 165° | 1 | CLEAN |
+| **11** | Geodesic Tet f=4 | **Single** | 34 | (3/4, 1/3, 1/3) | 0.432 | 170° | 1 | CLEAN |
+| **11** | Geodesic Tet f=3 | **Single** | 20 | (1/4, 1/4, 1/2) | 0.239 | 170° | 1 | CLEAN |
+| **13** | Geodesic Tet f=4 | **Single** | 34 | (1/2, 3/4, 3/4) | 0.448 | 173° | 1 | CLEAN |
+| **13** | Geodesic Tet f=4 | **Single** | 34 | (1/3, 2/3, 3/4) | 0.443 | 171° | 1 | CLEAN |
+| **13** | TruncTet+Icosa | Compound | 24 | (9/10, 24/25, 19/20) | 0.346 | 179° | 3 | BORDERLINE |
+
+**Breakthrough (freq=4 search)**: The geodesic tetrahedron at frequency 4 (34 vertices) produces the **first single-polyhedra 13-gon** at Tier 1 with reg=0.448 — beating the compound result (Tier 3, reg=0.346, borderline 179°) in every metric. The 13-gon at s=(1/2, 3/4, 3/4) uses only √2 radicals, same family as the 5-gon and 7-gon.
+
+#### Degenerate Results (180° — excluded from leaderboard)
+
+These hull counts are mathematically correct (Path C exact cross product is positive but ~1e-17) but geometrically meaningless — one or more vertices lie exactly on the line between their neighbors.
+
+| Prime | Source | Spreads | Hull | Max∠ | Note |
+|-------|--------|---------|------|------|------|
+| 7 | Cuboctahedron | (1/3, 2/3, 1/4) | 7 | 180° | Central symmetry artifact |
+| 7 | Rhombic Dodec | (1/2, 1/3, 1) | 7 | 180° | ALL rhombic dodec 7-gons degenerate |
+| 11 | Geodesic Oct f=2 | (1/3, 3/4, 3/4) | 11 | 180° | ALL geodesic oct f=2 11-gons degenerate |
+
+**Key insight**: Centrally symmetric polyhedra (cuboctahedron, rhombic dodecahedron, geodesic octahedron) produce exclusively degenerate odd-gon projections. Only the **asymmetric geodesic tetrahedron** yields clean single-poly primes — this is the Symmetry Barrier in action. The geodesic tet inherits the tetrahedron's lack of central symmetry, which is precisely what allows odd hull counts to emerge cleanly.
 
 **Elegance ranking** (most to least compelling):
 1. Single polyhedra at Tier 1 > Single at Tier 2+ > Compound at Tier 1 > Compound at Tier 2+
 2. Fewer vertices > more vertices (7 from 10v geodesic tet is more elegant than 7 from 16v compound)
 3. √2-only > √2+√3 > √5/φ (simpler radical family)
+4. **Non-degenerate only** — 180° hull vertices disqualify results from the leaderboard
 
 ### Implementation Steps
 
