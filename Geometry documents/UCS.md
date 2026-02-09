@@ -2,7 +2,7 @@
 
 **Branch**: `UCS`
 **Date**: 2026-02-09
-**Status**: Phase 1 complete (camera-based), orbit inversion TBD
+**Status**: Phase 2 complete — quaternion orbit eliminates polar singularity
 
 ---
 
@@ -238,16 +238,46 @@ This means: no polar singularity at unexpected positions, no mid-drag orbit reve
 - **Import**: Available via CDN (`npm/camera-controls`) or npm
 - **THREE.js**: Works with r160+ (uses THREE as a dependency injection: `CameraControls.install({ THREE })`)
 
-### 6.4 Implementation Options
+### 6.4 Implementation Options (Evaluated)
 
-| Option | Effort | Quality | Notes |
-|--------|--------|---------|-------|
-| **A. Drop-in camera-controls** | Medium | Best | Replace OrbitControls import, adapt ~20 lines in rt-rendering.js for API differences (damping, mouseButtons, update signature). MIT license, CDN-ready. |
-| **B. Port the up-vector transform** | Medium | Good | Extract the `_yAxisUpSpaceInverse` quaternion pattern from camera-controls (MIT permits this with attribution). Monkey-patch onto OrbitControls. Less code to change but fragile across THREE.js upgrades. |
-| **C. Roll our own quaternion orbit** | High | Variable | Write a minimal orbit controller using quaternion rotations (no spherical coords). ~100-150 lines for core orbit, but would also need zoom, pan, damping, touch, boundary constraints. Only worthwhile if we want zero dependencies. |
-| **D. Accept the quirk** | None | Acceptable | Editing controls work perfectly. Orbit inversion is noticeable but not a dealbreaker for Phase 1 deployment. Document in UI tooltip. |
+| Option | Effort | Quality | Status |
+|--------|--------|---------|--------|
+| **A. Drop-in camera-controls** | Medium | Best | Evaluated — ~95KB minified, 2400+ lines. Overkill for our needs. |
+| **B. Port the up-vector transform** | Medium | Good | Evaluated — fragile across THREE.js upgrades. |
+| **C. Roll our own quaternion orbit** | Medium | Good | **IMPLEMENTED** — ~35 lines core + ~25 lines event handling + ~5 lines damping. Keeps OrbitControls for zoom/pan. |
+| **D. Accept the quirk** | None | Acceptable | Rejected — orbit inversion too disorienting in non-standard UCS modes. |
 
-**Recommendation**: Option A. camera-controls is MIT, battle-tested, CDN-available, and solves the root cause. The API adaptation is straightforward.
+**Chosen**: Option C. Custom quaternion orbit inspired by camera-controls (yomotsu, MIT). Minimal code, zero new dependencies, solves the root cause.
+
+### 6.5 Quaternion Orbit Implementation
+
+The solution disables OrbitControls' spherical rotation (`controls.enableRotate = false`) and replaces it with a quaternion-based orbit that rotates the camera around:
+
+1. **Horizontal**: `camera.up` axis (no pole — this axis is always perpendicular to the view)
+2. **Vertical**: Camera's right axis (`cross(viewDirection, camera.up)`) — also always perpendicular
+
+Since neither rotation axis ever aligns with the camera-to-target vector, there is no polar singularity. The spherical coordinate poles simply don't exist in this formulation.
+
+OrbitControls continues to handle **zoom** (dolly) and **pan** — these are pole-independent and work correctly with any `camera.up`. Damping uses `controls.dampingFactor` for consistent feel.
+
+**Key code** (rt-rendering.js, outer scope):
+```javascript
+function _applyOrbitRotation(dx, dy) {
+  offset.copy(camera.position).sub(controls.target);
+  // Horizontal: rotate around camera.up (no pole)
+  quat.setFromAxisAngle(camera.up, -dx);
+  offset.applyQuaternion(quat);
+  // Vertical: rotate around camera's right axis (no pole)
+  camera.getWorldDirection(dir);
+  axis.crossVectors(dir, camera.up).normalize();
+  quat.setFromAxisAngle(axis, -dy);
+  offset.applyQuaternion(quat);
+  camera.position.copy(controls.target).add(offset);
+  camera.lookAt(controls.target);
+}
+```
+
+**Attribution**: Inspired by [camera-controls](https://github.com/yomotsu/camera-controls) by yomotsu (MIT license), which solves the same problem via canonical Y-up quaternion transform.
 
 ---
 
@@ -273,17 +303,19 @@ This means: no polar singularity at unexpected positions, no mid-drag orbit reve
 | 3. Wire up buttons in rt-init.js | Done | `d66db53` |
 | 4. Test visual correctness | Done | All editing controls work correctly |
 
-### Phase 2: Orbit Feel (TODO)
+### Phase 2: Orbit Feel (COMPLETE)
 5. ~~Investigate `controls.reverseOrbit`~~ — does not exist in official THREE.js (any version)
 6. ~~Camera position adjustment~~ — tested, caused quaternion drift / space warping
 7. ~~`rotateSpeed = -1` toggle~~ — tested, minor improvement but cannot fix position-dependent pole-crossing flip
-8. **Replace OrbitControls with camera-controls** (yomotsu, MIT) — solves polar singularity architecturally via canonical-space quaternion transform. See Section 6.3-6.4.
+8. ~~Replace OrbitControls with camera-controls~~ — evaluated, ~95KB overkill for our needs
+9. **Custom quaternion orbit** — implemented, ~65 lines total, eliminates polar singularity. See Section 6.5. Commit `75db42d`.
 
-### Phase 3: Polish
-8. Persist UCS preference in localStorage
-9. Expand toggle to include all 7 orientations if warranted
-10. Consider whether camera view presets should be UCS-aware
-11. Add UCS indicator label on canvas (e.g., small "QZ-up" badge)
+### Phase 3: Polish (TODO)
+10. Persist UCS preference in localStorage
+11. Expand toggle to include all 7 orientations if warranted
+12. Consider whether camera view presets should be UCS-aware
+13. Add UCS indicator label on canvas (e.g., small "QZ-up" badge)
+14. Investigate click-selection in orthographic view (raycasting may need adjustment with quaternion orbit)
 
 ---
 
@@ -291,10 +323,10 @@ This means: no polar singularity at unexpected positions, no mid-drag orbit reve
 
 | File | Changes | Status |
 |------|---------|--------|
-| rt-rendering.js | ~40 lines (`setUCSOrientation` + export) | Done |
+| rt-rendering.js | ~105 lines (`setUCSOrientation` + quaternion orbit + damping) | Done |
 | index.html | ~15 lines (toggle buttons) | Done |
 | rt-init.js | ~12 lines (button event wiring) | Done |
-| **Total new/changed code** | **~67 lines** | **Done** |
+| **Total new/changed code** | **~132 lines** | **Done** |
 
 **No changes at all**: rt-math.js, rt-polyhedra.js, rt-state-manager.js, rt-filehandler.js, rt-coordinates.js, rt-grids.js, rt-papercut.js, rt-projections.js, **rt-controls.js** (no gumball reparenting needed).
 
@@ -342,4 +374,12 @@ A second attempt tried computing camera position from a fixed Z-up reference sta
 
 ---
 
-*Workplan updated 2026-02-09. Phase 1 complete — orbit inversion fix next.*
+### Known Issues
+
+1. **Click-selection in orthographic view**: Raycasting for object selection is difficult/buggy in orthographic camera mode, in both Struppify (QZ-up) and default Z-up. Unclear whether this predates the UCS branch — may be a pre-existing issue exposed by testing, or introduced by the quaternion orbit replacing OrbitControls' rotation. Needs investigation in Phase 3.
+
+2. **`rotateSpeed = -1` remnant**: The `setUCSOrientation()` still sets `controls.rotateSpeed = newUp.z < 0 ? -1 : 1`. Since OrbitControls rotation is now disabled (`controls.enableRotate = false`), this line has no effect on orbit behavior. It may be safely removed, or kept for future reference if OrbitControls rotation is ever re-enabled for specific modes.
+
+---
+
+*Workplan updated 2026-02-09. Phases 1-2 complete — custom quaternion orbit deployed.*
