@@ -24,6 +24,7 @@
 
 import { RT, Quadray } from "./rt-math.js";
 import { Polyhedra } from "./rt-polyhedra.js";
+import { MetaLog } from "./rt-metalog.js";
 
 // Access THREE.js from global scope (set by main HTML)
 
@@ -294,6 +295,8 @@ export const Grids = {
 
     const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00]; // R, G, B, Y
 
+    // Suppress MetaLog — arrowhead dualTetrahedra are utility geometry
+    MetaLog.suppress();
     Quadray.basisVectors.forEach((vec, i) => {
       const arrow = Grids.createTetrahedralArrow(
         vec,
@@ -303,6 +306,7 @@ export const Grids = {
       );
       quadrayBasis.add(arrow);
     });
+    MetaLog.unsuppress();
 
     quadrayBasis.visible = true; // Visible by default
     scene.add(quadrayBasis);
@@ -331,9 +335,12 @@ export const Grids = {
 
     // DIAGNOSTIC: Log grid interval with full precision (first plane only)
     if (!window.gridIntervalLogged) {
-      console.log("=== QUADRAY GRID INTERVAL (FIXED) ===");
-      console.log(`Grid interval (√6/4): ${edgeLength.toFixed(16)}`);
-      console.log(`Exact value: ${edgeLength}`);
+      MetaLog.log(MetaLog.SUMMARY, "=== QUADRAY GRID INTERVAL (FIXED) ===");
+      MetaLog.log(
+        MetaLog.SUMMARY,
+        `Grid interval (√6/4): ${edgeLength.toFixed(16)}`
+      );
+      MetaLog.log(MetaLog.SUMMARY, `Exact value: ${edgeLength}`);
       window.gridIntervalLogged = true;
     }
 
@@ -468,7 +475,8 @@ export const Grids = {
     ivmYZ.name = "CentralAngle_YZ";
     ivmPlanes.add(ivmYZ);
 
-    console.log(
+    MetaLog.log(
+      MetaLog.SUMMARY,
       "✅ Central Angle grids created (corrected tessellation, 6 planes) with edge length:",
       (2 * halfSize * Math.sqrt(2)).toFixed(4)
     );

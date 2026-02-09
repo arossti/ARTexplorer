@@ -18,6 +18,7 @@
  */
 
 import { RT } from "./rt-math.js";
+import { MetaLog } from "./rt-metalog.js";
 import { Polyhedra } from "./rt-polyhedra.js";
 
 /**
@@ -315,9 +316,9 @@ export const RTRadialMatrix = {
       }
     }
 
-    // Debug: log shell distribution
-    console.log(
-      `[RTRadialMatrix] RD positions debug: frequency=${frequency}, spaceFilling=${spaceFilling}, maxShell=${maxShell}, total=${positions.length}`
+    MetaLog.log(
+      MetaLog.DEBUG,
+      `[RTRadialMatrix] RD positions: frequency=${frequency}, spaceFilling=${spaceFilling}, maxShell=${maxShell}, total=${positions.length}`
     );
 
     return positions;
@@ -428,23 +429,13 @@ export const RTRadialMatrix = {
       ? RTRadialMatrix.shellCounts.cube(frequency)
       : RTRadialMatrix.shellCounts.cubeStellation(frequency);
 
-    // Detailed logging for debugging
-    console.log(`[RTRadialMatrix] ========== CUBE RADIAL MATRIX ==========`);
-    console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
-    console.log(
-      `[RTRadialMatrix] Mode: ${spaceFilling ? "SPACE-FILLING" : "SHELL-ONLY"}`
-    );
-    console.log(
-      `[RTRadialMatrix] Center positions generated: ${positions.length}`
-    );
-    console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
-    console.log(
-      `[RTRadialMatrix] Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`
-    );
-    console.log(
-      `[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`
-    );
-    console.log(`[RTRadialMatrix] =========================================`);
+    MetaLog.identity("Radial Cube Matrix", "", {
+      construction: `F${frequency}, ${spaceFilling ? "space-filling" : "shell-only"}`,
+    });
+    MetaLog.construction([
+      `Positions: ${positions.length}, Expected: ${expectedCount}, Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`,
+      `Polyhedra in group: ${matrixGroup.children.length}`,
+    ]);
 
     return matrixGroup;
   },
@@ -558,27 +549,13 @@ export const RTRadialMatrix = {
       ? RTRadialMatrix.shellCounts.rhombicDodec(frequency)
       : RTRadialMatrix.shellCounts.rhombicDodecShell(frequency);
 
-    // Detailed logging for debugging
-    console.log(
-      `[RTRadialMatrix] ========== RHOMBIC DODEC RADIAL MATRIX ==========`
-    );
-    console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
-    console.log(
-      `[RTRadialMatrix] Mode: ${spaceFilling ? "SPACE-FILLING" : "SHELL-ONLY"}`
-    );
-    console.log(
-      `[RTRadialMatrix] Center positions generated: ${positions.length}`
-    );
-    console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
-    console.log(
-      `[RTRadialMatrix] Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`
-    );
-    console.log(
-      `[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`
-    );
-    console.log(
-      `[RTRadialMatrix] ================================================`
-    );
+    MetaLog.identity("Radial Rhombic Dodec Matrix", "", {
+      construction: `F${frequency}, ${spaceFilling ? "space-filling" : "shell-only"}`,
+    });
+    MetaLog.construction([
+      `Positions: ${positions.length}, Expected: ${expectedCount}, Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`,
+      `Polyhedra in group: ${matrixGroup.children.length}`,
+    ]);
 
     return matrixGroup;
   },
@@ -1045,33 +1022,13 @@ export const RTRadialMatrix = {
       ? positions.length // IVM positions computed, not formula-based yet
       : RTRadialMatrix.shellCounts.tetrahedron(frequency);
 
-    console.log(
-      `[RTRadialMatrix] ========== TETRAHEDRON RADIAL MATRIX ==========`
-    );
-    console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
-    console.log(
-      `[RTRadialMatrix] Mode: ${ivmMode ? "IVM (FCC ODD, void filling)" : "Standard (taxicab)"}`
-    );
-    console.log(
-      `[RTRadialMatrix] Spacing: ${spacing} (${ivmMode ? "4×" : "2×"} halfSize)`
-    );
-    console.log(
-      `[RTRadialMatrix] Center positions generated: ${positions.length}`
-    );
-    if (!ivmMode) {
-      console.log(
-        `[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`
-      );
-      console.log(
-        `[RTRadialMatrix] Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`
-      );
-    }
-    console.log(
-      `[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`
-    );
-    console.log(
-      `[RTRadialMatrix] ================================================`
-    );
+    MetaLog.identity("Radial Tetrahedron Matrix", "", {
+      construction: `F${frequency}, ${ivmMode ? "IVM (FCC ODD, void filling)" : "Standard (taxicab)"}, spacing=${spacing} (${ivmMode ? "4×" : "2×"} halfSize)`,
+    });
+    MetaLog.construction([
+      `Positions: ${positions.length}${!ivmMode ? `, Expected: ${expectedCount}, Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}` : ""}`,
+      `Polyhedra in group: ${matrixGroup.children.length}`,
+    ]);
 
     return matrixGroup;
   },
@@ -1218,34 +1175,23 @@ export const RTRadialMatrix = {
       matrixGroup.add(octGroup);
     });
 
-    console.log(
-      `[RTRadialMatrix] ========== OCTAHEDRON RADIAL MATRIX ==========`
-    );
-    console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
     const modeDesc = ivmScale
       ? "2× size, 4× spacing, FCC lattice (full IVM)"
       : ivmScaleOnly
         ? "2× size, geodesic frequency layers (IVM nesting)"
         : "1× size, 2× spacing, taxicab (standard)";
-    console.log(`[RTRadialMatrix] Mode: ${modeDesc}`);
-    console.log(
-      `[RTRadialMatrix] Octahedron size: ${octSize} (${useScaledSize ? "2×" : "1×"} halfSize)`
-    );
-    console.log(`[RTRadialMatrix] Spacing: ${spacing}`);
-    if (ivmScaleOnly) {
-      console.log(
-        `[RTRadialMatrix] Pattern: ${frequency % 2 === 1 ? "Odd (oct at origin)" : "Even (vertex at origin)"}`
-      );
-    }
-    console.log(
-      `[RTRadialMatrix] Center positions generated: ${positions.length}`
-    );
-    console.log(
-      `[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`
-    );
-    console.log(
-      `[RTRadialMatrix] ==============================================`
-    );
+    MetaLog.identity("Radial Octahedron Matrix", "", {
+      construction: `F${frequency}, ${modeDesc}`,
+    });
+    MetaLog.construction([
+      `Octahedron size: ${octSize} (${useScaledSize ? "2×" : "1×"} halfSize), Spacing: ${spacing}`,
+      ...(ivmScaleOnly
+        ? [
+            `Pattern: ${frequency % 2 === 1 ? "Odd (oct at origin)" : "Even (vertex at origin)"}`,
+          ]
+        : []),
+      `Positions: ${positions.length}, Polyhedra in group: ${matrixGroup.children.length}`,
+    ]);
 
     // Apply 45° constellation rotation for ivmScaleOnly
     // This rotates the entire octahedra group to align with tetrahedra IVM lattice
@@ -1367,23 +1313,13 @@ export const RTRadialMatrix = {
 
     const expectedCount = RTRadialMatrix.shellCounts.cuboctahedron(frequency);
 
-    console.log(
-      `[RTRadialMatrix] ========== CUBOCTAHEDRON RADIAL MATRIX ==========`
-    );
-    console.log(`[RTRadialMatrix] Frequency: F${frequency}`);
-    console.log(
-      `[RTRadialMatrix] Center positions generated: ${positions.length}`
-    );
-    console.log(`[RTRadialMatrix] Expected polyhedra count: ${expectedCount}`);
-    console.log(
-      `[RTRadialMatrix] Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`
-    );
-    console.log(
-      `[RTRadialMatrix] Polyhedra in THREE.Group: ${matrixGroup.children.length}`
-    );
-    console.log(
-      `[RTRadialMatrix] =================================================`
-    );
+    MetaLog.identity("Radial Cuboctahedron Matrix", "", {
+      construction: `F${frequency}`,
+    });
+    MetaLog.construction([
+      `Positions: ${positions.length}, Expected: ${expectedCount}, Match: ${positions.length === expectedCount ? "✓" : "✗ MISMATCH"}`,
+      `Polyhedra in group: ${matrixGroup.children.length}`,
+    ]);
 
     return matrixGroup;
   },
@@ -1425,7 +1361,8 @@ export const RTRadialMatrix = {
     const maxSpacing = Math.sqrt(maxQ);
     const avgSpacing = Math.sqrt(avgQ);
 
-    console.log(
+    MetaLog.log(
+      MetaLog.DETAILED,
       `[RTRadialMatrix] Spacing validation: expected=${expectedSpacing.toFixed(4)}, ` +
         `min=${minSpacing.toFixed(4)}, max=${maxSpacing.toFixed(4)}, avg=${avgSpacing.toFixed(4)}`
     );

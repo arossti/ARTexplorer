@@ -117,7 +117,8 @@ const PROJECTION_PRESETS = {
     vertexCount: 24,
     spreads: [0.9, 0.96, 0.95], // Rational: s=(9/10, 24/25, 19/20), Tier 3
     expectedHull: 13,
-    source: "Path A rational search tier 3, s=(9/10,24/25,19/20), regularity=0.3462",
+    source:
+      "Path A rational search tier 3, s=(9/10,24/25,19/20), regularity=0.3462",
     maxInteriorAngle: 178,
     verified: "2026-02-08",
     description:
@@ -156,8 +157,7 @@ const PROJECTION_PRESETS = {
     source: "Phase 1 geodesic f=2 search, s=(0,1/3,1/3), regularity=0.419",
     maxInteriorAngle: 170,
     verified: "2026-02-08",
-    description:
-      "Geodesic Tet f=2 (10v) → 7-gon hull — SINGLE polyhedron!",
+    description: "Geodesic Tet f=2 (10v) → 7-gon hull — SINGLE polyhedron!",
     rationalSpreads: ["0", "1/3", "1/3"],
     rationalTier: 1,
     projectionState: {
@@ -185,8 +185,7 @@ const PROJECTION_PRESETS = {
     source: "Phase 1 geodesic f=4 search, s=(3/4,1/3,1/3), regularity=0.432",
     maxInteriorAngle: 175,
     verified: "2026-02-08",
-    description:
-      "Geodesic Tet f=4 (34v) → 11-gon hull — SINGLE polyhedron!",
+    description: "Geodesic Tet f=4 (34v) → 11-gon hull — SINGLE polyhedron!",
     rationalSpreads: ["3/4", "1/3", "1/3"],
     rationalTier: 1,
     projectionState: {

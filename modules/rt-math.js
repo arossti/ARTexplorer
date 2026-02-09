@@ -16,6 +16,8 @@
  * - https://www.youtube.com/watch?v=GJPJKPNb2Zg
  */
 
+import { MetaLog } from "./rt-metalog.js";
+
 /**
  * Rational Trigonometry (RT) Library
  * @namespace RT
@@ -973,7 +975,10 @@ export const RT = {
     );
 
     group.applyMatrix4(rotationMatrix);
-    console.log(`[RT] 45° rotation applied: s=${s}, c=${c}, s+c=${s + c} ✓`);
+    MetaLog.log(
+      MetaLog.DEBUG,
+      `[RT] 45° rotation applied: s=${s}, c=${c}, s+c=${s + c} ✓`
+    );
   },
 
   /**
@@ -1032,7 +1037,10 @@ export const RT = {
     );
 
     group.applyMatrix4(rotationMatrix);
-    console.log(`[RT] 180° rotation applied: s=${s}, c=${c}, s+c=${s + c} ✓`);
+    MetaLog.log(
+      MetaLog.DEBUG,
+      `[RT] 180° rotation applied: s=${s}, c=${c}, s+c=${s + c} ✓`
+    );
   },
 
   /**
