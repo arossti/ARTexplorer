@@ -29,6 +29,15 @@ Please refer to the LICENSE file for details, or contact us directly with questi
 by Andy Thomson, OpneBuilding, Inc., OAA with mentorship by volunteer advisors including Dr.Ted Kesik, P.Eng and the guidance and peer review of Evelyne Bouchard, OAQ, CPHD. 
 Many thanks to INVISIJ Architects, Tandem Architecture, Pamela DeMelo, P.Eng., Stephen Pope, OAA, FRAIC and many others for peer review and ideas.
 
+THIRD-PARTY ATTRIBUTION
+
+Quaternion orbit camera control technique inspired by camera-controls by Yomotsu Takeno.
+Source: https://github.com/yomotsu/camera-controls
+License: MIT (https://opensource.org/licenses/MIT)
+No code was directly copied; the approach of rotating around camera.up and the camera's
+right axis (rather than using spherical coordinates) was inspired by the library's
+canonical-space quaternion transform technique.
+
 
 DISCLAIMER: (Disclaimer last updated: April 2025. Subject to change without notice.)
 OpenBuilding, including its directors, advisors, and volunteers, makes no guarantees and assumes no legal responsibility for the accuracy, completeness, or usefulness of this tool. 
