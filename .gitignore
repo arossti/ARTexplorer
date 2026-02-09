@@ -38,9 +38,20 @@ eslint.config.js
 *.PDF
 
 # Generated results (local only)
-results/
+scripts/results/
 
-# Whitepaper and reference materials (local resources only)
-Geometry Documents/Whitepaper LaTEX/
+# LaTeX build artifacts
+*.aux
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+
+# Whitepaper images and reference materials (large binaries)
 Geometry Documents/Whitepaper Images/
 Geometry Documents/Wildberger References/

@@ -136,6 +136,100 @@ const PROJECTION_PRESETS = {
       presetName: "tridecagon",
     },
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SINGLE-POLYHEDRA GEODESIC TETRAHEDRON RESULTS
+  // These bypass the compound requirement — asymmetric geodesic tet alone
+  // produces prime hulls due to lack of central symmetry.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  heptagonGeoTet: {
+    name: "Heptagon (7-gon) — Geodesic Tet",
+    buttonLabel: "7★",
+    n: 7,
+    polyhedronType: "primeGeoTetF2",
+    polyhedronCheckbox: "showPrimeGeoTetF2",
+    compound: "geodesicTetrahedronF2",
+    vertexCount: 10,
+    spreads: [0, 1 / 3, 1 / 3], // Rational: s=(0, 1/3, 1/3), Tier 1
+    expectedHull: 7,
+    source: "Phase 1 geodesic f=2 search, s=(0,1/3,1/3), regularity=0.419",
+    maxInteriorAngle: 170,
+    verified: "2026-02-08",
+    description:
+      "Geodesic Tet f=2 (10v) → 7-gon hull — SINGLE polyhedron!",
+    rationalSpreads: ["0", "1/3", "1/3"],
+    rationalTier: 1,
+    projectionState: {
+      enabled: true,
+      basis: "custom",
+      axis: null,
+      distance: 3,
+      showRays: true,
+      showInterior: false,
+      showIdealPolygon: true,
+      customSpreads: [0, 1 / 3, 1 / 3],
+      presetName: "heptagonGeoTet",
+    },
+  },
+  hendecagonGeoTet: {
+    name: "Hendecagon (11-gon) — Geodesic Tet",
+    buttonLabel: "11★",
+    n: 11,
+    polyhedronType: "primeGeoTetF4",
+    polyhedronCheckbox: "showPrimeGeoTetF4",
+    compound: "geodesicTetrahedronF4",
+    vertexCount: 34,
+    spreads: [0.75, 1 / 3, 1 / 3], // Rational: s=(3/4, 1/3, 1/3), Tier 1
+    expectedHull: 11,
+    source: "Phase 1 geodesic f=4 search, s=(3/4,1/3,1/3), regularity=0.432",
+    maxInteriorAngle: 175,
+    verified: "2026-02-08",
+    description:
+      "Geodesic Tet f=4 (34v) → 11-gon hull — SINGLE polyhedron!",
+    rationalSpreads: ["3/4", "1/3", "1/3"],
+    rationalTier: 1,
+    projectionState: {
+      enabled: true,
+      basis: "custom",
+      axis: null,
+      distance: 3,
+      showRays: true,
+      showInterior: false,
+      showIdealPolygon: true,
+      customSpreads: [0.75, 1 / 3, 1 / 3],
+      presetName: "hendecagonGeoTet",
+    },
+  },
+  tridecagonGeoTet: {
+    name: "Tridecagon (13-gon) — Geodesic Tet",
+    buttonLabel: "13★",
+    n: 13,
+    polyhedronType: "primeGeoTetF4",
+    polyhedronCheckbox: "showPrimeGeoTetF4",
+    compound: "geodesicTetrahedronF4",
+    vertexCount: 34,
+    spreads: [0.5, 0.75, 0.75], // Rational: s=(1/2, 3/4, 3/4), Tier 1
+    expectedHull: 13,
+    source: "Phase 1 geodesic f=4 search, s=(1/2,3/4,3/4), regularity=0.448",
+    maxInteriorAngle: 175,
+    verified: "2026-02-08",
+    description:
+      "Geodesic Tet f=4 (34v) → 13-gon hull — SINGLE polyhedron! Beats compound.",
+    rationalSpreads: ["1/2", "3/4", "3/4"],
+    rationalTier: 1,
+    projectionState: {
+      enabled: true,
+      basis: "custom",
+      axis: null,
+      distance: 3,
+      showRays: true,
+      showInterior: false,
+      showIdealPolygon: true,
+      customSpreads: [0.5, 0.75, 0.75],
+      presetName: "tridecagonGeoTet",
+    },
+  },
 };
 
 // Legacy lookup by n for backwards compatibility
@@ -191,13 +285,17 @@ export const RTPrimeCuts = {
       const preset = PROJECTION_PRESETS[key];
       // Fermat primes (3, 5, 17, 257, 65537) are constructible
       const isConstructible = [3, 5, 17].includes(preset.n);
+      const isSinglePoly = !!preset.buttonLabel; // Geodesic tet single-poly results
       const gradient = isConstructible
         ? "linear-gradient(135deg, #7bed9f 0%, #26de81 100%)"
-        : "linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%)";
+        : isSinglePoly
+          ? "linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)"
+          : "linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%)";
+      const label = preset.buttonLabel || `${preset.n}-gon`;
       buttonsHTML += `<button class="pp-btn" data-preset="${key}"
         title="${preset.description}"
         style="background: ${gradient}; color: #000">
-        ${preset.n}-gon</button>`;
+        ${label}</button>`;
     }
 
     const panel = document.createElement("div");
@@ -295,8 +393,9 @@ export const RTPrimeCuts = {
       </p>
       <div class="btn-grid">${buttonsHTML}</div>
       <p style="font-size: 8px; margin: 0; color: #888">
-        <span style="color: #7bed9f">Green</span>: Fermat/constructible |
-        <span style="color: #ff6b6b">Red</span>: Gauss-Wantzel bypass
+        <span style="color: #7bed9f">Green</span>: constructible |
+        <span style="color: #ff6b6b">Red</span>: compound |
+        <span style="color: #74b9ff">Blue★</span>: single poly
       </p>
       <div id="primeProjectionInfo"
         style="font-size: 10px; color: #00ffff; margin-top: 8px; display: none">
@@ -350,6 +449,8 @@ export const RTPrimeCuts = {
     disable("showPrimeTruncTet");
     disable("showPrimeCompoundTet");
     disable("showPrimeCompoundIcosa");
+    disable("showPrimeGeoTetF2");
+    disable("showPrimeGeoTetF4");
     disable("showQuadrayTruncatedTet");
 
     // For 11/13-gon switching (same checkbox), hide projection first

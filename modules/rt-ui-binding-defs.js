@@ -304,6 +304,16 @@ export const checkboxWithControlsBindings = [
     type: "checkbox-controls",
     controlsId: "prime-compound-icosa-controls",
   },
+  {
+    id: "showPrimeGeoTetF2",
+    type: "checkbox-controls",
+    controlsId: "prime-geo-tet-f2-controls",
+  },
+  {
+    id: "showPrimeGeoTetF4",
+    type: "checkbox-controls",
+    controlsId: "prime-geo-tet-f4-controls",
+  },
 
   // Projection with controls panel
   {
