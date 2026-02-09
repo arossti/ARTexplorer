@@ -125,7 +125,9 @@ export const MetaLog = {
     if (V !== undefined && E !== undefined && F !== undefined) {
       console.log(`  V: ${V}, E: ${E}, F: ${F}`);
       const euler = V - E + F;
-      console.log(`  Euler: V - E + F = ${euler} ${euler === 2 ? "\u2713" : "\u2717"}`);
+      console.log(
+        `  Euler: V - E + F = ${euler} ${euler === 2 ? "\u2713" : "\u2717"}`
+      );
     }
     if (edgeQ !== undefined) {
       console.log(`  Edge Q: ${edgeQ.toFixed(6)}`);

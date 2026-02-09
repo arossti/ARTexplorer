@@ -64,7 +64,10 @@ export class RTUIBindings {
    */
   registerAll(bindings) {
     bindings.forEach(b => this.register(b));
-    MetaLog.log(MetaLog.SUMMARY, `📋 RTUIBindings: Registered ${bindings.length} bindings`);
+    MetaLog.log(
+      MetaLog.SUMMARY,
+      `📋 RTUIBindings: Registered ${bindings.length} bindings`
+    );
   }
 
   /**

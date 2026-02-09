@@ -1091,7 +1091,6 @@ export function initScene(THREE, OrbitControls, RT) {
         }
       });
     });
-
   }
 
   /**
@@ -2026,13 +2025,31 @@ export function initScene(THREE, OrbitControls, RT) {
       // Only log for integer edge lengths 1-5
       const roundedEdge = Math.round(tetEdgeLength * 10) / 10;
       if ([1.0, 2.0, 3.0, 4.0, 5.0].includes(roundedEdge)) {
-        MetaLog.log(MetaLog.DETAILED, `\n=== TETRAHEDRON EDGE LENGTH ${roundedEdge} ===`);
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `\n=== TETRAHEDRON EDGE LENGTH ${roundedEdge} ===`
+        );
         MetaLog.log(MetaLog.DETAILED, `HalfSize (s): ${halfSize.toFixed(16)}`);
-        MetaLog.log(MetaLog.DETAILED, `Edge length (2s√2): ${tetEdgeLength.toFixed(16)}`);
-        MetaLog.log(MetaLog.DETAILED, `OutSphere radius (s√3): ${outSphereRadius.toFixed(16)}`);
-        MetaLog.log(MetaLog.DETAILED, `Grid interval (√6/4): ${gridInterval.toFixed(16)}`);
-        MetaLog.log(MetaLog.DETAILED, `Difference (OutSphere - Grid): ${difference.toFixed(16)}`);
-        MetaLog.log(MetaLog.DETAILED, `Percent difference: ${percentDiff.toFixed(8)}%`);
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `Edge length (2s√2): ${tetEdgeLength.toFixed(16)}`
+        );
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `OutSphere radius (s√3): ${outSphereRadius.toFixed(16)}`
+        );
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `Grid interval (√6/4): ${gridInterval.toFixed(16)}`
+        );
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `Difference (OutSphere - Grid): ${difference.toFixed(16)}`
+        );
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `Percent difference: ${percentDiff.toFixed(8)}%`
+        );
       }
     } else {
       tetrahedronGroup.visible = false;

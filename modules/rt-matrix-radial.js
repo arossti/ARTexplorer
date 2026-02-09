@@ -1185,7 +1185,11 @@ export const RTRadialMatrix = {
     });
     MetaLog.construction([
       `Octahedron size: ${octSize} (${useScaledSize ? "2×" : "1×"} halfSize), Spacing: ${spacing}`,
-      ...(ivmScaleOnly ? [`Pattern: ${frequency % 2 === 1 ? "Odd (oct at origin)" : "Even (vertex at origin)"}`] : []),
+      ...(ivmScaleOnly
+        ? [
+            `Pattern: ${frequency % 2 === 1 ? "Odd (oct at origin)" : "Even (vertex at origin)"}`,
+          ]
+        : []),
       `Positions: ${positions.length}, Polyhedra in group: ${matrixGroup.children.length}`,
     ]);
 
