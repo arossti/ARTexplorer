@@ -3203,6 +3203,8 @@ export function initScene(THREE, OrbitControls, RT) {
 
       const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00];
 
+      // Suppress MetaLog — arrowhead dualTetrahedra are utility geometry
+      MetaLog.suppress();
       Quadray.basisVectors.forEach((vec, i) => {
         const arrow = Grids.createTetrahedralArrow(
           vec,
@@ -3212,6 +3214,7 @@ export function initScene(THREE, OrbitControls, RT) {
         );
         quadrayBasis.add(arrow);
       });
+      MetaLog.unsuppress();
     }
 
     updateGeometryStats();

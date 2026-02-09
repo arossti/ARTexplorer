@@ -182,6 +182,9 @@ export const Polyhedra = {
    * @param {Object} options - Optional configuration (e.g., WXYZ basis arrows)
    */
   dualTetrahedron: (halfSize = 1, options = {}) => {
+    // Suppress all logging when called as utility geometry (arrowheads, node spheres, etc.)
+    if (options.silent) MetaLog.suppress();
+
     // Get base tetrahedron geometry
     MetaLog.suppress();
     const base = Polyhedra.tetrahedron(halfSize);
@@ -206,6 +209,7 @@ export const Polyhedra = {
       maxError,
     });
 
+    if (options.silent) MetaLog.unsuppress();
     return { vertices, edges, faces };
   },
 
