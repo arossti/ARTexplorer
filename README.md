@@ -701,6 +701,7 @@ We welcome contributions! Areas of interest:
 **Special Thanks:**
 
 - The Three.js community for excellent WebGL tools
+- **Yomotsu Takeno** ([camera-controls](https://github.com/yomotsu/camera-controls), MIT license) — quaternion orbit technique for pole-free camera rotation, which inspired our custom orbit implementation
 - Claude 4.5 (Anthropic) and the VSC IDE for development assistance and code review
 - Open source contributors and geometry enthusiasts
 

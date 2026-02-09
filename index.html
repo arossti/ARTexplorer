@@ -733,6 +733,36 @@
                 </p>
               </div>
             </div>
+            <!-- UCS (User Coordinate System) Scene Orientation -->
+            <div class="control-item" style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #333">
+              <label class="label-section">Scene Orientation (UCS)</label>
+              <div class="toggle-btn-group">
+                <button
+                  class="toggle-btn variant-objsnap active"
+                  data-ucs="z-up"
+                  title="Default Z-up (CAD/BIM standard)"
+                >
+                  Z-up
+                </button>
+                <button
+                  class="toggle-btn variant-objsnap"
+                  data-ucs="y-up"
+                  title="Y-up (game engine convention)"
+                >
+                  Y-up
+                </button>
+                <button
+                  class="toggle-btn variant-objsnap"
+                  data-ucs="qz-up"
+                  title="Quadray WZ-Up — rotates scene so QZ (Green) points skyward"
+                >
+                  Struppi-Up
+                </button>
+              </div>
+              <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                View-only — coordinates and files remain in native Z-up
+              </p>
+            </div>
           </div>
         </div>
         <!-- END SECTION 2: COORDINATE SYSTEMS -->

@@ -173,6 +173,41 @@ export function initScene(THREE, OrbitControls, RT) {
   let penroseTilingGroup; // Penrose Tiling: Aperiodic tiling with golden ratio
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
+  // ========================================================================
+  // Quaternion-Based Orbit — replaces OrbitControls' spherical rotation
+  // Avoids polar singularity (gimbal lock at poles) with non-standard camera.up
+  // Inspired by camera-controls by yomotsu (MIT license)
+  // https://github.com/yomotsu/camera-controls
+  // ========================================================================
+
+  let _qOrbitActive = false;
+  let _qOrbitPrevX = 0;
+  let _qOrbitPrevY = 0;
+  let _qOrbitVelX = 0;
+  let _qOrbitVelY = 0;
+  const _qOrbitQuat = new THREE.Quaternion();
+  const _qOrbitAxis = new THREE.Vector3();
+  const _qOrbitOffset = new THREE.Vector3();
+  const _qOrbitDir = new THREE.Vector3();
+  const ORBIT_SPEED = 2 * Math.PI / 1800;
+
+  function _applyOrbitRotation(dx, dy) {
+    _qOrbitOffset.copy(camera.position).sub(controls.target);
+
+    // Horizontal: rotate around camera.up axis (no pole)
+    _qOrbitQuat.setFromAxisAngle(camera.up, -dx);
+    _qOrbitOffset.applyQuaternion(_qOrbitQuat);
+
+    // Vertical: rotate around camera's right axis (no pole)
+    camera.getWorldDirection(_qOrbitDir);
+    _qOrbitAxis.crossVectors(_qOrbitDir, camera.up).normalize();
+    _qOrbitQuat.setFromAxisAngle(_qOrbitAxis, -dy);
+    _qOrbitOffset.applyQuaternion(_qOrbitQuat);
+
+    camera.position.copy(controls.target).add(_qOrbitOffset);
+    camera.lookAt(controls.target);
+  }
+
   function initScene() {
     // Scene
     scene = new THREE.Scene();
@@ -212,6 +247,31 @@ export function initScene(THREE, OrbitControls, RT) {
       MIDDLE: THREE.MOUSE.PAN,
       RIGHT: null, // Disable to free right-click for context menu
     };
+
+    // Disable OrbitControls rotation — quaternion orbit handles it (see outer scope)
+    controls.enableRotate = false;
+
+    renderer.domElement.addEventListener("pointerdown", function (e) {
+      if (e.button !== 0 || !controls.enabled) return;
+      _qOrbitActive = true;
+      _qOrbitPrevX = e.clientX;
+      _qOrbitPrevY = e.clientY;
+    });
+
+    renderer.domElement.addEventListener("pointermove", function (e) {
+      if (!_qOrbitActive || !controls.enabled) return;
+      const dx = (e.clientX - _qOrbitPrevX) * ORBIT_SPEED;
+      const dy = (e.clientY - _qOrbitPrevY) * ORBIT_SPEED;
+      _qOrbitPrevX = e.clientX;
+      _qOrbitPrevY = e.clientY;
+      _qOrbitVelX = dx;
+      _qOrbitVelY = dy;
+      _applyOrbitRotation(dx, dy);
+    });
+
+    window.addEventListener("pointerup", function () {
+      _qOrbitActive = false;
+    });
 
     // Ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -3818,7 +3878,15 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function animate() {
     requestAnimationFrame(animate);
-    controls.update(); // Required for damping
+
+    // Quaternion orbit damping — apply residual velocity after pointer release
+    if (!_qOrbitActive && (Math.abs(_qOrbitVelX) > 0.0001 || Math.abs(_qOrbitVelY) > 0.0001)) {
+      _applyOrbitRotation(_qOrbitVelX, _qOrbitVelY);
+      _qOrbitVelX *= 1 - controls.dampingFactor;
+      _qOrbitVelY *= 1 - controls.dampingFactor;
+    }
+
+    controls.update(); // Required for zoom/pan damping
     renderer.render(scene, camera);
 
     // Update FPS tracking and performance display
@@ -5060,6 +5128,52 @@ export function initScene(THREE, OrbitControls, RT) {
     }
   }
 
+  // ========================================================================
+  // UCS (User Coordinate System) — camera-based scene orientation
+  // ========================================================================
+
+  let currentUCSMode = "z-up";
+
+  /**
+   * Set UCS orientation by rotating the camera so the chosen axis appears vertical.
+   * Scene contents stay in native Z-up coordinates — only the viewpoint changes.
+   * @param {string} mode - One of: 'z-up', 'y-up', 'x-up', 'qw-up', 'qx-up', 'qy-up', 'qz-up'
+   */
+  function setUCSOrientation(mode) {
+    const orientations = {
+      "z-up": new THREE.Vector3(0, 0, 1),
+      "y-up": new THREE.Vector3(0, 1, 0),
+      "x-up": new THREE.Vector3(1, 0, 0),
+      "qw-up": Quadray.basisVectors[Quadray.AXIS_INDEX.qw].clone(),
+      "qx-up": Quadray.basisVectors[Quadray.AXIS_INDEX.qx].clone(),
+      "qy-up": Quadray.basisVectors[Quadray.AXIS_INDEX.qy].clone(),
+      "qz-up": Quadray.basisVectors[Quadray.AXIS_INDEX.qz].clone(),
+    };
+
+    const desiredUp = orientations[mode];
+    if (!desiredUp) return;
+
+    // Compute rotation from current up to desired up
+    const currentUp = camera.up.clone().normalize();
+    const newUp = desiredUp.clone().normalize();
+
+    if (currentUp.distanceTo(newUp) < 0.001) {
+      currentUCSMode = mode;
+      return; // Already there
+    }
+
+    // Rotate camera position and up vector
+    const quat = new THREE.Quaternion().setFromUnitVectors(currentUp, newUp);
+    camera.position.applyQuaternion(quat);
+    camera.up.copy(newUp);
+    camera.lookAt(controls.target);
+
+    controls.update();
+
+    currentUCSMode = mode;
+    MetaLog.log(`UCS orientation set to: ${mode}`);
+  }
+
   // Return public API from initScene() factory
   return {
     // Core scene initialization
@@ -5085,6 +5199,7 @@ export function initScene(THREE, OrbitControls, RT) {
     switchCameraType,
     setCameraPreset,
     resetCameraTarget,
+    setUCSOrientation,
 
     // Getters for THREE.js objects (needed by rt-init.js)
     getScene: () => scene,
