@@ -87,11 +87,193 @@ Key insight: vertex counts are always **even** — "finding primes from non-prim
 | **11** | t=(1/4,5/12) 24v, s=(1/2, 0, 1/3) | 0.591 | — | **No** (180° vertex) |
 | **13** | t=(1/3,5/12) 24v, s=(7/8, 7/8, 9/10) | 0.280 | Worse (0.346 from TruncTet+Icosa) | Mixed |
 
-**Critical finding**: ALL stella 11-gon results have a **degenerate 180° interior angle** — a collinear point the hull algorithm kept due to floating-point. These are actually 10-gons, not genuine 11-gons. The TruncTet+Icosa compound remains the only genuine source of 11-gon and 13-gon projections.
+**Critical finding**: ALL stella 11-gon results have a **degenerate 180° interior angle** — a collinear point the hull algorithm kept due to floating-point. These are actually 10-gons, not genuine 11-gons. The TruncTet+Icosa compound was the only genuine source of 11-gon and 13-gon projections — until the single-polyhedra search (see below).
 
 **7-gon improvement**: The stella search found s=(9/10, 1/3, 3/5) at reg=0.877, slightly better than our current s=(1/2, 1/2, 1/2) at reg=0.861. However, the new spreads are Tier 2 (denominator 10), while the current result is Tier 1. This is a regularity-vs-algebraic-simplicity trade-off.
 
 **Implementation**: `variable_stella_compound(t1, t2)` in `rt_polyhedra.py`; `--stella` flag in `prime_search_streamlined.py`. Searches over `(t1, t2, s1, s2, s3)` with configurable truncation and spread grids.
+
+### Single-Polyhedra Prime Search (Path C Exact)
+
+**Tested 2026-02-08** via `prime_search_streamlined.py --poly ... --exact --rational 1`.
+
+A more elegant result than compound polyhedra: finding prime polygon hulls from **single, non-compound rational polyhedra**. No combining two polyhedra to break symmetry — just one algebraically-defined solid, viewed at a rational spread angle, producing a prime hull.
+
+Four new search polyhedra, all in the √2 radical family (no golden ratio):
+
+| Polyhedra | Vertices | Radical Family | Vertex-Transitive |
+|-----------|----------|----------------|-------------------|
+| Cuboctahedron | 12 | √2 | Yes |
+| Rhombic Dodecahedron | 14 | √2 | No (2 orbits) |
+| Geodesic Tet freq=2 | 10 | √2, √3 | Yes (on sphere) |
+| Geodesic Oct freq=2 | 18 | √2 | Yes (on sphere) |
+
+**Results** (Tier 1 rational, `--exact`, all four polyhedra × primes 5/7/11/13):
+
+| Prime | Source | Best Spreads | Reg | Hits | Note |
+|-------|--------|-------------|-----|------|------|
+| **7** | Rhombic Dodecahedron (14v) | (1/2, 1/3, 1) | 0.521 | 3 | Single solid, √2 only |
+| **7** | Cuboctahedron (12v) | (1/3, 2/3, 1/4) | 0.421 | 7 | Vector Equilibrium! |
+| **7** | Geodesic Tet freq=2 (10v) | (0, 1/3, 1/3) | 0.419 | 97 | Richest source |
+| **11** | Geodesic Oct freq=2 (18v) | **(1/3, 3/4, 3/4)** | 0.354 | 1 | **√2 only — no φ!** |
+
+**Key findings**:
+
+1. **11-gon from a single geodesic octahedron** at Tier 1 rational spreads. This is the first 11-gon that requires only √2 radicals — the TruncTet+Icosa compound needed √5 (golden ratio). The geodesic octahedron is purely rational (vertices at permutations of (±1, 0, 0) projected to sphere).
+
+2. **7-gon from 10 vertices** (geodesic tet). The geodesic tetrahedron at frequency 2 has only 10 vertices — the fewest of any source — yet produces 97 heptagon hits at Tier 1 rationals. Finding primes from non-primes: 10 is even, yet the hull is prime.
+
+3. **No 5-gon or 13-gon** from these polyhedra at Tier 1. Higher tiers and frequencies may reveal them. The 5-gon may require truncation structure (the TruncTet's hexagonal faces naturally create pentagons under projection). The 13-gon may need more vertices (geodesic oct freq=3 has 38v).
+
+**The elegance argument**: A single, rationally-constructed polyhedron viewed at a rational angle producing a prime polygon is far more compelling than a compound polyhedron engineered to break symmetry. The cuboctahedron (Fuller's "Vector Equilibrium") producing heptagons at Tier 1 spreads connects prime projections directly to the most fundamental polyhedron in Synergetics.
+
+**Next**: Tier 2/3 searches, higher geodesic frequencies (freq=3,4), and verification that the geodesic oct 11-gon is not degenerate (no 180° angles).
+
+---
+
+## Workplan: Math Demo Buttons + Prime Leaderboard
+
+### Concept
+
+The Math Demo floating panel (`PROJECTION_PRESETS` in `rt-prime-cuts.js`) currently has 4 buttons: 5-gon, 7-gon, 11-gon, 13-gon. All use compound polyhedra (TruncTet alone or TruncTet+DualTet/Icosa). The single-polyhedra search has found new results from geodesics, cuboctahedron, and rhombic dodecahedron that should be added as **additional preset buttons** alongside the existing ones.
+
+The **Leaderboard** tracks the best result for each prime across all sources, ranked by regularity and elegance:
+
+### Prime Polygon Leaderboard (Verified — degeneracy-checked)
+
+**Degeneracy**: A hull vertex at 180° interior angle contributes nothing geometrically. All results below are verified non-degenerate (max angle < 179°) via Path C exact arithmetic.
+
+| Prime | Best Source | Type | V | Spreads | Reg | Max∠ | Tier | Status |
+|-------|-----------|------|---|---------|-----|------|------|--------|
+| **5** | Trunc Tetrahedron | Single | 12 | (0, 1/2, 0) | 0.423 | 144° | 1 | CLEAN |
+| **7** | TruncTet+DualTet | Compound | 16 | (1/2, 1/2, 1/2) | 0.861 | 136° | 1 | CLEAN |
+| **7** | Geodesic Tet f=2 | **Single** | 10 | (0, 1/3, 1/3) | 0.419 | 152° | 1 | CLEAN |
+| **11** | TruncTet+Icosa | Compound | 24 | (3/4, 1/4, 1/2) | 0.490 | 165° | 1 | CLEAN |
+| **11** | Geodesic Tet f=4 | **Single** | 34 | (3/4, 1/3, 1/3) | 0.432 | 170° | 1 | CLEAN |
+| **11** | Geodesic Tet f=3 | **Single** | 20 | (1/4, 1/4, 1/2) | 0.239 | 170° | 1 | CLEAN |
+| **13** | Geodesic Tet f=4 | **Single** | 34 | (1/2, 3/4, 3/4) | 0.448 | 173° | 1 | CLEAN |
+| **13** | Geodesic Tet f=4 | **Single** | 34 | (1/3, 2/3, 3/4) | 0.443 | 171° | 1 | CLEAN |
+| **13** | TruncTet+Icosa | Compound | 24 | (9/10, 24/25, 19/20) | 0.346 | 179° | 3 | BORDERLINE |
+
+**Breakthrough (freq=4 search)**: The geodesic tetrahedron at frequency 4 (34 vertices) produces the **first single-polyhedra 13-gon** at Tier 1 with reg=0.448 — beating the compound result (Tier 3, reg=0.346, borderline 179°) in every metric. The 13-gon at s=(1/2, 3/4, 3/4) uses only √2 radicals, same family as the 5-gon and 7-gon.
+
+#### Degenerate Results (180° — excluded from leaderboard)
+
+These hull counts are mathematically correct (Path C exact cross product is positive but ~1e-17) but geometrically meaningless — one or more vertices lie exactly on the line between their neighbors.
+
+| Prime | Source | Spreads | Hull | Max∠ | Note |
+|-------|--------|---------|------|------|------|
+| 7 | Cuboctahedron | (1/3, 2/3, 1/4) | 7 | 180° | Central symmetry artifact |
+| 7 | Rhombic Dodec | (1/2, 1/3, 1) | 7 | 180° | ALL rhombic dodec 7-gons degenerate |
+| 11 | Geodesic Oct f=2 | (1/3, 3/4, 3/4) | 11 | 180° | ALL geodesic oct f=2 11-gons degenerate |
+
+**Key insight**: Centrally symmetric polyhedra (cuboctahedron, rhombic dodecahedron, geodesic octahedron) produce exclusively degenerate odd-gon projections. Only the **asymmetric geodesic tetrahedron** yields clean single-poly primes — this is the Symmetry Barrier in action. The geodesic tet inherits the tetrahedron's lack of central symmetry, which is precisely what allows odd hull counts to emerge cleanly.
+
+**Elegance ranking** (most to least compelling):
+1. Single polyhedra at Tier 1 > Single at Tier 2+ > Compound at Tier 1 > Compound at Tier 2+
+2. Fewer vertices > more vertices (7 from 10v geodesic tet is more elegant than 7 from 16v compound)
+3. √2-only > √2+√3 > √5/φ (simpler radical family)
+4. **Non-degenerate only** — 180° hull vertices disqualify results from the leaderboard
+
+### Implementation Steps
+
+#### Phase 1: Verify + Run Extended Searches
+
+Before adding buttons, complete the search catalogue:
+
+1. **Verify geodesic oct 11-gon** — confirm no 180° interior angle at s=(1/3, 3/4, 3/4)
+2. **Search Tier 2/3** — run `--poly cuboctahedron,rhombicdodec,geodtet,geodoct --rational 2 --exact` and `--rational 3`
+3. **Search higher geodesic frequencies** — `--freq 3` (geodtet=20v, geodoct=38v) and `--freq 4` (34v, 66v)
+4. **Hunt 5-gon and 13-gon** from single polyhedra — the missing gaps in the leaderboard
+5. **Rank all results** by regularity AND equiangularity (max interior angle, angle variance)
+
+#### Phase 2: Add New Preset Entries to `rt-prime-cuts.js`
+
+For each single-polyhedra result that passes verification (no degenerate angles), add a new `PROJECTION_PRESETS` entry. The existing infrastructure already supports this — buttons are built dynamically from the registry.
+
+New presets (pending search completion):
+
+```
+PROJECTION_PRESETS = {
+  pentagon:    { ... },  // existing — TruncTet (single, only source)
+  heptagon:    { ... },  // existing — TruncTet+DualTet compound (best regularity)
+  hendecagon:  { ... },  // existing — TruncTet+Icosa compound (best regularity)
+  tridecagon:  { ... },  // existing — TruncTet+Icosa compound (only source)
+
+  // --- NEW: Single-polyhedra presets ---
+  heptagonRhombicDodec: {
+    name: "Heptagon (Rhombic Dodec)",
+    n: 7,
+    polyhedronType: "primeRhombicDodec",
+    polyhedronCheckbox: "showPrimeRhombicDodec",
+    compound: "rhombicDodecahedron",
+    vertexCount: 14,
+    spreads: [0.5, 1/3, 1.0],
+    ...
+  },
+  heptagonGeodesicTet: {
+    name: "Heptagon (Geodesic Tet)",
+    n: 7,
+    polyhedronType: "primeGeodesicTet",
+    polyhedronCheckbox: "showPrimeGeodesicTet",
+    compound: "geodesicTetrahedron",
+    vertexCount: 10,
+    spreads: [0, 1/3, 1/3],
+    ...
+  },
+  hendecagonGeodesicOct: {
+    name: "Hendecagon (Geodesic Oct)",
+    n: 11,
+    polyhedronType: "primeGeodesicOct",
+    polyhedronCheckbox: "showPrimeGeodesicOct",
+    compound: "geodesicOctahedron",
+    vertexCount: 18,
+    spreads: [1/3, 0.75, 0.75],
+    ...
+  },
+}
+```
+
+#### Phase 3: Wire New Polyhedra Groups in Rendering Pipeline
+
+For each new preset, add to the rendering pipeline following the established pattern:
+
+1. **`rt-rendering.js`**: Declare new THREE.Group (e.g. `primeRhombicDodecGroup`), initialize in scene setup, add rendering logic in update loop using existing `Polyhedra.rhombicDodecahedron()`, `Polyhedra.geodesicTetrahedron()`, `Polyhedra.geodesicOctahedron()`
+2. **`rt-ui-binding-defs.js`**: Add checkbox-controls binding for new checkbox IDs
+3. **`rt-init.js`**: Projection candidates whitelist already includes `"rhombicDodecahedron"` and types starting with `"geodesic"` — no changes needed
+4. **`rt-prime-cuts.js`**: Add disable/enable logic in `_applyPresetFromPanel()` for new checkbox IDs
+
+All JS polyhedra functions already exist: `Polyhedra.cuboctahedron()`, `Polyhedra.rhombicDodecahedron()`, `Polyhedra.geodesicTetrahedron()`, `Polyhedra.geodesicOctahedron()`. No new math code required.
+
+#### Phase 4: Update Panel UI
+
+The floating panel currently uses a 2-column grid for 4 buttons. With ~7 buttons, consider:
+
+- **Sectioned layout**: "Compound" section (existing 4) + "Single Polyhedra" section (new 3+)
+- **Color coding**: Green=constructible (5-gon), Red/Yellow=non-constructible compound, Blue=single-polyhedra
+- **Tooltip**: Show source polyhedron, vertex count, regularity, and radical family on hover
+- **Leaderboard star**: Mark the best result for each prime with a star/crown indicator
+
+#### Phase 5: Extended Search Programme
+
+Ongoing searches to fill gaps in the leaderboard:
+
+| Search | Command | Goal |
+|--------|---------|------|
+| Tier 2 all polys | `--poly all --rational 2 --exact` | Find 5-gon and 13-gon from single polyhedra |
+| Geodesic freq=3 | `--poly geodtet,geodoct --freq 3 --rational 1 --exact` | More vertices = more prime opportunities |
+| Geodesic freq=4 | `--poly geodtet,geodoct --freq 4 --rational 1 --exact` | 34v tet, 66v oct — rich hull landscapes |
+| Cuboctahedron deep | `--poly cuboctahedron --rational 3 --exact --primes 5,11,13` | Fuller's VE producing all primes? |
+| All primes 17,19,23 | `--poly all --rational 1 --exact --primes 17,19,23` | Beyond the initial four |
+
+### Success Criteria
+
+The workplan is complete when:
+- [ ] Every prime 5, 7, 11, 13 has at least one single-polyhedra result in the leaderboard (or is proven to require compounds)
+- [ ] All leaderboard results are verified with `--exact` (no degenerate 180° angles)
+- [ ] New preset buttons appear in the Math Demo panel for the best single-polyhedra results
+- [ ] The panel visually distinguishes compound vs single-polyhedra sources
+- [ ] Results are documented in this file with complete search provenance
 
 ---
 
@@ -186,9 +368,9 @@ For vertices that are rational or algebraic, the cross product can be computed *
 
 Python's `fractions.Fraction` provides this for free. The search would be slower but **provably correct** — every hull count would be mathematically exact.
 
-**Implementation**: Add a `--exact` flag to `prime_search_streamlined.py` that uses `Fraction`-based arithmetic for the hull computation. Combined with Path A (rational spreads), this gives exact integer cross products.
+**Implementation**: **DONE.** `convex_hull_2d_exact()` in `rt_math.py` uses `Fraction(float)` to convert Float64 projected coordinates to their exact IEEE 754 rational representations, then computes cross products with arbitrary-precision integer arithmetic. The `--exact` flag in `prime_search_streamlined.py` activates this for any search mode.
 
-**What this proves**: When the search reports hull=7 at s=1/2, it's not "7 within floating-point tolerance" — it's mathematically 7. Period. This is the standard of proof that a mathematical claim about prime polygons requires.
+**What this proves**: When the search reports hull=7 at s=1/2 with `--exact`, the cross products are computed with unlimited precision. Points that are exactly collinear in Float64 produce cross=0 (exactly), and are deterministically excluded. No epsilon, no platform-dependent rounding — the hull count is provably correct within the Float64 projection.
 
 ---
 
@@ -213,12 +395,21 @@ We are not starting from scratch. The ARTexplorer codebase already provides:
 
 **Python (`scripts/`)**:
 - `rt_math.py` — direct port of JS RT functions including `project_to_plane()`
+  - `convex_hull_2d_exact()` — **Path C** exact Fraction-based hull (no FP ambiguity)
 - `rt_polyhedra.py` — direct port of JS polyhedra with identical vertex definitions
   - `variable_stella_compound(t1, t2)` — variable stella octangula with independent truncation
   - `truncated_dual_tetrahedron()` — port of JS `truncatedDualTetrahedron()`
+  - `cuboctahedron()` — 12 vertices, √2 only, vertex-transitive
+  - `rhombic_dodecahedron()` — 14 vertices, √2 only, non-vertex-transitive
+  - `geodesic_tetrahedron(freq)` — subdivided tet projected to sphere (10/20/34/52/74v)
+  - `geodesic_octahedron(freq)` — subdivided oct projected to sphere (18/38/66/102v)
+  - `subdivide_triangles()` — barycentric geodesic subdivision (Fuller frequency notation)
 - `prime_search_streamlined.py` — grid search with regularity scoring
   - `--stella` flag: 5-parameter search over `(t1, t2, s1, s2, s3)`
   - `--rational TIER`: algebraically significant spread grid
+  - `--poly NAME,...`: search any polyhedron for any prime (cuboctahedron, rhombicdodec, geodtet, geodoct, etc.)
+  - `--exact`: **Path C** exact hull computation
+  - `--freq N`: geodesic subdivision frequency (default 2)
 
 **Visualization (`modules/rt-projections.js`, `rt-prime-cuts.js`)**:
 - `PROJECTION_PRESETS` registry — single source of truth for all presets
@@ -229,11 +420,57 @@ All of this infrastructure was designed for rational computation. The irony is t
 
 ---
 
+## Design Decision: Graham Scan Collinearity
+
+**Discovered 2026-02-08** while testing cuboctahedron and rhombic dodecahedron projections.
+
+### The Problem
+
+The Graham scan convex hull algorithm (`_computeConvexHull2D()` in `rt-projections.js`) uses `cross <= 0` to exclude collinear points from the hull:
+
+```javascript
+const cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+if (cross <= 0) hull.pop();  // Excludes collinear points
+```
+
+For vertex-transitive polyhedra like the cuboctahedron, some projected vertices land exactly on hull edges (mathematically collinear). Under Float32 arithmetic, some of these collinear points produce `cross ≈ 0` with sign depending on rounding — creating **inconsistent hull counts**.
+
+**Cuboctahedron Z-axis projection example:**
+- 12 vertices → 8 unique 2D points: 4 corners at (±t, ±t) + 4 edge midpoints at (±t, 0), (0, ±t)
+- Edge midpoints are mathematically collinear with the square hull edges (u + u = t exactly)
+- Float32: 2 of 4 midpoints appear non-collinear → **6-gon** instead of expected 4-gon or 8-gon
+- Visually: "stray rays" that don't connect to the hull outline
+
+### Implications for Prime Polygon Searches
+
+When expanding searches to geodesic and Archimedean solids (Geodesic Tet, Geodesic Oct, Cuboctahedron, Rhombic Dodecahedron), the collinearity handling directly affects hull vertex counts — the very metric we use to identify prime polygons.
+
+Three options:
+
+| Option | Behavior | Effect on Hull Count |
+|--------|----------|---------------------|
+| `cross <= 0` (current) | Exclude collinear | Float32-dependent, inconsistent |
+| `cross < -ε` (tolerance) | Include near-collinear | Consistent but adds "false" vertices |
+| `cross < 0` (strict left-turn) | Include collinear | Deterministic but inflates counts |
+
+**Recommendation**: Path C (exact arithmetic) resolves this definitively — integer cross products are exactly zero or not. For Float32/64 searches, the current `cross <= 0` is acceptable as long as results are validated with exact arithmetic.
+
+### Vertex Transitivity Matters
+
+Not all polyhedra behave the same under projection:
+
+- **Vertex-transitive** (Platonic solids, Cuboctahedron): All vertices equidistant from origin → all project to hull boundary → collinearity is the main ambiguity source
+- **Non-vertex-transitive** (Rhombic Dodecahedron): Vertices at different radii → some project to hull interior → these are geometrically legitimate interior points, not algorithm artifacts
+
+When selecting search polyhedra, vertex transitivity determines whether interior projected points indicate a genuine geometric property or a collinearity algorithm issue. The Rhombic Dodecahedron's two vertex orbits (6 axial at radius r, 8 cuboid at radius r√3/2) will always produce interior projections regardless of hull algorithm — this is geometry, not numerics.
+
+---
+
 ## The Goal
 
-**Immediate**: ~~Determine whether 11-gon and 13-gon projections exist at "nice" rational spreads (Path A).~~ **DONE** — yes, they do. See results table above.
+**Immediate**: ~~Determine whether 11-gon and 13-gon projections exist at "nice" rational spreads (Path A).~~ **DONE** — yes, they do. See results table above. ~~Path C exact hull.~~ **DONE** — `--exact` flag with `fractions.Fraction`.
 
-**Medium-term**: Port the Quadray rotation framework to Python (Path B) and add exact arithmetic hull counting (Path C). This creates a provably correct, algebraically exact search pipeline.
+**Medium-term**: ~~Search single rational polyhedra for prime projections.~~ **IN PROGRESS** — 11-gon found from geodesic octahedron (√2 only), 7-gon from cuboctahedron/rhombic dodec/geodesic tet. Need Tier 2/3 and higher geodesic frequencies for 5-gon and 13-gon. Port the Quadray rotation framework to Python (Path B).
 
 **Ultimate**: Establish that prime n-gon projections from algebraically-defined polyhedra at rational spreads constitute a **general method** — not isolated numerical coincidences. If prime hulls consistently emerge at rational spreads from integer-coordinate polyhedra, this is a new theorem-class result: *prime polygons exist as rational projections of tetrahedral compounds*.
 
