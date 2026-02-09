@@ -708,11 +708,11 @@ export const geodesicProjectionBindings = [
   { type: "radio-group", name: "tetrahelix2Strands" },
   // Helix bond mode (tetrahelix2 only)
   { type: "radio-group", name: "tetrahelix2BondMode" },
-  // Helix per-strand exit face selection (tetrahelix2 only) - Quadray axis names
-  { type: "radio-group", name: "tetrahelix2ExitQW" },
-  { type: "radio-group", name: "tetrahelix2ExitQX" },
-  { type: "radio-group", name: "tetrahelix2ExitQY" },
-  { type: "radio-group", name: "tetrahelix2ExitQZ" },
+  // Per-strand exit face: controls strand direction after 1st tet (HTML+bindings commented out)
+  // { type: "radio-group", name: "tetrahelix2ExitQW" },
+  // { type: "radio-group", name: "tetrahelix2ExitQX" },
+  // { type: "radio-group", name: "tetrahelix2ExitQY" },
+  // { type: "radio-group", name: "tetrahelix2ExitQZ" },
 ];
 
 // ============================================================================
