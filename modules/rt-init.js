@@ -4408,12 +4408,15 @@ function startARTexplorer(
             // Look for quadray polyhedra or standard polyhedra
             if (
               obj.userData.type.startsWith("quadray") ||
+              obj.userData.type.startsWith("geodesic") ||
               [
                 "tetrahedron",
                 "cube",
                 "octahedron",
                 "icosahedron",
                 "dodecahedron",
+                "cuboctahedron",
+                "rhombicDodecahedron",
               ].includes(obj.userData.type)
             ) {
               targetPolyhedron = obj;

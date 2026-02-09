@@ -243,6 +243,17 @@ export const RTProjections = {
       return;
     }
 
+    // Always clean up existing projection before creating new one
+    // Prevents orphaned groups from double-registration or polyhedron switches
+    if (RTProjections._projectionGroup) {
+      RTProjections._scene.remove(RTProjections._projectionGroup);
+      RTProjections._projectionGroup.traverse(child => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+      });
+      RTProjections._projectionGroup = null;
+    }
+
     // Store reference for updates
     RTProjections._activePolyhedron = polyhedronGroup;
     RTProjections.state.enabled = true;

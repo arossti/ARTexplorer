@@ -30,7 +30,8 @@ from rt_math import (
     quadrance, spread, spread_to_sin_cos,
     rotation_matrix_from_spreads, apply_rotation,
     project_to_plane,
-    convex_hull_2d, count_hull_vertices
+    convex_hull_2d, count_hull_vertices,
+    convex_hull_2d_exact, count_hull_vertices_exact
 )
 from rt_polyhedra import (
     truncated_tetrahedron,
@@ -41,7 +42,12 @@ from rt_polyhedra import (
     tetrahedron,
     dual_tetrahedron,
     icosahedron,
-    variable_stella_compound
+    variable_stella_compound,
+    octahedron,
+    cuboctahedron,
+    rhombic_dodecahedron,
+    geodesic_tetrahedron,
+    geodesic_octahedron,
 )
 
 
@@ -76,6 +82,58 @@ PRIME_CONFIGS = {
         'description': '24 vertices from TruncTet+Icosa → 13-gon hull'
     },
 }
+
+
+# =============================================================================
+# POLYHEDRA REGISTRY — for --poly mode (search any polyhedron for any prime)
+# =============================================================================
+
+def _resolve_polyhedra(name: str, half_size: float = 1.0,
+                       frequency: int = 2) -> Tuple[List, str]:
+    """
+    Resolve a polyhedra name to (vertices, display_name).
+
+    Available names:
+        trunctet, cuboctahedron, rhombicdodec,
+        geodtet, geodoct (use --freq for subdivision frequency)
+        trunctet_dualtet, trunctet_icosa (existing compounds)
+    """
+    registry = {
+        'trunctet': (
+            lambda: truncated_tetrahedron(half_size),
+            'Truncated Tetrahedron', '12v, √2'),
+        'trunctet_dualtet': (
+            lambda: trunc_tet_plus_dual_tet(half_size),
+            'TruncTet+DualTet', '16v normalized, √2'),
+        'trunctet_icosa': (
+            lambda: trunc_tet_plus_icosa(half_size),
+            'TruncTet+Icosa', '24v, √2/√5'),
+        'cuboctahedron': (
+            lambda: cuboctahedron(half_size),
+            'Cuboctahedron', '12v, √2'),
+        'rhombicdodec': (
+            lambda: rhombic_dodecahedron(half_size),
+            'Rhombic Dodecahedron', '14v, √2'),
+        'geodtet': (
+            lambda: geodesic_tetrahedron(half_size, frequency),
+            f'Geodesic Tet (freq={frequency})',
+            f'{len(geodesic_tetrahedron(1.0, frequency))}v, √2/√3'),
+        'geodoct': (
+            lambda: geodesic_octahedron(half_size, frequency),
+            f'Geodesic Oct (freq={frequency})',
+            f'{len(geodesic_octahedron(1.0, frequency))}v, √2'),
+    }
+    if name not in registry:
+        available = ', '.join(sorted(registry.keys()))
+        raise ValueError(f"Unknown polyhedra '{name}'. Available: {available}")
+    fn, display, desc = registry[name]
+    return fn(), f'{display} ({desc})'
+
+
+AVAILABLE_POLYHEDRA = [
+    'trunctet', 'trunctet_dualtet', 'trunctet_icosa',
+    'cuboctahedron', 'rhombicdodec', 'geodtet', 'geodoct',
+]
 
 
 def generate_spread_grid(precision: int) -> List[float]:
@@ -237,7 +295,8 @@ def compute_hull_geometry(hull_points: List[Tuple[float, float]]) -> Dict:
 
 
 def get_hull_points(vertices_3d: List[List[float]],
-                    s1: float, s2: float, s3: float) -> List[Tuple[float, float]]:
+                    s1: float, s2: float, s3: float,
+                    exact: bool = False) -> List[Tuple[float, float]]:
     """
     Get the 2D convex hull points for a projected polyhedron.
     Uses column-based projection matching JavaScript rt-projections.js.
@@ -245,11 +304,14 @@ def get_hull_points(vertices_3d: List[List[float]],
     Args:
         vertices_3d: List of [x, y, z] vertices
         s1, s2, s3: Rotation spreads
+        exact: Use Path C exact Fraction-based hull
 
     Returns:
         Ordered hull vertices as list of (x, y) tuples
     """
     points_2d = project_to_plane(vertices_3d, s1, s2, s3)
+    if exact:
+        return convex_hull_2d_exact(points_2d)
     return convex_hull_2d(points_2d)
 
 
@@ -257,26 +319,44 @@ def search_for_prime(
     target_prime: int,
     precision: int = 2,
     rational_tier: int = 0,
-    verbose: bool = False
+    verbose: bool = False,
+    vertices_override: List[List[float]] = None,
+    polyhedra_name: str = None,
+    exact: bool = False,
 ) -> List[Dict]:
     """
     Search for spread parameters that produce a target prime-gon hull.
 
     Args:
-        target_prime: Target number of hull vertices (5, 7, 11, 13)
+        target_prime: Target number of hull vertices (any prime)
         precision: Decimal places for spread search (used when rational_tier=0)
         rational_tier: If >0, use rational spread grid up to this tier (Path A)
         verbose: Print progress
+        vertices_override: Use these vertices instead of PRIME_CONFIGS lookup
+        polyhedra_name: Display name for the polyhedra (used with vertices_override)
+        exact: Use Path C exact Fraction-based hull computation
 
     Returns:
         List of {s1, s2, s3, hull_count} dictionaries
     """
-    if target_prime not in PRIME_CONFIGS:
-        raise ValueError(f"Unsupported prime: {target_prime}. Use 5, 7, 11, or 13")
+    if vertices_override is not None:
+        vertices = vertices_override
+        vertex_count = len(vertices)
+        config = {
+            'name': f'{target_prime}-gon',
+            'polyhedra': polyhedra_name or 'custom',
+            'description': f'{vertex_count} vertices → {target_prime}-gon hull'
+        }
+    elif target_prime in PRIME_CONFIGS:
+        config = PRIME_CONFIGS[target_prime]
+        vertices = config['vertices']()
+        vertex_count = len(vertices)
+    else:
+        raise ValueError(f"Prime {target_prime} not in PRIME_CONFIGS and no --poly specified")
 
-    config = PRIME_CONFIGS[target_prime]
-    vertices = config['vertices']()
-    vertex_count = len(vertices)
+    # Select hull counting function
+    hull_counter = count_hull_vertices_exact if exact else count_hull_vertices
+    hull_fn = convex_hull_2d_exact if exact else convex_hull_2d
 
     # Choose grid mode
     if rational_tier > 0:
@@ -290,9 +370,12 @@ def search_for_prime(
         mode_desc = f"decimal precision={precision} ({len(spread_values)} values)"
 
     if verbose:
-        print(f"\nSearching for {target_prime}-gon ({config['name']})")
-        print(f"  Polyhedra: {config['polyhedra']} ({vertex_count} vertices)")
+        poly_label = polyhedra_name or config.get('polyhedra', '?')
+        print(f"\nSearching for {target_prime}-gon ({config.get('name', '?')})")
+        print(f"  Polyhedra: {poly_label} ({vertex_count} vertices)")
         print(f"  Grid: {mode_desc}")
+        if exact:
+            print(f"  Hull: PATH C exact (Fraction-based cross products)")
         if rational_tier > 0:
             labels = [e['label'] for e in rational_entries]
             print(f"  Spreads: {labels}")
@@ -306,12 +389,12 @@ def search_for_prime(
             for s3 in spread_values:
                 checked += 1
 
-                # Count hull vertices
-                hull_count = count_hull_vertices(vertices, s1, s2, s3)
+                # Count hull vertices (exact or float)
+                hull_count = hull_counter(vertices, s1, s2, s3)
 
                 if hull_count == target_prime:
                     # Compute hull geometry for regularity scoring
-                    hull_pts = get_hull_points(vertices, s1, s2, s3)
+                    hull_pts = get_hull_points(vertices, s1, s2, s3, exact=exact)
                     geometry = compute_hull_geometry(hull_pts)
 
                     result = {
@@ -319,6 +402,7 @@ def search_for_prime(
                         's2': s2,
                         's3': s3,
                         'hull_count': hull_count,
+                        'polyhedra': polyhedra_name or config.get('polyhedra', '?'),
                         'regularity_score': geometry['regularity_score'],
                         'angle_variance': geometry['angle_variance'],
                         'edge_variance': geometry['edge_variance'],
@@ -590,6 +674,24 @@ def main():
         help='Stella mode: search variable stella octangula compound (t1, t2, s1, s2, s3)'
     )
     parser.add_argument(
+        '--poly',
+        type=str,
+        default=None,
+        help=('Comma-separated polyhedra to search. Overrides PRIME_CONFIGS. '
+              'Available: ' + ', '.join(AVAILABLE_POLYHEDRA))
+    )
+    parser.add_argument(
+        '--exact',
+        action='store_true',
+        help='Path C: use exact Fraction-based hull (deterministic collinearity)'
+    )
+    parser.add_argument(
+        '--freq',
+        type=int,
+        default=2,
+        help='Geodesic subdivision frequency for geodtet/geodoct (default: 2)'
+    )
+    parser.add_argument(
         '--verbose', '-v',
         action='store_true',
         help='Verbose output'
@@ -713,7 +815,130 @@ def main():
         return
 
     # =====================================================================
-    # STANDARD MODE: fixed polyhedra search
+    # POLY MODE: search specific polyhedra for any prime
+    # =====================================================================
+    if args.poly:
+        poly_names = [p.strip() for p in args.poly.split(',')]
+
+        print("=" * 60)
+        print("Multi-Polyhedra Prime Polygon Search")
+        print("=" * 60)
+        print(f"Target primes: {primes}")
+        print(f"Polyhedra: {poly_names}")
+        if args.exact:
+            print(f"Hull: PATH C exact (Fraction-based cross products)")
+        if args.rational > 0:
+            grid = generate_rational_spread_grid(args.rational)
+            print(f"Spreads: rational tier {args.rational} ({len(grid)} values)")
+            print(f"  Search space: {len(grid)}³ = {len(grid)**3:,} triples per polyhedron per prime")
+        else:
+            n = len(generate_spread_grid(args.precision))
+            print(f"Spreads: decimal precision={args.precision} ({n} values)")
+            print(f"  Search space: {n}³ = {n**3:,} triples per polyhedron per prime")
+        if args.freq != 2:
+            print(f"Geodesic frequency: {args.freq}")
+        print()
+
+        all_results = {
+            'metadata': {
+                'timestamp': datetime.now().isoformat(),
+                'mode': 'poly',
+                'polyhedra': poly_names,
+                'exact': args.exact,
+                'rational_tier': args.rational if args.rational > 0 else None,
+                'precision': args.precision,
+                'frequency': args.freq,
+                'source': 'prime_search_streamlined.py --poly',
+            },
+            'primes': {}
+        }
+
+        for prime in primes:
+            prime_results = []
+
+            for poly_name in poly_names:
+                vertices, display_name = _resolve_polyhedra(
+                    poly_name, half_size=1.0, frequency=args.freq)
+
+                results = search_for_prime(
+                    target_prime=prime,
+                    precision=args.precision,
+                    rational_tier=args.rational,
+                    verbose=args.verbose,
+                    vertices_override=vertices,
+                    polyhedra_name=display_name,
+                    exact=args.exact,
+                )
+                prime_results.extend(results)
+
+            # Sort all results across polyhedra by regularity
+            prime_results.sort(key=lambda r: r['regularity_score'], reverse=True)
+            total_found = len(prime_results)
+
+            if args.top > 0:
+                prime_results = prime_results[:args.top]
+
+            all_results['primes'][str(prime)] = {
+                'results': prime_results,
+                'count': len(prime_results),
+                'total_found': total_found,
+            }
+
+        # Summary
+        print("\n" + "=" * 60)
+        print("MULTI-POLYHEDRA SEARCH SUMMARY (ranked by regularity)")
+        print("=" * 60)
+
+        for prime_str, data in all_results['primes'].items():
+            count = data['total_found']
+            shown = data['count']
+            print(f"\n  {prime_str}-gon: {count} projections found")
+
+            if count == 0:
+                continue
+
+            # Group by polyhedra
+            poly_counts = {}
+            for r in data['results']:
+                p = r.get('polyhedra', '?')
+                poly_counts[p] = poly_counts.get(p, 0) + 1
+            for p, c in poly_counts.items():
+                print(f"    {p}: {c} hits")
+
+            show_n = min(10, shown)
+            for i, r in enumerate(data['results'][:show_n]):
+                tag = ""
+                if r.get('is_equiangular') and r.get('is_equilateral'):
+                    tag = " ★ GOLD"
+                elif r.get('is_equiangular'):
+                    tag = " ★ equiangular"
+                elif r.get('is_equilateral'):
+                    tag = " ★ equilateral"
+                if 's1_rational' in r:
+                    slbl = f"s=({r['s1_rational']}, {r['s2_rational']}, {r['s3_rational']})"
+                else:
+                    slbl = f"s=({r['s1']}, {r['s2']}, {r['s3']})"
+                poly = r.get('polyhedra', '?')
+                print(f"    #{i+1}: [{poly}] {slbl}"
+                      f" (reg={r['regularity_score']:.4f}){tag}")
+            if shown > show_n:
+                print(f"    ... and {shown - show_n} more")
+
+        # Write output
+        if args.output:
+            output_file = args.output
+        else:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            output_file = f'poly_search_{timestamp}.json'
+
+        with open(output_file, 'w') as f:
+            json.dump(all_results, f, indent=2)
+
+        print(f"\nResults written to: {output_file}")
+        return
+
+    # =====================================================================
+    # STANDARD MODE: fixed polyhedra search (PRIME_CONFIGS lookup)
     # =====================================================================
     print("=" * 60)
     print("Prime Polygon Hull Search (Project-Streamline)")
@@ -726,6 +951,8 @@ def main():
         print(f"  Search space: {len(grid)}³ = {len(grid)**3:,} triples per prime")
     else:
         print(f"Precision: {args.precision} decimal places")
+    if args.exact:
+        print(f"Hull: PATH C exact (Fraction-based cross products)")
     print(f"Using unified RT definitions from JavaScript")
     print()
 
@@ -735,6 +962,7 @@ def main():
             'timestamp': datetime.now().isoformat(),
             'precision': args.precision,
             'rational_tier': args.rational if args.rational > 0 else None,
+            'exact': args.exact,
             'mode': f'rational_tier_{args.rational}' if args.rational > 0 else f'decimal_p{args.precision}',
             'source': 'prime_search_streamlined.py',
             'note': 'Spreads work DIRECTLY in JavaScript rt-projections.js'
@@ -751,7 +979,8 @@ def main():
             target_prime=prime,
             precision=args.precision,
             rational_tier=args.rational,
-            verbose=args.verbose
+            verbose=args.verbose,
+            exact=args.exact,
         )
 
         total_found = len(results)
