@@ -4415,6 +4415,8 @@ function startARTexplorer(
                 "octahedron",
                 "icosahedron",
                 "dodecahedron",
+                "cuboctahedron",
+                "rhombicDodecahedron",
               ].includes(obj.userData.type)
             ) {
               targetPolyhedron = obj;
