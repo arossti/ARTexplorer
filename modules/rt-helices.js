@@ -459,17 +459,19 @@ export const Helices = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron();
 
-    console.log(
-      `[RT] Tetrahelix1 (Toroidal): count=${count}, halfSize=${halfSize}`
-    );
-    console.log(
-      `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
-    );
-    console.log(
-      `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
-    );
-    console.log(`  Chirality: left-handed (fixed)`);
-    console.log(`  Start face: ${startFace}`);
+    if (!options.silent) {
+      console.log(
+        `[RT] Tetrahelix1 (Toroidal): count=${count}, halfSize=${halfSize}`
+      );
+      console.log(
+        `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
+      );
+      console.log(
+        `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
+      );
+      console.log(`  Chirality: left-handed (fixed)`);
+      console.log(`  Start face: ${startFace}`);
+    }
 
     return {
       vertices: allVertices,
@@ -1063,20 +1065,22 @@ export const Helices = {
 
     const directionLabel =
       (dirPlus ? "+" : "") + (dirMinus ? "-" : "") || "none";
-    console.log(
-      `[RT] Tetrahelix2 (Linear): count=${count}, strands=${strands}, bondMode=${bondMode}, directions=${directionLabel}, halfSize=${halfSize}`
-    );
-    console.log(
-      `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
-    );
-    console.log(
-      `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
-    );
-    console.log(`  Pattern: Javelin (axis-aligned exit face selection)`);
-    console.log(
-      `  Start face: ${startFace}, Directions: ${directionLabel}, Strands: ${strands}, Mode: ${bondMode}`
-    );
-    console.log(`  Total tetrahedra: ${tetrahedra.length}`);
+    if (!options.silent) {
+      console.log(
+        `[RT] Tetrahelix2 (Linear): count=${count}, strands=${strands}, bondMode=${bondMode}, directions=${directionLabel}, halfSize=${halfSize}`
+      );
+      console.log(
+        `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
+      );
+      console.log(
+        `  Edge Q: ${expectedQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
+      );
+      console.log(`  Pattern: Javelin (axis-aligned exit face selection)`);
+      console.log(
+        `  Start face: ${startFace}, Directions: ${directionLabel}, Strands: ${strands}, Mode: ${bondMode}`
+      );
+      console.log(`  Total tetrahedra: ${tetrahedra.length}`);
+    }
 
     return {
       vertices: allVertices,
@@ -1314,18 +1318,20 @@ export const Helices = {
       )
       .join(", ");
 
-    console.log(
-      `[RT] Tetrahelix3 (Octahedral): count=${count}, halfSize=${halfSize}`
-    );
-    console.log(
-      `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
-    );
-    console.log(
-      `  Edge Q: ${octaEdgeQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
-    );
-    console.log(`  Enabled strands: ${activeStrands.join(", ") || "none"}`);
-    console.log(`  Chirality: ${chiralitySummary || "none"}`);
-    console.log(`  Total tetrahedra: ${tetrahedra.length}`);
+    if (!options.silent) {
+      console.log(
+        `[RT] Tetrahelix3 (Octahedral): count=${count}, halfSize=${halfSize}`
+      );
+      console.log(
+        `  Vertices: ${allVertices.length}, Edges: ${edges.length}, Faces: ${allFaces.length}`
+      );
+      console.log(
+        `  Edge Q: ${octaEdgeQ.toFixed(6)}, max error: ${maxError.toExponential(2)}`
+      );
+      console.log(`  Enabled strands: ${activeStrands.join(", ") || "none"}`);
+      console.log(`  Chirality: ${chiralitySummary || "none"}`);
+      console.log(`  Total tetrahedra: ${tetrahedra.length}`);
+    }
 
     return {
       vertices: allVertices,

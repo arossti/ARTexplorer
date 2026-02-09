@@ -1858,7 +1858,7 @@ export function initScene(THREE, OrbitControls, RT) {
         ? bondModeRadio.value
         : "zipped";
 
-      // Read per-strand exit face settings (using Quadray axis names)
+      // Per-strand exit face: which face each strand exits after 1st tet (UI commented out, defaults 0)
       const getExitFace = qAxis => {
         const radio = document.querySelector(
           `input[name="tetrahelix2Exit${qAxis}"]:checked`
@@ -3420,6 +3420,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const tetrahelix1Data = Helices.tetrahelix1(1, {
         count: tetrahelix1Count,
         startFace: tetrahelix1StartFace,
+        silent: true,
       });
       const V = tetrahelix1Data.vertices.length;
       const E = tetrahelix1Data.edges.length;
@@ -3461,7 +3462,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const tetrahelix2BondMode = bondModeRadio2
         ? bondModeRadio2.value
         : "zipped";
-      // Read per-strand exit faces for stats (using Quadray axis names)
+      // Per-strand exit face for stats (UI commented out, defaults 0)
       const getExitFaceStats = qAxis => {
         const radio = document.querySelector(
           `input[name="tetrahelix2Exit${qAxis}"]:checked`
@@ -3482,6 +3483,7 @@ export function initScene(THREE, OrbitControls, RT) {
         strands: tetrahelix2Strands,
         bondMode: tetrahelix2BondMode,
         exitFaces: tetrahelix2ExitFaces,
+        silent: true,
       });
       const V2 = tetrahelix2Data.vertices.length;
       const E2 = tetrahelix2Data.edges.length;
@@ -3528,6 +3530,7 @@ export function initScene(THREE, OrbitControls, RT) {
         count: tetrahelix3Count,
         enabledStrands,
         strandChirality,
+        silent: true,
       });
       const V3 = tetrahelix3Data.vertices.length;
       const E3 = tetrahelix3Data.edges.length;
@@ -3545,7 +3548,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showCube").checked) {
-      const cube = Polyhedra.cube(1);
+      const cube = Polyhedra.cube(1, { silent: true });
       const eulerOK = RT.verifyEuler(
         cube.vertices.length,
         cube.edges.length,
@@ -3559,7 +3562,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showTetrahedron").checked) {
-      const tetra = Polyhedra.tetrahedron(1);
+      const tetra = Polyhedra.tetrahedron(1, { silent: true });
       const eulerOK = RT.verifyEuler(
         tetra.vertices.length,
         tetra.edges.length,
@@ -3573,7 +3576,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showDualTetrahedron").checked) {
-      const tetra = Polyhedra.tetrahedron(1);
+      const tetra = Polyhedra.tetrahedron(1, { silent: true });
       const eulerOK = RT.verifyEuler(
         tetra.vertices.length,
         tetra.edges.length,
@@ -3587,7 +3590,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showOctahedron").checked) {
-      const octa = Polyhedra.octahedron(1);
+      const octa = Polyhedra.octahedron(1, { silent: true });
       const eulerOK = RT.verifyEuler(
         octa.vertices.length,
         octa.edges.length,
@@ -3601,7 +3604,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showIcosahedron").checked) {
-      const icosa = Polyhedra.icosahedron(1);
+      const icosa = Polyhedra.icosahedron(1, { silent: true });
       const eulerOK = RT.verifyEuler(
         icosa.vertices.length,
         icosa.edges.length,
@@ -3615,7 +3618,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showDualIcosahedron").checked) {
-      const icosa = Polyhedra.icosahedron(1);
+      const icosa = Polyhedra.icosahedron(1, { silent: true });
       const eulerOK = RT.verifyEuler(
         icosa.vertices.length,
         icosa.edges.length,
@@ -3629,7 +3632,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showDodecahedron").checked) {
-      const dodec = Polyhedra.dodecahedron(1);
+      const dodec = Polyhedra.dodecahedron(1, { silent: true });
       const eulerOK = RT.verifyEuler(
         dodec.vertices.length,
         dodec.edges.length,
@@ -3644,7 +3647,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     if (document.getElementById("showRhombicDodecahedron").checked) {
       // Use √2 scaling to match rendering (stats use scale=1 for display)
-      const rhombicDodec = Polyhedra.rhombicDodecahedron(Math.sqrt(2));
+      const rhombicDodec = Polyhedra.rhombicDodecahedron(Math.sqrt(2), { silent: true });
       const eulerOK = RT.verifyEuler(
         rhombicDodec.vertices.length,
         rhombicDodec.edges.length,
@@ -3658,7 +3661,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     if (document.getElementById("showCuboctahedron").checked) {
       // Use √2 scaling to match rendering (stats use scale=1 for display)
-      const cubocta = Polyhedra.cuboctahedron(Math.sqrt(2));
+      const cubocta = Polyhedra.cuboctahedron(Math.sqrt(2), { silent: true });
       const eulerOK = RT.verifyEuler(
         cubocta.vertices.length,
         cubocta.edges.length,
@@ -3682,7 +3685,8 @@ export function initScene(THREE, OrbitControls, RT) {
       const geodesicTetra = Polyhedra.geodesicTetrahedron(
         1,
         isNaN(frequency) ? 1 : frequency,
-        projection
+        projection,
+        { silent: true }
       );
       const eulerOK = RT.verifyEuler(
         geodesicTetra.vertices.length,
@@ -3709,7 +3713,8 @@ export function initScene(THREE, OrbitControls, RT) {
       const geodesicOcta = Polyhedra.geodesicOctahedron(
         1,
         isNaN(frequency) ? 1 : frequency,
-        projection
+        projection,
+        { silent: true }
       );
       const eulerOK = RT.verifyEuler(
         geodesicOcta.vertices.length,
@@ -3736,7 +3741,8 @@ export function initScene(THREE, OrbitControls, RT) {
       const geodesicIcosa = Polyhedra.geodesicIcosahedron(
         1,
         isNaN(frequency) ? 1 : frequency,
-        projection
+        projection,
+        { silent: true }
       );
       const eulerOK = RT.verifyEuler(
         geodesicIcosa.vertices.length,

@@ -498,7 +498,8 @@ function getCachedNodeGeometry(
     const polyData = window.RTPolyhedra.geodesicIcosahedron(
       radius,
       geodesicFrequency,
-      "out"
+      "out",
+      { silent: true }
     );
 
     nodeGeometry = new THREE.BufferGeometry();
@@ -610,17 +611,17 @@ function addMatrixNodes(
     // Get the appropriate polyhedron geometry
     let polyGeom;
     if (polyhedronType === "cube") {
-      polyGeom = Polyhedra.cube(scale);
+      polyGeom = Polyhedra.cube(scale, { silent: true });
     } else if (polyhedronType === "tetrahedron") {
-      polyGeom = Polyhedra.tetrahedron(scale);
+      polyGeom = Polyhedra.tetrahedron(scale, { silent: true });
     } else if (polyhedronType === "octahedron") {
-      polyGeom = Polyhedra.octahedron(scale);
+      polyGeom = Polyhedra.octahedron(scale, { silent: true });
     } else if (polyhedronType === "cuboctahedron") {
       // Scale by √2 to match matrix geometry (vertices at scale, not scale/√2)
-      polyGeom = Polyhedra.cuboctahedron(scale * Math.sqrt(2));
+      polyGeom = Polyhedra.cuboctahedron(scale * Math.sqrt(2), { silent: true });
     } else if (polyhedronType === "rhombicDodecahedron") {
       // Scale by √2 to match matrix geometry (rhombic dodec axial vertices at scale, not scale/√2)
-      polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2));
+      polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2), { silent: true });
     }
 
     const { vertices } = polyGeom;
@@ -812,17 +813,17 @@ function addRadialMatrixNodes(
     // Get the appropriate polyhedron geometry
     let polyGeom;
     if (polyhedronType === "cube") {
-      polyGeom = Polyhedra.cube(scale);
+      polyGeom = Polyhedra.cube(scale, { silent: true });
     } else if (polyhedronType === "rhombicDodecahedron") {
       // Scale by √2 to match matrix geometry
-      polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2));
+      polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2), { silent: true });
     } else if (polyhedronType === "tetrahedron") {
-      polyGeom = Polyhedra.tetrahedron(scale);
+      polyGeom = Polyhedra.tetrahedron(scale, { silent: true });
     } else if (polyhedronType === "octahedron") {
-      polyGeom = Polyhedra.octahedron(scale);
+      polyGeom = Polyhedra.octahedron(scale, { silent: true });
     } else if (polyhedronType === "cuboctahedron") {
       // Scale by √2 to match matrix geometry (vertices at scale from center)
-      polyGeom = Polyhedra.cuboctahedron(scale * Math.sqrt(2));
+      polyGeom = Polyhedra.cuboctahedron(scale * Math.sqrt(2), { silent: true });
     }
 
     // For each center position, add transformed vertices
@@ -846,8 +847,8 @@ function addRadialMatrixNodes(
         // Use base or dual tetrahedron based on orientation
         const tetGeom =
           pos.orientation === "up"
-            ? Polyhedra.tetrahedron(scale)
-            : Polyhedra.dualTetrahedron(scale);
+            ? Polyhedra.tetrahedron(scale, { silent: true })
+            : Polyhedra.dualTetrahedron(scale, { silent: true });
         vertices = tetGeom.vertices;
       } else {
         vertices = polyGeom.vertices;
