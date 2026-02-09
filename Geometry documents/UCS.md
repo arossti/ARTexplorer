@@ -201,17 +201,26 @@ document.querySelectorAll("[data-ucs]").forEach(btn => {
 
 When `camera.up` is set to a non-standard direction, OrbitControls orbit/rotate behavior can feel inverted — mouse dragging in one direction rotates the opposite way.
 
-**Observed**: When in QZ-up mode, on-axis camera views show CCW mouse drag → CW object rotation.
+**Observed**: When in QZ-up mode, on-axis camera views show CCW mouse drag → CW object rotation. This is a well-known limitation of THREE.js OrbitControls with non-standard up vectors ([GitHub issue #9875](https://github.com/mrdoob/three.js/issues/9875), open since 2016, never merged).
 
-### Potential Fixes (Phase 2)
+### Research Findings (2026-02-09)
 
-1. **`controls.reverseOrbit`** — THREE.js OrbitControls property that flips orbit direction. Can be toggled when entering non-Z-up UCS modes.
+- **Current THREE.js version**: `0.160.0` (r160) via CDN
+- **Latest THREE.js version**: `0.182.0` (r182)
+- **`reverseOrbit` does NOT exist** in any official THREE.js version. It only exists in [three-stdlib](https://github.com/pmndrs/three-stdlib) (community fork for React Three Fiber). Upgrading THREE.js will not help.
+- **No OrbitControls + camera.up fixes** in r160→r182 changelog. The [migration guide](https://github.com/mrdoob/three.js/wiki/Migration-Guide) shows no relevant changes.
 
-2. **Camera position adjustment** — Instead of just rotating the camera position, compute a new position that produces natural orbit feel for the chosen up vector.
+### Candidate Fixes (Phase 2)
 
-3. **`controls.rotateSpeed` sign flip** — Negate rotateSpeed when up vector flips hemisphere. Crude but effective.
+1. **`controls.rotateSpeed = -1`** — Negate rotateSpeed when UCS up vector is in the opposite hemisphere (Z component < 0). Simple one-line toggle. Flips both horizontal and vertical orbit. Quick to test.
 
-4. **On-axis view preset integration** — Make camera view presets (iso, top, front...) UCS-aware so they produce natural orbit behavior in any UCS mode.
+2. **Monkey-patch `rotateLeft`/`rotateUp`** — Override specific rotation methods on the controls instance to negate individual axes. More surgical control over horizontal vs vertical inversion, but fragile across THREE.js upgrades.
+
+3. **[camera-controls](https://github.com/yomotsu/camera-controls) library** — Drop-in replacement for OrbitControls by yomotsu with better custom up-vector support and built-in orbit reversal. API-compatible. Would require swapping the import.
+
+4. **Accept the quirk** — Editing controls work perfectly. Orbit inversion is noticeable but not a dealbreaker. Could document in UI tooltip: "orbit may feel different in non-Z-up modes."
+
+5. **On-axis view preset integration** — Make camera view presets (iso, top, front...) UCS-aware so they produce natural orbit behavior in any UCS mode.
 
 ---
 
@@ -238,9 +247,11 @@ When `camera.up` is set to a non-standard direction, OrbitControls orbit/rotate 
 | 4. Test visual correctness | Done | All editing controls work correctly |
 
 ### Phase 2: Orbit Feel (TODO)
-5. Investigate `controls.reverseOrbit` for non-Z-up modes
-6. Test camera position adjustment approach
-7. Fix on-axis view rotation inversion artifact
+5. ~~Investigate `controls.reverseOrbit`~~ — does not exist in official THREE.js (any version)
+6. ~~Camera position adjustment~~ — tested, caused quaternion drift / space warping
+7. Try `rotateSpeed = -1` toggle for inverted-hemisphere UCS modes
+8. Evaluate camera-controls library as OrbitControls replacement
+9. Fix on-axis view rotation inversion artifact
 
 ### Phase 3: Polish
 8. Persist UCS preference in localStorage
@@ -277,13 +288,15 @@ When `camera.up` is set to a non-standard direction, OrbitControls orbit/rotate 
 
 ## 11. Remaining Open Questions
 
-1. **Best approach for orbit inversion?** `reverseOrbit`, camera position, or rotateSpeed sign flip? Needs testing.
+1. **Best approach for orbit inversion?** `reverseOrbit` ruled out (doesn't exist). Next candidates: `rotateSpeed = -1` toggle (quickest), or camera-controls library (cleanest). Needs testing.
 
-2. **Should camera view presets (iso, top, front...) be UCS-aware?** "Top" currently means "looking down Z". In QZ-up mode, should "top" mean looking down QZ? Phase 3 polish.
+2. **THREE.js upgrade?** Currently r160, latest r182. No orbit-relevant fixes, but r163+ drops WebGL 1 and r182 deprecates `PCFSoftShadowMap`. Upgrade is independent of UCS — worth doing separately if desired.
 
-3. **Expand to full custom UCS?** The proposed system handles 7 presets. A full UCS (user-defined arbitrary plane) is scope creep — note for future.
+3. **Should camera view presets (iso, top, front...) be UCS-aware?** "Top" currently means "looking down Z". In QZ-up mode, should "top" mean looking down QZ? Phase 3 polish.
 
-4. **Persist UCS preference?** Should the chosen orientation survive page reload (localStorage)? Probably yes, simple addition in Phase 3.
+4. **Expand to full custom UCS?** The proposed system handles 7 presets. A full UCS (user-defined arbitrary plane) is scope creep — note for future.
+
+5. **Persist UCS preference?** Should the chosen orientation survive page reload (localStorage)? Probably yes, simple addition in Phase 3.
 
 ---
 
@@ -297,6 +310,10 @@ The initial design wrapped all scene geometry in a `THREE.Group` with a rotation
 
 Commits `8f31e7a` (ucsGroup implementation) and `d66db53` (revert + camera-based) document this evolution.
 
+### Abandoned: Camera Position from Fixed Reference
+
+A second attempt tried computing camera position from a fixed Z-up reference state (`Z_UP_CAMERA_POS = (5,-5,5)`) instead of chaining quaternions from the current position. Intent was to avoid quaternion drift, but this caused visible space warping — the camera position "jumped" unpredictably when switching between UCS modes. Reverted in favor of the simpler current→desired quaternion approach which preserves the user's current orbit distance and angle.
+
 ---
 
-*Workplan updated by Claude. Phase 1 complete — orbit inversion fix next.*
+*Workplan updated 2026-02-09. Phase 1 complete — orbit inversion fix next.*
