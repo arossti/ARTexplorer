@@ -5168,15 +5168,10 @@ export function initScene(THREE, OrbitControls, RT) {
     camera.up.copy(newUp);
     camera.lookAt(controls.target);
 
-    // Compensate orbit inversion when up vector flips hemisphere (Z < 0)
-    // OrbitControls orbit feels reversed when camera.up points "downward"
-    // relative to the native Z-up convention
-    controls.rotateSpeed = newUp.z < 0 ? -1 : 1;
-
     controls.update();
 
     currentUCSMode = mode;
-    MetaLog.log(`UCS orientation set to: ${mode} (rotateSpeed: ${controls.rotateSpeed})`);
+    MetaLog.log(`UCS orientation set to: ${mode}`);
   }
 
   // Return public API from initScene() factory
