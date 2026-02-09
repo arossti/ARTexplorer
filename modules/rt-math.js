@@ -975,7 +975,10 @@ export const RT = {
     );
 
     group.applyMatrix4(rotationMatrix);
-    MetaLog.log(MetaLog.DEBUG, `[RT] 45° rotation applied: s=${s}, c=${c}, s+c=${s + c} ✓`);
+    MetaLog.log(
+      MetaLog.DEBUG,
+      `[RT] 45° rotation applied: s=${s}, c=${c}, s+c=${s + c} ✓`
+    );
   },
 
   /**
@@ -1034,7 +1037,10 @@ export const RT = {
     );
 
     group.applyMatrix4(rotationMatrix);
-    MetaLog.log(MetaLog.DEBUG, `[RT] 180° rotation applied: s=${s}, c=${c}, s+c=${s + c} ✓`);
+    MetaLog.log(
+      MetaLog.DEBUG,
+      `[RT] 180° rotation applied: s=${s}, c=${c}, s+c=${s + c} ✓`
+    );
   },
 
   /**

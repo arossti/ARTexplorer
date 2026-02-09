@@ -173,12 +173,18 @@ export const QuadrayPolyhedra = {
     MetaLog.identity("Quadray Tetrahedron", "{3,3}", {
       construction: `Quadray basis vectors, normalize=${normalize}, scale=${scale}`,
     });
-    MetaLog.log(MetaLog.DEBUG, `  WXYZ raw: [${wxyz_raw[0]}] -> [${wxyz_raw[3]}]`);
+    MetaLog.log(
+      MetaLog.DEBUG,
+      `  WXYZ raw: [${wxyz_raw[0]}] -> [${wxyz_raw[3]}]`
+    );
     MetaLog.log(
       MetaLog.DEBUG,
       `  WXYZ normalized: [${wxyz_normalized[0].map(n => n.toFixed(3)).join(", ")}]`
     );
-    MetaLog.rtMetrics({ edgeQ: sampleQ, maxError: Math.abs(sampleQ - expectedQ) });
+    MetaLog.rtMetrics({
+      edgeQ: sampleQ,
+      maxError: Math.abs(sampleQ - expectedQ),
+    });
 
     return {
       vertices,
@@ -327,7 +333,10 @@ export const QuadrayPolyhedra = {
     MetaLog.identity("Quadray Octahedron", "{3,4}", {
       construction: `{1,1,0,0} permutations, normalize=${normalize}, scale=${scale}`,
     });
-    MetaLog.log(MetaLog.DEBUG, `  WXYZ: {1,1,0,0} permutations - 6 vertices (tet edge midpoints)`);
+    MetaLog.log(
+      MetaLog.DEBUG,
+      `  WXYZ: {1,1,0,0} permutations - 6 vertices (tet edge midpoints)`
+    );
 
     return {
       vertices,

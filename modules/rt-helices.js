@@ -464,8 +464,11 @@ export const Helices = {
       construction: `count=${count}, halfSize=${halfSize}`,
     });
     MetaLog.rtMetrics({
-      V: allVertices.length, E: edges.length, F: allFaces.length,
-      edgeQ: expectedQ, maxError,
+      V: allVertices.length,
+      E: edges.length,
+      F: allFaces.length,
+      edgeQ: expectedQ,
+      maxError,
     });
     MetaLog.construction([
       `Chirality: left-handed (fixed)`,
@@ -1068,8 +1071,11 @@ export const Helices = {
       construction: `count=${count}, strands=${strands}, bondMode=${bondMode}, directions=${directionLabel}, halfSize=${halfSize}`,
     });
     MetaLog.rtMetrics({
-      V: allVertices.length, E: edges.length, F: allFaces.length,
-      edgeQ: expectedQ, maxError,
+      V: allVertices.length,
+      E: edges.length,
+      F: allFaces.length,
+      edgeQ: expectedQ,
+      maxError,
     });
     MetaLog.construction([
       `Pattern: Javelin (axis-aligned exit face selection)`,
@@ -1317,8 +1323,11 @@ export const Helices = {
       construction: `count=${count}, halfSize=${halfSize}`,
     });
     MetaLog.rtMetrics({
-      V: allVertices.length, E: edges.length, F: allFaces.length,
-      edgeQ: octaEdgeQ, maxError,
+      V: allVertices.length,
+      E: edges.length,
+      F: allFaces.length,
+      edgeQ: octaEdgeQ,
+      maxError,
     });
     MetaLog.construction([
       `Enabled strands: ${activeStrands.join(", ") || "none"}`,

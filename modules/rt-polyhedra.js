@@ -103,7 +103,9 @@ export const Polyhedra = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.cube(); // S = 1 (perpendicular faces)
     MetaLog.polyhedron("Cube", "{4,3}", {
-      V: 8, E: 12, F: 6,
+      V: 8,
+      E: 12,
+      F: 6,
       edgeQ: expectedQ,
       maxError,
       faceSpread,
@@ -155,7 +157,9 @@ export const Polyhedra = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron(); // S = 8/9 (Wildberger Ch.26)
     MetaLog.polyhedron("Tetrahedron", "{3,3}", {
-      V: 4, E: 6, F: 4,
+      V: 4,
+      E: 6,
+      F: 4,
       edgeQ: expectedQ,
       maxError,
       faceSpread,
@@ -204,7 +208,9 @@ export const Polyhedra = {
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     MetaLog.polyhedron("Dual Tetrahedron", "{3,3}", {
-      V: 4, E: 6, F: 4,
+      V: 4,
+      E: 6,
+      F: 4,
       edgeQ: expectedQ,
       maxError,
     });
@@ -270,7 +276,10 @@ export const Polyhedra = {
         [0, 2, 3],
         [1, 3, 2],
       ];
-      MetaLog.log(MetaLog.SUMMARY, `  Truncated Tetrahedron: t=0 (base tetrahedron), 4 vertices`);
+      MetaLog.log(
+        MetaLog.SUMMARY,
+        `  Truncated Tetrahedron: t=0 (base tetrahedron), 4 vertices`
+      );
       return { vertices, edges, faces };
     }
 
@@ -313,7 +322,10 @@ export const Polyhedra = {
         [5, 1, 3],
       ];
 
-      MetaLog.log(MetaLog.SUMMARY, `  Truncated Tetrahedron: t=0.5 (octahedron limit), 6 vertices`);
+      MetaLog.log(
+        MetaLog.SUMMARY,
+        `  Truncated Tetrahedron: t=0.5 (octahedron limit), 6 vertices`
+      );
       return { vertices, edges, faces };
     }
 
@@ -455,14 +467,13 @@ export const Polyhedra = {
     const edges = Array.from(edgeSet).map(e => e.split(",").map(Number));
 
     // RT VALIDATION
-    const sampleQ = RT.quadrance(
-      vertices[edges[0][0]],
-      vertices[edges[0][1]]
-    );
+    const sampleQ = RT.quadrance(vertices[edges[0][0]], vertices[edges[0][1]]);
     const validation = RT.validateEdges(vertices, edges, sampleQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     MetaLog.polyhedron("Truncated Tetrahedron", "", {
-      V: vertices.length, E: edges.length, F: faces.length,
+      V: vertices.length,
+      E: edges.length,
+      F: faces.length,
       maxError,
       constructionLines: [`t=${t.toFixed(4)}`],
     });
@@ -480,7 +491,11 @@ export const Polyhedra = {
    * @param {Object} options - Optional configuration
    * @returns {Object} - {vertices, edges, faces}
    */
-  truncatedDualTetrahedron: (halfSize = 1, truncation = 1 / 3, options = {}) => {
+  truncatedDualTetrahedron: (
+    halfSize = 1,
+    truncation = 1 / 3,
+    options = {}
+  ) => {
     MetaLog.suppress();
     const base = Polyhedra.truncatedTetrahedron(halfSize, truncation);
     MetaLog.unsuppress();
@@ -494,7 +509,8 @@ export const Polyhedra = {
     // Edges remain topologically identical
     const edges = base.edges;
 
-    MetaLog.log(MetaLog.SUMMARY,
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `  Truncated Dual Tetrahedron: t=${Math.max(0, Math.min(0.5, truncation)).toFixed(4)}, ${vertices.length} vertices`
     );
 
@@ -598,7 +614,9 @@ export const Polyhedra = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.octahedron(); // S = 8/9 (same as tetrahedron!)
     MetaLog.polyhedron("Octahedron", "{3,4}", {
-      V: 6, E: 12, F: 8,
+      V: 6,
+      E: 12,
+      F: 8,
       edgeQ: expectedQ,
       maxError,
       faceSpread,
@@ -761,7 +779,9 @@ export const Polyhedra = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.icosahedron(); // S = 4/9 (Wildberger Ch.26)
     MetaLog.rtMetrics({
-      V: 12, E: 30, F: 20,
+      V: 12,
+      E: 30,
+      F: 20,
       edgeQ: expectedQ,
       maxError,
       faceSpread,
@@ -1143,7 +1163,7 @@ export const Polyhedra = {
     const base = Polyhedra.geodesicIcosahedron(
       dualRadius,
       frequency,
-      projection,
+      projection
     );
     MetaLog.unsuppress();
 
@@ -1317,7 +1337,8 @@ export const Polyhedra = {
 
     const newEdges = Array.from(edgeSet).map(e => e.split(",").map(Number));
 
-    MetaLog.log(MetaLog.SUMMARY,
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `  Geodesic subdivision: freq=${frequency}, divisions=${divisions}, faces=${newFaces.length} (expected: ${faces.length * divisions * divisions})`
     );
 
@@ -1332,7 +1353,12 @@ export const Polyhedra = {
    * @param {number} frequency - Subdivision frequency (1-6)
    * @returns {Object} - {vertices, edges, faces}
    */
-  geodesicIcosahedron: (halfSize = 1, frequency = 1, projection = "out", options = {}) => {
+  geodesicIcosahedron: (
+    halfSize = 1,
+    frequency = 1,
+    projection = "out",
+    options = {}
+  ) => {
     // Phase 2.9: RT-Pure Geodesic with InSphere/MidSphere/OutSphere options
     // Fuller frequency notation: 1 = base polyhedron (undivided edges)
     //                            2 = each edge bisected (2 segments)
@@ -1346,13 +1372,17 @@ export const Polyhedra = {
     MetaLog.identity("Geodesic Icosahedron", "", {
       construction: `freq=${frequency}, projection=${projection}`,
     });
-    MetaLog.log(MetaLog.SUMMARY,
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `  Base vertices: ${base.vertices.length}, faces: ${base.faces.length}`
     );
 
     // Frequency 1 = return base icosahedron (no subdivision, no sphere projection)
     if (frequency === 1) {
-      MetaLog.log(MetaLog.SUMMARY, `  Frequency 1: Returning base icosahedron (20 faces, undivided edges)`);
+      MetaLog.log(
+        MetaLog.SUMMARY,
+        `  Frequency 1: Returning base icosahedron (20 faces, undivided edges)`
+      );
       return base;
     }
 
@@ -1363,7 +1393,8 @@ export const Polyhedra = {
       frequency
     );
 
-    MetaLog.log(MetaLog.SUMMARY,
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `  Subdivided vertices: ${subdivided.vertices.length}, faces: ${subdivided.faces.length}`
     );
 
@@ -1400,7 +1431,11 @@ export const Polyhedra = {
       const ratio_in_sq = numerator.toDecimal() / denominator.toDecimal();
       Q_target = halfSize * halfSize * ratio_in_sq;
 
-      MetaLog.spheres({ projection: "InSphere (RT-pure + PurePhi)", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.spheres({
+        projection: "InSphere (RT-pure + PurePhi)",
+        targetQ: Q_target,
+        targetRadius: Math.sqrt(Q_target),
+      });
       MetaLog.construction([
         `[PurePhi] Numerator: ${numerator.toString()} = ${numerator.toDecimal().toFixed(15)}`,
         `[PurePhi] Denominator: ${denominator.toString()} = ${denominator.toDecimal().toFixed(15)}`,
@@ -1423,7 +1458,11 @@ export const Polyhedra = {
       const ratio_mid_sq = phiSq.toDecimal() / phiPlusTwo.toDecimal();
       Q_target = halfSize * halfSize * ratio_mid_sq;
 
-      MetaLog.spheres({ projection: "MidSphere (RT-pure + PurePhi)", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.spheres({
+        projection: "MidSphere (RT-pure + PurePhi)",
+        targetQ: Q_target,
+        targetRadius: Math.sqrt(Q_target),
+      });
       MetaLog.construction([
         `[PurePhi] φ² = ${phiSq.toString()} = ${phiSq.toDecimal().toFixed(15)} (identity: φ + 1)`,
         `[PurePhi] φ + 2 = ${phiPlusTwo.toString()} = ${phiPlusTwo.toDecimal().toFixed(15)}`,
@@ -1432,11 +1471,16 @@ export const Polyhedra = {
     } else if (projection === "out") {
       // OutSphere: Through vertices (Fuller's true geodesic)
       Q_target = halfSize * halfSize;
-      MetaLog.spheres({ projection: "OutSphere (Fuller geodesic)", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.spheres({
+        projection: "OutSphere (Fuller geodesic)",
+        targetQ: Q_target,
+        targetRadius: Math.sqrt(Q_target),
+      });
     }
 
     const r_target = Math.sqrt(Q_target);
-    MetaLog.log(MetaLog.SUMMARY,
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `  Target quadrance: Q = ${Q_target.toFixed(6)}, r = ${r_target.toFixed(6)}`
     );
 
@@ -1458,7 +1502,10 @@ export const Polyhedra = {
       validation.reduce((sum, v) => sum + v.Q, 0) / validation.length;
 
     MetaLog.rtMetrics({ edgeQ: avgQ, maxError });
-    MetaLog.log(MetaLog.DETAILED, `  RT PURITY: Normalization deferred until final step`);
+    MetaLog.log(
+      MetaLog.DETAILED,
+      `  RT PURITY: Normalization deferred until final step`
+    );
 
     return {
       vertices: projected,
@@ -1476,7 +1523,12 @@ export const Polyhedra = {
    * @param {number} frequency - Subdivision frequency (1-6)
    * @returns {Object} - {vertices, edges, faces}
    */
-  geodesicTetrahedron: (halfSize = 1, frequency = 1, projection = "out", options = {}) => {
+  geodesicTetrahedron: (
+    halfSize = 1,
+    frequency = 1,
+    projection = "out",
+    options = {}
+  ) => {
     // Phase 2.9: RT-Pure Geodesic with InSphere/MidSphere/OutSphere options
     // Fuller frequency notation: 1 = base polyhedron (undivided edges)
     //                            2 = each edge bisected (2 segments)
@@ -1490,13 +1542,17 @@ export const Polyhedra = {
     MetaLog.identity("Geodesic Tetrahedron", "", {
       construction: `freq=${frequency}, projection=${projection}`,
     });
-    MetaLog.log(MetaLog.SUMMARY,
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `  Base vertices: ${base.vertices.length}, faces: ${base.faces.length}`
     );
 
     // Frequency 1 = return base tetrahedron (no subdivision, no sphere projection)
     if (frequency === 1) {
-      MetaLog.log(MetaLog.SUMMARY, `  Frequency 1: Returning base tetrahedron (4 faces, undivided edges)`);
+      MetaLog.log(
+        MetaLog.SUMMARY,
+        `  Frequency 1: Returning base tetrahedron (4 faces, undivided edges)`
+      );
       return base;
     }
 
@@ -1507,7 +1563,8 @@ export const Polyhedra = {
       frequency
     );
 
-    MetaLog.log(MetaLog.SUMMARY,
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `  Subdivided vertices: ${subdivided.vertices.length}, faces: ${subdivided.faces.length}`
     );
 
@@ -1526,15 +1583,27 @@ export const Polyhedra = {
     } else if (projection === "in") {
       // InSphere: tangent to face centers, Q = s²/3
       Q_target = (halfSize * halfSize) / 3;
-      MetaLog.spheres({ projection: "InSphere", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.spheres({
+        projection: "InSphere",
+        targetQ: Q_target,
+        targetRadius: Math.sqrt(Q_target),
+      });
     } else if (projection === "mid") {
       // MidSphere: tangent to edge centers, Q = s²
       Q_target = halfSize * halfSize;
-      MetaLog.spheres({ projection: "MidSphere", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.spheres({
+        projection: "MidSphere",
+        targetQ: Q_target,
+        targetRadius: Math.sqrt(Q_target),
+      });
     } else if (projection === "out") {
       // OutSphere: through vertices, Q = 3s² (Fuller's geodesic)
       Q_target = 3 * halfSize * halfSize;
-      MetaLog.spheres({ projection: "OutSphere (Fuller geodesic)", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.spheres({
+        projection: "OutSphere (Fuller geodesic)",
+        targetQ: Q_target,
+        targetRadius: Math.sqrt(Q_target),
+      });
     }
 
     // Project to target sphere
@@ -1559,7 +1628,10 @@ export const Polyhedra = {
       validation.reduce((sum, v) => sum + v.Q, 0) / validation.length;
 
     MetaLog.rtMetrics({ edgeQ: avgQ, maxError });
-    MetaLog.log(MetaLog.DETAILED, `  RT PURITY: Quadrance calculated algebraically, √ only at final projection`);
+    MetaLog.log(
+      MetaLog.DETAILED,
+      `  RT PURITY: Quadrance calculated algebraically, √ only at final projection`
+    );
 
     return {
       vertices: finalVertices,
@@ -1577,7 +1649,12 @@ export const Polyhedra = {
    * @param {number} frequency - Subdivision frequency (1-6)
    * @returns {Object} - {vertices, edges, faces}
    */
-  geodesicOctahedron: (halfSize = 1, frequency = 1, projection = "out", options = {}) => {
+  geodesicOctahedron: (
+    halfSize = 1,
+    frequency = 1,
+    projection = "out",
+    options = {}
+  ) => {
     // Phase 2.9: RT-Pure Geodesic with InSphere/MidSphere/OutSphere options
     // Fuller frequency notation: 1 = base polyhedron (undivided edges)
     //                            2 = each edge bisected (2 segments)
@@ -1591,13 +1668,17 @@ export const Polyhedra = {
     MetaLog.identity("Geodesic Octahedron", "", {
       construction: `freq=${frequency}, projection=${projection}`,
     });
-    MetaLog.log(MetaLog.SUMMARY,
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `  Base vertices: ${base.vertices.length}, faces: ${base.faces.length}`
     );
 
     // Frequency 1 = return base octahedron (no subdivision, no sphere projection)
     if (frequency === 1) {
-      MetaLog.log(MetaLog.SUMMARY, `  Frequency 1: Returning base octahedron (8 faces, undivided edges)`);
+      MetaLog.log(
+        MetaLog.SUMMARY,
+        `  Frequency 1: Returning base octahedron (8 faces, undivided edges)`
+      );
       return base;
     }
 
@@ -1608,7 +1689,8 @@ export const Polyhedra = {
       frequency
     );
 
-    MetaLog.log(MetaLog.SUMMARY,
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `  Subdivided vertices: ${subdivided.vertices.length}, faces: ${subdivided.faces.length}`
     );
 
@@ -1626,15 +1708,27 @@ export const Polyhedra = {
     } else if (projection === "in") {
       // InSphere: tangent to face centers, Q = s²/3
       Q_target = (halfSize * halfSize) / 3;
-      MetaLog.spheres({ projection: "InSphere", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.spheres({
+        projection: "InSphere",
+        targetQ: Q_target,
+        targetRadius: Math.sqrt(Q_target),
+      });
     } else if (projection === "mid") {
       // MidSphere: tangent to edge centers, Q = s²/2
       Q_target = (halfSize * halfSize) / 2;
-      MetaLog.spheres({ projection: "MidSphere", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.spheres({
+        projection: "MidSphere",
+        targetQ: Q_target,
+        targetRadius: Math.sqrt(Q_target),
+      });
     } else if (projection === "out") {
       // OutSphere: through vertices, Q = s² (Fuller's geodesic)
       Q_target = halfSize * halfSize;
-      MetaLog.spheres({ projection: "OutSphere (Fuller geodesic)", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.spheres({
+        projection: "OutSphere (Fuller geodesic)",
+        targetQ: Q_target,
+        targetRadius: Math.sqrt(Q_target),
+      });
     }
 
     // Project to target sphere
@@ -1659,7 +1753,10 @@ export const Polyhedra = {
       validation.reduce((sum, v) => sum + v.Q, 0) / validation.length;
 
     MetaLog.rtMetrics({ edgeQ: avgQ, maxError });
-    MetaLog.log(MetaLog.DETAILED, `  RT PURITY: Quadrance calculated algebraically, √ only at final projection`);
+    MetaLog.log(
+      MetaLog.DETAILED,
+      `  RT PURITY: Quadrance calculated algebraically, √ only at final projection`
+    );
 
     return {
       vertices: finalVertices,
@@ -1822,7 +1919,9 @@ export const Polyhedra = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.dodecahedron(); // S = 4/5 (Wildberger Ch.26)
     MetaLog.rtMetrics({
-      V: 20, E: 30, F: 12,
+      V: 20,
+      E: 30,
+      F: 12,
       edgeQ: sampleQ,
       maxError,
       faceSpread,

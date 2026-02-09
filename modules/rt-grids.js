@@ -336,7 +336,10 @@ export const Grids = {
     // DIAGNOSTIC: Log grid interval with full precision (first plane only)
     if (!window.gridIntervalLogged) {
       MetaLog.log(MetaLog.SUMMARY, "=== QUADRAY GRID INTERVAL (FIXED) ===");
-      MetaLog.log(MetaLog.SUMMARY, `Grid interval (√6/4): ${edgeLength.toFixed(16)}`);
+      MetaLog.log(
+        MetaLog.SUMMARY,
+        `Grid interval (√6/4): ${edgeLength.toFixed(16)}`
+      );
       MetaLog.log(MetaLog.SUMMARY, `Exact value: ${edgeLength}`);
       window.gridIntervalLogged = true;
     }
