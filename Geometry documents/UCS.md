@@ -197,30 +197,57 @@ document.querySelectorAll("[data-ucs]").forEach(btn => {
 
 ---
 
-## 6. Known Issue: Orbit Inversion
+## 6. Known Issue: Polar Singularity + Orbit Inversion
 
-When `camera.up` is set to a non-standard direction, OrbitControls orbit/rotate behavior can feel inverted — mouse dragging in one direction rotates the opposite way.
+### 6.1 The Problem
 
-**Observed**: When in QZ-up mode, on-axis camera views show CCW mouse drag → CW object rotation. This is a well-known limitation of THREE.js OrbitControls with non-standard up vectors ([GitHub issue #9875](https://github.com/mrdoob/three.js/issues/9875), open since 2016, never merged).
+THREE.js OrbitControls uses **spherical coordinates** (theta, phi) internally. This creates an inherent **polar singularity** — when the camera approaches the "poles" of the up-axis sphere (looking straight along `camera.up`):
 
-### Research Findings (2026-02-09)
+- Near the pole, horizontal mouse movement causes rapid spinning instead of smooth orbit
+- **Crossing the pole flips orbit direction** — same mouse direction, opposite camera movement
+- This is the spherical-coordinate equivalent of gimbal lock
 
-- **Current THREE.js version**: `0.160.0` (r160) via CDN
-- **Latest THREE.js version**: `0.182.0` (r182)
-- **`reverseOrbit` does NOT exist** in any official THREE.js version. It only exists in [three-stdlib](https://github.com/pmndrs/three-stdlib) (community fork for React Three Fiber). Upgrading THREE.js will not help.
-- **No OrbitControls + camera.up fixes** in r160→r182 changelog. The [migration guide](https://github.com/mrdoob/three.js/wiki/Migration-Guide) shows no relevant changes.
+This happens even in default Z-up mode (orbit straight over the top to see it), but it's more noticeable with non-standard up vectors because the poles end up in unexpected screen positions.
 
-### Candidate Fixes (Phase 2)
+**Observed in ARTExplorer**: When in QZ-up mode, on-axis camera views show CCW mouse drag → CW object rotation. Orbiting also encounters "magnetic resistance" at certain axial thresholds where the direction flips mid-drag.
 
-1. **`controls.rotateSpeed = -1`** — Negate rotateSpeed when UCS up vector is in the opposite hemisphere (Z component < 0). Simple one-line toggle. Flips both horizontal and vertical orbit. Quick to test.
+This is a well-known limitation: [GitHub issue #9875](https://github.com/mrdoob/three.js/issues/9875), open since 2016, never merged into THREE.js.
 
-2. **Monkey-patch `rotateLeft`/`rotateUp`** — Override specific rotation methods on the controls instance to negate individual axes. More surgical control over horizontal vs vertical inversion, but fragile across THREE.js upgrades.
+### 6.2 Why OrbitControls Can't Fix This
 
-3. **[camera-controls](https://github.com/yomotsu/camera-controls) library** — Drop-in replacement for OrbitControls by yomotsu with better custom up-vector support and built-in orbit reversal. API-compatible. Would require swapping the import.
+OrbitControls computes spherical coordinates **directly relative to `camera.up`**. When `camera.up` is non-standard, the internal clamping (`minPolarAngle`, `maxPolarAngle`) doesn't account for the rotated coordinate frame, and the poles land in unexpected positions.
 
-4. **Accept the quirk** — Editing controls work perfectly. Orbit inversion is noticeable but not a dealbreaker. Could document in UI tooltip: "orbit may feel different in non-Z-up modes."
+- **`reverseOrbit` does NOT exist** in any official THREE.js version (r160 through r182). Only in [three-stdlib](https://github.com/pmndrs/three-stdlib) (React Three Fiber community fork).
+- **`rotateSpeed = -1`** partially compensates for constant inversion but cannot fix the position-dependent pole-crossing flip.
+- **No OrbitControls + camera.up fixes** in r160→r182 [migration guide](https://github.com/mrdoob/three.js/wiki/Migration-Guide).
 
-5. **On-axis view preset integration** — Make camera view presets (iso, top, front...) UCS-aware so they produce natural orbit behavior in any UCS mode.
+### 6.3 Solution: camera-controls Library (yomotsu)
+
+[**camera-controls**](https://github.com/yomotsu/camera-controls) by yomotsu solves this architecturally. It also uses spherical coordinates, but with a critical difference:
+
+1. Works internally in a **canonical Y-up space** via a quaternion transform (`_yAxisUpSpaceInverse`)
+2. Applies orbit rotations in this normalized space where the poles are predictable
+3. Transforms the result back to the user's actual `camera.up` direction
+4. Proper angle clamping + `makeSafe()` works correctly regardless of up vector
+
+This means: no polar singularity at unexpected positions, no mid-drag orbit reversal, smooth orbiting in any UCS orientation.
+
+**Compatibility**:
+- **License**: MIT — fully FOSS compatible, free to use, modify, and distribute
+- **API**: Near-compatible with OrbitControls for our usage (damping, zoom, pan, target, mouseButtons, enabled toggle, update method)
+- **Import**: Available via CDN (`npm/camera-controls`) or npm
+- **THREE.js**: Works with r160+ (uses THREE as a dependency injection: `CameraControls.install({ THREE })`)
+
+### 6.4 Implementation Options
+
+| Option | Effort | Quality | Notes |
+|--------|--------|---------|-------|
+| **A. Drop-in camera-controls** | Medium | Best | Replace OrbitControls import, adapt ~20 lines in rt-rendering.js for API differences (damping, mouseButtons, update signature). MIT license, CDN-ready. |
+| **B. Port the up-vector transform** | Medium | Good | Extract the `_yAxisUpSpaceInverse` quaternion pattern from camera-controls (MIT permits this with attribution). Monkey-patch onto OrbitControls. Less code to change but fragile across THREE.js upgrades. |
+| **C. Roll our own quaternion orbit** | High | Variable | Write a minimal orbit controller using quaternion rotations (no spherical coords). ~100-150 lines for core orbit, but would also need zoom, pan, damping, touch, boundary constraints. Only worthwhile if we want zero dependencies. |
+| **D. Accept the quirk** | None | Acceptable | Editing controls work perfectly. Orbit inversion is noticeable but not a dealbreaker for Phase 1 deployment. Document in UI tooltip. |
+
+**Recommendation**: Option A. camera-controls is MIT, battle-tested, CDN-available, and solves the root cause. The API adaptation is straightforward.
 
 ---
 
@@ -249,9 +276,8 @@ When `camera.up` is set to a non-standard direction, OrbitControls orbit/rotate 
 ### Phase 2: Orbit Feel (TODO)
 5. ~~Investigate `controls.reverseOrbit`~~ — does not exist in official THREE.js (any version)
 6. ~~Camera position adjustment~~ — tested, caused quaternion drift / space warping
-7. Try `rotateSpeed = -1` toggle for inverted-hemisphere UCS modes
-8. Evaluate camera-controls library as OrbitControls replacement
-9. Fix on-axis view rotation inversion artifact
+7. ~~`rotateSpeed = -1` toggle~~ — tested, minor improvement but cannot fix position-dependent pole-crossing flip
+8. **Replace OrbitControls with camera-controls** (yomotsu, MIT) — solves polar singularity architecturally via canonical-space quaternion transform. See Section 6.3-6.4.
 
 ### Phase 3: Polish
 8. Persist UCS preference in localStorage
@@ -288,9 +314,9 @@ When `camera.up` is set to a non-standard direction, OrbitControls orbit/rotate 
 
 ## 11. Remaining Open Questions
 
-1. **Best approach for orbit inversion?** `reverseOrbit` ruled out (doesn't exist). Next candidates: `rotateSpeed = -1` toggle (quickest), or camera-controls library (cleanest). Needs testing.
+1. **camera-controls integration scope?** API is near-compatible but need to audit: mouse button remapping (`controls.mouseButtons`), `controls.enabled` toggling during gumball drags, `controls.update()` signature (takes `delta` parameter), and damping property names (`smoothTime` vs `dampingFactor`). See Section 6.4.
 
-2. **THREE.js upgrade?** Currently r160, latest r182. No orbit-relevant fixes, but r163+ drops WebGL 1 and r182 deprecates `PCFSoftShadowMap`. Upgrade is independent of UCS — worth doing separately if desired.
+2. **THREE.js upgrade?** Currently r160, latest r182. No orbit-relevant fixes, but r163+ drops WebGL 1 and r182 deprecates `PCFSoftShadowMap`. Upgrade is independent of UCS — worth doing separately if desired. camera-controls works with r160+.
 
 3. **Should camera view presets (iso, top, front...) be UCS-aware?** "Top" currently means "looking down Z". In QZ-up mode, should "top" mean looking down QZ? Phase 3 polish.
 
