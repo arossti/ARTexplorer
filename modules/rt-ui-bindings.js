@@ -25,6 +25,8 @@
  * - radio-group: Radio button group by name attribute
  */
 
+import { MetaLog } from "./rt-metalog.js";
+
 export class RTUIBindings {
   constructor() {
     this.bindings = [];
@@ -45,7 +47,7 @@ export class RTUIBindings {
     this.RT = deps.RT;
     this.Quadray = deps.Quadray;
     this.initialized = true;
-    console.log("✅ RTUIBindings initialized");
+    MetaLog.log(MetaLog.SUMMARY, "✅ RTUIBindings initialized");
   }
 
   /**
@@ -62,7 +64,10 @@ export class RTUIBindings {
    */
   registerAll(bindings) {
     bindings.forEach(b => this.register(b));
-    console.log(`📋 RTUIBindings: Registered ${bindings.length} bindings`);
+    MetaLog.log(
+      MetaLog.SUMMARY,
+      `📋 RTUIBindings: Registered ${bindings.length} bindings`
+    );
   }
 
   /**
@@ -86,7 +91,8 @@ export class RTUIBindings {
       }
     });
 
-    console.log(
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `✅ RTUIBindings: Applied ${applied} bindings, skipped ${skipped}`
     );
   }

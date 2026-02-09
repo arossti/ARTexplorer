@@ -27,6 +27,9 @@ import { allBindings, getBindingStats } from "./rt-ui-binding-defs.js";
 // Phase 3 Modularization: Coordinate Display System (Jan 30, 2026)
 import { RTCoordinates } from "./rt-coordinates.js";
 
+// Centralized geometry logging (Feb 2026)
+import { MetaLog } from "./rt-metalog.js";
+
 // Phase 2b Modularization: Selection System - REVERTED
 // Selection is tightly coupled with gumball (~40 references to currentSelection)
 // Extracting selection without gumball creates artificial separation that adds
@@ -180,7 +183,8 @@ function startARTexplorer(
     uiBindings.applyAll();
 
     const stats = getBindingStats();
-    console.log(
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `🆕 DECLARATIVE UI: ${stats.total} bindings (${stats.simpleCheckboxes} checkboxes, ${stats.simpleSliders} sliders, ${stats.linkedSliders} linked)`
     );
   }
@@ -204,7 +208,7 @@ function startARTexplorer(
       }
     };
 
-    console.log("🆕 COORDINATE MODULE: Active");
+    MetaLog.log(MetaLog.SUMMARY, "🆕 COORDINATE MODULE: Active");
   }
 
   // ========================================================================
@@ -224,6 +228,31 @@ function startARTexplorer(
   // - Janus scale sliders (scaleSlider, tetScaleSlider) - complex inversion logic
   // - Geodesic projection radio buttons
   // - View controls, demo modals, data I/O (handled after line 1311)
+
+  // ========================================================================
+  // MetaLog: Centralized geometry logging (Feb 2026)
+  // ========================================================================
+  const urlLogLevel = MetaLog.initFromURL();
+  const advancedLoggingCheckbox = document.getElementById(
+    "enableAdvancedLogging"
+  );
+  if (advancedLoggingCheckbox) {
+    // Sync checkbox to URL param if present
+    if (urlLogLevel !== null && urlLogLevel >= MetaLog.SUMMARY) {
+      advancedLoggingCheckbox.checked = true;
+    }
+    advancedLoggingCheckbox.addEventListener("change", function () {
+      if (this.checked) {
+        // Only upgrade to SUMMARY if currently SILENT
+        // (Don't downgrade from DETAILED/DEBUG set via URL)
+        if (MetaLog.level < MetaLog.SUMMARY) {
+          MetaLog.setLevel(MetaLog.SUMMARY);
+        }
+      } else {
+        MetaLog.setLevel(MetaLog.SILENT);
+      }
+    });
+  }
 
   // ========================================================================
   // Plane checkbox toggles (Cartesian XYZ + Central Angle IVM)
@@ -2754,8 +2783,6 @@ function startARTexplorer(
 
     // Instances
     const allInstances = RTStateManager.getAllInstances();
-    // DEBUG: Uncomment for snap debugging
-    // console.log(`🔍 SNAP DEBUG: ${allInstances.length} instances in RTStateManager`);
 
     // Build set of connected Point IDs to exclude (prevent self-collapse)
     const excludeConnectedIds = new Set();
@@ -2776,7 +2803,6 @@ function startARTexplorer(
     }
 
     allInstances.forEach(instance => {
-      // console.log(`  Instance: ${instance.id}, visible: ${instance.threeObject?.visible}, excluded: ${instance.threeObject === excludeGroup}`);
       if (
         instance.threeObject &&
         instance.threeObject.visible &&
@@ -2786,8 +2812,6 @@ function startARTexplorer(
         targetGroups.push(instance.threeObject);
       }
     });
-
-    // console.log(`🔍 SNAP DEBUG: ${targetGroups.length} target groups found (excluding dragged object)`);
 
     // Get source object's snap points (we need to compare geometry-to-geometry)
     // NODE-BASED SNAP: If in vertex mode with a selected node, only use that node
@@ -2812,14 +2836,11 @@ function startARTexplorer(
       ? getPolyhedronFaceCentroids(excludeGroup)
       : [];
 
-    // console.log(`🔍 SNAP DEBUG: Source has ${sourceVertices.length} vertices, ${sourceEdges.length} edges, ${sourceFaces.length} faces`);
-
     // Check each target group for snap points
     targetGroups.forEach(targetGroup => {
       // Vertex-to-vertex snapping
       if (objectSnapVertex && sourceVertices.length > 0) {
         const targetVertices = getPolyhedronVertices(targetGroup);
-        // console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetVertices.length} vertices`);
         sourceVertices.forEach(srcVertex => {
           targetVertices.forEach(tgtVertex => {
             const distance = srcVertex.distanceTo(tgtVertex);
@@ -2844,7 +2865,6 @@ function startARTexplorer(
       // Edge-to-edge snapping (midpoint to midpoint)
       if (objectSnapEdge && sourceEdges.length > 0) {
         const targetEdges = getPolyhedronEdgeMidpoints(targetGroup);
-        // console.log(`🔍 SNAP DEBUG: Target ${targetGroup.userData?.type || 'unknown'} has ${targetEdges.length} edge midpoints`);
         sourceEdges.forEach(srcEdge => {
           targetEdges.forEach(tgtEdge => {
             const distance = srcEdge.distanceTo(tgtEdge);
@@ -2888,13 +2908,6 @@ function startARTexplorer(
         });
       }
     });
-
-    // Debug: Log result (uncomment for debugging)
-    // if (nearest) {
-    //   console.log(`🎯 SNAP FOUND: ${nearest.type} at distance ${nearest.distance.toFixed(3)}`);
-    // } else {
-    //   console.log(`🔍 SNAP DEBUG: Closest was beyond threshold ${threshold}`);
-    // }
 
     return nearest;
   }
@@ -4199,7 +4212,7 @@ function startARTexplorer(
   // FILE HANDLER INITIALIZATION
   // ========================================================================
   RTFileHandler.init(RTStateManager, scene, camera);
-  console.log("✅ RTFileHandler module initialized");
+  MetaLog.log(MetaLog.SUMMARY, "✅ RTFileHandler module initialized");
 
   // Wire up File section UI buttons
   const importBtn = document.getElementById("importBtn");
@@ -4252,7 +4265,6 @@ function startARTexplorer(
 
   // TODO: Extract to rt-controls.js module when ready
   // RTControls.init(THREE, Quadray, scene, camera, renderer, controls);
-  // console.log("✅ RTControls module initialized");
 
   // Initialize selection click listener with drag detection
   let mouseDownPos = null;
@@ -4634,5 +4646,5 @@ function startARTexplorer(
 
   // Signal that app initialization is complete
   window.dispatchEvent(new CustomEvent("artexplorer-ready"));
-  console.log("✅ ARTexplorer initialization complete");
+  MetaLog.log(MetaLog.SUMMARY, "✅ ARTexplorer initialization complete");
 } // End startARTexplorer function

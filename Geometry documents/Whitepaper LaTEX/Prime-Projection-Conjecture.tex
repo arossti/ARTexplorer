@@ -816,6 +816,12 @@ Centrally symmetric polyhedra (cuboctahedron, rhombic dodecahedron, geodesic oct
 \textbf{Only asymmetric polyhedra} (those lacking central inversion symmetry) produce \textbf{non-degenerate} odd hull counts. The geodesic tetrahedron inherits the base tetrahedron's lack of central symmetry, which is precisely what allows odd hull counts to emerge cleanly.
 \end{tcolorbox}
 
+\begin{tcolorbox}[colback=orange!5, colframe=orange!40!black, title=\textbf{Did you know? --- The Collinear Hitchhiker}]
+The Graham scan algorithm builds a convex hull by walking through sorted points and keeping only ``left turns'' (positive cross products). A point that is \emph{exactly collinear} with its neighbors produces a cross product of zero and is excluded. But what about a point that is \emph{almost} collinear? With Path~C exact arithmetic, we can detect that certain hull vertices have interior angles of exactly $180°$---they sit precisely on the straight line between their two neighbors. These ``collinear hitchhikers'' survive the Graham scan (cross product positive but $\sim\!10^{-17}$), inflating the hull count by one without adding any geometric meaning. Removing such a vertex does not change the hull's shape at all.
+
+This is how centrally symmetric polyhedra appear to produce odd hull counts. The cuboctahedron reports a ``7-gon,'' but one vertex is a hitchhiker at $180°$---the real polygon is a hexagon. The geodesic octahedron reports an ``11-gon,'' but it is really a decagon with a collinear point on one edge. Every single odd-gon from a centrally symmetric polyhedron turned out to be an even-gon with a collinear hitchhiker. The Central Symmetry Barrier was never actually broken---it was merely disguised.
+\end{tcolorbox}
+
 \begin{tcolorbox}[colback=green!5, colframe=green!40!black, title=\textbf{VERIFIED SINGLE-POLYHEDRA PRIME PROJECTIONS (v5.1)}]
 
 \begin{center}

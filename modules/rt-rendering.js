@@ -24,6 +24,7 @@ import { RTPrimeCuts } from "./rt-prime-cuts.js";
 import { Grids } from "./rt-grids.js";
 import { Nodes } from "./rt-nodes.js";
 import { Helices } from "./rt-helices.js";
+import { MetaLog } from "./rt-metalog.js";
 import { PenroseTiles, PenroseTiling } from "./rt-penrose.js";
 
 // Line2 addons for variable lineweight (cross-platform support)
@@ -847,7 +848,6 @@ export function initScene(THREE, OrbitControls, RT) {
         // Fallback to "md" if packed not available (e.g., Point has no edges)
         if (nodeRadius === null) {
           nodeRadius = 0.04; // "md" size fallback
-          console.log(`[Node] Packed fallback to md for ${polyType}`);
         }
       } else {
         const nodeSizes = { sm: 0.02, md: 0.04, lg: 0.08 };
@@ -939,17 +939,6 @@ export function initScene(THREE, OrbitControls, RT) {
     );
 
     // Find the outermost vertices (for boundary visualization)
-    // These form the "perimeter" of the tiling pattern
-    const EXTENT_THRESHOLD = 0.95; // Vertices within 95% of maxExtent
-    const boundaryVertexIndices = pentTiling.vertices
-      .map((v, i) => ({ i, r: Math.sqrt(v.x * v.x + v.y * v.y) }))
-      .filter(({ r }) => r >= maxExtent * EXTENT_THRESHOLD)
-      .map(({ i }) => i);
-
-    console.log(
-      `[RT] Pentagon tiling pattern: gen=${generations}, maxExtent=${maxExtent.toFixed(4)}, boundaryVerts=${boundaryVertexIndices.length}`
-    );
-
     // Create material for tiling edges - cyan to contrast with yellow dodecahedron
     const tilingEdgeMaterial = new THREE.LineBasicMaterial({
       color: 0x00ffff, // Cyan
@@ -994,15 +983,7 @@ export function initScene(THREE, OrbitControls, RT) {
       // Note: No flipWinding needed. With uBasis = normal × vBasis, the transformation
       // always preserves orientation (uBasis × vBasis = normal), so 2D CCW → 3D CCW from outside
 
-      // Calculate face INRADIUS (distance from center to edge midpoint)
-      // This is smaller than circumradius and ensures tiling fits within face edges
-      // For a regular pentagon: inradius = circumradius × cos(36°)
-      const edgeMidpoint = new THREE.Vector3()
-        .addVectors(faceVerts[0], faceVerts[1])
-        .multiplyScalar(0.5);
-      const faceInradius = center.distanceTo(edgeMidpoint);
-
-      // Also get face circumradius (for reference)
+      // Get face circumradius (center to vertex distance)
       const faceCircumradius = center.distanceTo(faceVerts[0]);
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -1017,23 +998,6 @@ export function initScene(THREE, OrbitControls, RT) {
           "1.0"
       );
       const tilingScale = (faceCircumradius * userScale) / maxExtent;
-
-      // Log once per dodecahedron (first face only) for debugging
-      if (faceIndices === faces[0]) {
-        const invPhi = RT.PurePhi.inverse();
-        const cos36 = RT.PurePhi.pentagon.cos36();
-        console.log(
-          `[RT] Dodec Face Tiling: userScale=${userScale.toFixed(3)}, ` +
-            `circumR=${faceCircumradius.toFixed(4)}, inR=${faceInradius.toFixed(4)}, ` +
-            `ratio(in/circ)=${(faceInradius / faceCircumradius).toFixed(4)} (cos36=${cos36.toFixed(4)})`
-        );
-        console.log(
-          `  → tilingScale=${tilingScale.toFixed(4)}, maxExtent=${maxExtent.toFixed(4)}`
-        );
-        console.log(
-          `  φ-refs: 1/φ=${invPhi.toFixed(4)}, cos36=${cos36.toFixed(4)}, 1/cos36=${(1 / cos36).toFixed(4)}`
-        );
-      }
 
       // Build transformation from 2D tiling plane (XY) to 3D face plane
       // The pentagon tiling has its first pentagon at +Y direction (top of pattern)
@@ -1127,13 +1091,6 @@ export function initScene(THREE, OrbitControls, RT) {
         }
       });
     });
-
-    console.log(
-      `[RT] Dodecahedron Face Tiling: ${faces.length} faces × ${pentTiling.metadata.pentagonCount} pentagons = ${faces.length * pentTiling.metadata.pentagonCount} total pentagons`
-    );
-    console.log(
-      `  └─ RT-pure extent scaling: maxExtent=${maxExtent.toFixed(4)}, scale=faceRadius/maxExtent`
-    );
   }
 
   /**
@@ -1858,7 +1815,7 @@ export function initScene(THREE, OrbitControls, RT) {
         ? bondModeRadio.value
         : "zipped";
 
-      // Read per-strand exit face settings (using Quadray axis names)
+      // Per-strand exit face: which face each strand exits after 1st tet (UI commented out, defaults 0)
       const getExitFace = qAxis => {
         const radio = document.querySelector(
           `input[name="tetrahelix2Exit${qAxis}"]:checked`
@@ -2068,13 +2025,31 @@ export function initScene(THREE, OrbitControls, RT) {
       // Only log for integer edge lengths 1-5
       const roundedEdge = Math.round(tetEdgeLength * 10) / 10;
       if ([1.0, 2.0, 3.0, 4.0, 5.0].includes(roundedEdge)) {
-        console.log(`\n=== TETRAHEDRON EDGE LENGTH ${roundedEdge} ===`);
-        console.log(`HalfSize (s): ${halfSize.toFixed(16)}`);
-        console.log(`Edge length (2s√2): ${tetEdgeLength.toFixed(16)}`);
-        console.log(`OutSphere radius (s√3): ${outSphereRadius.toFixed(16)}`);
-        console.log(`Grid interval (√6/4): ${gridInterval.toFixed(16)}`);
-        console.log(`Difference (OutSphere - Grid): ${difference.toFixed(16)}`);
-        console.log(`Percent difference: ${percentDiff.toFixed(8)}%`);
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `\n=== TETRAHEDRON EDGE LENGTH ${roundedEdge} ===`
+        );
+        MetaLog.log(MetaLog.DETAILED, `HalfSize (s): ${halfSize.toFixed(16)}`);
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `Edge length (2s√2): ${tetEdgeLength.toFixed(16)}`
+        );
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `OutSphere radius (s√3): ${outSphereRadius.toFixed(16)}`
+        );
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `Grid interval (√6/4): ${gridInterval.toFixed(16)}`
+        );
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `Difference (OutSphere - Grid): ${difference.toFixed(16)}`
+        );
+        MetaLog.log(
+          MetaLog.DETAILED,
+          `Percent difference: ${percentDiff.toFixed(8)}%`
+        );
       }
     } else {
       tetrahedronGroup.visible = false;
@@ -2308,10 +2283,6 @@ export function initScene(THREE, OrbitControls, RT) {
       if (faceTilingEnabled && tilingGenerations > 1) {
         // Face tiling enabled: apply pentagon array to each face
         // TODO: Implement actual face subdivision - for now render with pentagon overlay
-        console.log(
-          `[RT] Dodecahedron Face Tiling: gen=${tilingGenerations}, applying pentagon array to 12 faces`
-        );
-
         // Render base dodecahedron with reduced opacity when tiling is shown
         const dodec = Polyhedra.dodecahedron(scale);
         renderPolyhedron(
@@ -2396,7 +2367,8 @@ export function initScene(THREE, OrbitControls, RT) {
       geodesicIcosahedronGroup.visible = true;
 
       if (faceTilingEnabled && tilingGenerations > 1) {
-        console.log(
+        MetaLog.log(
+          MetaLog.DETAILED,
           `[RT] Geodesic Icosahedron: freq=${actualFrequency} × tiling=${tilingDivisions} → effective=${effectiveFrequency}`
         );
       }
@@ -3248,6 +3220,8 @@ export function initScene(THREE, OrbitControls, RT) {
 
       const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00];
 
+      // Suppress MetaLog — arrowhead dualTetrahedra are utility geometry
+      MetaLog.suppress();
       Quadray.basisVectors.forEach((vec, i) => {
         const arrow = Grids.createTetrahedralArrow(
           vec,
@@ -3257,6 +3231,7 @@ export function initScene(THREE, OrbitControls, RT) {
         );
         quadrayBasis.add(arrow);
       });
+      MetaLog.unsuppress();
     }
 
     updateGeometryStats();
@@ -3305,6 +3280,9 @@ export function initScene(THREE, OrbitControls, RT) {
    * Update geometry statistics display
    */
   function updateGeometryStats() {
+    // Suppress MetaLog during stats rebuild — these Polyhedra calls exist
+    // only to extract V/E/F counts for the info panel, not to log geometry.
+    MetaLog.suppress();
     const stats = document.getElementById("polyhedraStats");
     let html = "";
 
@@ -3461,7 +3439,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const tetrahelix2BondMode = bondModeRadio2
         ? bondModeRadio2.value
         : "zipped";
-      // Read per-strand exit faces for stats (using Quadray axis names)
+      // Per-strand exit face for stats (UI commented out, defaults 0)
       const getExitFaceStats = qAxis => {
         const radio = document.querySelector(
           `input[name="tetrahelix2Exit${qAxis}"]:checked`
@@ -3832,6 +3810,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     stats.innerHTML = html || "Select a polyhedron to see stats";
+    MetaLog.unsuppress();
   }
 
   /**

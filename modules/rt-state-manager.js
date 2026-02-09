@@ -9,6 +9,8 @@
  * @requires THREE.js
  */
 
+import { MetaLog } from "./rt-metalog.js";
+
 export const RTStateManager = {
   // ========================================================================
   // FORMS REGISTRY (Templates - always at origin)
@@ -128,7 +130,7 @@ export const RTStateManager = {
    * Initialize StateManager
    */
   init() {
-    console.log("✅ RTStateManager initialized");
+    MetaLog.log(MetaLog.SUMMARY, "✅ RTStateManager initialized");
   },
 
   /**

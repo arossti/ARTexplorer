@@ -62,6 +62,7 @@
  */
 
 import { RT } from "./rt-math.js";
+import { MetaLog } from "./rt-metalog.js";
 import { Polyhedra } from "./rt-polyhedra.js";
 
 /**
@@ -178,8 +179,9 @@ export const RTMatrix = {
       RT.applyRotation45(matrixGroup);
     }
 
-    console.log(
-      `[RTMatrix] Cube matrix created: ${matrixSize}×${matrixSize} = ${matrixSize * matrixSize} cubes, rotate45=${rotate45}`
+    MetaLog.log(
+      MetaLog.SUMMARY,
+      `[RTMatrix] Cube matrix: ${matrixSize}×${matrixSize} = ${matrixSize * matrixSize} cubes, rotate45=${rotate45}`
     );
 
     return matrixGroup;
@@ -310,8 +312,9 @@ export const RTMatrix = {
       RT.applyRotation45(matrixGroup);
     }
 
-    console.log(
-      `[RTMatrix] Cuboctahedron matrix created: ${matrixSize}×${matrixSize} = ${
+    MetaLog.log(
+      MetaLog.SUMMARY,
+      `[RTMatrix] Cuboctahedron matrix: ${matrixSize}×${matrixSize} = ${
         matrixSize * matrixSize
       } VEs, rotate45=${rotate45}`
     );
@@ -465,12 +468,13 @@ export const RTMatrix = {
       RT.applyRotation45(matrixGroup);
     }
 
-    console.log(
-      `[RTMatrix] Rhombic dodecahedron matrix created: ${matrixSize}×${matrixSize} primary grid${
+    MetaLog.log(
+      MetaLog.SUMMARY,
+      `[RTMatrix] Rhombic dodecahedron matrix: ${matrixSize}×${matrixSize} primary grid${
         faceCoplanar
           ? ` + ${(matrixSize - 1) * (matrixSize - 1)} interstitial`
           : ""
-      } = ${polyhedraCount} total rhombic dodecs, rotate45=${rotate45}, faceCoplanar=${faceCoplanar}`
+      } = ${polyhedraCount} total, rotate45=${rotate45}, faceCoplanar=${faceCoplanar}`
     );
 
     return matrixGroup;
@@ -603,8 +607,9 @@ export const RTMatrix = {
       RT.applyRotation45(matrixGroup);
     }
 
-    console.log(
-      `[RTMatrix] Tetrahedron matrix created: ${matrixSize}×${matrixSize} = ${matrixSize * matrixSize} tetrahedra, rotate45=${rotate45}`
+    MetaLog.log(
+      MetaLog.SUMMARY,
+      `[RTMatrix] Tetrahedron matrix: ${matrixSize}×${matrixSize} = ${matrixSize * matrixSize} tetrahedra, rotate45=${rotate45}`
     );
 
     return matrixGroup;
@@ -743,12 +748,13 @@ export const RTMatrix = {
       RT.applyRotation45(matrixGroup);
     }
 
-    console.log(
-      `[RTMatrix] Octahedron matrix created: ${matrixSize}×${matrixSize} primary grid${
+    MetaLog.log(
+      MetaLog.SUMMARY,
+      `[RTMatrix] Octahedron matrix: ${matrixSize}×${matrixSize} primary grid${
         colinearEdges
           ? ` + ${(matrixSize - 1) * (matrixSize - 1)} interstitial`
           : ""
-      } = ${polyhedraCount} total octahedra, rotate45=${rotate45}, colinearEdges=${colinearEdges}`
+      } = ${polyhedraCount} total, rotate45=${rotate45}, colinearEdges=${colinearEdges}`
     );
 
     return matrixGroup;
@@ -817,7 +823,8 @@ export const RTMatrix = {
       if (error < tolerance) {
         validCount++;
       } else {
-        console.warn(
+        MetaLog.warn(
+          MetaLog.SUMMARY,
           `[RTMatrix] Spacing error at position ${i}: Q_actual=${Q_actual.toFixed(6)}, Q_expected=${Q_expected.toFixed(6)}, error=${error.toExponential(3)}`
         );
       }
@@ -826,11 +833,13 @@ export const RTMatrix = {
     const allValid = validCount === totalChecks;
 
     if (allValid) {
-      console.log(
+      MetaLog.log(
+        MetaLog.DETAILED,
         `[RTMatrix] ✓ Spacing validation passed: Q=${Q_expected.toFixed(6)} (${totalChecks} checks, tolerance=${tolerance})`
       );
     } else {
-      console.warn(
+      MetaLog.warn(
+        MetaLog.SUMMARY,
         `[RTMatrix] ✗ Spacing validation failed: ${validCount}/${totalChecks} checks passed (tolerance=${tolerance})`
       );
     }
