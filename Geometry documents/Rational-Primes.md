@@ -87,11 +87,47 @@ Key insight: vertex counts are always **even** — "finding primes from non-prim
 | **11** | t=(1/4,5/12) 24v, s=(1/2, 0, 1/3) | 0.591 | — | **No** (180° vertex) |
 | **13** | t=(1/3,5/12) 24v, s=(7/8, 7/8, 9/10) | 0.280 | Worse (0.346 from TruncTet+Icosa) | Mixed |
 
-**Critical finding**: ALL stella 11-gon results have a **degenerate 180° interior angle** — a collinear point the hull algorithm kept due to floating-point. These are actually 10-gons, not genuine 11-gons. The TruncTet+Icosa compound remains the only genuine source of 11-gon and 13-gon projections.
+**Critical finding**: ALL stella 11-gon results have a **degenerate 180° interior angle** — a collinear point the hull algorithm kept due to floating-point. These are actually 10-gons, not genuine 11-gons. The TruncTet+Icosa compound was the only genuine source of 11-gon and 13-gon projections — until the single-polyhedra search (see below).
 
 **7-gon improvement**: The stella search found s=(9/10, 1/3, 3/5) at reg=0.877, slightly better than our current s=(1/2, 1/2, 1/2) at reg=0.861. However, the new spreads are Tier 2 (denominator 10), while the current result is Tier 1. This is a regularity-vs-algebraic-simplicity trade-off.
 
 **Implementation**: `variable_stella_compound(t1, t2)` in `rt_polyhedra.py`; `--stella` flag in `prime_search_streamlined.py`. Searches over `(t1, t2, s1, s2, s3)` with configurable truncation and spread grids.
+
+### Single-Polyhedra Prime Search (Path C Exact)
+
+**Tested 2026-02-08** via `prime_search_streamlined.py --poly ... --exact --rational 1`.
+
+A more elegant result than compound polyhedra: finding prime polygon hulls from **single, non-compound rational polyhedra**. No combining two polyhedra to break symmetry — just one algebraically-defined solid, viewed at a rational spread angle, producing a prime hull.
+
+Four new search polyhedra, all in the √2 radical family (no golden ratio):
+
+| Polyhedra | Vertices | Radical Family | Vertex-Transitive |
+|-----------|----------|----------------|-------------------|
+| Cuboctahedron | 12 | √2 | Yes |
+| Rhombic Dodecahedron | 14 | √2 | No (2 orbits) |
+| Geodesic Tet freq=2 | 10 | √2, √3 | Yes (on sphere) |
+| Geodesic Oct freq=2 | 18 | √2 | Yes (on sphere) |
+
+**Results** (Tier 1 rational, `--exact`, all four polyhedra × primes 5/7/11/13):
+
+| Prime | Source | Best Spreads | Reg | Hits | Note |
+|-------|--------|-------------|-----|------|------|
+| **7** | Rhombic Dodecahedron (14v) | (1/2, 1/3, 1) | 0.521 | 3 | Single solid, √2 only |
+| **7** | Cuboctahedron (12v) | (1/3, 2/3, 1/4) | 0.421 | 7 | Vector Equilibrium! |
+| **7** | Geodesic Tet freq=2 (10v) | (0, 1/3, 1/3) | 0.419 | 97 | Richest source |
+| **11** | Geodesic Oct freq=2 (18v) | **(1/3, 3/4, 3/4)** | 0.354 | 1 | **√2 only — no φ!** |
+
+**Key findings**:
+
+1. **11-gon from a single geodesic octahedron** at Tier 1 rational spreads. This is the first 11-gon that requires only √2 radicals — the TruncTet+Icosa compound needed √5 (golden ratio). The geodesic octahedron is purely rational (vertices at permutations of (±1, 0, 0) projected to sphere).
+
+2. **7-gon from 10 vertices** (geodesic tet). The geodesic tetrahedron at frequency 2 has only 10 vertices — the fewest of any source — yet produces 97 heptagon hits at Tier 1 rationals. Finding primes from non-primes: 10 is even, yet the hull is prime.
+
+3. **No 5-gon or 13-gon** from these polyhedra at Tier 1. Higher tiers and frequencies may reveal them. The 5-gon may require truncation structure (the TruncTet's hexagonal faces naturally create pentagons under projection). The 13-gon may need more vertices (geodesic oct freq=3 has 38v).
+
+**The elegance argument**: A single, rationally-constructed polyhedron viewed at a rational angle producing a prime polygon is far more compelling than a compound polyhedron engineered to break symmetry. The cuboctahedron (Fuller's "Vector Equilibrium") producing heptagons at Tier 1 spreads connects prime projections directly to the most fundamental polyhedron in Synergetics.
+
+**Next**: Tier 2/3 searches, higher geodesic frequencies (freq=3,4), and verification that the geodesic oct 11-gon is not degenerate (no 180° angles).
 
 ---
 
@@ -186,9 +222,9 @@ For vertices that are rational or algebraic, the cross product can be computed *
 
 Python's `fractions.Fraction` provides this for free. The search would be slower but **provably correct** — every hull count would be mathematically exact.
 
-**Implementation**: Add a `--exact` flag to `prime_search_streamlined.py` that uses `Fraction`-based arithmetic for the hull computation. Combined with Path A (rational spreads), this gives exact integer cross products.
+**Implementation**: **DONE.** `convex_hull_2d_exact()` in `rt_math.py` uses `Fraction(float)` to convert Float64 projected coordinates to their exact IEEE 754 rational representations, then computes cross products with arbitrary-precision integer arithmetic. The `--exact` flag in `prime_search_streamlined.py` activates this for any search mode.
 
-**What this proves**: When the search reports hull=7 at s=1/2, it's not "7 within floating-point tolerance" — it's mathematically 7. Period. This is the standard of proof that a mathematical claim about prime polygons requires.
+**What this proves**: When the search reports hull=7 at s=1/2 with `--exact`, the cross products are computed with unlimited precision. Points that are exactly collinear in Float64 produce cross=0 (exactly), and are deterministically excluded. No epsilon, no platform-dependent rounding — the hull count is provably correct within the Float64 projection.
 
 ---
 
@@ -213,12 +249,21 @@ We are not starting from scratch. The ARTexplorer codebase already provides:
 
 **Python (`scripts/`)**:
 - `rt_math.py` — direct port of JS RT functions including `project_to_plane()`
+  - `convex_hull_2d_exact()` — **Path C** exact Fraction-based hull (no FP ambiguity)
 - `rt_polyhedra.py` — direct port of JS polyhedra with identical vertex definitions
   - `variable_stella_compound(t1, t2)` — variable stella octangula with independent truncation
   - `truncated_dual_tetrahedron()` — port of JS `truncatedDualTetrahedron()`
+  - `cuboctahedron()` — 12 vertices, √2 only, vertex-transitive
+  - `rhombic_dodecahedron()` — 14 vertices, √2 only, non-vertex-transitive
+  - `geodesic_tetrahedron(freq)` — subdivided tet projected to sphere (10/20/34/52/74v)
+  - `geodesic_octahedron(freq)` — subdivided oct projected to sphere (18/38/66/102v)
+  - `subdivide_triangles()` — barycentric geodesic subdivision (Fuller frequency notation)
 - `prime_search_streamlined.py` — grid search with regularity scoring
   - `--stella` flag: 5-parameter search over `(t1, t2, s1, s2, s3)`
   - `--rational TIER`: algebraically significant spread grid
+  - `--poly NAME,...`: search any polyhedron for any prime (cuboctahedron, rhombicdodec, geodtet, geodoct, etc.)
+  - `--exact`: **Path C** exact hull computation
+  - `--freq N`: geodesic subdivision frequency (default 2)
 
 **Visualization (`modules/rt-projections.js`, `rt-prime-cuts.js`)**:
 - `PROJECTION_PRESETS` registry — single source of truth for all presets
@@ -277,9 +322,9 @@ When selecting search polyhedra, vertex transitivity determines whether interior
 
 ## The Goal
 
-**Immediate**: ~~Determine whether 11-gon and 13-gon projections exist at "nice" rational spreads (Path A).~~ **DONE** — yes, they do. See results table above.
+**Immediate**: ~~Determine whether 11-gon and 13-gon projections exist at "nice" rational spreads (Path A).~~ **DONE** — yes, they do. See results table above. ~~Path C exact hull.~~ **DONE** — `--exact` flag with `fractions.Fraction`.
 
-**Medium-term**: Port the Quadray rotation framework to Python (Path B) and add exact arithmetic hull counting (Path C). This creates a provably correct, algebraically exact search pipeline.
+**Medium-term**: ~~Search single rational polyhedra for prime projections.~~ **IN PROGRESS** — 11-gon found from geodesic octahedron (√2 only), 7-gon from cuboctahedron/rhombic dodec/geodesic tet. Need Tier 2/3 and higher geodesic frequencies for 5-gon and 13-gon. Port the Quadray rotation framework to Python (Path B).
 
 **Ultimate**: Establish that prime n-gon projections from algebraically-defined polyhedra at rational spreads constitute a **general method** — not isolated numerical coincidences. If prime hulls consistently emerge at rational spreads from integer-coordinate polyhedra, this is a new theorem-class result: *prime polygons exist as rational projections of tetrahedral compounds*.
 
