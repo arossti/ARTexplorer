@@ -24,6 +24,7 @@ import { RTPrimeCuts } from "./rt-prime-cuts.js";
 import { Grids } from "./rt-grids.js";
 import { Nodes } from "./rt-nodes.js";
 import { Helices } from "./rt-helices.js";
+import { MetaLog } from "./rt-metalog.js";
 import { PenroseTiles, PenroseTiling } from "./rt-penrose.js";
 
 // Line2 addons for variable lineweight (cross-platform support)
@@ -847,7 +848,6 @@ export function initScene(THREE, OrbitControls, RT) {
         // Fallback to "md" if packed not available (e.g., Point has no edges)
         if (nodeRadius === null) {
           nodeRadius = 0.04; // "md" size fallback
-          console.log(`[Node] Packed fallback to md for ${polyType}`);
         }
       } else {
         const nodeSizes = { sm: 0.02, md: 0.04, lg: 0.08 };
@@ -939,17 +939,6 @@ export function initScene(THREE, OrbitControls, RT) {
     );
 
     // Find the outermost vertices (for boundary visualization)
-    // These form the "perimeter" of the tiling pattern
-    const EXTENT_THRESHOLD = 0.95; // Vertices within 95% of maxExtent
-    const boundaryVertexIndices = pentTiling.vertices
-      .map((v, i) => ({ i, r: Math.sqrt(v.x * v.x + v.y * v.y) }))
-      .filter(({ r }) => r >= maxExtent * EXTENT_THRESHOLD)
-      .map(({ i }) => i);
-
-    console.log(
-      `[RT] Pentagon tiling pattern: gen=${generations}, maxExtent=${maxExtent.toFixed(4)}, boundaryVerts=${boundaryVertexIndices.length}`
-    );
-
     // Create material for tiling edges - cyan to contrast with yellow dodecahedron
     const tilingEdgeMaterial = new THREE.LineBasicMaterial({
       color: 0x00ffff, // Cyan
@@ -994,15 +983,7 @@ export function initScene(THREE, OrbitControls, RT) {
       // Note: No flipWinding needed. With uBasis = normal × vBasis, the transformation
       // always preserves orientation (uBasis × vBasis = normal), so 2D CCW → 3D CCW from outside
 
-      // Calculate face INRADIUS (distance from center to edge midpoint)
-      // This is smaller than circumradius and ensures tiling fits within face edges
-      // For a regular pentagon: inradius = circumradius × cos(36°)
-      const edgeMidpoint = new THREE.Vector3()
-        .addVectors(faceVerts[0], faceVerts[1])
-        .multiplyScalar(0.5);
-      const faceInradius = center.distanceTo(edgeMidpoint);
-
-      // Also get face circumradius (for reference)
+      // Get face circumradius (center to vertex distance)
       const faceCircumradius = center.distanceTo(faceVerts[0]);
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -1017,23 +998,6 @@ export function initScene(THREE, OrbitControls, RT) {
           "1.0"
       );
       const tilingScale = (faceCircumradius * userScale) / maxExtent;
-
-      // Log once per dodecahedron (first face only) for debugging
-      if (faceIndices === faces[0]) {
-        const invPhi = RT.PurePhi.inverse();
-        const cos36 = RT.PurePhi.pentagon.cos36();
-        console.log(
-          `[RT] Dodec Face Tiling: userScale=${userScale.toFixed(3)}, ` +
-            `circumR=${faceCircumradius.toFixed(4)}, inR=${faceInradius.toFixed(4)}, ` +
-            `ratio(in/circ)=${(faceInradius / faceCircumradius).toFixed(4)} (cos36=${cos36.toFixed(4)})`
-        );
-        console.log(
-          `  → tilingScale=${tilingScale.toFixed(4)}, maxExtent=${maxExtent.toFixed(4)}`
-        );
-        console.log(
-          `  φ-refs: 1/φ=${invPhi.toFixed(4)}, cos36=${cos36.toFixed(4)}, 1/cos36=${(1 / cos36).toFixed(4)}`
-        );
-      }
 
       // Build transformation from 2D tiling plane (XY) to 3D face plane
       // The pentagon tiling has its first pentagon at +Y direction (top of pattern)
@@ -1128,12 +1092,6 @@ export function initScene(THREE, OrbitControls, RT) {
       });
     });
 
-    console.log(
-      `[RT] Dodecahedron Face Tiling: ${faces.length} faces × ${pentTiling.metadata.pentagonCount} pentagons = ${faces.length * pentTiling.metadata.pentagonCount} total pentagons`
-    );
-    console.log(
-      `  └─ RT-pure extent scaling: maxExtent=${maxExtent.toFixed(4)}, scale=faceRadius/maxExtent`
-    );
   }
 
   /**
@@ -2068,13 +2026,13 @@ export function initScene(THREE, OrbitControls, RT) {
       // Only log for integer edge lengths 1-5
       const roundedEdge = Math.round(tetEdgeLength * 10) / 10;
       if ([1.0, 2.0, 3.0, 4.0, 5.0].includes(roundedEdge)) {
-        console.log(`\n=== TETRAHEDRON EDGE LENGTH ${roundedEdge} ===`);
-        console.log(`HalfSize (s): ${halfSize.toFixed(16)}`);
-        console.log(`Edge length (2s√2): ${tetEdgeLength.toFixed(16)}`);
-        console.log(`OutSphere radius (s√3): ${outSphereRadius.toFixed(16)}`);
-        console.log(`Grid interval (√6/4): ${gridInterval.toFixed(16)}`);
-        console.log(`Difference (OutSphere - Grid): ${difference.toFixed(16)}`);
-        console.log(`Percent difference: ${percentDiff.toFixed(8)}%`);
+        MetaLog.log(MetaLog.DETAILED, `\n=== TETRAHEDRON EDGE LENGTH ${roundedEdge} ===`);
+        MetaLog.log(MetaLog.DETAILED, `HalfSize (s): ${halfSize.toFixed(16)}`);
+        MetaLog.log(MetaLog.DETAILED, `Edge length (2s√2): ${tetEdgeLength.toFixed(16)}`);
+        MetaLog.log(MetaLog.DETAILED, `OutSphere radius (s√3): ${outSphereRadius.toFixed(16)}`);
+        MetaLog.log(MetaLog.DETAILED, `Grid interval (√6/4): ${gridInterval.toFixed(16)}`);
+        MetaLog.log(MetaLog.DETAILED, `Difference (OutSphere - Grid): ${difference.toFixed(16)}`);
+        MetaLog.log(MetaLog.DETAILED, `Percent difference: ${percentDiff.toFixed(8)}%`);
       }
     } else {
       tetrahedronGroup.visible = false;
@@ -2308,10 +2266,6 @@ export function initScene(THREE, OrbitControls, RT) {
       if (faceTilingEnabled && tilingGenerations > 1) {
         // Face tiling enabled: apply pentagon array to each face
         // TODO: Implement actual face subdivision - for now render with pentagon overlay
-        console.log(
-          `[RT] Dodecahedron Face Tiling: gen=${tilingGenerations}, applying pentagon array to 12 faces`
-        );
-
         // Render base dodecahedron with reduced opacity when tiling is shown
         const dodec = Polyhedra.dodecahedron(scale);
         renderPolyhedron(
@@ -2396,7 +2350,8 @@ export function initScene(THREE, OrbitControls, RT) {
       geodesicIcosahedronGroup.visible = true;
 
       if (faceTilingEnabled && tilingGenerations > 1) {
-        console.log(
+        MetaLog.log(
+          MetaLog.DETAILED,
           `[RT] Geodesic Icosahedron: freq=${actualFrequency} × tiling=${tilingDivisions} → effective=${effectiveFrequency}`
         );
       }
@@ -3420,7 +3375,6 @@ export function initScene(THREE, OrbitControls, RT) {
       const tetrahelix1Data = Helices.tetrahelix1(1, {
         count: tetrahelix1Count,
         startFace: tetrahelix1StartFace,
-        silent: true,
       });
       const V = tetrahelix1Data.vertices.length;
       const E = tetrahelix1Data.edges.length;
@@ -3483,7 +3437,6 @@ export function initScene(THREE, OrbitControls, RT) {
         strands: tetrahelix2Strands,
         bondMode: tetrahelix2BondMode,
         exitFaces: tetrahelix2ExitFaces,
-        silent: true,
       });
       const V2 = tetrahelix2Data.vertices.length;
       const E2 = tetrahelix2Data.edges.length;
@@ -3530,7 +3483,6 @@ export function initScene(THREE, OrbitControls, RT) {
         count: tetrahelix3Count,
         enabledStrands,
         strandChirality,
-        silent: true,
       });
       const V3 = tetrahelix3Data.vertices.length;
       const E3 = tetrahelix3Data.edges.length;
@@ -3548,7 +3500,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showCube").checked) {
-      const cube = Polyhedra.cube(1, { silent: true });
+      const cube = Polyhedra.cube(1);
       const eulerOK = RT.verifyEuler(
         cube.vertices.length,
         cube.edges.length,
@@ -3562,7 +3514,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showTetrahedron").checked) {
-      const tetra = Polyhedra.tetrahedron(1, { silent: true });
+      const tetra = Polyhedra.tetrahedron(1);
       const eulerOK = RT.verifyEuler(
         tetra.vertices.length,
         tetra.edges.length,
@@ -3576,7 +3528,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showDualTetrahedron").checked) {
-      const tetra = Polyhedra.tetrahedron(1, { silent: true });
+      const tetra = Polyhedra.tetrahedron(1);
       const eulerOK = RT.verifyEuler(
         tetra.vertices.length,
         tetra.edges.length,
@@ -3590,7 +3542,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showOctahedron").checked) {
-      const octa = Polyhedra.octahedron(1, { silent: true });
+      const octa = Polyhedra.octahedron(1);
       const eulerOK = RT.verifyEuler(
         octa.vertices.length,
         octa.edges.length,
@@ -3604,7 +3556,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showIcosahedron").checked) {
-      const icosa = Polyhedra.icosahedron(1, { silent: true });
+      const icosa = Polyhedra.icosahedron(1);
       const eulerOK = RT.verifyEuler(
         icosa.vertices.length,
         icosa.edges.length,
@@ -3618,7 +3570,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showDualIcosahedron").checked) {
-      const icosa = Polyhedra.icosahedron(1, { silent: true });
+      const icosa = Polyhedra.icosahedron(1);
       const eulerOK = RT.verifyEuler(
         icosa.vertices.length,
         icosa.edges.length,
@@ -3632,7 +3584,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (document.getElementById("showDodecahedron").checked) {
-      const dodec = Polyhedra.dodecahedron(1, { silent: true });
+      const dodec = Polyhedra.dodecahedron(1);
       const eulerOK = RT.verifyEuler(
         dodec.vertices.length,
         dodec.edges.length,
@@ -3647,7 +3599,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     if (document.getElementById("showRhombicDodecahedron").checked) {
       // Use √2 scaling to match rendering (stats use scale=1 for display)
-      const rhombicDodec = Polyhedra.rhombicDodecahedron(Math.sqrt(2), { silent: true });
+      const rhombicDodec = Polyhedra.rhombicDodecahedron(Math.sqrt(2));
       const eulerOK = RT.verifyEuler(
         rhombicDodec.vertices.length,
         rhombicDodec.edges.length,
@@ -3661,7 +3613,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     if (document.getElementById("showCuboctahedron").checked) {
       // Use √2 scaling to match rendering (stats use scale=1 for display)
-      const cubocta = Polyhedra.cuboctahedron(Math.sqrt(2), { silent: true });
+      const cubocta = Polyhedra.cuboctahedron(Math.sqrt(2));
       const eulerOK = RT.verifyEuler(
         cubocta.vertices.length,
         cubocta.edges.length,
@@ -3685,8 +3637,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const geodesicTetra = Polyhedra.geodesicTetrahedron(
         1,
         isNaN(frequency) ? 1 : frequency,
-        projection,
-        { silent: true }
+        projection
       );
       const eulerOK = RT.verifyEuler(
         geodesicTetra.vertices.length,
@@ -3713,8 +3664,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const geodesicOcta = Polyhedra.geodesicOctahedron(
         1,
         isNaN(frequency) ? 1 : frequency,
-        projection,
-        { silent: true }
+        projection
       );
       const eulerOK = RT.verifyEuler(
         geodesicOcta.vertices.length,
@@ -3741,8 +3691,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const geodesicIcosa = Polyhedra.geodesicIcosahedron(
         1,
         isNaN(frequency) ? 1 : frequency,
-        projection,
-        { silent: true }
+        projection
       );
       const eulerOK = RT.verifyEuler(
         geodesicIcosa.vertices.length,

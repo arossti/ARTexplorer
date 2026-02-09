@@ -12,6 +12,7 @@
  */
 
 import { RT } from "./rt-math.js";
+import { MetaLog } from "./rt-metalog.js";
 
 // Access THREE.js from global scope (set by main HTML)
 
@@ -32,7 +33,7 @@ export const Primitives = {
     const edges = []; // No edges
     const faces = []; // No faces
 
-    console.log("[RT] Point: single vertex at origin");
+    MetaLog.identity("Point", "", { construction: "Single vertex at origin" });
 
     return { vertices, edges, faces };
   },
@@ -63,9 +64,8 @@ export const Primitives = {
     // No faces (1D primitive)
     const faces = [];
 
-    console.log(
-      `[RT] Line: Q=${quadrance.toFixed(6)}, length=${length.toFixed(6)}`
-    );
+    MetaLog.identity("Line", "");
+    MetaLog.rtMetrics({ edgeQ: quadrance, edgeLength: length });
 
     return {
       vertices,
@@ -187,9 +187,9 @@ export const Primitives = {
 
     // Classical trig fallback for n values without algebraic/cubic solutions
     // (11, 13, 14, 17, 18, 19, 21, 22, 23...) require transcendental sin(π/n)
-    console.log(
-      `[RT] ${n}-gon using classical trig (sin π/${n}). ` +
-        `RT-pure: 3,4,5,6,8,10,12 | Cubic: 7,9`
+    MetaLog.log(
+      MetaLog.SUMMARY,
+      `  ${n}-gon using classical trig (sin π/${n}). RT-pure: 3,4,5,6,8,10,12 | Cubic: 7,9`
     );
     return Primitives._polygonClassical(quadrance, { sides: n, showFace });
   },
@@ -222,10 +222,15 @@ export const Primitives = {
     for (let i = 0; i < n; i++) edges.push([i, (i + 1) % n]);
     const faces = showFace ? [Array.from({ length: n }, (_, i) => i)] : [];
 
-    console.log(
-      `[RT] ${n}-gon (classical): Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `spread=${spread.toFixed(6)}, Q_edge=${Q_edge.toFixed(6)}`
-    );
+    MetaLog.polyhedron(`${n}-gon`, "", {
+      construction: "Classical trig (sin/cos)",
+      edgeQ: Q_edge,
+      edgeLength: Math.sqrt(Q_edge),
+      constructionLines: [
+        `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
+        `Spread: ${spread.toFixed(6)} (transcendental)`,
+      ],
+    });
 
     return {
       vertices,
@@ -270,10 +275,15 @@ export const Primitives = {
     const faces = options.showFace ? [[0, 1, 2]] : [];
     const Q_edge = 4 * starSpread * quadrance; // = 3Q
 
-    console.log(
-      `[RT] Triangle: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `s=3/4, Q_edge=${Q_edge.toFixed(6)}`
-    );
+    MetaLog.polyhedron("Triangle", "{3}", {
+      construction: "RT-pure (√3)",
+      edgeQ: Q_edge,
+      edgeLength: Math.sqrt(Q_edge),
+      constructionLines: [
+        `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
+        `Star spread s: 3/4 = ${starSpread.toFixed(6)}`,
+      ],
+    });
 
     return {
       vertices,
@@ -320,10 +330,15 @@ export const Primitives = {
     const faces = options.showFace ? [[0, 1, 2, 3]] : [];
     const Q_edge = 4 * starSpread * quadrance; // = 2Q
 
-    console.log(
-      `[RT] Square: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `s=1/2, Q_edge=${Q_edge.toFixed(6)}`
-    );
+    MetaLog.polyhedron("Square", "{4}", {
+      construction: "RT-pure (√2)",
+      edgeQ: Q_edge,
+      edgeLength: Math.sqrt(Q_edge),
+      constructionLines: [
+        `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
+        `Star spread s: 1/2 = ${starSpread.toFixed(6)}`,
+      ],
+    });
 
     return {
       vertices,
@@ -377,10 +392,15 @@ export const Primitives = {
     const faces = options.showFace ? [[0, 1, 2, 3, 4]] : [];
     const Q_edge = 4 * starSpread * quadrance;
 
-    console.log(
-      `[RT] Pentagon: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `s=${starSpread.toFixed(6)}, Q_edge=${Q_edge.toFixed(6)}`
-    );
+    MetaLog.polyhedron("Pentagon", "{5}", {
+      construction: "RT-pure (φ)",
+      edgeQ: Q_edge,
+      edgeLength: Math.sqrt(Q_edge),
+      constructionLines: [
+        `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
+        `Star spread s: (5+√5)/8 = ${starSpread.toFixed(6)}`,
+      ],
+    });
 
     return {
       vertices,
@@ -433,10 +453,15 @@ export const Primitives = {
     const faces = options.showFace ? [[0, 1, 2, 3, 4, 5]] : [];
     const Q_edge = 4 * starSpread * quadrance; // = Q (edge = circumradius)
 
-    console.log(
-      `[RT] Hexagon: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `s=1/4, Q_edge=${Q_edge.toFixed(6)} (edge=R)`
-    );
+    MetaLog.polyhedron("Hexagon", "{6}", {
+      construction: "RT-pure (√3)",
+      edgeQ: Q_edge,
+      edgeLength: Math.sqrt(Q_edge),
+      constructionLines: [
+        `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
+        `Star spread s: 1/4 = ${starSpread.toFixed(6)} (edge=R)`,
+      ],
+    });
 
     return {
       vertices,
@@ -489,10 +514,15 @@ export const Primitives = {
     const faces = options.showFace ? [[0, 1, 2, 3, 4, 5, 6, 7]] : [];
     const Q_edge = 4 * starSpread * quadrance;
 
-    console.log(
-      `[RT] Octagon: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `s=${starSpread.toFixed(6)}, Q_edge=${Q_edge.toFixed(6)}`
-    );
+    MetaLog.polyhedron("Octagon", "{8}", {
+      construction: "RT-pure (√2)",
+      edgeQ: Q_edge,
+      edgeLength: Math.sqrt(Q_edge),
+      constructionLines: [
+        `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
+        `Star spread s: (2-√2)/4 = ${starSpread.toFixed(6)}`,
+      ],
+    });
 
     return {
       vertices,
@@ -561,10 +591,16 @@ export const Primitives = {
     const starSpread = RT.PureCubics.nonagon.starSpread();
     const Q_edge = 4 * starSpread * quadrance;
 
-    console.log(
-      `[RT] Nonagon: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `s=${starSpread.toFixed(6)} (3×Triangle @ 40°, cubic-cached)`
-    );
+    MetaLog.polyhedron("Nonagon", "{9}", {
+      construction: "Cubic-algebraic (3×Triangle @ 40°)",
+      edgeQ: Q_edge,
+      edgeLength: Math.sqrt(Q_edge),
+      constructionLines: [
+        `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
+        `Star spread s: ${starSpread.toFixed(6)} (cubic-cached)`,
+        `Cubic: 8x³ - 6x - 1 = 0 (cos 20°)`,
+      ],
+    });
 
     return {
       vertices,
@@ -630,10 +666,16 @@ export const Primitives = {
     const starSpread = RT.PureCubics.heptagon.starSpread();
     const Q_edge = 4 * starSpread * quadrance;
 
-    console.log(
-      `[RT] Heptagon: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `s=${starSpread.toFixed(6)} (cubic-cached)`
-    );
+    MetaLog.polyhedron("Heptagon", "{7}", {
+      construction: "Cubic-algebraic (direct)",
+      edgeQ: Q_edge,
+      edgeLength: Math.sqrt(Q_edge),
+      constructionLines: [
+        `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
+        `Star spread s: ${starSpread.toFixed(6)} (cubic-cached)`,
+        `Cubic: 8x³ - 4x² - 4x + 1 = 0 (cos 2π/7)`,
+      ],
+    });
 
     return {
       vertices,
@@ -695,10 +737,15 @@ export const Primitives = {
     const faces = options.showFace ? [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]] : [];
     const Q_edge = 4 * starSpread * quadrance;
 
-    console.log(
-      `[RT] Decagon: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `s=${starSpread.toFixed(6)}, Q_edge=${Q_edge.toFixed(6)}`
-    );
+    MetaLog.polyhedron("Decagon", "{10}", {
+      construction: "RT-pure (φ)",
+      edgeQ: Q_edge,
+      edgeLength: Math.sqrt(Q_edge),
+      constructionLines: [
+        `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
+        `Star spread s: (3-√5)/8 = ${starSpread.toFixed(6)}`,
+      ],
+    });
 
     return {
       vertices,
@@ -760,10 +807,15 @@ export const Primitives = {
       : [];
     const Q_edge = 4 * starSpread * quadrance;
 
-    console.log(
-      `[RT] Dodecagon: Q_R=${quadrance.toFixed(6)}, R=${R.toFixed(6)}, ` +
-        `s=${starSpread.toFixed(6)}, Q_edge=${Q_edge.toFixed(6)}`
-    );
+    MetaLog.polyhedron("Dodecagon", "{12}", {
+      construction: "RT-pure (√2, √3)",
+      edgeQ: Q_edge,
+      edgeLength: Math.sqrt(Q_edge),
+      constructionLines: [
+        `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
+        `Star spread s: (2-√3)/4 = ${starSpread.toFixed(6)}`,
+      ],
+    });
 
     return {
       vertices,
@@ -887,10 +939,16 @@ export const Primitives = {
     // Base edge quadrance from polygon metadata
     const baseEdgeQ = basePolygon.metadata.edgeQuadrance;
 
-    console.log(
-      `[RT] Prism (${n}-gon): Q_R=${baseQuadrance.toFixed(6)}, Q_H=${heightQuadrance.toFixed(6)}, ` +
-        `V=${vertices.length}, E=${edges.length}, F=${showFaces ? n + 2 : 0}, rtPure=${basePolygon.metadata.rtPure}`
-    );
+    MetaLog.polyhedron(`Prism (${n}-gon)`, "", {
+      V: vertices.length,
+      E: edges.length,
+      F: showFaces ? n + 2 : 0,
+      edgeQ: baseEdgeQ,
+      constructionLines: [
+        `Q_R: ${baseQuadrance.toFixed(6)}, Q_H: ${heightQuadrance.toFixed(6)}`,
+        `RT-pure: ${basePolygon.metadata.rtPure}`,
+      ],
+    });
 
     return {
       vertices,
@@ -985,10 +1043,15 @@ export const Primitives = {
     const slantQuadrance = baseQuadrance + heightQuadrance;
     const baseEdgeQ = basePolygon.metadata.edgeQuadrance;
 
-    console.log(
-      `[RT] Cone (${n}-gon): Q_R=${baseQuadrance.toFixed(6)}, Q_H=${heightQuadrance.toFixed(6)}, ` +
-        `Q_slant=${slantQuadrance.toFixed(6)}, V=${vertices.length}, E=${edges.length}, F=${showFaces ? n + 1 : 0}`
-    );
+    MetaLog.polyhedron(`Cone (${n}-gon)`, "", {
+      V: vertices.length,
+      E: edges.length,
+      F: showFaces ? n + 1 : 0,
+      edgeQ: baseEdgeQ,
+      constructionLines: [
+        `Q_R: ${baseQuadrance.toFixed(6)}, Q_H: ${heightQuadrance.toFixed(6)}, Q_slant: ${slantQuadrance.toFixed(6)}`,
+      ],
+    });
 
     return {
       vertices,
@@ -1032,8 +1095,9 @@ export const Primitives = {
     // Note: n=24 and n=36 are NOT RT-pure (not Gauss-Wantzel constructible)
     result.metadata.rtPure = false;
 
-    console.log(
-      `[RT] Cylinder (${sides}-gon prism): resolution=${resolution}, rtPure=false`
+    MetaLog.log(
+      MetaLog.SUMMARY,
+      `  Cylinder (${sides}-gon prism): resolution=${resolution}, rtPure=false`
     );
 
     return result;

@@ -15,6 +15,7 @@
 import { RT } from "./rt-math.js";
 import { Primitives } from "./rt-primitives.js";
 import { QuadrayPolyhedra } from "./rt-quadray-polyhedra.js";
+import { MetaLog } from "./rt-metalog.js";
 
 // Access THREE.js from global scope (set by main HTML)
 
@@ -101,11 +102,13 @@ export const Polyhedra = {
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.cube(); // S = 1 (perpendicular faces)
-    if (!options.silent) {
-      console.log(
-        `Cube: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread} (perpendicular)`
-      );
-    }
+    MetaLog.polyhedron("Cube", "{4,3}", {
+      V: 8, E: 12, F: 6,
+      edgeQ: expectedQ,
+      maxError,
+      faceSpread,
+      faceSpreadFraction: "1 (perpendicular)",
+    });
 
     return { vertices, edges, faces, faceSpread };
   },
@@ -115,7 +118,7 @@ export const Polyhedra = {
    * Uses alternating vertices (every other corner)
    * Edge quadrance Q = 8 (edge length = 2√2)
    * @param {number} halfSize - Half the edge length of bounding cube
-   * @param {Object} options - {silent: boolean} - Skip logging for utility uses
+   * @param {Object} options - Optional configuration
    */
   tetrahedron: (halfSize = 1, options = {}) => {
     const s = halfSize;
@@ -151,11 +154,13 @@ export const Polyhedra = {
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.tetrahedron(); // S = 8/9 (Wildberger Ch.26)
-    if (!options.silent) {
-      console.log(
-        `Tetrahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread.toFixed(6)} (8/9)`
-      );
-    }
+    MetaLog.polyhedron("Tetrahedron", "{3,3}", {
+      V: 4, E: 6, F: 4,
+      edgeQ: expectedQ,
+      maxError,
+      faceSpread,
+      faceSpreadFraction: "8/9",
+    });
 
     return { vertices, edges, faces, faceSpread };
   },
@@ -174,11 +179,11 @@ export const Polyhedra = {
    *   - Creates perfect visual symmetry in stella octangula display
    *
    * @param {number} halfSize - Half the edge length of bounding cube
-   * @param {Object} options - {silent: boolean} - Skip logging for utility uses (e.g., WXYZ basis arrows)
+   * @param {Object} options - Optional configuration (e.g., WXYZ basis arrows)
    */
   dualTetrahedron: (halfSize = 1, options = {}) => {
-    // Get base tetrahedron geometry (pass silent option to skip its logging too)
-    const base = Polyhedra.tetrahedron(halfSize, { silent: options.silent });
+    // Get base tetrahedron geometry
+    const base = Polyhedra.tetrahedron(halfSize);
 
     // Invert all vertices (multiply by -1)
     const vertices = base.vertices.map(v => v.clone().multiplyScalar(-1));
@@ -193,11 +198,11 @@ export const Polyhedra = {
     const expectedQ = 8 * halfSize * halfSize; // Q = (2√2·s)² = 8s²
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
-    if (!options.silent) {
-      console.log(
-        `Dual Tetrahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}`
-      );
-    }
+    MetaLog.polyhedron("Dual Tetrahedron", "{3,3}", {
+      V: 4, E: 6, F: 4,
+      edgeQ: expectedQ,
+      maxError,
+    });
 
     return { vertices, edges, faces };
   },
@@ -224,7 +229,7 @@ export const Polyhedra = {
    *
    * @param {number} halfSize - Scale factor (base tetrahedron bounding cube half-size)
    * @param {number} truncation - Truncation parameter t ∈ [0, 0.5] (default: 1/3)
-   * @param {Object} options - {silent: boolean} - Skip logging for utility uses
+   * @param {Object} options - Optional configuration
    * @returns {Object} - {vertices, edges, faces}
    */
   truncatedTetrahedron: (halfSize = 1, truncation = 1 / 3, options = {}) => {
@@ -259,11 +264,7 @@ export const Polyhedra = {
         [0, 2, 3],
         [1, 3, 2],
       ];
-      if (!options.silent) {
-        console.log(
-          `Truncated Tetrahedron: t=0 (base tetrahedron), 4 vertices`
-        );
-      }
+      MetaLog.log(MetaLog.SUMMARY, `  Truncated Tetrahedron: t=0 (base tetrahedron), 4 vertices`);
       return { vertices, edges, faces };
     }
 
@@ -306,11 +307,7 @@ export const Polyhedra = {
         [5, 1, 3],
       ];
 
-      if (!options.silent) {
-        console.log(
-          `Truncated Tetrahedron: t=0.5 (octahedron limit), 6 vertices`
-        );
-      }
+      MetaLog.log(MetaLog.SUMMARY, `  Truncated Tetrahedron: t=0.5 (octahedron limit), 6 vertices`);
       return { vertices, edges, faces };
     }
 
@@ -452,17 +449,17 @@ export const Polyhedra = {
     const edges = Array.from(edgeSet).map(e => e.split(",").map(Number));
 
     // RT VALIDATION
-    if (!options.silent) {
-      const sampleQ = RT.quadrance(
-        vertices[edges[0][0]],
-        vertices[edges[0][1]]
-      );
-      const validation = RT.validateEdges(vertices, edges, sampleQ);
-      const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
-      console.log(
-        `Truncated Tetrahedron: t=${t.toFixed(4)}, ${vertices.length} vertices, Max Q error=${maxError.toExponential(2)}`
-      );
-    }
+    const sampleQ = RT.quadrance(
+      vertices[edges[0][0]],
+      vertices[edges[0][1]]
+    );
+    const validation = RT.validateEdges(vertices, edges, sampleQ);
+    const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
+    MetaLog.polyhedron("Truncated Tetrahedron", "", {
+      V: vertices.length, E: edges.length, F: faces.length,
+      maxError,
+      constructionLines: [`t=${t.toFixed(4)}`],
+    });
 
     return { vertices, edges, faces };
   },
@@ -474,13 +471,11 @@ export const Polyhedra = {
    *
    * @param {number} halfSize - Scale factor (base tetrahedron bounding cube half-size)
    * @param {number} truncation - Truncation parameter t ∈ [0, 0.5] (default: 1/3)
-   * @param {Object} options - {silent: boolean}
+   * @param {Object} options - Optional configuration
    * @returns {Object} - {vertices, edges, faces}
    */
   truncatedDualTetrahedron: (halfSize = 1, truncation = 1 / 3, options = {}) => {
-    const base = Polyhedra.truncatedTetrahedron(halfSize, truncation, {
-      silent: true,
-    });
+    const base = Polyhedra.truncatedTetrahedron(halfSize, truncation);
 
     // Invert all vertices (multiply by -1) — same as dualTetrahedron pattern
     const vertices = base.vertices.map(v => v.clone().multiplyScalar(-1));
@@ -491,12 +486,9 @@ export const Polyhedra = {
     // Edges remain topologically identical
     const edges = base.edges;
 
-    if (!options.silent) {
-      const t = Math.max(0, Math.min(0.5, truncation));
-      console.log(
-        `Truncated Dual Tetrahedron: t=${t.toFixed(4)}, ${vertices.length} vertices`
-      );
-    }
+    MetaLog.log(MetaLog.SUMMARY,
+      `  Truncated Dual Tetrahedron: t=${Math.max(0, Math.min(0.5, truncation)).toFixed(4)}, ${vertices.length} vertices`
+    );
 
     return { vertices, edges, faces };
   },
@@ -518,7 +510,7 @@ export const Polyhedra = {
     options = {}
   ) => {
     // Get base geodesic tetrahedron (subdivided and projected)
-    const base = Polyhedra.geodesicTetrahedron(halfSize, frequency, projection, { silent: options.silent });
+    const base = Polyhedra.geodesicTetrahedron(halfSize, frequency, projection);
 
     // Invert all vertices (multiply by -1) to create dual
     const vertices = base.vertices.map(v => v.clone().multiplyScalar(-1));
@@ -529,11 +521,9 @@ export const Polyhedra = {
     // Edges remain topologically identical
     const edges = base.edges;
 
-    if (!options.silent) {
-      console.log(
-        `[RT] Geodesic Dual Tetrahedron: frequency=${frequency}, projection=${projection}, vertices=${vertices.length}`
-      );
-    }
+    MetaLog.identity("Geodesic Dual Tetrahedron", "", {
+      construction: `freq=${frequency}, projection=${projection}, V=${vertices.length}`,
+    });
 
     return { vertices, edges, faces };
   },
@@ -597,11 +587,13 @@ export const Polyhedra = {
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.octahedron(); // S = 8/9 (same as tetrahedron!)
-    if (!options.silent) {
-      console.log(
-        `Octahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread.toFixed(6)} (8/9, same as tet)`
-      );
-    }
+    MetaLog.polyhedron("Octahedron", "{3,4}", {
+      V: 6, E: 12, F: 8,
+      edgeQ: expectedQ,
+      maxError,
+      faceSpread,
+      faceSpreadFraction: "8/9",
+    });
 
     return { vertices, edges, faces, faceSpread };
   },
@@ -646,32 +638,19 @@ export const Polyhedra = {
     const b = bSym.toDecimal(); // Only now do we expand to decimal
 
     // Educational console output showing symbolic algebra
-    if (!options.silent) {
-      console.log(
-        `[PurePhi] Icosahedron - High-precision symbolic construction:`
-      );
-      console.log(`  φ = ${phi.toString()} = ${phi.toDecimal().toFixed(15)}`);
-      console.log(
-        `  φ² = ${phiSq.toString()} = ${phiSq.toDecimal().toFixed(15)} (identity: φ + 1)`
-      );
-      console.log(
-        `  1 + φ² = ${onePlusPhiSq.toString()} = ${onePlusPhiSq.toDecimal().toFixed(15)}`
-      );
-      console.log(`  Normalization: 1/√(1 + φ²) = ${normFactor.toFixed(15)}`);
-      console.log(`  a = 1·norm = ${a.toFixed(15)}`);
-      console.log(`  b = φ·norm = ${b.toFixed(15)}`);
-      console.log(
-        `  Precision: 15 decimal places maintained via symbolic algebra`
-      );
-
-      // Verify algebraic identity: φ² = φ + 1
-      const phi_decimal = phi.toDecimal();
-      const phiSq_decimal = phiSq.toDecimal();
-      const identity_error = Math.abs(phiSq_decimal - (phi_decimal + 1));
-      console.log(
-        `  Identity check: |φ² - (φ + 1)| = ${identity_error.toExponential()} (should be ~0)`
-      );
-    }
+    MetaLog.identity("Icosahedron", "{3,5}", {
+      construction: "PurePhi symbolic (high-precision)",
+      halfSize,
+    });
+    MetaLog.construction([
+      `φ = ${phi.toString()} = ${phi.toDecimal().toFixed(15)}`,
+      `φ² = ${phiSq.toString()} = ${phiSq.toDecimal().toFixed(15)} (identity: φ + 1)`,
+      `1 + φ² = ${onePlusPhiSq.toString()} = ${onePlusPhiSq.toDecimal().toFixed(15)}`,
+      `Normalization: 1/√(1 + φ²) = ${normFactor.toFixed(15)}`,
+      `a = 1·norm = ${a.toFixed(15)}`,
+      `b = φ·norm = ${b.toFixed(15)}`,
+      `Identity check: |φ² - (φ + 1)| = ${Math.abs(phiSq.toDecimal() - (phi.toDecimal() + 1)).toExponential()} (should be ~0)`,
+    ]);
 
     // Z-up convention: Three orthogonal golden rectangles
     // Note: Vertex order unchanged (maintains edge/face topology)
@@ -771,11 +750,13 @@ export const Polyhedra = {
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.icosahedron(); // S = 4/9 (Wildberger Ch.26)
-    if (!options.silent) {
-      console.log(
-        `Icosahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread.toFixed(6)} (4/9)`
-      );
-    }
+    MetaLog.rtMetrics({
+      V: 12, E: 30, F: 20,
+      edgeQ: expectedQ,
+      maxError,
+      faceSpread,
+      faceSpreadFraction: "4/9",
+    });
 
     return { vertices, edges, faces, faceSpread };
   },
@@ -803,7 +784,7 @@ export const Polyhedra = {
     const truncTetVertices = truncTet.vertices;
 
     // Get tetrahedron vertices at same scale
-    const tet = Polyhedra.tetrahedron(scale, { silent: true });
+    const tet = Polyhedra.tetrahedron(scale);
     const tetVertices = tet.vertices;
 
     // Combine vertices: TruncTet (0-11) + Tet (12-15)
@@ -883,8 +864,8 @@ export const Polyhedra = {
    */
   compoundTruncTetDualTet: (scale = 1, truncation = 1 / 3) => {
     // Get canonical geometries (half_size=3 gives integer-like [±1,±1,±3] coords)
-    const truncTet = Polyhedra.truncatedTetrahedron(3, truncation, { silent: true });
-    const dualTet = Polyhedra.dualTetrahedron(1, { silent: true });
+    const truncTet = Polyhedra.truncatedTetrahedron(3, truncation);
+    const dualTet = Polyhedra.dualTetrahedron(1);
 
     // Normalize all vertices to unit sphere, then scale to desired radius
     // This ensures both components have equal reach from origin
@@ -978,7 +959,7 @@ export const Polyhedra = {
     // Get icosahedron at unit scale
     // Icosahedron with halfSize=1 has circumradius = 1.0
     // (verified: vertex [0, a, b] has distance sqrt(a² + b²) = 1.0)
-    const icosa = Polyhedra.icosahedron(1.0, { silent: true });
+    const icosa = Polyhedra.icosahedron(1.0);
     const icosaRadius = 1.0;
 
     // Scale icosahedron to match truncated tetrahedron bounding sphere
@@ -1074,26 +1055,21 @@ export const Polyhedra = {
     // Scale icosahedron to match this radius for face dual alignment
     const dualRadius = phiVal * halfSize;
 
-    if (!options.silent) {
-      console.log(
-        `[ThreeRT] Dual Icosahedron RT construction (PurePhi Method 2):`
-      );
-      console.log(`  Dodecahedron halfSize: ${halfSize.toFixed(3)}`);
-      console.log(
-        `  Dodecahedron inradius (face center): φ·s = ${dualRadius.toFixed(15)}`
-      );
-      console.log(
-        `  [PurePhi] φ = ${phi.toString()} = ${phiVal.toFixed(15)} (symbolic constant)`
-      );
-      console.log(
-        `  Icosahedron vertex radius: ${dualRadius.toFixed(15)} (matches dodec inradius)`
-      );
-      console.log(`  RT ROTATION: Spread s=1, Cross c=0 (exact integers!)`);
-      console.log(`  Transform: (x,y,z) → (y,-x,z) - pure integer matrix`);
-    }
+    MetaLog.identity("Dual Icosahedron", "", {
+      construction: "PurePhi Method 2 + RT rotation",
+      halfSize,
+    });
+    MetaLog.construction([
+      `Dodecahedron halfSize: ${halfSize.toFixed(3)}`,
+      `Dodecahedron inradius (face center): φ·s = ${dualRadius.toFixed(15)}`,
+      `[PurePhi] φ = ${phi.toString()} = ${phiVal.toFixed(15)}`,
+      `Icosahedron vertex radius: ${dualRadius.toFixed(15)} (matches dodec inradius)`,
+      `RT ROTATION: Spread s=1, Cross c=0 (exact integers!)`,
+      `Transform: (x,y,z) → (y,-x,z) - pure integer matrix`,
+    ]);
 
     // Get base icosahedron geometry at dual scale
-    const base = Polyhedra.icosahedron(dualRadius, { silent: true });
+    const base = Polyhedra.icosahedron(dualRadius);
 
     // Apply RT-pure Z-rotation: -90° clockwise
     // Spread s = sin²(-π/2) = 1 (exact integer!)
@@ -1115,11 +1091,7 @@ export const Polyhedra = {
 
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
-    if (!options.silent) {
-      console.log(
-        `Dual Icosahedron: Expected Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}`
-      );
-    }
+    MetaLog.rtMetrics({ V: 12, E: 30, F: 20, edgeQ: expectedQ, maxError });
 
     return { vertices, edges, faces };
   },
@@ -1150,7 +1122,6 @@ export const Polyhedra = {
       dualRadius,
       frequency,
       projection,
-      { silent: options.silent }
     );
 
     // Apply RT-pure Z-rotation: -90° clockwise
@@ -1161,11 +1132,9 @@ export const Polyhedra = {
     const edges = base.edges;
     const faces = base.faces;
 
-    if (!options.silent) {
-      console.log(
-        `[RT] Geodesic Dual Icosahedron: frequency=${frequency}, projection=${projection}, vertices=${vertices.length}`
-      );
-    }
+    MetaLog.identity("Geodesic Dual Icosahedron", "", {
+      construction: `freq=${frequency}, projection=${projection}, V=${vertices.length}`,
+    });
 
     return { vertices, edges, faces };
   },
@@ -1325,11 +1294,9 @@ export const Polyhedra = {
 
     const newEdges = Array.from(edgeSet).map(e => e.split(",").map(Number));
 
-    if (!options.silent) {
-      console.log(
-        `[RT] Geodesic subdivision: freq=${frequency}, divisions=${divisions}, faces=${newFaces.length} (expected: ${faces.length * divisions * divisions})`
-      );
-    }
+    MetaLog.log(MetaLog.SUMMARY,
+      `  Geodesic subdivision: freq=${frequency}, divisions=${divisions}, faces=${newFaces.length} (expected: ${faces.length * divisions * divisions})`
+    );
 
     return { vertices: newVertices, edges: newEdges, faces: newFaces };
   },
@@ -1349,24 +1316,18 @@ export const Polyhedra = {
     //                            3 = each edge trisected (3 segments), etc.
 
     // 1. Start with pure algebraic icosahedron
-    const base = Polyhedra.icosahedron(halfSize, { silent: options.silent });
+    const base = Polyhedra.icosahedron(halfSize);
 
-    if (!options.silent) {
-      console.log(
-        `[RT] Geodesic Icosahedron: frequency=${frequency}, projection=${projection}`
-      );
-      console.log(
-        `  Base vertices: ${base.vertices.length}, faces: ${base.faces.length}`
-      );
-    }
+    MetaLog.identity("Geodesic Icosahedron", "", {
+      construction: `freq=${frequency}, projection=${projection}`,
+    });
+    MetaLog.log(MetaLog.SUMMARY,
+      `  Base vertices: ${base.vertices.length}, faces: ${base.faces.length}`
+    );
 
     // Frequency 1 = return base icosahedron (no subdivision, no sphere projection)
     if (frequency === 1) {
-      if (!options.silent) {
-        console.log(
-          `  Frequency 1: Returning base icosahedron (20 faces, undivided edges)`
-        );
-      }
+      MetaLog.log(MetaLog.SUMMARY, `  Frequency 1: Returning base icosahedron (20 faces, undivided edges)`);
       return base;
     }
 
@@ -1374,15 +1335,12 @@ export const Polyhedra = {
     const subdivided = Polyhedra.subdivideTriangles(
       base.vertices,
       base.faces,
-      frequency,
-      { silent: options.silent }
+      frequency
     );
 
-    if (!options.silent) {
-      console.log(
-        `  Subdivided vertices: ${subdivided.vertices.length}, faces: ${subdivided.faces.length}`
-      );
-    }
+    MetaLog.log(MetaLog.SUMMARY,
+      `  Subdivided vertices: ${subdivided.vertices.length}, faces: ${subdivided.faces.length}`
+    );
 
     // Phase 2.9: RT-PURE Projection options (Off, InSphere, MidSphere, OutSphere)
     // NO TRIG! Pure quadrance relationships using golden ratio φ
@@ -1390,7 +1348,7 @@ export const Polyhedra = {
 
     if (projection === "off") {
       // No sphere projection - return flat subdivided mesh
-      if (!options.silent) console.log(`  Projection: OFF (flat subdivided mesh)`);
+      MetaLog.log(MetaLog.SUMMARY, `  Projection: OFF (flat subdivided mesh)`);
       return {
         vertices: subdivided.vertices,
         edges: subdivided.edges,
@@ -1417,20 +1375,12 @@ export const Polyhedra = {
       const ratio_in_sq = numerator.toDecimal() / denominator.toDecimal();
       Q_target = halfSize * halfSize * ratio_in_sq;
 
-      if (!options.silent) {
-        console.log(
-          `  Projection: InSphere (perpendicular to face planes, RT-pure + PurePhi)`
-        );
-        console.log(
-          `  [PurePhi] Numerator: ${numerator.toString()} = ${numerator.toDecimal().toFixed(15)}`
-        );
-        console.log(
-          `  [PurePhi] Denominator: ${denominator.toString()} = ${denominator.toDecimal().toFixed(15)}`
-        );
-        console.log(
-          `  RT: Q_in/Q_out = (3φ+2)/[3(φ+2)] = ${ratio_in_sq.toFixed(15)}`
-        );
-      }
+      MetaLog.spheres({ projection: "InSphere (RT-pure + PurePhi)", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.construction([
+        `[PurePhi] Numerator: ${numerator.toString()} = ${numerator.toDecimal().toFixed(15)}`,
+        `[PurePhi] Denominator: ${denominator.toString()} = ${denominator.toDecimal().toFixed(15)}`,
+        `RT: Q_in/Q_out = (3φ+2)/[3(φ+2)] = ${ratio_in_sq.toFixed(15)}`,
+      ]);
     } else if (projection === "mid") {
       // RT-PURE + PUREPHI MidSphere: Distance to edge midpoints
       // For icosahedron: Q_mid = Q_out · φ²/(φ+2) = Q_out · (φ+1)/(φ+2)
@@ -1448,36 +1398,22 @@ export const Polyhedra = {
       const ratio_mid_sq = phiSq.toDecimal() / phiPlusTwo.toDecimal();
       Q_target = halfSize * halfSize * ratio_mid_sq;
 
-      if (!options.silent) {
-        console.log(
-          `  Projection: MidSphere (distance to edge midpoints, RT-pure + PurePhi)`
-        );
-        console.log(
-          `  [PurePhi] φ² = ${phiSq.toString()} = ${phiSq.toDecimal().toFixed(15)} (identity: φ + 1)`
-        );
-        console.log(
-          `  [PurePhi] φ + 2 = ${phiPlusTwo.toString()} = ${phiPlusTwo.toDecimal().toFixed(15)}`
-        );
-        console.log(
-          `  RT: Q_mid/Q_out = φ²/(φ+2) = (φ+1)/(φ+2) = ${ratio_mid_sq.toFixed(15)}`
-        );
-      }
+      MetaLog.spheres({ projection: "MidSphere (RT-pure + PurePhi)", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
+      MetaLog.construction([
+        `[PurePhi] φ² = ${phiSq.toString()} = ${phiSq.toDecimal().toFixed(15)} (identity: φ + 1)`,
+        `[PurePhi] φ + 2 = ${phiPlusTwo.toString()} = ${phiPlusTwo.toDecimal().toFixed(15)}`,
+        `RT: Q_mid/Q_out = φ²/(φ+2) = (φ+1)/(φ+2) = ${ratio_mid_sq.toFixed(15)}`,
+      ]);
     } else if (projection === "out") {
       // OutSphere: Through vertices (Fuller's true geodesic)
       Q_target = halfSize * halfSize;
-      if (!options.silent) {
-        console.log(
-          `  Projection: OutSphere (through vertices - Fuller geodesic)`
-        );
-      }
+      MetaLog.spheres({ projection: "OutSphere (Fuller geodesic)", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
     }
 
     const r_target = Math.sqrt(Q_target);
-    if (!options.silent) {
-      console.log(
-        `  Target quadrance: Q = ${Q_target.toFixed(6)}, r = ${r_target.toFixed(6)}`
-      );
-    }
+    MetaLog.log(MetaLog.SUMMARY,
+      `  Target quadrance: Q = ${Q_target.toFixed(6)}, r = ${r_target.toFixed(6)}`
+    );
 
     // 3. Project to sphere - ONLY NOW do we normalize
     const projected = subdivided.vertices.map(v => {
@@ -1496,12 +1432,8 @@ export const Polyhedra = {
     const avgQ =
       validation.reduce((sum, v) => sum + v.Q, 0) / validation.length;
 
-    if (!options.silent) {
-      console.log(
-        `  Edge quadrance: avg=${avgQ.toFixed(6)}, max error=${maxError.toExponential(2)}`
-      );
-      console.log(`  RT PURITY: Normalization deferred until final step ✓`);
-    }
+    MetaLog.rtMetrics({ edgeQ: avgQ, maxError });
+    MetaLog.log(MetaLog.DETAILED, `  RT PURITY: Normalization deferred until final step`);
 
     return {
       vertices: projected,
@@ -1526,24 +1458,18 @@ export const Polyhedra = {
     //                            3 = each edge trisected (3 segments), etc.
 
     // 1. Start with pure algebraic tetrahedron
-    const base = Polyhedra.tetrahedron(halfSize, { silent: options.silent });
+    const base = Polyhedra.tetrahedron(halfSize);
 
-    if (!options.silent) {
-      console.log(
-        `[RT] Geodesic Tetrahedron: frequency=${frequency}, projection=${projection}`
-      );
-      console.log(
-        `  Base vertices: ${base.vertices.length}, faces: ${base.faces.length}`
-      );
-    }
+    MetaLog.identity("Geodesic Tetrahedron", "", {
+      construction: `freq=${frequency}, projection=${projection}`,
+    });
+    MetaLog.log(MetaLog.SUMMARY,
+      `  Base vertices: ${base.vertices.length}, faces: ${base.faces.length}`
+    );
 
     // Frequency 1 = return base tetrahedron (no subdivision, no sphere projection)
     if (frequency === 1) {
-      if (!options.silent) {
-        console.log(
-          `  Frequency 1: Returning base tetrahedron (4 faces, undivided edges)`
-        );
-      }
+      MetaLog.log(MetaLog.SUMMARY, `  Frequency 1: Returning base tetrahedron (4 faces, undivided edges)`);
       return base;
     }
 
@@ -1551,15 +1477,12 @@ export const Polyhedra = {
     const subdivided = Polyhedra.subdivideTriangles(
       base.vertices,
       base.faces,
-      frequency,
-      { silent: options.silent }
+      frequency
     );
 
-    if (!options.silent) {
-      console.log(
-        `  Subdivided vertices: ${subdivided.vertices.length}, faces: ${subdivided.faces.length}`
-      );
-    }
+    MetaLog.log(MetaLog.SUMMARY,
+      `  Subdivided vertices: ${subdivided.vertices.length}, faces: ${subdivided.faces.length}`
+    );
 
     // 3. Projection options (Phase 2.9)
     let finalVertices;
@@ -1567,7 +1490,7 @@ export const Polyhedra = {
 
     if (projection === "off") {
       // No projection - return flat subdivided mesh
-      if (!options.silent) console.log(`  Projection: OFF (flat subdivided faces)`);
+      MetaLog.log(MetaLog.SUMMARY, `  Projection: OFF (flat subdivided faces)`);
       return {
         vertices: subdivided.vertices,
         edges: subdivided.edges,
@@ -1576,19 +1499,15 @@ export const Polyhedra = {
     } else if (projection === "in") {
       // InSphere: tangent to face centers, Q = s²/3
       Q_target = (halfSize * halfSize) / 3;
-      if (!options.silent) console.log(`  Projection: InSphere (Q = s²/3 = ${Q_target.toFixed(6)})`);
+      MetaLog.spheres({ projection: "InSphere", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
     } else if (projection === "mid") {
       // MidSphere: tangent to edge centers, Q = s²
       Q_target = halfSize * halfSize;
-      if (!options.silent) console.log(`  Projection: MidSphere (Q = s² = ${Q_target.toFixed(6)})`);
+      MetaLog.spheres({ projection: "MidSphere", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
     } else if (projection === "out") {
       // OutSphere: through vertices, Q = 3s² (Fuller's geodesic)
       Q_target = 3 * halfSize * halfSize;
-      if (!options.silent) {
-        console.log(
-          `  Projection: OutSphere (Q = 3s² = ${Q_target.toFixed(6)}) - Fuller geodesic`
-        );
-      }
+      MetaLog.spheres({ projection: "OutSphere (Fuller geodesic)", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
     }
 
     // Project to target sphere
@@ -1612,15 +1531,8 @@ export const Polyhedra = {
     const avgQ =
       validation.reduce((sum, v) => sum + v.Q, 0) / validation.length;
 
-    if (!options.silent) {
-      console.log(`  Target radius: r = √Q = ${r_target.toFixed(6)}`);
-      console.log(
-        `  Edge quadrance: avg=${avgQ.toFixed(6)}, max error=${maxError.toExponential(2)}`
-      );
-      console.log(
-        `  RT PURITY: Quadrance calculated algebraically, √ only at final projection ✓`
-      );
-    }
+    MetaLog.rtMetrics({ edgeQ: avgQ, maxError });
+    MetaLog.log(MetaLog.DETAILED, `  RT PURITY: Quadrance calculated algebraically, √ only at final projection`);
 
     return {
       vertices: finalVertices,
@@ -1645,24 +1557,18 @@ export const Polyhedra = {
     //                            3 = each edge trisected (3 segments), etc.
 
     // 1. Start with pure algebraic octahedron
-    const base = Polyhedra.octahedron(halfSize, { silent: options.silent });
+    const base = Polyhedra.octahedron(halfSize);
 
-    if (!options.silent) {
-      console.log(
-        `[RT] Geodesic Octahedron: frequency=${frequency}, projection=${projection}`
-      );
-      console.log(
-        `  Base vertices: ${base.vertices.length}, faces: ${base.faces.length}`
-      );
-    }
+    MetaLog.identity("Geodesic Octahedron", "", {
+      construction: `freq=${frequency}, projection=${projection}`,
+    });
+    MetaLog.log(MetaLog.SUMMARY,
+      `  Base vertices: ${base.vertices.length}, faces: ${base.faces.length}`
+    );
 
     // Frequency 1 = return base octahedron (no subdivision, no sphere projection)
     if (frequency === 1) {
-      if (!options.silent) {
-        console.log(
-          `  Frequency 1: Returning base octahedron (8 faces, undivided edges)`
-        );
-      }
+      MetaLog.log(MetaLog.SUMMARY, `  Frequency 1: Returning base octahedron (8 faces, undivided edges)`);
       return base;
     }
 
@@ -1670,22 +1576,19 @@ export const Polyhedra = {
     const subdivided = Polyhedra.subdivideTriangles(
       base.vertices,
       base.faces,
-      frequency,
-      { silent: options.silent }
+      frequency
     );
 
-    if (!options.silent) {
-      console.log(
-        `  Subdivided vertices: ${subdivided.vertices.length}, faces: ${subdivided.faces.length}`
-      );
-    }
+    MetaLog.log(MetaLog.SUMMARY,
+      `  Subdivided vertices: ${subdivided.vertices.length}, faces: ${subdivided.faces.length}`
+    );
 
     // 3. Projection options (Phase 2.9)
     let finalVertices;
     let Q_target;
 
     if (projection === "off") {
-      if (!options.silent) console.log(`  Projection: OFF (flat subdivided faces)`);
+      MetaLog.log(MetaLog.SUMMARY, `  Projection: OFF (flat subdivided faces)`);
       return {
         vertices: subdivided.vertices,
         edges: subdivided.edges,
@@ -1694,23 +1597,15 @@ export const Polyhedra = {
     } else if (projection === "in") {
       // InSphere: tangent to face centers, Q = s²/3
       Q_target = (halfSize * halfSize) / 3;
-      if (!options.silent) console.log(`  Projection: InSphere (Q = s²/3 = ${Q_target.toFixed(6)})`);
+      MetaLog.spheres({ projection: "InSphere", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
     } else if (projection === "mid") {
       // MidSphere: tangent to edge centers, Q = s²/2
       Q_target = (halfSize * halfSize) / 2;
-      if (!options.silent) {
-        console.log(
-          `  Projection: MidSphere (Q = s²/2 = ${Q_target.toFixed(6)})`
-        );
-      }
+      MetaLog.spheres({ projection: "MidSphere", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
     } else if (projection === "out") {
       // OutSphere: through vertices, Q = s² (Fuller's geodesic)
       Q_target = halfSize * halfSize;
-      if (!options.silent) {
-        console.log(
-          `  Projection: OutSphere (Q = s² = ${Q_target.toFixed(6)}) - Fuller geodesic`
-        );
-      }
+      MetaLog.spheres({ projection: "OutSphere (Fuller geodesic)", targetQ: Q_target, targetRadius: Math.sqrt(Q_target) });
     }
 
     // Project to target sphere
@@ -1734,15 +1629,8 @@ export const Polyhedra = {
     const avgQ =
       validation.reduce((sum, v) => sum + v.Q, 0) / validation.length;
 
-    if (!options.silent) {
-      console.log(`  Target radius: r = √Q = ${r_target.toFixed(6)}`);
-      console.log(
-        `  Edge quadrance: avg=${avgQ.toFixed(6)}, max error=${maxError.toExponential(2)}`
-      );
-      console.log(
-        `  RT PURITY: Quadrance calculated algebraically, √ only at final projection ✓`
-      );
-    }
+    MetaLog.rtMetrics({ edgeQ: avgQ, maxError });
+    MetaLog.log(MetaLog.DETAILED, `  RT PURITY: Quadrance calculated algebraically, √ only at final projection`);
 
     return {
       vertices: finalVertices,
@@ -1779,16 +1667,15 @@ export const Polyhedra = {
     const phi = RT.PurePhi.constants.phi; // φ = (1 + √5)/2 - 15 decimal precision
     const invPhi = RT.PurePhi.constants.invPhi; // 1/φ = φ - 1 (algebraic identity!)
 
-    if (!options.silent) {
-      console.log(`[ThreeRT] Dodecahedron RT construction (PurePhi Method 2):`);
-      console.log(`  Cube half-size: ${s.toFixed(3)}`);
-      console.log(
-        `  [PurePhi] φ = ${phi.toString()} = ${phi.toDecimal().toFixed(15)} (symbolic constant)`
-      );
-      console.log(
-        `  [PurePhi] 1/φ = ${invPhi.toString()} = ${invPhi.toDecimal().toFixed(15)} (algebraic identity - no division!)`
-      );
-    }
+    MetaLog.identity("Dodecahedron", "{5,3}", {
+      construction: "PurePhi Method 2 (hip roof on cube)",
+      halfSize,
+    });
+    MetaLog.construction([
+      `Cube half-size: ${s.toFixed(3)}`,
+      `[PurePhi] φ = ${phi.toString()} = ${phi.toDecimal().toFixed(15)}`,
+      `[PurePhi] 1/φ = ${invPhi.toString()} = ${invPhi.toDecimal().toFixed(15)} (algebraic identity)`,
+    ]);
 
     // GPU boundary: expand symbolic constants to decimals for THREE.Vector3 creation
     const phiVal = phi.toDecimal();
@@ -1905,11 +1792,13 @@ export const Polyhedra = {
     const validation = RT.validateEdges(vertices, edges, sampleQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     const faceSpread = RT.FaceSpreads.dodecahedron(); // S = 4/5 (Wildberger Ch.26)
-    if (!options.silent) {
-      console.log(
-        `Dodecahedron: Edge Q=${sampleQ.toFixed(6)}, Max error=${maxError.toExponential(2)}, Face spread S=${faceSpread} (4/5)`
-      );
-    }
+    MetaLog.rtMetrics({
+      V: 20, E: 30, F: 12,
+      edgeQ: sampleQ,
+      maxError,
+      faceSpread,
+      faceSpreadFraction: "4/5",
+    });
 
     return { vertices, edges, faces, faceSpread };
   },
@@ -1936,17 +1825,15 @@ export const Polyhedra = {
     const t = s / sqrt2; // Cuboctahedron vertex distance: s/√2
     const u = t / 2; // Rhombic dodec octant vertex distance: (s/√2)/2 = s/(2√2)
 
-    if (!options.silent) {
-      console.log(
-        `[ThreeRT] Rhombic Dodecahedron RT construction (dual of cuboctahedron):`
-      );
-      console.log(`  HalfSize: s = ${s.toFixed(6)}`);
-      console.log(`  √2 = ${sqrt2.toFixed(6)} (cached, PureRadicals)`);
-      console.log(`  Cuboctahedron vertex distance: t = s/√2 = ${t.toFixed(6)}`);
-      console.log(
-        `  Rhombic dodec octant vertices: u = t/2 = s/(2√2) = ${u.toFixed(6)}`
-      );
-    }
+    MetaLog.identity("Rhombic Dodecahedron", "", {
+      construction: "Dual of cuboctahedron (PureRadicals √2)",
+      halfSize,
+    });
+    MetaLog.construction([
+      `√2 = ${sqrt2.toFixed(6)} (cached, PureRadicals)`,
+      `Cuboctahedron vertex distance: t = s/√2 = ${t.toFixed(6)}`,
+      `Rhombic dodec octant vertices: u = t/2 = s/(2√2) = ${u.toFixed(6)}`,
+    ]);
 
     // 14 vertices positioned to create planar rhombic faces
     const vertices = [
@@ -2037,11 +1924,7 @@ export const Polyhedra = {
     const expectedQ = (3 * t * t) / 4; // All edges have quadrance = 3t²/4 = 3s²/8
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
-    if (!options.silent) {
-      console.log(
-        `Rhombic Dodecahedron (dual): Expected edge Q=${expectedQ.toFixed(6)} (= 3s²/8), Max error=${maxError.toExponential(2)}`
-      );
-    }
+    MetaLog.rtMetrics({ V: 14, E: 24, F: 12, edgeQ: expectedQ, maxError });
 
     return { vertices, edges, faces };
   },
@@ -2066,16 +1949,14 @@ export const Polyhedra = {
     const sqrt2 = RT.PureRadicals.sqrt2();
     const t = s / sqrt2; // Edge midpoint distance from origin: s/√2
 
-    if (!options.silent) {
-      console.log(
-        `[ThreeRT] Cuboctahedron (Vector Equilibrium) RT construction:`
-      );
-      console.log(`  HalfSize: s = ${s.toFixed(6)}`);
-      console.log(`  √2 = ${sqrt2.toFixed(6)} (cached, PureRadicals)`);
-      console.log(
-        `  Vertex distance from origin: s/√2 = ${t.toFixed(6)} (rationalized!)`
-      );
-    }
+    MetaLog.identity("Cuboctahedron", "", {
+      construction: "Vector Equilibrium (PureRadicals √2)",
+      halfSize,
+    });
+    MetaLog.construction([
+      `√2 = ${sqrt2.toFixed(6)} (cached, PureRadicals)`,
+      `Vertex distance from origin: s/√2 = ${t.toFixed(6)} (rationalized!)`,
+    ]);
 
     // 12 vertices at edge midpoints of cube (alternating coordinates)
     // Pattern: two coords ±t, one coord 0 (all permutations)
@@ -2152,11 +2033,7 @@ export const Polyhedra = {
     const expectedQ = 2 * t * t; // Two perpendicular components of length t
     const validation = RT.validateEdges(vertices, edges, expectedQ);
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
-    if (!options.silent) {
-      console.log(
-        `Cuboctahedron: Expected edge Q=${expectedQ.toFixed(6)}, Max error=${maxError.toExponential(2)}`
-      );
-    }
+    MetaLog.rtMetrics({ V: 12, E: 24, F: 14, edgeQ: expectedQ, maxError });
 
     return { vertices, edges, faces };
   },

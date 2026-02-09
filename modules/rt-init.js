@@ -27,6 +27,9 @@ import { allBindings, getBindingStats } from "./rt-ui-binding-defs.js";
 // Phase 3 Modularization: Coordinate Display System (Jan 30, 2026)
 import { RTCoordinates } from "./rt-coordinates.js";
 
+// Centralized geometry logging (Feb 2026)
+import { MetaLog } from "./rt-metalog.js";
+
 // Phase 2b Modularization: Selection System - REVERTED
 // Selection is tightly coupled with gumball (~40 references to currentSelection)
 // Extracting selection without gumball creates artificial separation that adds
@@ -224,6 +227,31 @@ function startARTexplorer(
   // - Janus scale sliders (scaleSlider, tetScaleSlider) - complex inversion logic
   // - Geodesic projection radio buttons
   // - View controls, demo modals, data I/O (handled after line 1311)
+
+  // ========================================================================
+  // MetaLog: Centralized geometry logging (Feb 2026)
+  // ========================================================================
+  const urlLogLevel = MetaLog.initFromURL();
+  const advancedLoggingCheckbox = document.getElementById(
+    "enableAdvancedLogging"
+  );
+  if (advancedLoggingCheckbox) {
+    // Sync checkbox to URL param if present
+    if (urlLogLevel !== null && urlLogLevel >= MetaLog.SUMMARY) {
+      advancedLoggingCheckbox.checked = true;
+    }
+    advancedLoggingCheckbox.addEventListener("change", function () {
+      if (this.checked) {
+        // Only upgrade to SUMMARY if currently SILENT
+        // (Don't downgrade from DETAILED/DEBUG set via URL)
+        if (MetaLog.level < MetaLog.SUMMARY) {
+          MetaLog.setLevel(MetaLog.SUMMARY);
+        }
+      } else {
+        MetaLog.setLevel(MetaLog.SILENT);
+      }
+    });
+  }
 
   // ========================================================================
   // Plane checkbox toggles (Cartesian XYZ + Central Angle IVM)

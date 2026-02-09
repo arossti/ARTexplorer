@@ -20,6 +20,7 @@
 
 import * as THREE from "three";
 import { RT } from "./rt-math.js";
+import { MetaLog } from "./rt-metalog.js";
 
 // ============================================================================
 // SHARED UTILITIES
@@ -169,16 +170,15 @@ export const QuadrayPolyhedra = {
     const sampleQ = RT.quadrance(vertices[0], vertices[1]);
     const expectedQ = 8 * scale * scale;
 
-    console.log(
-      `[RT] Quadray Tetrahedron: normalize=${normalize}, scale=${scale}`
-    );
-    console.log(`  WXYZ raw: [${wxyz_raw[0]}] -> [${wxyz_raw[3]}]`);
-    console.log(
+    MetaLog.identity("Quadray Tetrahedron", "{3,3}", {
+      construction: `Quadray basis vectors, normalize=${normalize}, scale=${scale}`,
+    });
+    MetaLog.log(MetaLog.DEBUG, `  WXYZ raw: [${wxyz_raw[0]}] -> [${wxyz_raw[3]}]`);
+    MetaLog.log(
+      MetaLog.DEBUG,
       `  WXYZ normalized: [${wxyz_normalized[0].map(n => n.toFixed(3)).join(", ")}]`
     );
-    console.log(
-      `  Edge Q: expected=${expectedQ.toFixed(6)}, actual=${sampleQ.toFixed(6)}`
-    );
+    MetaLog.rtMetrics({ edgeQ: sampleQ, maxError: Math.abs(sampleQ - expectedQ) });
 
     return {
       vertices,
@@ -214,13 +214,13 @@ export const QuadrayPolyhedra = {
       [0, 0, 0, zStretch], // Stretched!
     ];
 
-    console.log(
-      `[RT] Deformed Quadray Tetrahedron: Z stretched by ${zStretch}x`
-    );
-    console.log(`  With zero-sum: Z normalizes - deformation LOST`);
-    console.log(
-      `  Without zero-sum: Z stays at (0,0,0,${zStretch}) - PRESERVED`
-    );
+    MetaLog.identity("Deformed Quadray Tetrahedron", "", {
+      construction: `Z stretched by ${zStretch}x`,
+    });
+    MetaLog.construction([
+      `With zero-sum: Z normalizes - deformation LOST`,
+      `Without zero-sum: Z stays at (0,0,0,${zStretch}) - PRESERVED`,
+    ]);
 
     // Return WITHOUT normalization to preserve deformation
     return QuadrayPolyhedra.tetrahedron(scale, {
@@ -251,13 +251,13 @@ export const QuadrayPolyhedra = {
       [1, 1, 1, 0], // Z inactive
     ];
 
-    console.log(`[RT] Quadray Dual Tetrahedron: scale=${scale}`);
-    console.log(
-      `  Vertices: (0,1,1,1) permutations (single inactive coordinate)`
-    );
-    console.log(
-      `  Relationship: dual = base inverted through origin + (1,1,1,1)`
-    );
+    MetaLog.identity("Quadray Dual Tetrahedron", "{3,3}", {
+      construction: `scale=${scale}, normalize=${normalize}`,
+    });
+    MetaLog.construction([
+      `Vertices: (0,1,1,1) permutations (single inactive coordinate)`,
+      `Relationship: dual = base inverted through origin + (1,1,1,1)`,
+    ]);
 
     return QuadrayPolyhedra.tetrahedron(scale, {
       normalize: normalize,
@@ -324,12 +324,10 @@ export const QuadrayPolyhedra = {
       [5, 3, 1],
     ].map(f => fixWinding(f, vertices));
 
-    console.log(
-      `[RT] Quadray Octahedron: normalize=${normalize}, scale=${scale}`
-    );
-    console.log(
-      `  WXYZ: {1,1,0,0} permutations - 6 vertices (tet edge midpoints)`
-    );
+    MetaLog.identity("Quadray Octahedron", "{3,4}", {
+      construction: `{1,1,0,0} permutations, normalize=${normalize}, scale=${scale}`,
+    });
+    MetaLog.log(MetaLog.DEBUG, `  WXYZ: {1,1,0,0} permutations - 6 vertices (tet edge midpoints)`);
 
     return {
       vertices,
@@ -477,12 +475,14 @@ export const QuadrayPolyhedra = {
     const sampleQ =
       vertices.length > 1 ? RT.quadrance(vertices[0], vertices[1]) : 0;
 
-    console.log(
-      `[RT] Quadray Truncated Tetrahedron: normalize=${normalize}, scale=${scale}`
-    );
-    console.log(`  WXYZ: {2,1,0,0} permutations - 12 vertices (ALL RATIONAL!)`);
-    console.log(`  Edges: ${computedEdges.length} (expected 18)`);
-    console.log(`  Prime projection: 7-gon at spreads (0.11, 0, 0.5)`);
+    MetaLog.identity("Quadray Truncated Tetrahedron", "", {
+      construction: `{2,1,0,0} permutations, normalize=${normalize}, scale=${scale}`,
+    });
+    MetaLog.construction([
+      `WXYZ: {2,1,0,0} permutations - 12 vertices (ALL RATIONAL!)`,
+      `Edges: ${computedEdges.length} (expected 18)`,
+      `Prime projection: 7-gon at spreads (0.11, 0, 0.5)`,
+    ]);
 
     return {
       vertices,
@@ -558,11 +558,13 @@ export const QuadrayPolyhedra = {
       ...dualTet.faces.map(f => f.map(idx => idx + 4)),
     ];
 
-    console.log(
-      `[RT] Quadray Stella Octangula: normalize=${normalize}, scale=${scale}`
-    );
-    console.log(`  Composed from tetrahedron + dualTetrahedron`);
-    console.log(`  8 vertices, 12 edges, 8 faces`);
+    MetaLog.identity("Quadray Stella Octangula", "", {
+      construction: `Compound tet + dual tet, normalize=${normalize}, scale=${scale}`,
+    });
+    MetaLog.construction([
+      `Composed from tetrahedron + dualTetrahedron`,
+      `8 vertices, 12 edges, 8 faces`,
+    ]);
 
     return {
       vertices,
@@ -713,13 +715,13 @@ export const QuadrayPolyhedra = {
       ...squareFaces.map(f => fixWinding(f, vertices)),
     ];
 
-    console.log(
-      `[RT] Quadray Cuboctahedron (VE): normalize=${normalize}, scale=${scale}`
-    );
-    console.log(`  WXYZ: {2,1,1,0} permutations - 12 vertices`);
-    console.log(
-      `  Edges: ${edges.length}, Faces: ${faces.length} (8 tri + 6 sq)`
-    );
+    MetaLog.identity("Quadray Cuboctahedron (VE)", "", {
+      construction: `{2,1,1,0} permutations, normalize=${normalize}, scale=${scale}`,
+    });
+    MetaLog.construction([
+      `WXYZ: {2,1,1,0} permutations - 12 vertices`,
+      `Edges: ${edges.length}, Faces: ${faces.length} (8 tri + 6 sq)`,
+    ]);
 
     return {
       vertices,
