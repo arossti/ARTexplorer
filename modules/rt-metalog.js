@@ -28,6 +28,25 @@ export const MetaLog = {
   // Current level (mutable from UI toggle / URL param)
   _level: 0,
 
+  // Stack-based suppression for internal calls (stats builder, node spheres,
+  // compound internals). When > 0, all logging is silenced regardless of level.
+  _suppressCount: 0,
+
+  /** Temporarily silence all logging (nestable) */
+  suppress() {
+    this._suppressCount++;
+  },
+
+  /** Restore logging after suppress() (nestable) */
+  unsuppress() {
+    if (this._suppressCount > 0) this._suppressCount--;
+  },
+
+  /** Check if logging is active at the given minimum level */
+  _active(minLevel) {
+    return this._suppressCount === 0 && this._level >= minLevel;
+  },
+
   get level() {
     return this._level;
   },
@@ -75,7 +94,7 @@ export const MetaLog = {
    * @param {Object} data - { construction, halfSize }
    */
   identity(name, schlafli, data = {}) {
-    if (this._level < this.SUMMARY) return;
+    if (!this._active(this.SUMMARY)) return;
     const symbol = schlafli ? ` ${schlafli}` : "";
     console.log(`=== ${name.toUpperCase()}${symbol} ===`);
     if (data.construction) {
@@ -91,7 +110,7 @@ export const MetaLog = {
    * @param {Object} data - { V, E, F, edgeQ, edgeLength, maxError, faceSpread, faceSpreadFraction }
    */
   rtMetrics(data) {
-    if (this._level < this.SUMMARY) return;
+    if (!this._active(this.SUMMARY)) return;
     const {
       V,
       E,
@@ -129,7 +148,7 @@ export const MetaLog = {
    * @param {string|string[]} lines - Single line or array of lines
    */
   construction(lines) {
-    if (this._level < this.DETAILED) return;
+    if (!this._active(this.DETAILED)) return;
     if (typeof lines === "string") {
       console.log(`  ${lines}`);
     } else if (Array.isArray(lines)) {
@@ -143,7 +162,7 @@ export const MetaLog = {
    * @param {Object} data - { projection, targetQ, targetRadius, avgQ, maxError }
    */
   spheres(data) {
-    if (this._level < this.DETAILED) return;
+    if (!this._active(this.DETAILED)) return;
     if (data.projection) console.log(`  Projection: ${data.projection}`);
     if (data.targetQ !== undefined)
       console.log(`  Target Q: ${data.targetQ.toFixed(6)}`);
@@ -165,7 +184,7 @@ export const MetaLog = {
    * @param {...*} args - Arguments passed to console.log
    */
   log(minLevel, ...args) {
-    if (this._level >= minLevel) console.log(...args);
+    if (this._active(minLevel)) console.log(...args);
   },
 
   /**
@@ -174,7 +193,7 @@ export const MetaLog = {
    * @param {...*} args - Arguments passed to console.warn
    */
   warn(minLevel, ...args) {
-    if (this._level >= minLevel) console.warn(...args);
+    if (this._active(minLevel)) console.warn(...args);
   },
 
   // =========================================================================
@@ -190,7 +209,7 @@ export const MetaLog = {
    *     construction, halfSize, constructionLines, projection, targetQ, ... }
    */
   polyhedron(name, schlafli, data = {}) {
-    if (this._level < this.SUMMARY) return;
+    if (!this._active(this.SUMMARY)) return;
     this.identity(name, schlafli, data);
     this.rtMetrics(data);
     if (this._level >= this.DETAILED) {

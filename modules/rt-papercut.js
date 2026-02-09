@@ -15,6 +15,7 @@ import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 import { RT, Quadray } from "./rt-math.js";
 import { RTPrimeCuts } from "./rt-prime-cuts.js";
+import { MetaLog } from "./rt-metalog.js";
 
 export const RTPapercut = {
   // Module state (local, not persisted)
@@ -324,7 +325,8 @@ export const RTPapercut = {
       snapMode = "WXYZ";
     }
 
-    console.log(
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `✂️ Cutplane range: [${range.min}, ${range.max}] step=${range.step.toFixed(6)} (basis: ${basis}, snap: ${snapMode})`
     );
   },

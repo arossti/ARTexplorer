@@ -183,7 +183,8 @@ function startARTexplorer(
     uiBindings.applyAll();
 
     const stats = getBindingStats();
-    console.log(
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `🆕 DECLARATIVE UI: ${stats.total} bindings (${stats.simpleCheckboxes} checkboxes, ${stats.simpleSliders} sliders, ${stats.linkedSliders} linked)`
     );
   }
@@ -207,7 +208,7 @@ function startARTexplorer(
       }
     };
 
-    console.log("🆕 COORDINATE MODULE: Active");
+    MetaLog.log(MetaLog.SUMMARY, "🆕 COORDINATE MODULE: Active");
   }
 
   // ========================================================================
@@ -4227,7 +4228,7 @@ function startARTexplorer(
   // FILE HANDLER INITIALIZATION
   // ========================================================================
   RTFileHandler.init(RTStateManager, scene, camera);
-  console.log("✅ RTFileHandler module initialized");
+  MetaLog.log(MetaLog.SUMMARY, "✅ RTFileHandler module initialized");
 
   // Wire up File section UI buttons
   const importBtn = document.getElementById("importBtn");
@@ -4662,5 +4663,5 @@ function startARTexplorer(
 
   // Signal that app initialization is complete
   window.dispatchEvent(new CustomEvent("artexplorer-ready"));
-  console.log("✅ ARTexplorer initialization complete");
+  MetaLog.log(MetaLog.SUMMARY, "✅ ARTexplorer initialization complete");
 } // End startARTexplorer function

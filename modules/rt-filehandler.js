@@ -13,6 +13,8 @@
  * @requires RTStateManager
  */
 
+import { MetaLog } from "./rt-metalog.js";
+
 export const RTFileHandler = {
   // ========================================================================
   // CONFIGURATION
@@ -64,7 +66,8 @@ export const RTFileHandler = {
             }
           }
         );
-        console.log(
+        MetaLog.log(
+          MetaLog.SUMMARY,
           `💾 Auto-save enabled (every ${this.config.autoSaveThreshold} modifications)`
         );
       } else {
@@ -74,7 +77,7 @@ export const RTFileHandler = {
       }
     }
 
-    console.log("✅ RTFileHandler initialized");
+    MetaLog.log(MetaLog.SUMMARY, "✅ RTFileHandler initialized");
   },
 
   // ========================================================================

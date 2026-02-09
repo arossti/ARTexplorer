@@ -13,6 +13,8 @@
  * @requires RTFileHandler
  */
 
+import { MetaLog } from "./rt-metalog.js";
+
 export const RTViewManager = {
   // ========================================================================
   // CONFIGURATION
@@ -109,7 +111,7 @@ export const RTViewManager = {
     // Wire up UI controls
     this._wireUpUI();
 
-    console.log("✅ RTViewManager initialized");
+    MetaLog.log(MetaLog.SUMMARY, "✅ RTViewManager initialized");
   },
 
   /**
