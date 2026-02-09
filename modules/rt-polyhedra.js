@@ -53,6 +53,7 @@ export const Polyhedra = {
    * Z-up convention: Z is vertical axis
    */
   cube: (halfSize = 1, options = {}) => {
+    if (options.silent) MetaLog.suppress();
     const s = halfSize;
     const vertices = [
       // Bottom face (Z = -s)
@@ -112,6 +113,7 @@ export const Polyhedra = {
       faceSpreadFraction: "1 (perpendicular)",
     });
 
+    if (options.silent) MetaLog.unsuppress();
     return { vertices, edges, faces, faceSpread };
   },
 
@@ -123,6 +125,7 @@ export const Polyhedra = {
    * @param {Object} options - Optional configuration
    */
   tetrahedron: (halfSize = 1, options = {}) => {
+    if (options.silent) MetaLog.suppress();
     const s = halfSize;
     // Select 4 vertices of cube such that no two share an edge
     // These form a regular tetrahedron
@@ -166,6 +169,7 @@ export const Polyhedra = {
       faceSpreadFraction: "8/9",
     });
 
+    if (options.silent) MetaLog.unsuppress();
     return { vertices, edges, faces, faceSpread };
   },
 
@@ -244,7 +248,7 @@ export const Polyhedra = {
    * @param {Object} options - Optional configuration
    * @returns {Object} - {vertices, edges, faces}
    */
-  truncatedTetrahedron: (halfSize = 1, truncation = 1 / 3, options = {}) => {
+  truncatedTetrahedron: (halfSize = 1, truncation = 1 / 3, _options = {}) => {
     const t = Math.max(0, Math.min(0.5, truncation)); // Clamp to valid range
     const s = halfSize;
 
@@ -494,7 +498,7 @@ export const Polyhedra = {
   truncatedDualTetrahedron: (
     halfSize = 1,
     truncation = 1 / 3,
-    options = {}
+    _options = {}
   ) => {
     MetaLog.suppress();
     const base = Polyhedra.truncatedTetrahedron(halfSize, truncation);
@@ -531,7 +535,7 @@ export const Polyhedra = {
     halfSize = 1,
     frequency = 1,
     projection = "out",
-    options = {}
+    _options = {}
   ) => {
     // Get base geodesic tetrahedron (subdivided and projected)
     MetaLog.suppress();
@@ -562,6 +566,7 @@ export const Polyhedra = {
    * Z-up convention: Z is vertical axis
    */
   octahedron: (halfSize = 1, options = {}) => {
+    if (options.silent) MetaLog.suppress();
     const s = halfSize;
     // 6 vertices at cube face centers
     const vertices = [
@@ -623,6 +628,7 @@ export const Polyhedra = {
       faceSpreadFraction: "8/9",
     });
 
+    if (options.silent) MetaLog.unsuppress();
     return { vertices, edges, faces, faceSpread };
   },
 
@@ -633,7 +639,7 @@ export const Polyhedra = {
    * For RT purity: coordinates (0, ±a, ±b) where b²/a² = 5 (golden rectangle ratio)
    * This gives edge quadrance Q = 4a² for all 30 edges
    */
-  icosahedron: (halfSize = 1, options = {}) => {
+  icosahedron: (halfSize = 1, _options = {}) => {
     // RT approach: Use (0, ±a, ±b) where b²/a² = 5 (golden rectangle ratio)
     // Quadrance from (0,1,√5) to (1,√5,0) = 1² + (√5-1)² + 5 = 1 + (6-2√5) + 5 = 12-2√5
     //
@@ -1083,7 +1089,7 @@ export const Polyhedra = {
    * This represents the GOLD STANDARD for RT: exact integer spread values
    * eliminate ALL transcendental functions - pure algebraic geometry!
    */
-  dualIcosahedron: (halfSize = 1, options = {}) => {
+  dualIcosahedron: (halfSize = 1, _options = {}) => {
     // PurePhi Method 2: High-precision symbolic constant for consistency
     const phi = RT.PurePhi.constants.phi; // φ = (1 + √5)/2 - 15 decimal precision
 
@@ -1151,7 +1157,7 @@ export const Polyhedra = {
     halfSize = 1,
     frequency = 1,
     projection = "out",
-    options = {}
+    _options = {}
   ) => {
     // PurePhi Method 2: High-precision symbolic constant for consistency
     const phi = RT.PurePhi.constants.phi; // φ = (1 + √5)/2 - 15 decimal precision
@@ -1192,7 +1198,7 @@ export const Polyhedra = {
    * @param {number} frequency - Subdivision frequency (1-6)
    * @returns {Object} - {vertices, edges, faces} for subdivided polyhedron
    */
-  subdivideTriangles: (vertices, faces, frequency, options = {}) => {
+  subdivideTriangles: (vertices, faces, frequency, _options = {}) => {
     if (frequency === 0) {
       // Frequency 0 = base polyhedron (no subdivision)
       const edges = [];
@@ -1357,7 +1363,7 @@ export const Polyhedra = {
     halfSize = 1,
     frequency = 1,
     projection = "out",
-    options = {}
+    _options = {}
   ) => {
     // Phase 2.9: RT-Pure Geodesic with InSphere/MidSphere/OutSphere options
     // Fuller frequency notation: 1 = base polyhedron (undivided edges)
@@ -1527,7 +1533,7 @@ export const Polyhedra = {
     halfSize = 1,
     frequency = 1,
     projection = "out",
-    options = {}
+    _options = {}
   ) => {
     // Phase 2.9: RT-Pure Geodesic with InSphere/MidSphere/OutSphere options
     // Fuller frequency notation: 1 = base polyhedron (undivided edges)
@@ -1653,7 +1659,7 @@ export const Polyhedra = {
     halfSize = 1,
     frequency = 1,
     projection = "out",
-    options = {}
+    _options = {}
   ) => {
     // Phase 2.9: RT-Pure Geodesic with InSphere/MidSphere/OutSphere options
     // Fuller frequency notation: 1 = base polyhedron (undivided edges)
@@ -1779,7 +1785,7 @@ export const Polyhedra = {
    *
    * Schläfli: {5,3}
    */
-  dodecahedron: (halfSize = 1, options = {}) => {
+  dodecahedron: (halfSize = 1, _options = {}) => {
     const s = halfSize;
 
     // RATIONAL TRIGONOMETRY: Defer sqrt(5) expansion following Wildberger principles
@@ -1946,6 +1952,7 @@ export const Polyhedra = {
    * - This ensures coplanar rhombic faces (no saddle distortion)
    */
   rhombicDodecahedron: (halfSize = 1, options = {}) => {
+    if (options.silent) MetaLog.suppress();
     const s = halfSize;
 
     // RT-PURE + PureRadicals: Use cached √2 for consistency
@@ -2054,6 +2061,7 @@ export const Polyhedra = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     MetaLog.rtMetrics({ V: 14, E: 24, F: 12, edgeQ: expectedQ, maxError });
 
+    if (options.silent) MetaLog.unsuppress();
     return { vertices, edges, faces };
   },
 
@@ -2071,6 +2079,7 @@ export const Polyhedra = {
    * - Cuboctahedron faces → Rhombic dodec vertices
    */
   cuboctahedron: (halfSize = 1, options = {}) => {
+    if (options.silent) MetaLog.suppress();
     const s = halfSize;
 
     // RT-PURE + PureRadicals: Use cached √2 for consistency
@@ -2163,6 +2172,7 @@ export const Polyhedra = {
     const maxError = validation.reduce((max, v) => Math.max(max, v.error), 0);
     MetaLog.rtMetrics({ V: 12, E: 24, F: 14, edgeQ: expectedQ, maxError });
 
+    if (options.silent) MetaLog.unsuppress();
     return { vertices, edges, faces };
   },
 
