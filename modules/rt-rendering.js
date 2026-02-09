@@ -160,6 +160,7 @@ export function initScene(THREE, OrbitControls, RT) {
     quadrayTruncatedTetGroup,
     quadrayStellaOctangulaGroup; // Quadray demonstrators
   let primeTruncTetGroup, primeCompoundTetGroup, primeCompoundIcosaGroup; // Prime polygon projection polyhedra (base geometry)
+  let primeGeoTetF2Group, primeGeoTetF4Group; // Geodesic tet single-poly prime projections
   let pointGroup; // Point primitive (single vertex)
   let lineGroup; // Line primitive (two vertices, one edge)
   let polygonGroup; // Polygon primitive (n vertices, n edges, 1 face)
@@ -377,6 +378,12 @@ export function initScene(THREE, OrbitControls, RT) {
     primeCompoundIcosaGroup = new THREE.Group();
     primeCompoundIcosaGroup.userData.type = "primeCompoundIcosa";
 
+    primeGeoTetF2Group = new THREE.Group();
+    primeGeoTetF2Group.userData.type = "primeGeoTetF2";
+
+    primeGeoTetF4Group = new THREE.Group();
+    primeGeoTetF4Group.userData.type = "primeGeoTetF4";
+
     scene.add(pointGroup);
     scene.add(lineGroup);
     scene.add(polygonGroup);
@@ -420,6 +427,8 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(primeTruncTetGroup);
     scene.add(primeCompoundTetGroup);
     scene.add(primeCompoundIcosaGroup);
+    scene.add(primeGeoTetF2Group);
+    scene.add(primeGeoTetF4Group);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -2774,6 +2783,52 @@ export function initScene(THREE, OrbitControls, RT) {
       primeCompoundIcosaGroup.visible = true;
     } else {
       primeCompoundIcosaGroup.visible = false;
+    }
+
+    // Prime Geodesic Tet f=2 (single-poly 7-gon)
+    if (document.getElementById("showPrimeGeoTetF2")?.checked) {
+      while (primeGeoTetF2Group.children.length > 0) {
+        primeGeoTetF2Group.remove(primeGeoTetF2Group.children[0]);
+      }
+
+      const geoTet = Polyhedra.geodesicTetrahedron(scale, 2, "out");
+      renderPolyhedron(
+        primeGeoTetF2Group,
+        geoTet,
+        colorPalette.geodesicTetrahedron,
+        opacity
+      );
+
+      primeGeoTetF2Group.userData = {
+        type: "primeGeoTetF2",
+        parameters: { scale: scale, frequency: 2, projection: "out" },
+      };
+      primeGeoTetF2Group.visible = true;
+    } else {
+      primeGeoTetF2Group.visible = false;
+    }
+
+    // Prime Geodesic Tet f=4 (single-poly 11/13-gon)
+    if (document.getElementById("showPrimeGeoTetF4")?.checked) {
+      while (primeGeoTetF4Group.children.length > 0) {
+        primeGeoTetF4Group.remove(primeGeoTetF4Group.children[0]);
+      }
+
+      const geoTet = Polyhedra.geodesicTetrahedron(scale, 4, "out");
+      renderPolyhedron(
+        primeGeoTetF4Group,
+        geoTet,
+        colorPalette.geodesicTetrahedron,
+        opacity
+      );
+
+      primeGeoTetF4Group.userData = {
+        type: "primeGeoTetF4",
+        parameters: { scale: scale, frequency: 4, projection: "out" },
+      };
+      primeGeoTetF4Group.visible = true;
+    } else {
+      primeGeoTetF4Group.visible = false;
     }
 
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
