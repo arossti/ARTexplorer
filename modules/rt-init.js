@@ -838,7 +838,7 @@ function startARTexplorer(
 
     // Hide editing basis after depositing (nothing selected)
     if (editingBasis) {
-      scene.remove(editingBasis);
+      ucsGroup.remove(editingBasis);
       editingBasis = null;
     }
 
@@ -998,6 +998,18 @@ function startARTexplorer(
     });
   }
 
+  // UCS orientation toggle — mutually exclusive
+  document.querySelectorAll("[data-ucs]").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const mode = this.dataset.ucs;
+      document.querySelectorAll("[data-ucs]").forEach(b => {
+        b.classList.remove("active");
+      });
+      this.classList.add("active");
+      renderingAPI.setUCSOrientation(mode);
+    });
+  });
+
   // ========================================================================
   // ROTATION INPUT FIELDS - Per-Axis Bidirectional Conversion (Degrees ↔ Spread)
   // ========================================================================
@@ -1077,7 +1089,7 @@ function startARTexplorer(
 
       // Remove editing basis but keep selection highlight
       if (editingBasis) {
-        scene.remove(editingBasis);
+        ucsGroup.remove(editingBasis);
         editingBasis = null;
       }
 
@@ -1698,7 +1710,7 @@ function startARTexplorer(
   function createEditingBasis(position, selectedObject) {
     // Remove existing editing basis if any
     if (editingBasis) {
-      scene.remove(editingBasis);
+      ucsGroup.remove(editingBasis);
     }
 
     // Create new group for editing basis
@@ -2002,7 +2014,7 @@ function startARTexplorer(
       editingBasis.add(centralSphere);
     }
 
-    scene.add(editingBasis);
+    ucsGroup.add(editingBasis);
 
     // Log basis sizing for debugging adaptive scaling
     const systems = [];
@@ -2027,7 +2039,7 @@ function startARTexplorer(
    */
   function destroyEditingBasis() {
     if (editingBasis) {
-      scene.remove(editingBasis);
+      ucsGroup.remove(editingBasis);
       editingBasis = null;
     }
     hoveredHandle = null;
@@ -3020,15 +3032,16 @@ function startARTexplorer(
             // Create drag plane perpendicular to camera
             const cameraDirection = new THREE.Vector3();
             camera.getWorldDirection(cameraDirection);
+            const worldPos = currentSelection.getWorldPosition(new THREE.Vector3());
             dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
               cameraDirection,
-              currentSelection.position.clone()
+              worldPos
             );
 
-            // Get click point and offset
+            // Get click point and offset (world space)
             raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
             freeMoveDragOffset
-              .copy(currentSelection.position)
+              .copy(worldPos)
               .sub(dragStartPoint);
 
             // Store initial positions for delta-based movement
@@ -3204,20 +3217,21 @@ function startARTexplorer(
               }
               selectedPolyhedra = getSelectedPolyhedra();
 
-              // Create drag plane perpendicular to camera, through object's position
+              // Create drag plane perpendicular to camera, through object's world position
               const cameraDirection = new THREE.Vector3();
               camera.getWorldDirection(cameraDirection);
+              const worldPos = currentSelection.getWorldPosition(new THREE.Vector3());
               dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
                 cameraDirection,
-                currentSelection.position.clone()
+                worldPos
               );
 
-              // Get click point on drag plane
+              // Get click point on drag plane (world space)
               raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
 
-              // Calculate offset from click point to object center (prevents jumping)
+              // Calculate offset from click point to object center (world space)
               freeMoveDragOffset
-                .copy(currentSelection.position)
+                .copy(worldPos)
                 .sub(dragStartPoint);
 
               // Store initial positions of ALL selected polyhedra for delta-based movement
@@ -3256,14 +3270,15 @@ function startARTexplorer(
 
             const cameraDirection = new THREE.Vector3();
             camera.getWorldDirection(cameraDirection);
+            const worldPos = currentSelection.getWorldPosition(new THREE.Vector3());
             dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(
               cameraDirection,
-              currentSelection.position.clone()
+              worldPos
             );
 
             raycaster.ray.intersectPlane(dragPlane, dragStartPoint);
             freeMoveDragOffset
-              .copy(currentSelection.position)
+              .copy(worldPos)
               .sub(dragStartPoint);
 
             // Store initial positions of ALL selected polyhedra for delta-based movement
@@ -3304,8 +3319,9 @@ function startARTexplorer(
           raycaster.ray.intersectPlane(dragPlane, currentPoint);
 
           if (currentPoint) {
-            // Apply offset to get new position (prevents jumping)
+            // Apply offset to get new position (world space → local for snap)
             let newPosition = currentPoint.clone().add(freeMoveDragOffset);
+            newPosition.applyQuaternion(ucsGroup.quaternion.clone().invert());
 
             // ================================================================
             // OBJECT SNAPPING: Check for snap targets during drag
@@ -3334,8 +3350,9 @@ function startARTexplorer(
               }
             }
 
-            // Calculate movement delta from drag start (preserves relative positions)
+            // Calculate movement delta from drag start (world → local space)
             const movementDelta = currentPoint.clone().sub(freeMoveStartPoint);
+            movementDelta.applyQuaternion(ucsGroup.quaternion.clone().invert());
 
             // Move all selected polyhedra using delta-based positioning
             selectedPolyhedra.forEach((poly, index) => {
@@ -3357,9 +3374,10 @@ function startARTexplorer(
                 RTStateManager.isVertexMode() &&
                 firstVertex?.getWorldPosition
               ) {
-                // NODE-BASED: Follow the selected node's world position
+                // NODE-BASED: Follow the selected node's position (world → ucsGroup local)
                 const nodeWorldPos = new THREE.Vector3();
                 firstVertex.getWorldPosition(nodeWorldPos);
+                nodeWorldPos.applyQuaternion(ucsGroup.quaternion.clone().invert());
                 editingBasis.position.copy(nodeWorldPos);
               } else {
                 // CLASSICAL: Follow polyhedron centroid
@@ -3419,11 +3437,12 @@ function startARTexplorer(
             // ====================================================================
             // MOVE MODE: Translate polyhedra along axis
             // ====================================================================
-            // Calculate movement vector
+            // Calculate movement vector (world space → ucsGroup local space)
             const movement = new THREE.Vector3().subVectors(
               currentPoint,
               dragStartPoint
             );
+            movement.applyQuaternion(ucsGroup.quaternion.clone().invert());
 
             // Project movement onto the selected axis (constrained movement)
             const axisMovement = movement.dot(selectedHandle.axis);
@@ -3455,11 +3474,12 @@ function startARTexplorer(
             // ====================================================================
             // SCALE MODE: Scale selected object (Form or Instance)
             // ====================================================================
-            // Calculate movement vector
+            // Calculate movement vector (world space → ucsGroup local space)
             const movement = new THREE.Vector3().subVectors(
               currentPoint,
               dragStartPoint
             );
+            movement.applyQuaternion(ucsGroup.quaternion.clone().invert());
 
             // Project movement onto the selected axis (or radial for uniform)
             let scaleMovement;
@@ -4157,6 +4177,7 @@ function startARTexplorer(
   camera = renderingAPI.getCamera();
   renderer = renderingAPI.getRenderer();
   controls = renderingAPI.getControls();
+  const ucsGroup = renderingAPI.getUCSGroup();
 
   // Initialize Janus module with scene dependencies
   RTJanus.init({ THREE, scene });
