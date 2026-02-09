@@ -2,7 +2,7 @@
 
 **Branch**: `UCS`
 **Date**: 2026-02-09
-**Status**: Draft / Discussion
+**Status**: Phase 1 complete (camera-based), orbit inversion TBD
 
 ---
 
@@ -24,24 +24,36 @@ A secondary use case: some users prefer **Y-up** (game engine / Three.js default
 
 ---
 
-## 2. Design Principle: Scene Rotation, Not Camera Manipulation
+## 2. Design Principle: Camera Rotation, Not Scene Manipulation
 
-**Key insight**: We rotate the **scene contents**, not the camera. This means:
+**Key insight**: We rotate the **camera**, not the scene contents. This means:
 
-- OrbitControls remain untouched — orbit/pan/zoom behavior is identical
-- `camera.up` stays `(0, 0, 1)` always
-- The "trick" is a rotation applied to a wrapper group around all scene geometry
-- Files save/load/export in native Z-up coordinates — the UCS rotation is stripped on save and re-applied on load
+- All scene geometry stays in native Z-up coordinates — nothing moves
+- `camera.up` is changed to the desired axis direction
+- Camera position is rotated by the same quaternion so the viewpoint tilts naturally
+- All editing controls (gumball move/rotate/scale, free move, drag-copy) work identically — they operate in scene space which hasn't changed
+- Files save/load/export in native Z-up coordinates — no transform to strip
+- OrbitControls automatically adapt to the new `camera.up`
 
-This is the standard approach used by Rhino, Revit, etc. The UCS is a **view-layer transformation** that sits between internal coordinates and the screen.
+This is the simplest possible approach — a pure view-layer change with zero impact on scene logic.
+
+### Why Not Scene Rotation?
+
+We initially tried a `ucsGroup` wrapper approach (rotate scene contents inside a `THREE.Group`). This was **abandoned** because:
+
+1. **World/local coordinate space mismatch**: Raycaster returns world-space positions, but objects inside a rotated parent group have local-space positions. Every drag/move/scale operation needed coordinate transforms.
+2. **Intractable inversion bugs**: Despite adding 8+ world→local transforms across gumball axis move, scale, free-move drag plane setup, movement delta, and snap position, objects still moved opposite to mouse direction.
+3. **Scope explosion**: What should have been ~71 lines grew into deep changes across rt-init.js, rt-controls.js, and rt-rendering.js with fragile coordinate conversions.
+
+The camera-based approach achieves the same visual result with **~50 lines total** and zero coordinate space issues.
 
 ---
 
-## 3. Architecture: The `ucsGroup` Wrapper
+## 3. Architecture: Camera-Based UCS
 
-### 3.1 Current State (No Wrapper)
+### 3.1 Scene Structure (Unchanged)
 
-All ~30+ geometry groups are added directly to `scene`:
+All geometry groups remain directly on `scene` — no wrapper group:
 
 ```
 scene
@@ -51,236 +63,240 @@ scene
 ├── quadrayBasis
 ├── cubeGroup
 ├── tetrahedronGroup
-├── ... (30+ groups)
+├── ... (45+ groups)
 ```
 
-### 3.2 Proposed: Insert `ucsGroup` Between Scene and Content
+### 3.2 UCS Rotation Math
 
-```
-scene
-├── ambientLight        ← stays on scene (lights are view-relative)
-├── directionalLight    ← stays on scene
-└── ucsGroup            ← NEW: single rotation applied here
-    ├── cartesianBasis
-    ├── quadrayBasis
-    ├── cubeGroup
-    ├── tetrahedronGroup
-    ├── ... (all geometry groups)
-```
-
-The `ucsGroup` is a `THREE.Group` with a single rotation quaternion. When UCS is "Z-up" (default), it has identity rotation. When UCS is "QZ-up", it carries the rotation that maps `(1,-1,-1)/√3 → (0,0,1)`.
-
-### 3.3 Rotation Math
-
-To make an arbitrary axis `v` point "up" (align with screen vertical = Z in our Z-up convention):
+To make an arbitrary axis `v` appear as "up" on screen:
 
 ```javascript
-// Compute rotation from current "up" (0,0,1) to desired axis v
-const targetUp = new THREE.Vector3(0, 0, 1);
-const desiredAxis = quadrayBasisVector.clone().normalize();
+// Compute rotation from current camera up to desired up
+const currentUp = camera.up.clone().normalize();
+const newUp = desiredAxis.clone().normalize();
+const quat = new THREE.Quaternion().setFromUnitVectors(currentUp, newUp);
 
-// We want: R * desiredAxis = targetUp
-// So R rotates desiredAxis TO the up direction
-// Equivalently: scene content rotates so desiredAxis appears vertical
-const quaternion = new THREE.Quaternion().setFromUnitVectors(desiredAxis, targetUp);
-ucsGroup.quaternion.copy(quaternion);
+// Apply to camera position (tilts the viewpoint)
+camera.position.applyQuaternion(quat);
+// Set new up vector (tells OrbitControls which way is "up")
+camera.up.copy(newUp);
+// Re-orient camera to look at target
+camera.lookAt(controls.target);
+controls.update();
 ```
 
 For the specific presets:
 
-| UCS Mode    | Axis to Align Up | Rotation                        |
-|-------------|------------------|---------------------------------|
-| Z-up (default) | (0, 0, 1)    | Identity (no rotation)          |
-| Y-up        | (0, 1, 0)       | 90° around X-axis               |
-| X-up        | (1, 0, 0)       | -90° around Y-axis              |
-| QW-up       | (-1,-1, 1)/√3   | ~54.7° compound rotation        |
-| QX-up       | ( 1, 1, 1)/√3   | ~54.7° compound rotation        |
-| QY-up       | (-1, 1,-1)/√3   | ~54.7° compound rotation        |
-| QZ-up       | ( 1,-1,-1)/√3   | ~54.7° compound rotation        |
+| UCS Mode    | camera.up Vector   | Visual Effect                   |
+|-------------|--------------------|---------------------------------|
+| Z-up (default) | (0, 0, 1)     | Standard CAD view               |
+| Y-up        | (0, 1, 0)         | Game engine convention          |
+| X-up        | (1, 0, 0)         | X-axis vertical                 |
+| QW-up       | (-1,-1, 1)/√3     | Yellow quadray skyward          |
+| QX-up       | ( 1, 1, 1)/√3     | Red quadray skyward             |
+| QY-up       | (-1, 1,-1)/√3     | Blue quadray skyward            |
+| QZ-up       | ( 1,-1,-1)/√3     | Green quadray skyward (Struppify) |
 
-All of these are just `setFromUnitVectors()` — one line of math.
+All presets use `setFromUnitVectors()` — one quaternion computation.
 
 ---
 
 ## 4. What DOESN'T Change
 
-This is a critical list — the UCS is **purely an environment variable / view-layer trick**:
+This is a critical list — the camera-based UCS has **zero impact** on scene logic:
 
-1. **OrbitControls** — orbit, pan, zoom work identically (camera.up unchanged)
-2. **Gumball controls** — handles are vector-based and live inside `ucsGroup`, so they rotate naturally with the scene. No code changes needed. When QZ becomes "up", the QZ gumball handle visually becomes the vertical axis and Z becomes angled — correct behavior.
-3. **Papercut/cutplane** — vector-based, tied to scene geometry. Rotates with `ucsGroup` naturally. No code changes.
+1. **Gumball controls** — move/rotate/scale all work identically (scene space unchanged)
+2. **Free move / drag-copy** — raycaster and drag planes operate in unchanged scene space
+3. **Papercut/cutplane** — vector-based, tied to scene geometry. No code changes.
 4. **State save/load** — positions/rotations stored in native Z-up coordinates
-5. **File export** (JSON/glTF) — native Z-up, no UCS transform baked in
-6. **Coordinate panel display** — always shows native XYZ/WXYZ values (Option A: simple)
+5. **File export** (JSON/glTF) — native Z-up, no transform to strip
+6. **Coordinate panel display** — always shows native XYZ/WXYZ values
 7. **All geometry generation** — polyhedra, grids, etc. computed in native space
 8. **All core math** — rt-math.js, rt-polyhedra.js, etc. completely untouched
-
-**Important finding**: The gumball (`editingBasis`) is currently added to `this.scene` directly (rt-controls.js:504). It must be reparented into `ucsGroup` so it rotates with the geometry. This is the one line in rt-controls.js that changes: `this.scene.add(...)` → `this.ucsGroup.add(...)`.
+9. **rt-controls.js** — no gumball reparenting needed (unlike ucsGroup approach)
+10. **Projection system** — `_getWorldVerticesFromGroup()` returns native coordinates
 
 ---
 
 ## 5. What DOES Change
 
-### 5.1 rt-rendering.js — Scene Setup
+### 5.1 rt-rendering.js — `setUCSOrientation()` (~40 lines)
 
-**Modification**: After creating all geometry groups, parent them under `ucsGroup` instead of `scene`.
-
-```javascript
-// NEW: Create UCS wrapper group
-const ucsGroup = new THREE.Group();
-ucsGroup.name = 'ucsGroup';
-scene.add(ucsGroup);
-
-// CHANGE: Add geometry to ucsGroup instead of scene
-ucsGroup.add(cubeGroup);
-ucsGroup.add(tetrahedronGroup);
-// ... all geometry groups
-// (lights stay on scene)
-```
-
-**Estimated scope**: ~30 lines changed (`scene.add(X)` → `ucsGroup.add(X)`)
-
-### 5.2 rt-rendering.js — UCS Rotation API
+New function added before the return/exports block:
 
 ```javascript
-// NEW function
+let currentUCSMode = "z-up";
+
 function setUCSOrientation(mode) {
-  const Z_UP = new THREE.Vector3(0, 0, 1);
-
   const orientations = {
-    'z-up':  new THREE.Vector3(0, 0, 1),   // identity
-    'y-up':  new THREE.Vector3(0, 1, 0),
-    'x-up':  new THREE.Vector3(1, 0, 0),
-    'qw-up': Quadray.basisVectors[Quadray.AXIS_INDEX.qw].clone(),
-    'qx-up': Quadray.basisVectors[Quadray.AXIS_INDEX.qx].clone(),
-    'qy-up': Quadray.basisVectors[Quadray.AXIS_INDEX.qy].clone(),
-    'qz-up': Quadray.basisVectors[Quadray.AXIS_INDEX.qz].clone(),
+    "z-up": new THREE.Vector3(0, 0, 1),
+    "y-up": new THREE.Vector3(0, 1, 0),
+    "x-up": new THREE.Vector3(1, 0, 0),
+    "qw-up": Quadray.basisVectors[Quadray.AXIS_INDEX.qw].clone(),
+    "qx-up": Quadray.basisVectors[Quadray.AXIS_INDEX.qx].clone(),
+    "qy-up": Quadray.basisVectors[Quadray.AXIS_INDEX.qy].clone(),
+    "qz-up": Quadray.basisVectors[Quadray.AXIS_INDEX.qz].clone(),
   };
 
   const desiredUp = orientations[mode];
   if (!desiredUp) return;
 
-  if (mode === 'z-up') {
-    ucsGroup.quaternion.identity();
-  } else {
-    ucsGroup.quaternion.setFromUnitVectors(desiredUp, Z_UP);
+  const currentUp = camera.up.clone().normalize();
+  const newUp = desiredUp.clone().normalize();
+
+  if (currentUp.distanceTo(newUp) < 0.001) {
+    currentUCSMode = mode;
+    return; // Already there
   }
 
+  const quat = new THREE.Quaternion().setFromUnitVectors(currentUp, newUp);
+  camera.position.applyQuaternion(quat);
+  camera.up.copy(newUp);
+  camera.lookAt(controls.target);
+  controls.update();
+
   currentUCSMode = mode;
+  MetaLog.log(`UCS orientation set to: ${mode}`);
 }
 ```
 
-### 5.3 index.html — UI Toggle
+Exported as `setUCSOrientation` in the Camera controls section.
 
-Add to the **Coordinate Systems** section (after the Cartesian/Quadray basis toggles):
+### 5.2 index.html — UI Toggle (~15 lines)
+
+Added to the **Coordinate Systems** section (after Cartesian/Quadray basis toggles):
 
 ```html
-<div class="control-item">
+<div class="control-item" style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #333">
   <label class="label-section">Scene Orientation (UCS)</label>
   <div class="toggle-btn-group">
     <button class="toggle-btn variant-objsnap active" data-ucs="z-up">Z-up</button>
     <button class="toggle-btn variant-objsnap" data-ucs="y-up">Y-up</button>
     <button class="toggle-btn variant-objsnap" data-ucs="qz-up">WZ-Up (Struppify)</button>
   </div>
+  <p class="info-text" style="font-size: 10px; margin-top: 5px">View-only — coordinates and files remain in native Z-up</p>
 </div>
 ```
 
-Default shows 3 options: standard Z-up, game-engine Y-up, and the Struppi-requested WZ-Up. Could expand to a dropdown with all 7 Quadray orientations if needed.
+### 5.3 rt-init.js — Wire Up UCS Buttons (~12 lines)
 
-### 5.4 rt-init.js — Wire Up UCS Buttons
-
-Standard event listener pattern matching existing toggle-btn-group usage.
-
-### 5.5 rt-controls.js — Gumball Reparenting (1 line)
-
-The gumball (`editingBasis`) is currently added via `this.scene.add(this.state.editingBasis)` at line 504. This single call must target `ucsGroup` instead so the gumball rotates with the scene contents:
+Standard event listener pattern with mutual exclusion:
 
 ```javascript
-// CHANGE (line 504): scene → ucsGroup
-this.ucsGroup.add(this.state.editingBasis);
+document.querySelectorAll("[data-ucs]").forEach(btn => {
+  btn.addEventListener("click", function () {
+    const mode = this.dataset.ucs;
+    document.querySelectorAll("[data-ucs]").forEach(b => {
+      b.classList.remove("active");
+    });
+    this.classList.add("active");
+    renderingAPI.setUCSOrientation(mode);
+  });
+});
 ```
 
-Raycasting: THREE.js `raycaster.intersectObjects()` already accounts for parent transforms, so hit-testing through the rotated `ucsGroup` should work natively.
+---
 
-### 5.6 rt-coordinates.js — No Change (Option A)
+## 6. Known Issue: Orbit Inversion
 
-Always show native coordinates (internal Z-up). No code change. The coordinate panel displays canonical XYZ/WXYZ values regardless of UCS orientation. This is the simplest and most predictable approach — the numbers always mean the same thing.
+When `camera.up` is set to a non-standard direction, OrbitControls orbit/rotate behavior can feel inverted — mouse dragging in one direction rotates the opposite way.
+
+**Observed**: When in QZ-up mode, on-axis camera views show CCW mouse drag → CW object rotation.
+
+### Potential Fixes (Phase 2)
+
+1. **`controls.reverseOrbit`** — THREE.js OrbitControls property that flips orbit direction. Can be toggled when entering non-Z-up UCS modes.
+
+2. **Camera position adjustment** — Instead of just rotating the camera position, compute a new position that produces natural orbit feel for the chosen up vector.
+
+3. **`controls.rotateSpeed` sign flip** — Negate rotateSpeed when up vector flips hemisphere. Crude but effective.
+
+4. **On-axis view preset integration** — Make camera view presets (iso, top, front...) UCS-aware so they produce natural orbit behavior in any UCS mode.
 
 ---
 
-## 6. Risk Assessment
+## 7. Risk Assessment
 
-Since everything vector-based (gumball, cutplane, grids, basis arrows) lives inside `ucsGroup` and rotates naturally, risks are minimal:
-
-| Risk | Severity | Mitigation |
-|------|----------|------------|
-| Raycasting through rotated parent | Low | THREE.js handles parent transforms natively; verify with click test |
-| State save captures UCS rotation | Low | UCS rotation is on `ucsGroup`, not on individual objects; state manager reads object transforms only |
-| Projection system (rt-projections.js) | Medium | Uses `_getWorldVerticesFromGroup()` → `getWorldPosition()` which WILL include UCS rotation. May need to strip `ucsGroup` transform when extracting vertices for prime polygon projection math. |
-| Camera view presets | Low | "Look down Z" etc. currently ignore UCS — acceptable for Phase 1 |
-| Gumball `scene.add` reference | Low | Single line change (rt-controls.js:504) to add to `ucsGroup` instead |
-
-**Lowest-risk approach possible** — the `ucsGroup` wrapper means everything inside it "just works" visually. The only system that reaches through to extract world coordinates (projections) needs a check.
+| Risk | Severity | Status |
+|------|----------|--------|
+| Editing controls broken | None | **Verified OK** — move, rotate, scale, free move, drag-copy all work |
+| Orbit feels inverted | Low-Medium | Known issue, multiple fix options (Phase 2) |
+| State save captures camera UCS | None | Camera position/up is not persisted in state — only object transforms |
+| Projection system affected | None | Scene coordinates unchanged — world vertices are native Z-up |
+| Camera view presets | Low | "Top" still means "looking down Z" regardless of UCS — acceptable |
 
 ---
 
-## 7. Implementation Order
+## 8. Implementation Status
 
-### Phase 1: Core (Minimal Viable UCS)
-1. Create `ucsGroup` in rt-rendering.js
-2. Reparent all geometry groups under `ucsGroup` (lights stay on scene)
-3. Add `setUCSOrientation()` function
-4. Add 3-button toggle in index.html (Z-up / Y-up / QZ-up)
-5. Wire up in rt-init.js
-6. **Test**: Visual correctness, orbit still works, basic selection works
+### Phase 1: Core (COMPLETE)
+| Step | Status | Commit |
+|------|--------|--------|
+| 1. Add 3-button toggle in index.html | Done | `2e30bf0` |
+| 2. Add `setUCSOrientation()` (camera-based) in rt-rendering.js | Done | `d66db53` |
+| 3. Wire up buttons in rt-init.js | Done | `d66db53` |
+| 4. Test visual correctness | Done | All editing controls work correctly |
 
-### Phase 2: Compatibility Verification
-7. Test gumball move/rotate/scale in non-default UCS
-8. Test state save/load (confirm UCS rotation not baked into state)
-9. Test file export (confirm native coordinates exported)
-10. Test coordinate panel display
-11. Test papercut with non-default UCS
+### Phase 2: Orbit Feel (TODO)
+5. Investigate `controls.reverseOrbit` for non-Z-up modes
+6. Test camera position adjustment approach
+7. Fix on-axis view rotation inversion artifact
 
 ### Phase 3: Polish
-12. Add UCS indicator label on canvas (e.g., small "QZ-up" badge)
-13. Persist UCS preference in localStorage
-14. Expand toggle to include all 7 orientations if warranted
-15. Consider whether camera view presets should be UCS-aware
+8. Persist UCS preference in localStorage
+9. Expand toggle to include all 7 orientations if warranted
+10. Consider whether camera view presets should be UCS-aware
+11. Add UCS indicator label on canvas (e.g., small "QZ-up" badge)
 
 ---
 
-## 8. Estimated Scope
+## 9. Estimated Scope (Final)
 
-| File | Changes |
-|------|---------|
-| rt-rendering.js | ~40 lines (ucsGroup creation, reparenting, setUCSOrientation, export ref) |
-| index.html | ~15 lines (toggle buttons in Coordinate Systems section) |
-| rt-init.js | ~15 lines (button event wiring) |
-| rt-controls.js | ~1 line (gumball reparent: `scene` → `ucsGroup`) |
-| **Total new/changed code** | **~71 lines** |
+| File | Changes | Status |
+|------|---------|--------|
+| rt-rendering.js | ~40 lines (`setUCSOrientation` + export) | Done |
+| index.html | ~15 lines (toggle buttons) | Done |
+| rt-init.js | ~12 lines (button event wiring) | Done |
+| **Total new/changed code** | **~67 lines** | **Done** |
 
-**No changes at all**: rt-math.js, rt-polyhedra.js, rt-state-manager.js, rt-filehandler.js, rt-coordinates.js, rt-grids.js, rt-papercut.js, rt-projections.js (unless projection extraction needs UCS stripping — TBD in testing).
-
-This is an environment variable + scene wrapper. No geometry, math, or core logic rewrite.
+**No changes at all**: rt-math.js, rt-polyhedra.js, rt-state-manager.js, rt-filehandler.js, rt-coordinates.js, rt-grids.js, rt-papercut.js, rt-projections.js, **rt-controls.js** (no gumball reparenting needed).
 
 ---
 
-## 9. Resolved Decisions
+## 10. Resolved Decisions
 
-1. **Gumball handles rotate with UCS?** YES — gumball lives inside `ucsGroup`, rotates naturally. When QZ becomes "up", QZ gumball handle becomes vertical and Z handle becomes angled relative to the ground plane. Correct and expected behavior.
+1. **Scene rotation vs camera rotation?** CAMERA — scene rotation (ucsGroup) caused intractable world/local coordinate mismatches in drag/move/scale. Camera rotation has zero impact on editing controls.
 
-2. **Coordinate panel shows UCS-relative values?** NO — Option A (simple). Always show native Z-up coordinates. No confusion, no code change.
+2. **Gumball handles rotate with UCS?** N/A — with camera-based approach, gumball handles stay in native orientation. The visual effect is identical (QZ handle appears vertical in QZ-up mode) because the camera tilts, not the scene.
 
-3. **Cutplane/papercut affected?** NO — vector-based, lives inside `ucsGroup`, rotates naturally with geometry.
+3. **Coordinate panel shows UCS-relative values?** NO — always shows native Z-up coordinates. No confusion, no code change.
 
-## 10. Remaining Open Questions
+4. **Cutplane/papercut affected?** NO — scene coordinates unchanged.
 
-1. **Should camera view presets (iso, top, front...) be UCS-aware?** "Top" currently means "looking down Z". In QZ-up mode, should "top" mean looking down QZ? Probably Phase 3 polish if at all.
+5. **rt-controls.js changes needed?** NO — unlike ucsGroup approach, no gumball reparenting required.
 
-2. **Expand to full custom UCS?** The proposed system handles 7 presets. A full UCS (user-defined arbitrary plane) is scope creep — note for future.
+## 11. Remaining Open Questions
 
-3. **Persist UCS preference?** Should the chosen orientation survive page reload (localStorage)? Probably yes, simple addition in Phase 3.
+1. **Best approach for orbit inversion?** `reverseOrbit`, camera position, or rotateSpeed sign flip? Needs testing.
+
+2. **Should camera view presets (iso, top, front...) be UCS-aware?** "Top" currently means "looking down Z". In QZ-up mode, should "top" mean looking down QZ? Phase 3 polish.
+
+3. **Expand to full custom UCS?** The proposed system handles 7 presets. A full UCS (user-defined arbitrary plane) is scope creep — note for future.
+
+4. **Persist UCS preference?** Should the chosen orientation survive page reload (localStorage)? Probably yes, simple addition in Phase 3.
 
 ---
 
-*Workplan drafted by Claude. Ready for review.*
+## Appendix: Abandoned `ucsGroup` Approach
+
+The initial design wrapped all scene geometry in a `THREE.Group` with a rotation quaternion. While visually correct, this approach failed because:
+
+- **Raycaster world-space positions** conflicted with **local-space object positions** inside the rotated group
+- 8+ coordinate transforms were added across gumball axis move, scale mode, free-move drag plane setup, movement delta, snap position, and node-mode editing — but objects still moved inversely to mouse direction
+- The fix required deep changes to rt-init.js drag handling that were fragile and error-prone
+
+Commits `8f31e7a` (ucsGroup implementation) and `d66db53` (revert + camera-based) document this evolution.
+
+---
+
+*Workplan updated by Claude. Phase 1 complete — orbit inversion fix next.*
