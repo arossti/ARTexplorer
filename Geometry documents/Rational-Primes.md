@@ -229,6 +229,52 @@ All of this infrastructure was designed for rational computation. The irony is t
 
 ---
 
+## Design Decision: Graham Scan Collinearity
+
+**Discovered 2026-02-08** while testing cuboctahedron and rhombic dodecahedron projections.
+
+### The Problem
+
+The Graham scan convex hull algorithm (`_computeConvexHull2D()` in `rt-projections.js`) uses `cross <= 0` to exclude collinear points from the hull:
+
+```javascript
+const cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+if (cross <= 0) hull.pop();  // Excludes collinear points
+```
+
+For vertex-transitive polyhedra like the cuboctahedron, some projected vertices land exactly on hull edges (mathematically collinear). Under Float32 arithmetic, some of these collinear points produce `cross ≈ 0` with sign depending on rounding — creating **inconsistent hull counts**.
+
+**Cuboctahedron Z-axis projection example:**
+- 12 vertices → 8 unique 2D points: 4 corners at (±t, ±t) + 4 edge midpoints at (±t, 0), (0, ±t)
+- Edge midpoints are mathematically collinear with the square hull edges (u + u = t exactly)
+- Float32: 2 of 4 midpoints appear non-collinear → **6-gon** instead of expected 4-gon or 8-gon
+- Visually: "stray rays" that don't connect to the hull outline
+
+### Implications for Prime Polygon Searches
+
+When expanding searches to geodesic and Archimedean solids (Geodesic Tet, Geodesic Oct, Cuboctahedron, Rhombic Dodecahedron), the collinearity handling directly affects hull vertex counts — the very metric we use to identify prime polygons.
+
+Three options:
+
+| Option | Behavior | Effect on Hull Count |
+|--------|----------|---------------------|
+| `cross <= 0` (current) | Exclude collinear | Float32-dependent, inconsistent |
+| `cross < -ε` (tolerance) | Include near-collinear | Consistent but adds "false" vertices |
+| `cross < 0` (strict left-turn) | Include collinear | Deterministic but inflates counts |
+
+**Recommendation**: Path C (exact arithmetic) resolves this definitively — integer cross products are exactly zero or not. For Float32/64 searches, the current `cross <= 0` is acceptable as long as results are validated with exact arithmetic.
+
+### Vertex Transitivity Matters
+
+Not all polyhedra behave the same under projection:
+
+- **Vertex-transitive** (Platonic solids, Cuboctahedron): All vertices equidistant from origin → all project to hull boundary → collinearity is the main ambiguity source
+- **Non-vertex-transitive** (Rhombic Dodecahedron): Vertices at different radii → some project to hull interior → these are geometrically legitimate interior points, not algorithm artifacts
+
+When selecting search polyhedra, vertex transitivity determines whether interior projected points indicate a genuine geometric property or a collinearity algorithm issue. The Rhombic Dodecahedron's two vertex orbits (6 axial at radius r, 8 cuboid at radius r√3/2) will always produce interior projections regardless of hull algorithm — this is geometry, not numerics.
+
+---
+
 ## The Goal
 
 **Immediate**: ~~Determine whether 11-gon and 13-gon projections exist at "nice" rational spreads (Path A).~~ **DONE** — yes, they do. See results table above.

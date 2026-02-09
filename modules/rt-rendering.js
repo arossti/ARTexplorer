@@ -3223,6 +3223,8 @@ export function initScene(THREE, OrbitControls, RT) {
               "octahedron",
               "icosahedron",
               "dodecahedron",
+              "cuboctahedron",
+              "rhombicDodecahedron",
             ].includes(obj.userData.type)
           ) {
             projTarget = obj;
