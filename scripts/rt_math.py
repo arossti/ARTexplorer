@@ -12,6 +12,7 @@ Benefits:
 - Identical results to JavaScript rt-math.js
 """
 
+from fractions import Fraction
 from math import sqrt
 from typing import Tuple, List
 
@@ -314,6 +315,102 @@ def convex_hull_2d(points: List[Tuple[float, float]]) -> List[Tuple[float, float
         hull.append(p)
 
     return hull
+
+
+def convex_hull_2d_exact(points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+    """
+    Path C: Convex hull with exact (Fraction-based) cross products.
+    Eliminates all floating-point ambiguity in collinearity detection.
+
+    Uses Fraction(float) to get the exact rational representation of each
+    Float64 value, then computes cross products with arbitrary-precision
+    integer arithmetic. The result is deterministic:
+    - cross == 0 (exactly collinear in Float64) → excluded from hull
+    - cross > 0 (left turn) → kept on hull
+    - cross < 0 (right turn) → popped from hull
+
+    No epsilon, no tolerance, no platform-dependent rounding.
+
+    Args:
+        points: List of (x, y) tuples (Float64 values)
+
+    Returns:
+        List of (x, y) tuples forming the convex hull in CCW order
+    """
+    if len(points) < 3:
+        return list(points)
+
+    # Remove duplicates (within tolerance — same as Float64 hull)
+    tolerance = 1e-10
+    unique = []
+    for p in points:
+        is_dup = False
+        for q in unique:
+            if abs(p[0] - q[0]) < tolerance and abs(p[1] - q[1]) < tolerance:
+                is_dup = True
+                break
+        if not is_dup:
+            unique.append(p)
+
+    if len(unique) < 3:
+        return unique
+
+    # Convert to Fraction for exact arithmetic
+    # Fraction(float) gives the exact rational representation of IEEE 754 value
+    frac_pts = [(Fraction(p[0]), Fraction(p[1])) for p in unique]
+
+    # Find starting point (lowest y, then leftmost x) using exact comparison
+    start_idx = min(range(len(unique)),
+                    key=lambda i: (frac_pts[i][1], frac_pts[i][0]))
+
+    # Sort by polar angle from start (float atan2 is fine for ordering —
+    # the exact cross product handles collinearity in the scan)
+    from math import atan2
+    start = unique[start_idx]
+
+    def angle_key(i):
+        if i == start_idx:
+            return (-float('inf'), 0)
+        dx = unique[i][0] - start[0]
+        dy = unique[i][1] - start[1]
+        return (atan2(dy, dx), dx * dx + dy * dy)
+
+    sorted_indices = sorted(range(len(unique)), key=angle_key)
+
+    # Graham scan with EXACT Fraction cross products
+    hull_indices = []
+    for idx in sorted_indices:
+        while len(hull_indices) >= 2:
+            o = frac_pts[hull_indices[-2]]
+            a = frac_pts[hull_indices[-1]]
+            b = frac_pts[idx]
+            # Exact cross product — arbitrary-precision integer arithmetic
+            cross = (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+            if cross <= 0:
+                hull_indices.pop()
+            else:
+                break
+        hull_indices.append(idx)
+
+    return [unique[i] for i in hull_indices]
+
+
+def count_hull_vertices_exact(vertices_3d: List[List[float]],
+                              s1: float, s2: float, s3: float) -> int:
+    """
+    Path C: Count hull vertices using exact Fraction-based cross products.
+    Deterministic — same input always gives same output, no FP ambiguity.
+
+    Args:
+        vertices_3d: List of [x, y, z] vertices
+        s1, s2, s3: Rotation spreads
+
+    Returns:
+        Number of vertices on the 2D convex hull (exact)
+    """
+    points_2d = project_to_plane(vertices_3d, s1, s2, s3)
+    hull = convex_hull_2d_exact(points_2d)
+    return len(hull)
 
 
 def project_to_plane(vertices_3d: List[List[float]],
