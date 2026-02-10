@@ -1134,6 +1134,10 @@ export const Helices = {
    * @param {Object} options.strandChirality - Chirality per strand: { A: true/false, ... H: true/false } (true=RH, false=LH)
    * @returns {Object} { vertices, edges, faces, metadata }
    */
+  // BUG (non-critical): Packed node sizing uses octahedron edge Q for tetrahelix3,
+  // but the helix strands are tetrahedral chains with their own (smaller) edge Q.
+  // Result: packed nodes on helix strands are slightly too large.
+  // Fix would require passing per-strand edge Q to the node sizing system.
   tetrahelix3: (halfSize = 1, options = {}) => {
     const count = Math.min(Math.max(options.count || 10, 1), 145);
     // Default: only strand A enabled

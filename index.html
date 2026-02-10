@@ -3212,7 +3212,7 @@
               class="section-toggle collapsed"
               data-target="visual-options-section"
             ></span>
-            Visual Options
+            Nodes and Faces
           </h3>
           <div id="visual-options-section" class="section-content collapsed">
             <div class="control-item">
@@ -3225,20 +3225,17 @@
                 "
                 >Nodes</label
               >
-              <div class="node-size-selector">
-                <button class="node-size-btn" data-node-size="off">Off</button>
-                <button class="node-size-btn" data-node-size="sm">Sm</button>
-                <button class="node-size-btn active" data-node-size="md">
-                  Md
-                </button>
-                <button class="node-size-btn" data-node-size="lg">Lg</button>
-                <button
-                  class="node-size-btn"
-                  data-node-size="packed"
-                  title="Close-packed spheres: r = a/2 (kissing number)"
-                >
-                  Packed
-                </button>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="nodeSizeSlider"
+                  min="0"
+                  max="8"
+                  step="1"
+                  value="4"
+                  title="Node sphere size: 0=Off, 1-7=Fixed sizes, 8=Packed (close-packed r=a/2)"
+                />
+                <span class="slider-value" id="nodeSizeLabel">Md</span>
               </div>
             </div>
             <div class="control-item spacing-top-medium">

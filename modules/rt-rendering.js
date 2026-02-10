@@ -668,6 +668,17 @@ export function initScene(THREE, OrbitControls, RT) {
     return Nodes.getNodeConfig().nodeOpacity;
   }
 
+  /**
+   * Read node size from slider element
+   * @returns {string} nodeSize key ("off", "1"-"7", or "packed")
+   */
+  function getNodeSize() {
+    const slider = document.getElementById("nodeSizeSlider");
+    return slider
+      ? Nodes.getNodeSizeFromSlider(slider.value)
+      : "4"; // default to Md
+  }
+
   // Original node functions moved to rt-nodes.js (Phase 3 extraction, Jan 2026)
   // See: modules/rt-nodes.js for getPolyhedronEdgeQuadrance, getClosePackedRadius,
   //      getCachedNodeGeometry, addMatrixNodes, addRadialMatrixNodes
@@ -711,8 +722,7 @@ export function initScene(THREE, OrbitControls, RT) {
     const { vertices, edges, faces } = geometry;
 
     // Get selected node size from new button selector
-    const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-    const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+    const nodeSize = getNodeSize();
     const showNodes = nodeSize !== "off";
     const showFaces = true; // Always render faces (use opacity slider to hide)
 
@@ -910,8 +920,7 @@ export function initScene(THREE, OrbitControls, RT) {
           nodeRadius = 0.04; // "md" size fallback
         }
       } else {
-        const nodeSizes = { sm: 0.02, md: 0.04, lg: 0.08 };
-        nodeRadius = nodeSizes[nodeSize] || 0.04;
+        nodeRadius = Nodes.getNodeSizeRadius(nodeSize);
       }
 
       // Get flatShading preference from checkbox
@@ -2030,8 +2039,7 @@ export function initScene(THREE, OrbitControls, RT) {
         cubeMatrixGroup.add(cubeMatrix);
 
         // Add vertex nodes if enabled
-        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
         if (showNodes) {
@@ -2206,8 +2214,7 @@ export function initScene(THREE, OrbitControls, RT) {
         tetMatrixGroup.add(tetMatrix);
 
         // Add vertex nodes if enabled
-        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
         if (showNodes) {
@@ -2287,8 +2294,7 @@ export function initScene(THREE, OrbitControls, RT) {
         octaMatrixGroup.add(octaMatrix);
 
         // Add vertex nodes if enabled
-        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
         if (showNodes) {
@@ -2512,8 +2518,7 @@ export function initScene(THREE, OrbitControls, RT) {
         cuboctaMatrixGroup.add(cuboctaMatrix);
 
         // Add vertex nodes if enabled
-        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
         if (showNodes) {
@@ -2903,8 +2908,7 @@ export function initScene(THREE, OrbitControls, RT) {
         rhombicDodecMatrixGroup.add(rhombicDodecMatrix);
 
         // Add vertex nodes if enabled
-        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
         if (showNodes) {
@@ -2962,8 +2966,7 @@ export function initScene(THREE, OrbitControls, RT) {
         radialCubeMatrixGroup.add(radialCubeMatrix);
 
         // Add vertex nodes if enabled
-        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
         if (showNodes) {
@@ -3026,8 +3029,7 @@ export function initScene(THREE, OrbitControls, RT) {
         radialRhombicDodecMatrixGroup.add(radialRhombicDodecMatrix);
 
         // Add vertex nodes if enabled
-        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
         if (showNodes) {
@@ -3089,8 +3091,7 @@ export function initScene(THREE, OrbitControls, RT) {
         radialTetMatrixGroup.add(radialTetMatrix);
 
         // Add vertex nodes if enabled
-        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
         if (showNodes) {
@@ -3156,8 +3157,7 @@ export function initScene(THREE, OrbitControls, RT) {
         radialOctMatrixGroup.add(radialOctMatrix);
 
         // Add vertex nodes if enabled
-        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
         if (showNodes) {
@@ -3226,8 +3226,7 @@ export function initScene(THREE, OrbitControls, RT) {
         radialVEMatrixGroup.add(radialVEMatrix);
 
         // Add vertex nodes if enabled
-        const nodeSizeBtn = document.querySelector(".node-size-btn.active");
-        const nodeSize = nodeSizeBtn ? nodeSizeBtn.dataset.nodeSize : "md";
+        const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
         if (showNodes) {

@@ -433,6 +433,86 @@ function getClosePackedRadius(type, scale, options = {}) {
 // ============================================================================
 
 // ============================================================================
+// NODE SIZE SLIDER MAPPING
+// ============================================================================
+
+/**
+ * Map slider step (0-8) to node size key string
+ * 0 = Off, 1-7 = fixed radii, 8 = Packed (close-packed)
+ */
+const NODE_SIZE_STEPS = {
+  0: "off",
+  1: "1",
+  2: "2",
+  3: "3",
+  4: "4",
+  5: "5",
+  6: "6",
+  7: "7",
+  8: "packed",
+};
+
+/**
+ * Fixed radii for slider steps 1-7
+ * Logarithmic-ish spacing for better low-end resolution
+ */
+const NODE_SIZE_RADII = {
+  "1": 0.01,
+  "2": 0.02,
+  "3": 0.03,
+  "4": 0.04,
+  "5": 0.06,
+  "6": 0.08,
+  "7": 0.12,
+  // Legacy string keys (backward compatibility with saved states)
+  sm: 0.02,
+  md: 0.04,
+  lg: 0.08,
+};
+
+/**
+ * Display labels for slider steps
+ */
+const NODE_SIZE_LABELS = {
+  0: "Off",
+  1: "1",
+  2: "Sm",
+  3: "3",
+  4: "Md",
+  5: "5",
+  6: "Lg",
+  7: "7",
+  8: "Packed",
+};
+
+/**
+ * Convert slider integer value to nodeSize key
+ * @param {number|string} sliderValue - Slider step (0-8)
+ * @returns {string} nodeSize key for getCachedNodeGeometry
+ */
+function getNodeSizeFromSlider(sliderValue) {
+  return NODE_SIZE_STEPS[parseInt(sliderValue)] || "4";
+}
+
+/**
+ * Get display label for slider value
+ * @param {number|string} sliderValue - Slider step (0-8)
+ * @returns {string} Human-readable label
+ */
+function getNodeSizeLabel(sliderValue) {
+  return NODE_SIZE_LABELS[parseInt(sliderValue)] || "Md";
+}
+
+/**
+ * Get fixed radius for a nodeSize key (for userData, not packed mode)
+ * @param {string} nodeSize - Size key ("1"-"7", "sm", "md", "lg")
+ * @returns {number} Radius in scene units
+ */
+function getNodeSizeRadius(nodeSize) {
+  return NODE_SIZE_RADII[nodeSize] || 0.04;
+}
+
+// ============================================================================
 // NODE GEOMETRY CACHE
 // ============================================================================
 
@@ -485,13 +565,8 @@ function getCachedNodeGeometry(
       }
     }
   } else {
-    // FIXED SIZE MODE: Use predefined sizes
-    const nodeSizes = {
-      sm: 0.02,
-      md: 0.04,
-      lg: 0.08,
-    };
-    radius = nodeSizes[nodeSize] || 0.04;
+    // FIXED SIZE MODE: Use slider step radii (with legacy string fallback)
+    radius = NODE_SIZE_RADII[nodeSize] || 0.04;
   }
 
   if (useRT) {
@@ -586,8 +661,7 @@ function addMatrixNodes(
   if (nodeSize === "packed") {
     nodeRadius = getClosePackedRadius(polyhedronType, scale);
   } else {
-    const nodeSizes = { sm: 0.02, md: 0.04, lg: 0.08 };
-    nodeRadius = nodeSizes[nodeSize] || 0.04;
+    nodeRadius = NODE_SIZE_RADII[nodeSize] || 0.04;
   }
 
   const nodeMaterial = new THREE.MeshStandardMaterial({
@@ -796,8 +870,7 @@ function addRadialMatrixNodes(
   if (nodeSize === "packed") {
     nodeRadius = getClosePackedRadius(polyhedronType, scale);
   } else {
-    const nodeSizes = { sm: 0.02, md: 0.04, lg: 0.08 };
-    nodeRadius = nodeSizes[nodeSize] || 0.04;
+    nodeRadius = NODE_SIZE_RADII[nodeSize] || 0.04;
   }
 
   const nodeMaterial = new THREE.MeshStandardMaterial({
@@ -991,6 +1064,11 @@ export const Nodes = {
   setNodeGeometryType,
   setGeodesicFrequency,
   setNodeOpacity,
+
+  // Slider mapping
+  getNodeSizeFromSlider,
+  getNodeSizeLabel,
+  getNodeSizeRadius,
 
   // State getter
   getNodeConfig,
