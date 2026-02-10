@@ -27,6 +27,9 @@ import { allBindings, getBindingStats } from "./rt-ui-binding-defs.js";
 // Phase 3 Modularization: Coordinate Display System (Jan 30, 2026)
 import { RTCoordinates } from "./rt-coordinates.js";
 
+// Node size slider helpers (Feb 2026)
+import { Nodes } from "./rt-nodes.js";
+
 // Centralized geometry logging (Feb 2026)
 import { MetaLog } from "./rt-metalog.js";
 
@@ -604,21 +607,21 @@ function startARTexplorer(
     }
   });
 
-  // Node size selector functionality
-  document.querySelectorAll(".node-size-btn").forEach(btn => {
-    btn.addEventListener("click", function () {
+  // Node size slider functionality
+  const nodeSizeSlider = document.getElementById("nodeSizeSlider");
+  const nodeSizeLabel = document.getElementById("nodeSizeLabel");
+  if (nodeSizeSlider) {
+    nodeSizeSlider.addEventListener("input", function () {
+      // Update label
+      if (nodeSizeLabel) {
+        nodeSizeLabel.textContent = Nodes.getNodeSizeLabel(this.value);
+      }
       // Clear geometry cache when size changes
       renderingAPI.clearNodeCache();
-      // Remove active from all buttons
-      document
-        .querySelectorAll(".node-size-btn")
-        .forEach(b => b.classList.remove("active"));
-      // Add active to clicked button
-      this.classList.add("active");
       // Trigger re-render
       updateGeometry();
     });
-  });
+  }
 
   // Node geometry type toggle (Classical vs RT)
   document
