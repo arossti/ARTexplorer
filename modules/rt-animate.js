@@ -36,6 +36,7 @@ export const RTAnimate = {
     this._renderer = renderer;
     this._scene = scene;
 
+    this._wireUpButtons();
     MetaLog.log(MetaLog.SUMMARY, "✅ RTAnimate initialized");
   },
 
@@ -50,7 +51,7 @@ export const RTAnimate = {
    *   view.transitionDuration, then 2000ms default.
    * @returns {Promise<void>} Resolves when animation completes or is cancelled.
    */
-  animateToView(viewId, durationMs) {
+  animateToView(viewId, durationMs, { cancelPreview = true } = {}) {
     const vm = this._viewManager;
     const view = vm.state.views.find(
       v => v.id === viewId || v.name === viewId
@@ -65,8 +66,9 @@ export const RTAnimate = {
       this.state.frameId = null;
     }
 
-    // 2. If previewing and ▶ is clicked, exit preview mode
-    if (this.state.previewing) {
+    // 2. If previewing and ▶ is clicked externally, exit preview mode
+    //    (skip when called internally from previewAnimation loop)
+    if (cancelPreview && this.state.previewing) {
       this.state.previewing = false;
       this._updatePreviewButton(false);
     }
@@ -183,7 +185,7 @@ export const RTAnimate = {
         if (!this.state.previewing) break;
         const view = views[i];
         const duration = view.transitionDuration || 2000;
-        await this.animateToView(view.id, duration);
+        await this.animateToView(view.id, duration, { cancelPreview: false });
         if (!this.state.previewing) break;
         // Hold at keyframe
         await new Promise(r =>
@@ -207,5 +209,196 @@ export const RTAnimate = {
     if (!btn) return;
     btn.textContent = playing ? "Stop" : "Preview";
     btn.classList.toggle("active", playing);
+  },
+
+  /**
+   * Wire up Preview/Batch/Animation button click handlers.
+   * @private
+   */
+  _wireUpButtons() {
+    const previewBtn = document.getElementById("previewAnimationBtn");
+    const batchBtn = document.getElementById("exportBatchBtn");
+    const animBtn = document.getElementById("exportAnimationBtn");
+
+    if (previewBtn) {
+      previewBtn.addEventListener("click", () => this.previewAnimation());
+    }
+    if (batchBtn) {
+      batchBtn.addEventListener("click", () => this.exportBatch());
+    }
+    if (animBtn) {
+      animBtn.addEventListener("click", () => this.exportAnimation());
+    }
+  },
+
+  // ── Batch export ──────────────────────────────────────────────
+
+  /**
+   * Export each saved view as an individual SVG file.
+   * Positions camera at each view, generates SVG, triggers download.
+   */
+  async exportBatch() {
+    const vm = this._viewManager;
+    const views = vm._getSortedViews();
+    if (views.length === 0) return;
+
+    for (const view of views) {
+      // Position camera at this view (instant snap for export)
+      vm.loadView(view.id);
+      // Allow one frame for render to settle
+      await new Promise(r => requestAnimationFrame(r));
+      // Export SVG
+      vm.exportSVG({ view });
+    }
+
+    MetaLog.log(MetaLog.SUMMARY, `📦 Batch exported ${views.length} SVGs`);
+  },
+
+  // ── Animation export (SVG+SMIL) ──────────────────────────────
+
+  /**
+   * Generate interpolated frames between all saved views and export
+   * as a single animated SVG with SMIL timing.
+   *
+   * @param {Object} [options]
+   * @param {number} [options.stepsPerTransition=10] - Frames between keyframes
+   */
+  async exportAnimation(options = {}) {
+    const { stepsPerTransition = 10 } = options;
+    const vm = this._viewManager;
+    const views = vm._getSortedViews();
+
+    if (views.length < 2) {
+      console.warn("Need at least 2 views for animation export");
+      return;
+    }
+
+    const camera = this._camera;
+    const controls = this._controls;
+    const frames = []; // Array of SVG strings
+    const frameDurations = []; // Duration per frame in seconds
+
+    // For each pair of adjacent views, generate interpolated frames
+    for (let v = 0; v < views.length; v++) {
+      const fromView = views[v];
+      const toView = views[(v + 1) % views.length];
+      const transMs = toView.transitionDuration || 2000;
+      const holdSec = Math.max(transMs / 3000, 0.5);
+      const frameSec = transMs / 1000 / stepsPerTransition;
+
+      // Hold frame at current keyframe
+      vm.loadView(fromView.id);
+      await new Promise(r => requestAnimationFrame(r));
+      frames.push(vm.generateSVG({ view: fromView }));
+      frameDurations.push(holdSec);
+
+      // Interpolated frames between this view and next
+      const startPos = new THREE.Vector3(
+        fromView.camera.position.x,
+        fromView.camera.position.y,
+        fromView.camera.position.z
+      );
+      const endPos = new THREE.Vector3(
+        toView.camera.position.x,
+        toView.camera.position.y,
+        toView.camera.position.z
+      );
+      const startDist = startPos.length();
+      const endDist = endPos.length();
+      const startZoom = fromView.camera.zoom || 1;
+      const endZoom = toView.camera.zoom || 1;
+
+      for (let s = 1; s < stepsPerTransition; s++) {
+        const rawT = s / stepsPerTransition;
+        const t = rawT * rawT * (3 - 2 * rawT); // smoothstep
+
+        // Slerp position
+        const pos = new THREE.Vector3().lerpVectors(startPos, endPos, t);
+        const dist = startDist + (endDist - startDist) * t;
+        pos.normalize().multiplyScalar(dist);
+
+        camera.position.copy(pos);
+        camera.up.set(0, 0, 1);
+        camera.lookAt(0, 0, 0);
+        camera.zoom = startZoom + (endZoom - startZoom) * t;
+        camera.updateProjectionMatrix();
+
+        if (controls) {
+          controls.target.set(0, 0, 0);
+          controls.update();
+        }
+
+        this._renderer.render(this._scene, camera);
+        await new Promise(r => requestAnimationFrame(r));
+
+        // Generate SVG at this interpolated position
+        const interpView = vm.captureView({ name: `frame_${frames.length}` });
+        frames.push(vm.generateSVG({ view: interpView }));
+        frameDurations.push(frameSec);
+      }
+    }
+
+    // Assemble animated SVG with SMIL
+    const dims = vm.getExportDimensions();
+    const animatedSvg = this._assembleSMIL(frames, frameDurations, dims);
+
+    // Download
+    const blob = new Blob([animatedSvg], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "animation.svg";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    MetaLog.log(
+      MetaLog.SUMMARY,
+      `🎬 Animation exported: ${frames.length} frames, ${frameDurations.reduce((a, b) => a + b, 0).toFixed(1)}s total`
+    );
+  },
+
+  /**
+   * Assemble individual SVG frame strings into a single animated SVG
+   * using SMIL <set> elements for frame-by-frame visibility.
+   *
+   * @param {string[]} frames - Array of SVG strings (one per frame)
+   * @param {number[]} durations - Duration in seconds for each frame
+   * @param {{width: number, height: number}} dims - SVG dimensions
+   * @returns {string} Complete animated SVG string
+   * @private
+   */
+  _assembleSMIL(frames, durations, dims) {
+    const totalDur = durations.reduce((a, b) => a + b, 0);
+
+    // Extract inner content from each SVG (strip outer <svg> tags)
+    const innerFrames = frames.map(svg => {
+      const match = svg.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
+      return match ? match[1] : svg;
+    });
+
+    // Build frame groups with SMIL timing
+    let currentTime = 0;
+    const frameGroups = innerFrames.map((content, i) => {
+      const begin = currentTime.toFixed(3);
+      const dur = durations[i].toFixed(3);
+      currentTime += durations[i];
+
+      return `  <g id="frame-${i}" visibility="hidden">
+    <set attributeName="visibility" to="visible"
+         begin="${begin}s" dur="${dur}s" fill="remove"/>
+${content}
+  </g>`;
+    });
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 ${dims.width} ${dims.height}"
+     width="${dims.width}" height="${dims.height}">
+  <title>ARTexplorer Animation</title>
+  <desc>Generated by ARTexplorer — ${frames.length} frames, ${totalDur.toFixed(1)}s loop</desc>
+${frameGroups.join("\n")}
+</svg>`;
   },
 };
