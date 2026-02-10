@@ -432,42 +432,7 @@ button:active {
   max-height: 0;
 }
 
-/* Node size selector */
-.node-size-selector {
-  display: flex;
-  gap: 5px;
-  margin-top: 5px;
-}
-
-/* Node Size Buttons - HiFi Style */
-.node-size-btn {
-  flex: 1;
-  padding: 5px 8px;
-  font-size: 10px;
-  font-weight: 500;
-  border: none;
-  border-radius: var(--hifi-radius-sm, 3px);
-  cursor: pointer;
-  transition: all 0.15s ease-out;
-  color: var(--hifi-text-muted, #b0b0b0);
-  background: linear-gradient(145deg, #2f2f2f, #262626);
-  box-shadow:
-    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
-    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
-}
-
-.node-size-btn:hover {
-  color: var(--hifi-text, #e0e0e0);
-  background: linear-gradient(145deg, #333333, #292929);
-}
-
-.node-size-btn.active {
-  color: var(--hifi-accent, #00b4ff);
-  background: var(--hifi-bg-dark, #1a1a1a);
-  box-shadow:
-    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
-    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
-}
+/* Node size slider uses .slider-container styles (defined above) */
 
 /* Plane toggle switches (iOS-style pill switches) */
 .plane-toggle-container {

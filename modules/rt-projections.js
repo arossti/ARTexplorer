@@ -14,6 +14,7 @@
 
 import * as THREE from "three";
 import { MetaLog } from "./rt-metalog.js";
+import { RT } from "./rt-math.js";
 
 export const RTProjections = {
   // ═══════════════════════════════════════════════════════════════════════════
@@ -203,6 +204,9 @@ export const RTProjections = {
   setProjectionAxis: function (basis, axis) {
     RTProjections.state.basis = basis;
     RTProjections.state.axis = axis;
+    // Clear custom spreads — named axis overrides any preset
+    RTProjections.state.customSpreads = null;
+    RTProjections.state.presetName = null;
     console.log(`📐 Projection axis set to: ${basis}/${axis}`);
 
     // Update if currently enabled
@@ -516,34 +520,102 @@ export const RTProjections = {
    * @returns {Array<number>} [s1, s2, s3] spreads for current axis
    */
   _axisToSpreads: function () {
+    // NOTE: Only used for custom/preset spread-based projections now.
+    // For named axis projections, use _axisToNormal() + _normalToProjectionBasis().
     const { basis, axis } = RTProjections.state;
 
     if (basis === "cartesian") {
-      // Cartesian axes: simple plane-aligned projections
       switch (axis) {
-        case "x": // YZ plane, normal = (1,0,0)
-          return [0.5, 0.5, 0]; // Rotate 90° around Y, then Z
-        case "y": // XZ plane, normal = (0,1,0)
-          return [0, 0.5, 0.5]; // Rotate 90° around X, then Y
-        case "z": // XY plane, normal = (0,0,1)
+        case "x":
+          return [0, 1, 0]; // Ry(90°): normal = (1,0,0)
+        case "y":
+          return [0, 0, 0]; // Fallback (use _axisToNormal instead)
+        case "z":
         default:
-          return [0, 0, 0]; // No rotation - default XY plane
+          return [0, 0, 0]; // Identity: normal = (0,0,1)
       }
     } else {
-      // Tetrahedral (Quadray) axes
-      // Normals point toward tetrahedron vertices: (±1,±1,±1)/√3
       switch (axis) {
-        case "qw": // (1,1,1)/√3
-          return [0.25, 0.25, 0.25]; // s=0.25 → θ=30° each axis
-        case "qx": // (1,-1,-1)/√3
-          return [0.25, 0.25, 0.75];
-        case "qy": // (-1,1,-1)/√3
-          return [0.75, 0.25, 0.25];
-        case "qz": // (-1,-1,1)/√3
+        case "qw":
+          return [0, 0, 0]; // Fallback (use _axisToNormal instead)
+        case "qx":
+          return [0, 0, 0];
+        case "qy":
+          return [0, 0, 0];
+        case "qz":
         default:
-          return [0.25, 0.75, 0.25];
+          return [0, 0, 0];
       }
     }
+  },
+
+  /**
+   * Get projection normal vector directly from axis selection.
+   * Bypasses the spread→rotation pipeline for exact axis alignment.
+   *
+   * RT-pure: Cartesian axes are exact rationals (no radicals).
+   * Quadray axes are integer Cartesian (±1,±1,±1) normalized via
+   * cached RT.PureRadicals.sqrt3() — single √3 expansion, not recomputed.
+   *
+   * @returns {THREE.Vector3} Unit normal vector for the projection plane
+   */
+  _axisToNormal: function () {
+    const { basis, axis } = RTProjections.state;
+
+    if (basis === "cartesian") {
+      // Exact rational unit vectors — no radicals needed
+      switch (axis) {
+        case "x":
+          return new THREE.Vector3(1, 0, 0);
+        case "y":
+          return new THREE.Vector3(0, 1, 0);
+        case "z":
+        default:
+          return new THREE.Vector3(0, 0, 1);
+      }
+    } else {
+      // Tetrahedral (Quadray) basis vectors — cube diagonals
+      // Quadray WXYZ = integer Cartesian (±1, ±1, ±1), length = √3
+      // Normalize via cached radical: 1/√3 = √3/3
+      const s = 1 / RT.PureRadicals.sqrt3();
+      switch (axis) {
+        case "qw":
+          return new THREE.Vector3(s, s, s);
+        case "qx":
+          return new THREE.Vector3(s, -s, -s);
+        case "qy":
+          return new THREE.Vector3(-s, s, -s);
+        case "qz":
+        default:
+          return new THREE.Vector3(-s, -s, s);
+      }
+    }
+  },
+
+  /**
+   * Construct orthonormal projection basis from a normal vector.
+   * Returns right/up/normal vectors that define the projection plane.
+   *
+   * @param {THREE.Vector3} normal - Unit normal for the projection plane
+   * @returns {{planeRight: THREE.Vector3, planeUp: THREE.Vector3, planeNormal: THREE.Vector3}}
+   */
+  _normalToProjectionBasis: function (normal) {
+    const planeNormal = normal.clone().normalize();
+
+    // Choose a reference vector not parallel to normal
+    const ref =
+      Math.abs(planeNormal.y) < 0.9
+        ? new THREE.Vector3(0, 1, 0)
+        : new THREE.Vector3(1, 0, 0);
+
+    const planeRight = new THREE.Vector3()
+      .crossVectors(ref, planeNormal)
+      .normalize();
+    const planeUp = new THREE.Vector3()
+      .crossVectors(planeNormal, planeRight)
+      .normalize();
+
+    return { planeRight, planeUp, planeNormal };
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -577,13 +649,18 @@ export const RTProjections = {
     worldVertices.forEach(v => center.add(v));
     center.divideScalar(worldVertices.length);
 
-    // Get projection plane basis - use custom spreads from preset/options if available
-    const spreads =
-      options.spreads ||
-      RTProjections.state.customSpreads ||
-      RTProjections._axisToSpreads();
-    const { planeRight, planeUp, planeNormal } =
-      RTProjections._getProjectionPlaneBasis(spreads);
+    // Get projection plane basis
+    // Custom spreads (from presets) use rotation matrix; named axes use direct normal
+    const customSpreads = options.spreads || RTProjections.state.customSpreads;
+    let planeRight, planeUp, planeNormal;
+    if (customSpreads) {
+      ({ planeRight, planeUp, planeNormal } =
+        RTProjections._getProjectionPlaneBasis(customSpreads));
+    } else {
+      const normal = RTProjections._axisToNormal();
+      ({ planeRight, planeUp, planeNormal } =
+        RTProjections._normalToProjectionBasis(normal));
+    }
 
     // Projection plane is at distance along the normal from center
     const planeCenter = center
@@ -768,7 +845,8 @@ export const RTProjections = {
     RTProjections._updateProjectionInfo(hull2D.length, worldVertices.length);
 
     console.log(
-      `📐 Projection complete: ${worldVertices.length} vertices → ${hull2D.length}-gon hull`
+      `📐 Projection complete: ${worldVertices.length} vertices → ${hull2D.length}-gon hull` +
+        ` | normal=(${planeNormal.x.toFixed(3)}, ${planeNormal.y.toFixed(3)}, ${planeNormal.z.toFixed(3)})`
     );
   },
 
