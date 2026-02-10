@@ -615,20 +615,20 @@ if __name__ == '__main__':
 
 ## Implementation Order
 
-| Step | File(s) | What | Test |
-|------|---------|------|------|
-| **1a** | `rt-animate.js`, `rt-init.js` | Create module, init, `animateToView()` | Console: `RTAnimate.animateToView('QW1')` |
-| **1b** | `rt-viewmanager.js` | ▶ delegates to RTAnimate | ▶ button smoothly transitions |
-| **1c** | `rt-animate.js` | Cancel logic (click ▶ mid-animation) | Redirects smoothly to new target |
-| **2a** | `rt-viewmanager.js` | Add `transitionDuration` to view data model | Verify in export/import |
-| **2b** | `rt-animate.js`, `art.css` | T button + HiFi popup slider | Set timing, verify persistence |
-| **3a** | `rt-animate.js`, `index.html` | Preview button — loops through views | Watch cube tumble in scene |
-| **3b** | `rt-animate.js` | Export Batch — downloads individual SVGs | Check SVG files |
-| **3c** | `rt-animate.js` | Export Animation — generates animated SVG+SMIL | Open .svg in browser, verify it plays |
-| **4** | `build_favicon.py` | Python GIF assembly | Verify favicon.gif in browser tab |
-| **5a** | `rt-viewmanager.js` | Drag-to-reorder rows (grip handle) | Drag view between others, verify order persists |
-| **5b** | `rt-viewmanager.js`, `rt-animate.js` | Object visibility per view (instanceRefs) | Add/remove polyhedra between views, verify dissolve |
-| **5c** | `rt-papercut.js` | Papercut respects opacity=0 as invisible | Zero-opacity objects excluded from section cuts |
+| Step | File(s) | What | Test | Status |
+|------|---------|------|------|--------|
+| ~~**1a**~~ | `rt-animate.js`, `rt-init.js` | ~~Create module, init, `animateToView()`~~ | ~~Console: `RTAnimate.animateToView('QW1')`~~ | **DONE** |
+| ~~**1b**~~ | `rt-viewmanager.js` | ~~▶ delegates to RTAnimate~~ | ~~▶ button smoothly transitions~~ | **DONE** |
+| ~~**1c**~~ | `rt-animate.js` | ~~Cancel logic (click ▶ mid-animation)~~ | ~~Redirects smoothly to new target~~ | **DONE** |
+| ~~**2a**~~ | `rt-viewmanager.js` | ~~Add `transitionDuration` to view data model~~ | ~~Verify in export/import~~ | **DONE** |
+| ~~**2b**~~ | `rt-animate.js`, `art.css` | ~~T button + HiFi popup slider~~ | ~~Set timing, verify persistence~~ | **DONE** |
+| ~~**3a**~~ | `rt-animate.js`, `index.html` | ~~Preview button — loops through views~~ | ~~Watch cube tumble in scene~~ | **DONE** |
+| ~~**3b**~~ | `rt-animate.js` | ~~Export Batch — downloads individual SVGs~~ | ~~Check SVG files~~ | **DONE** |
+| ~~**3c**~~ | `rt-animate.js` | ~~Export Animation — generates animated SVG+SMIL~~ | ~~Open .svg in browser, verify it plays~~ | **DONE** |
+| **4** | `build_favicon.py` | Python GIF assembly | Verify favicon.gif in browser tab | Pending |
+| **5a** | `rt-viewmanager.js` | Drag-to-reorder rows (grip handle) | Drag view between others, verify order persists | Pending |
+| **5b** | `rt-viewmanager.js`, `rt-animate.js` | Object visibility per view (instanceRefs) | Add/remove polyhedra between views, verify dissolve | Pending |
+| **5c** | `rt-papercut.js` | Papercut respects opacity=0 as invisible | Zero-opacity objects excluded from section cuts | Pending |
 
 ## Favicon-Specific Parameters
 
@@ -733,6 +733,45 @@ if (mesh.material.opacity === 0) continue;
 ```
 
 This is a single-line guard in the section loop. Objects faded out via the dissolve system are automatically excluded from cuts. When they fade back in, they're automatically included again.
+
+---
+
+## Modal Distinction: Interactive vs Export
+
+The animation system operates in two distinct modes with different scope:
+
+### Interactive Mode (▶ / Preview)
+
+**Camera-only.** The ▶ button and Preview loop animate only the camera position, zoom, and orientation. Scene objects, cutplanes, projections — everything the user is currently experimenting with — remains untouched.
+
+This is intentional: Interactive mode is for **creative exploration**. A user can plan an animation path while simultaneously adding/removing objects, toggling cutplanes, or changing projections. The camera animation becomes a live "turntable" that orbits through saved viewpoints while the user sculpts the scene.
+
+### Export Mode (Batch / Animation)
+
+**Full state restore.** Batch and Animation export call `loadView()` which restores the complete saved state — camera, cutplanes, object visibility, projections. Each frame is rendered from the exact scene configuration that was saved.
+
+This is necessary for **reproducible output**: an exported SVG sequence must show exactly what was saved, not whatever the user happens to have on screen at export time.
+
+### Summary
+
+| Mode | Trigger | Camera | Scene State | Use Case |
+|------|---------|--------|-------------|----------|
+| **Interactive** | ▶, Preview | Animated | Untouched (user controls) | Creative exploration |
+| **Export** | Batch, Animation | Snapped per view | Full restore via `loadView()` | Reproducible output |
+
+---
+
+## Known Bugs
+
+### BUG: Cutplane state not restoring on ▶ transitions
+
+**Symptom**: Section cut state (cutplane on/off, position) used to toggle correctly when switching between views via ▶. If View 1 had no section cut and View 2 did, clicking ▶ on each would show/hide the cut. This may have been lost when ▶ was changed from `loadView()` (full state restore) to `animateToView()` (camera-only).
+
+**Root cause**: The ▶ delegation in `rt-viewmanager.js` now calls `RTAnimate.animateToView()` which only interpolates camera position/zoom — it does not call `loadView()` and therefore does not restore cutplane, projection, or object visibility state.
+
+**Possible fix**: At animation completion (when `rawT >= 1`), optionally call a lightweight state-restore that applies non-camera state (cutplane, projections) from the target view. This preserves the smooth camera transition while snapping non-camera state at the end. Alternatively, this could be a per-view toggle ("animate camera only" vs "animate + restore state").
+
+**Priority**: Medium — affects users who rely on cutplane toggling between views.
 
 ---
 
