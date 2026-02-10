@@ -207,8 +207,13 @@ export const RTAnimate = {
   _updatePreviewButton(playing) {
     const btn = document.getElementById("previewAnimationBtn");
     if (!btn) return;
-    btn.textContent = playing ? "Stop" : "Preview";
-    btn.classList.toggle("active", playing);
+    if (playing) {
+      btn.innerHTML = '<span style="color: #ff6b6b; font-size: 14px">&#9632;</span>'; // red ■
+      btn.title = "Stop animation preview";
+    } else {
+      btn.innerHTML = '<span style="color: #4caf50; font-size: 14px">&#9654;</span>'; // green ▶
+      btn.title = "Preview animation loop in scene";
+    }
   },
 
   /**
