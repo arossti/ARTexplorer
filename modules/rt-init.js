@@ -33,6 +33,9 @@ import { Nodes } from "./rt-nodes.js";
 // Centralized geometry logging (Feb 2026)
 import { MetaLog } from "./rt-metalog.js";
 
+// Camera animation system for View Capture (Feb 2026)
+import { RTAnimate } from "./rt-animate.js";
+
 // Phase 2b Modularization: Selection System - REVERTED
 // Selection is tightly coupled with gumball (~40 references to currentSelection)
 // Extracting selection without gumball creates artificial separation that adds
@@ -4355,6 +4358,18 @@ function startARTexplorer(
     renderer: renderer,
   });
   window.RTViewManager = RTViewManager; // Global access for debugging
+
+  // ========================================================================
+  // RT-ANIMATE MODULE INITIALIZATION
+  // ========================================================================
+  RTAnimate.init({
+    viewManager: RTViewManager,
+    camera: camera,
+    controls: controls,
+    renderer: renderer,
+    scene: scene,
+  });
+  window.RTAnimate = RTAnimate; // Global access for debugging
 
   // Wire up cutplane axis selector buttons
   const cutplaneAxisButtons = [
