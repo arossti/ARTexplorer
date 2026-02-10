@@ -2816,6 +2816,17 @@ button:disabled {
   border-color: #00b4ff;
 }
 
+.view-actions .view-timing-btn {
+  font-size: 9px;
+  color: #00b4ff;
+  border-color: #00b4ff44;
+}
+
+.view-actions .view-timing-btn:hover {
+  background: rgba(0, 180, 255, 0.15);
+  border-color: #00b4ff;
+}
+
 .view-actions .view-delete-btn:hover {
   background: #442222;
   border-color: #ff6b6b;
