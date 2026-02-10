@@ -480,6 +480,31 @@ The Greeks didn't have algebra. We do.
 
 ---
 
+## TODO: Geodesic Tetrahedron Axis-Projection Hull Asymmetry
+
+**Observed 2026-02-09** during projection axis alignment fix testing.
+
+When projecting a geodesic tetrahedron (74 vertices, freq=5?) along the four Quadray axes, the hull counts are **asymmetric**:
+
+| Axis | Normal | Hull Count |
+|------|--------|------------|
+| QW | (0.577, 0.577, 0.577) | 8-gon |
+| QX | (0.577, -0.577, -0.577) | 7-gon |
+| QY | (-0.577, 0.577, -0.577) | 9-gon |
+| QZ | (-0.577, -0.577, 0.577) | 7-gon |
+
+Cartesian axes all produce 6-gon hulls (as expected — the cube has 4-fold symmetry along XYZ, and the tet's geodesic subdivision preserves it).
+
+**Questions to investigate**:
+- Why do QX and QZ both give 7 while QW gives 8 and QY gives 9?
+- The geodesic tet inherits Td symmetry (tetrahedral, not full octahedral). QW points toward a tet vertex; QX/QY/QZ point toward the opposite face centers. Are the 7-gons from QX/QZ genuine primes or degenerate (180° angles)?
+- Does this asymmetry persist at other geodesic frequencies?
+- Could this be a new source of prime polygons at **named Quadray axes** (not searched spreads)?
+
+**Action**: Run `prime_search_streamlined.py --exact` with spreads corresponding to the 4 Quadray axis normals to verify hull counts and check for degeneracy. Compare with the leaderboard results for geodesic tet.
+
+---
+
 ## References
 
 - Wildberger, N.J. *Divine Proportions: Rational Trigonometry to Universal Geometry* (2005)
