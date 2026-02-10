@@ -626,6 +626,9 @@ if __name__ == '__main__':
 | **3b** | `rt-animate.js` | Export Batch — downloads individual SVGs | Check SVG files |
 | **3c** | `rt-animate.js` | Export Animation — generates animated SVG+SMIL | Open .svg in browser, verify it plays |
 | **4** | `build_favicon.py` | Python GIF assembly | Verify favicon.gif in browser tab |
+| **5a** | `rt-viewmanager.js` | Drag-to-reorder rows (grip handle) | Drag view between others, verify order persists |
+| **5b** | `rt-viewmanager.js`, `rt-animate.js` | Object visibility per view (instanceRefs) | Add/remove polyhedra between views, verify dissolve |
+| **5c** | `rt-papercut.js` | Papercut respects opacity=0 as invisible | Zero-opacity objects excluded from section cuts |
 
 ## Favicon-Specific Parameters
 
@@ -638,6 +641,100 @@ For the QW↔X tumble favicon using this system:
 5. Run `build_favicon.py` to rasterize at 64×64
 
 The return path naturally forms a different great-circle arc than the forward path because the camera slerps between different positions on the sphere — creating the tumble effect without needing an explicit waypoint.
+
+## Phase 5: View Reordering & Object Persistence
+
+Two features that become essential once views are used as animation keyframes.
+
+---
+
+### 5a: Drag-to-Reorder Views
+
+**Problem**: Views are currently sorted by name/axis/date. For animation keyframes, the user needs explicit control over sequence order.
+
+**Solution**: Add a drag handle (⠿ grip dots) to the left of each view name. Drag-and-drop reorders the `state.views` array directly.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ ⠿  AXO1    Cart-Z   Feb 10   [▶] [2s] [↓] [✕]          │
+│ ⠿  X1      Cart-Z   Feb 10   [▶] [2s] [↓] [✕]          │
+│ ⠿  QZ1     Tet-QZ   Feb 10   [▶] [5s] [↓] [✕]          │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Implementation approach**:
+- Add `<span class="view-drag-handle">⠿</span>` before view name in row template
+- Use native HTML5 drag-and-drop (`draggable`, `dragstart`, `dragover`, `drop`)
+- On drop, splice the view from old index to new index in `state.views`
+- Add a `sortColumn: "manual"` mode that preserves array order
+- When any view is dragged, auto-switch to manual sort mode
+- Re-render table after reorder
+
+**No external dependencies** — HTML5 DnD is sufficient for a short list.
+
+---
+
+### 5b: Object Visibility Per View (Scene State)
+
+**Problem**: Currently all objects in the scene are visible in all views. When building an animation sequence (e.g. "first show cube, then add tetrahedron"), there's no way to control which objects appear per keyframe.
+
+**Current infrastructure**: `captureView()` already stores `instanceRefs` — an array of instance IDs present at capture time. This data exists but isn't used during `loadView()`.
+
+**Solution**: Use `instanceRefs` to control visibility via opacity transitions.
+
+#### How It Works
+
+1. **Capture**: `captureView()` already records `instanceRefs` (all instances at save time)
+2. **Load**: When transitioning to a view, compare current scene instances with the target view's `instanceRefs`:
+   - **Entering objects** (in target but not current): Fade in from opacity 0 → 1
+   - **Exiting objects** (in current but not target): Fade out from opacity 1 → 0
+   - **Persistent objects**: No change
+3. **Dissolve timing**: Object fade runs in parallel with camera animation, using the same `transitionDuration`
+
+#### Opacity Transition (in `rt-animate.js`)
+
+```js
+_dissolveObjects(targetInstanceRefs, durationMs) {
+  const sm = this._viewManager._stateManager;
+  const allInstances = sm.state.instances;
+
+  for (const inst of allInstances) {
+    const shouldBeVisible = targetInstanceRefs.includes(inst.id);
+    const mesh = inst.mesh; // THREE.js mesh reference
+
+    if (shouldBeVisible && mesh.material.opacity < 1) {
+      // Fade in — animate opacity 0 → 1
+      this._animateOpacity(mesh, 1, durationMs);
+    } else if (!shouldBeVisible && mesh.material.opacity > 0) {
+      // Fade out — animate opacity 1 → 0
+      this._animateOpacity(mesh, 0, durationMs);
+    }
+  }
+}
+```
+
+#### KWW: Leverage Existing Material System
+
+THREE.js materials already support `transparent: true` and `opacity`. The dissolve just animates what's already there — no new render pipeline needed. Objects at opacity=0 are still in the scene graph but invisible.
+
+---
+
+### 5c: Papercut Respects Opacity=0
+
+**Problem**: Papercut section cuts slice all geometry in the scene, including objects at opacity=0 that are "invisible" in the current view. This produces visible cut lines for objects the user can't see.
+
+**Rule**: Treat `material.opacity === 0` as "not present" for section calculations.
+
+**Implementation**: In `rt-papercut.js`, where geometry is gathered for section cuts, add an early filter:
+
+```js
+// Skip invisible (dissolved-out) objects
+if (mesh.material.opacity === 0) continue;
+```
+
+This is a single-line guard in the section loop. Objects faded out via the dissolve system are automatically excluded from cuts. When they fade back in, they're automatically included again.
+
+---
 
 ## Notes
 

@@ -433,6 +433,7 @@ export const RTViewManager = {
       instanceRefs: instanceRefs,
       grids: grids,
       colors: colors,
+      transitionDuration: 2000, // ms, default 2s (used by RTAnimate)
       sheetSize: this.state.sheetSize,
       svg: {
         exported: false,
@@ -1652,8 +1653,9 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
           <span class="view-name" style="flex: 1 1 auto; min-width: 40px; max-width: 100px; font-weight: 500; color: #00B4FF; font-size: ${fontSize}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${view.name}">${displayName}</span>
           <span class="view-axis" style="flex: 0 0 45px; color: #888; font-size: 10px;">${axisLabel}</span>
           <span class="view-date" style="flex: 0 0 45px; color: #666; font-size: 10px;">${dateStr}</span>
-          <span class="view-actions" style="flex: 0 0 60px; display: flex; gap: 4px;">
+          <span class="view-actions" style="flex: 0 0 75px; display: flex; gap: 4px;">
             <button class="view-load-btn" data-view-id="${view.id}" title="Load view">▶</button>
+            <button class="view-timing-btn" data-view-id="${view.id}" title="Transition timing">${(view.transitionDuration || 2000) / 1000}s</button>
             <button class="view-export-btn" data-view-id="${view.id}" title="Export SVG">↓</button>
             <button class="view-delete-btn" data-view-id="${view.id}" title="Delete view">✕</button>
           </span>
@@ -1706,6 +1708,8 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
         if (view) {
           this.exportSVG({ view });
         }
+      } else if (btn.classList.contains("view-timing-btn")) {
+        this._toggleTimingPopup(btn, viewId);
       } else if (btn.classList.contains("view-delete-btn")) {
         this.deleteView(viewId);
       }
@@ -1713,6 +1717,74 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
 
     // Mark as having delegation attached
     tbody._viewsDelegationAttached = true;
+  },
+
+  /**
+   * Toggle a HiFi timing slider popup below the view row.
+   * @param {HTMLElement} btn - The T button that was clicked
+   * @param {string} viewId - View ID
+   * @private
+   */
+  _toggleTimingPopup(btn, viewId) {
+    const row = btn.closest(".view-row");
+    if (!row) return;
+
+    // If popup already exists for this row, remove it
+    const existing = row.nextElementSibling;
+    if (existing?.classList.contains("view-timing-popup")) {
+      existing.remove();
+      return;
+    }
+
+    // Remove any other open popup
+    const tbody = row.parentElement;
+    tbody
+      .querySelectorAll(".view-timing-popup")
+      .forEach(el => el.remove());
+
+    const view = this.state.views.find(v => v.id === viewId);
+    if (!view) return;
+
+    const currentSec = (view.transitionDuration || 2000) / 1000;
+
+    const popup = document.createElement("div");
+    popup.className = "view-timing-popup";
+    popup.style.cssText =
+      "display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #1a1a1a; border-bottom: 1px solid #333;";
+    popup.innerHTML = `
+      <span style="color: #888; font-size: 10px; white-space: nowrap;">Transition:</span>
+      <div class="hifi-slider-container" style="flex: 1;">
+        <input type="range" class="hifi-slider hifi-slider--led"
+               min="1" max="24" step="1" value="${currentSec}">
+        <span class="hifi-slider-value">${currentSec}s</span>
+      </div>
+    `;
+
+    // Insert after the row
+    row.after(popup);
+
+    // Wire up slider
+    const slider = popup.querySelector("input[type=range]");
+    const valueDisplay = popup.querySelector(".hifi-slider-value");
+
+    slider.addEventListener("input", () => {
+      const sec = parseInt(slider.value);
+      valueDisplay.textContent = `${sec}s`;
+      view.transitionDuration = sec * 1000;
+      // Update the T button text
+      btn.textContent = `${sec}s`;
+    });
+
+    // Dismiss on outside click (next tick to avoid immediate trigger)
+    setTimeout(() => {
+      const dismiss = e => {
+        if (!popup.contains(e.target) && e.target !== btn) {
+          popup.remove();
+          document.removeEventListener("mousedown", dismiss);
+        }
+      };
+      document.addEventListener("mousedown", dismiss);
+    }, 0);
   },
 
   /**
