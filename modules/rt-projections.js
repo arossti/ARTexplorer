@@ -14,6 +14,7 @@
 
 import * as THREE from "three";
 import { MetaLog } from "./rt-metalog.js";
+import { RT } from "./rt-math.js";
 
 export const RTProjections = {
   // ═══════════════════════════════════════════════════════════════════════════
@@ -552,12 +553,17 @@ export const RTProjections = {
    * Get projection normal vector directly from axis selection.
    * Bypasses the spread→rotation pipeline for exact axis alignment.
    *
+   * RT-pure: Cartesian axes are exact rationals (no radicals).
+   * Quadray axes are integer Cartesian (±1,±1,±1) normalized via
+   * cached RT.PureRadicals.sqrt3() — single √3 expansion, not recomputed.
+   *
    * @returns {THREE.Vector3} Unit normal vector for the projection plane
    */
   _axisToNormal: function () {
     const { basis, axis } = RTProjections.state;
 
     if (basis === "cartesian") {
+      // Exact rational unit vectors — no radicals needed
       switch (axis) {
         case "x":
           return new THREE.Vector3(1, 0, 0);
@@ -569,17 +575,19 @@ export const RTProjections = {
       }
     } else {
       // Tetrahedral (Quadray) basis vectors — cube diagonals
-      // Matches QUADRAY_BASIS in rt-quadray-polyhedra.js
+      // Quadray WXYZ = integer Cartesian (±1, ±1, ±1), length = √3
+      // Normalize via cached radical: 1/√3 = √3/3
+      const s = 1 / RT.PureRadicals.sqrt3();
       switch (axis) {
         case "qw":
-          return new THREE.Vector3(1, 1, 1).normalize();
+          return new THREE.Vector3(s, s, s);
         case "qx":
-          return new THREE.Vector3(1, -1, -1).normalize();
+          return new THREE.Vector3(s, -s, -s);
         case "qy":
-          return new THREE.Vector3(-1, 1, -1).normalize();
+          return new THREE.Vector3(-s, s, -s);
         case "qz":
         default:
-          return new THREE.Vector3(-1, -1, 1).normalize();
+          return new THREE.Vector3(-s, -s, s);
       }
     }
   },
