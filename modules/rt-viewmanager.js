@@ -1695,7 +1695,12 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
       btn.blur();
 
       if (btn.classList.contains("view-load-btn")) {
-        this.loadView(viewId);
+        // Delegate to RTAnimate for smooth transitions if available
+        if (window.RTAnimate) {
+          window.RTAnimate.animateToView(viewId);
+        } else {
+          this.loadView(viewId);
+        }
       } else if (btn.classList.contains("view-export-btn")) {
         const view = this.state.views.find(v => v.id === viewId);
         if (view) {
