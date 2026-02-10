@@ -1,8 +1,8 @@
-# View Animation & Favicon Workplan
+# View Animation Workplan
 
 ## Goal
 
-Build an animation system into the existing View Capture UI, then use it to produce an animated favicon. Four phases — each testable independently.
+Build an animation system into the existing View Capture UI. Camera-only mode for interactive exploration, full-scene mode for export with object transitions, cutplanes, and projections. Also usable for animated favicon generation.
 
 ---
 
@@ -629,6 +629,9 @@ if __name__ == '__main__':
 | **5a** | `rt-viewmanager.js` | Drag-to-reorder rows (grip handle) | Drag view between others, verify order persists | Pending |
 | **5b** | `rt-viewmanager.js`, `rt-animate.js` | Object visibility per view (instanceRefs) | Add/remove polyhedra between views, verify dissolve | Pending |
 | **5c** | `rt-papercut.js` | Papercut respects opacity=0 as invisible | Zero-opacity objects excluded from section cuts | Pending |
+| **6a** | `index.html` | Dual-row UI: "Camera" / "Camera + Scene" labels + buttons | Both rows visible, distinct labels | Pending |
+| **6b** | `rt-viewmanager.js` | `loadViewState()` with `skipCamera` option | Restores non-camera state only | Pending |
+| **6c** | `rt-animate.js` | `animateToViewFull()` + `previewAnimationFull()` | Bottom-row ▶ restores cutplanes at arrival | Pending |
 
 ## Favicon-Specific Parameters
 
@@ -736,28 +739,63 @@ This is a single-line guard in the section loop. Objects faded out via the disso
 
 ---
 
-## Modal Distinction: Interactive vs Export
+## Phase 6: Dual-Row Animation UI — Camera vs Full Scene
 
-The animation system operates in two distinct modes with different scope:
+The modal distinction between camera-only and full-scene animation is made **explicit in the UI** via two button rows:
 
-### Interactive Mode (▶ / Preview)
+```
+Camera
+[▶] [Batch] [Animation]
 
-**Camera-only.** The ▶ button and Preview loop animate only the camera position, zoom, and orientation. Scene objects, cutplanes, projections — everything the user is currently experimenting with — remains untouched.
+Camera + Scene
+[▶] [Batch] [Animation]
+```
 
-This is intentional: Interactive mode is for **creative exploration**. A user can plan an animation path while simultaneously adding/removing objects, toggling cutplanes, or changing projections. The camera animation becomes a live "turntable" that orbits through saved viewpoints while the user sculpts the scene.
+### How It Works
 
-### Export Mode (Batch / Animation)
+**Top row — Camera only** (current Phase 1-3 behavior):
+- ▶ and Preview animate camera position, zoom, orientation only
+- Scene objects, cutplanes, projections remain untouched
+- Use case: creative exploration, planning camera paths while sculpting the scene
 
-**Full state restore.** Batch and Animation export call `loadView()` which restores the complete saved state — camera, cutplanes, object visibility, projections. Each frame is rendered from the exact scene configuration that was saved.
+**Bottom row — Camera + Scene** (full state):
+- ▶ animates camera smoothly, then snaps non-camera state at arrival
+- Preview loops with full state restore at each keyframe
+- Batch/Animation export restores complete saved state per frame
+- Includes: object visibility (dissolve via instanceRefs), cutplane state, projection state
 
-This is necessary for **reproducible output**: an exported SVG sequence must show exactly what was saved, not whatever the user happens to have on screen at export time.
+### Why Two Rows Instead of a Toggle
 
-### Summary
+- **No hidden mode** — the user sees both options at all times
+- **No "which mode am I in?"** confusion — click the row matching your intent
+- **Code maps directly**: top row calls `animateToView()`, bottom row calls `animateToViewFull()` which adds `loadView()` state restore
+- **Resolves cutplane bug naturally** — top row is *correctly* camera-only by design; cutplane users use the bottom row
 
-| Mode | Trigger | Camera | Scene State | Use Case |
-|------|---------|--------|-------------|----------|
-| **Interactive** | ▶, Preview | Animated | Untouched (user controls) | Creative exploration |
-| **Export** | Batch, Animation | Snapped per view | Full restore via `loadView()` | Reproducible output |
+### Implementation
+
+| Component | What |
+|-----------|------|
+| `index.html` | Duplicate button row with "Camera" / "Camera + Scene" labels |
+| `rt-animate.js` | `animateToViewFull()` — wraps `animateToView()` + calls `loadView()` non-camera state at completion |
+| `rt-animate.js` | `previewAnimationFull()` — preview loop using `animateToViewFull()` |
+| `rt-animate.js` | Wire up second row of buttons to full-scene variants |
+
+### `animateToViewFull()` Sketch
+
+```js
+async animateToViewFull(viewId, durationMs, opts) {
+  // Smooth camera transition (same as camera-only)
+  await this.animateToView(viewId, durationMs, opts);
+
+  // At arrival, snap non-camera state from the saved view
+  const vm = this._viewManager;
+  vm.loadViewState(viewId, { cameraOnly: false, skipCamera: true });
+  // ↑ restores cutplanes, object visibility, projections
+  //   but skips camera (already positioned by animation)
+}
+```
+
+This requires a `loadViewState()` variant in ViewManager that can selectively restore subsets of view state. The existing `loadView()` does everything at once — the refactor splits it into camera vs non-camera concerns.
 
 ---
 
@@ -765,13 +803,13 @@ This is necessary for **reproducible output**: an exported SVG sequence must sho
 
 ### BUG: Cutplane state not restoring on ▶ transitions
 
-**Symptom**: Section cut state (cutplane on/off, position) used to toggle correctly when switching between views via ▶. If View 1 had no section cut and View 2 did, clicking ▶ on each would show/hide the cut. This may have been lost when ▶ was changed from `loadView()` (full state restore) to `animateToView()` (camera-only).
+**Symptom**: Section cut state (cutplane on/off, position) used to toggle correctly when switching between views via ▶. If View 1 had no section cut and View 2 did, clicking ▶ on each would show/hide the cut. This was lost when ▶ was changed from `loadView()` (full state restore) to `animateToView()` (camera-only).
 
 **Root cause**: The ▶ delegation in `rt-viewmanager.js` now calls `RTAnimate.animateToView()` which only interpolates camera position/zoom — it does not call `loadView()` and therefore does not restore cutplane, projection, or object visibility state.
 
-**Possible fix**: At animation completion (when `rawT >= 1`), optionally call a lightweight state-restore that applies non-camera state (cutplane, projections) from the target view. This preserves the smooth camera transition while snapping non-camera state at the end. Alternatively, this could be a per-view toggle ("animate camera only" vs "animate + restore state").
+**Resolution**: Phase 6 dual-row UI. The top-row ▶ is correctly camera-only. The bottom-row ▶ calls `animateToViewFull()` which restores non-camera state at animation completion. Users who need cutplane toggling use the bottom row.
 
-**Priority**: Medium — affects users who rely on cutplane toggling between views.
+**Priority**: Resolved by design in Phase 6.
 
 ---
 
