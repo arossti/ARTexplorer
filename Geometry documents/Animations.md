@@ -932,6 +932,21 @@ This makes cutplane transitions feel physically motivated — the plane always a
 
 ---
 
+## TO BE INVESTIGATED
+
+### Per-Polyhedron Scale in Delta System
+
+The delta system currently captures `scaleSlider` (global) and `tetScaleSlider` (tetrahedron) — but polyhedra can also have **individual scale** set through the state manager. The sizes of things are recorded in export files, so this data exists in `RTFileHandler.exportState()` somewhere beyond the two sliders already in `RTDelta._sliderMap`.
+
+**Questions**:
+- Are there additional per-polyhedron size controls beyond `scaleSlider` and `tetScaleSlider`?
+- Does the state manager track per-form circumradius or scale independently?
+- Do we need to expand `_sliderMap` or add a new capture category for per-polyhedron sizes?
+
+**Impact**: If a user scales the geodesic icosahedron to 2× in view 1, then changes it to 3× in view 2, the delta system should capture and interpolate that change. Currently only global scale and tet scale are tracked.
+
+---
+
 ## Notes
 
 - **Z-up convention**: Camera always uses `camera.up.set(0,0,1)` per rt-rendering.js:228

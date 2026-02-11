@@ -240,7 +240,8 @@ export const RTDelta = {
   },
 
   /**
-   * Set a slider's DOM value and its display element (if any).
+   * Set a slider's DOM value, update display, and dispatch 'input' event
+   * so existing handlers (scale, opacity, etc.) fire correctly.
    * @private
    */
   _setSlider(key, value) {
@@ -251,6 +252,10 @@ export const RTDelta = {
     if (!el) return;
 
     el.value = value;
+
+    // Dispatch 'input' event so the slider's existing handler fires
+    // (e.g., scale slider applies transform, opacity slider updates materials)
+    el.dispatchEvent(new Event("input", { bubbles: true }));
 
     // Update associated display elements (e.g., "tetrahelix1CountDisplay")
     // Convention: slider "fooSlider" or "fooCountSlider" → display "fooDisplay" or "fooCountDisplay"
