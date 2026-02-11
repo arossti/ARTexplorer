@@ -951,6 +951,42 @@ Currently, clicking ▶ in the "Camera" row only animates camera position — th
 
 **Resolution**: Phase 6 dual-row UI. Top-row ▶ is camera-only by design. Bottom-row ▶ calls `animateToViewFull()` which smoothly interpolates the cutplane value per frame and snaps remaining scene state at arrival. Exceeded original fix — cutplane now *animates* between views rather than snapping.
 
+### BUG: Camera slerp torque on Z-down transitions (View 12)
+
+**Symptom**: When transitioning to `zdown` camera preset (e.g., PP-12 "All 5 geodesics, top-down"), the camera arrives at the correct position but at the last second torques ~180° — a sudden rotation snap at the end of what should be a smooth slerp.
+
+**Likely cause**: Quaternion slerp shortest-path ambiguity. When the start and end quaternions are nearly antipodal (>180° apart), three.js `Quaternion.slerp()` can choose the long path, or the direction-normalized lerp in `animateToView()` may produce a near-zero-length direction vector at t≈1, causing the final `lookAt()` to flip the up vector.
+
+**Possible fix**: In `animateToView()`, check if `startDir.dot(endDir) < 0` and negate one endpoint before interpolation (standard slerp hemisphere check). Alternatively, pre-compute quaternions from camera matrices and use `Quaternion.slerp()` with explicit shortest-path normalization.
+
+**Workaround**: In the Player Piano sequence, avoid large angular jumps to `zdown` by inserting an intermediate waypoint view, or reorder views so the preceding camera is closer on the sphere.
+
+---
+
+### BUG: Planar/Radial matrix groups missing dissolve transitions (Views 13–19)
+
+**Symptom**: During Player Piano playback (Camera + Scene ▶), planar matrices (cube matrix, tet matrix, etc.) and radial matrices pop in/out with no opacity dissolve. They appear after a blank screen flash. In contrast, tetrahelix forms (Views 21–23) dissolve correctly.
+
+**Analysis**: The `_CHECKBOX_TO_GROUP` mapping in `rt-animate.js` includes all matrix groups (`cubeMatrixGroup`, `radialCubeMatrixGroup`, etc.), so the form dissolve system *should* handle them. Possible causes:
+
+1. **Matrix groups use a different rendering path**: Matrix/radial forms are built by `rt-nodes.js` which creates nested `RTMatrix` groups containing instanced child polyhedra. The `dissolveOpacity` on `group.userData` may not propagate to the deeply-nested child meshes the way it does for simple polyhedra groups.
+2. **`getAllFormGroups()` returns the wrong group level**: If the group returned for `cubeMatrixGroup` is a parent container but the actual meshes are in child groups, `renderPolyhedron()` won't see the `dissolveOpacity` marker.
+3. **Rebuild timing**: Matrix geometry rebuilds are expensive and may not complete within the 200ms settle time, so the dissolve starts before meshes exist.
+
+**To investigate**: Add `console.log(groupKey, group.children.length)` in `_setupFormDissolve()` for matrix groups to verify the group has children at dissolve setup time. Check whether `renderPolyhedron()` is called for matrix child meshes and whether it reads the parent's `dissolveOpacity`.
+
+---
+
+### BUG: Radial matrix state not persisting across save/load
+
+**Symptom**: User report — radial matrix configurations (frequency, which radial matrices are enabled) revert to defaults when reopening a saved `.artstate` file. The user saved a scene with specific radial matrix settings, but on reload the matrices reverted.
+
+**Likely cause**: `RTFileHandler.exportState()` / `importState()` may not capture radial matrix slider values or checkbox states. The delta system (`RTDelta._sliderMap`) does include radial frequency sliders (`radialCubeFreqSlider`, `radialTetFreqSlider`, etc.), but the file handler may use a different save path that doesn't include these.
+
+**To investigate**: Check `RTFileHandler.exportState()` and `importState()` to verify radial matrix sliders and checkboxes are included in the saved state. Compare with planar matrix sliders which presumably do persist.
+
+**Impact**: This is a data loss bug — users lose their radial matrix configurations on save/load. Separate from the animation system but likely shares the same root cause as the missing dissolve (the system doesn't fully "see" these newer form groups).
+
 ---
 
 ## TO BE INVESTIGATED
@@ -976,3 +1012,9 @@ The delta system currently captures `scaleSlider` (global) and `tetScaleSlider` 
 - **`disposal=2`**: Critical for transparent animated GIFs (clears each frame before drawing next)
 - **SVG+SMIL browser support**: Chrome, Firefox, Safari, Edge — all modern browsers (not IE)
 - **Smoothstep easing** `t²(3-2t)`: Natural deceleration at keyframes, zero-velocity endpoints
+
+### Player Piano Demo Reel
+
+`PlayerPiano-generator.js` is a browser console script that generates a 23-view `.artviews` demo reel touring all major form categories (primitives, platonic solids, geodesic spheres, planar matrices, radial matrices, tetrahelixes). Run in console → downloads `.artview` → import and play via Camera + Scene ▶ Preview.
+
+**Future enhancement**: A second Player Piano pass with cutplanes sweeping through geometry during transitions — each view enables a section cut that animates across the form, revealing interior structure.
