@@ -1020,6 +1020,16 @@ These toggles ARE declared in `rt-ui-binding-defs.js` (simpleCheckboxBindings) a
 
 ## TO BE INVESTIGATED
 
+### Optimize Matrix Dissolve — Skip Geometry Rebuilds for Opacity-Only Ticks
+
+Matrix dissolve transitions currently call `updateGeometry()` every tick, which destroys and recreates the entire matrix mesh just to change opacity. For radial matrices at F3-F4, each rebuild takes 52-276ms (see rAF violations in Logs). Since dissolve-only ticks change `dissolveOpacity` but not structure (no checkbox, slider, or projection changes), the system could instead traverse existing child meshes and update `material.opacity` directly — avoiding the expensive teardown/rebuild cycle.
+
+**Approach**: In `_setupFormDissolve()` (rt-animate.js), detect whether the group is a matrix type (check `_subControlMap` keys or a `userData.isMatrix` flag). For matrix groups, instead of calling `updateGeometry()`, walk the group's children and set `child.material.opacity = effectiveOpacity` on each mesh. Only fall back to `updateGeometry()` if structure actually changed (checkbox/slider delta in the same tick).
+
+**Player Piano implication**: Future demo reel scripts should dissolve radial matrices into view at their final target frequency rather than animating frequency ramps (F1→F4). Frequency stepping creates N expensive geometry rebuilds per transition. Instead, set the target frequency in the view delta and let the dissolve system fade the completed geometry in/out smoothly. Reserve stepped frequency animation for planar matrices where the rebuild cost is low (cube/tet at size 2-5 is cheap).
+
+---
+
 ### Per-Polyhedron Scale in Delta System
 
 The delta system currently captures `scaleSlider` (global) and `tetScaleSlider` (tetrahedron) — but polyhedra can also have **individual scale** set through the state manager. The sizes of things are recorded in export files, so this data exists in `RTFileHandler.exportState()` somewhere beyond the two sliders already in `RTDelta._sliderMap`.
