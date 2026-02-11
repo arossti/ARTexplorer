@@ -2698,14 +2698,13 @@ export const RT = {
  */
 export const Quadray = {
   /**
-   * Axis name to basisVector index mapping
-   * Maps QW/QX/QY/QZ names to their corresponding basisVectors[] indices
+   * Axis name → basisVectors[] index mapping.
    *
-   * Color convention: QW=Yellow(3), QX=Red(0), QY=Blue(2), QZ=Green(1)
-   * This is the canonical mapping used throughout the codebase for:
-   * - Camera view presets (quadqw, quadqx, quadqy, quadqz)
-   * - Cutplane axis selection
-   * - Editing basis visualization
+   * Indices are NOT sequential (QW→3, QX→0, QY→2, QZ→1) because
+   * basisVectors[] is ordered by geometry (A,B,C,D) while axis names
+   * follow the tetrahedral color convention.
+   *
+   * Prefer Quadray.getAxisVector(name) — it handles this indirection.
    *
    * @type {Object.<string, number>}
    */
@@ -2742,6 +2741,18 @@ export const Quadray = {
       new THREE.Vector3(-1, 1, -1).normalize(), // C (bottom-front-left)
       new THREE.Vector3(-1, -1, 1).normalize(), // D (top-back-left)
     ];
+  },
+
+  /**
+   * Get the basis vector for a named quadray axis.
+   * Preferred over manual AXIS_INDEX lookup — avoids the non-sequential
+   * index mapping that has caused axis-swap bugs in projections & cutplanes.
+   *
+   * @param {string} axisName - "qw", "qx", "qy", or "qz"
+   * @returns {THREE.Vector3} The corresponding basis vector (not cloned)
+   */
+  getAxisVector: axisName => {
+    return Quadray.basisVectors[Quadray.AXIS_INDEX[axisName]];
   },
 
   /**
