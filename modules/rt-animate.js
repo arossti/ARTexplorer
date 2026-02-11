@@ -52,7 +52,7 @@ export const RTAnimate = {
    *   view.transitionDuration, then 2000ms default.
    * @param {Object} [opts] - Options
    * @param {boolean} [opts.cancelPreview=true] - Cancel preview on external ▶ click
-   * @param {function} [opts.onTick] - Called each frame with smoothstepped t (0→1)
+   * @param {function} [opts.onTick] - Called each frame with (t, rawT) where t is smoothstepped and rawT is linear (0→1)
    * @returns {Promise<void>} Resolves when animation completes or is cancelled.
    */
   animateToView(
@@ -129,8 +129,8 @@ export const RTAnimate = {
           controls.update();
         }
 
-        // Per-frame callback (e.g. cutplane interpolation)
-        if (onTick) onTick(t);
+        // Per-frame callback (e.g. cutplane interpolation, stepped sliders)
+        if (onTick) onTick(t, rawT);
 
         // Render the frame
         this._renderer.render(this._scene, camera);
@@ -230,12 +230,14 @@ export const RTAnimate = {
     }
 
     // Merge cutplane + dissolve + delta into a single onTick
+    // cutplane and dissolve use smoothstepped t (continuous interpolation)
+    // deltaTick receives both t and rawT (uses rawT for even-spaced discrete steps)
     const onTick =
       cutplaneTick || dissolveTick || deltaTick
-        ? t => {
+        ? (t, rawT) => {
             if (cutplaneTick) cutplaneTick(t);
             if (dissolveTick) dissolveTick(t);
-            if (deltaTick) deltaTick(t);
+            if (deltaTick) deltaTick(t, rawT);
           }
         : null;
 

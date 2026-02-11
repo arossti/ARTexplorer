@@ -629,7 +629,7 @@ if __name__ == '__main__':
 | ~~**5a**~~ | `rt-viewmanager.js` | ~~Drag-to-reorder rows (grip handle) + expandable view list~~ | ~~Drag view between others, verify order persists~~ | **DONE** `d564a39` |
 | ~~**5b-partial**~~ | `rt-animate.js`, `rt-viewmanager.js` | ~~Instance dissolve system (`_setupDissolve`, `group.visible` snap)~~ | ~~Deposited instances fade in/out between views~~ | **DONE** `912c6ff` |
 | ~~**5c**~~ | `rt-papercut.js`, `rt-viewmanager.js` | ~~Papercut + SVG export respects opacity=0~~ | ~~Zero-opacity objects excluded from cuts + SVG~~ | **DONE** `912c6ff` |
-| **5b** | `rt-delta.js`, `rt-viewmanager.js`, `rt-animate.js` | Full scene state per view (delta-based) — new `rt-delta.js` module handles capture, diff, apply, and stepped interpolation of scene deltas | Toggle forms between views, change geodesic freq mid-transition, verify stepped slider interpolation | Pending |
+| ~~**5b**~~ | `rt-delta.js`, `rt-viewmanager.js`, `rt-animate.js` | ~~Full scene state per view (delta-based) — `rt-delta.js` captures, diffs, applies, and interpolates scene deltas. Integer sliders use linear timing (rawT) for even step spacing; float sliders use smoothstepped t for eased motion.~~ | ~~Geodesic freq F1→F7 steps evenly, scale interpolates smoothly, forms toggle between views~~ | **DONE** `724d229` |
 | ~~**6a**~~ | `index.html` | ~~Dual-row UI: "Camera" / "Camera + Scene" labels + buttons~~ | ~~Both rows visible, distinct labels~~ | **DONE** `a106bf7` |
 | ~~**6b**~~ | `rt-viewmanager.js` | ~~`loadView()` with `skipCamera` option~~ | ~~Restores non-camera state only~~ | **DONE** `a106bf7` |
 | ~~**6c**~~ | `rt-animate.js` | ~~`animateToViewFull()` + smooth cutplane interpolation~~ | ~~Bottom-row ▶ slerps camera + interpolates cutplane~~ | **DONE** `a106bf7` |
@@ -919,6 +919,27 @@ This makes cutplane transitions feel physically motivated — the plane always a
 ### ~~Expandable View List (No Scrollbar)~~ — DONE (Phase 5a)
 
 ~~The Saved Views table currently has `max-height: 150px; overflow-y: auto`, which produces a scrollbar when the list grows.~~ Resolved: `max-height` removed, view list expands naturally within collapsible section.
+
+### TODO: Smoother Mesh Rebuild Transitions
+
+Currently, integer slider changes (geodesic frequency, tetrahelix count) produce visible hard jumps during animated transitions — each step is a complete mesh topology change (different vertex/face count). The steps are evenly timed (linear rawT), which is an improvement over smoothstep bunching, but each F→F+1 is still a discontinuous visual jump.
+
+Dragging the geodesic frequency slider manually feels blazing fast and fluid because the user's hand motion provides natural easing. During camera animation, the same steps feel jerkier because the mesh pops while the camera glides.
+
+**Possible approaches** (worth testing, potentially processor-intensive):
+- **Sub-step mesh interpolation**: Generate both F(n) and F(n+1) meshes, cross-fade opacity between them over a brief window (~100ms) around each step change. Would require two meshes briefly coexisting.
+- **Static camera render sequence**: Test stepped transitions with a locked camera first — if it looks smooth without camera motion, the perceived jerkiness is a camera/mesh timing issue, not a rebuild speed issue.
+- **Longer transition durations**: More seconds = more time per step = each frequency gets perceived as a "hold" rather than a flash. User can already control this via the T slider.
+
+**Recommendation**: Start by testing with a static camera to isolate whether the issue is rebuild speed or perceptual conflict with camera motion. If static looks good, the fix may be as simple as slightly delaying stepped changes relative to camera motion (e.g., steps begin at rawT=0.1 and end at rawT=0.9, giving the camera a head start and a settling period).
+
+### TODO: Scene State Preview in Saved Views Table
+
+Currently, clicking ▶ in the "Camera" row only animates camera position — the scene environment (which forms are visible, slider values, geodesic frequency) doesn't change. The user must use "Camera + Scene" ▶ to see full transitions.
+
+**Enhancement**: When the user clicks on a view row in the Saved Views table (not ▶, just selecting the row), show a preview of that view's scene state — or at minimum, display the key delta values (which forms are on/off, geodesic freq, scale) as a tooltip or inline summary. This would let users understand what each view contains without having to load it.
+
+**Alternatively**: Make the "Camera + Scene" ▶ the default/primary animation mode, since users building animation sequences typically want full state transitions, not camera-only.
 
 ---
 

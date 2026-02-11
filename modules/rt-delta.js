@@ -285,7 +285,9 @@ export const RTDelta = {
    *
    * @param {Object} fromSnapshot - Full snapshot at animation start
    * @param {Object} delta        - Target delta (view.sceneState)
-   * @returns {function|null} Tick function: (t: 0→1) => void, or null if no interpolable changes
+   * @returns {function|null} Tick function: (t, rawT) => void, or null if no interpolable changes
+   *   t = smoothstepped (used for continuous sliders — smooth acceleration/deceleration)
+   *   rawT = linear (used for discrete steps — even time per frequency/count value)
    */
   buildSteppedTick(fromSnapshot, delta) {
     if (!delta) return null;
@@ -324,18 +326,20 @@ export const RTDelta = {
 
     let needsRebuild = false;
 
-    return (t) => {
+    return (t, rawT) => {
       needsRebuild = false;
 
       // Interpolate sliders
+      // Stepped (integer) sliders use rawT for even spacing — each frequency/count
+      // value gets equal screen time. Smooth (float) sliders use t for eased motion.
       for (const step of steps) {
         let value;
 
         if (step.type === "stepped") {
-          // Integer: step through each value, round to nearest
-          value = Math.round(step.from + (step.to - step.from) * t);
+          // Integer: step through each value with even timing (linear rawT)
+          value = Math.round(step.from + (step.to - step.from) * rawT);
         } else {
-          // Float: smooth lerp
+          // Float: smooth lerp with easing (smoothstepped t)
           value = step.from + (step.to - step.from) * t;
         }
 
