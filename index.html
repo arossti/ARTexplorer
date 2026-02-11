@@ -3305,7 +3305,7 @@
         <!-- END SECTION 6: VISUAL OPTIONS -->
 
         <!-- ========================================
-             SECTION 7: CAMERA
+             SECTION 7: VIEW MANAGER
              ======================================== -->
         <div class="control-group">
           <h3>
@@ -3313,7 +3313,7 @@
               class="section-toggle collapsed"
               data-target="view-section"
             ></span>
-            Camera
+            View Manager
           </h3>
           <div id="view-section" class="section-content collapsed">
             <!-- Projection Mode -->
@@ -3382,9 +3382,215 @@
               </div>
             </div>
 
+            <!-- View Capture Section -->
+            <div
+              class="control-item"
+              style="
+                margin-top: 12px;
+                border-top: 1px solid #444;
+                padding-top: 12px;
+              "
+            >
+              <label class="label-section">View Capture</label>
+
+              <!-- View Name Input + Save Button -->
+              <div
+                style="
+                  display: flex;
+                  gap: 4px;
+                  align-items: center;
+                  margin-bottom: 8px;
+                "
+              >
+                <input
+                  type="text"
+                  id="viewNameInput"
+                  style="
+                    flex: 1;
+                    background: #333;
+                    border: 1px solid #555;
+                    color: #fff;
+                    padding: 6px 8px;
+                    font-size: 12px;
+                    border-radius: 4px;
+                  "
+                  placeholder="Auto: Z1"
+                />
+                <button
+                  class="toggle-btn variant-standard"
+                  id="saveViewBtn"
+                  title="Save current view"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+
+            <!-- Saved Views Table -->
+            <div class="control-item">
+              <label class="label-section">Saved Views</label>
+
+              <!-- Table Header with Sort Controls -->
+              <div
+                class="views-table-header"
+                style="
+                  display: flex;
+                  gap: 4px;
+                  margin-bottom: 4px;
+                  font-size: 10px;
+                  color: #888;
+                "
+              >
+                <span
+                  style="flex: 0 0 50px; cursor: pointer"
+                  id="sortByName"
+                  title="Sort by name"
+                  >Name ▼</span
+                >
+                <span
+                  style="flex: 0 0 50px; cursor: pointer"
+                  id="sortByAxis"
+                  title="Sort by axis"
+                  >Axis</span
+                >
+                <span
+                  style="flex: 1; cursor: pointer"
+                  id="sortByDate"
+                  title="Sort by date"
+                  >Date</span
+                >
+                <span style="flex: 0 0 75px">Actions</span>
+              </div>
+
+              <!-- Views Table Body -->
+              <div
+                id="viewsTableBody"
+                style="
+                  border: 1px solid #444;
+                  border-radius: 4px;
+                "
+              >
+                <!-- Empty state (replaced by JS) -->
+                <div
+                  class="views-empty-state"
+                  style="
+                    padding: 12px;
+                    text-align: center;
+                    color: #666;
+                    font-size: 11px;
+                  "
+                >
+                  No saved views yet.
+                </div>
+              </div>
+
+              <!-- Bulk Actions -->
+              <div style="display: flex; gap: 4px; margin-top: 8px">
+                <button
+                  class="toggle-btn variant-small"
+                  id="downloadSelectedBtn"
+                  title="Download selected view as SVG"
+                  style="flex: 1"
+                >
+                  SVG
+                </button>
+                <button
+                  class="toggle-btn variant-small"
+                  id="exportAllViewsBtn"
+                  title="Export all views to .artview file"
+                  style="flex: 1"
+                >
+                  Export
+                </button>
+                <button
+                  class="toggle-btn variant-small"
+                  id="importViewsBtn"
+                  title="Import views from file"
+                  style="flex: 1"
+                >
+                  Import
+                </button>
+                <button
+                  class="toggle-btn variant-small"
+                  id="clearAllViewsBtn"
+                  title="Delete all views"
+                  style="
+                    width: 28px;
+                    min-width: 28px;
+                    padding: 4px;
+                    color: #ff6b6b;
+                  "
+                >
+                  ✕
+                </button>
+              </div>
+
+              <!-- Animation Actions: Camera Only -->
+              <div style="margin-top: 8px">
+                <div style="font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px">Camera</div>
+                <div style="display: flex; gap: 4px">
+                  <button
+                    class="toggle-btn variant-small"
+                    id="previewAnimationBtn"
+                    title="Preview camera animation loop"
+                    style="flex: 1"
+                  >
+                    <span style="color: #4caf50; font-size: 14px">&#9654;</span>
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportBatchBtn"
+                    title="Export each view as individual SVG (camera only)"
+                    style="flex: 1"
+                  >
+                    Batch
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportAnimationBtn"
+                    title="Export animated SVG sequence (camera only)"
+                    style="flex: 1"
+                  >
+                    Animation
+                  </button>
+                </div>
+              </div>
+
+              <!-- Animation Actions: Camera + Scene -->
+              <div style="margin-top: 4px">
+                <div style="font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px">Camera + Scene</div>
+                <div style="display: flex; gap: 4px">
+                  <button
+                    class="toggle-btn variant-small"
+                    id="previewFullBtn"
+                    title="Preview with full scene restore (cutplane, render state)"
+                    style="flex: 1"
+                  >
+                    <span style="color: #4caf50; font-size: 14px">&#9654;</span>
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportBatchFullBtn"
+                    title="Export each view as individual SVG (full scene state)"
+                    style="flex: 1"
+                  >
+                    Batch
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportAnimationFullBtn"
+                    title="Export animated SVG sequence (full scene state)"
+                    style="flex: 1"
+                  >
+                    Animation
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
-        <!-- END SECTION 7: CAMERA -->
+        <!-- END SECTION 7: VIEW MANAGER -->
 
         <!-- ========================================
              SECTION 8: PAPERCUT
@@ -3520,180 +3726,6 @@
                 </button>
                 <button class="toggle-btn variant-standard" id="fitCustom">
                   Custom
-                </button>
-              </div>
-            </div>
-
-            <!-- View Capture Section -->
-            <div
-              class="control-item"
-              style="
-                margin-top: 12px;
-                border-top: 1px solid #444;
-                padding-top: 12px;
-              "
-            >
-              <label class="label-section">View Capture</label>
-
-              <!-- View Name Input + Save Button -->
-              <div
-                style="
-                  display: flex;
-                  gap: 4px;
-                  align-items: center;
-                  margin-bottom: 8px;
-                "
-              >
-                <input
-                  type="text"
-                  id="viewNameInput"
-                  style="
-                    flex: 1;
-                    background: #333;
-                    border: 1px solid #555;
-                    color: #fff;
-                    padding: 6px 8px;
-                    font-size: 12px;
-                    border-radius: 4px;
-                  "
-                  placeholder="Auto: Z1"
-                />
-                <button
-                  class="toggle-btn variant-standard"
-                  id="saveViewBtn"
-                  title="Save current view"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-
-            <!-- Saved Views Table -->
-            <div class="control-item">
-              <label class="label-section">Saved Views</label>
-
-              <!-- Table Header with Sort Controls -->
-              <div
-                class="views-table-header"
-                style="
-                  display: flex;
-                  gap: 4px;
-                  margin-bottom: 4px;
-                  font-size: 10px;
-                  color: #888;
-                "
-              >
-                <span
-                  style="flex: 0 0 50px; cursor: pointer"
-                  id="sortByName"
-                  title="Sort by name"
-                  >Name ▼</span
-                >
-                <span
-                  style="flex: 0 0 50px; cursor: pointer"
-                  id="sortByAxis"
-                  title="Sort by axis"
-                  >Axis</span
-                >
-                <span
-                  style="flex: 1; cursor: pointer"
-                  id="sortByDate"
-                  title="Sort by date"
-                  >Date</span
-                >
-                <span style="flex: 0 0 75px">Actions</span>
-              </div>
-
-              <!-- Views Table Body (scrollable) -->
-              <div
-                id="viewsTableBody"
-                style="
-                  max-height: 150px;
-                  overflow-y: auto;
-                  border: 1px solid #444;
-                  border-radius: 4px;
-                "
-              >
-                <!-- Empty state (replaced by JS) -->
-                <div
-                  class="views-empty-state"
-                  style="
-                    padding: 12px;
-                    text-align: center;
-                    color: #666;
-                    font-size: 11px;
-                  "
-                >
-                  No saved views yet.
-                </div>
-              </div>
-
-              <!-- Bulk Actions -->
-              <div style="display: flex; gap: 4px; margin-top: 8px">
-                <button
-                  class="toggle-btn variant-small"
-                  id="downloadSelectedBtn"
-                  title="Download selected view as SVG"
-                  style="flex: 1"
-                >
-                  SVG
-                </button>
-                <button
-                  class="toggle-btn variant-small"
-                  id="exportAllViewsBtn"
-                  title="Export all views to .artview file"
-                  style="flex: 1"
-                >
-                  Export
-                </button>
-                <button
-                  class="toggle-btn variant-small"
-                  id="importViewsBtn"
-                  title="Import views from file"
-                  style="flex: 1"
-                >
-                  Import
-                </button>
-                <button
-                  class="toggle-btn variant-small"
-                  id="clearAllViewsBtn"
-                  title="Delete all views"
-                  style="
-                    width: 28px;
-                    min-width: 28px;
-                    padding: 4px;
-                    color: #ff6b6b;
-                  "
-                >
-                  ✕
-                </button>
-              </div>
-
-              <!-- Animation Actions -->
-              <div style="display: flex; gap: 4px; margin-top: 8px">
-                <button
-                  class="toggle-btn variant-small"
-                  id="previewAnimationBtn"
-                  title="Preview animation loop in scene"
-                  style="flex: 1"
-                >
-                  <span style="color: #4caf50; font-size: 14px">&#9654;</span>
-                </button>
-                <button
-                  class="toggle-btn variant-small"
-                  id="exportBatchBtn"
-                  title="Export each view as individual SVG"
-                  style="flex: 1"
-                >
-                  Batch
-                </button>
-                <button
-                  class="toggle-btn variant-small"
-                  id="exportAnimationBtn"
-                  title="Export animated SVG sequence"
-                  style="flex: 1"
-                >
-                  Animation
                 </button>
               </div>
             </div>
