@@ -626,9 +626,10 @@ if __name__ == '__main__':
 | ~~**3b**~~ | `rt-animate.js` | ~~Export Batch — downloads individual SVGs~~ | ~~Check SVG files~~ | **DONE** |
 | ~~**3c**~~ | `rt-animate.js` | ~~Export Animation — generates animated SVG+SMIL~~ | ~~Open .svg in browser, verify it plays~~ | **DONE** |
 | **4** | `build_favicon.py` | Python GIF assembly | Verify favicon.gif in browser tab | Pending |
-| **5a** | `rt-viewmanager.js` | Drag-to-reorder rows (grip handle) | Drag view between others, verify order persists | Pending |
-| **5b** | `rt-viewmanager.js`, `rt-animate.js` | Object visibility per view (instanceRefs) | Add/remove polyhedra between views, verify dissolve | Pending |
-| **5c** | `rt-papercut.js` | Papercut respects opacity=0 as invisible | Zero-opacity objects excluded from section cuts | Pending |
+| ~~**5a**~~ | `rt-viewmanager.js` | ~~Drag-to-reorder rows (grip handle) + expandable view list~~ | ~~Drag view between others, verify order persists~~ | **DONE** `d564a39` |
+| ~~**5b-partial**~~ | `rt-animate.js`, `rt-viewmanager.js` | ~~Instance dissolve system (`_setupDissolve`, `group.visible` snap)~~ | ~~Deposited instances fade in/out between views~~ | **DONE** `912c6ff` |
+| ~~**5c**~~ | `rt-papercut.js`, `rt-viewmanager.js` | ~~Papercut + SVG export respects opacity=0~~ | ~~Zero-opacity objects excluded from cuts + SVG~~ | **DONE** `912c6ff` |
+| ~~**5b**~~ | `rt-delta.js`, `rt-viewmanager.js`, `rt-animate.js` | ~~Full scene state per view (delta-based) — `rt-delta.js` captures, diffs, applies, and interpolates scene deltas. Integer sliders use linear timing (rawT) for even step spacing; float sliders use smoothstepped t for eased motion.~~ | ~~Geodesic freq F1→F7 steps evenly, scale interpolates smoothly, forms toggle between views~~ | **DONE** `724d229` |
 | ~~**6a**~~ | `index.html` | ~~Dual-row UI: "Camera" / "Camera + Scene" labels + buttons~~ | ~~Both rows visible, distinct labels~~ | **DONE** `a106bf7` |
 | ~~**6b**~~ | `rt-viewmanager.js` | ~~`loadView()` with `skipCamera` option~~ | ~~Restores non-camera state only~~ | **DONE** `a106bf7` |
 | ~~**6c**~~ | `rt-animate.js` | ~~`animateToViewFull()` + smooth cutplane interpolation~~ | ~~Bottom-row ▶ slerps camera + interpolates cutplane~~ | **DONE** `a106bf7` |
@@ -678,65 +679,169 @@ Two features that become essential once views are used as animation keyframes.
 
 ---
 
-### 5b: Object Visibility Per View (Scene State)
+### 5b: Full Scene State Per View (Delta-Based)
 
-**Problem**: Currently all objects in the scene are visible in all views. When building an animation sequence (e.g. "first show cube, then add tetrahedron"), there's no way to control which objects appear per keyframe.
+**Problem**: Views currently only save camera position, cutplane, and `instanceRefs` (deposited copies). But the actual user workflow is toggling *forms* on/off (Tetrahedron, Cube, Geodesic Icosahedron F3, etc.), adjusting sliders (geodesic frequency, matrix size, scale), and changing projections. None of this is captured per view.
 
-**Current infrastructure**: `captureView()` already stores `instanceRefs` — an array of instance IDs present at capture time. This data exists but isn't used during `loadView()`.
+**Goal**: Each view is a full **scene snapshot** — a keyframe that records everything the user sees. Transitioning between views restores the complete scene state, enabling sequences like:
 
-**Solution**: Use `instanceRefs` to control visibility via opacity transitions.
+- Geodesic icosahedron subdividing from F1 → F2 → F3 → F6 as camera orbits
+- Tetrahelix growing (count slider increasing) as camera follows the helix axis
+- Form transitions: cube → cuboctahedron → icosahedron in successive views
+- Projection toggling on/off between views
 
-#### How It Works
+**Approach: Delta compression** — Only record what *changed* from the previous view. Unchanged properties persist naturally from the last keyframe. This keeps view data small and the system simple.
 
-1. **Capture**: `captureView()` already records `instanceRefs` (all instances at save time)
-2. **Load**: When transitioning to a view, compare current scene instances with the target view's `instanceRefs`:
-   - **Entering objects** (in target but not current): Fade in from opacity 0 → 1
-   - **Exiting objects** (in current but not target): Fade out from opacity 1 → 0
-   - **Persistent objects**: No change
-3. **Dissolve timing**: Object fade runs in parallel with camera animation, using the same `transitionDuration`
+#### New Module: `rt-delta.js`
 
-#### Opacity Transition (in `rt-animate.js`)
+All delta logic lives in a standalone module — keeping `rt-viewmanager.js` and `rt-animate.js` clean. Three responsibilities:
+
+1. **`RTDelta.captureSnapshot()`** — Read current scene state from DOM (checkboxes, sliders, projections)
+2. **`RTDelta.computeDelta(prev, current)`** — Shallow diff two snapshots, return only changed fields
+3. **`RTDelta.applyDelta(delta)`** — Restore a delta through existing UI handlers (checkbox `.click()`, slider `dispatchEvent('input')`)
+4. **`RTDelta.buildSteppedTick(fromState, toDelta, durationMs)`** — Return an `onTick(t)` function that steps discrete slider values evenly across the transition, firing UI handlers at each step
+
+#### Existing Infrastructure
+
+`RTFileHandler.exportState()` already captures the complete scene as JSON:
+
+| Category | What It Captures | Example Fields |
+|----------|-----------------|----------------|
+| **Form visibility** | Which polyhedra are on/off | `polyhedraCheckboxes.showCube`, `showGeodesicIcosahedron`, `showTetrahelix1` |
+| **Slider values** | All parametric controls | `sliderValues.geodesicIcosaFrequency`, `tetrahelix1Count`, `scaleSlider` |
+| **Geodesic projections** | Subdivision mode per geodesic | `geodesicProjections.geodesicIcosaProjection` ("out"\|"flat"\|"in") |
+| **Instances** | Deposited copies + transforms | `instances[]` with id, type, parameters, transform |
+| **Projection** | RT projection system | `projection.enabled`, `.basis`, `.axis`, `.distance` |
+| **Grids** | Grid visibility + tessellation | `grids.quadray.visible`, `grids.cartesian.tessellation` |
+| **Colors** | Palette + background | `colorPalette`, `canvasBackground` |
+
+The view system should leverage this existing serialization rather than reinventing it.
+
+#### Data Model: `view.sceneState` (Delta)
 
 ```js
-_dissolveObjects(targetInstanceRefs, durationMs) {
-  const sm = this._viewManager._stateManager;
-  const allInstances = sm.state.instances;
+// In captureView(), compute delta against previous view (or baseline):
+view.sceneState = {
+  // Only includes fields that CHANGED from the previous view in the sequence.
+  // On first view (or standalone), stores the full relevant state.
 
-  for (const inst of allInstances) {
-    const shouldBeVisible = targetInstanceRefs.includes(inst.id);
-    const mesh = inst.mesh; // THREE.js mesh reference
+  // Examples of what might appear in a delta:
+  polyhedraCheckboxes: {
+    showGeodesicIcosahedron: true,   // turned on since last view
+    showTetrahelix1: false,          // turned off since last view
+  },
+  sliderValues: {
+    geodesicIcosaFrequency: 3,       // changed from 2 → 3
+    scaleSlider: 1.5,                // changed from 1.0 → 1.5
+  },
+  geodesicProjections: {
+    geodesicIcosaProjection: "out",  // changed from "flat" → "out"
+  },
+  // instanceRefs still here for deposited instance visibility
+  instanceRefs: ["instance_123", "instance_456"],
+};
+```
 
-    if (shouldBeVisible && mesh.material.opacity < 1) {
-      // Fade in — animate opacity 0 → 1
-      this._animateOpacity(mesh, 1, durationMs);
-    } else if (!shouldBeVisible && mesh.material.opacity > 0) {
-      // Fade out — animate opacity 1 → 0
-      this._animateOpacity(mesh, 0, durationMs);
-    }
-  }
+Unchanged fields are simply omitted — they carry forward from the previous view.
+
+#### Capture Logic
+
+```js
+// In captureView():
+const currentSnapshot = RTDelta.captureSnapshot();
+
+// Diff against previous view's accumulated state
+const prevSnapshot = this._getAccumulatedSnapshot(previousViewIndex);
+view.sceneState = RTDelta.computeDelta(prevSnapshot, currentSnapshot);
+```
+
+The delta computation is a shallow diff of the relevant `polyhedraCheckboxes`, `sliderValues`, `geodesicProjections`, and `instanceRefs` fields. Deep nesting isn't needed — these are flat key-value maps.
+
+#### Restore Logic
+
+```js
+// In loadView():
+if (view.sceneState) {
+  RTDelta.applyDelta(view.sceneState);
 }
 ```
 
-#### KWW: Leverage Existing Material System
+`applyDelta()` iterates the delta and drives existing UI handlers:
+1. **Checkboxes**: Set `.checked` + trigger `.click()` handler for form visibility
+2. **Sliders**: Set `.value` + dispatch `'input'` event for parametric controls
+3. **Projections**: Set select `.value` + dispatch `'change'` event
+4. **Instances**: Show/hide deposited instances via `group.visible`
 
-THREE.js materials already support `transparent: true` and `opacity`. The dissolve just animates what's already there — no new render pipeline needed. Objects at opacity=0 are still in the scene graph but invisible.
+Each restore goes through the **existing UI handlers**, so the scene regenerates exactly as if the user had clicked/dragged those controls manually. No parallel code paths.
+
+#### Transition Behavior — Stepped Interpolation
+
+| Delta Field | Camera-Only (top row) | Camera + Scene (bottom row) |
+|------------|----------------------|----------------------------|
+| Camera position | Slerp (existing) | Slerp (existing) |
+| Cutplane value | — | Smooth interpolate (existing) |
+| Form on/off (boolean) | — | Dissolve fade in/out |
+| Slider values (integer) | — | **Stepped** — evenly spaced across transition duration |
+| Slider values (continuous) | — | **Smooth** — interpolated per-frame via UI handler |
+| Geodesic projection (enum) | — | Snap at midpoint |
+| Instance visibility | — | Dissolve fade (existing `_setupDissolve`) |
+
+**Stepped interpolation for discrete sliders**: Geometry rebuilds are fast (no visible delay), so integer sliders like geodesic frequency or tetrahelix count are stepped through every intermediate value during the transition. Example: F1→F6 in a 2-second transition = 5 steps, each held for ~400ms, each triggering the slider's `'input'` handler to rebuild the mesh. The result is a live subdivision animation.
+
+**Smooth interpolation for continuous sliders**: Values like `scaleSlider` or `opacitySlider` are interpolated per-frame, driving the UI handler at each tick.
+
+**Snap for enums**: Projection mode (`"out"|"flat"|"in"`) switches at t=0.5 (midpoint).
+
+#### `buildSteppedTick()` Design
+
+```js
+// Returns an onTick(t) function for animateToViewFull()
+RTDelta.buildSteppedTick(fromSnapshot, toDelta, durationMs)
+
+// Inside the tick function:
+// - Integer sliders: compute which step we're on based on t, fire handler if step changed
+// - Continuous sliders: lerp value, fire handler every frame
+// - Booleans: handled by dissolve system (separate)
+// - Enums: snap at t >= 0.5
+```
+
+The tick function tracks `lastStep` per slider to avoid redundant handler calls — only fires when the integer value actually changes. This keeps rebuilds to the minimum needed.
+
+#### What This Enables
+
+1. **Geodesic subdivision animation**: F1→F6 in 2s — watch the icosahedron refine live as camera orbits
+2. **Tetrahelix growth animation**: Count 1→10 — the helix extends step by step as camera follows its axis
+3. **Form transitions**: Cube dissolves out, cuboctahedron dissolves in between keyframes
+4. **Scale animation**: Smooth scale changes interpolated per-frame
+5. **Mixed sequences**: Any combination of the above with camera slerp and cutplane interpolation
 
 ---
 
-### 5c: Papercut Respects Opacity=0
+### 5c: Papercut Respects Invisible Objects — **DONE** `912c6ff`
 
 **Problem**: Papercut section cuts slice all geometry in the scene, including objects at opacity=0 that are "invisible" in the current view. This produces visible cut lines for objects the user can't see.
 
 **Rule**: Treat `material.opacity === 0` as "not present" for section calculations.
 
-**Implementation**: In `rt-papercut.js`, where geometry is gathered for section cuts, add an early filter:
+**Implementation**: Added opacity guard in `_generateIntersectionEdges()` and SVG extraction methods:
 
 ```js
-// Skip invisible (dissolved-out) objects
-if (mesh.material.opacity === 0) continue;
+// Skip dissolved-out objects (opacity=0 during view transitions)
+if (object.material) {
+  const mat = Array.isArray(object.material) ? object.material[0] : object.material;
+  if (mat.opacity === 0) return;
+}
 ```
 
-This is a single-line guard in the section loop. Objects faded out via the dissolve system are automatically excluded from cuts. When they fade back in, they're automatically included again.
+Also added in `extractEdgeLines()` and `extractMeshFaces()` for SVG export consistency.
+
+### 5d: Instance Dissolve System — **DONE** `912c6ff` (Partial — instances only)
+
+The opacity dissolve infrastructure is in place for deposited instances via `_setupDissolve()` in rt-animate.js. This will be extended in 5b to handle form visibility changes (checkbox toggles) using the same fade mechanism. The dissolve system includes:
+
+- Per-tick opacity interpolation via `onTick` callback
+- Mid-animation cancel safety via `_dissolveOriginal*` material markers
+- Visibility snap in `loadView()` via `group.visible`
 
 ---
 
@@ -811,9 +916,30 @@ Currently `animateToViewFull()` interpolates the cutplane value between two view
 
 This makes cutplane transitions feel physically motivated — the plane always arrives from or departs to a natural boundary rather than popping on/off. Implementation would extend the `onTick` callback in `animateToViewFull()` to detect the no-cut ↔ cut transition case and remap the interpolation range accordingly (e.g. `lerp(edgeDistance, targetValue, t)` instead of `lerp(0, targetValue, t)`).
 
-### Expandable View List (No Scrollbar)
+### ~~Expandable View List (No Scrollbar)~~ — DONE (Phase 5a)
 
-The Saved Views table currently has `max-height: 150px; overflow-y: auto`, which produces a scrollbar when the list grows. This doesn't match the UI's scroll-free aesthetic. Instead, remove the `max-height` constraint and let the view list expand naturally within the collapsible section. The user already scrolls the full sidebar panel — an inner scrollbar is redundant and visually inconsistent. This becomes especially important once drag-to-reorder handles (Phase 5a) are added, where seeing the full list is essential for reordering across many views (20-50+).
+~~The Saved Views table currently has `max-height: 150px; overflow-y: auto`, which produces a scrollbar when the list grows.~~ Resolved: `max-height` removed, view list expands naturally within collapsible section.
+
+### TODO: Smoother Mesh Rebuild Transitions
+
+Currently, integer slider changes (geodesic frequency, tetrahelix count) produce visible hard jumps during animated transitions — each step is a complete mesh topology change (different vertex/face count). The steps are evenly timed (linear rawT), which is an improvement over smoothstep bunching, but each F→F+1 is still a discontinuous visual jump.
+
+Dragging the geodesic frequency slider manually feels blazing fast and fluid because the user's hand motion provides natural easing. During camera animation, the same steps feel jerkier because the mesh pops while the camera glides.
+
+**Possible approaches** (worth testing, potentially processor-intensive):
+- **Sub-step mesh interpolation**: Generate both F(n) and F(n+1) meshes, cross-fade opacity between them over a brief window (~100ms) around each step change. Would require two meshes briefly coexisting.
+- **Static camera render sequence**: Test stepped transitions with a locked camera first — if it looks smooth without camera motion, the perceived jerkiness is a camera/mesh timing issue, not a rebuild speed issue.
+- **Longer transition durations**: More seconds = more time per step = each frequency gets perceived as a "hold" rather than a flash. User can already control this via the T slider.
+
+**Recommendation**: Start by testing with a static camera to isolate whether the issue is rebuild speed or perceptual conflict with camera motion. If static looks good, the fix may be as simple as slightly delaying stepped changes relative to camera motion (e.g., steps begin at rawT=0.1 and end at rawT=0.9, giving the camera a head start and a settling period).
+
+### TODO: Scene State Preview in Saved Views Table
+
+Currently, clicking ▶ in the "Camera" row only animates camera position — the scene environment (which forms are visible, slider values, geodesic frequency) doesn't change. The user must use "Camera + Scene" ▶ to see full transitions.
+
+**Enhancement**: When the user clicks on a view row in the Saved Views table (not ▶, just selecting the row), show a preview of that view's scene state — or at minimum, display the key delta values (which forms are on/off, geodesic freq, scale) as a tooltip or inline summary. This would let users understand what each view contains without having to load it.
+
+**Alternatively**: Make the "Camera + Scene" ▶ the default/primary animation mode, since users building animation sequences typically want full state transitions, not camera-only.
 
 ---
 
@@ -824,6 +950,21 @@ The Saved Views table currently has `max-height: 150px; overflow-y: auto`, which
 ~~**Symptom**: Section cut state (cutplane on/off, position) used to toggle correctly when switching between views via ▶.~~
 
 **Resolution**: Phase 6 dual-row UI. Top-row ▶ is camera-only by design. Bottom-row ▶ calls `animateToViewFull()` which smoothly interpolates the cutplane value per frame and snaps remaining scene state at arrival. Exceeded original fix — cutplane now *animates* between views rather than snapping.
+
+---
+
+## TO BE INVESTIGATED
+
+### Per-Polyhedron Scale in Delta System
+
+The delta system currently captures `scaleSlider` (global) and `tetScaleSlider` (tetrahedron) — but polyhedra can also have **individual scale** set through the state manager. The sizes of things are recorded in export files, so this data exists in `RTFileHandler.exportState()` somewhere beyond the two sliders already in `RTDelta._sliderMap`.
+
+**Questions**:
+- Are there additional per-polyhedron size controls beyond `scaleSlider` and `tetScaleSlider`?
+- Does the state manager track per-form circumradius or scale independently?
+- Do we need to expand `_sliderMap` or add a new capture category for per-polyhedron sizes?
+
+**Impact**: If a user scales the geodesic icosahedron to 2× in view 1, then changes it to 3× in view 2, the delta system should capture and interpolate that change. Currently only global scale and tet scale are tracked.
 
 ---
 

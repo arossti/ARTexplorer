@@ -88,7 +88,8 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
           const invPhi = RT.PurePhi.inverse(); // φ - 1 ≈ 0.618
           const invPhiSq = invPhi * invPhi; // (φ-1)² ≈ 0.382
           Q_edge = Q_edge * invPhiSq;
-          console.log(
+          MetaLog.log(
+            MetaLog.DETAILED,
             `[RT] Pentagon array: gen=${gen}, edge Q scaled by 1/φ² ≈ ${invPhiSq.toFixed(4)}`
           );
         } else {
@@ -96,7 +97,8 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
           // So edge quadrance divides by 4^(gen-1)
           const divisionsPerEdge = Math.pow(2, gen - 1);
           Q_edge = Q_edge / (divisionsPerEdge * divisionsPerEdge);
-          console.log(
+          MetaLog.log(
+            MetaLog.DETAILED,
             `[RT] Polygon tiling: gen=${gen}, edge Q scaled by 1/${divisionsPerEdge * divisionsPerEdge}`
           );
         }
@@ -271,18 +273,21 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
           }
 
           Q_edge = Q_edge * radiusScale;
-          console.log(
+          MetaLog.log(
+            MetaLog.DETAILED,
             `[RT] Geodesic ${type}: projection=${projection}, stretch=${stretchFactor.toFixed(2)}, radius scale=${radiusScale.toFixed(4)}`
           );
         } else {
-          console.log(
+          MetaLog.log(
+            MetaLog.DETAILED,
             `[RT] Geodesic ${type}: projection=${projection}, stretch=${stretchFactor.toFixed(2)}`
           );
         }
       }
 
       if (options.frequency && options.frequency > 1) {
-        console.log(
+        MetaLog.log(
+          MetaLog.DETAILED,
           `[RT] Geodesic ${type}: freq=${options.frequency}, projection=${projection}, edge Q=${Q_edge.toFixed(6)}`
         );
       }
@@ -347,7 +352,7 @@ function getClosePackedRadius(type, scale, options = {}) {
 
   // Handle forms without edges (e.g., Point)
   if (Q_edge === null || Q_edge === 0) {
-    console.log(`⚠️ Close-pack not available for ${type} (no edges)`);
+    MetaLog.warn(MetaLog.SUMMARY, `⚠️ Close-pack not available for ${type} (no edges)`);
     return null; // Signal packed sizing not available
   }
 
@@ -360,11 +365,11 @@ function getClosePackedRadius(type, scale, options = {}) {
   const radius = Math.sqrt(Q_vertex);
 
   // DIAGNOSTIC: RT validation logging (matches rt-polyhedra.js pattern)
-  console.log(`🔵 Close-pack RT for ${type} (halfSize=${scale.toFixed(4)}):`);
-  console.log(`  Edge quadrance Q_edge: ${Q_edge.toFixed(6)}`);
-  console.log(`  Vertex quadrance Q_vertex = Q_edge/4: ${Q_vertex.toFixed(6)}`);
-  console.log(`  Vertex radius r = √Q_vertex: ${radius.toFixed(6)}`);
-  console.log(`  ✓ RT-PURE: Stayed in quadrance space until final sqrt`);
+  MetaLog.log(MetaLog.DETAILED, `🔵 Close-pack RT for ${type} (halfSize=${scale.toFixed(4)}):`);
+  MetaLog.log(MetaLog.DETAILED, `  Edge quadrance Q_edge: ${Q_edge.toFixed(6)}`);
+  MetaLog.log(MetaLog.DETAILED, `  Vertex quadrance Q_vertex = Q_edge/4: ${Q_vertex.toFixed(6)}`);
+  MetaLog.log(MetaLog.DETAILED, `  Vertex radius r = √Q_vertex: ${radius.toFixed(6)}`);
+  MetaLog.log(MetaLog.DETAILED, `  ✓ RT-PURE: Stayed in quadrance space until final sqrt`);
 
   return radius;
 }
@@ -825,7 +830,8 @@ function addMatrixNodes(
       matrixGroup.add(node);
     });
 
-    console.log(
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `[Matrix Nodes] Added ${vertexPositions.size} nodes to ${matrixSize}×${matrixSize} ${polyhedronType} matrix`
     );
   });
@@ -987,7 +993,8 @@ function addRadialMatrixNodes(
       matrixGroup.add(node);
     });
 
-    console.log(
+    MetaLog.log(
+      MetaLog.SUMMARY,
       `[Radial Matrix Nodes] Added ${vertexPositions.size} nodes to ${centerPositions.length} ${polyhedronType} radial matrix`
     );
   });
