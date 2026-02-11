@@ -443,6 +443,45 @@ Mixed (algebraic core + boundary) & $0$ core, $\epsilon$ boundary & $\epsilon$ (
 
 With RT algebra, quantization error does not \emph{accumulate through layers}---it occurs only at the boundary where the algebraic domain meets the hardware representation. This is the difference between $O(L)$ and $O(1)$ error growth.
 
+\subsection{Empirical Precedent: Path C Exact Arithmetic}
+
+This is not merely theoretical. The ARTexplorer project's Prime Projection Conjecture~[6] required solving a concrete instance of the same problem: determining exact convex hull vertex counts from projected polyhedra, where floating-point ambiguity in cross products ($\sim 10^{-17}$) could flip a 7-gon to a 6-gon.
+
+The solution---\textbf{Path C exact arithmetic}---converts IEEE 754 Float64 coordinates to Python's \texttt{fractions.Fraction} (arbitrary-precision rationals), then computes cross products with exact integer arithmetic:
+
+\begin{verbatim}
+from fractions import Fraction
+frac_pts = [(Fraction(p[0]), Fraction(p[1])) for p in projected_2d]
+cross = (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0])
+# cross is a Fraction -- exactly zero or not. No epsilon needed.
+\end{verbatim}
+
+This eliminated \emph{all} floating-point ambiguity from hull counting. The geometric discovery---that non-constructible prime polygons (7, 11, 13-gon) emerge as projections of geodesic tetrahedra at rational spreads---was only possible because the arithmetic was exact.
+
+The parallel to AI inference is direct: when a neural network's internal computation is algebraically exact, the \emph{decisions} it makes (attention routing, classification boundaries) are deterministic. Floating-point non-determinism in $\exp(\cdot)$ evaluation is a known source of inference irreproducibility across hardware platforms. Spread-based attention would eliminate this entirely.
+
+\subsection{Tiered Rational Parameter Spaces}
+
+The Prime Projection search~[6] also demonstrates a methodology directly applicable to neural architecture: \textbf{tiered rational parameter search}. Instead of sweeping a decimal grid ($101^3 \approx 10^6$ configurations), the search was organized by algebraic significance:
+
+\begin{center}
+\begin{tabular}{clcl}
+\toprule
+\textbf{Tier} & \textbf{Denominators} & \textbf{Spread Values} & \textbf{Radical Family} \\
+\midrule
+1 (RT-pure) & $\{2, 3, 4\}$ & 7 values, 343 configs & $\sqrt{2}, \sqrt{3}$ \\
+2 ($\varphi$-family) & $\{5, 8, 10\}$ & 19 values & $\sqrt{5}$ \\
+3 (algebraic) & $\{6, 9, 12, 16, 20, 25\}$ & 67 values & mixed \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The key result: \textbf{all four prime polygons (5, 7, 11, 13) were found at Tier~1}---the simplest rational spreads with denominators $\{2, 3, 4\}$. The algebraically simplest parameters produced the most significant geometric structures.
+
+\begin{observation}[Tier Hierarchy for Neural Architecture Search]
+In quantized neural networks, weights are restricted to discrete values (e.g., $\{-1, 0, 1\}$ for ternary, $\{0, 1/4, 1/2, 3/4, 1\}$ for 2-bit). These are \emph{exactly} Tier~1 rational spreads. The Prime Projection result suggests that the most geometrically significant transformations---the ones that produce structurally rich outputs---naturally live at the simplest rational values. This would explain why aggressive quantization (even to ternary weights) preserves model quality better than precision analysis alone predicts: the important structure is already rational.
+\end{observation}
+
 %==============================================================================
 \section{Tetrahedral Topology Matches Multi-Head Attention}
 %==============================================================================
@@ -468,6 +507,38 @@ A Quadray-native attention mechanism with one head per basis axis would have:
 \end{observation}
 
 For 8- or 16-head architectures, nested tetrahedral structures (e.g., the compound of two tetrahedra forming a cube, or the compound of five tetrahedra forming a dodecahedron) provide natural multi-scale head arrangements with algebraically exact mutual spreads.
+
+\subsection{Symmetry Breaking and the Central Symmetry Barrier}
+
+The Prime Projection Conjecture~[6] established a theorem with direct implications for attention architecture:
+
+\begin{theorem}[Central Symmetry Barrier]
+If a polyhedron has central (inversion) symmetry, ALL orthographic projections have even convex hull vertex counts. Proof: for every vertex $v$ on the hull, its antipodal partner $-v$ either also lies on the hull or is excluded symmetrically. Hull vertices come in pairs $\Rightarrow$ even count.
+\end{theorem}
+
+Only \textbf{asymmetric} polyhedra---those lacking central inversion---can produce odd (and specifically prime) hull counts. The truncated tetrahedron and geodesic tetrahedra are asymmetric; the cuboctahedron and octahedron are not.
+
+\begin{observation}[Symmetry Breaking in Attention]
+Standard multi-head attention treats all heads symmetrically (same architecture, different learned weights). The Central Symmetry Barrier suggests this is a structural limitation: symmetric architectures can only produce ``even'' (symmetric) attention patterns. To access richer structure---the geometric analogue of prime polygons---\textbf{deliberate asymmetry} is needed.
+
+Quadray coordinates provide this naturally: the four tetrahedral axes have two chirality classes (W/Y are right-circulant, X/Z are left-circulant in the rotor framework~[5]). A 4-head Quadray attention mechanism would have 2 right-handed and 2 left-handed heads---built-in chirality breaking that symmetric architectures must learn.
+\end{observation}
+
+\subsection{The Cartesian Blind Spot}
+
+The Janus Inversion framework~[10] identifies a cognitive property of coordinate systems relevant to AI architecture design: \textbf{the coordinate system you choose determines which structures you can efficiently represent, and which questions you naturally ask}.
+
+In Cartesian coordinates, all of 3D space requires both positive and negative values. The question ``what is negative space?'' is trivial---it is the opposite octant.
+
+In Quadray coordinates, all of 3D space is already covered by positive values alone ($w, x, y, z \geq 0$). The question ``what does the negative region mean?'' becomes non-trivial and geometrically productive: it maps the tetrahedron to its dual (vertices $\leftrightarrow$ face-centers), revealing structure that Cartesian coordinates structurally obscure.
+
+For AI: embedding spaces are conventionally Cartesian (orthogonal basis). The choice is so automatic it is invisible. But if the tetrahedron is the minimum-complexity structure that maximizes representational diversity (Section~8.2), then Cartesian embeddings may be hiding structure that tetrahedral embeddings would reveal---just as Cartesian coordinates hide the tetrahedron-dual relationship that Quadray makes visible.
+
+\subsection{The Fourth Coordinate as Shape Information}
+
+The Janus Inversion analysis~[10] demonstrates that the ``redundant'' 4th Quadray parameter carries real geometric content. When the zero-sum constraint ($w + x + y + z = k$) is enforced, 4D collapses to 3D---isomorphic to Cartesian, with identical expressive power. When the constraint is released, the 4th parameter encodes \textbf{shape} information beyond position: a deformed tetrahedron with weights $(1, 1, 1, 6)$ occupies the same position as $(1, 1, 1, 1)$ but encodes a different geometric relationship.
+
+In embedding space, this suggests that 4D tetrahedral embeddings (without zero-sum constraint) could carry one additional degree of freedom per token---encoding not just ``where'' a token sits in meaning space, but ``what shape'' its meaning takes. This is analogous to the distinction between a word's denotation (position) and its connotation (shape).
 
 \subsection{The Janus Polarity Bit and Semantic Valence}
 
@@ -582,6 +653,108 @@ In AI terms: the tetrahedron provides the minimum-complexity structure that achi
 \end{enumerate}
 
 %==============================================================================
+\section{Anticipated Objections}
+%==============================================================================
+
+We address here several substantive criticisms that would arise in peer review of both Zhang's original work and our proposed extensions. These objections are serious and deserve serious responses.
+
+\subsection{Objection 1: ``Zhang chose a handicapped baseline''}
+
+\begin{tcolorbox}[colback=red!5!white, colframe=red!50!black, title=The Objection]
+It is well known that transformers are wasteful and inaccurate at small-scale tasks where decision trees, CNNs, and structured models perform better. At 13--18M parameters, the comparison baseline is handicapped---transformers only demonstrate their advantage at scale. By showing competitive results at small scale, the author has not demonstrated improvement over existing techniques.
+\end{tcolorbox}
+
+\textbf{Response.} This objection is factually correct about scale dynamics and must be taken seriously. Transformers' quadratic attention cost is \emph{justified} at scale precisely because the $O(n^2)$ global context window enables emergent capabilities (in-context learning, chain-of-thought reasoning) that local methods cannot replicate. At 13--18M parameters, a well-tuned CNN or LSTM will often match or exceed a transformer on perplexity benchmarks.
+
+However, the objection misidentifies the claim. Zhang's result is not ``we beat transformers.'' It is: \textbf{geometric operations on manifolds can replicate transformer-level performance without computing the full attention matrix}. The significance is architectural, not numerical. If Grassmann layers match attention at 18M parameters, the question becomes whether they \emph{also} match at 3B and 7B---where attention's quadratic cost becomes the dominant bottleneck.
+
+For the Quadray-RT extension, the scale question is even more pointed: does exact rational arithmetic \emph{compound} its advantage at scale, or plateau? We predict the former (Section~5.2, $O(1)$ vs.\ $O(L)$ error growth), but this is an empirical claim that requires validation at scale. \textbf{The honest answer is: we don't yet know.}
+
+\subsection{Objection 2: ``Show me 3B and 7B results''}
+
+\begin{tcolorbox}[colback=red!5!white, colframe=red!50!black, title=The Objection]
+Results at 3B--7B parameters would demonstrate whether geometric methods maintain competitive performance at scales where attention genuinely matters but training remains tractable. Even better: distill a known-good LLM into a geometric architecture and measure what is preserved.
+\end{tcolorbox}
+
+\textbf{Response.} This is the right experiment. We agree completely that the research programme outlined here is incomplete without mid-scale validation. The specific experiments needed are:
+
+\begin{enumerate}
+    \item \textbf{Geometric distillation}: Take a known-good 7B transformer (e.g., Llama-3 8B or Mistral 7B), replace attention layers with spread-based or Grassmann layers, and distill. Measure: (a) what fraction of benchmark performance is preserved, (b) inference latency reduction, (c) quantization tolerance.
+
+    \item \textbf{Hybrid architecture}: Replace only the \emph{middle} layers with geometric attention (where the representation is most abstract), keeping standard attention at input/output boundaries. This tests whether geometric layers can serve as efficient ``backbone'' computation while attention handles boundary conditions.
+
+    \item \textbf{INT4 stress test}: Train a spread-based model and a standard transformer at identical scale, then quantize both to INT4. The prediction from Section~5.2 is that the spread-based model degrades less, because its core operations are already rational. If this prediction fails, the quantization argument collapses.
+\end{enumerate}
+
+Until these experiments are run, this paper's claims about scale remain theoretical. We are explicit about this limitation.
+
+\subsection{Objection 3: ``The real claim is architectural, not accuracy''}
+
+\begin{tcolorbox}[colback=yellow!5!white, colframe=yellow!50!black, title=The Nuance]
+The performance gains in Zhang are modest. The interesting result is not ``+0.X\% accuracy'' but that Grassmann layers match transformer-level results \emph{without attention at all}. Architecturally, that's the real claim---the full $n \times n$ attention matrix is not necessary for competitive sequence modelling.
+\end{tcolorbox}
+
+\textbf{Response.} We endorse this reading. The contribution of geometric methods to AI is not (yet) about beating SOTA benchmarks. It is about demonstrating that the \textbf{core computation} of sequence modelling---capturing token-to-token relationships---can be performed by structured geometric operations rather than unstructured dense matrix exponentiation.
+
+This matters for three reasons that transcend benchmark scores:
+
+\begin{enumerate}
+    \item \textbf{Interpretability}: Geometric operations (rotation, projection, subspace deformation) have meaning. A spread-based attention score of $s = 3/4$ means ``these vectors are at 60° spread''---a geometric relationship that can be visualized and reasoned about. A softmax score of 0.73 means nothing without context.
+
+    \item \textbf{Hardware co-design}: If the core operations are algebraic (polynomial/rational), hardware can be specialized. Circulant matrix units, fixed-point spread accumulators, and Weierstrass function units are simpler circuits than transcendental function approximators. The architectural claim enables hardware claims.
+
+    \item \textbf{Theoretical understanding}: If ``LLM = Geometry'' is correct---if the transformations learned by neural networks are fundamentally geometric---then understanding which geometry (Grassmann, tetrahedral, hyperbolic, etc.) best matches which task class is a more productive research direction than scaling up a single architecture.
+\end{enumerate}
+
+\subsection{Objection 4: ``Attention alternatives already exist---RWKV, Mamba, etc.''}
+
+\begin{tcolorbox}[colback=red!5!white, colframe=red!50!black, title=The Objection]
+We already know attention is not the only possible mechanism. RWKV~[11] achieves transformer-competitive performance with linear-time recurrence. Mamba~[12] uses selective state spaces. RetNet uses retention mechanisms. Zhang's Grassmann approach is one more entry in a growing list of attention alternatives. What does Quadray-RT add beyond yet another alternative?
+\end{tcolorbox}
+
+\textbf{Response.} This objection correctly situates the work within a broader trend. RWKV, Mamba, RetNet, and Grassmann layers are all demonstrations that $O(n^2)$ attention is sufficient but not necessary. Our contribution is not another attention alternative---it is a \textbf{mathematical toolkit} that could improve \emph{any} of them.
+
+The key distinction:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{System} & \textbf{Contribution} & \textbf{Core Operations} \\
+\midrule
+RWKV & Architecture (linear RNN) & Standard floating-point \\
+Mamba & Architecture (selective SSM) & Standard floating-point \\
+Grassmann & Architecture (manifold layers) & Pl\"ucker coordinates \\
+\textbf{Quadray-RT} & \textbf{Algebra} (exact rational) & \textbf{Spread/cross, Weierstrass} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+RWKV, Mamba, and Grassmann layers all still compute with IEEE 754 floating-point arithmetic, including transcendental functions where needed. Quadray-RT proposes that \emph{whatever architecture you choose}, its core operations can be reformulated in exact rational algebra---spread instead of cosine, Weierstrass instead of sinusoidal, circulant instead of dense.
+
+\begin{observation}[Algebra is orthogonal to architecture]
+Spread-based scoring could be applied within RWKV's recurrence, Mamba's state-space updates, or Grassmann's subspace deformations. The algebraic toolkit is \textbf{composable with any architecture} that performs geometric operations on token representations. This is not a competing alternative to these methods---it is a potential \emph{acceleration layer} beneath them.
+\end{observation}
+
+A concrete test: implement RWKV's channel mixing with spread-normalized scores instead of softmax, quantize to INT4, and compare quality degradation against standard RWKV-INT4. If the spread version degrades less, the algebraic contribution is validated independent of architecture choice.
+
+\subsection{Objection 5: ``Squared dot products lose sign information''}
+
+\begin{tcolorbox}[colback=red!5!white, colframe=red!50!black, title=The Objection]
+Cross-normalized attention (Equation~\ref{eq:cross-attention}) uses $(\mathbf{q} \cdot \mathbf{k})^2$, which is always non-negative. Standard attention uses $\mathbf{q} \cdot \mathbf{k}$, which can be negative (softmax then suppresses negative scores exponentially). Squaring discards sign information---anti-correlated tokens (negative dot product) receive the same weight as correlated ones.
+\end{tcolorbox}
+
+\textbf{Response.} This is a genuine technical limitation. Spread and cross are inherently unsigned measures ($s = \sin^2\theta$ cannot distinguish $\theta$ from $180° - \theta$). The Janus Inversion framework~[10] addresses this explicitly: the $\mathbb{Z}_2$ polarity bit restores sign information.
+
+In practice, a spread-based attention mechanism would need to track polarity:
+\begin{equation}
+\alpha_i = \frac{\text{sgn}(\mathbf{q} \cdot \mathbf{k}_i) \cdot c(\mathbf{q}, \mathbf{k}_i)}{\sum_j |c(\mathbf{q}, \mathbf{k}_j)|}
+\end{equation}
+
+where $\text{sgn}(\cdot)$ is the sign function (a single comparison, not a transcendental). This restores signed attention weights while keeping the core computation algebraic. The Janus polarity bit provides the mathematical framework for this sign tracking.
+
+Alternatively, for tasks where anti-correlation should produce low (not high) attention, the unsigned spread itself is appropriate: anti-correlated tokens have low spread (they are ``aligned'' in the spread sense, just pointing opposite ways). Whether this is a bug or a feature depends on the task.
+
+%==============================================================================
 \section{Conclusion}
 %==============================================================================
 
@@ -623,6 +796,12 @@ Zhang proved the architecture works. Wildberger provided the algebra. Fuller pro
     \item Brouwer, L.E.J. (1912). ``\"Uber Abbildung von Mannigfaltigkeiten.'' \textit{Mathematische Annalen}, 71(4), 97--115.
 
     \item Ace, T. ``Rotating in Encyclopedic Space.'' \url{http://www.tomacevedo.com}
+
+    \item Thomson, A. (2026). ``Janus Inversion: Coordinate Inversion Through the Origin in Tetrahedral Geometry.'' ARTexplorer Project, v9.
+
+    \item Peng, B. et al. (2023). ``RWKV: Reinventing RNNs for the Transformer Era.'' \textit{arXiv:2305.13048}.
+
+    \item Gu, A. and Dao, T. (2023). ``Mamba: Linear-Time Sequence Modeling with Selective State Spaces.'' \textit{arXiv:2312.00752}.
 \end{enumerate}
 
 \end{document}
