@@ -632,6 +632,7 @@ if __name__ == '__main__':
 | ~~**6a**~~ | `index.html` | ~~Dual-row UI: "Camera" / "Camera + Scene" labels + buttons~~ | ~~Both rows visible, distinct labels~~ | **DONE** `a106bf7` |
 | ~~**6b**~~ | `rt-viewmanager.js` | ~~`loadView()` with `skipCamera` option~~ | ~~Restores non-camera state only~~ | **DONE** `a106bf7` |
 | ~~**6c**~~ | `rt-animate.js` | ~~`animateToViewFull()` + smooth cutplane interpolation~~ | ~~Bottom-row ▶ slerps camera + interpolates cutplane~~ | **DONE** `a106bf7` |
+| ~~**6d**~~ | `index.html` | ~~HTML reorg: Move View Capture → "View Manager" section, rename Camera → View Manager~~ | ~~UI layout correct, all controls functional~~ | **DONE** |
 
 ## Favicon-Specific Parameters
 
@@ -796,6 +797,23 @@ async animateToViewFull(viewId, durationMs, opts) {
 ```
 
 This requires a `loadViewState()` variant in ViewManager that can selectively restore subsets of view state. The existing `loadView()` does everything at once — the refactor splits it into camera vs non-camera concerns.
+
+---
+
+## Future Refinements
+
+### Bidirectional Cutplane Transitions
+
+Currently `animateToViewFull()` interpolates the cutplane value between two views that share the same axis. When transitioning from a view with **no cutplane** to one **with a cutplane** (or vice versa), the transition should be bidirectional:
+
+- **Entering a cut** (no cut → cut at interval *d*): Enable the cutplane at the far edge (or distance 0), then smoothly slide it to position *d* over the transition duration. The cut "sweeps in" from the boundary.
+- **Exiting a cut** (cut at interval *d* → no cut): Smoothly slide the cutplane back to the far edge / distance 0, then disable. The cut "recedes" before disappearing.
+
+This makes cutplane transitions feel physically motivated — the plane always arrives from or departs to a natural boundary rather than popping on/off. Implementation would extend the `onTick` callback in `animateToViewFull()` to detect the no-cut ↔ cut transition case and remap the interpolation range accordingly (e.g. `lerp(edgeDistance, targetValue, t)` instead of `lerp(0, targetValue, t)`).
+
+### Expandable View List (No Scrollbar)
+
+The Saved Views table currently has `max-height: 150px; overflow-y: auto`, which produces a scrollbar when the list grows. This doesn't match the UI's scroll-free aesthetic. Instead, remove the `max-height` constraint and let the view list expand naturally within the collapsible section. The user already scrolls the full sidebar panel — an inner scrollbar is redundant and visually inconsistent. This becomes especially important once drag-to-reorder handles (Phase 5a) are added, where seeing the full list is essential for reordering across many views (20-50+).
 
 ---
 

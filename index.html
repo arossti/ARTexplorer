@@ -3305,7 +3305,7 @@
         <!-- END SECTION 6: VISUAL OPTIONS -->
 
         <!-- ========================================
-             SECTION 7: CAMERA
+             SECTION 7: VIEW MANAGER
              ======================================== -->
         <div class="control-group">
           <h3>
@@ -3313,7 +3313,7 @@
               class="section-toggle collapsed"
               data-target="view-section"
             ></span>
-            Camera
+            View Manager
           </h3>
           <div id="view-section" class="section-content collapsed">
             <!-- Projection Mode -->
@@ -3378,148 +3378,6 @@
                 </button>
                 <button class="toggle-btn variant-standard" id="viewQuadQZ">
                   QZ
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-        <!-- END SECTION 7: CAMERA -->
-
-        <!-- ========================================
-             SECTION 8: PAPERCUT
-             ======================================== -->
-        <div class="control-group">
-          <h3>
-            <span
-              class="section-toggle collapsed"
-              data-target="papercut-section"
-            ></span>
-            Papercut
-          </h3>
-          <div id="papercut-section" class="section-content collapsed">
-            <div class="control-item">
-              <label style="font-size: 12px; color: #b0b0b0"
-                >Cut Line Weight</label
-              >
-              <div class="slider-container">
-                <input
-                  type="range"
-                  id="cutplaneLineWeight"
-                  min="1"
-                  max="10"
-                  step="1"
-                  value="3"
-                />
-                <span class="slider-value" id="cutplaneLineWeightValue">3</span>
-              </div>
-            </div>
-            <div class="control-item">
-              <label
-                class="checkbox-label"
-                title="Hide back-facing polygons for better performance (~2x faster). All geometry is correctly wound."
-              >
-                <input type="checkbox" id="backfaceCulling" checked />
-                Backface Culling
-              </label>
-            </div>
-            <div class="control-item">
-              <label class="checkbox-label">
-                <input type="checkbox" id="enablePrintMode" />
-                Print Mode (B&amp;W)
-              </label>
-            </div>
-            <div class="control-item">
-              <div class="toggle-with-refresh">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="enableCutPlane" />
-                  Enable Cut Plane
-                </label>
-                <button id="refreshCutPlane" class="refresh-btn">Refresh</button>
-              </div>
-            </div>
-            <div class="control-item">
-              <label class="checkbox-label">
-                <input type="checkbox" id="invertCutPlane" />
-                Invert Cut Plane
-              </label>
-            </div>
-            <div class="control-item">
-              <label class="checkbox-label">
-                <input type="checkbox" id="intervalSnapXYZ" checked />
-                XYZ Interval Snap
-              </label>
-            </div>
-            <div class="control-item">
-              <label class="checkbox-label">
-                <input type="checkbox" id="intervalSnapWXYZ" />
-                WXYZ Interval Snap
-              </label>
-            </div>
-            <div class="control-item">
-              <label class="checkbox-label">
-                <input type="checkbox" id="sectionNodes" />
-                Section Nodes
-              </label>
-            </div>
-            <div class="control-item">
-              <label class="checkbox-label">
-                <input type="checkbox" id="adaptiveNodeResolution" />
-                High Resolution Nodes
-              </label>
-            </div>
-            <!-- Axial Cutplane Selections -->
-            <div class="control-item spacing-top-large">
-              <hr
-                style="border: none; border-top: 1px solid #444; margin: 20px 0"
-              />
-              <label class="label-section">Axial Cutplane Selections</label>
-              <label class="label-subsection">Cartesian Basis</label>
-              <div style="display: flex; gap: 4px; margin-bottom: 8px">
-                <button class="toggle-btn variant-small" id="cutplaneAxisX">
-                  X
-                </button>
-                <button class="toggle-btn variant-small" id="cutplaneAxisY">
-                  Y
-                </button>
-                <button
-                  class="toggle-btn variant-small active"
-                  id="cutplaneAxisZ"
-                >
-                  Z
-                </button>
-              </div>
-              <label class="label-subsection">Tetrahedral Basis</label>
-              <div style="display: flex; gap: 4px">
-                <button class="toggle-btn variant-small" id="cutplaneAxisQW">
-                  QW
-                </button>
-                <button class="toggle-btn variant-small" id="cutplaneAxisQX">
-                  QX
-                </button>
-                <button class="toggle-btn variant-small" id="cutplaneAxisQY">
-                  QY
-                </button>
-                <button class="toggle-btn variant-small" id="cutplaneAxisQZ">
-                  QZ
-                </button>
-              </div>
-            </div>
-            <!-- Sheet Size / Print Extents -->
-            <div class="control-item">
-              <label class="label-section">Sheet Size</label>
-              <div class="button-grid-2col">
-                <button class="toggle-btn variant-standard" id="fitA4">
-                  A4
-                </button>
-                <button class="toggle-btn variant-standard" id="fitLetter">
-                  Letter
-                </button>
-                <button class="toggle-btn variant-standard" id="fitA3">
-                  A3
-                </button>
-                <button class="toggle-btn variant-standard" id="fitCustom">
-                  Custom
                 </button>
               </div>
             </div>
@@ -3729,6 +3587,148 @@
                     Animation
                   </button>
                 </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <!-- END SECTION 7: VIEW MANAGER -->
+
+        <!-- ========================================
+             SECTION 8: PAPERCUT
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="papercut-section"
+            ></span>
+            Papercut
+          </h3>
+          <div id="papercut-section" class="section-content collapsed">
+            <div class="control-item">
+              <label style="font-size: 12px; color: #b0b0b0"
+                >Cut Line Weight</label
+              >
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="cutplaneLineWeight"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value="3"
+                />
+                <span class="slider-value" id="cutplaneLineWeightValue">3</span>
+              </div>
+            </div>
+            <div class="control-item">
+              <label
+                class="checkbox-label"
+                title="Hide back-facing polygons for better performance (~2x faster). All geometry is correctly wound."
+              >
+                <input type="checkbox" id="backfaceCulling" checked />
+                Backface Culling
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="enablePrintMode" />
+                Print Mode (B&amp;W)
+              </label>
+            </div>
+            <div class="control-item">
+              <div class="toggle-with-refresh">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="enableCutPlane" />
+                  Enable Cut Plane
+                </label>
+                <button id="refreshCutPlane" class="refresh-btn">Refresh</button>
+              </div>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="invertCutPlane" />
+                Invert Cut Plane
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="intervalSnapXYZ" checked />
+                XYZ Interval Snap
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="intervalSnapWXYZ" />
+                WXYZ Interval Snap
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="sectionNodes" />
+                Section Nodes
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="adaptiveNodeResolution" />
+                High Resolution Nodes
+              </label>
+            </div>
+            <!-- Axial Cutplane Selections -->
+            <div class="control-item spacing-top-large">
+              <hr
+                style="border: none; border-top: 1px solid #444; margin: 20px 0"
+              />
+              <label class="label-section">Axial Cutplane Selections</label>
+              <label class="label-subsection">Cartesian Basis</label>
+              <div style="display: flex; gap: 4px; margin-bottom: 8px">
+                <button class="toggle-btn variant-small" id="cutplaneAxisX">
+                  X
+                </button>
+                <button class="toggle-btn variant-small" id="cutplaneAxisY">
+                  Y
+                </button>
+                <button
+                  class="toggle-btn variant-small active"
+                  id="cutplaneAxisZ"
+                >
+                  Z
+                </button>
+              </div>
+              <label class="label-subsection">Tetrahedral Basis</label>
+              <div style="display: flex; gap: 4px">
+                <button class="toggle-btn variant-small" id="cutplaneAxisQW">
+                  QW
+                </button>
+                <button class="toggle-btn variant-small" id="cutplaneAxisQX">
+                  QX
+                </button>
+                <button class="toggle-btn variant-small" id="cutplaneAxisQY">
+                  QY
+                </button>
+                <button class="toggle-btn variant-small" id="cutplaneAxisQZ">
+                  QZ
+                </button>
+              </div>
+            </div>
+            <!-- Sheet Size / Print Extents -->
+            <div class="control-item">
+              <label class="label-section">Sheet Size</label>
+              <div class="button-grid-2col">
+                <button class="toggle-btn variant-standard" id="fitA4">
+                  A4
+                </button>
+                <button class="toggle-btn variant-standard" id="fitLetter">
+                  Letter
+                </button>
+                <button class="toggle-btn variant-standard" id="fitA3">
+                  A3
+                </button>
+                <button class="toggle-btn variant-standard" id="fitCustom">
+                  Custom
+                </button>
               </div>
             </div>
           </div>
