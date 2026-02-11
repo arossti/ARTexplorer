@@ -371,6 +371,17 @@ export const RTFileHandler = {
       rhombicDodecMatrixSizeSlider: parseInt(
         document.getElementById("rhombicDodecMatrixSizeSlider")?.value || "1"
       ),
+      // Planar matrix 45° rotation toggles
+      cubeMatrixRotate45:
+        document.getElementById("cubeMatrixRotate45")?.checked || false,
+      tetMatrixRotate45:
+        document.getElementById("tetMatrixRotate45")?.checked || false,
+      octaMatrixRotate45:
+        document.getElementById("octaMatrixRotate45")?.checked || false,
+      cuboctaMatrixRotate45:
+        document.getElementById("cuboctaMatrixRotate45")?.checked || false,
+      rhombicDodecMatrixRotate45:
+        document.getElementById("rhombicDodecMatrixRotate45")?.checked || false,
       // Radial matrix frequency sliders
       radialCubeFreqSlider: parseInt(
         document.getElementById("radialCubeFreqSlider")?.value || "1"
@@ -839,47 +850,51 @@ export const RTFileHandler = {
             if (checkbox) checkbox.checked = sliders[chiralKey];
           }
         }
-        // Planar matrix size sliders
-        if (sliders.cubeMatrixSizeSlider !== undefined) {
-          const el = document.getElementById("cubeMatrixSizeSlider");
-          if (el) el.value = sliders.cubeMatrixSizeSlider;
+        // Planar matrix size sliders (set value + update N×N display text)
+        const matrixSizeSliders = [
+          ["cubeMatrixSizeSlider", "cubeMatrixSizeValue"],
+          ["tetMatrixSizeSlider", "tetMatrixSizeValue"],
+          ["octaMatrixSizeSlider", "octaMatrixSizeValue"],
+          ["cuboctaMatrixSizeSlider", "cuboctaMatrixSizeValue"],
+          ["rhombicDodecMatrixSizeSlider", "rhombicDodecMatrixSizeValue"],
+        ];
+        for (const [sliderId, displayId] of matrixSizeSliders) {
+          if (sliders[sliderId] !== undefined) {
+            const el = document.getElementById(sliderId);
+            if (el) el.value = sliders[sliderId];
+            const display = document.getElementById(displayId);
+            if (display) {
+              const v = sliders[sliderId];
+              display.textContent = `${v}×${v}`;
+            }
+          }
         }
-        if (sliders.tetMatrixSizeSlider !== undefined) {
-          const el = document.getElementById("tetMatrixSizeSlider");
-          if (el) el.value = sliders.tetMatrixSizeSlider;
+        // Planar matrix 45° rotation toggles
+        const rotate45Ids = [
+          "cubeMatrixRotate45", "tetMatrixRotate45", "octaMatrixRotate45",
+          "cuboctaMatrixRotate45", "rhombicDodecMatrixRotate45",
+        ];
+        for (const id of rotate45Ids) {
+          if (sliders[id] !== undefined) {
+            const el = document.getElementById(id);
+            if (el) el.checked = sliders[id];
+          }
         }
-        if (sliders.octaMatrixSizeSlider !== undefined) {
-          const el = document.getElementById("octaMatrixSizeSlider");
-          if (el) el.value = sliders.octaMatrixSizeSlider;
-        }
-        if (sliders.cuboctaMatrixSizeSlider !== undefined) {
-          const el = document.getElementById("cuboctaMatrixSizeSlider");
-          if (el) el.value = sliders.cuboctaMatrixSizeSlider;
-        }
-        if (sliders.rhombicDodecMatrixSizeSlider !== undefined) {
-          const el = document.getElementById("rhombicDodecMatrixSizeSlider");
-          if (el) el.value = sliders.rhombicDodecMatrixSizeSlider;
-        }
-        // Radial matrix frequency sliders
-        if (sliders.radialCubeFreqSlider !== undefined) {
-          const el = document.getElementById("radialCubeFreqSlider");
-          if (el) el.value = sliders.radialCubeFreqSlider;
-        }
-        if (sliders.radialRhombicDodecFreqSlider !== undefined) {
-          const el = document.getElementById("radialRhombicDodecFreqSlider");
-          if (el) el.value = sliders.radialRhombicDodecFreqSlider;
-        }
-        if (sliders.radialTetFreqSlider !== undefined) {
-          const el = document.getElementById("radialTetFreqSlider");
-          if (el) el.value = sliders.radialTetFreqSlider;
-        }
-        if (sliders.radialOctFreqSlider !== undefined) {
-          const el = document.getElementById("radialOctFreqSlider");
-          if (el) el.value = sliders.radialOctFreqSlider;
-        }
-        if (sliders.radialVEFreqSlider !== undefined) {
-          const el = document.getElementById("radialVEFreqSlider");
-          if (el) el.value = sliders.radialVEFreqSlider;
+        // Radial matrix frequency sliders (set value + update Fn display text)
+        const radialFreqSliders = [
+          ["radialCubeFreqSlider", "radialCubeFreqDisplay", v => `F${2 * v - 1}`],
+          ["radialRhombicDodecFreqSlider", "radialRhombicDodecFreqDisplay", v => `F${2 * v - 1}`],
+          ["radialTetFreqSlider", "radialTetFreqDisplay", v => `F${v}`],
+          ["radialOctFreqSlider", "radialOctFreqDisplay", v => `F${v}`],
+          ["radialVEFreqSlider", "radialVEFreqDisplay", v => `F${v}`],
+        ];
+        for (const [sliderId, displayId, formatFn] of radialFreqSliders) {
+          if (sliders[sliderId] !== undefined) {
+            const el = document.getElementById(sliderId);
+            if (el) el.value = sliders[sliderId];
+            const display = document.getElementById(displayId);
+            if (display) display.textContent = formatFn(sliders[sliderId]);
+          }
         }
         // Geodesic frequency sliders
         if (sliders.geodesicTetraFrequency !== undefined) {
@@ -1049,6 +1064,26 @@ export const RTFileHandler = {
         );
         if (quadrayTruncTetControls && checkboxes.showQuadrayTruncatedTet) {
           quadrayTruncTetControls.style.display = "block";
+        }
+
+        // Show/hide planar matrix controls based on checkbox state
+        const matrixControlMappings = [
+          ["showCubeMatrix", "cube-matrix-controls"],
+          ["showTetMatrix", "tet-matrix-controls"],
+          ["showOctaMatrix", "octa-matrix-controls"],
+          ["showCuboctahedronMatrix", "cubocta-matrix-controls"],
+          ["showRhombicDodecMatrix", "rhombic-dodec-matrix-controls"],
+          ["showRadialCubeMatrix", "radial-cube-matrix-controls"],
+          ["showRadialRhombicDodecMatrix", "radial-rhombic-dodec-matrix-controls"],
+          ["showRadialTetrahedronMatrix", "radial-tetrahedron-matrix-controls"],
+          ["showRadialOctahedronMatrix", "radial-octahedron-matrix-controls"],
+          ["showRadialCuboctahedronMatrix", "radial-cuboctahedron-matrix-controls"],
+        ];
+        for (const [checkboxId, controlsId] of matrixControlMappings) {
+          if (checkboxes[checkboxId]) {
+            const panel = document.getElementById(controlsId);
+            if (panel) panel.style.display = "block";
+          }
         }
 
         // Trigger updateGeometry to render the restored forms
