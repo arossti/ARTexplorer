@@ -40,6 +40,9 @@ eslint.config.js
 # Generated results (local only)
 scripts/results/
 
+# Console utility scripts (developer-only, auto-downloads files)
+scripts/PlayerPiano*.js
+
 # LaTeX build artifacts
 *.aux
 *.out
