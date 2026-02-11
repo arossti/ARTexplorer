@@ -716,6 +716,14 @@ export const RTViewManager = {
         ancestor = ancestor.parent;
       }
 
+      // Skip dissolved-out objects (opacity=0 during view transitions)
+      if (object.material) {
+        const mat = Array.isArray(object.material)
+          ? object.material[0]
+          : object.material;
+        if (mat.opacity === 0) return;
+      }
+
       // Skip helper/grid/basis objects
       if (object.name && skipNames.some(name => object.name.includes(name))) {
         return;
@@ -948,6 +956,14 @@ export const RTViewManager = {
       while (ancestor) {
         if (!ancestor.visible) return;
         ancestor = ancestor.parent;
+      }
+
+      // Skip dissolved-out objects (opacity=0 during view transitions)
+      if (object.material) {
+        const mat = Array.isArray(object.material)
+          ? object.material[0]
+          : object.material;
+        if (mat.opacity === 0) return;
       }
 
       // Skip helper/grid/basis objects
@@ -1509,6 +1525,20 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
       // Update cutplane
       if (view.cutplane.enabled) {
         pc.updateCutplane(view.cutplane.value, this._scene);
+      }
+    }
+
+    // Apply instance visibility (show/hide objects per view)
+    // Uses group.visible for instant snap — material opacity is NOT modified here
+    // so that _setupDissolve() can read correct original values for fade animations
+    if (view.instanceRefs && this._stateManager) {
+      const allInstances = this._stateManager.state.instances;
+      for (const inst of allInstances) {
+        const shouldBeVisible = view.instanceRefs.includes(inst.id);
+        const group = inst.threeObject;
+        if (!group) continue;
+
+        group.visible = shouldBeVisible;
       }
     }
 

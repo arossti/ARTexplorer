@@ -199,8 +199,8 @@ export const RTAnimate = {
       }
     }
 
-    // Build the onTick callback for cutplane interpolation
-    const onTick =
+    // Build the cutplane tick callback
+    const cutplaneTick =
       pc && scene && (startEnabled || endEnabled)
         ? t => {
             const interpValue = startValue + (endValue - startValue) * t;
@@ -215,11 +215,154 @@ export const RTAnimate = {
           }
         : null;
 
-    // Run camera animation with cutplane interpolation
+    // Build the dissolve tick callback (fade objects in/out)
+    const dissolveTick = view.instanceRefs
+      ? this._setupDissolve(view.instanceRefs)
+      : null;
+
+    // Merge cutplane + dissolve into a single onTick
+    const onTick =
+      cutplaneTick || dissolveTick
+        ? t => {
+            if (cutplaneTick) cutplaneTick(t);
+            if (dissolveTick) dissolveTick(t);
+          }
+        : null;
+
+    // Run camera animation with cutplane interpolation + object dissolve
     await this.animateToView(viewId, durationMs, { ...opts, onTick });
 
     // Snap final non-camera state (render settings, exact cutplane, etc.)
     vm.loadView(viewId, { skipCamera: true });
+  },
+
+  // ── Object dissolve (opacity fade per view) ────────────────────
+
+  /**
+   * Prepare a per-tick dissolve function that fades objects in/out based on
+   * which instances should be visible in the target view.
+   *
+   * Objects present in targetInstanceRefs but currently hidden fade IN.
+   * Objects absent from targetInstanceRefs but currently visible fade OUT.
+   *
+   * @param {string[]} targetInstanceRefs - Instance IDs that should be visible
+   * @returns {function|null} Tick function: (t: 0→1) => void, or null if no fades needed
+   * @private
+   */
+  _setupDissolve(targetInstanceRefs) {
+    const sm = this._viewManager._stateManager;
+    if (!sm) return null;
+
+    const allInstances = sm.state.instances;
+    if (!allInstances || allInstances.length === 0) return null;
+
+    // First pass: restore any materials left mid-dissolve by a cancelled animation.
+    // Materials touched by dissolve have _dissolveOriginal* markers.
+    for (const inst of allInstances) {
+      const group = inst.threeObject;
+      if (!group) continue;
+      group.traverse(child => {
+        if (child.material) {
+          const mats = Array.isArray(child.material)
+            ? child.material
+            : [child.material];
+          mats.forEach(mat => {
+            if (mat._dissolveOriginalOpacity !== undefined) {
+              mat.opacity = mat._dissolveOriginalOpacity;
+              mat.transparent = mat._dissolveOriginalTransparent;
+              delete mat._dissolveOriginalOpacity;
+              delete mat._dissolveOriginalTransparent;
+              mat.needsUpdate = true;
+            }
+          });
+        }
+      });
+    }
+
+    // Second pass: determine which objects need to fade in/out
+    const fadeTargets = [];
+
+    for (const inst of allInstances) {
+      const shouldBeVisible = targetInstanceRefs.includes(inst.id);
+      const group = inst.threeObject;
+      if (!group) continue;
+
+      const isCurrentlyVisible = group.visible;
+
+      if (shouldBeVisible && !isCurrentlyVisible) {
+        // FADE IN: make group visible at opacity 0, animate to original opacity
+        group.visible = true;
+        const materials = [];
+        group.traverse(child => {
+          if (child.material) {
+            const mats = Array.isArray(child.material)
+              ? child.material
+              : [child.material];
+            mats.forEach(mat => {
+              const origOpacity = mat.opacity;
+              const origTransparent = mat.transparent;
+              // Mark material as dissolve-modified (for mid-cancel cleanup)
+              mat._dissolveOriginalOpacity = origOpacity;
+              mat._dissolveOriginalTransparent = origTransparent;
+              mat.transparent = true;
+              mat.opacity = 0;
+              mat.needsUpdate = true;
+              materials.push({ mat, origOpacity, origTransparent });
+            });
+          }
+        });
+        fadeTargets.push({ group, materials, direction: "in" });
+      } else if (!shouldBeVisible && isCurrentlyVisible) {
+        // FADE OUT: animate from current opacity to 0, then hide
+        const materials = [];
+        group.traverse(child => {
+          if (child.material) {
+            const mats = Array.isArray(child.material)
+              ? child.material
+              : [child.material];
+            mats.forEach(mat => {
+              const origOpacity = mat.opacity;
+              const origTransparent = mat.transparent;
+              mat._dissolveOriginalOpacity = origOpacity;
+              mat._dissolveOriginalTransparent = origTransparent;
+              mat.transparent = true;
+              mat.needsUpdate = true;
+              materials.push({ mat, origOpacity, origTransparent });
+            });
+          }
+        });
+        fadeTargets.push({ group, materials, direction: "out" });
+      }
+    }
+
+    if (fadeTargets.length === 0) return null;
+
+    return t => {
+      for (const target of fadeTargets) {
+        for (const { mat, origOpacity } of target.materials) {
+          if (target.direction === "in") {
+            mat.opacity = origOpacity * t;
+          } else {
+            mat.opacity = origOpacity * (1 - t);
+          }
+          mat.needsUpdate = true;
+        }
+
+        // At completion, finalize state and clean up markers
+        if (t >= 1) {
+          if (target.direction === "out") {
+            target.group.visible = false;
+          }
+          for (const { mat, origOpacity, origTransparent } of target.materials) {
+            mat.opacity = origOpacity;
+            mat.transparent = origTransparent;
+            delete mat._dissolveOriginalOpacity;
+            delete mat._dissolveOriginalTransparent;
+            mat.needsUpdate = true;
+          }
+        }
+      }
+    };
   },
 
   // ── Preview loop ────────────────────────────────────────────────
