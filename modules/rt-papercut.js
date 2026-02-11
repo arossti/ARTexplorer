@@ -728,6 +728,14 @@ export const RTPapercut = {
         ancestor = ancestor.parent;
       }
 
+      // Skip dissolved-out objects (opacity=0 during view transitions)
+      if (object.material) {
+        const mat = Array.isArray(object.material)
+          ? object.material[0]
+          : object.material;
+        if (mat.opacity === 0) return;
+      }
+
       // Skip grid-related meshes
       if (
         object.parent &&

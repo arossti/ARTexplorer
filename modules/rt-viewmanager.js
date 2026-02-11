@@ -14,6 +14,7 @@
  */
 
 import { MetaLog } from "./rt-metalog.js";
+import { RTDelta } from "./rt-delta.js";
 
 export const RTViewManager = {
   // ========================================================================
@@ -421,6 +422,11 @@ export const RTViewManager = {
     const quadrayAxis = this._detectQuadrayAxis();
     const axisCode = quadrayAxis || this._detectCameraAxis();
 
+    // Capture scene state delta (forms, sliders, projections)
+    const currentSnapshot = RTDelta.captureSnapshot();
+    const prevSnapshot = this._getAccumulatedSnapshot();
+    const sceneState = RTDelta.computeDelta(prevSnapshot, currentSnapshot);
+
     const view = {
       id: `view_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name: name,
@@ -431,6 +437,7 @@ export const RTViewManager = {
       cutplane: cutplaneState,
       render: renderState,
       instanceRefs: instanceRefs,
+      sceneState: sceneState,
       grids: grids,
       colors: colors,
       transitionDuration: 2000, // ms, default 2s (used by RTAnimate)
@@ -445,6 +452,48 @@ export const RTViewManager = {
     };
 
     return view;
+  },
+
+  /**
+   * Build the accumulated scene snapshot up to (but not including) the last view.
+   * Used to compute deltas when capturing a new view.
+   *
+   * For the first view, returns null (full snapshot will be stored).
+   * For subsequent views, accumulates deltas from all prior views.
+   *
+   * @returns {Object|null} Accumulated snapshot, or null if no prior views
+   * @private
+   */
+  _getAccumulatedSnapshot() {
+    const views = this.state.views;
+    if (!views || views.length === 0) return null;
+
+    // Start from first view's sceneState (which is a full snapshot)
+    const first = views[0];
+    if (!first.sceneState) return null;
+
+    const deltas = views.slice(1).map(v => v.sceneState).filter(Boolean);
+    return RTDelta.accumulateSnapshot(first.sceneState, deltas);
+  },
+
+  /**
+   * Build the accumulated scene snapshot at a specific view index.
+   * Used by animateToViewFull() to know the "from" state.
+   *
+   * @param {number} viewIndex - Index into state.views
+   * @returns {Object|null} Accumulated snapshot at that index
+   */
+  getSnapshotAtView(viewIndex) {
+    const views = this.state.views;
+    if (!views || viewIndex < 0 || viewIndex >= views.length) return null;
+
+    const first = views[0];
+    if (!first.sceneState) return null;
+
+    if (viewIndex === 0) return structuredClone(first.sceneState);
+
+    const deltas = views.slice(1, viewIndex + 1).map(v => v.sceneState).filter(Boolean);
+    return RTDelta.accumulateSnapshot(first.sceneState, deltas);
   },
 
   // ========================================================================
@@ -716,6 +765,14 @@ export const RTViewManager = {
         ancestor = ancestor.parent;
       }
 
+      // Skip dissolved-out objects (opacity=0 during view transitions)
+      if (object.material) {
+        const mat = Array.isArray(object.material)
+          ? object.material[0]
+          : object.material;
+        if (mat.opacity === 0) return;
+      }
+
       // Skip helper/grid/basis objects
       if (object.name && skipNames.some(name => object.name.includes(name))) {
         return;
@@ -948,6 +1005,14 @@ export const RTViewManager = {
       while (ancestor) {
         if (!ancestor.visible) return;
         ancestor = ancestor.parent;
+      }
+
+      // Skip dissolved-out objects (opacity=0 during view transitions)
+      if (object.material) {
+        const mat = Array.isArray(object.material)
+          ? object.material[0]
+          : object.material;
+        if (mat.opacity === 0) return;
       }
 
       // Skip helper/grid/basis objects
@@ -1512,6 +1577,36 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
       }
     }
 
+    // Apply scene state (forms, sliders, projections) via accumulated snapshot
+    // Uses the full accumulated state at this view, not just the delta,
+    // because loadView() is a direct jump — the scene must match this view exactly.
+    if (view.sceneState) {
+      const viewIndex = this.state.views.indexOf(view);
+      if (viewIndex >= 0) {
+        const fullSnapshot = this.getSnapshotAtView(viewIndex);
+        if (fullSnapshot) {
+          RTDelta.applyDelta(fullSnapshot);
+        }
+      } else {
+        // View not in the array (e.g., standalone) — apply delta directly
+        RTDelta.applyDelta(view.sceneState);
+      }
+    }
+
+    // Apply instance visibility (show/hide objects per view)
+    // Uses group.visible for instant snap — material opacity is NOT modified here
+    // so that _setupDissolve() can read correct original values for fade animations
+    if (view.instanceRefs && this._stateManager) {
+      const allInstances = this._stateManager.state.instances;
+      for (const inst of allInstances) {
+        const shouldBeVisible = view.instanceRefs.includes(inst.id);
+        const group = inst.threeObject;
+        if (!group) continue;
+
+        group.visible = shouldBeVisible;
+      }
+    }
+
     // Apply render settings
     if (view.render && this._papercut) {
       // Print mode
@@ -1701,7 +1796,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
       if (btn.classList.contains("view-load-btn")) {
         // Delegate to RTAnimate for smooth transitions if available
         if (window.RTAnimate) {
-          window.RTAnimate.animateToView(viewId);
+          window.RTAnimate.animateToViewFull(viewId);
         } else {
           this.loadView(viewId);
         }

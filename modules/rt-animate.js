@@ -9,6 +9,7 @@
  */
 
 import { MetaLog } from "./rt-metalog.js";
+import { RTDelta } from "./rt-delta.js";
 
 export const RTAnimate = {
   // ── Dependencies (set during init) ──────────────────────────────
@@ -51,7 +52,7 @@ export const RTAnimate = {
    *   view.transitionDuration, then 2000ms default.
    * @param {Object} [opts] - Options
    * @param {boolean} [opts.cancelPreview=true] - Cancel preview on external ▶ click
-   * @param {function} [opts.onTick] - Called each frame with smoothstepped t (0→1)
+   * @param {function} [opts.onTick] - Called each frame with (t, rawT) where t is smoothstepped and rawT is linear (0→1)
    * @returns {Promise<void>} Resolves when animation completes or is cancelled.
    */
   animateToView(
@@ -128,8 +129,8 @@ export const RTAnimate = {
           controls.update();
         }
 
-        // Per-frame callback (e.g. cutplane interpolation)
-        if (onTick) onTick(t);
+        // Per-frame callback (e.g. cutplane interpolation, stepped sliders)
+        if (onTick) onTick(t, rawT);
 
         // Render the frame
         this._renderer.render(this._scene, camera);
@@ -199,8 +200,8 @@ export const RTAnimate = {
       }
     }
 
-    // Build the onTick callback for cutplane interpolation
-    const onTick =
+    // Build the cutplane tick callback
+    const cutplaneTick =
       pc && scene && (startEnabled || endEnabled)
         ? t => {
             const interpValue = startValue + (endValue - startValue) * t;
@@ -215,11 +216,340 @@ export const RTAnimate = {
           }
         : null;
 
-    // Run camera animation with cutplane interpolation
+    // Build the dissolve tick callback (fade objects in/out)
+    const dissolveTick = view.instanceRefs
+      ? this._setupDissolve(view.instanceRefs)
+      : null;
+
+    // Build the scene delta tick callback (stepped slider interpolation)
+    let deltaTick = null;
+    let formDissolveTick = null;
+    if (view.sceneState) {
+      // Get the "from" snapshot — current scene state before animation
+      const fromSnapshot = RTDelta.captureSnapshot();
+      deltaTick = RTDelta.buildSteppedTick(fromSnapshot, view.sceneState);
+
+      // Build form dissolve tick (fade base forms in/out based on checkbox changes)
+      const viewIndex = vm.state.views.indexOf(view);
+      const targetSnapshot = viewIndex >= 0
+        ? vm.getSnapshotAtView(viewIndex)
+        : view.sceneState;
+      formDissolveTick = this._setupFormDissolve(fromSnapshot, targetSnapshot);
+    }
+
+    // Merge cutplane + instance dissolve + form dissolve + delta into a single onTick
+    // cutplane and dissolves use smoothstepped t (continuous interpolation)
+    // deltaTick receives both t and rawT (uses rawT for even-spaced discrete steps)
+    const onTick =
+      cutplaneTick || dissolveTick || formDissolveTick || deltaTick
+        ? (t, rawT) => {
+            if (cutplaneTick) cutplaneTick(t);
+            if (dissolveTick) dissolveTick(t);
+            if (formDissolveTick) formDissolveTick(t);
+            if (deltaTick) deltaTick(t, rawT);
+          }
+        : null;
+
+    // Run camera animation with cutplane interpolation + object dissolve
     await this.animateToView(viewId, durationMs, { ...opts, onTick });
 
     // Snap final non-camera state (render settings, exact cutplane, etc.)
     vm.loadView(viewId, { skipCamera: true });
+  },
+
+  // ── Object dissolve (opacity fade per view) ────────────────────
+
+  /**
+   * Prepare a per-tick dissolve function that fades objects in/out based on
+   * which instances should be visible in the target view.
+   *
+   * Objects present in targetInstanceRefs but currently hidden fade IN.
+   * Objects absent from targetInstanceRefs but currently visible fade OUT.
+   *
+   * @param {string[]} targetInstanceRefs - Instance IDs that should be visible
+   * @returns {function|null} Tick function: (t: 0→1) => void, or null if no fades needed
+   * @private
+   */
+  _setupDissolve(targetInstanceRefs) {
+    const sm = this._viewManager._stateManager;
+    if (!sm) return null;
+
+    const allInstances = sm.state.instances;
+    if (!allInstances || allInstances.length === 0) return null;
+
+    // First pass: restore any materials left mid-dissolve by a cancelled animation.
+    // Materials touched by dissolve have _dissolveOriginal* markers.
+    for (const inst of allInstances) {
+      const group = inst.threeObject;
+      if (!group) continue;
+      group.traverse(child => {
+        if (child.material) {
+          const mats = Array.isArray(child.material)
+            ? child.material
+            : [child.material];
+          mats.forEach(mat => {
+            if (mat._dissolveOriginalOpacity !== undefined) {
+              mat.opacity = mat._dissolveOriginalOpacity;
+              mat.transparent = mat._dissolveOriginalTransparent;
+              delete mat._dissolveOriginalOpacity;
+              delete mat._dissolveOriginalTransparent;
+              mat.needsUpdate = true;
+            }
+          });
+        }
+      });
+    }
+
+    // Second pass: determine which objects need to fade in/out
+    const fadeTargets = [];
+
+    for (const inst of allInstances) {
+      const shouldBeVisible = targetInstanceRefs.includes(inst.id);
+      const group = inst.threeObject;
+      if (!group) continue;
+
+      const isCurrentlyVisible = group.visible;
+
+      if (shouldBeVisible && !isCurrentlyVisible) {
+        // FADE IN: make group visible at opacity 0, animate to original opacity
+        group.visible = true;
+        const materials = [];
+        group.traverse(child => {
+          if (child.material) {
+            const mats = Array.isArray(child.material)
+              ? child.material
+              : [child.material];
+            mats.forEach(mat => {
+              const origOpacity = mat.opacity;
+              const origTransparent = mat.transparent;
+              // Mark material as dissolve-modified (for mid-cancel cleanup)
+              mat._dissolveOriginalOpacity = origOpacity;
+              mat._dissolveOriginalTransparent = origTransparent;
+              mat.transparent = true;
+              mat.opacity = 0;
+              mat.needsUpdate = true;
+              materials.push({ mat, origOpacity, origTransparent });
+            });
+          }
+        });
+        fadeTargets.push({ group, materials, direction: "in" });
+      } else if (!shouldBeVisible && isCurrentlyVisible) {
+        // FADE OUT: animate from current opacity to 0, then hide
+        const materials = [];
+        group.traverse(child => {
+          if (child.material) {
+            const mats = Array.isArray(child.material)
+              ? child.material
+              : [child.material];
+            mats.forEach(mat => {
+              const origOpacity = mat.opacity;
+              const origTransparent = mat.transparent;
+              mat._dissolveOriginalOpacity = origOpacity;
+              mat._dissolveOriginalTransparent = origTransparent;
+              mat.transparent = true;
+              mat.needsUpdate = true;
+              materials.push({ mat, origOpacity, origTransparent });
+            });
+          }
+        });
+        fadeTargets.push({ group, materials, direction: "out" });
+      }
+    }
+
+    if (fadeTargets.length === 0) return null;
+
+    return t => {
+      for (const target of fadeTargets) {
+        for (const { mat, origOpacity } of target.materials) {
+          if (target.direction === "in") {
+            mat.opacity = origOpacity * t;
+          } else {
+            mat.opacity = origOpacity * (1 - t);
+          }
+          mat.needsUpdate = true;
+        }
+
+        // At completion, finalize state and clean up markers
+        if (t >= 1) {
+          if (target.direction === "out") {
+            target.group.visible = false;
+          }
+          for (const { mat, origOpacity, origTransparent } of target.materials) {
+            mat.opacity = origOpacity;
+            mat.transparent = origTransparent;
+            delete mat._dissolveOriginalOpacity;
+            delete mat._dissolveOriginalTransparent;
+            mat.needsUpdate = true;
+          }
+        }
+      }
+    };
+  },
+
+  // ── Base form dissolve (opacity fade for checkbox-toggled polyhedra) ──
+
+  /**
+   * Map checkbox DOM IDs to getAllFormGroups() keys.
+   * Excludes basis vectors (showCartesianBasis, showQuadray) which use
+   * different rendering paths and should snap rather than dissolve.
+   * @private
+   */
+  _CHECKBOX_TO_GROUP: {
+    showPoint: "pointGroup",
+    showLine: "lineGroup",
+    showPolygon: "polygonGroup",
+    showPrism: "prismGroup",
+    showCone: "coneGroup",
+    showTetrahelix1: "tetrahelix1Group",
+    showTetrahelix2: "tetrahelix2Group",
+    showCube: "cubeGroup",
+    showTetrahedron: "tetrahedronGroup",
+    showDualTetrahedron: "dualTetrahedronGroup",
+    showOctahedron: "octahedronGroup",
+    showIcosahedron: "icosahedronGroup",
+    showDodecahedron: "dodecahedronGroup",
+    showDualIcosahedron: "dualIcosahedronGroup",
+    showCuboctahedron: "cuboctahedronGroup",
+    showRhombicDodecahedron: "rhombicDodecahedronGroup",
+    showGeodesicTetrahedron: "geodesicTetrahedronGroup",
+    showGeodesicDualTetrahedron: "geodesicDualTetrahedronGroup",
+    showGeodesicOctahedron: "geodesicOctahedronGroup",
+    showGeodesicIcosahedron: "geodesicIcosahedronGroup",
+    showGeodesicDualIcosahedron: "geodesicDualIcosahedronGroup",
+    showQuadrayTetrahedron: "quadrayTetrahedronGroup",
+    showQuadrayTetraDeformed: "quadrayTetraDeformedGroup",
+    showQuadrayCuboctahedron: "quadrayCuboctahedronGroup",
+    showQuadrayOctahedron: "quadrayOctahedronGroup",
+    showQuadrayTruncatedTet: "quadrayTruncatedTetGroup",
+    showCubeMatrix: "cubeMatrixGroup",
+    showTetMatrix: "tetMatrixGroup",
+    showOctaMatrix: "octaMatrixGroup",
+    showCuboctahedronMatrix: "cuboctaMatrixGroup",
+    showRhombicDodecMatrix: "rhombicDodecMatrixGroup",
+    showRadialCubeMatrix: "radialCubeMatrixGroup",
+    showRadialRhombicDodecMatrix: "radialRhombicDodecMatrixGroup",
+    showRadialTetrahedronMatrix: "radialTetMatrixGroup",
+    showRadialOctahedronMatrix: "radialOctMatrixGroup",
+    showRadialCuboctahedronMatrix: "radialVEMatrixGroup",
+    showPenroseTiling: "penroseTilingGroup",
+  },
+
+  /**
+   * Remove any stale dissolveOpacity markers left by cancelled animations.
+   * Called at the start of _setupFormDissolve() to ensure clean state.
+   * @private
+   */
+  _cleanupFormDissolve() {
+    const formGroups = window.renderingAPI?.getAllFormGroups();
+    if (!formGroups) return;
+    let cleaned = false;
+    for (const group of Object.values(formGroups)) {
+      if (group.userData.dissolveOpacity !== undefined) {
+        delete group.userData.dissolveOpacity;
+        cleaned = true;
+      }
+    }
+    if (cleaned && window.renderingAPI?.updateGeometry) {
+      window.renderingAPI.updateGeometry();
+    }
+  },
+
+  /**
+   * Prepare a per-tick dissolve function that fades base forms in/out based on
+   * which polyhedra checkboxes change between views.
+   *
+   * Forms turning ON fade in (dissolveOpacity 0→1).
+   * Forms turning OFF fade out (dissolveOpacity 1→0).
+   *
+   * Uses group.userData.dissolveOpacity which renderPolyhedron() reads
+   * when creating materials during updateGeometry().
+   *
+   * @param {Object} fromSnapshot - Current scene snapshot
+   * @param {Object} targetSnapshot - Target scene full accumulated snapshot
+   * @returns {function|null} Tick function: (t: 0→1) => void, or null if no form changes
+   * @private
+   */
+  _setupFormDissolve(fromSnapshot, targetSnapshot) {
+    if (!fromSnapshot?.polyhedraCheckboxes || !targetSnapshot?.polyhedraCheckboxes) {
+      return null;
+    }
+
+    // Clean up any stale dissolve markers from cancelled animations
+    this._cleanupFormDissolve();
+
+    const formGroups = window.renderingAPI?.getAllFormGroups();
+    if (!formGroups) return null;
+
+    const fadeTargets = [];
+
+    for (const [checkboxId, targetChecked] of Object.entries(targetSnapshot.polyhedraCheckboxes)) {
+      const currentChecked = fromSnapshot.polyhedraCheckboxes[checkboxId] ?? false;
+      if (currentChecked === targetChecked) continue;
+
+      const groupKey = this._CHECKBOX_TO_GROUP[checkboxId];
+      if (!groupKey) continue;
+
+      const group = formGroups[groupKey];
+      if (!group) continue;
+
+      if (targetChecked && !currentChecked) {
+        fadeTargets.push({ checkboxId, group, direction: "in" });
+      } else if (!targetChecked && currentChecked) {
+        fadeTargets.push({ checkboxId, group, direction: "out" });
+      }
+    }
+
+    if (fadeTargets.length === 0) return null;
+
+    // Pre-animation setup:
+    // Forms fading IN: check checkbox, set dissolveOpacity=0, rebuild so mesh exists but invisible
+    // Forms fading OUT: keep checkbox checked, dissolveOpacity starts at 1
+    for (const target of fadeTargets) {
+      if (target.direction === "in") {
+        const el = document.getElementById(target.checkboxId);
+        if (el) el.checked = true;
+        target.group.userData.dissolveOpacity = 0;
+      } else {
+        target.group.userData.dissolveOpacity = 1;
+      }
+    }
+
+    // Rebuild geometry so fade-in forms are rendered (at opacity 0)
+    if (window.renderingAPI?.updateGeometry) {
+      window.renderingAPI.updateGeometry();
+    }
+
+    return (t) => {
+      let needsRebuild = false;
+
+      for (const target of fadeTargets) {
+        const prev = target.group.userData.dissolveOpacity;
+        const next = target.direction === "in" ? t : 1 - t;
+
+        if (Math.abs(next - prev) > 0.001) {
+          target.group.userData.dissolveOpacity = next;
+          needsRebuild = true;
+        }
+      }
+
+      if (needsRebuild && window.renderingAPI?.updateGeometry) {
+        window.renderingAPI.updateGeometry();
+      }
+
+      // At completion, finalize state and clean up markers
+      if (t >= 1) {
+        for (const target of fadeTargets) {
+          if (target.direction === "out") {
+            const el = document.getElementById(target.checkboxId);
+            if (el) el.checked = false;
+          }
+          delete target.group.userData.dissolveOpacity;
+        }
+        if (window.renderingAPI?.updateGeometry) {
+          window.renderingAPI.updateGeometry();
+        }
+      }
+    };
   },
 
   // ── Preview loop ────────────────────────────────────────────────
