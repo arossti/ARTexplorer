@@ -1446,7 +1446,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
    * @param {string} idOrName - View ID or name
    * @returns {boolean} Success
    */
-  loadView(idOrName) {
+  loadView(idOrName, { skipCamera = false } = {}) {
     const view = this.state.views.find(
       v => v.id === idOrName || v.name === idOrName
     );
@@ -1457,7 +1457,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
     }
 
     // Apply camera state
-    if (view.camera && this._camera) {
+    if (!skipCamera && view.camera && this._camera) {
       this._camera.position.set(
         view.camera.position.x,
         view.camera.position.y,

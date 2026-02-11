@@ -3669,32 +3669,66 @@
                 </button>
               </div>
 
-              <!-- Animation Actions -->
-              <div style="display: flex; gap: 4px; margin-top: 8px">
-                <button
-                  class="toggle-btn variant-small"
-                  id="previewAnimationBtn"
-                  title="Preview animation loop in scene"
-                  style="flex: 1"
-                >
-                  <span style="color: #4caf50; font-size: 14px">&#9654;</span>
-                </button>
-                <button
-                  class="toggle-btn variant-small"
-                  id="exportBatchBtn"
-                  title="Export each view as individual SVG"
-                  style="flex: 1"
-                >
-                  Batch
-                </button>
-                <button
-                  class="toggle-btn variant-small"
-                  id="exportAnimationBtn"
-                  title="Export animated SVG sequence"
-                  style="flex: 1"
-                >
-                  Animation
-                </button>
+              <!-- Animation Actions: Camera Only -->
+              <div style="margin-top: 8px">
+                <div style="font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px">Camera</div>
+                <div style="display: flex; gap: 4px">
+                  <button
+                    class="toggle-btn variant-small"
+                    id="previewAnimationBtn"
+                    title="Preview camera animation loop"
+                    style="flex: 1"
+                  >
+                    <span style="color: #4caf50; font-size: 14px">&#9654;</span>
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportBatchBtn"
+                    title="Export each view as individual SVG (camera only)"
+                    style="flex: 1"
+                  >
+                    Batch
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportAnimationBtn"
+                    title="Export animated SVG sequence (camera only)"
+                    style="flex: 1"
+                  >
+                    Animation
+                  </button>
+                </div>
+              </div>
+
+              <!-- Animation Actions: Camera + Scene -->
+              <div style="margin-top: 4px">
+                <div style="font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px">Camera + Scene</div>
+                <div style="display: flex; gap: 4px">
+                  <button
+                    class="toggle-btn variant-small"
+                    id="previewFullBtn"
+                    title="Preview with full scene restore (cutplane, render state)"
+                    style="flex: 1"
+                  >
+                    <span style="color: #4caf50; font-size: 14px">&#9654;</span>
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportBatchFullBtn"
+                    title="Export each view as individual SVG (full scene state)"
+                    style="flex: 1"
+                  >
+                    Batch
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportAnimationFullBtn"
+                    title="Export animated SVG sequence (full scene state)"
+                    style="flex: 1"
+                  >
+                    Animation
+                  </button>
+                </div>
               </div>
             </div>
           </div>
