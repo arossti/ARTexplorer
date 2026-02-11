@@ -771,6 +771,8 @@ The pieces exist:
 
 What remains is to assemble them into a working architecture and test empirically. If spread-based attention proves competitive with softmax, the computational savings---exact integer arithmetic, no transcendental evaluation, structured sparsity, $O(1)$ quantization error---could be substantial, particularly for edge inference where every FLOP and every bit of precision matter.
 
+A companion benchmark workplan~[13] defines 13 tests across four cost tiers---from 5-minute CPU microbenchmarks (raw spread-vs-softmax FLOP counts, INT8 fidelity) through single-GPU component swaps (attention replacement in pre-trained GPT-2, INT4 stress tests) to multi-GPU distillation experiments. Crucially, the claims in this paper can be tested \emph{cheaply}: the make-or-break experiment (does spread-based attention degrade less under INT4 quantization than softmax?) requires only a pre-trained 124M-parameter model and approximately three hours on a single GPU. No billion-parameter training run is needed to validate or falsify the core algebraic argument. The workplan includes explicit success criteria and falsification conditions---if INT4 quantization error is equivalent or worse for spread-based scoring, the strongest claim in this paper collapses.
+
 Zhang proved the architecture works. Wildberger provided the algebra. Fuller provided the coordinates. The question now is engineering.
 
 %==============================================================================
@@ -802,6 +804,8 @@ Zhang proved the architecture works. Wildberger provided the algebra. Fuller pro
     \item Peng, B. et al. (2023). ``RWKV: Reinventing RNNs for the Transformer Era.'' \textit{arXiv:2305.13048}.
 
     \item Gu, A. and Dao, T. (2023). ``Mamba: Linear-Time Sequence Modeling with Selective State Spaces.'' \textit{arXiv:2312.00752}.
+
+    \item Thomson, A. (2026). ``Accelerant Test Cases: Tiered Benchmarks for Spread-Based AI Claims.'' ARTexplorer Project. Available at \texttt{Geometry Documents/Accelerant.md} in the project repository.
 \end{enumerate}
 
 \end{document}
