@@ -382,6 +382,13 @@ export const RTFileHandler = {
         document.getElementById("cuboctaMatrixRotate45")?.checked || false,
       rhombicDodecMatrixRotate45:
         document.getElementById("rhombicDodecMatrixRotate45")?.checked || false,
+      // Radial matrix mode toggles (Space Filling / IVM)
+      radialCubeSpaceFill:
+        document.getElementById("radialCubeSpaceFill")?.checked ?? true,
+      radialTetIVMMode:
+        document.getElementById("radialTetIVMMode")?.checked || false,
+      radialOctIVMScale:
+        document.getElementById("radialOctIVMScale")?.checked || false,
       // Radial matrix frequency sliders
       radialCubeFreqSlider: parseInt(
         document.getElementById("radialCubeFreqSlider")?.value || "1"
@@ -875,6 +882,16 @@ export const RTFileHandler = {
           "cuboctaMatrixRotate45", "rhombicDodecMatrixRotate45",
         ];
         for (const id of rotate45Ids) {
+          if (sliders[id] !== undefined) {
+            const el = document.getElementById(id);
+            if (el) el.checked = sliders[id];
+          }
+        }
+        // Radial matrix mode toggles (Space Filling / IVM)
+        const radialModeIds = [
+          "radialCubeSpaceFill", "radialTetIVMMode", "radialOctIVMScale",
+        ];
+        for (const id of radialModeIds) {
           if (sliders[id] !== undefined) {
             const el = document.getElementById(id);
             if (el) el.checked = sliders[id];
