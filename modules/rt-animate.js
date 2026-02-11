@@ -91,6 +91,8 @@ export const RTAnimate = {
     // Capture start state
     const startPos = camera.position.clone();
     const startDist = startPos.length();
+    const startDir = startPos.clone().normalize();
+    const startUp = camera.up.clone();
     const startZoom = camera.zoom;
 
     // Target state from saved view
@@ -100,7 +102,23 @@ export const RTAnimate = {
       view.camera.position.z
     );
     const endDist = endPos.length();
+    const endDir = endPos.clone().normalize();
     const endZoom = view.camera.zoom || 1;
+
+    // Compute end up vector — match setCameraPreset Z-pole handling
+    // When camera is near the Z axis, lookAt(origin) with up=(0,0,1) is degenerate
+    // because look direction becomes parallel to up vector. Use Y-up instead.
+    const zAxis = new THREE.Vector3(0, 0, 1);
+    const endUp = Math.abs(endDir.dot(zAxis)) > 0.95
+      ? new THREE.Vector3(0, endDir.z > 0 ? 1 : -1, 0)
+      : new THREE.Vector3(0, 0, 1);
+
+    // Pre-compute slerp parameters for direction interpolation
+    // Angle-based slerp handles all angular separations correctly (unlike lerp+normalize
+    // which breaks near antipodal directions where the midpoint approaches zero)
+    const dirDot = THREE.MathUtils.clamp(startDir.dot(endDir), -1, 1);
+    const omega = Math.acos(dirDot);
+    const sinOmega = Math.sin(omega);
 
     const startTime = performance.now();
     this.state.active = true;
@@ -113,13 +131,25 @@ export const RTAnimate = {
         const rawT = Math.min(elapsed / durationMs, 1);
         const t = rawT * rawT * (3 - 2 * rawT); // smoothstep
 
-        // Slerp on sphere: lerp directions + interpolate distance
-        const pos = new THREE.Vector3().lerpVectors(startPos, endPos, t);
-        const dist = startDist + (endDist - startDist) * t;
-        pos.normalize().multiplyScalar(dist);
+        // Direction slerp on the unit sphere (robust for all angular separations)
+        let dir;
+        if (omega < 0.001) {
+          // Nearly identical directions — just use start
+          dir = startDir.clone();
+        } else {
+          const a = Math.sin((1 - t) * omega) / sinOmega;
+          const b = Math.sin(t * omega) / sinOmega;
+          dir = startDir.clone().multiplyScalar(a).addScaledVector(endDir, b);
+        }
 
-        camera.position.copy(pos);
-        camera.up.set(0, 0, 1); // Z-up convention
+        const dist = startDist + (endDist - startDist) * t;
+        camera.position.copy(dir.multiplyScalar(dist));
+
+        // Interpolate up vector (avoids lookAt singularity at Z poles)
+        const up = new THREE.Vector3().lerpVectors(startUp, endUp, t);
+        if (up.lengthSq() < 0.001) up.set(0, 0, 1); // safety for antipodal ups
+        up.normalize();
+        camera.up.copy(up);
         camera.lookAt(0, 0, 0);
         camera.zoom = startZoom + (endZoom - startZoom) * t;
         camera.updateProjectionMatrix();
