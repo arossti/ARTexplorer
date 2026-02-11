@@ -9,6 +9,7 @@
  */
 
 import { MetaLog } from "./rt-metalog.js";
+import { RTDelta } from "./rt-delta.js";
 
 export const RTAnimate = {
   // ── Dependencies (set during init) ──────────────────────────────
@@ -220,12 +221,21 @@ export const RTAnimate = {
       ? this._setupDissolve(view.instanceRefs)
       : null;
 
-    // Merge cutplane + dissolve into a single onTick
+    // Build the scene delta tick callback (stepped slider interpolation)
+    let deltaTick = null;
+    if (view.sceneState) {
+      // Get the "from" snapshot — current scene state before animation
+      const fromSnapshot = RTDelta.captureSnapshot();
+      deltaTick = RTDelta.buildSteppedTick(fromSnapshot, view.sceneState);
+    }
+
+    // Merge cutplane + dissolve + delta into a single onTick
     const onTick =
-      cutplaneTick || dissolveTick
+      cutplaneTick || dissolveTick || deltaTick
         ? t => {
             if (cutplaneTick) cutplaneTick(t);
             if (dissolveTick) dissolveTick(t);
+            if (deltaTick) deltaTick(t);
           }
         : null;
 
