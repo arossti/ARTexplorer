@@ -49,9 +49,12 @@ export const RTAnimate = {
    * @param {string} viewId - View ID or name
    * @param {number} [durationMs] - Override duration (ms). Falls back to
    *   view.transitionDuration, then 2000ms default.
+   * @param {Object} [opts] - Options
+   * @param {boolean} [opts.cancelPreview=true] - Cancel preview on external ▶ click
+   * @param {function} [opts.onTick] - Called each frame with smoothstepped t (0→1)
    * @returns {Promise<void>} Resolves when animation completes or is cancelled.
    */
-  animateToView(viewId, durationMs, { cancelPreview = true } = {}) {
+  animateToView(viewId, durationMs, { cancelPreview = true, onTick = null } = {}) {
     const vm = this._viewManager;
     const view = vm.state.views.find(
       v => v.id === viewId || v.name === viewId
@@ -123,6 +126,9 @@ export const RTAnimate = {
           controls.update();
         }
 
+        // Per-frame callback (e.g. cutplane interpolation)
+        if (onTick) onTick(t);
+
         // Render the frame
         this._renderer.render(this._scene, camera);
 
@@ -142,6 +148,79 @@ export const RTAnimate = {
 
       this.state.frameId = requestAnimationFrame(tick);
     });
+  },
+
+  /**
+   * Animate camera to a saved view with smooth cutplane interpolation.
+   * Camera slerps, cutplane value interpolates, render state snaps at arrival.
+   *
+   * @param {string} viewId - View ID or name
+   * @param {number} [durationMs] - Override duration (ms)
+   * @param {Object} [opts] - Options passed through to animateToView
+   * @returns {Promise<void>}
+   */
+  async animateToViewFull(viewId, durationMs, opts = {}) {
+    const vm = this._viewManager;
+    const view = vm.state.views.find(
+      v => v.id === viewId || v.name === viewId
+    );
+    if (!view) return;
+
+    const pc = vm._papercut;
+    const scene = this._scene;
+    const targetCut = view.cutplane || {};
+
+    // Capture current cutplane state before animation starts
+    const startEnabled = pc ? pc.state.cutplaneEnabled : false;
+    const startValue = pc ? pc.state.cutplaneValue : 0;
+    const startAxis = pc ? pc.state.cutplaneAxis : "z";
+    const startBasis = pc ? pc.state.cutplaneBasis : "cartesian";
+
+    const endEnabled = targetCut.enabled || false;
+    const endValue = targetCut.value || 0;
+    const endAxis = targetCut.axis || "z";
+    const endBasis = targetCut.basis || "cartesian";
+
+    // Determine if we can smoothly interpolate the cutplane value
+    const sameAxis = startAxis === endAxis && startBasis === endBasis;
+
+    // Set up cutplane for interpolation before animation starts
+    if (pc && scene) {
+      // If axis/basis changes, snap it at the start
+      if (!sameAxis && endEnabled) {
+        pc.setCutplaneAxis(endBasis, endAxis, scene);
+      }
+
+      // Enable cutplane if either endpoint needs it
+      if (!startEnabled && endEnabled) {
+        pc.state.cutplaneEnabled = true;
+        const checkbox = document.getElementById("enableCutPlane");
+        if (checkbox) checkbox.checked = true;
+      }
+    }
+
+    // Build the onTick callback for cutplane interpolation
+    const onTick =
+      pc && scene && (startEnabled || endEnabled)
+        ? t => {
+            const interpValue = startValue + (endValue - startValue) * t;
+            pc.state.cutplaneValue = interpValue;
+            pc.updateCutplane(interpValue, scene);
+
+            // Update slider UI
+            const slider = document.getElementById("cutplaneSlider");
+            if (slider) slider.value = interpValue;
+            const valueDisplay = document.getElementById("cutplaneValue");
+            if (valueDisplay)
+              valueDisplay.textContent = interpValue.toFixed(2);
+          }
+        : null;
+
+    // Run camera animation with cutplane interpolation
+    await this.animateToView(viewId, durationMs, { ...opts, onTick });
+
+    // Snap final non-camera state (render settings, exact cutplane, etc.)
+    vm.loadView(viewId, { skipCamera: true });
   },
 
   // ── Preview loop ────────────────────────────────────────────────
@@ -164,6 +243,7 @@ export const RTAnimate = {
       }
       this.state.active = false;
       this._updatePreviewButton(false);
+      this._updatePreviewFullButton(false);
       return;
     }
 
@@ -198,6 +278,59 @@ export const RTAnimate = {
     this._updatePreviewButton(false);
   },
 
+  /**
+   * Toggle full-scene preview: loops through all saved views with animated
+   * camera transitions and full scene state restore at each keyframe.
+   */
+  async previewAnimationFull() {
+    if (this.state.previewing) {
+      // Already previewing → Stop
+      this.state.previewing = false;
+      if (this.state.frameId) {
+        cancelAnimationFrame(this.state.frameId);
+        this.state.frameId = null;
+      }
+      if (this.state._cancelResolve) {
+        this.state._cancelResolve();
+        this.state._cancelResolve = null;
+      }
+      this.state.active = false;
+      this._updatePreviewButton(false);
+      this._updatePreviewFullButton(false);
+      return;
+    }
+
+    const views = this._viewManager._getSortedViews();
+    if (views.length < 2) return;
+
+    this.state.previewing = true;
+    this._updatePreviewFullButton(true);
+
+    let startIdx = 0;
+    if (this.state.activeViewId) {
+      const idx = views.findIndex(v => v.id === this.state.activeViewId);
+      if (idx >= 0) startIdx = (idx + 1) % views.length;
+    }
+
+    while (this.state.previewing) {
+      for (let i = startIdx; i < views.length; i++) {
+        if (!this.state.previewing) break;
+        const view = views[i];
+        const duration = view.transitionDuration || 2000;
+        await this.animateToViewFull(view.id, duration, {
+          cancelPreview: false,
+        });
+        if (!this.state.previewing) break;
+        await new Promise(r =>
+          setTimeout(r, Math.max(duration / 3, 500))
+        );
+      }
+      startIdx = 0;
+    }
+
+    this._updatePreviewFullButton(false);
+  },
+
   // ── UI helpers ──────────────────────────────────────────────────
 
   /**
@@ -217,7 +350,25 @@ export const RTAnimate = {
   },
 
   /**
-   * Wire up Preview/Batch/Animation button click handlers.
+   * Update Full Preview button (Camera + Scene row) play/stop state.
+   * @param {boolean} playing
+   */
+  _updatePreviewFullButton(playing) {
+    const btn = document.getElementById("previewFullBtn");
+    if (!btn) return;
+    if (playing) {
+      btn.innerHTML =
+        '<span style="color: #ff6b6b; font-size: 14px">&#9632;</span>';
+      btn.title = "Stop full-scene animation preview";
+    } else {
+      btn.innerHTML =
+        '<span style="color: #4caf50; font-size: 14px">&#9654;</span>';
+      btn.title = "Preview with full scene restore (cutplane, render state)";
+    }
+  },
+
+  /**
+   * Wire up Preview/Batch/Animation button click handlers for both rows.
    * @private
    */
   _wireUpButtons() {
@@ -233,6 +384,25 @@ export const RTAnimate = {
     }
     if (animBtn) {
       animBtn.addEventListener("click", () => this.exportAnimation());
+    }
+
+    // ── Camera + Scene row ──
+    const previewFullBtn = document.getElementById("previewFullBtn");
+    const batchFullBtn = document.getElementById("exportBatchFullBtn");
+    const animFullBtn = document.getElementById("exportAnimationFullBtn");
+
+    if (previewFullBtn) {
+      previewFullBtn.addEventListener("click", () =>
+        this.previewAnimationFull()
+      );
+    }
+    if (batchFullBtn) {
+      // Batch already calls vm.loadView() — full state restore
+      batchFullBtn.addEventListener("click", () => this.exportBatch());
+    }
+    if (animFullBtn) {
+      // Animation already calls vm.loadView() — full state restore
+      animFullBtn.addEventListener("click", () => this.exportAnimation());
     }
   },
 
