@@ -38,7 +38,14 @@ export const RTDelta = {
       // Primitives
       "showPoint", "showLine", "showPolygon", "showPrism", "showCone",
       // Helices
-      "showTetrahelix1", "showTetrahelix2",
+      "showTetrahelix1", "showTetrahelix2", "showTetrahelix3",
+      // Tetrahelix 3 strand + chirality toggles
+      "tetrahelix3StrandA", "tetrahelix3StrandB", "tetrahelix3StrandC",
+      "tetrahelix3StrandD", "tetrahelix3StrandE", "tetrahelix3StrandF",
+      "tetrahelix3StrandG", "tetrahelix3StrandH",
+      "tetrahelix3ChiralA", "tetrahelix3ChiralB", "tetrahelix3ChiralC",
+      "tetrahelix3ChiralD", "tetrahelix3ChiralE", "tetrahelix3ChiralF",
+      "tetrahelix3ChiralG", "tetrahelix3ChiralH",
       // Regular polyhedra
       "showCube", "showTetrahedron", "showDualTetrahedron",
       "showOctahedron", "showIcosahedron", "showDodecahedron",
@@ -125,6 +132,8 @@ export const RTDelta = {
     showRadialTetrahedronMatrix: "radial-tetrahedron-matrix-controls",
     showRadialOctahedronMatrix: "radial-octahedron-matrix-controls",
     showRadialCuboctahedronMatrix: "radial-cuboctahedron-matrix-controls",
+    // Tetrahelix 3
+    showTetrahelix3: "tetrahelix3-controls",
   },
 
   /** @private */
