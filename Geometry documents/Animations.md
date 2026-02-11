@@ -951,9 +951,105 @@ Currently, clicking ▶ in the "Camera" row only animates camera position — th
 
 **Resolution**: Phase 6 dual-row UI. Top-row ▶ is camera-only by design. Bottom-row ▶ calls `animateToViewFull()` which smoothly interpolates the cutplane value per frame and snaps remaining scene state at arrival. Exceeded original fix — cutplane now *animates* between views rather than snapping.
 
+### ~~BUG: Camera slerp torque on Z-down transitions (View 12)~~ — RESOLVED `bfc1a1c`
+
+~~**Symptom**: When transitioning to `zdown` camera preset (e.g., PP-12 "All 5 geodesics, top-down"), the camera arrives at the correct position but at the last second torques ~180°.~~
+
+**Root cause**: `animateToView()` hardcoded `camera.up.set(0, 0, 1)` every frame, but `setCameraPreset("zdown")` sets `camera.up.set(0, 1, 0)` (Y-up for top view). When the camera position approached (0,0,+d), the look direction (0,0,-1) became antiparallel to the forced Z-up vector — `lookAt()` singularity caused the flip.
+
+**Fix**: (1) Proper angle-based slerp `sin((1-t)ω)/sin(ω)` for direction interpolation (replaces lerp+normalize which breaks near antipodal). (2) Interpolated up vector — captures `startUp` from current camera, computes `endUp` using setCameraPreset's Z-pole logic (Y-up when camera is within ~18° of Z axis), and smoothly lerps between them.
+
+---
+
+### ~~BUG: Planar/Radial matrix groups missing dissolve transitions (Views 13–19)~~ — PARTIALLY RESOLVED `a3dfe92`
+
+~~**Symptom**: During Player Piano playback (Camera + Scene ▶), planar matrices (cube matrix, tet matrix, etc.) and radial matrices pop in/out with no opacity dissolve. They appear at 100% opacity — fully opaque — regardless of the opacity slider setting.~~
+
+**Partial fix** (`66de343`): All 10 matrix creation blocks in `rt-rendering.js` (5 planar + 5 radial) now read `dissolveOpacity` from the group's `userData` and compute `effectiveOpacity = opacity * dissolveOpacity` before passing to the matrix creator. The `userData.parameters.opacity` still stores the raw slider value for clean export/import (dissolve is transient during animation only).
+
+**Remaining issue**: Dissolve transitions for matrices remain visually glitchy even with the opacity pipeline fix. Tested with simple planar matrix views (4×4 cube matrix, no frequency ramps, t=8s) — no smooth fade comparable to regular polyhedra or tetrahelices. See "Known Limitation" below.
+
+---
+
+### KNOWN LIMITATION: Planar/Radial matrix animation quality `a3dfe92`
+
+**Symptom**: Planar and radial matrix forms produce glitchy, non-smooth dissolve transitions during Player Piano playback. Unlike regular polyhedra and tetrahelices which fade cleanly, matrices exhibit visual artifacts during opacity transitions.
+
+**Underlying cause**: Matrix geometry is built from **copies of base forms** — each cell in an N×N planar matrix or F-frequency radial matrix contains its own independent mesh with its own materials. There is no geometry deduplication. This means:
+
+1. **Z-fighting**: Coplanar faces from adjacent cells fight for depth buffer priority, producing flickering/shimmer that is especially visible during opacity transitions when `depthWrite` behavior changes.
+2. **Rebuild cost**: Each dissolve tick calls `updateGeometry()` which tears down and recreates the entire matrix mesh. For radial matrices at F3–F4 this takes 52–276ms per frame, causing rAF violations and frame drops.
+3. **No material sharing**: Unlike `renderPolyhedron()` which creates a single mesh with shared materials, matrix creators build N² independent cell groups. Updating opacity requires rebuilding all of them.
+
+By contrast, tetrahelices **do** deduplicate geometry at each build step, producing clean shared faces with no coplanar overlap — which is why they dissolve smoothly.
+
+**Current status**: Users are not blocked from adding matrix views to animations, but results will be visually rough. The Player Piano demo reel generator (`scripts/PlayerPiano-generator.js`) should avoid matrix views until this is resolved.
+
+**Future pipeline**:
+- Short-term: Optimize dissolve-only ticks to update `material.opacity` in-place rather than rebuilding (see workplan item below)
+- Medium-term: Investigate instanced rendering (`THREE.InstancedMesh`) for matrix cells to eliminate per-cell material overhead
+- Long-term: Geometry deduplication for matrix cells — merge coplanar shared faces (as tetrahelices already do) to eliminate z-fighting
+
+---
+
+### ~~BUG: Matrix sub-control state not persisting across save/load~~ — RESOLVED `9326f11`
+
+~~**Symptom**: User report — matrix configurations (size slider, 45° toggle, radial frequency) revert to defaults or display incorrectly when reopening a saved file. Specifically: slider thumb at position 5 but display text shows "1×1"; 45° rotation toggle not restored; sub-control panels (size slider, rotation checkbox) hidden until parent checkbox toggled off/on.~~
+
+**Root cause**: Three interrelated gaps in the state pipeline:
+
+1. **45° toggles not captured**: The 5 `*MatrixRotate45` checkboxes were absent from both `RTDelta._captureCheckboxes()` (view deltas) and `RTFileHandler.exportState()` (file export). The rendering code reads them from DOM but no persistence system saved them.
+2. **Slider display text not updated**: `importState()` set `el.value` on matrix size sliders without dispatching 'input' events or updating the display element. The display ID `cubeMatrixSizeValue` doesn't match `_setSlider()`'s two lookup patterns (`*Display` and `*SliderValue`), so even the delta path's own display update missed it — though the dispatched 'input' event triggers the UI binding handler which uses the correct `formatValue: v => \`${v}×${v}\``.
+3. **Sub-control panels not revealed**: `importState()` had explicit show/hide blocks for line, polygon, prism, cone, tetrahelix, penrose, and quadray controls — but zero entries for any of the 10 matrix control panels (5 planar + 5 radial).
+
+**Fix**: (1) Added 5 rotate45 checkboxes to `RTDelta._captureCheckboxes()` and `RTFileHandler.exportState()`/`importState()`. (2) Added explicit `N×N` display text updates for matrix size sliders and `Fn` display for radial freq sliders in `importState()`. (3) Added 10 matrix sub-control panel show/hide entries to `importState()`. (4) Added `_subControlMap` to `RTDelta` + visibility toggle in `applyDelta()` for view transitions.
+
+---
+
+### ~~BUG: Radial matrix mode toggles not persisting across save/load~~ — RESOLVED
+
+~~**Symptom**: Radial matrix render mode toggles — "Space Filling" (Cube), "IVM Mode" (Tet), "IVM Scale" (Octa) — revert to defaults on export/import and are not captured in view deltas. User unchecks Space Filling to get a "Cube Cross" layout, but on reimport the toggle is lost and renders as space-filling.~~
+
+**Root cause**: Three radial matrix mode checkboxes were absent from the entire persistence pipeline:
+- `radialCubeSpaceFill` — "Space-filling" toggle (default: checked/true)
+- `radialTetIVMMode` — "IVM Mode (fill oct voids)" toggle (default: unchecked/false)
+- `radialOctIVMScale` — "IVM Scale (match tet faces)" toggle (default: unchecked/false)
+
+These toggles ARE declared in `rt-ui-binding-defs.js` (simpleCheckboxBindings) and ARE read by `rt-rendering.js` during geometry generation, but were NOT captured in `RTDelta._captureCheckboxes()`, NOT saved in `RTFileHandler.exportState()`, and NOT restored in `RTFileHandler.importState()`. Identical pattern to the earlier rotate45 gap.
+
+**Fix**: (1) Added 3 radial mode toggle IDs to `RTDelta._captureCheckboxes()`. (2) Added 3 toggles to `RTFileHandler.exportState()` sliders section (using `?? true` for spaceFill default, `|| false` for IVM modes). (3) Added restore loop in `RTFileHandler.importState()` after the rotate45 block, following the same `sliders[id]` pattern.
+
+---
+
+### ~~BUG: Double updateGeometry() per animation tick in buildSteppedTick()~~ — RESOLVED
+
+~~**Symptom**: During Camera + Scene animated transitions, continuous `requestAnimationFrame` violations at ~77-83ms per frame. Radial matrix transitions especially slow, with occasional 287ms spikes.~~
+
+**Root cause**: `buildSteppedTick()` in `rt-delta.js` called `_setSlider()` which dispatches an 'input' event — triggering `updateGeometry()` via the UI binding system. Then `buildSteppedTick()` ALSO called `updateGeometry()` explicitly at the end of each tick. Result: **two geometry rebuilds per tick** for every slider change during animated transitions.
+
+**Fix**: Removed the redundant explicit `updateGeometry()` call from `buildSteppedTick()`. The `_setSlider()` → 'input' event → UI binding handler already triggers geometry rebuilds. Explicit `updateGeometry()` is now only called for projection radio snaps (which don't dispatch events). This halves the geometry rebuild cost during animated transitions.
+
+**Note**: The continuous ~78ms rAF violations during radial matrix preview are partly inherent — F3-F4 radial matrices create many nested polyhedra shells, and the THREE.js render pass for this geometry is expensive. The double-rebuild fix helps, but complex radial matrices will still be GPU-heavy.
+
+---
+
+### POSSIBLE BUG: Browser freeze after tab switch during preview
+
+**Symptom**: App froze/crashed when switching away from the browser tab and back during preview playback. May be caused by `requestAnimationFrame` queuing up while the tab is backgrounded, then firing in a burst when the tab regains focus — especially if `updateGeometry()` is called many times in rapid succession. If this reproduces, investigate throttling the animation tick when returning from a background state.
+
 ---
 
 ## TO BE INVESTIGATED
+
+### Optimize Matrix Dissolve — Skip Geometry Rebuilds for Opacity-Only Ticks
+
+Matrix dissolve transitions currently call `updateGeometry()` every tick, which destroys and recreates the entire matrix mesh just to change opacity. For radial matrices at F3-F4, each rebuild takes 52-276ms (see rAF violations in Logs). Since dissolve-only ticks change `dissolveOpacity` but not structure (no checkbox, slider, or projection changes), the system could instead traverse existing child meshes and update `material.opacity` directly — avoiding the expensive teardown/rebuild cycle.
+
+**Approach**: In `_setupFormDissolve()` (rt-animate.js), detect whether the group is a matrix type (check `_subControlMap` keys or a `userData.isMatrix` flag). For matrix groups, instead of calling `updateGeometry()`, walk the group's children and set `child.material.opacity = effectiveOpacity` on each mesh. Only fall back to `updateGeometry()` if structure actually changed (checkbox/slider delta in the same tick).
+
+**Player Piano implication**: Future demo reel scripts should dissolve radial matrices into view at their final target frequency rather than animating frequency ramps (F1→F4). Frequency stepping creates N expensive geometry rebuilds per transition. Instead, set the target frequency in the view delta and let the dissolve system fade the completed geometry in/out smoothly. Reserve stepped frequency animation for planar matrices where the rebuild cost is low (cube/tet at size 2-5 is cheap).
+
+---
 
 ### Per-Polyhedron Scale in Delta System
 
@@ -976,3 +1072,9 @@ The delta system currently captures `scaleSlider` (global) and `tetScaleSlider` 
 - **`disposal=2`**: Critical for transparent animated GIFs (clears each frame before drawing next)
 - **SVG+SMIL browser support**: Chrome, Firefox, Safari, Edge — all modern browsers (not IE)
 - **Smoothstep easing** `t²(3-2t)`: Natural deceleration at keyframes, zero-velocity endpoints
+
+### Player Piano Demo Reel
+
+`PlayerPiano-generator.js` is a browser console script that generates a 30-view `.artviews` demo reel touring all major form categories (primitives, platonic solids, geodesic spheres, planar matrices with 45° rotations and size ramps, radial matrices with frequency ramps, tetrahelixes). Run in console → downloads `.artview` → import and play via Camera + Scene ▶ Preview.
+
+**Future enhancement**: A second Player Piano pass with cutplanes sweeping through geometry during transitions — each view enables a section cut that animates across the form, revealing interior structure.

@@ -2027,6 +2027,10 @@ export function initScene(THREE, OrbitControls, RT) {
         cubeMatrixGroup.remove(cubeMatrixGroup.children[0]);
       }
 
+      // Apply dissolve opacity for smooth fade transitions
+      const dissolveOpacity = cubeMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       // Store parameters for instance creation/export
       cubeMatrixGroup.userData.parameters = {
         matrixSize: matrixSize,
@@ -2042,7 +2046,7 @@ export function initScene(THREE, OrbitControls, RT) {
           matrixSize,
           scale,
           rotate45,
-          opacity,
+          effectiveOpacity,
           colorPalette.cubeMatrix,
           THREE
         );
@@ -2202,6 +2206,10 @@ export function initScene(THREE, OrbitControls, RT) {
         tetMatrixGroup.remove(tetMatrixGroup.children[0]);
       }
 
+      // Apply dissolve opacity for smooth fade transitions
+      const dissolveOpacity = tetMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       // Store parameters for instance creation/export
       tetMatrixGroup.userData.parameters = {
         matrixSize: matrixSize,
@@ -2217,7 +2225,7 @@ export function initScene(THREE, OrbitControls, RT) {
           matrixSize,
           scale,
           rotate45,
-          opacity,
+          effectiveOpacity,
           colorPalette.tetrahedron,
           THREE
         );
@@ -2280,6 +2288,10 @@ export function initScene(THREE, OrbitControls, RT) {
         octaMatrixGroup.remove(octaMatrixGroup.children[0]);
       }
 
+      // Apply dissolve opacity for smooth fade transitions
+      const dissolveOpacity = octaMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       // Store parameters for instance creation/export
       octaMatrixGroup.userData.parameters = {
         matrixSize: matrixSize,
@@ -2297,7 +2309,7 @@ export function initScene(THREE, OrbitControls, RT) {
           scale,
           rotate45,
           colinearEdges,
-          opacity,
+          effectiveOpacity,
           colorPalette.octahedronMatrix,
           THREE
         );
@@ -2506,6 +2518,10 @@ export function initScene(THREE, OrbitControls, RT) {
         cuboctaMatrixGroup.remove(cuboctaMatrixGroup.children[0]);
       }
 
+      // Apply dissolve opacity for smooth fade transitions
+      const dissolveOpacity = cuboctaMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       // Store parameters for instance creation/export
       cuboctaMatrixGroup.userData.parameters = {
         matrixSize: matrixSize,
@@ -2521,7 +2537,7 @@ export function initScene(THREE, OrbitControls, RT) {
           matrixSize,
           scale,
           rotate45,
-          opacity,
+          effectiveOpacity,
           colorPalette.cuboctahedron, // Lime-cyan (Vector Equilibrium color)
           THREE
         );
@@ -2894,6 +2910,10 @@ export function initScene(THREE, OrbitControls, RT) {
         rhombicDodecMatrixGroup.remove(rhombicDodecMatrixGroup.children[0]);
       }
 
+      // Apply dissolve opacity for smooth fade transitions
+      const dissolveOpacity = rhombicDodecMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       // Store parameters for instance creation/export
       rhombicDodecMatrixGroup.userData.parameters = {
         matrixSize: matrixSize,
@@ -2911,7 +2931,7 @@ export function initScene(THREE, OrbitControls, RT) {
           scale,
           rotate45,
           faceCoplanar,
-          opacity,
+          effectiveOpacity,
           colorPalette.rhombicDodecahedron, // Golden orange (Rhombic Dodecahedron color)
           THREE
         );
@@ -2954,6 +2974,10 @@ export function initScene(THREE, OrbitControls, RT) {
         radialCubeMatrixGroup.remove(radialCubeMatrixGroup.children[0]);
       }
 
+      // Apply dissolve opacity for smooth fade transitions
+      const dissolveOpacity = radialCubeMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       // Store parameters for instance creation/export
       radialCubeMatrixGroup.userData.parameters = {
         frequency: frequency,
@@ -2969,7 +2993,7 @@ export function initScene(THREE, OrbitControls, RT) {
           frequency,
           scale,
           spaceFilling,
-          opacity,
+          effectiveOpacity,
           colorPalette.cube, // Use cube color
           THREE
         );
@@ -3016,6 +3040,10 @@ export function initScene(THREE, OrbitControls, RT) {
         );
       }
 
+      // Apply dissolve opacity for smooth fade transitions
+      const dissolveOpacity = radialRhombicDodecMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       // Store parameters for instance creation/export
       radialRhombicDodecMatrixGroup.userData.parameters = {
         frequency: frequency,
@@ -3032,7 +3060,7 @@ export function initScene(THREE, OrbitControls, RT) {
             frequency,
             scale,
             spaceFilling,
-            opacity,
+            effectiveOpacity,
             colorPalette.rhombicDodecahedron, // Use rhombic dodec color
             THREE
           );
@@ -3079,6 +3107,10 @@ export function initScene(THREE, OrbitControls, RT) {
       const ivmMode =
         document.getElementById("radialTetIVMMode")?.checked || false;
 
+      // Apply dissolve opacity for smooth fade transitions
+      const dissolveOpacity = radialTetMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       // Store parameters for instance creation/export
       radialTetMatrixGroup.userData.parameters = {
         frequency: frequency,
@@ -3093,7 +3125,7 @@ export function initScene(THREE, OrbitControls, RT) {
         const radialTetMatrix = RTRadialMatrix.createRadialTetrahedronMatrix(
           frequency,
           scale,
-          opacity,
+          effectiveOpacity,
           colorPalette.radialTetrahedron,
           THREE,
           ivmMode
@@ -3144,6 +3176,10 @@ export function initScene(THREE, OrbitControls, RT) {
       const ivmScaleOnly =
         document.getElementById("radialOctIVMScale")?.checked || false;
 
+      // Apply dissolve opacity for smooth fade transitions
+      const dissolveOpacity = radialOctMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       // Store parameters for instance creation/export
       radialOctMatrixGroup.userData.parameters = {
         frequency: frequency,
@@ -3158,7 +3194,7 @@ export function initScene(THREE, OrbitControls, RT) {
         const radialOctMatrix = RTRadialMatrix.createRadialOctahedronMatrix(
           frequency,
           scale,
-          opacity,
+          effectiveOpacity,
           colorPalette.radialOctahedron,
           THREE,
           false, // ivmScale = false (no FCC lattice)
@@ -3216,6 +3252,10 @@ export function initScene(THREE, OrbitControls, RT) {
         radialVEMatrixGroup.remove(radialVEMatrixGroup.children[0]);
       }
 
+      // Apply dissolve opacity for smooth fade transitions
+      const dissolveOpacity = radialVEMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       // Store parameters for instance creation/export
       radialVEMatrixGroup.userData.parameters = {
         frequency: frequency,
@@ -3229,7 +3269,7 @@ export function initScene(THREE, OrbitControls, RT) {
         const radialVEMatrix = RTRadialMatrix.createRadialCuboctahedronMatrix(
           frequency,
           scale,
-          opacity,
+          effectiveOpacity,
           colorPalette.radialCuboctahedron,
           THREE
         );
