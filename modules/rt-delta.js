@@ -38,7 +38,14 @@ export const RTDelta = {
       // Primitives
       "showPoint", "showLine", "showPolygon", "showPrism", "showCone",
       // Helices
-      "showTetrahelix1", "showTetrahelix2",
+      "showTetrahelix1", "showTetrahelix2", "showTetrahelix3",
+      // Tetrahelix 3 strand + chirality toggles
+      "tetrahelix3StrandA", "tetrahelix3StrandB", "tetrahelix3StrandC",
+      "tetrahelix3StrandD", "tetrahelix3StrandE", "tetrahelix3StrandF",
+      "tetrahelix3StrandG", "tetrahelix3StrandH",
+      "tetrahelix3ChiralA", "tetrahelix3ChiralB", "tetrahelix3ChiralC",
+      "tetrahelix3ChiralD", "tetrahelix3ChiralE", "tetrahelix3ChiralF",
+      "tetrahelix3ChiralG", "tetrahelix3ChiralH",
       // Regular polyhedra
       "showCube", "showTetrahedron", "showDualTetrahedron",
       "showOctahedron", "showIcosahedron", "showDodecahedron",
@@ -54,10 +61,15 @@ export const RTDelta = {
       // Planar matrices
       "showCubeMatrix", "showTetMatrix", "showOctaMatrix",
       "showCuboctahedronMatrix", "showRhombicDodecMatrix",
+      // Matrix rotation toggles (45° grid alignment)
+      "cubeMatrixRotate45", "tetMatrixRotate45", "octaMatrixRotate45",
+      "cuboctaMatrixRotate45", "rhombicDodecMatrixRotate45",
       // Radial matrices
       "showRadialCubeMatrix", "showRadialRhombicDodecMatrix",
       "showRadialTetrahedronMatrix", "showRadialOctahedronMatrix",
       "showRadialCuboctahedronMatrix",
+      // Radial matrix mode toggles (Space Filling / IVM)
+      "radialCubeSpaceFill", "radialTetIVMMode", "radialOctIVMScale",
       // Basis vectors
       "showCartesianBasis", "showQuadray",
       // Penrose Tiling
@@ -99,6 +111,29 @@ export const RTDelta = {
     geodesicOctaFrequency: "geodesicOctaFrequency",
     geodesicIcosaFrequency: "geodesicIcosaFrequency",
     geodesicDualIcosaFrequency: "geodesicDualIcosaFrequency",
+  },
+
+  /**
+   * Checkbox ID → sub-control panel ID mapping.
+   * Used by applyDelta() to show/hide sub-control panels when checkboxes change.
+   * Mirrors the checkbox-controls bindings in rt-ui-binding-defs.js.
+   * @private
+   */
+  _subControlMap: {
+    // Planar matrices
+    showCubeMatrix: "cube-matrix-controls",
+    showTetMatrix: "tet-matrix-controls",
+    showOctaMatrix: "octa-matrix-controls",
+    showCuboctahedronMatrix: "cubocta-matrix-controls",
+    showRhombicDodecMatrix: "rhombic-dodec-matrix-controls",
+    // Radial matrices
+    showRadialCubeMatrix: "radial-cube-matrix-controls",
+    showRadialRhombicDodecMatrix: "radial-rhombic-dodec-matrix-controls",
+    showRadialTetrahedronMatrix: "radial-tetrahedron-matrix-controls",
+    showRadialOctahedronMatrix: "radial-octahedron-matrix-controls",
+    showRadialCuboctahedronMatrix: "radial-cuboctahedron-matrix-controls",
+    // Tetrahelix 3
+    showTetrahelix3: "tetrahelix3-controls",
   },
 
   /** @private */
@@ -231,6 +266,16 @@ export const RTDelta = {
         const el = document.getElementById(id);
         if (el) el.checked = checked;
       }
+
+      // Show/hide sub-control panels for checkbox-with-controls forms
+      for (const [checkboxId, controlsId] of Object.entries(this._subControlMap)) {
+        if (delta.polyhedraCheckboxes[checkboxId] !== undefined) {
+          const panel = document.getElementById(controlsId);
+          if (panel) {
+            panel.style.display = delta.polyhedraCheckboxes[checkboxId] ? "block" : "none";
+          }
+        }
+      }
     }
 
     // 4. Trigger geometry rebuild (single call, like importState)
@@ -358,6 +403,7 @@ export const RTDelta = {
       }
 
       // Snap projections at midpoint
+      let projSnapped = false;
       for (const snap of projSnaps) {
         if (!snap.applied && t >= 0.5) {
           const radio = document.querySelector(
@@ -365,12 +411,14 @@ export const RTDelta = {
           );
           if (radio) radio.checked = true;
           snap.applied = true;
-          needsRebuild = true;
+          projSnapped = true;
         }
       }
 
-      // Single geometry rebuild if anything changed this tick
-      if (needsRebuild && window.renderingAPI?.updateGeometry) {
+      // Geometry rebuild: _setSlider() dispatches 'input' events which trigger
+      // updateGeometry() via the UI binding system. Only call explicitly for
+      // projection snaps (which don't dispatch events).
+      if (projSnapped && window.renderingAPI?.updateGeometry) {
         window.renderingAPI.updateGeometry();
       }
 
@@ -385,9 +433,11 @@ export const RTDelta = {
               `input[name="${snap.name}"][value="${snap.to}"]`
             );
             if (radio) radio.checked = true;
+            projSnapped = true;
           }
         }
-        if (window.renderingAPI?.updateGeometry) {
+        // Only explicit rebuild for remaining projection snaps
+        if (projSnapped && window.renderingAPI?.updateGeometry) {
           window.renderingAPI.updateGeometry();
         }
       }
