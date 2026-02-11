@@ -961,13 +961,34 @@ Currently, clicking ▶ in the "Camera" row only animates camera position — th
 
 ---
 
-### ~~BUG: Planar/Radial matrix groups missing dissolve transitions (Views 13–19)~~ — RESOLVED
+### ~~BUG: Planar/Radial matrix groups missing dissolve transitions (Views 13–19)~~ — PARTIALLY RESOLVED `a3dfe92`
 
 ~~**Symptom**: During Player Piano playback (Camera + Scene ▶), planar matrices (cube matrix, tet matrix, etc.) and radial matrices pop in/out with no opacity dissolve. They appear at 100% opacity — fully opaque — regardless of the opacity slider setting.~~
 
-**Root cause**: Matrix creators (`createCubeMatrix`, `createRadialCubeMatrix`, etc.) in `rt-matrix-planar.js` and `rt-matrix-radial.js` receive `opacity` as a parameter and bake it directly into materials at creation time. Unlike regular polyhedra which go through `renderPolyhedron()` (which reads `group.userData.dissolveOpacity ?? 1.0`), matrix creation blocks in `rt-rendering.js` passed the raw global slider opacity without applying the dissolve multiplier.
+**Partial fix** (`66de343`): All 10 matrix creation blocks in `rt-rendering.js` (5 planar + 5 radial) now read `dissolveOpacity` from the group's `userData` and compute `effectiveOpacity = opacity * dissolveOpacity` before passing to the matrix creator. The `userData.parameters.opacity` still stores the raw slider value for clean export/import (dissolve is transient during animation only).
 
-**Fix**: All 10 matrix creation blocks in `rt-rendering.js` (5 planar + 5 radial) now read `dissolveOpacity` from the group's `userData` and compute `effectiveOpacity = opacity * dissolveOpacity` before passing to the matrix creator. The `userData.parameters.opacity` still stores the raw slider value for clean export/import (dissolve is transient during animation only). Pattern applied to: cube, tet, octa, cubocta, rhombic dodec (planar) and radial cube, radial rhombic dodec, radial tet, radial oct, radial VE (radial).
+**Remaining issue**: Dissolve transitions for matrices remain visually glitchy even with the opacity pipeline fix. Tested with simple planar matrix views (4×4 cube matrix, no frequency ramps, t=8s) — no smooth fade comparable to regular polyhedra or tetrahelices. See "Known Limitation" below.
+
+---
+
+### KNOWN LIMITATION: Planar/Radial matrix animation quality `a3dfe92`
+
+**Symptom**: Planar and radial matrix forms produce glitchy, non-smooth dissolve transitions during Player Piano playback. Unlike regular polyhedra and tetrahelices which fade cleanly, matrices exhibit visual artifacts during opacity transitions.
+
+**Underlying cause**: Matrix geometry is built from **copies of base forms** — each cell in an N×N planar matrix or F-frequency radial matrix contains its own independent mesh with its own materials. There is no geometry deduplication. This means:
+
+1. **Z-fighting**: Coplanar faces from adjacent cells fight for depth buffer priority, producing flickering/shimmer that is especially visible during opacity transitions when `depthWrite` behavior changes.
+2. **Rebuild cost**: Each dissolve tick calls `updateGeometry()` which tears down and recreates the entire matrix mesh. For radial matrices at F3–F4 this takes 52–276ms per frame, causing rAF violations and frame drops.
+3. **No material sharing**: Unlike `renderPolyhedron()` which creates a single mesh with shared materials, matrix creators build N² independent cell groups. Updating opacity requires rebuilding all of them.
+
+By contrast, tetrahelices **do** deduplicate geometry at each build step, producing clean shared faces with no coplanar overlap — which is why they dissolve smoothly.
+
+**Current status**: Users are not blocked from adding matrix views to animations, but results will be visually rough. The Player Piano demo reel generator (`scripts/PlayerPiano-generator.js`) should avoid matrix views until this is resolved.
+
+**Future pipeline**:
+- Short-term: Optimize dissolve-only ticks to update `material.opacity` in-place rather than rebuilding (see workplan item below)
+- Medium-term: Investigate instanced rendering (`THREE.InstancedMesh`) for matrix cells to eliminate per-cell material overhead
+- Long-term: Geometry deduplication for matrix cells — merge coplanar shared faces (as tetrahelices already do) to eliminate z-fighting
 
 ---
 
