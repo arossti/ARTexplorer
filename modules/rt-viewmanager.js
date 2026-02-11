@@ -68,7 +68,7 @@ export const RTViewManager = {
     activeViewId: null,
 
     // Sort state for table
-    sortColumn: "name", // 'name' | 'axis' | 'date'
+    sortColumn: "name", // 'name' | 'axis' | 'date' | 'manual'
     sortDirection: "asc", // 'asc' | 'desc'
   },
 
@@ -1648,8 +1648,9 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
         const fontSize = view.name.length > 8 ? "10px" : "12px";
 
         return `
-        <div class="view-row${isActive ? " active" : ""}" data-view-id="${view.id}"
+        <div class="view-row${isActive ? " active" : ""}" data-view-id="${view.id}" draggable="true"
              style="display: flex; gap: 4px; padding: 4px 8px; border-bottom: 1px solid #333; align-items: center;">
+          <span class="view-drag-handle">⠿</span>
           <span class="view-name" style="flex: 1 1 auto; min-width: 40px; max-width: 100px; font-weight: 500; color: #00B4FF; font-size: ${fontSize}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${view.name}">${displayName}</span>
           <span class="view-axis" style="flex: 0 0 45px; color: #888; font-size: 10px;">${axisLabel}</span>
           <span class="view-date" style="flex: 0 0 45px; color: #666; font-size: 10px;">${dateStr}</span>
@@ -1667,6 +1668,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
     // Use event delegation - single listener on tbody handles all button clicks
     // This avoids listener accumulation when renderViewsTable() is called multiple times
     this._setupTableEventDelegation(tbody);
+    this._setupDragReorder(tbody);
 
     // Update sort indicators
     this._updateSortIndicators();
@@ -1717,6 +1719,77 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
 
     // Mark as having delegation attached
     tbody._viewsDelegationAttached = true;
+  },
+
+  /**
+   * Setup HTML5 drag-and-drop reordering for view rows.
+   * Uses event delegation on tbody. Only attaches once.
+   * @param {HTMLElement} tbody
+   * @private
+   */
+  _setupDragReorder(tbody) {
+    if (tbody._dragReorderAttached) return;
+
+    let draggedId = null;
+
+    tbody.addEventListener("dragstart", e => {
+      const row = e.target.closest(".view-row");
+      if (!row) return;
+      draggedId = row.dataset.viewId;
+      row.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", draggedId);
+    });
+
+    tbody.addEventListener("dragover", e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const row = e.target.closest(".view-row");
+      if (!row || row.dataset.viewId === draggedId) return;
+
+      // Show drop indicator on the hovered row
+      tbody
+        .querySelectorAll(".view-row")
+        .forEach(r => r.classList.remove("drag-over"));
+      row.classList.add("drag-over");
+    });
+
+    tbody.addEventListener("dragleave", e => {
+      const row = e.target.closest(".view-row");
+      if (row) row.classList.remove("drag-over");
+    });
+
+    tbody.addEventListener("drop", e => {
+      e.preventDefault();
+      const targetRow = e.target.closest(".view-row");
+      if (!targetRow || !draggedId) return;
+
+      const targetId = targetRow.dataset.viewId;
+      if (draggedId === targetId) return;
+
+      // Reorder in state.views array
+      const views = this.state.views;
+      const fromIdx = views.findIndex(v => v.id === draggedId);
+      const toIdx = views.findIndex(v => v.id === targetId);
+      if (fromIdx < 0 || toIdx < 0) return;
+
+      const [moved] = views.splice(fromIdx, 1);
+      views.splice(toIdx, 0, moved);
+
+      // Switch to manual sort mode
+      this.state.sortColumn = "manual";
+
+      this.renderViewsTable();
+    });
+
+    tbody.addEventListener("dragend", () => {
+      draggedId = null;
+      tbody.querySelectorAll(".view-row").forEach(r => {
+        r.classList.remove("dragging", "drag-over");
+      });
+    });
+
+    tbody._dragReorderAttached = true;
   },
 
   /**
@@ -1800,6 +1873,8 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
       let aVal, bVal;
 
       switch (sortColumn) {
+        case "manual":
+          return 0; // preserve array order
         case "name":
           aVal = a.name.toLowerCase();
           bVal = b.name.toLowerCase();
@@ -1859,14 +1934,14 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
         // Remove existing indicators
         el.classList.remove("sort-asc", "sort-desc");
 
-        // Add indicator for active column
+        // Add indicator for active column (not in manual mode)
         if (this.state.sortColumn === column) {
           el.classList.add(
             this.state.sortDirection === "asc" ? "sort-asc" : "sort-desc"
           );
         }
 
-        // Update text content
+        // Update text content — no arrows in manual mode
         const baseText = { name: "Name", axis: "Axis", date: "Date" }[column];
         if (this.state.sortColumn === column) {
           el.textContent = `${baseText} ${this.state.sortDirection === "asc" ? "▲" : "▼"}`;
