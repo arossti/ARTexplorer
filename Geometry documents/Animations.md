@@ -989,6 +989,12 @@ Currently, clicking ▶ in the "Camera" row only animates camera position — th
 
 ---
 
+### POSSIBLE BUG: Browser freeze after tab switch during preview
+
+**Symptom**: App froze/crashed when switching away from the browser tab and back during preview playback. May be caused by `requestAnimationFrame` queuing up while the tab is backgrounded, then firing in a burst when the tab regains focus — especially if `updateGeometry()` is called many times in rapid succession. If this reproduces, investigate throttling the animation tick when returning from a background state.
+
+---
+
 ## TO BE INVESTIGATED
 
 ### Per-Polyhedron Scale in Delta System
