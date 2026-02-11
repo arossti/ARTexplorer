@@ -61,6 +61,8 @@ export const RTDelta = {
       "showRadialCubeMatrix", "showRadialRhombicDodecMatrix",
       "showRadialTetrahedronMatrix", "showRadialOctahedronMatrix",
       "showRadialCuboctahedronMatrix",
+      // Radial matrix mode toggles (Space Filling / IVM)
+      "radialCubeSpaceFill", "radialTetIVMMode", "radialOctIVMScale",
       // Basis vectors
       "showCartesianBasis", "showQuadray",
       // Penrose Tiling
@@ -392,6 +394,7 @@ export const RTDelta = {
       }
 
       // Snap projections at midpoint
+      let projSnapped = false;
       for (const snap of projSnaps) {
         if (!snap.applied && t >= 0.5) {
           const radio = document.querySelector(
@@ -399,12 +402,14 @@ export const RTDelta = {
           );
           if (radio) radio.checked = true;
           snap.applied = true;
-          needsRebuild = true;
+          projSnapped = true;
         }
       }
 
-      // Single geometry rebuild if anything changed this tick
-      if (needsRebuild && window.renderingAPI?.updateGeometry) {
+      // Geometry rebuild: _setSlider() dispatches 'input' events which trigger
+      // updateGeometry() via the UI binding system. Only call explicitly for
+      // projection snaps (which don't dispatch events).
+      if (projSnapped && window.renderingAPI?.updateGeometry) {
         window.renderingAPI.updateGeometry();
       }
 
@@ -419,9 +424,11 @@ export const RTDelta = {
               `input[name="${snap.name}"][value="${snap.to}"]`
             );
             if (radio) radio.checked = true;
+            projSnapped = true;
           }
         }
-        if (window.renderingAPI?.updateGeometry) {
+        // Only explicit rebuild for remaining projection snaps
+        if (projSnapped && window.renderingAPI?.updateGeometry) {
           window.renderingAPI.updateGeometry();
         }
       }

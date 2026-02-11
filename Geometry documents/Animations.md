@@ -961,20 +961,13 @@ Currently, clicking ▶ in the "Camera" row only animates camera position — th
 
 ---
 
-### BUG: Planar/Radial matrix groups missing dissolve transitions (Views 13–19)
+### ~~BUG: Planar/Radial matrix groups missing dissolve transitions (Views 13–19)~~ — RESOLVED
 
-**Symptom**: During Player Piano playback (Camera + Scene ▶), planar matrices (cube matrix, tet matrix, etc.) and radial matrices pop in/out with no opacity dissolve. They appear after a blank screen flash. In contrast, tetrahelix forms (Views 21–23) dissolve correctly.
+~~**Symptom**: During Player Piano playback (Camera + Scene ▶), planar matrices (cube matrix, tet matrix, etc.) and radial matrices pop in/out with no opacity dissolve. They appear at 100% opacity — fully opaque — regardless of the opacity slider setting.~~
 
-**Additional observation**: When the matrices do pop into view, they appear at **100% opacity** — fully opaque — whereas the app's default opacity settings (opacity slider ~0.35) should make them semi-transparent. All other form categories (primitives, polyhedra, geodesics, tetrahelixes) correctly respect the opacity slider during both static display and animated transitions. This suggests the matrix rendering path may bypass the opacity/dissolveOpacity pipeline entirely, which would be a deeper issue than just the dissolve system.
+**Root cause**: Matrix creators (`createCubeMatrix`, `createRadialCubeMatrix`, etc.) in `rt-matrix-planar.js` and `rt-matrix-radial.js` receive `opacity` as a parameter and bake it directly into materials at creation time. Unlike regular polyhedra which go through `renderPolyhedron()` (which reads `group.userData.dissolveOpacity ?? 1.0`), matrix creation blocks in `rt-rendering.js` passed the raw global slider opacity without applying the dissolve multiplier.
 
-**Analysis**: The `_CHECKBOX_TO_GROUP` mapping in `rt-animate.js` includes all matrix groups (`cubeMatrixGroup`, `radialCubeMatrixGroup`, etc.), so the form dissolve system *should* handle them. Possible causes:
-
-1. **Matrix groups use a different rendering path**: Matrix/radial forms are built by `rt-nodes.js` which creates nested `RTMatrix` groups containing instanced child polyhedra. The `dissolveOpacity` on `group.userData` may not propagate to the deeply-nested child meshes the way it does for simple polyhedra groups.
-2. **`getAllFormGroups()` returns the wrong group level**: If the group returned for `cubeMatrixGroup` is a parent container but the actual meshes are in child groups, `renderPolyhedron()` won't see the `dissolveOpacity` marker.
-3. **Rebuild timing**: Matrix geometry rebuilds are expensive and may not complete within the 200ms settle time, so the dissolve starts before meshes exist.
-4. **Opacity pipeline bypass**: If matrices render at 100% opacity regardless of the opacity slider, they may not go through `renderPolyhedron()` at all — `rt-nodes.js` may create materials directly without reading the global opacity or `dissolveOpacity` values.
-
-**To investigate**: First test static export/import of planar and radial matrix views to see if the state persists correctly (separate from animation). Then add `console.log(groupKey, group.children.length)` in `_setupFormDissolve()` for matrix groups to verify the group has children at dissolve setup time. Check whether matrix meshes go through `renderPolyhedron()` or have their own material creation path.
+**Fix**: All 10 matrix creation blocks in `rt-rendering.js` (5 planar + 5 radial) now read `dissolveOpacity` from the group's `userData` and compute `effectiveOpacity = opacity * dissolveOpacity` before passing to the matrix creator. The `userData.parameters.opacity` still stores the raw slider value for clean export/import (dissolve is transient during animation only). Pattern applied to: cube, tet, octa, cubocta, rhombic dodec (planar) and radial cube, radial rhombic dodec, radial tet, radial oct, radial VE (radial).
 
 ---
 
@@ -989,6 +982,33 @@ Currently, clicking ▶ in the "Camera" row only animates camera position — th
 3. **Sub-control panels not revealed**: `importState()` had explicit show/hide blocks for line, polygon, prism, cone, tetrahelix, penrose, and quadray controls — but zero entries for any of the 10 matrix control panels (5 planar + 5 radial).
 
 **Fix**: (1) Added 5 rotate45 checkboxes to `RTDelta._captureCheckboxes()` and `RTFileHandler.exportState()`/`importState()`. (2) Added explicit `N×N` display text updates for matrix size sliders and `Fn` display for radial freq sliders in `importState()`. (3) Added 10 matrix sub-control panel show/hide entries to `importState()`. (4) Added `_subControlMap` to `RTDelta` + visibility toggle in `applyDelta()` for view transitions.
+
+---
+
+### ~~BUG: Radial matrix mode toggles not persisting across save/load~~ — RESOLVED
+
+~~**Symptom**: Radial matrix render mode toggles — "Space Filling" (Cube), "IVM Mode" (Tet), "IVM Scale" (Octa) — revert to defaults on export/import and are not captured in view deltas. User unchecks Space Filling to get a "Cube Cross" layout, but on reimport the toggle is lost and renders as space-filling.~~
+
+**Root cause**: Three radial matrix mode checkboxes were absent from the entire persistence pipeline:
+- `radialCubeSpaceFill` — "Space-filling" toggle (default: checked/true)
+- `radialTetIVMMode` — "IVM Mode (fill oct voids)" toggle (default: unchecked/false)
+- `radialOctIVMScale` — "IVM Scale (match tet faces)" toggle (default: unchecked/false)
+
+These toggles ARE declared in `rt-ui-binding-defs.js` (simpleCheckboxBindings) and ARE read by `rt-rendering.js` during geometry generation, but were NOT captured in `RTDelta._captureCheckboxes()`, NOT saved in `RTFileHandler.exportState()`, and NOT restored in `RTFileHandler.importState()`. Identical pattern to the earlier rotate45 gap.
+
+**Fix**: (1) Added 3 radial mode toggle IDs to `RTDelta._captureCheckboxes()`. (2) Added 3 toggles to `RTFileHandler.exportState()` sliders section (using `?? true` for spaceFill default, `|| false` for IVM modes). (3) Added restore loop in `RTFileHandler.importState()` after the rotate45 block, following the same `sliders[id]` pattern.
+
+---
+
+### ~~BUG: Double updateGeometry() per animation tick in buildSteppedTick()~~ — RESOLVED
+
+~~**Symptom**: During Camera + Scene animated transitions, continuous `requestAnimationFrame` violations at ~77-83ms per frame. Radial matrix transitions especially slow, with occasional 287ms spikes.~~
+
+**Root cause**: `buildSteppedTick()` in `rt-delta.js` called `_setSlider()` which dispatches an 'input' event — triggering `updateGeometry()` via the UI binding system. Then `buildSteppedTick()` ALSO called `updateGeometry()` explicitly at the end of each tick. Result: **two geometry rebuilds per tick** for every slider change during animated transitions.
+
+**Fix**: Removed the redundant explicit `updateGeometry()` call from `buildSteppedTick()`. The `_setSlider()` → 'input' event → UI binding handler already triggers geometry rebuilds. Explicit `updateGeometry()` is now only called for projection radio snaps (which don't dispatch events). This halves the geometry rebuild cost during animated transitions.
+
+**Note**: The continuous ~78ms rAF violations during radial matrix preview are partly inherent — F3-F4 radial matrices create many nested polyhedra shells, and the THREE.js render pass for this geometry is expensive. The double-rebuild fix helps, but complex radial matrices will still be GPU-heavy.
 
 ---
 
@@ -1024,6 +1044,6 @@ The delta system currently captures `scaleSlider` (global) and `tetScaleSlider` 
 
 ### Player Piano Demo Reel
 
-`PlayerPiano-generator.js` is a browser console script that generates a 23-view `.artviews` demo reel touring all major form categories (primitives, platonic solids, geodesic spheres, planar matrices, radial matrices, tetrahelixes). Run in console → downloads `.artview` → import and play via Camera + Scene ▶ Preview.
+`PlayerPiano-generator.js` is a browser console script that generates a 30-view `.artviews` demo reel touring all major form categories (primitives, platonic solids, geodesic spheres, planar matrices with 45° rotations and size ramps, radial matrices with frequency ramps, tetrahelixes). Run in console → downloads `.artview` → import and play via Camera + Scene ▶ Preview.
 
 **Future enhancement**: A second Player Piano pass with cutplanes sweeping through geometry during transitions — each view enables a section cut that animates across the form, revealing interior structure.
