@@ -54,11 +54,13 @@ export const RTAnimate = {
    * @param {function} [opts.onTick] - Called each frame with smoothstepped t (0→1)
    * @returns {Promise<void>} Resolves when animation completes or is cancelled.
    */
-  animateToView(viewId, durationMs, { cancelPreview = true, onTick = null } = {}) {
+  animateToView(
+    viewId,
+    durationMs,
+    { cancelPreview = true, onTick = null } = {}
+  ) {
     const vm = this._viewManager;
-    const view = vm.state.views.find(
-      v => v.id === viewId || v.name === viewId
-    );
+    const view = vm.state.views.find(v => v.id === viewId || v.name === viewId);
     if (!view?.camera) return Promise.resolve();
 
     durationMs = durationMs || view.transitionDuration || 2000;
@@ -161,9 +163,7 @@ export const RTAnimate = {
    */
   async animateToViewFull(viewId, durationMs, opts = {}) {
     const vm = this._viewManager;
-    const view = vm.state.views.find(
-      v => v.id === viewId || v.name === viewId
-    );
+    const view = vm.state.views.find(v => v.id === viewId || v.name === viewId);
     if (!view) return;
 
     const pc = vm._papercut;
@@ -211,8 +211,7 @@ export const RTAnimate = {
             const slider = document.getElementById("cutplaneSlider");
             if (slider) slider.value = interpValue;
             const valueDisplay = document.getElementById("cutplaneValue");
-            if (valueDisplay)
-              valueDisplay.textContent = interpValue.toFixed(2);
+            if (valueDisplay) valueDisplay.textContent = interpValue.toFixed(2);
           }
         : null;
 
@@ -226,24 +225,35 @@ export const RTAnimate = {
   // ── Preview loop ────────────────────────────────────────────────
 
   /**
-   * Toggle preview: loops through all saved views with animated transitions.
-   * If already previewing, stops. Resumes from last-reached view.
+   * Stop any running preview loop and reset UI.
+   * @private
    */
-  async previewAnimation() {
+  _stopPreview() {
+    this.state.previewing = false;
+    if (this.state.frameId) {
+      cancelAnimationFrame(this.state.frameId);
+      this.state.frameId = null;
+    }
+    if (this.state._cancelResolve) {
+      this.state._cancelResolve();
+      this.state._cancelResolve = null;
+    }
+    this.state.active = false;
+    this._updatePreviewButton(false);
+    this._updatePreviewFullButton(false);
+  },
+
+  /**
+   * Core preview loop: cycles through views using the supplied animate function.
+   * Resumes from last-reached view.
+   *
+   * @param {function} animateFn - (viewId, durationMs, opts) => Promise
+   * @param {function} updateBtn - (playing: boolean) => void
+   * @private
+   */
+  async _runPreviewLoop(animateFn, updateBtn) {
     if (this.state.previewing) {
-      // Already previewing → Stop
-      this.state.previewing = false;
-      if (this.state.frameId) {
-        cancelAnimationFrame(this.state.frameId);
-        this.state.frameId = null;
-      }
-      if (this.state._cancelResolve) {
-        this.state._cancelResolve();
-        this.state._cancelResolve = null;
-      }
-      this.state.active = false;
-      this._updatePreviewButton(false);
-      this._updatePreviewFullButton(false);
+      this._stopPreview();
       return;
     }
 
@@ -251,9 +261,9 @@ export const RTAnimate = {
     if (views.length < 2) return;
 
     this.state.previewing = true;
-    this._updatePreviewButton(true);
+    updateBtn(true);
 
-    // Resume from activeViewId if set
+    // Resume from last-reached view if set
     let startIdx = 0;
     if (this.state.activeViewId) {
       const idx = views.findIndex(v => v.id === this.state.activeViewId);
@@ -265,106 +275,75 @@ export const RTAnimate = {
         if (!this.state.previewing) break;
         const view = views[i];
         const duration = view.transitionDuration || 2000;
-        await this.animateToView(view.id, duration, { cancelPreview: false });
+        await animateFn.call(this, view.id, duration, {
+          cancelPreview: false,
+        });
         if (!this.state.previewing) break;
-        // Hold at keyframe
-        await new Promise(r =>
-          setTimeout(r, Math.max(duration / 3, 500))
-        );
+        // Hold at keyframe (1/3 of transition, min 500ms)
+        await new Promise(r => setTimeout(r, Math.max(duration / 3, 500)));
       }
       startIdx = 0; // After first pass, loop from beginning
     }
 
-    this._updatePreviewButton(false);
+    updateBtn(false);
   },
 
   /**
-   * Toggle full-scene preview: loops through all saved views with animated
-   * camera transitions and full scene state restore at each keyframe.
+   * Toggle preview: loops through all saved views with animated transitions.
+   */
+  async previewAnimation() {
+    await this._runPreviewLoop(this.animateToView, playing =>
+      this._updatePreviewButton(playing)
+    );
+  },
+
+  /**
+   * Toggle full-scene preview: loops with camera + cutplane + scene restore.
    */
   async previewAnimationFull() {
-    if (this.state.previewing) {
-      // Already previewing → Stop
-      this.state.previewing = false;
-      if (this.state.frameId) {
-        cancelAnimationFrame(this.state.frameId);
-        this.state.frameId = null;
-      }
-      if (this.state._cancelResolve) {
-        this.state._cancelResolve();
-        this.state._cancelResolve = null;
-      }
-      this.state.active = false;
-      this._updatePreviewButton(false);
-      this._updatePreviewFullButton(false);
-      return;
-    }
-
-    const views = this._viewManager._getSortedViews();
-    if (views.length < 2) return;
-
-    this.state.previewing = true;
-    this._updatePreviewFullButton(true);
-
-    let startIdx = 0;
-    if (this.state.activeViewId) {
-      const idx = views.findIndex(v => v.id === this.state.activeViewId);
-      if (idx >= 0) startIdx = (idx + 1) % views.length;
-    }
-
-    while (this.state.previewing) {
-      for (let i = startIdx; i < views.length; i++) {
-        if (!this.state.previewing) break;
-        const view = views[i];
-        const duration = view.transitionDuration || 2000;
-        await this.animateToViewFull(view.id, duration, {
-          cancelPreview: false,
-        });
-        if (!this.state.previewing) break;
-        await new Promise(r =>
-          setTimeout(r, Math.max(duration / 3, 500))
-        );
-      }
-      startIdx = 0;
-    }
-
-    this._updatePreviewFullButton(false);
+    await this._runPreviewLoop(this.animateToViewFull, playing =>
+      this._updatePreviewFullButton(playing)
+    );
   },
 
   // ── UI helpers ──────────────────────────────────────────────────
 
   /**
-   * Update Preview/Stop button text and active state.
-   * @param {boolean} playing - true → "Stop", false → "Preview"
+   * Update a play/stop button's icon and title.
+   * @param {string} elementId - DOM id of the button
+   * @param {boolean} playing - true → stop icon, false → play icon
+   * @param {string} stopTitle - title when playing
+   * @param {string} playTitle - title when stopped
+   * @private
    */
-  _updatePreviewButton(playing) {
-    const btn = document.getElementById("previewAnimationBtn");
+  _updatePlayStopBtn(elementId, playing, stopTitle, playTitle) {
+    const btn = document.getElementById(elementId);
     if (!btn) return;
     if (playing) {
-      btn.innerHTML = '<span style="color: #ff6b6b; font-size: 14px">&#9632;</span>'; // red ■
-      btn.title = "Stop animation preview";
+      btn.innerHTML = '<span class="anim-icon-stop">&#9632;</span>';
+      btn.title = stopTitle;
     } else {
-      btn.innerHTML = '<span style="color: #4caf50; font-size: 14px">&#9654;</span>'; // green ▶
-      btn.title = "Preview animation loop in scene";
+      btn.innerHTML = '<span class="anim-icon-play">&#9654;</span>';
+      btn.title = playTitle;
     }
   },
 
-  /**
-   * Update Full Preview button (Camera + Scene row) play/stop state.
-   * @param {boolean} playing
-   */
+  _updatePreviewButton(playing) {
+    this._updatePlayStopBtn(
+      "previewAnimationBtn",
+      playing,
+      "Stop animation preview",
+      "Preview animation loop in scene"
+    );
+  },
+
   _updatePreviewFullButton(playing) {
-    const btn = document.getElementById("previewFullBtn");
-    if (!btn) return;
-    if (playing) {
-      btn.innerHTML =
-        '<span style="color: #ff6b6b; font-size: 14px">&#9632;</span>';
-      btn.title = "Stop full-scene animation preview";
-    } else {
-      btn.innerHTML =
-        '<span style="color: #4caf50; font-size: 14px">&#9654;</span>';
-      btn.title = "Preview with full scene restore (cutplane, render state)";
-    }
+    this._updatePlayStopBtn(
+      "previewFullBtn",
+      playing,
+      "Stop full-scene animation preview",
+      "Preview with full scene restore (cutplane, render state)"
+    );
   },
 
   /**

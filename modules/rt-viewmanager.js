@@ -1811,9 +1811,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
 
     // Remove any other open popup
     const tbody = row.parentElement;
-    tbody
-      .querySelectorAll(".view-timing-popup")
-      .forEach(el => el.remove());
+    tbody.querySelectorAll(".view-timing-popup").forEach(el => el.remove());
 
     const view = this.state.views.find(v => v.id === viewId);
     if (!view) return;
