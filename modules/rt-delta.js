@@ -54,6 +54,9 @@ export const RTDelta = {
       // Planar matrices
       "showCubeMatrix", "showTetMatrix", "showOctaMatrix",
       "showCuboctahedronMatrix", "showRhombicDodecMatrix",
+      // Matrix rotation toggles (45° grid alignment)
+      "cubeMatrixRotate45", "tetMatrixRotate45", "octaMatrixRotate45",
+      "cuboctaMatrixRotate45", "rhombicDodecMatrixRotate45",
       // Radial matrices
       "showRadialCubeMatrix", "showRadialRhombicDodecMatrix",
       "showRadialTetrahedronMatrix", "showRadialOctahedronMatrix",
@@ -99,6 +102,27 @@ export const RTDelta = {
     geodesicOctaFrequency: "geodesicOctaFrequency",
     geodesicIcosaFrequency: "geodesicIcosaFrequency",
     geodesicDualIcosaFrequency: "geodesicDualIcosaFrequency",
+  },
+
+  /**
+   * Checkbox ID → sub-control panel ID mapping.
+   * Used by applyDelta() to show/hide sub-control panels when checkboxes change.
+   * Mirrors the checkbox-controls bindings in rt-ui-binding-defs.js.
+   * @private
+   */
+  _subControlMap: {
+    // Planar matrices
+    showCubeMatrix: "cube-matrix-controls",
+    showTetMatrix: "tet-matrix-controls",
+    showOctaMatrix: "octa-matrix-controls",
+    showCuboctahedronMatrix: "cubocta-matrix-controls",
+    showRhombicDodecMatrix: "rhombic-dodec-matrix-controls",
+    // Radial matrices
+    showRadialCubeMatrix: "radial-cube-matrix-controls",
+    showRadialRhombicDodecMatrix: "radial-rhombic-dodec-matrix-controls",
+    showRadialTetrahedronMatrix: "radial-tetrahedron-matrix-controls",
+    showRadialOctahedronMatrix: "radial-octahedron-matrix-controls",
+    showRadialCuboctahedronMatrix: "radial-cuboctahedron-matrix-controls",
   },
 
   /** @private */
@@ -230,6 +254,16 @@ export const RTDelta = {
       for (const [id, checked] of Object.entries(delta.polyhedraCheckboxes)) {
         const el = document.getElementById(id);
         if (el) el.checked = checked;
+      }
+
+      // Show/hide sub-control panels for checkbox-with-controls forms
+      for (const [checkboxId, controlsId] of Object.entries(this._subControlMap)) {
+        if (delta.polyhedraCheckboxes[checkboxId] !== undefined) {
+          const panel = document.getElementById(controlsId);
+          if (panel) {
+            panel.style.display = delta.polyhedraCheckboxes[checkboxId] ? "block" : "none";
+          }
+        }
       }
     }
 
