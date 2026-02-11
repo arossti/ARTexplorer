@@ -629,9 +629,10 @@ if __name__ == '__main__':
 | **5a** | `rt-viewmanager.js` | Drag-to-reorder rows (grip handle) | Drag view between others, verify order persists | Pending |
 | **5b** | `rt-viewmanager.js`, `rt-animate.js` | Object visibility per view (instanceRefs) | Add/remove polyhedra between views, verify dissolve | Pending |
 | **5c** | `rt-papercut.js` | Papercut respects opacity=0 as invisible | Zero-opacity objects excluded from section cuts | Pending |
-| **6a** | `index.html` | Dual-row UI: "Camera" / "Camera + Scene" labels + buttons | Both rows visible, distinct labels | Pending |
-| **6b** | `rt-viewmanager.js` | `loadViewState()` with `skipCamera` option | Restores non-camera state only | Pending |
-| **6c** | `rt-animate.js` | `animateToViewFull()` + `previewAnimationFull()` | Bottom-row ▶ restores cutplanes at arrival | Pending |
+| ~~**6a**~~ | `index.html` | ~~Dual-row UI: "Camera" / "Camera + Scene" labels + buttons~~ | ~~Both rows visible, distinct labels~~ | **DONE** `a106bf7` |
+| ~~**6b**~~ | `rt-viewmanager.js` | ~~`loadView()` with `skipCamera` option~~ | ~~Restores non-camera state only~~ | **DONE** `a106bf7` |
+| ~~**6c**~~ | `rt-animate.js` | ~~`animateToViewFull()` + smooth cutplane interpolation~~ | ~~Bottom-row ▶ slerps camera + interpolates cutplane~~ | **DONE** `a106bf7` |
+| ~~**6d**~~ | `index.html` | ~~HTML reorg: Move View Capture → "View Manager" section, rename Camera → View Manager~~ | ~~UI layout correct, all controls functional~~ | **DONE** |
 
 ## Favicon-Specific Parameters
 
@@ -799,17 +800,30 @@ This requires a `loadViewState()` variant in ViewManager that can selectively re
 
 ---
 
+## Future Refinements
+
+### Bidirectional Cutplane Transitions
+
+Currently `animateToViewFull()` interpolates the cutplane value between two views that share the same axis. When transitioning from a view with **no cutplane** to one **with a cutplane** (or vice versa), the transition should be bidirectional:
+
+- **Entering a cut** (no cut → cut at interval *d*): Enable the cutplane at the far edge (or distance 0), then smoothly slide it to position *d* over the transition duration. The cut "sweeps in" from the boundary.
+- **Exiting a cut** (cut at interval *d* → no cut): Smoothly slide the cutplane back to the far edge / distance 0, then disable. The cut "recedes" before disappearing.
+
+This makes cutplane transitions feel physically motivated — the plane always arrives from or departs to a natural boundary rather than popping on/off. Implementation would extend the `onTick` callback in `animateToViewFull()` to detect the no-cut ↔ cut transition case and remap the interpolation range accordingly (e.g. `lerp(edgeDistance, targetValue, t)` instead of `lerp(0, targetValue, t)`).
+
+### Expandable View List (No Scrollbar)
+
+The Saved Views table currently has `max-height: 150px; overflow-y: auto`, which produces a scrollbar when the list grows. This doesn't match the UI's scroll-free aesthetic. Instead, remove the `max-height` constraint and let the view list expand naturally within the collapsible section. The user already scrolls the full sidebar panel — an inner scrollbar is redundant and visually inconsistent. This becomes especially important once drag-to-reorder handles (Phase 5a) are added, where seeing the full list is essential for reordering across many views (20-50+).
+
+---
+
 ## Known Bugs
 
-### BUG: Cutplane state not restoring on ▶ transitions
+### ~~BUG: Cutplane state not restoring on ▶ transitions~~ — RESOLVED `a106bf7`
 
-**Symptom**: Section cut state (cutplane on/off, position) used to toggle correctly when switching between views via ▶. If View 1 had no section cut and View 2 did, clicking ▶ on each would show/hide the cut. This was lost when ▶ was changed from `loadView()` (full state restore) to `animateToView()` (camera-only).
+~~**Symptom**: Section cut state (cutplane on/off, position) used to toggle correctly when switching between views via ▶.~~
 
-**Root cause**: The ▶ delegation in `rt-viewmanager.js` now calls `RTAnimate.animateToView()` which only interpolates camera position/zoom — it does not call `loadView()` and therefore does not restore cutplane, projection, or object visibility state.
-
-**Resolution**: Phase 6 dual-row UI. The top-row ▶ is correctly camera-only. The bottom-row ▶ calls `animateToViewFull()` which restores non-camera state at animation completion. Users who need cutplane toggling use the bottom row.
-
-**Priority**: Resolved by design in Phase 6.
+**Resolution**: Phase 6 dual-row UI. Top-row ▶ is camera-only by design. Bottom-row ▶ calls `animateToViewFull()` which smoothly interpolates the cutplane value per frame and snaps remaining scene state at arrival. Exceeded original fix — cutplane now *animates* between views rather than snapping.
 
 ---
 

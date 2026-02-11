@@ -2989,3 +2989,42 @@ input[type="number"] {
     inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
   transform: translateY(1px);
 }
+
+/* ========================================================================
+   VIEW TABLE - Drag Reorder
+   ======================================================================== */
+
+.view-drag-handle {
+  flex: 0 0 14px;
+  cursor: grab;
+  color: #555;
+  font-size: 11px;
+  user-select: none;
+  line-height: 1;
+}
+
+.view-drag-handle:hover {
+  color: #888;
+}
+
+.view-row.dragging {
+  opacity: 0.4;
+}
+
+.view-row.drag-over {
+  border-top: 2px solid #00b4ff;
+}
+
+/* ========================================================================
+   ANIMATION - Play/Stop Icons
+   ======================================================================== */
+
+.anim-icon-stop {
+  color: #ff6b6b;
+  font-size: 14px;
+}
+
+.anim-icon-play {
+  color: #4caf50;
+  font-size: 14px;
+}
