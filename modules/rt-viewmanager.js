@@ -1796,7 +1796,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
       if (btn.classList.contains("view-load-btn")) {
         // Delegate to RTAnimate for smooth transitions if available
         if (window.RTAnimate) {
-          window.RTAnimate.animateToView(viewId);
+          window.RTAnimate.animateToViewFull(viewId);
         } else {
           this.loadView(viewId);
         }

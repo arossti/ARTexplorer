@@ -721,6 +721,9 @@ export function initScene(THREE, OrbitControls, RT) {
 
     const { vertices, edges, faces } = geometry;
 
+    // Dissolve multiplier for form fade in/out during view transitions
+    const dissolveOpacity = group.userData.dissolveOpacity ?? 1.0;
+
     // Get selected node size from new button selector
     const nodeSize = getNodeSize();
     const showNodes = nodeSize !== "off";
@@ -753,12 +756,14 @@ export function initScene(THREE, OrbitControls, RT) {
       faceGeometry.setIndex(indices);
       faceGeometry.computeVertexNormals();
 
+      const effectiveOpacity = opacity * dissolveOpacity;
+
       const faceMaterial = new THREE.MeshStandardMaterial({
         color: color,
         transparent: true,
-        opacity: opacity,
+        opacity: effectiveOpacity,
         side: THREE.FrontSide, // Backface culling enabled - all polyhedra winding corrected (2026-01-11)
-        depthWrite: opacity >= 0.99, // Only write depth for opaque faces
+        depthWrite: effectiveOpacity >= 0.99, // Only write depth for opaque faces
         flatShading: true,
       });
 
@@ -792,7 +797,9 @@ export function initScene(THREE, OrbitControls, RT) {
           linewidth: options.lineWidth * 0.002, // Convert to world units (scaled for visibility)
           worldUnits: true,
           depthTest: true,
-          depthWrite: true,
+          depthWrite: dissolveOpacity >= 0.99,
+          transparent: dissolveOpacity < 1,
+          opacity: dissolveOpacity,
         });
 
         // Set resolution for proper line rendering
@@ -827,7 +834,9 @@ export function initScene(THREE, OrbitControls, RT) {
         color: color,
         linewidth: 1, // WebGL limitation - always 1px on most platforms
         depthTest: true,
-        depthWrite: true,
+        depthWrite: dissolveOpacity >= 0.99,
+        transparent: dissolveOpacity < 1,
+        opacity: dissolveOpacity,
       });
 
       const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
@@ -928,13 +937,14 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("nodeFlatShading")?.checked || false;
 
       const currentNodeOpacity = getNodeOpacity();
+      const effectiveNodeOpacity = currentNodeOpacity * dissolveOpacity;
       const nodeMaterial = new THREE.MeshStandardMaterial({
         color: color,
         emissive: color,
         emissiveIntensity: 0.2,
         flatShading: useFlatShading, // User-controlled shading
-        transparent: currentNodeOpacity < 1,
-        opacity: currentNodeOpacity,
+        transparent: effectiveNodeOpacity < 1,
+        opacity: effectiveNodeOpacity,
         side: THREE.FrontSide, // Backface culling enabled - all polyhedra winding corrected (2026-01-11)
       });
 
