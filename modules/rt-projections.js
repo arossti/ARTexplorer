@@ -575,19 +575,22 @@ export const RTProjections = {
       }
     } else {
       // Tetrahedral (Quadray) basis vectors — cube diagonals
-      // Quadray WXYZ = integer Cartesian (±1, ±1, ±1), length = √3
-      // Normalize via cached radical: 1/√3 = √3/3
+      // Must match Quadray.AXIS_INDEX → basisVectors[] in rt-math.js:
+      //   QW = D = (-1,-1, 1)/√3  [index 3, Yellow]
+      //   QX = A = ( 1, 1, 1)/√3  [index 0, Red]
+      //   QY = C = (-1, 1,-1)/√3  [index 2, Blue]
+      //   QZ = B = ( 1,-1,-1)/√3  [index 1, Green]
       const s = 1 / RT.PureRadicals.sqrt3();
       switch (axis) {
         case "qw":
-          return new THREE.Vector3(s, s, s);
+          return new THREE.Vector3(-s, -s, s);
         case "qx":
-          return new THREE.Vector3(s, -s, -s);
+          return new THREE.Vector3(s, s, s);
         case "qy":
           return new THREE.Vector3(-s, s, -s);
         case "qz":
         default:
-          return new THREE.Vector3(-s, -s, s);
+          return new THREE.Vector3(s, -s, -s);
       }
     }
   },
