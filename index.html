@@ -3423,6 +3423,14 @@
                 >
                   Save
                 </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="resaveViewBtn"
+                  title="Overwrite selected view with current state"
+                  style="display: none"
+                >
+                  Re-Save
+                </button>
               </div>
             </div>
 
@@ -3488,11 +3496,11 @@
               <div style="display: flex; gap: 4px; margin-top: 8px">
                 <button
                   class="toggle-btn variant-small"
-                  id="downloadSelectedBtn"
-                  title="Download selected view as SVG"
+                  id="importViewsBtn"
+                  title="Import views from file"
                   style="flex: 1"
                 >
-                  SVG
+                  Import
                 </button>
                 <button
                   class="toggle-btn variant-small"
@@ -3504,11 +3512,11 @@
                 </button>
                 <button
                   class="toggle-btn variant-small"
-                  id="importViewsBtn"
-                  title="Import views from file"
+                  id="downloadSelectedBtn"
+                  title="Download selected view as SVG"
                   style="flex: 1"
                 >
-                  Import
+                  SVG
                 </button>
                 <button
                   class="toggle-btn variant-small"
@@ -3527,7 +3535,7 @@
 
               <!-- Animation Actions: Camera Only -->
               <div style="margin-top: 8px">
-                <div style="font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px">Camera</div>
+                <div style="font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px">Camera Only</div>
                 <div style="display: flex; gap: 4px">
                   <button
                     class="toggle-btn variant-small"

@@ -634,6 +634,46 @@ if __name__ == '__main__':
 | ~~**6b**~~ | `rt-viewmanager.js` | ~~`loadView()` with `skipCamera` option~~ | ~~Restores non-camera state only~~ | **DONE** `a106bf7` |
 | ~~**6c**~~ | `rt-animate.js` | ~~`animateToViewFull()` + smooth cutplane interpolation~~ | ~~Bottom-row ▶ slerps camera + interpolates cutplane~~ | **DONE** `a106bf7` |
 | ~~**6d**~~ | `index.html` | ~~HTML reorg: Move View Capture → "View Manager" section, rename Camera → View Manager~~ | ~~UI layout correct, all controls functional~~ | **DONE** |
+| **7a** | `index.html`, `rt-viewmanager.js` | Re-Save button — overwrite active view's camera + scene state in-place | Navigate to view, adjust scene, click Re-Save, replay to verify | Pending |
+
+## Phase 7: Re-Save View (In-Place Edit)
+
+**Problem**: Once a view is saved, there's no way to adjust its camera or scene state without deleting and re-creating it — losing its position in the sequence, name, and transition duration.
+
+**Solution**: A "Re-Save" button appears beside "Save" whenever a view is active (selected via ▶). Clicking it overwrites the active view's camera + scene state with the current scene, while preserving its identity.
+
+### Workflow
+
+1. Click ▶ on a view (e.g. PP-05) — camera animates there, PP-05 becomes active
+2. User rotates camera, toggles forms, adjusts sliders — whatever changes they want
+3. Click "Re-Save PP-05" — current state overwrites PP-05
+4. Save button still works independently to create a new view
+
+### What Gets Updated vs Preserved
+
+| Updated (current state) | Preserved (view identity) |
+|------------------------|--------------------------|
+| Camera position/rotation/zoom | View ID |
+| Cutplane state | View name |
+| Render settings | Position in sequence |
+| Instance references | Transition duration |
+| Scene state delta | Label, sheet size |
+| Axis code | Timestamp |
+
+### Implementation
+
+| Component | What |
+|-----------|------|
+| `index.html` | `#resaveViewBtn` beside Save, hidden by default (`display: none`) |
+| `rt-viewmanager.js` | `resaveActiveView()` — captures fresh state, overwrites active view object |
+| `rt-viewmanager.js` | `_updateResaveButton()` — shows/hides button, updates label to "Re-Save {name}" |
+| `rt-viewmanager.js` | Button shown when `setActiveViewRow()` called, hidden on delete/clear |
+
+### Delta Chain Integrity
+
+Re-saving view N recomputes its delta relative to `getSnapshotAtView(N-1)`. Subsequent views' deltas (N+1, N+2, ...) remain untouched because they store absolute target values for changed fields. The cascade propagates naturally — if re-saving N changes a value that N+1 didn't touch, N+1 inherits the new value from N (correct behavior).
+
+---
 
 ## Favicon-Specific Parameters
 
