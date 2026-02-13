@@ -1,0 +1,768 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{parskip}  % Adds vertical space between paragraphs
+\usepackage{tcolorbox}  % For framed boxes
+\usepackage{endnotes}   % For endnotes instead of footnotes
+
+\geometry{margin=1in}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{definition}{Definition}
+\newtheorem{observation}{Observation}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+
+\title{Algebraic Geometry as AI Accelerant:\\
+\large Quadray Coordinates and Rational Trigonometry\\
+for Hardware-Efficient Neural Computation}
+
+\author{Andrew Thomson\\
+\small Open Building / ARTexplorer Project\\
+\small \href{mailto:andy@openbuilding.ca}{andy@openbuilding.ca}}
+
+\date{February 2026 -- Draft v0.2 (revised)}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Recent work by Zhang~(2025) demonstrates that Grassmann manifold geometry can replace attention mechanisms in transformer architectures, achieving competitive performance with linear scaling in sequence length. We observe that Wildberger's Rational Trigonometry---specifically, the spread function $s = 1 - (\mathbf{u} \cdot \mathbf{v})^2 / (Q_u Q_v)$---is \textbf{closed over the rationals}: rational inputs produce rational outputs, with no transcendental functions evaluated. This algebraic property has a concrete hardware consequence: spread-based scoring can be computed in \textbf{exact fixed-point arithmetic}, eliminating the floating-point rounding that accumulates through softmax's $\exp(\cdot)$ evaluations.
+
+We propose spread/cross algebra as a \textbf{drop-in replacement for the softmax normalization step} in attention mechanisms, and describe how Quadray coordinates (tetrahedral $\mathbb{R}^4$ basis) provide structured parameter efficiency for geometric layers. We are explicit about what this paper does \emph{not} claim: the dominant cost of attention is the $QK^\top$ matrix multiply, not the softmax---spread-based scoring does not change this. The contribution is algebraic exactness, not asymptotic speedup. Whether this exactness translates to measurable quantization resilience is an empirical question; we define the experiments needed to answer it.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%==============================================================================
+\section{Introduction: The Geometric Turn in AI}
+%==============================================================================
+
+\subsection{From Attention to Geometry}
+
+The transformer architecture~(Vaswani et al., 2017) computes attention scores via:
+\begin{equation}\label{eq:attention}
+\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right) V
+\end{equation}
+
+Every element of the softmax requires evaluating $\exp(\cdot)$---a transcendental function that produces irrational outputs from rational inputs. While $\exp(\cdot)$ is \emph{not} the dominant cost of attention (the $QK^\top$ matrix multiply at $O(n^2 d)$ is), it introduces a qualitative problem: \textbf{the softmax normalization step is not closed over the rationals}. This means:
+\begin{itemize}
+    \item Quantized (INT8/INT4) inference must approximate $\exp(\cdot)$, introducing rounding error at every layer
+    \item Numerical stability requires the ``log-sum-exp trick'' (additional passes over data)
+    \item Inference results are non-deterministic across hardware platforms due to different $\exp(\cdot)$ implementations
+\end{itemize}
+
+Zhang~(2025) showed that replacing attention with geometric operations on Grassmann manifolds---specifically, encoding token pairs as 2-dimensional subspaces via Pl\"ucker coordinates---achieves competitive language modelling performance with \textbf{linear scaling} in sequence length. The core computation becomes controlled deformation of low-rank subspaces rather than exponentiation over unstructured tensor space.
+
+This paper was not isolated. The ``geometric turn'' in AI reflects a growing recognition that the mathematical structures underlying neural computation---rotations, projections, subspace relationships---are fundamentally \emph{geometric}, and that working with native geometric representations eliminates computational overhead introduced by coordinate-dependent encodings.
+
+\subsection{The Parallel Discovery}
+
+The ARTexplorer project arrived at a structurally identical principle from a different tradition: combining R.\ Buckminster Fuller's Quadray coordinate system (tetrahedral $\mathbb{R}^4$ basis) with Norman J.\ Wildberger's Rational Trigonometry (spread/cross algebra). The resulting system---Spread-Quadray Rotors---achieves:
+
+\begin{itemize}
+    \item \textbf{Exact rational arithmetic} for rotations at algebraically significant angles
+    \item \textbf{No transcendental functions} at the core computation layer
+    \item \textbf{Deferred radical expansion}---$\sqrt{\cdot}$ evaluated once at the hardware boundary
+    \item \textbf{Circulant matrix structure} enabling parameter-efficient block-diagonal transforms
+    \item \textbf{Gimbal-lock-free} rotation via topological lift to $\mathbb{R}^4 \times \mathbb{Z}_2$
+\end{itemize}
+
+This paper argues that the convergence is not coincidental. The same algebraic structures that make geometric AI \emph{possible} (Zhang) can be made \emph{hardware-efficient} through rational trigonometric algebra (Wildberger) in tetrahedral coordinates (Fuller/Urner).
+
+\subsection{Thesis}
+
+\begin{tcolorbox}[colback=blue!5!white, colframe=blue!50!black, title=Central Claim]
+The spread/cross algebra of Rational Trigonometry is \textbf{closed over $\mathbb{Q}$}: rational inputs produce rational outputs without evaluating any transcendental function. Applied to neural network scoring, this means the normalization step of attention (currently softmax with $\exp(\cdot)$) can be replaced by an algebraically exact rational operation. The dominant cost of attention---the $QK^\top$ matrix multiply---is unchanged. The contribution is exactness, not speed: a scoring function that introduces \textbf{zero rounding error} in fixed-point arithmetic, with potential benefits for quantized inference (INT8/INT4) that are empirically testable.
+\end{tcolorbox}
+
+%==============================================================================
+\section{Background: Two Traditions Converge}
+%==============================================================================
+
+\subsection{Grassmann Geometry in AI (Zhang, 2025)}
+
+Zhang's ``Attention Is Not What You Need'' proposes \textbf{Causal Grassmann layers} as a replacement for self-attention. The architecture:
+
+\begin{enumerate}
+    \item \textbf{Linear reduction}: Token hidden states are projected to lower dimension
+    \item \textbf{Grassmann encoding}: Local token pairs are encoded as 2-dimensional subspaces on the Grassmann manifold $\text{Gr}(2, d)$ via Pl\"ucker coordinates
+    \item \textbf{Gated fusion}: Information is mixed back into hidden states through algebraic (not transcendental) gating operations
+\end{enumerate}
+
+\textbf{Key results} (13--18M parameter models):
+\begin{itemize}
+    \item Wikitext-2 perplexity within 10--15\% of transformer equivalents
+    \item SNLI validation accuracy 0.8550 vs.\ 0.8545 for standard attention (slight improvement)
+    \item Linear scaling in sequence length for fixed rank (vs.\ quadratic for attention)
+\end{itemize}
+
+The critical insight: ``Information propagates by controlled deformations of low-rank subspaces over multi-scale local windows, so the core computation lives on a finite-dimensional manifold rather than in an unstructured tensor space.''
+
+\subsection{Rational Trigonometry (Wildberger, 2005)}
+
+Wildberger's Rational Trigonometry replaces the classical distance/angle framework with:
+
+\begin{definition}[Quadrance]
+$Q(P_1, P_2) = (x_2 - x_1)^2 + (y_2 - y_1)^2 + (z_2 - z_1)^2$
+\end{definition}
+
+\begin{definition}[Spread]
+$s(\mathbf{v}_1, \mathbf{v}_2) = 1 - \frac{(\mathbf{v}_1 \cdot \mathbf{v}_2)^2}{Q(\mathbf{v}_1) \cdot Q(\mathbf{v}_2)}$
+\end{definition}
+
+Spread measures ``perpendicularity'' between vectors: $s = 0$ for parallel, $s = 1$ for perpendicular. Crucially, $s = \sin^2\theta$, so spread is the \textbf{square} of the classical sine---and squaring collapses transcendental values to rational ones at algebraically significant angles:
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+\textbf{Angle} & $\sin\theta$ & $\cos\theta$ & \textbf{Spread} $s = \sin^2\theta$ \\
+\midrule
+$0°$ & $0$ & $1$ & $\mathbf{0}$ \\
+$30°$ & $1/2$ & $\sqrt{3}/2$ & $\mathbf{1/4}$ \\
+$45°$ & $\sqrt{2}/2$ & $\sqrt{2}/2$ & $\mathbf{1/2}$ \\
+$60°$ & $\sqrt{3}/2$ & $1/2$ & $\mathbf{3/4}$ \\
+$90°$ & $1$ & $0$ & $\mathbf{1}$ \\
+$120°$ & $\sqrt{3}/2$ & $-1/2$ & $\mathbf{3/4}$ \\
+$180°$ & $0$ & $-1$ & $\mathbf{0}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All spreads are \textbf{exact rationals}, even when $\sin\theta$ and $\cos\theta$ are irrational. This is the foundation of the computational advantage.
+
+\subsection{Quadray Coordinates (Fuller/Urner)}
+
+The Quadray coordinate system uses four basis vectors directed toward the vertices of a regular tetrahedron:
+\begin{align}
+\hat{W} &= (1, 0, 0, 0) \\
+\hat{X} &= (0, 1, 0, 0) \\
+\hat{Y} &= (0, 0, 1, 0) \\
+\hat{Z} &= (0, 0, 0, 1)
+\end{align}
+
+In Cartesian space, these same vectors require $\sqrt{3}$:
+\begin{equation}
+\hat{W}_{\text{xyz}} = \tfrac{1}{\sqrt{3}}(1, 1, 1), \quad
+\hat{X}_{\text{xyz}} = \tfrac{1}{\sqrt{3}}(1, -1, -1), \quad \text{etc.}
+\end{equation}
+
+The mutual spread between any two Quadray basis vectors is:
+\begin{equation}
+s(\hat{W}, \hat{X}) = \sin^2(109.47°) = \frac{8}{9} \quad \text{(exact rational!)}
+\end{equation}
+
+The tetrahedral central angle $\cos^{-1}(-1/3) \approx 109.47°$ is the natural angular quantum of this coordinate system, and its spread $8/9$ is exactly representable in any fixed-point format.
+
+%==============================================================================
+\section{Structural Correspondence: Grassmann Layers $\leftrightarrow$ Spread-Quadray Algebra}
+%==============================================================================
+
+The correspondence between Zhang's geometric AI and Quadray-RT is not metaphorical---it is structural. Both systems execute the same three-phase computational pattern:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Zhang (Grassmann)} & \textbf{Quadray-RT (Spread-Rotor)} \\
+\midrule
+\textbf{1. Lift} & Tokens $\to$ Grassmann manifold & $\mathbb{R}^3 \to \mathbb{R}^4 \times \mathbb{Z}_2$ \\
+\textbf{2. Transform} & Subspace deformation (algebraic) & F,G,H rotation (polynomial) \\
+\textbf{3. Project} & Grassmann $\to$ hidden states & Rotor $\to$ Matrix3 at GPU boundary \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Phase 1: Dimensional Lifting to Escape Singularities}
+
+Zhang lifts from tensor space to the Grassmann manifold to escape quadratic scaling---a computational ``singularity'' of standard attention. Quadray-RT lifts from $\mathbb{R}^3$ to $\mathbb{R}^4 \times \mathbb{Z}_2$ to escape gimbal lock---a topological singularity of $SO(3)$.
+
+The underlying principle is identical: the \textbf{Hairy Ball Theorem} (Brouwer, 1912) guarantees that any continuous parameterization of an even-dimensional sphere must have singularities. Both systems escape by adding a dimension.
+
+\begin{theorem}[Topological Obstruction --- applies to both domains]
+You cannot smoothly cover the full space of transformations with fewer parameters than the topology demands without creating singularities. In rotation: gimbal lock. In attention: quadratic blowup. The solution in both cases: lift to a higher-dimensional space where the topology is simply connected.
+\end{theorem}
+
+\subsection{Phase 2: Algebraic Core Computation}
+
+In the lifted space, both systems perform their core computation using \textbf{algebraic} (polynomial/rational) operations rather than transcendental ones:
+
+\begin{itemize}
+    \item \textbf{Zhang}: Pl\"ucker coordinates are quadratic functions of the input vectors. Subspace deformation is linear algebra on these coordinates.
+    \item \textbf{Quadray-RT}: Spread is a rational function of dot products. Rotation via F,G,H coefficients is polynomial in $\cos\theta$ (which is itself rational via Weierstrass for rational parameter $t$).
+\end{itemize}
+
+No $\exp(\cdot)$, no $\sin(\cdot)$, no $\cos(\cdot)$ at the core layer. Both systems defer transcendental evaluation to the boundary.
+
+\subsection{Phase 3: Boundary Projection}
+
+Both systems re-enter ``hardware space'' only at the boundary:
+\begin{itemize}
+    \item Zhang: Grassmann subspaces are projected back to hidden state vectors via gated mixing
+    \item Quadray-RT: Rotors are converted to $3 \times 3$ matrices via \texttt{toMatrix3()} only when the GPU shader requires Cartesian coordinates
+\end{itemize}
+
+This \emph{deferred materialization} principle is key: radical and transcendental expansions happen \textbf{once per boundary crossing}, not once per operation.
+
+%==============================================================================
+\section{Three Concrete Acceleration Paths}
+%==============================================================================
+
+\subsection{Path 1: Spread-Based Attention Replaces Softmax}
+
+\subsubsection{What Softmax Actually Costs}
+
+Standard attention computes $\text{softmax}(QK^\top / \sqrt{d_k})$, requiring $\exp(x_i)$ for every element. To be precise about costs: the dominant operation in attention is the $QK^\top$ matrix multiply at $O(n^2 d)$ multiply-accumulate operations. The softmax is $O(n^2)$---a \textbf{lower-order term} in total FLOPs.
+
+The problem with softmax is therefore not speed but \textbf{algebraic character}:
+\begin{itemize}
+    \item $\exp(\cdot)$ produces irrational outputs from rational inputs---breaking rational closure
+    \item Numerical stability requires the ``log-sum-exp trick'' (additional passes over data)
+    \item INT8/INT4 quantization must approximate a transcendental function, introducing rounding error that propagates through subsequent layers
+    \item Inference results vary across hardware platforms due to different $\exp(\cdot)$ implementations
+\end{itemize}
+
+\subsubsection{Spread as Attention Score}
+
+The RT spread formula computes the same geometric quantity---how ``different'' two vectors are---using only algebraic operations:
+
+\begin{equation}\label{eq:spread-attention}
+s(\mathbf{q}, \mathbf{k}) = 1 - \frac{(\mathbf{q} \cdot \mathbf{k})^2}{Q(\mathbf{q}) \cdot Q(\mathbf{k})}
+\end{equation}
+
+This requires: one dot product (existing), two quadrances (existing), one multiply, one divide, one subtract. \textbf{No transcendental functions.}
+
+\begin{observation}[Spread $\leftrightarrow$ Cosine Similarity]
+The standard cosine similarity $\cos\theta = \frac{\mathbf{q} \cdot \mathbf{k}}{|\mathbf{q}||\mathbf{k}|}$ requires two square roots (for the norms). Spread avoids both:
+\begin{equation}
+s = 1 - \cos^2\theta = \sin^2\theta
+\end{equation}
+The spread is the \emph{complement of the squared cosine similarity}, computed without any radical operations.
+\end{observation}
+
+\begin{proposition}[Rational Preservation]
+If query $\mathbf{q}$ and key $\mathbf{k}$ have rational (or integer) components, then $s(\mathbf{q}, \mathbf{k})$ is \textbf{exactly rational}. No precision is lost. This holds for any embedding dimension $d$.
+\end{proposition}
+
+\begin{proof}
+$\mathbf{q} \cdot \mathbf{k} = \sum q_i k_i$ is rational. $Q(\mathbf{q}) = \sum q_i^2$ and $Q(\mathbf{k}) = \sum k_i^2$ are rational. The ratio of rationals is rational. $1 - r$ for rational $r$ is rational. \qed
+\end{proof}
+
+This means spread-based attention scores can be computed in \textbf{exact fixed-point arithmetic} on quantized hardware, with \textbf{zero approximation error}.
+
+\subsubsection{Spread Normalization}
+
+Softmax provides a probability distribution (scores sum to 1). Spread-based scores can be normalized algebraically:
+
+\begin{equation}
+\alpha_i = \frac{s(\mathbf{q}, \mathbf{k}_i)}{\sum_j s(\mathbf{q}, \mathbf{k}_j)}
+\end{equation}
+
+This is a rational function of rational values---still exact, still no transcendentals. The normalization division is a single operation per query, amortized over all keys.
+
+Note: spread measures perpendicularity (high spread = different), which inverts the attention intuition (high score = relevant). For attention, we can use the complementary \textbf{cross} value $c = 1 - s = \cos^2\theta$, which is high when vectors are aligned:
+
+\begin{equation}\label{eq:cross-attention}
+\alpha_i = \frac{c(\mathbf{q}, \mathbf{k}_i)}{\sum_j c(\mathbf{q}, \mathbf{k}_j)} = \frac{(\mathbf{q} \cdot \mathbf{k}_i)^2 / (Q(\mathbf{q}) \cdot Q(\mathbf{k}_i))}{\sum_j (\mathbf{q} \cdot \mathbf{k}_j)^2 / (Q(\mathbf{q}) \cdot Q(\mathbf{k}_j))}
+\end{equation}
+
+When all keys have equal quadrance (e.g., after layer normalization), this simplifies further:
+
+\begin{equation}
+\alpha_i = \frac{(\mathbf{q} \cdot \mathbf{k}_i)^2}{\sum_j (\mathbf{q} \cdot \mathbf{k}_j)^2}
+\end{equation}
+
+Pure dot products, squared, normalized. No $\exp$, no $\sqrt{\cdot}$, no transcendentals anywhere.
+
+%----------------------------------------------------------------------
+\subsection{Path 2: Weierstrass Rational Parametrization (Niche Applications)}
+
+\textbf{Scope note.} Modern large-scale transformers have largely moved beyond sinusoidal position encoding to learned embeddings (RoPE, ALiBi), and even the original sinusoidal encoding is computed once at initialization and cached. \textbf{This path is not a major optimization for standard LLM inference.} We include it for completeness because the Weierstrass parametrization has genuine applications in two specific contexts.
+
+\subsubsection{The Weierstrass Substitution}
+
+The Weierstrass substitution $t = \tan(\theta/2)$ gives:
+\begin{align}\label{eq:weierstrass}
+\cos\theta &= \frac{1 - t^2}{1 + t^2} \\
+\sin\theta &= \frac{2t}{1 + t^2}
+\end{align}
+
+\begin{theorem}[Wildberger / Weierstrass]
+For any \textbf{rational} parameter $t \in \mathbb{Q}$, both $\cos\theta$ and $\sin\theta$ are \textbf{exact rationals}. No transcendental functions are evaluated.
+\end{theorem}
+
+\subsubsection{Where This Actually Matters}
+
+\textbf{Context 1: Edge/embedded inference.} On microcontrollers and custom ASICs without floating-point units, sinusoidal functions require software emulation. Weierstrass parametrization converts position encoding to pure integer arithmetic (multiply, add, divide), which is natively supported. For on-device inference at INT8 or below, this eliminates a dependency on floating-point entirely.
+
+\textbf{Context 2: Geometric layers with continuous rotation.} In architectures that use learned rotation parameters (including Grassmann layers and rotor-based transforms), the Weierstrass parametrization provides a rational path from a learned parameter $t$ to rotation coefficients $(\cos\theta, \sin\theta)$---maintaining rational closure through the rotation computation. This is relevant to the rotor framework (Section~4.3) where rotation angles are continuous learned parameters, not fixed at initialization.
+
+For standard GPU-based LLM inference, where position encodings are computed once in FP32 and cached, the Weierstrass substitution offers no practical advantage. We are explicit about this limitation.
+
+%----------------------------------------------------------------------
+\subsection{Path 3: Circulant Rotor Structure for Parameter-Efficient Transforms}
+
+\subsubsection{Dense Weight Matrices and Structured Alternatives}
+
+A standard attention head multiplies by dense $d \times d$ matrices $W_Q, W_K, W_V$---$3d^2$ parameters per head. Various structured alternatives exist (low-rank factorization, block-diagonal, Monarch matrices). Quadray-RT contributes one such structure: \textbf{circulant block-diagonal matrices} derived from tetrahedral symmetry.
+
+\subsubsection{F, G, H Rotor Structure}
+
+Rotation about a Quadray basis axis uses Tom Ace's formula:
+\begin{align}
+F &= \frac{2\cos\theta + 1}{3} \\
+G &= \frac{2\cos(\theta - 120°) + 1}{3} \\
+H &= \frac{2\cos(\theta + 120°) + 1}{3}
+\end{align}
+
+The resulting $4 \times 4$ rotation matrix has \textbf{circulant} substructure:
+\begin{equation}\label{eq:circulant}
+R_W = \begin{pmatrix}
+1 & 0 & 0 & 0 \\
+0 & F & H & G \\
+0 & G & F & H \\
+0 & H & G & F
+\end{pmatrix}
+\end{equation}
+
+The $3 \times 3$ submatrix is circulant---each row is a cyclic permutation of $(F, H, G)$.
+
+\begin{proposition}[Parameter Efficiency]
+The $3 \times 3$ circulant subblock is defined by a single parameter $\theta$ (or equivalently, a single rational spread $s$), from which $F$, $G$, $H$ are derived. A general $3 \times 3$ matrix requires 9 free parameters. The circulant structure reduces this to \textbf{1 parameter} per rotation axis.
+\end{proposition}
+
+\textbf{Scope note.} At $3 \times 3$, circulant structure does not provide meaningful FFT-based speedup---the block is too small. The advantage is \textbf{parameter efficiency and regularization}: a $4 \times 4$ tetrahedral rotation is defined by 3 axis choices $\times$ 1 angle parameter = 3 parameters total, compared to 16 for a dense $4 \times 4$ matrix. For a neural network layer that applies per-token geometric transforms, this structured parameterization acts as an algebraically motivated inductive bias---similar to how convolutional layers impose translation invariance through weight sharing.
+
+For a $d$-dimensional embedding processed in $d/4$ independent tetrahedral blocks, the transform requires $3 \cdot (d/4) = 3d/4$ parameters instead of $d^2$ for a dense matrix. This is a form of \textbf{block-diagonal structure}, not FFT acceleration.
+
+\subsubsection{Exact Rational Coefficients at Key Angles}
+
+For algebraically significant rotation angles, the F, G, H coefficients are \textbf{exact rationals}:
+
+\begin{center}
+\begin{tabular}{ccccl}
+\toprule
+\textbf{Angle} & $F$ & $G$ & $H$ & \textbf{Arithmetic} \\
+\midrule
+$0°$ (identity) & $1$ & $0$ & $0$ & Integer \\
+$120°$ & $0$ & $1/3$ & $1/3$ & Rational \\
+$180°$ & $-1/3$ & $2/3$ & $2/3$ & Rational \\
+$240°$ & $0$ & $1/3$ & $1/3$ & Rational (= $120°$) \\
+$360°$ (identity) & $1$ & $0$ & $0$ & Integer \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+At $120°$, the rotation matrix becomes a \textbf{pure cyclic permutation} scaled by $1/3$. At $180°$, it becomes a Janus inversion. These are among the most useful rotations in tetrahedral geometry---and they require \textbf{no floating-point arithmetic at all}.
+
+%==============================================================================
+\section{Quantization-Friendly Exactness}
+%==============================================================================
+
+The AI industry is converging on reduced-precision inference: INT8, INT4, and even binary/ternary weights. The fundamental barrier to quantization is that standard neural network operations produce irrational outputs from rational inputs:
+
+\begin{itemize}
+    \item $\exp(1) = e \approx 2.71828...$ (softmax)
+    \item $\sin(\pi/6) = 0.5$ (this one is exact---but $\sin(\pi/7)$ is not)
+    \item $\sqrt{x}$ (layer normalization)
+\end{itemize}
+
+Every such operation introduces rounding error when quantized. Through multiple layers, these errors compound.
+
+\subsection{RT Algebra: Rational In, Rational Out}
+
+The spread and cross formulas have a remarkable property:
+
+\begin{theorem}[Rational Closure of Spread Algebra]
+If all input vectors have rational (or integer) components, then:
+\begin{enumerate}
+    \item Quadrance $Q = \sum x_i^2$ is rational
+    \item Dot product $\mathbf{u} \cdot \mathbf{v} = \sum u_i v_i$ is rational
+    \item Spread $s = 1 - (\mathbf{u} \cdot \mathbf{v})^2 / (Q_u \cdot Q_v)$ is rational
+    \item Cross $c = 1 - s$ is rational
+    \item Weierstrass parametrization $(1-t^2)/(1+t^2)$ and $2t/(1+t^2)$ are rational for rational $t$
+\end{enumerate}
+The entire algebra is \textbf{closed over $\mathbb{Q}$}.
+\end{theorem}
+
+This means a neural network layer built from spread/cross operations and Weierstrass-parametrized rotations can be computed in \textbf{exact fixed-point arithmetic} with \textbf{zero quantization error} at the algebraic core. The only precision loss occurs at boundary conversions (e.g., to floating-point for GPU shaders).
+
+\subsection{Narrowing the Quantization Claim}
+
+\textbf{What we are \emph{not} claiming.} The dominant source of quantization error in neural networks is not transcendental function approximation---it is the interaction between weight distributions, activation outliers, and the limited dynamic range of INT8/INT4 formats. Techniques like GPTQ, AWQ, and SmoothQuant address these issues, and spread-based scoring does not change them.
+
+\textbf{What we \emph{are} claiming.} Within the normalization step specifically, replacing $\exp(\cdot)$ with rational operations eliminates one source of quantization error entirely. Whether this matters in practice depends on how much of the total quantization degradation is attributable to the softmax path versus other sources (weight quantization, activation outliers, accumulator overflow). This is an empirical question.
+
+The strongest version of the claim is narrower than the original: \textbf{spread-based scoring enables the normalization path to be computed in exact fixed-point arithmetic}, which simplifies the quantization pipeline for that component. Whether this translates to measurable model quality improvement under INT4 is the make-or-break experiment defined in the companion benchmark plan~[13] (Test~1.3).
+
+\subsection{Empirical Precedent: Path C Exact Arithmetic}
+
+This is not merely theoretical. The ARTexplorer project's Prime Projection Conjecture~[6] required solving a concrete instance of the same problem: determining exact convex hull vertex counts from projected polyhedra, where floating-point ambiguity in cross products ($\sim 10^{-17}$) could flip a 7-gon to a 6-gon.
+
+The solution---\textbf{Path C exact arithmetic}---converts IEEE 754 Float64 coordinates to Python's \texttt{fractions.Fraction} (arbitrary-precision rationals), then computes cross products with exact integer arithmetic:
+
+\begin{verbatim}
+from fractions import Fraction
+frac_pts = [(Fraction(p[0]), Fraction(p[1])) for p in projected_2d]
+cross = (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0])
+# cross is a Fraction -- exactly zero or not. No epsilon needed.
+\end{verbatim}
+
+This eliminated \emph{all} floating-point ambiguity from hull counting. The geometric discovery---that non-constructible prime polygons (7, 11, 13-gon) emerge as projections of geodesic tetrahedra at rational spreads---was only possible because the arithmetic was exact.
+
+The parallel to AI inference is direct: when a neural network's internal computation is algebraically exact, the \emph{decisions} it makes (attention routing, classification boundaries) are deterministic. Floating-point non-determinism in $\exp(\cdot)$ evaluation is a known source of inference irreproducibility across hardware platforms. Spread-based attention would eliminate this entirely.
+
+\subsection{Tiered Rational Parameter Spaces}
+
+The Prime Projection search~[6] also demonstrates a methodology directly applicable to neural architecture: \textbf{tiered rational parameter search}. Instead of sweeping a decimal grid ($101^3 \approx 10^6$ configurations), the search was organized by algebraic significance:
+
+\begin{center}
+\begin{tabular}{clcl}
+\toprule
+\textbf{Tier} & \textbf{Denominators} & \textbf{Spread Values} & \textbf{Radical Family} \\
+\midrule
+1 (RT-pure) & $\{2, 3, 4\}$ & 7 values, 343 configs & $\sqrt{2}, \sqrt{3}$ \\
+2 ($\varphi$-family) & $\{5, 8, 10\}$ & 19 values & $\sqrt{5}$ \\
+3 (algebraic) & $\{6, 9, 12, 16, 20, 25\}$ & 67 values & mixed \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The key result: \textbf{all four prime polygons (5, 7, 11, 13) were found at Tier~1}---the simplest rational spreads with denominators $\{2, 3, 4\}$. The algebraically simplest parameters produced the most significant geometric structures.
+
+\begin{observation}[Tier Hierarchy for Neural Architecture Search]
+In quantized neural networks, weights are restricted to discrete values (e.g., $\{-1, 0, 1\}$ for ternary, $\{0, 1/4, 1/2, 3/4, 1\}$ for 2-bit). These are \emph{exactly} Tier~1 rational spreads. The Prime Projection result suggests that the most geometrically significant transformations---the ones that produce structurally rich outputs---naturally live at the simplest rational values. This would explain why aggressive quantization (even to ternary weights) preserves model quality better than precision analysis alone predicts: the important structure is already rational.
+\end{observation}
+
+%==============================================================================
+\section{Tetrahedral Topology Matches Multi-Head Attention}
+%==============================================================================
+
+\subsection{Tetrahedral Structure in Embedding Space}
+
+\textbf{Caveat.} Standard attention heads operate in $d_k$-dimensional space (typically 64 or 128 dimensions), not 3D. The Quadray basis vectors live in $\mathbb{R}^3$ (or $\mathbb{R}^4$ with constraint). A direct mapping of ``4 Quadray axes = 4 attention heads'' is a \textbf{numerological coincidence}, not a structural correspondence, and we do not claim otherwise.
+
+What Quadray coordinates \emph{do} provide is a concrete example of a principle that generalizes to higher dimensions: \textbf{maximally spread basis vectors}. In $\mathbb{R}^3$, 4 vectors with mutual spread $8/9$ achieve the theoretical maximum diversity (tetrahedral packing). The analogous construction in $\mathbb{R}^d$ would seek $d+1$ vectors with maximal mutual spread---a simplex in $d$-space.
+
+\begin{observation}[Simplex Embeddings]
+If token embeddings were initialized on a $d$-simplex (the $d$-dimensional generalization of the tetrahedron), they would start with guaranteed maximal mutual spread. This is a known initialization strategy in metric learning (simplex ETF---Equiangular Tight Frames), not a novel claim. The connection to Quadray coordinates is that the tetrahedral basis is the $d=3$ instance of simplex ETF, and spread algebra provides exact rational mutual angles for this configuration.
+\end{observation}
+
+\subsection{Symmetry Breaking and the Central Symmetry Barrier}
+
+The Prime Projection Conjecture~[6] established a theorem with direct implications for attention architecture:
+
+\begin{theorem}[Central Symmetry Barrier]
+If a polyhedron has central (inversion) symmetry, ALL orthographic projections have even convex hull vertex counts. Proof: for every vertex $v$ on the hull, its antipodal partner $-v$ either also lies on the hull or is excluded symmetrically. Hull vertices come in pairs $\Rightarrow$ even count.
+\end{theorem}
+
+Only \textbf{asymmetric} polyhedra---those lacking central inversion---can produce odd (and specifically prime) hull counts. The truncated tetrahedron and geodesic tetrahedra are asymmetric; the cuboctahedron and octahedron are not.
+
+\begin{observation}[Symmetry Breaking in Attention]
+Standard multi-head attention treats all heads symmetrically (same architecture, different learned weights). The Central Symmetry Barrier suggests this is a structural limitation: symmetric architectures can only produce ``even'' (symmetric) attention patterns. To access richer structure---the geometric analogue of prime polygons---\textbf{deliberate asymmetry} is needed.
+
+Quadray coordinates provide this naturally: the four tetrahedral axes have two chirality classes (W/Y are right-circulant, X/Z are left-circulant in the rotor framework~[5]). A 4-head Quadray attention mechanism would have 2 right-handed and 2 left-handed heads---built-in chirality breaking that symmetric architectures must learn.
+\end{observation}
+
+\subsection{The Cartesian Blind Spot}
+
+The Janus Inversion framework~[10] identifies a cognitive property of coordinate systems relevant to AI architecture design: \textbf{the coordinate system you choose determines which structures you can efficiently represent, and which questions you naturally ask}.
+
+In Cartesian coordinates, all of 3D space requires both positive and negative values. The question ``what is negative space?'' is trivial---it is the opposite octant.
+
+In Quadray coordinates, all of 3D space is already covered by positive values alone ($w, x, y, z \geq 0$). The question ``what does the negative region mean?'' becomes non-trivial and geometrically productive: it maps the tetrahedron to its dual (vertices $\leftrightarrow$ face-centers), revealing structure that Cartesian coordinates structurally obscure.
+
+For AI: embedding spaces are conventionally Cartesian (orthogonal basis). The choice is so automatic it is invisible. But if the tetrahedron is the minimum-complexity structure that maximizes representational diversity (Section~8.2), then Cartesian embeddings may be hiding structure that tetrahedral embeddings would reveal---just as Cartesian coordinates hide the tetrahedron-dual relationship that Quadray makes visible.
+
+\subsection{The Fourth Coordinate as Shape Information}
+
+The Janus Inversion analysis~[10] demonstrates that the ``redundant'' 4th Quadray parameter carries real geometric content. When the zero-sum constraint ($w + x + y + z = k$) is enforced, 4D collapses to 3D---isomorphic to Cartesian, with identical expressive power. When the constraint is released, the 4th parameter encodes \textbf{shape} information beyond position: a deformed tetrahedron with weights $(1, 1, 1, 6)$ occupies the same position as $(1, 1, 1, 1)$ but encodes a different geometric relationship.
+
+In embedding space, this suggests that 4D tetrahedral embeddings (without zero-sum constraint) could carry one additional degree of freedom per token---encoding not just ``where'' a token sits in meaning space, but ``what shape'' its meaning takes. This is analogous to the distinction between a word's denotation (position) and its connotation (shape).
+
+\subsection{The Janus Polarity Bit}
+
+In the Spread-Quadray Rotor framework~[5, 10], an explicit $\mathbb{Z}_2$ polarity flag distinguishes between $+$ and $-$ orientations:
+
+\begin{equation}
+\text{Quadray Rotor} = (W, X, Y, Z, \pm) \in \mathbb{R}^4 \times \mathbb{Z}_2
+\end{equation}
+
+In the geometric context where it was developed, polarity resolves the fundamental ambiguity of spread: $s(\mathbf{u}, \mathbf{v}) = s(\mathbf{u}, -\mathbf{v})$, because spread is a squared measure. The polarity bit restores orientation information lost by squaring.
+
+For AI applications, the relevant question is whether cross-normalized attention (Equation~\ref{eq:cross-attention}), which uses $(\mathbf{q} \cdot \mathbf{k})^2$, loses important sign information. It does: standard softmax attention distinguishes between aligned ($\mathbf{q} \cdot \mathbf{k} > 0$) and anti-aligned ($\mathbf{q} \cdot \mathbf{k} < 0$) query-key pairs, using $\exp(\cdot)$ to exponentially suppress negative scores. Cross-normalization treats both identically.
+
+The Janus polarity bit addresses this by restoring the sign as a separate discrete channel. In practice, this amounts to tracking $\text{sgn}(\mathbf{q} \cdot \mathbf{k})$ alongside the cross score---a single comparison, not a transcendental function. Whether the sign information matters enough to affect model quality is task-dependent and requires empirical testing (see Objection~5).
+
+%==============================================================================
+\section{The Deferred Materialization Principle}
+%==============================================================================
+
+Both Zhang's Grassmann architecture and Quadray-RT follow what we term \textbf{deferred materialization}:
+
+\begin{tcolorbox}[colback=green!5!white, colframe=green!50!black, title=Deferred Materialization]
+Work in the algebraically exact representation for as long as possible. Only convert to hardware-native format (floating-point, pixel coordinates, attention weights) at the \textbf{boundary} where the computation meets the physical device.
+\end{tcolorbox}
+
+In Quadray-RT, this is implemented concretely:
+
+\begin{enumerate}
+    \item \textbf{PurePhi}: Golden ratio algebra in symbolic $(a + b\sqrt{5})/c$ form, expanded to decimal only at \texttt{toDecimal()} call
+    \item \textbf{PureRadicals}: $\sqrt{2}$, $\sqrt{3}$, $\sqrt{6}$ cached as IEEE 754 doubles, expanded once
+    \item \textbf{PureCubics}: Non-constructible polygon constants (heptagon, nonagon) solved once, cached
+    \item \textbf{Spread algebra}: All rotation operations in spread/cross space, $\sqrt{\cdot}$ extracted only for matrix output
+\end{enumerate}
+
+The analogous principle for AI inference:
+
+\begin{enumerate}
+    \item \textbf{Embedding layer}: Integer token IDs $\to$ integer/fixed-point embedding vectors
+    \item \textbf{Attention scoring}: Spread/cross algebra (exact rational)---no $\exp(\cdot)$ in the normalization path
+    \item \textbf{Linear transforms}: Standard matrix multiplies (unchanged---these dominate compute)
+    \item \textbf{Output layer}: Project to vocabulary logits; apply softmax \textbf{once} for probability distribution
+\end{enumerate}
+
+The modest prediction: replacing softmax normalization with cross-normalization at each attention layer eliminates one source of floating-point approximation per layer. The output softmax remains (it is needed for probability calibration at the final layer). The benefit is not eliminating \emph{all} floating-point---it is eliminating it from the \emph{scoring path} where exact arithmetic may improve quantization resilience.
+
+%==============================================================================
+\section{Computational Cost Comparison}
+%==============================================================================
+
+\textbf{Scope of claims.} The $QK^\top$ matrix multiply---the dominant cost of attention at $O(n^2 d)$---is unchanged by spread-based scoring. The savings described here apply only to the \textbf{normalization step} (softmax $\to$ cross-normalization) and to the \textbf{algebraic character} of the operations, not to overall FLOP count.
+
+\begin{center}
+\begin{tabular}{p{3.2cm}p{4.5cm}p{4.5cm}}
+\toprule
+\textbf{Operation} & \textbf{Standard Transformer} & \textbf{Spread-Based Equivalent} \\
+\midrule
+Score normalization & softmax($\exp(\cdot)$)---transcendental, breaks rational closure & Cross-normalization $(\text{dot}^2/Q_1 Q_2)$---rational, closed over $\mathbb{Q}$ \\
+\addlinespace
+Fixed-point compatibility & $\exp(\cdot)$ requires float approximation & All operations exact in fixed-point \\
+\addlinespace
+Cross-platform determinism & $\exp(\cdot)$ implementation varies by hardware & Rational arithmetic is deterministic \\
+\addlinespace
+Quantization error (normalization only) & Rounding at every $\exp(\cdot)$ evaluation & Zero error for rational inputs \\
+\addlinespace
+$QK^\top$ matrix multiply & $O(n^2 d)$ & $O(n^2 d)$ \textbf{(unchanged)} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The honest summary: spread-based scoring replaces a small, non-dominant component (softmax normalization) with an algebraically exact alternative. The value proposition is not ``fewer FLOPs'' but ``exact fixed-point arithmetic in the scoring path,'' which may compound its advantage under aggressive quantization. This is testable (see companion benchmark plan~[13]).
+
+%==============================================================================
+\section{Discussion: ``LLM = Geometry''}
+%==============================================================================
+
+\subsection{The Convergence is Real}
+
+Zhang's paper and Quadray-RT arrive at the same conclusion from opposite directions:
+
+\begin{itemize}
+    \item \textbf{Zhang} (top-down): ``Neural network computation \emph{is} geometric transformation. Let's use the right geometry.'' Starting from AI, discovers the geometry.
+    \item \textbf{Quadray-RT} (bottom-up): ``Geometric computation should use the right algebra. Let's eliminate transcendentals.'' Starting from geometry, discovers the computation.
+\end{itemize}
+
+The meeting point is the claim that \textbf{algebraic geometry---polynomial and rational operations on structured manifolds---is both sufficient and optimal for the transformations that neural networks perform}.
+
+\subsection{Why Tetrahedral Geometry Specifically?}
+
+The tetrahedron is the simplest 3D polyhedron (4 vertices, 6 edges, 4 faces). Fuller called it the ``minimum system'' of Universe---the simplest structure that encloses space. This minimality has algebraic consequences:
+
+\begin{enumerate}
+    \item \textbf{Maximum spread diversity}: 4 vectors with mutual spread $8/9$ provide the most ``different'' set of directions achievable in 3-space
+    \item \textbf{Circulant structure}: Tetrahedral symmetry produces circulant submatrices, enabling parameter-efficient block-diagonal transforms
+    \item \textbf{Rational basis spread}: $8/9$ is exact, unlike the orthogonal basis spread of $1$ which, while also exact, leads to coordinate systems requiring $\sqrt{2}$, $\sqrt{3}$ for tetrahedral geometry
+    \item \textbf{Natural dimension}: 4 basis vectors for 3D space provides exactly one redundant degree of freedom---enough to escape $SO(3)$ singularities without the normalization constraint of quaternions
+\end{enumerate}
+
+In AI terms: the tetrahedron provides the minimum-complexity structure that achieves maximum representational diversity with exact arithmetic.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+    \item \textbf{Empirical validation}: Does spread-based attention actually match softmax attention in language modelling benchmarks? Zhang showed Grassmann layers are competitive---spread attention is algebraically simpler, but the question is empirical.
+
+    \item \textbf{Gradient flow}: Can spread/cross operations be differentiated efficiently for backpropagation? The operations are all rational functions, so gradients are also rational---but numerical stability of gradient computation needs investigation.
+
+    \item \textbf{Expressiveness}: Softmax attention can represent any probability distribution over keys. Can cross-normalized attention (Equation~\ref{eq:cross-attention}) match this expressiveness? The squared dot product is always non-negative, which is good for attention weights, but the distribution shape differs from softmax.
+
+    \item \textbf{Hardware support}: Current AI accelerators (GPUs, TPUs) are optimized for dense matrix multiplication and transcendental functions. Would spread-based architectures require new hardware, or can they leverage existing INT8/INT4 pipelines more efficiently?
+
+    \item \textbf{Scaling laws}: Do the precision advantages of exact rational arithmetic compound at scale? A model with $O(1)$ quantization error instead of $O(L)$ could potentially be trained with lower precision throughout, reducing memory and communication costs.
+\end{enumerate}
+
+%==============================================================================
+\section{Anticipated Objections}
+%==============================================================================
+
+We address here several substantive criticisms that would arise in peer review of both Zhang's original work and our proposed extensions. These objections are serious and deserve serious responses.
+
+\subsection{Objection 1: ``Zhang chose a handicapped baseline''}
+
+\begin{tcolorbox}[colback=red!5!white, colframe=red!50!black, title=The Objection]
+It is well known that transformers are wasteful and inaccurate at small-scale tasks where decision trees, CNNs, and structured models perform better. At 13--18M parameters, the comparison baseline is handicapped---transformers only demonstrate their advantage at scale. By showing competitive results at small scale, the author has not demonstrated improvement over existing techniques.
+\end{tcolorbox}
+
+\textbf{Response.} This objection is factually correct about scale dynamics and must be taken seriously. Transformers' quadratic attention cost is \emph{justified} at scale precisely because the $O(n^2)$ global context window enables emergent capabilities (in-context learning, chain-of-thought reasoning) that local methods cannot replicate. At 13--18M parameters, a well-tuned CNN or LSTM will often match or exceed a transformer on perplexity benchmarks.
+
+However, the objection misidentifies the claim. Zhang's result is not ``we beat transformers.'' It is: \textbf{geometric operations on manifolds can replicate transformer-level performance without computing the full attention matrix}. The significance is architectural, not numerical. If Grassmann layers match attention at 18M parameters, the question becomes whether they \emph{also} match at 3B and 7B---where attention's quadratic cost becomes the dominant bottleneck.
+
+For the Quadray-RT extension, the scale question is even more pointed: does exact rational arithmetic \emph{compound} its advantage at scale, or plateau? We predict the former (Section~5.2, $O(1)$ vs.\ $O(L)$ error growth), but this is an empirical claim that requires validation at scale. \textbf{The honest answer is: we don't yet know.}
+
+\subsection{Objection 2: ``Show me 3B and 7B results''}
+
+\begin{tcolorbox}[colback=red!5!white, colframe=red!50!black, title=The Objection]
+Results at 3B--7B parameters would demonstrate whether geometric methods maintain competitive performance at scales where attention genuinely matters but training remains tractable. Even better: distill a known-good LLM into a geometric architecture and measure what is preserved.
+\end{tcolorbox}
+
+\textbf{Response.} This is the right experiment. We agree completely that the research programme outlined here is incomplete without mid-scale validation. The specific experiments needed are:
+
+\begin{enumerate}
+    \item \textbf{Geometric distillation}: Take a known-good 7B transformer (e.g., Llama-3 8B or Mistral 7B), replace attention layers with spread-based or Grassmann layers, and distill. Measure: (a) what fraction of benchmark performance is preserved, (b) inference latency reduction, (c) quantization tolerance.
+
+    \item \textbf{Hybrid architecture}: Replace only the \emph{middle} layers with geometric attention (where the representation is most abstract), keeping standard attention at input/output boundaries. This tests whether geometric layers can serve as efficient ``backbone'' computation while attention handles boundary conditions.
+
+    \item \textbf{INT4 stress test}: Train a spread-based model and a standard transformer at identical scale, then quantize both to INT4. The prediction from Section~5.2 is that the spread-based model degrades less, because its core operations are already rational. If this prediction fails, the quantization argument collapses.
+\end{enumerate}
+
+Until these experiments are run, this paper's claims about scale remain theoretical. We are explicit about this limitation.
+
+\subsection{Objection 3: ``The real claim is architectural, not accuracy''}
+
+\begin{tcolorbox}[colback=yellow!5!white, colframe=yellow!50!black, title=The Nuance]
+The performance gains in Zhang are modest. The interesting result is not ``+0.X\% accuracy'' but that Grassmann layers match transformer-level results \emph{without attention at all}. Architecturally, that's the real claim---the full $n \times n$ attention matrix is not necessary for competitive sequence modelling.
+\end{tcolorbox}
+
+\textbf{Response.} We endorse this reading. The contribution of geometric methods to AI is not (yet) about beating SOTA benchmarks. It is about demonstrating that the \textbf{core computation} of sequence modelling---capturing token-to-token relationships---can be performed by structured geometric operations rather than unstructured dense matrix exponentiation.
+
+This matters for three reasons that transcend benchmark scores:
+
+\begin{enumerate}
+    \item \textbf{Interpretability}: Geometric operations (rotation, projection, subspace deformation) have meaning. A spread-based attention score of $s = 3/4$ means ``these vectors are at 60° spread''---a geometric relationship that can be visualized and reasoned about. A softmax score of 0.73 means nothing without context.
+
+    \item \textbf{Hardware co-design}: If the core operations are algebraic (polynomial/rational), hardware can be specialized. Circulant matrix units, fixed-point spread accumulators, and Weierstrass function units are simpler circuits than transcendental function approximators. The architectural claim enables hardware claims.
+
+    \item \textbf{Theoretical understanding}: If ``LLM = Geometry'' is correct---if the transformations learned by neural networks are fundamentally geometric---then understanding which geometry (Grassmann, tetrahedral, hyperbolic, etc.) best matches which task class is a more productive research direction than scaling up a single architecture.
+\end{enumerate}
+
+\subsection{Objection 4: ``Attention alternatives already exist---RWKV, Mamba, etc.''}
+
+\begin{tcolorbox}[colback=red!5!white, colframe=red!50!black, title=The Objection]
+We already know attention is not the only possible mechanism. RWKV~[11] achieves transformer-competitive performance with linear-time recurrence. Mamba~[12] uses selective state spaces. RetNet uses retention mechanisms. Zhang's Grassmann approach is one more entry in a growing list of attention alternatives. What does Quadray-RT add beyond yet another alternative?
+\end{tcolorbox}
+
+\textbf{Response.} This objection correctly situates the work within a broader trend. RWKV, Mamba, RetNet, and Grassmann layers are all demonstrations that $O(n^2)$ attention is sufficient but not necessary. Our contribution is not another attention alternative---it is a \textbf{mathematical toolkit} that could improve \emph{any} of them.
+
+The key distinction:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{System} & \textbf{Contribution} & \textbf{Core Operations} \\
+\midrule
+RWKV & Architecture (linear RNN) & Standard floating-point \\
+Mamba & Architecture (selective SSM) & Standard floating-point \\
+Grassmann & Architecture (manifold layers) & Pl\"ucker coordinates \\
+\textbf{Quadray-RT} & \textbf{Algebra} (exact rational) & \textbf{Spread/cross, Weierstrass} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+RWKV, Mamba, and Grassmann layers all still compute with IEEE 754 floating-point arithmetic, including transcendental functions where needed. Quadray-RT proposes that \emph{whatever architecture you choose}, its core operations can be reformulated in exact rational algebra---spread instead of cosine, Weierstrass instead of sinusoidal, circulant instead of dense.
+
+\begin{observation}[Algebra is orthogonal to architecture]
+Spread-based scoring could be applied within RWKV's recurrence, Mamba's state-space updates, or Grassmann's subspace deformations. The algebraic toolkit is \textbf{composable with any architecture} that performs geometric operations on token representations. This is not a competing alternative to these methods---it is a potential \emph{acceleration layer} beneath them.
+\end{observation}
+
+A concrete test: implement RWKV's channel mixing with spread-normalized scores instead of softmax, quantize to INT4, and compare quality degradation against standard RWKV-INT4. If the spread version degrades less, the algebraic contribution is validated independent of architecture choice.
+
+\subsection{Objection 5: ``Squared dot products lose sign information''}
+
+\begin{tcolorbox}[colback=red!5!white, colframe=red!50!black, title=The Objection]
+Cross-normalized attention (Equation~\ref{eq:cross-attention}) uses $(\mathbf{q} \cdot \mathbf{k})^2$, which is always non-negative. Standard attention uses $\mathbf{q} \cdot \mathbf{k}$, which can be negative (softmax then suppresses negative scores exponentially). Squaring discards sign information---anti-correlated tokens (negative dot product) receive the same weight as correlated ones.
+\end{tcolorbox}
+
+\textbf{Response.} This is a genuine technical limitation. Spread and cross are inherently unsigned measures ($s = \sin^2\theta$ cannot distinguish $\theta$ from $180° - \theta$). The Janus Inversion framework~[10] addresses this explicitly: the $\mathbb{Z}_2$ polarity bit restores sign information.
+
+In practice, a spread-based attention mechanism would need to track polarity:
+\begin{equation}
+\alpha_i = \frac{\text{sgn}(\mathbf{q} \cdot \mathbf{k}_i) \cdot c(\mathbf{q}, \mathbf{k}_i)}{\sum_j |c(\mathbf{q}, \mathbf{k}_j)|}
+\end{equation}
+
+where $\text{sgn}(\cdot)$ is the sign function (a single comparison, not a transcendental). This restores signed attention weights while keeping the core computation algebraic. The Janus polarity bit provides the mathematical framework for this sign tracking.
+
+Alternatively, for tasks where anti-correlation should produce low (not high) attention, the unsigned spread itself is appropriate: anti-correlated tokens have low spread (they are ``aligned'' in the spread sense, just pointing opposite ways). Whether this is a bug or a feature depends on the task.
+
+%==============================================================================
+\section{Conclusion}
+%==============================================================================
+
+The convergence between geometric AI (Zhang, 2025) and algebraic geometric computation (Quadray-RT) points to a specific, testable claim: \textbf{the softmax normalization step in attention can be replaced by cross-normalization, a rational operation closed over $\mathbb{Q}$, with potential benefits for quantized inference}.
+
+The core contribution is algebraic:
+\begin{itemize}
+    \item Spread/cross algebra provides exact rational attention scores---the central claim
+    \item Janus polarity restores sign information lost by squaring
+    \item Circulant rotor structure provides parameter-efficient block-diagonal transforms
+    \item Weierstrass parametrization serves niche applications (edge inference, learned rotations)
+\end{itemize}
+
+What this paper does \emph{not} claim: that spread-based scoring reduces total FLOPs (the $QK^\top$ multiply dominates), that tetrahedral coordinates map directly to attention head structure (they don't---dimensions don't match), or that quantization error is eliminated across the full network (only the scoring path is affected).
+
+What remains is empirical validation. If spread-based scoring proves competitive with softmax---and specifically, if it degrades less under INT4 quantization---the algebraic argument holds and the practical benefits follow, particularly for edge inference where fixed-point arithmetic is native.
+
+A companion benchmark workplan~[13] defines 13 tests across four cost tiers---from 5-minute CPU microbenchmarks (raw spread-vs-softmax FLOP counts, INT8 fidelity) through single-GPU component swaps (attention replacement in pre-trained GPT-2, INT4 stress tests) to multi-GPU distillation experiments. Crucially, the claims in this paper can be tested \emph{cheaply}: the make-or-break experiment (does spread-based attention degrade less under INT4 quantization than softmax?) requires only a pre-trained 124M-parameter model and approximately three hours on a single GPU. No billion-parameter training run is needed to validate or falsify the core algebraic argument. The workplan includes explicit success criteria and falsification conditions---if INT4 quantization error is equivalent or worse for spread-based scoring, the strongest claim in this paper collapses.
+
+Zhang proved the architecture works. Wildberger provided the algebra. Fuller provided the coordinates. The question now is engineering.
+
+%==============================================================================
+% References
+%==============================================================================
+\section*{References}
+
+\begin{enumerate}[label={[\arabic*]}]
+    \item Zhang, C. (2025). ``Attention Is Not What You Need.'' \textit{arXiv:2512.19428}. \url{https://arxiv.org/abs/2512.19428}
+
+    \item Wildberger, N.J. (2005). \textit{Divine Proportions: Rational Trigonometry to Universal Geometry}. Wild Egg Books.
+
+    \item Fuller, R.B. (1975). \textit{Synergetics: Explorations in the Geometry of Thinking}. Macmillan.
+
+    \item Urner, K. (2003). ``Quadray Coordinates.'' \url{https://www.grunch.net/synergetics/quadrays.html}
+
+    \item Thomson, A. (2026). ``Spread-Quadray Rotors v2.0: A Tetrahedral Alternative to Quaternions for Gimbal-Lock-Free Rotation Representation.'' ARTexplorer Project.
+
+    \item Thomson, A. (2026). ``Prime Projection Conjecture: Non-Constructible Polygons from Polyhedral Shadows.'' ARTexplorer Project.
+
+    \item Vaswani, A. et al. (2017). ``Attention Is All You Need.'' \textit{Advances in Neural Information Processing Systems}, 30.
+
+    \item Brouwer, L.E.J. (1912). ``\"Uber Abbildung von Mannigfaltigkeiten.'' \textit{Mathematische Annalen}, 71(4), 97--115.
+
+    \item Ace, T. ``Rotating in Encyclopedic Space.'' \url{http://www.tomacevedo.com}
+
+    \item Thomson, A. (2026). ``Janus Inversion: Coordinate Inversion Through the Origin in Tetrahedral Geometry.'' ARTexplorer Project, v9.
+
+    \item Peng, B. et al. (2023). ``RWKV: Reinventing RNNs for the Transformer Era.'' \textit{arXiv:2305.13048}.
+
+    \item Gu, A. and Dao, T. (2023). ``Mamba: Linear-Time Sequence Modeling with Selective State Spaces.'' \textit{arXiv:2312.00752}.
+
+    \item Thomson, A. (2026). ``Accelerant Test Cases: Tiered Benchmarks for Spread-Based AI Claims.'' ARTexplorer Project. Available at \texttt{Geometry Documents/Accelerant.md} in the project repository.
+\end{enumerate}
+
+\end{document}
