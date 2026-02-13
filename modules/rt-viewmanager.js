@@ -142,6 +142,12 @@ export const RTViewManager = {
       saveViewBtn.addEventListener("click", () => this.saveCurrentView());
     }
 
+    // Re-Save button (overwrites active view with current state)
+    const resaveViewBtn = document.getElementById("resaveViewBtn");
+    if (resaveViewBtn) {
+      resaveViewBtn.addEventListener("click", () => this.resaveActiveView());
+    }
+
     // View name input - update placeholder on focus
     const viewNameInput = document.getElementById("viewNameInput");
     if (viewNameInput) {
@@ -1470,6 +1476,99 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
   },
 
   /**
+   * Overwrite the active view with the current camera + scene state.
+   * Preserves the view's identity (id, name, position, timing).
+   */
+  resaveActiveView() {
+    if (!this.state.activeViewId) {
+      console.warn("No active view to re-save");
+      return;
+    }
+
+    const viewIndex = this.state.views.findIndex(
+      v => v.id === this.state.activeViewId
+    );
+    if (viewIndex < 0) {
+      console.warn("Active view not found in registry");
+      return;
+    }
+
+    const view = this.state.views[viewIndex];
+
+    // Compute accumulated snapshot up to (but not including) this view
+    const prevSnapshot =
+      viewIndex > 0 ? this.getSnapshotAtView(viewIndex - 1) : null;
+
+    // Capture current scene state and compute delta
+    const currentSnapshot = RTDelta.captureSnapshot();
+    const sceneState = RTDelta.computeDelta(prevSnapshot, currentSnapshot);
+
+    // Get current camera state
+    const cameraState = {
+      position: {
+        x: this._camera.position.x,
+        y: this._camera.position.y,
+        z: this._camera.position.z,
+      },
+      rotation: {
+        x: this._camera.rotation.x,
+        y: this._camera.rotation.y,
+        z: this._camera.rotation.z,
+      },
+      zoom: this._camera.zoom || 1,
+      type: this._camera.isPerspectiveCamera ? "perspective" : "orthographic",
+    };
+
+    // Get current cutplane state
+    const papercutState = this._papercut?.state || {};
+    const cutplaneState = {
+      enabled: papercutState.cutplaneEnabled || false,
+      axis: papercutState.cutplaneAxis || "z",
+      basis: papercutState.cutplaneBasis || "cartesian",
+      value: papercutState.cutplaneValue || 0,
+      inverted: papercutState.invertCutPlane || false,
+    };
+
+    // Get current render settings
+    const renderState = {
+      printMode: papercutState.printModeEnabled || false,
+      lineWeight: papercutState.lineWeightMax || 3,
+      sectionNodes: papercutState.sectionNodesEnabled || false,
+      adaptiveResolution: papercutState.adaptiveNodeResolution || false,
+      backfaceCulling: papercutState.backfaceCullingEnabled || true,
+    };
+
+    // Get current instance references
+    const instanceRefs = this._stateManager
+      ? this._stateManager.state.instances.map(inst => inst.id)
+      : [];
+
+    // Update transient state (camera, scene, etc.)
+    view.camera = cameraState;
+    view.cutplane = cutplaneState;
+    view.render = renderState;
+    view.instanceRefs = instanceRefs;
+    view.sceneState = sceneState;
+    view.axisCode =
+      this._detectQuadrayAxis() || this._detectCameraAxis();
+
+    // Mark SVG as stale (needs re-export)
+    view.svg.exported = false;
+    view.svg.data = null;
+
+    // Re-render table and release focus
+    this.renderViewsTable();
+
+    const resaveBtn = document.getElementById("resaveViewBtn");
+    if (resaveBtn) resaveBtn.blur();
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
+
+    console.log(`🔄 View re-saved: ${view.name}`);
+  },
+
+  /**
    * Download the currently selected/active view as SVG
    */
   downloadSelectedView() {
@@ -1659,6 +1758,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
     }
 
     this.renderViewsTable();
+    this._updateResaveButton();
     console.log(`🗑️ View deleted: ${view.name}`);
     return true;
   },
@@ -1684,6 +1784,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
         this.state.counters[key] = 0;
       });
       this.renderViewsTable();
+      this._updateResaveButton();
       this._updateViewNamePlaceholder();
       console.log("🗑️ All views cleared");
     }
@@ -2056,6 +2157,22 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
     tbody.querySelectorAll(".view-row").forEach(row => {
       row.classList.toggle("active", row.dataset.viewId === viewId);
     });
+
+    this._updateResaveButton();
+  },
+
+  /**
+   * Show/hide the Re-Save button based on whether a view is active.
+   * @private
+   */
+  _updateResaveButton() {
+    const btn = document.getElementById("resaveViewBtn");
+    if (!btn) return;
+
+    const hasActive = this.state.activeViewId &&
+      this.state.views.some(v => v.id === this.state.activeViewId);
+
+    btn.style.display = hasActive ? "" : "none";
   },
 
   // ========================================================================
