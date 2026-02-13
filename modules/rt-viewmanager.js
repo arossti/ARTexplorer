@@ -2163,24 +2163,16 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
 
   /**
    * Show/hide the Re-Save button based on whether a view is active.
-   * Updates button text to show which view will be overwritten.
    * @private
    */
   _updateResaveButton() {
     const btn = document.getElementById("resaveViewBtn");
     if (!btn) return;
 
-    const view = this.state.activeViewId
-      ? this.state.views.find(v => v.id === this.state.activeViewId)
-      : null;
+    const hasActive = this.state.activeViewId &&
+      this.state.views.some(v => v.id === this.state.activeViewId);
 
-    if (view) {
-      btn.style.display = "";
-      btn.textContent = `Re-Save ${view.name}`;
-      btn.title = `Overwrite ${view.name} with current camera + scene state`;
-    } else {
-      btn.style.display = "none";
-    }
+    btn.style.display = hasActive ? "" : "none";
   },
 
   // ========================================================================
