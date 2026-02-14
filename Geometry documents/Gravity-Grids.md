@@ -227,31 +227,109 @@ In a 2D plane slice, these are circles. In 3D, sections of spheres.
 
 Each tessellation ring's edges become geodesic arcs on the sphere at radius r_k. The triangular tessellation vertices remain at the same angular positions, but edges curve outward to follow the spherical surface. Visually, the triangular grid on each shell looks like a **spherical tiling** rather than a flat tessellation.
 
-### Implementation
+### Implementation: RT-Pure Rational Arcs (Not SLERP)
 
-Discretize each arc into ~16 segments (configurable):
+Classical SLERP computes intermediate arc points via:
+
+```
+slerp(A, B, t) = sin((1-t)θ)/sin(θ) · A + sin(tθ)/sin(θ) · B
+```
+
+Every sample point requires `sin` and `arccos` — transcendental functions that introduce irrational mantissas and accumulated truncation. This violates the RT design principle: *no square roots needed, no transcendental functions, algebraic identities remain exact*.
+
+**Instead, use the Weierstrass rational circle parameterization (stereographic projection):**
+
+A great-circle arc between two points on a sphere is a circular arc in the plane defined by those two points and the center. A circle can be parameterized *rationally*:
+
+```
+For parameter u:
+  x(u) = r · (1 - u²) / (1 + u²)
+  y(u) = r · (2u)     / (1 + u²)
+```
+
+This is purely rational in `u` — addition, multiplication, division only. No `sin`, no `cos`, no transcendentals. The parameter `u` is conceptually `tan(θ/2)`, but we never compute the `tan` — we work with `u` directly as a rational variable.
+
+#### The Pipeline
+
+1. **Great-circle plane** — Cross product of `(A−C)` and `(B−C)` gives the plane normal. Pure algebra.
+
+2. **Spread between A and B** (as seen from center C):
+   ```
+   s = 1 − [(A−C)·(B−C)]² / [Q(A,C) · Q(B,C)]
+   ```
+   Quadrances and dot products — all rational on rational inputs.
+
+3. **Arc parameter range** — Given spread `s`, the endpoint parameter `u_max` satisfies:
+   ```
+   s · (1 + u²)² = 4u²
+   ```
+   A polynomial in `u²`, solvable algebraically. One `√` at most — same boundary as everywhere else in RT.
+
+4. **Intermediate points** — Subdivide `u ∈ [0, u_max]` into N steps. Each intermediate point is a rational function of `u` applied to the plane basis vectors. No trig at any step.
+
+5. **Float conversion** — Only at the final step, when handing `(x,y,z)` to THREE.js's vertex buffer.
+
+#### Implementation Sketch
 
 ```javascript
-function arcBetween(pointA, pointB, center, segments = 16) {
-    // Both points lie on the same sphere centered at 'center'
-    const radius = pointA.distanceTo(center);
-    const results = [];
+RT.Gravity.rationalArc = function(A, B, center, segments = 16) {
+    // 1. Plane basis (algebraic)
+    const e1 = A.clone().sub(center);
+    const Q_r = e1.dot(e1);              // quadrance = radius²
+    const e2_raw = B.clone().sub(center);
+
+    // 2. Spread between A and B from center (rational)
+    const dot = e1.dot(e2_raw);
+    const s = 1 - (dot * dot) / (Q_r * e2_raw.dot(e2_raw));
+
+    // 3. Orthogonal basis in arc plane (one √ per arc — the GPU boundary)
+    const r = Math.sqrt(Q_r);
+    e1.normalize();
+    e2_raw.sub(e1.clone().multiplyScalar(dot / Q_r));
+    e2_raw.normalize();
+
+    // 4. u_max from spread polynomial: s(1+u²)² = 4u²
+    //    Rearranges to: s·u⁴ + (2s-4)·u² + s = 0
+    //    Solve quadratic in u²:
+    const disc = (2*s - 4)*(2*s - 4) - 4*s*s;  // = 16 - 16s
+    const u2 = (4 - 2*s - Math.sqrt(disc)) / (2*s);
+    const u_max = Math.sqrt(u2);                 // second √ per arc
+
+    // 5. Rational parameterization — NO TRIG
+    const points = [];
     for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
-        // Spherical interpolation (SLERP) between A and B
-        const p = slerpOnSphere(pointA, pointB, center, radius, t);
-        results.push(p);
+        const u = (i / segments) * u_max;
+        const denom = 1 + u * u;
+        const x = r * (1 - u * u) / denom;   // rational in u
+        const y = r * (2 * u) / denom;        // rational in u
+        points.push(center.clone()
+            .add(e1.clone().multiplyScalar(x))
+            .add(e2_raw.clone().multiplyScalar(y)));
     }
-    return results;
-}
+    return points;
+};
 ```
+
+#### Comparison: SLERP vs. RT Rational Arcs
+
+| Aspect | Classical SLERP | RT Rational Arc |
+|--------|----------------|-----------------|
+| Trig calls per arc | 2N (sin, arccos per sample) | Zero |
+| `√` calls per arc | 0 | 2 (one for radius, one for u_max) |
+| Accumulated truncation | Grows with N samples | Single boundary conversion |
+| Visual result | Identical | Identical |
+| Performance | Identical (rational ops are cheap) | Identical |
+| RT-purity | Broken | **Maintained** |
+
+The key insight: 2 square roots per arc (at the GPU boundary) vs. 2N transcendental calls per arc. Same visual output, algebraically exact intermediate math.
 
 ### Implementation Notes
 
 - Arc resolution: ~16 segments per arc should suffice visually. Configurable.
 - Performance: More vertices per gridline (16× vs 2 for straight). Monitor frame rate.
-- Use THREE.js `slerp` utilities or manual spherical interpolation.
+- **Do NOT use THREE.js `slerp` utilities** — they use classical trig internally. Use `RT.Gravity.rationalArc()` instead.
 - The arcs are the **true geometry** of the grid — they show the actual shell surface, not an approximation.
+- The rational parameterization is the Weierstrass substitution (stereographic projection of the circle), a standard technique in algebraic geometry — fully consistent with Wildberger's RT framework.
 
 ---
 
@@ -307,24 +385,24 @@ Use `THREE.SubdivisionModifier` or manual tessellation before applying `gravityW
 | `modules/rt-init.js` | UI toggles for G-Cartesian and G-Quadray in Coordinate Systems section |
 | `modules/rt-rendering.js` | `updateGeometry()` to handle gravity grid scaling |
 | `modules/rt-state-manager.js` | Persist gravity grid on/off state and parameters |
-| `modules/rt-math.js` | `computeGravityIntervals(N, H, g)` utility function |
+| `modules/rt-math.js` | `RT.Gravity` namespace: body presets, `g_standard`, `getGM()`, `computeGravityIntervals(N, GM)` |
 
 ### UI Design
 
 Add to the existing **Coordinate Systems** section:
 
 ```
-┌─ Coordinate Systems ─────────────────────┐
-│  ○ Cartesian Planes    ○ G-Cartesian Planes │
-│  ○ Quadray Grids       ○ G-Quadray Grids    │
-│                                              │
-│  Gravity:  g = [9.8] m/s²                   │
-│  Height:   N = [144] gridlines               │
-│  [Curved gridlines ☐]                        │
-└──────────────────────────────────────────────┘
+┌─ Coordinate Systems ─────────────────────────┐
+│  ○ Cartesian Planes    ○ G-Cartesian Planes   │
+│  ○ Quadray Grids       ○ G-Quadray Grids      │
+│                                                │
+│  Body: [▼ Normalized ]  GM: 1.000             │
+│  Shells: N = [144]                             │
+│  [Curved gridlines ☐]                          │
+└────────────────────────────────────────────────┘
 ```
 
-Or simpler: a single toggle "Gravity Warp" that transforms whichever grid system is currently active.
+The Body dropdown selects a gravitational body preset (see **Gravitational Bodies & GM Selection** section below for full dropdown design and available presets). "Normalized" (GM = 1) is the default — pure geometry with no physical units.
 
 ### Existing Infrastructure to Reuse
 
@@ -348,9 +426,115 @@ If we extend the grid through the origin into negative radii (the "other side" o
 
 ---
 
+## Gravitational Bodies & GM Selection
+
+### G, M, and GM — What's Universal vs. Body-Specific
+
+| Constant | Value | Nature |
+|----------|-------|--------|
+| **G** (Newton's gravitational constant) | 6.67430 × 10⁻¹¹ m³/(kg·s²) | Universal — same everywhere in the universe |
+| **M** (mass of gravitating body) | Varies per body | Body-specific — Earth, Moon, Sun, etc. |
+| **GM** (gravitational parameter) | G × M | Body-specific — combines universal law with specific mass |
+| **g** (surface gravity) | GM/r² at surface | Body- *and* location-specific — depends on both mass and where you stand |
+
+**Key insight:** G is universal, but the moment you multiply by a mass M, the result is specific to that body. This is exactly like ATM (standard atmosphere) — the gas law is universal, but 101.325 kPa is Earth at sea level.
+
+The shell spacing formula `r_k = GM/(k·ΔΦ)` uses the body-specific GM. Different bodies produce **topologically identical grids** (same number of shells, same connectivity, same harmonic compression) at **different absolute scales**. The grid *structure* is universal; the grid *size* is body-specific.
+
+### Default: GM = 1 (Normalized / Body-Agnostic)
+
+When GM = 1, the grid shows the **pure structure** of an inverse-square field without reference to any particular body. This is the natural default for exploring the geometry itself — the same way our Cartesian and Quadray grids use unit intervals without claiming those intervals represent meters or miles.
+
+GM = 1 means: "one unit of gravitational parameter." The shell radii are:
+
+```
+r_k = 1/(k·ΔΦ) = N/k    (when ΔΦ = 1/N)
+```
+
+Pure harmonic series. No physical constants needed.
+
+### Body Presets
+
+To connect the abstract grid to physical reality, offer a selection of gravitational bodies:
+
+| Body | GM (m³/s²) | Surface g (m/s²) | Notes |
+|------|-----------|-------------------|-------|
+| **Normalized** | 1.0 | — | Default. Pure geometry, no physical units. |
+| **Earth** | 3.986 × 10¹⁴ | 9.807 | Standard reference. g = 196133/20000 (exactly rational, 3rd CGPM 1901). |
+| **Moon** | 4.905 × 10¹² | 1.625 | ~1/6 Earth surface g. |
+| **Mars** | 4.283 × 10¹³ | 3.721 | ~0.38 Earth surface g. |
+| **Sun** | 1.327 × 10²⁰ | 274.0 | ~28× Earth surface g. Shells extremely compressed near center. |
+| **Jupiter** | 1.267 × 10¹⁷ | 24.79 | ~2.5× Earth surface g. |
+| **Black Hole (1M☉)** | 1.327 × 10²⁰ | — | Same GM as Sun but no surface — shells compress all the way to the event horizon. The Janus connection at its most literal. |
+| **Custom** | User-entered | Computed | For hypothetical bodies, exoplanets, or classroom exercises. |
+
+### UI: Body Selection
+
+Add a **Gravity Body** selector to the Coordinate Systems panel:
+
+```
+┌─ Gravity Grid Settings ──────────────────────┐
+│                                                │
+│  Body: [▼ Normalized          ]               │
+│         ├── Normalized (GM=1)                  │
+│         ├── Earth                               │
+│         ├── Moon                                │
+│         ├── Mars                                │
+│         ├── Jupiter                             │
+│         ├── Sun                                 │
+│         ├── Black Hole (1M☉)                   │
+│         └── Custom...                          │
+│                                                │
+│  GM:     [1.000000         ]  (read-only for   │
+│  Surface g: [—             ]   presets, editable│
+│  Radius: [—               ]   for Custom)      │
+│                                                │
+│  Shells: N = [144]                             │
+│  [Curved gridlines ☐]                          │
+│                                                │
+└────────────────────────────────────────────────┘
+```
+
+**Behavior:**
+- Selecting a preset fills in GM, surface g, and body radius automatically (read-only)
+- Selecting "Custom" unlocks the GM field for direct entry
+- Surface g and radius are informational only — the grid math uses GM directly
+- Changing the body **rescales** the grid but preserves topology (same N shells, same harmonic compression)
+- The "Normalized" default is always available to return to pure geometry
+
+### Implementation: `RT.Gravity` Namespace
+
+Add to `rt-math.js`:
+
+```javascript
+RT.Gravity = {
+    // Standard gravity (exactly rational, defined by 3rd CGPM 1901)
+    g_standard: 196133 / 20000,   // 9.80665 m/s²
+
+    // Body presets: { name, GM, surfaceG, radius }
+    BODIES: {
+        normalized: { name: 'Normalized',      GM: 1.0,          surfaceG: null,  radius: null },
+        earth:      { name: 'Earth',           GM: 3.986004e14,  surfaceG: 9.807, radius: 6.371e6 },
+        moon:       { name: 'Moon',            GM: 4.9048695e12, surfaceG: 1.625, radius: 1.7374e6 },
+        mars:       { name: 'Mars',            GM: 4.2828e13,    surfaceG: 3.721, radius: 3.3895e6 },
+        jupiter:    { name: 'Jupiter',         GM: 1.26687e17,   surfaceG: 24.79, radius: 6.9911e7 },
+        sun:        { name: 'Sun',             GM: 1.32712e20,   surfaceG: 274.0, radius: 6.957e8 },
+        blackhole:  { name: 'Black Hole (1M☉)', GM: 1.32712e20,  surfaceG: null,  radius: null },
+    },
+
+    // Active body (default: normalized)
+    activeBody: 'normalized',
+
+    // Get current GM
+    getGM() { return this.BODIES[this.activeBody].GM; }
+};
+```
+
+---
+
 ## Open Questions
 
-1. **Normalize g or use physical units?** Phase 0 works in abstract units. Should the implementation use g = 9.8 m/s² literally, or normalize to g = 1 with a "physical units" display option?
+1. ~~**Normalize g or use physical units?**~~ **Resolved:** Default to GM = 1 (normalized). Body presets available for physical units. The grid structure is body-agnostic; only absolute scale changes per body.
 
 2. **Gravity center mobility?** Initially at origin. Later: could the gravity center be attached to a polyhedron or draggable point?
 
@@ -361,6 +545,8 @@ If we extend the grid through the origin into negative radii (the "other side" o
 5. **Performance budget?** Curved gridlines (Phase 3) and subdivided warped polyhedra (Phase 4) multiply vertex count significantly. Profile and set limits.
 
 6. **What does a Quadray basis vector look like in gravity space?** The four tetrahedral basis directions remain angular constants, but their *lengths* now vary with the gravity metric. The basis "arrows" could be drawn with variable thickness or curvature to indicate the local metric distortion.
+
+7. **Body-relative shell labeling?** When a physical body is selected, should shells be labeled with actual radii (km) and potential values (J/kg)? Or keep everything in grid units with a conversion factor displayed?
 
 ---
 
@@ -385,6 +571,9 @@ If we extend the grid through the origin into negative radii (the "other side" o
 | | Outward arcs | Arcs between grid points on the same shell sweep outward along the shell surface (great-circle arcs), not straight chords through the interior. |
 | | Polyhedra | Later phase: render shapes with gravity distortion applied to vertices. Compressed near origin, normal far out. |
 | | Janus connection | Gravity grid as visible Inversion Manifold — compression toward singular point, re-expansion on the other side. |
+| | GM clarification | G is universal, M is body-specific, GM is body-specific (like ATM). Default GM = 1 (normalized, body-agnostic). Body presets: Earth, Moon, Mars, Jupiter, Sun, Black Hole, Custom. |
+| | Body selection UI | Dropdown in Coordinate Systems panel. Presets fill GM/g/radius (read-only). Custom unlocks GM input. Topology invariant across bodies; only absolute scale changes. |
+| | RT-pure arcs | Great-circle arcs via Weierstrass rational parameterization, NOT classical SLERP. Zero trig calls; 2√ per arc at GPU boundary. Spread replaces angle; quadrance replaces distance. Consistent with RT design rule. |
 
 ---
 
