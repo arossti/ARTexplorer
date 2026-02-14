@@ -2770,6 +2770,39 @@ export const RT = {
     },
 
     /**
+     * Compute cumulative distances from origin for gravity-warped grid.
+     * Returns array of N+2 cumulative positions: [0, d1, d2, ..., dN, dN+1]
+     * where d_k is the distance from origin to the k-th gridline.
+     *
+     * Innermost gridlines are close together (strong field),
+     * outermost gridlines are far apart (weak field).
+     *
+     * The extra (N+2)th element extrapolates one step beyond for boundary
+     * triangle safety — the tessellation loop accesses cumDist[i+1]
+     * where i can reach N.
+     *
+     * @param {number} N - Number of intervals (tessellation count)
+     * @param {number} totalExtent - Total extent to scale to
+     * @param {number} [GM=1] - Gravitational parameter
+     * @returns {number[]} Cumulative distances [0, d1, ..., dN, dN+extrapolated]
+     */
+    computeGravityCumulativeDistances: (N, totalExtent, GM = 1) => {
+      const { radii } = RT.Gravity.computeGravityIntervals(N, GM);
+      // radii = [N/1, N/2, ..., N/N] outermost first
+      // Reverse: [N/N, N/(N-1), ..., N/1] = [1, ...] innermost first
+      const reversed = [...radii].reverse();
+      const scale = totalExtent / reversed[reversed.length - 1];
+      const cumDist = [0];
+      for (let k = 0; k < N; k++) {
+        cumDist.push(reversed[k] * scale);
+      }
+      // Extrapolate one step beyond for boundary triangle safety
+      const lastGap = cumDist[N] - cumDist[N - 1];
+      cumDist.push(cumDist[N] + lastGap);
+      return cumDist;
+    },
+
+    /**
      * For uniform-g (constant acceleration) model:
      * Position of body dropped from height H after crossing k shells.
      * x_k = H · k² / N²  (quadratic in k)

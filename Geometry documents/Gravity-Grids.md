@@ -151,43 +151,85 @@ createGravityCartesianGrid(scene, divisions, gravityCenter)
 
 ---
 
-## Phase 2: G-Quadray Grids — Warped Tetrahedral Grids
+## Phase 1: G-Quadray Grids — Gravity-Warped Central Angle Tessellation
 
-### The Challenge
+**Status: In Progress**
+**Approach: Modify existing `createIVMGrid()` with `gridMode` parameter**
 
-Quadray grids are triangular tessellations on 6 planes (WX, WY, WZ, XY, XZ, YZ). The current `createIVMGrid()` uses a constant `edgeLength = RT.PureRadicals.QUADRAY_GRID_INTERVAL` (√6/4 ≈ 0.612) for every triangle.
+### The Core Technique: cumDist Lookup Table
 
-For gravity grids, each successive tessellation ring outward from the origin must use a **different** edge length, derived from the gravity interval sequence.
-
-### Implementation Strategy
-
-Modify `createIVMGrid()` (or create `createGravityIVMGrid()`) to accept a **variable interval array** instead of a constant edge length:
-
-```javascript
-createGravityIVMGrid: (basis1, basis2, intervals, color) => {
-    // intervals = [Δr₀, Δr₁, Δr₂, ...] from computeGravityIntervals()
-    // Each tessellation ring uses cumulative sum of intervals
-    // Triangle vertices at ring k are at distance Σ(Δr₀..Δr_k) from origin
-}
+The existing `createIVMGrid()` computes each vertex as:
+```
+P(i,j) = basis1 × (i × edgeLength) + basis2 × (j × edgeLength)
 ```
 
-### Tessellation Modification
-
-Current uniform tessellation:
+The gravity variant replaces this with a **cumulative distance lookup**:
 ```
-Ring k: vertices at k × edgeLength along each basis direction
+P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
 ```
 
-Gravity tessellation:
+Where `cumDist[k]` encodes the gravity-warped distance from origin to grid line k.
+
+- **Uniform mode:** `cumDist[k] = k × edgeLength` (constant intervals, current behavior)
+- **Gravity mode:** `cumDist[k] = reversed_radii[k] × scaleFactor` (harmonic compression — small steps near origin, large steps far out)
+
+**Same loop body, same topology, same triangle count.** Only the spacing changes.
+
+### Mathematical Derivation
+
+From `computeGravityIntervals(N)`:
+- `radii = [N/1, N/2, N/3, ..., N/N]` (outermost → innermost)
+- Reverse for origin-outward: `[1, N/(N-1), ..., N]` (innermost → outermost)
+- Scale to match uniform grid extent: `scaleFactor = (N × QUADRAY_GRID_INTERVAL) / N = QUADRAY_GRID_INTERVAL`
+- `cumDist[k] = reversed_radii[k] × QUADRAY_GRID_INTERVAL`
+
+Result: dense small triangles near origin (strong field), sparse large triangles far out (weak field).
+
+### New Function: `RT.Gravity.computeGravityCumulativeDistances(N, totalExtent)`
+
+Added to `rt-math.js` inside `RT.Gravity` namespace. Returns N+2 cumulative distances (extra element for boundary triangle safety — the tessellation loop accesses `cumDist[i+1]` where `i` can reach `tessellations`).
+
+### Grid Mode UI
+
+Three-button toggle in the Central Angle Grids section (same `toggle-btn variant-objsnap` pattern as coordinate mode):
+
+| Button | Mode | Status |
+|--------|------|--------|
+| **Uniform** | Standard equal-interval tessellation | Active (default) |
+| **Gravity** | Gravity-warped intervals, chordal (straight lines) | Phase 1 |
+| **Spherical** | Gravity-warped intervals, great-circle arcs | Disabled (Phase 3 placeholder) |
+
+Mode change triggers grid rebuild via existing `rebuildQuadrayGrids()` pattern. Tessellation slider controls number of intervals (N) in both modes.
+
+### Threading `gridMode` Through the Call Chain
+
 ```
-Ring k: vertices at Σ(intervals[0..k]) along each basis direction
+UI button click / slider change
+  → rt-init.js reads active mode from data-grid-mode attribute
+  → rt-ui-binding-defs.js passes gridMode to renderingAPI
+  → rt-rendering.js wrapper forwards to Grids module
+  → rt-grids.js: rebuildQuadrayGrids() → createIVMPlanes() → createIVMGrid()
+  → createIVMGrid() branches on gridMode to build cumDist table
 ```
 
-The triangular topology is preserved — same number of triangles, same connectivity — but the **metric is warped**. Triangles near the origin are **small** (condensed shells = strong field), triangles far from origin are **large** (spread shells = weak field).
+All parameters have `= 'uniform'` defaults — fully backward-compatible.
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `modules/rt-math.js` | +25 lines: `computeGravityCumulativeDistances()` in `RT.Gravity` |
+| `modules/rt-grids.js` | ~30 lines: `gridMode` param + cumDist logic in 3 functions |
+| `modules/rt-rendering.js` | ~5 lines: thread `gridMode` through wrapper |
+| `index.html` | +15 lines: Grid Mode button group |
+| `modules/rt-init.js` | +20 lines: grid mode button handler |
+| `modules/rt-ui-binding-defs.js` | ~3 lines: slider reads/passes gridMode |
+
+~100 lines total. No new files.
 
 ### RT Purity Consideration
 
-The gravity intervals are inherently irrational (they involve √(2H/g) and k²/N² terms). This is acceptable because the gravity grid represents a **physical metric** (spacetime curvature), not a pure geometric construction. The base Quadray interval (√6/4) remains the RT-pure reference; the gravity warping is an applied distortion.
+The gravity intervals are inherently irrational (they involve the harmonic series N/k). This is acceptable because the gravity grid represents a **physical metric** (spacetime curvature), not a pure geometric construction. The base Quadray interval (√6/4) remains the RT-pure reference; the gravity warping is an applied distortion.
 
 Document this distinction clearly in code comments: RT-pure geometry vs. physics-applied metric.
 
@@ -555,11 +597,12 @@ RT.Gravity = {
 | Phase | Deliverable | Depends On | Status |
 |-------|-------------|------------|--------|
 | 0     | Mathematical model + Gravity Numberline demo | Nothing | **Done** (PR #93) |
-| 1     | G-Cartesian Planes: non-uniform straight-line grids in XYZ | Phase 0 | Pending |
-| 2     | G-Quadray Grids: non-uniform triangular tessellation | Phase 0, Phase 1 patterns | Pending |
+| 1     | G-Quadray Grids: gravity-warped Central Angle tessellation (chordal) | Phase 0 | **In Progress** |
+| 1b    | G-Cartesian Planes: non-uniform straight-line grids in XYZ | Phase 1 patterns | Pending |
+| 2     | G-Quadray + G-Cartesian with body selector UI | Phase 1 | Pending |
 | 3     | Curved gridlines: arcs replacing straight lines | Phase 1 or 2 | Pending |
 | 4     | Distorted polyhedra: vertex remapping through gravity metric | Phase 2 | Pending |
-| 5a    | IK rigid link in Gravity Numberline demo | Phase 0 | Planned |
+| 5a    | IK rigid link in Gravity Numberline demo | Phase 0 | **Done** (df0faf0) |
 | 5b    | Pin joints and hinges | Phase 5a | Planned |
 | 5c    | Elastic, tension, compression members | Phase 5a | Planned |
 | 5d    | Pneumatic soft compression | Phase 5c | Planned |
@@ -581,6 +624,10 @@ RT.Gravity = {
 | Feb 14, 2026 | Gravity Numberline demo | Phase 0 complete. Demo deployed via PR #93. Two numberlines: uniform (acceleration) vs gravity (constant v). N=144, body selector, Drop/Stop animation, draggable handle. |
 | | Black Hole body | Added to presets with computed Schwarzschild values: surfaceG = 1.52e13 m/s² (c⁴/4GM), radius = 2953 m (2GM/c²). |
 | | IK solver planning | New module `rt-ik-solvers.js` planned. Rigid link between demo bodies as first consumer. Future: pin joints, hinges, elastic, tension, compression, pneumatic connections. |
+| Feb 14, 2026 | Phase 5a complete | `rt-ik-solvers.js` created with `linkSpread2D()`, `linkAngle2D()`, `solveRigid2D()`, `solveRigid3D()`. Display-only rigid link added to Gravity Numberline demo. Committed as `df0faf0` on `Gravity` branch. |
+| | Phase 1 planning | Decided to implement G-Quadray grids (Central Angle gravity intervals) before G-Cartesian, since the Central Angle tessellation is the more architecturally interesting target. Chordal (straight lines) first, Spherical (arcs) as Phase 3. |
+| | cumDist technique | Key insight: replace constant `edgeLength × i` with a cumulative distance lookup `cumDist[i]` in `createIVMGrid()`. Same loop, same topology — only spacing changes. Thread `gridMode` parameter through the full call chain. ~100 lines across 6 files. |
+| | Phase reordering | Phase 1 = G-Quadray (was Phase 2). Phase 1b = G-Cartesian (was Phase 1). Rationale: Quadray tessellation is the core geometry; Cartesian warping is a simpler derivative. |
 
 ---
 
@@ -826,9 +873,16 @@ Link | s = 0.XXX (spread) | Q = X.XX | θ ≈ XX.X°
 - [x] ~~Validate Phase 0 math: compute and plot 1D gravity intervals for N=144~~
 - [x] ~~Prototype `computeGravityIntervals()` in `rt-math.js`~~
 - [x] ~~Test visual effect: drop a marker and verify constant-rate gridline crossings~~
-- [ ] Build `createGravityCartesianGrid()` in `rt-grids.js` (Phase 1)
-- [ ] Add UI toggle to Coordinate Systems panel (Phase 1)
 - [x] ~~Write Phase 5a workplan into Gravity-Grids.md~~
-- [ ] Create `modules/rt-ik-solvers.js` with `solveRigid2D()` (Phase 5a)
-- [ ] Add rigid link visual to Gravity Numberline demo (Phase 5a)
+- [x] ~~Create `modules/rt-ik-solvers.js` with `solveRigid2D()` (Phase 5a)~~
+- [x] ~~Add rigid link visual to Gravity Numberline demo (Phase 5a)~~
+- [ ] **Phase 1: G-Quadray gravity grids (IN PROGRESS)**
+  - [ ] Add `computeGravityCumulativeDistances()` to `RT.Gravity` namespace
+  - [ ] Add `gridMode` param to `createIVMGrid()` with cumDist branching
+  - [ ] Thread `gridMode` through `createIVMPlanes()`, `rebuildQuadrayGrids()`, rt-rendering.js wrapper
+  - [ ] Add Grid Mode UI buttons (Uniform / Gravity / Spherical-disabled)
+  - [ ] Wire buttons in rt-init.js and update tessellation slider binding
+  - [ ] Browser verify: uniform regression, gravity visual, slider + checkboxes preserved
+- [ ] Phase 1b: G-Cartesian Planes (non-uniform XYZ grids)
+- [ ] Phase 3: Curved gridlines (Weierstrass rational arcs replacing straight chords)
 - [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)

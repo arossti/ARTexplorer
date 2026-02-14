@@ -713,6 +713,33 @@
                   </label>
                 </div>
                 <div class="spacing-top-large">
+                  <label class="label-subsection">Grid Mode</label>
+                  <div class="toggle-btn-group">
+                    <button
+                      class="toggle-btn variant-objsnap active"
+                      data-grid-mode="uniform"
+                      title="Standard uniform-interval triangular tessellation"
+                    >
+                      Uniform
+                    </button>
+                    <button
+                      class="toggle-btn variant-objsnap"
+                      data-grid-mode="gravity-chordal"
+                      title="Gravity-warped intervals (chordal straight lines)"
+                    >
+                      Gravity
+                    </button>
+                    <button
+                      class="toggle-btn variant-objsnap"
+                      data-grid-mode="gravity-spherical"
+                      title="Great-circle arcs — Phase 3 (not yet implemented)"
+                      disabled
+                    >
+                      Spherical
+                    </button>
+                  </div>
+                </div>
+                <div class="spacing-top-large">
                   <label class="label-subsection">Grid Intervals</label>
                   <div class="slider-container">
                     <input
