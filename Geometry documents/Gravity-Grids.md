@@ -741,6 +741,86 @@ Start with approach 1 (display-only) to visualize the differential, then optiona
 
 ---
 
+## Phase 5a Implementation: Rigid Link in Gravity Numberline
+
+### Overview
+
+Add a **display-only rigid link** between bodyA (top, accelerating) and bodyB (bottom, constant velocity). The link is a straight line connecting the two body positions — it rotates and changes angle as the bodies diverge, then returns to vertical as they reconverge at f=1.
+
+**No physics feedback** — both bodies continue to follow their pure trajectories. The link visualizes the *differential* without enforcing the constraint. This is approach 1 from Phase 5 above.
+
+### Files to Modify/Create
+
+| File | Action | Change |
+|------|--------|--------|
+| `modules/rt-ik-solvers.js` | **CREATE** (~80 lines) | New module: `solveRigid2D()`, `linkAngle2D()`, `linkSpread2D()` |
+| `demos/rt-gravity-demo.js` | **MODIFY** (~30 lines added) | Import solver, create link Line2, update in `updateVisualization()`, add link stats to formula panel |
+
+### rt-ik-solvers.js — API
+
+```javascript
+import { RT } from "./rt-math.js";
+
+/**
+ * Compute the angle (in radians) of the line from A to B.
+ * Returns atan2(dy, dx). For display/formula purposes.
+ */
+export function linkAngle2D(ax, ay, bx, by) { ... }
+
+/**
+ * Compute the spread (sin²θ) of the link relative to vertical.
+ * RT-pure: no trig — uses the quadrance cross-ratio.
+ *
+ *   vertical = (0, 1)
+ *   link     = (bx - ax, by - ay)
+ *   spread   = 1 - (dot²) / (Q_link · Q_vert)
+ *            = (dx²) / (dx² + dy²)
+ *
+ * Returns { spread, quadrance, dx, dy }
+ */
+export function linkSpread2D(ax, ay, bx, by) { ... }
+
+/**
+ * Solve rigid constraint: given anchor A (fixed), target B (desired),
+ * return the position of B constrained to distance L from A.
+ * B is projected onto the circle of radius L centered at A,
+ * preserving the direction from A to B.
+ *
+ * For the display-only demo this isn't used yet, but it's the
+ * foundation for Phase 5b (constrained mode).
+ */
+export function solveRigid2D(ax, ay, bx, by, length) { ... }
+```
+
+### Gravity Demo Integration
+
+**New visual element:** `linkLine` — a `Line2` from `(topScreenX, TOP_Y)` to `(botScreenX, BOT_Y)`, colored white with partial opacity.
+
+**In `updateVisualization()`:**
+1. Compute link endpoints from body positions
+2. Call `linkSpread2D()` to get spread and quadrance
+3. Update `linkLine` geometry
+4. Add link stats to formula panel: spread value, angle (from spread via arcsin), screen length
+
+**Link behavior over time:**
+- `f=0`: both bodies at LINE_LEFT → link is vertical (spread = 0)
+- `f=0.5`: top body at 25% (f²=0.25), bottom at 50% → link angles backward (spread > 0)
+- `f≈0.71`: maximum separation → maximum spread
+- `f=1`: both at LINE_RIGHT → link is vertical again (spread = 0)
+
+**Formula panel addition** (new section after Separation):
+```
+Link | s = 0.XXX (spread) | Q = X.XX | θ ≈ XX.X°
+```
+
+### Visual Design
+
+- **Color**: white, 50% opacity — neutral between orange (top) and teal (bottom)
+- **Width**: 1.5px (same as handle line)
+- **Z-order**: behind bodies (z = 0.003), in front of trails
+
+---
+
 ## Next Steps
 
 - [x] ~~Validate Phase 0 math: compute and plot 1D gravity intervals for N=144~~
@@ -748,6 +828,7 @@ Start with approach 1 (display-only) to visualize the differential, then optiona
 - [x] ~~Test visual effect: drop a marker and verify constant-rate gridline crossings~~
 - [ ] Build `createGravityCartesianGrid()` in `rt-grids.js` (Phase 1)
 - [ ] Add UI toggle to Coordinate Systems panel (Phase 1)
+- [x] ~~Write Phase 5a workplan into Gravity-Grids.md~~
 - [ ] Create `modules/rt-ik-solvers.js` with `solveRigid2D()` (Phase 5a)
 - [ ] Add rigid link visual to Gravity Numberline demo (Phase 5a)
 - [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)

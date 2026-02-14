@@ -21,6 +21,7 @@ import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 import { create2DScene, initializeModalHandlers } from "./rt-demo-utils.js";
 import { RT } from "../modules/rt-math.js";
+import { linkSpread2D } from "../modules/rt-ik-solvers.js";
 
 // Scene references
 let scene, camera, renderer, animate, cleanup;
@@ -29,6 +30,7 @@ let scene, camera, renderer, animate, cleanup;
 let handleLine, handleRing;
 let bodyA, bodyB;
 let trailA, trailB;
+let linkLine;
 let formulaElement;
 let bodySelector;
 let uniformTicks = [];
@@ -165,6 +167,7 @@ export function initGravityDemo() {
   createTicks();
   createBodies();
   createHandle();
+  createLink();
   createFormulaDisplay(container);
 
   // Set up interaction
@@ -320,6 +323,25 @@ function createHandle() {
   handleRing = new THREE.Mesh(ringGeom, ringMat);
   handleRing.position.set(LINE_LEFT, 0, 0.02);
   scene.add(handleRing);
+}
+
+/**
+ * Create the rigid link line between bodyA and bodyB.
+ * Display-only — shows the differential angle as bodies diverge.
+ */
+function createLink() {
+  const geom = new LineGeometry();
+  geom.setPositions([LINE_LEFT, TOP_Y, 0, LINE_LEFT, BOT_Y, 0]);
+  const mat = new LineMaterial({
+    color: 0xffffff,
+    linewidth: 1.5,
+    transparent: true,
+    opacity: 0.5,
+  });
+  mat.resolution.set(window.innerWidth, window.innerHeight);
+  linkLine = new Line2(geom, mat);
+  linkLine.position.z = 0.003;
+  scene.add(linkLine);
 }
 
 /**
@@ -576,6 +598,16 @@ function updateVisualization() {
   const separation = Math.abs(topScreenX - botScreenX);
   const separationPhysical = Math.abs(position - H * f);
 
+  // Update rigid link line between bodies
+  linkLine.geometry.dispose();
+  const linkGeom = new LineGeometry();
+  linkGeom.setPositions([topScreenX, TOP_Y, 0, botScreenX, BOT_Y, 0]);
+  linkLine.geometry = linkGeom;
+
+  // Link spread (RT-pure: sin^2 of angle from vertical)
+  const link = linkSpread2D(topScreenX, TOP_Y, botScreenX, BOT_Y);
+  const linkAngleDeg = Math.asin(Math.sqrt(link.spread)) * (180 / Math.PI);
+
   // Update formula panel
   const bodyInfo = RT.Gravity.BODIES[selectedBody];
   formulaElement.innerHTML = `
@@ -616,6 +648,15 @@ function updateVisualization() {
       <div class="gravity-section-content">
         \u0394x = <span style="color: #fff;">${fmtVal(separationPhysical)}</span><br>
         <span class="gravity-text-muted">${bodyInfo.name}, g = ${fmtG(g)} m/s\u00B2</span>
+      </div>
+    </div>
+
+    <div class="gravity-section-divider">
+      <strong class="gravity-section-title" style="color: #ccc;">Link</strong>
+      <div class="gravity-section-content">
+        s = <span style="color: #fff;">${link.spread.toFixed(4)}</span>
+        <span class="gravity-text-muted">\u2248 ${linkAngleDeg.toFixed(1)}\u00B0</span><br>
+        <span class="gravity-text-muted">Q = ${link.quadrance.toFixed(3)}</span>
       </div>
     </div>
   `;
