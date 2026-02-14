@@ -355,7 +355,14 @@ export const simpleSliderBindings = [
         ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
         ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
       };
-      renderingAPI.rebuildQuadrayGrids(parseInt(value), visibilityState);
+      // Read active grid mode from UI
+      const activeBtn = document.querySelector("[data-grid-mode].active");
+      const gridMode = activeBtn ? activeBtn.dataset.gridMode : "uniform";
+      renderingAPI.rebuildQuadrayGrids(
+        parseInt(value),
+        visibilityState,
+        gridMode
+      );
     },
     updateGeometry: false, // Handled by rebuildQuadrayGrids
   },
@@ -372,7 +379,14 @@ export const simpleSliderBindings = [
         cartesianBasis:
           document.getElementById("showCartesianBasis")?.checked ?? false,
       };
-      renderingAPI.rebuildCartesianGrids(parseInt(value), visibilityState);
+      // Read active grid mode from UI
+      const activeBtn = document.querySelector("[data-grid-mode].active");
+      const gridMode = activeBtn ? activeBtn.dataset.gridMode : "uniform";
+      renderingAPI.rebuildCartesianGrids(
+        parseInt(value),
+        visibilityState,
+        gridMode
+      );
     },
     updateGeometry: false, // Handled by rebuildCartesianGrids
   },

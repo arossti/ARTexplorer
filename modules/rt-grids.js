@@ -34,14 +34,67 @@ import { MetaLog } from "./rt-metalog.js";
  */
 export const Grids = {
   /**
+   * Create a single gravity-warped Cartesian plane as LineSegments.
+   * Replaces THREE.GridHelper when gridMode is 'gravity-chordal'.
+   * Lines are gravity-spaced from center outward (bidirectional).
+   *
+   * @param {number} divisions - Total number of grid divisions
+   * @param {number} color - Line color (hex)
+   * @returns {THREE.LineSegments} The grid plane (in XZ plane, like GridHelper)
+   */
+  createGravityCartesianPlane: (divisions, color) => {
+    const halfDiv = Math.floor(divisions / 2);
+    const halfExtent = halfDiv; // Match GridHelper: divisions/2 units each side
+
+    // Gravity intervals from center outward
+    const cumDist = RT.Gravity.computeGravityCumulativeDistances(
+      halfDiv,
+      halfExtent
+    );
+    // cumDist = [0, d1, ..., dHalf, dExtra]
+
+    const vertices = [];
+    const extent = cumDist[halfDiv]; // Actual half-extent after scaling
+
+    // Lines along X at gravity-spaced Z positions (and vice versa)
+    // GridHelper convention: grid lies in XZ plane, Y=0
+    for (let k = 0; k <= halfDiv; k++) {
+      const pos = cumDist[k];
+
+      // Lines along X at +Z and -Z positions
+      vertices.push(-extent, 0, pos, extent, 0, pos);
+      if (k > 0) {
+        vertices.push(-extent, 0, -pos, extent, 0, -pos);
+      }
+
+      // Lines along Z at +X and -X positions
+      vertices.push(pos, 0, -extent, pos, 0, extent);
+      if (k > 0) {
+        vertices.push(-pos, 0, -extent, -pos, 0, extent);
+      }
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(vertices, 3)
+    );
+    return new THREE.LineSegments(
+      geometry,
+      new THREE.LineBasicMaterial({ color })
+    );
+  },
+
+  /**
    * Create Cartesian grid (XYZ) - grey hairlines
    * Z-up coordinate system: Z is vertical, XY is horizontal ground plane
    *
    * @param {THREE.Scene} scene - Scene to add grids to
    * @param {number} divisions - Number of grid divisions (from slider)
+   * @param {string} gridMode - Grid mode: 'uniform' or 'gravity-chordal'
    * @returns {Object} { cartesianGrid, cartesianBasis, gridXY, gridXZ, gridYZ }
    */
-  createCartesianGrid: (scene, divisions = 10) => {
+  createCartesianGrid: (scene, divisions = 10, gridMode = "uniform") => {
     const cartesianGrid = new THREE.Group();
 
     // Grid size scales with divisions to maintain 1.0×1.0 unit squares
@@ -55,35 +108,48 @@ export const Grids = {
     // Z-UP CONVENTION: Notation swap from Y-up
     // In Z-up: XY is horizontal, XZ is vertical, YZ is vertical
 
+    let gridXY, gridXZ, gridYZ;
+
+    if (gridMode === "gravity-chordal") {
+      // Gravity mode: custom LineSegments with non-uniform spacing
+      gridXY = Grids.createGravityCartesianPlane(divisions, gridColor);
+      gridXY.rotation.x = Math.PI / 2;
+      gridXZ = Grids.createGravityCartesianPlane(divisions, gridColor);
+      gridYZ = Grids.createGravityCartesianPlane(divisions, gridColor);
+      gridYZ.rotation.z = Math.PI / 2;
+    } else {
+      // Uniform mode: standard THREE.GridHelper
+      gridXY = new THREE.GridHelper(
+        gridSize,
+        divisions,
+        gridColor,
+        gridColor
+      );
+      gridXY.rotation.x = Math.PI / 2;
+      gridXZ = new THREE.GridHelper(
+        gridSize,
+        divisions,
+        gridColor,
+        gridColor
+      );
+      gridYZ = new THREE.GridHelper(
+        gridSize,
+        divisions,
+        gridColor,
+        gridColor
+      );
+      gridYZ.rotation.z = Math.PI / 2;
+    }
+
     // XY plane (Z = 0) - HORIZONTAL ground plane in Z-up
-    const gridXY = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
-    gridXY.rotation.x = Math.PI / 2;
     gridXY.visible = false; // Hidden by default
     cartesianGrid.add(gridXY);
 
     // XZ plane (Y = 0) - VERTICAL wall in Z-up (front/back)
-    const gridXZ = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
     gridXZ.visible = false; // Hidden by default
     cartesianGrid.add(gridXZ);
 
     // YZ plane (X = 0) - VERTICAL wall in Z-up (left/right)
-    const gridYZ = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
-    gridYZ.rotation.z = Math.PI / 2;
     gridYZ.visible = false; // Hidden by default
     cartesianGrid.add(gridYZ);
 
@@ -326,7 +392,14 @@ export const Grids = {
    * @param {number} color - Grid line color
    * @returns {THREE.LineSegments} Central Angle grid geometry
    */
-  createIVMGrid: (basis1, basis2, halfSize, tessellations, color) => {
+  createIVMGrid: (
+    basis1,
+    basis2,
+    halfSize,
+    tessellations,
+    color,
+    gridMode = "uniform"
+  ) => {
     const geometry = new THREE.BufferGeometry();
     const vertices = [];
 
@@ -344,33 +417,59 @@ export const Grids = {
       window.gridIntervalLogged = true;
     }
 
-    // Base triangle edge vectors
-    const v1 = basis1.clone().multiplyScalar(edgeLength);
-    const v2 = basis2.clone().multiplyScalar(edgeLength);
+    // Build cumulative distance table based on grid mode
+    // Uniform: cumDist[k] = k × edgeLength (constant intervals)
+    // Gravity: cumDist[k] = reversed shell radii × scale (harmonic compression)
+    let cumDist;
+    if (gridMode === "gravity-chordal") {
+      const totalExtent = tessellations * edgeLength;
+      cumDist = RT.Gravity.computeGravityCumulativeDistances(
+        tessellations,
+        totalExtent
+      );
+    } else {
+      // Uniform mode (default) — +1 extra for boundary triangle safety
+      cumDist = [];
+      for (let k = 0; k <= tessellations + 1; k++) {
+        cumDist.push(k * edgeLength);
+      }
+    }
 
-    // Tessellate triangle outward
+    // Extract basis components for inline vertex math (avoids .clone() per vertex)
+    const b1x = basis1.x,
+      b1y = basis1.y,
+      b1z = basis1.z;
+    const b2x = basis2.x,
+      b2y = basis2.y,
+      b2z = basis2.z;
+
+    // Tessellate triangle outward (same topology for both modes)
     for (let i = 0; i <= tessellations; i++) {
       for (let j = 0; j <= tessellations - i; j++) {
-        // Calculate the "origin" of this triangle copy
-        const triOrigin = v1
-          .clone()
-          .multiplyScalar(i)
-          .add(v2.clone().multiplyScalar(j));
+        const di = cumDist[i],
+          di1 = cumDist[i + 1];
+        const dj = cumDist[j],
+          dj1 = cumDist[j + 1];
 
-        // Three vertices of this triangle
-        const p0 = triOrigin.clone();
-        const p1 = triOrigin.clone().add(v1);
-        const p2 = triOrigin.clone().add(v2);
+        // P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
+        const p0x = b1x * di + b2x * dj;
+        const p0y = b1y * di + b2y * dj;
+        const p0z = b1z * di + b2z * dj;
 
-        // Draw three edges (triangle outline)
-        vertices.push(p0.x, p0.y, p0.z);
-        vertices.push(p1.x, p1.y, p1.z);
+        // P(i+1,j)
+        const p1x = b1x * di1 + b2x * dj;
+        const p1y = b1y * di1 + b2y * dj;
+        const p1z = b1z * di1 + b2z * dj;
 
-        vertices.push(p1.x, p1.y, p1.z);
-        vertices.push(p2.x, p2.y, p2.z);
+        // P(i,j+1)
+        const p2x = b1x * di + b2x * dj1;
+        const p2y = b1y * di + b2y * dj1;
+        const p2z = b1z * di + b2z * dj1;
 
-        vertices.push(p2.x, p2.y, p2.z);
-        vertices.push(p0.x, p0.y, p0.z);
+        // Three edges (triangle outline)
+        vertices.push(p0x, p0y, p0z, p1x, p1y, p1z);
+        vertices.push(p1x, p1y, p1z, p2x, p2y, p2z);
+        vertices.push(p2x, p2y, p2z, p0x, p0y, p0z);
       }
     }
 
@@ -396,7 +495,7 @@ export const Grids = {
    * @param {number} tessellations - Number of triangle copies in each direction
    * @returns {Object} { ivmPlanes, ivmWX, ivmWY, ivmWZ, ivmXY, ivmXZ, ivmYZ }
    */
-  createIVMPlanes: (scene, tessellations = 12) => {
+  createIVMPlanes: (scene, tessellations = 12, gridMode = "uniform") => {
     const ivmPlanes = new THREE.Group();
     const halfSize = 1.0;
 
@@ -409,7 +508,8 @@ export const Grids = {
       Quadray.basisVectors[1],
       halfSize,
       tessellations,
-      0xffaa00
+      0xffaa00,
+      gridMode
     );
     ivmWX.visible = true;
     ivmWX.name = "CentralAngle_WX";
@@ -421,7 +521,8 @@ export const Grids = {
       Quadray.basisVectors[2],
       halfSize,
       tessellations,
-      0xaaaaff
+      0xaaaaff,
+      gridMode
     );
     ivmWY.visible = true;
     ivmWY.name = "CentralAngle_WY";
@@ -433,7 +534,8 @@ export const Grids = {
       Quadray.basisVectors[3],
       halfSize,
       tessellations,
-      0xaaff00
+      0xaaff00,
+      gridMode
     );
     ivmWZ.visible = true;
     ivmWZ.name = "CentralAngle_WZ";
@@ -445,7 +547,8 @@ export const Grids = {
       Quadray.basisVectors[2],
       halfSize,
       tessellations,
-      0xff00ff
+      0xff00ff,
+      gridMode
     );
     ivmXY.visible = true;
     ivmXY.name = "CentralAngle_XY";
@@ -457,7 +560,8 @@ export const Grids = {
       Quadray.basisVectors[3],
       halfSize,
       tessellations,
-      0xffff00
+      0xffff00,
+      gridMode
     );
     ivmXZ.visible = true;
     ivmXZ.name = "CentralAngle_XZ";
@@ -469,7 +573,8 @@ export const Grids = {
       Quadray.basisVectors[3],
       halfSize,
       tessellations,
-      0x00ffff
+      0x00ffff,
+      gridMode
     );
     ivmYZ.visible = true;
     ivmYZ.name = "CentralAngle_YZ";
@@ -498,7 +603,8 @@ export const Grids = {
     scene,
     existingIvmPlanes,
     tessellations,
-    visibilityState = {}
+    visibilityState = {},
+    gridMode = "uniform"
   ) => {
     // Remove existing grids
     if (existingIvmPlanes) {
@@ -515,7 +621,8 @@ export const Grids = {
       Quadray.basisVectors[1],
       halfSize,
       tessellations,
-      0xffaa00
+      0xffaa00,
+      gridMode
     );
     ivmWX.visible = visibilityState.ivmWX ?? true;
     ivmWX.name = "CentralAngle_WX";
@@ -527,7 +634,8 @@ export const Grids = {
       Quadray.basisVectors[2],
       halfSize,
       tessellations,
-      0xaaaaff
+      0xaaaaff,
+      gridMode
     );
     ivmWY.visible = visibilityState.ivmWY ?? true;
     ivmWY.name = "CentralAngle_WY";
@@ -539,7 +647,8 @@ export const Grids = {
       Quadray.basisVectors[3],
       halfSize,
       tessellations,
-      0xaaff00
+      0xaaff00,
+      gridMode
     );
     ivmWZ.visible = visibilityState.ivmWZ ?? true;
     ivmWZ.name = "CentralAngle_WZ";
@@ -551,7 +660,8 @@ export const Grids = {
       Quadray.basisVectors[2],
       halfSize,
       tessellations,
-      0xff00ff
+      0xff00ff,
+      gridMode
     );
     ivmXY.visible = visibilityState.ivmXY ?? true;
     ivmXY.name = "CentralAngle_XY";
@@ -563,7 +673,8 @@ export const Grids = {
       Quadray.basisVectors[3],
       halfSize,
       tessellations,
-      0xffff00
+      0xffff00,
+      gridMode
     );
     ivmXZ.visible = visibilityState.ivmXZ ?? true;
     ivmXZ.name = "CentralAngle_XZ";
@@ -575,7 +686,8 @@ export const Grids = {
       Quadray.basisVectors[3],
       halfSize,
       tessellations,
-      0x00ffff
+      0x00ffff,
+      gridMode
     );
     ivmYZ.visible = visibilityState.ivmYZ ?? true;
     ivmYZ.name = "CentralAngle_YZ";
@@ -584,7 +696,7 @@ export const Grids = {
     scene.add(ivmPlanes);
 
     console.log(
-      `✅ Rebuilt Central Angle grids with tessellation=${tessellations}`
+      `Rebuilt Central Angle grids: tessellation=${tessellations}, mode=${gridMode}`
     );
 
     return { ivmPlanes, ivmWX, ivmWY, ivmWZ, ivmXY, ivmXZ, ivmYZ };
@@ -604,7 +716,8 @@ export const Grids = {
     existingCartesianGrid,
     existingCartesianBasis,
     divisions,
-    visibilityState = {}
+    visibilityState = {},
+    gridMode = "uniform"
   ) => {
     // Remove existing grids and basis
     if (existingCartesianGrid) {
@@ -619,35 +732,43 @@ export const Grids = {
     const gridSize = divisions;
     const gridColor = 0x444444;
 
-    // XY plane (Z = 0) - HORIZONTAL ground plane in Z-up
-    const gridXY = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
-    gridXY.rotation.x = Math.PI / 2;
+    let gridXY, gridXZ, gridYZ;
+
+    if (gridMode === "gravity-chordal") {
+      gridXY = Grids.createGravityCartesianPlane(divisions, gridColor);
+      gridXY.rotation.x = Math.PI / 2;
+      gridXZ = Grids.createGravityCartesianPlane(divisions, gridColor);
+      gridYZ = Grids.createGravityCartesianPlane(divisions, gridColor);
+      gridYZ.rotation.z = Math.PI / 2;
+    } else {
+      gridXY = new THREE.GridHelper(
+        gridSize,
+        divisions,
+        gridColor,
+        gridColor
+      );
+      gridXY.rotation.x = Math.PI / 2;
+      gridXZ = new THREE.GridHelper(
+        gridSize,
+        divisions,
+        gridColor,
+        gridColor
+      );
+      gridYZ = new THREE.GridHelper(
+        gridSize,
+        divisions,
+        gridColor,
+        gridColor
+      );
+      gridYZ.rotation.z = Math.PI / 2;
+    }
+
     gridXY.visible = visibilityState.gridXY ?? false;
     cartesianGrid.add(gridXY);
 
-    // XZ plane (Y = 0) - VERTICAL wall in Z-up (front/back)
-    const gridXZ = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
     gridXZ.visible = visibilityState.gridXZ ?? false;
     cartesianGrid.add(gridXZ);
 
-    // YZ plane (X = 0) - VERTICAL wall in Z-up (left/right)
-    const gridYZ = new THREE.GridHelper(
-      gridSize,
-      divisions,
-      gridColor,
-      gridColor
-    );
-    gridYZ.rotation.z = Math.PI / 2;
     gridYZ.visible = visibilityState.gridYZ ?? false;
     cartesianGrid.add(gridYZ);
 

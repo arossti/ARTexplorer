@@ -4340,12 +4340,17 @@ export function initScene(THREE, OrbitControls, RT) {
   /**
    * Rebuild Quadray grids with new tessellation value - delegated to rt-grids.js
    */
-  function rebuildQuadrayGrids(tessellations, visibilityState = {}) {
+  function rebuildQuadrayGrids(
+    tessellations,
+    visibilityState = {},
+    gridMode = "uniform"
+  ) {
     const result = Grids.rebuildQuadrayGrids(
       scene,
       ivmPlanes,
       tessellations,
-      visibilityState
+      visibilityState,
+      gridMode
     );
 
     // Store references for later use
@@ -4361,13 +4366,18 @@ export function initScene(THREE, OrbitControls, RT) {
   /**
    * Rebuild Cartesian grids with new tessellation value - delegated to rt-grids.js
    */
-  function rebuildCartesianGrids(divisions, visibilityState = {}) {
+  function rebuildCartesianGrids(
+    divisions,
+    visibilityState = {},
+    gridMode = "uniform"
+  ) {
     const result = Grids.rebuildCartesianGrids(
       scene,
       cartesianGrid,
       cartesianBasis,
       divisions,
-      visibilityState
+      visibilityState,
+      gridMode
     );
 
     // Store references for later use
