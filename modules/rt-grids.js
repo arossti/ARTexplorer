@@ -110,8 +110,10 @@ export const Grids = {
 
     let gridXY, gridXZ, gridYZ;
 
-    if (gridMode === "gravity-chordal") {
+    if (gridMode === "gravity-chordal" || gridMode === "gravity-spherical") {
       // Gravity mode: custom LineSegments with non-uniform spacing
+      // (Cartesian lines are straight by definition — spherical arc subdivision
+      // only applies to Central Angle grids where ring edges trace shell surfaces)
       gridXY = Grids.createGravityCartesianPlane(divisions, gridColor);
       gridXY.rotation.x = Math.PI / 2;
       gridXZ = Grids.createGravityCartesianPlane(divisions, gridColor);
@@ -425,7 +427,7 @@ export const Grids = {
       b2y = basis2.y,
       b2z = basis2.z;
 
-    if (gridMode === "gravity-chordal") {
+    if (gridMode === "gravity-chordal" || gridMode === "gravity-spherical") {
       // --- Radial shell projection (gravity mode) ---
       // Each vertex (i,j) is projected onto the spherical shell at cumDist[i+j].
       // 1. Compute uniform-space position: P = basis1×(i×e) + basis2×(j×e)
@@ -435,11 +437,16 @@ export const Grids = {
       //
       // This places ALL vertices on ring k (i+j = k) at the SAME radial distance
       // cumDist[k], producing outward-arcing gridlines along concentric shells.
+      //
+      // Spherical mode: ring edges (P1→P2, same shell) are subdivided into arc
+      // segments, each intermediate point projected onto the shell. This eliminates
+      // chord sag where straight segments cut below the shell surface.
       const totalExtent = tessellations * edgeLength;
       const cumDist = RT.Gravity.computeGravityCumulativeDistances(
         tessellations,
         totalExtent
       );
+      const arcSub = gridMode === "gravity-spherical" ? 8 : 0;
 
       for (let i = 0; i <= tessellations; i++) {
         for (let j = 0; j <= tessellations - i; j++) {
@@ -473,9 +480,32 @@ export const Grids = {
           scale = RT.Gravity.shellProjectionScale(Q, cumDist[i + j + 1]);
           const p2x = px * scale, p2y = py * scale, p2z = pz * scale;
 
-          // Three edges (triangle outline)
+          // Edge P0→P1: radial (different shells) — always straight
           vertices.push(p0x, p0y, p0z, p1x, p1y, p1z);
-          vertices.push(p1x, p1y, p1z, p2x, p2y, p2z);
+
+          // Edge P1→P2: RING (same shell i+j+1) — arc subdivide if spherical
+          if (arcSub > 0) {
+            // Subdivide chord P1→P2, project each point onto shell
+            const shellR = cumDist[i + j + 1];
+            let prevAx = p1x, prevAy = p1y, prevAz = p1z;
+            for (let s = 1; s <= arcSub; s++) {
+              const t = s / arcSub;
+              // Lerp along chord in 3D
+              const ax = p1x + (p2x - p1x) * t;
+              const ay = p1y + (p2y - p1y) * t;
+              const az = p1z + (p2z - p1z) * t;
+              // Project onto shell (one √ per arc point — GPU boundary)
+              const aQ = ax * ax + ay * ay + az * az;
+              const aScale = RT.Gravity.shellProjectionScale(aQ, shellR);
+              const cx = ax * aScale, cy = ay * aScale, cz = az * aScale;
+              vertices.push(prevAx, prevAy, prevAz, cx, cy, cz);
+              prevAx = cx; prevAy = cy; prevAz = cz;
+            }
+          } else {
+            vertices.push(p1x, p1y, p1z, p2x, p2y, p2z);
+          }
+
+          // Edge P2→P0: radial (different shells) — always straight
           vertices.push(p2x, p2y, p2z, p0x, p0y, p0z);
         }
       }
@@ -778,7 +808,7 @@ export const Grids = {
 
     let gridXY, gridXZ, gridYZ;
 
-    if (gridMode === "gravity-chordal") {
+    if (gridMode === "gravity-chordal" || gridMode === "gravity-spherical") {
       gridXY = Grids.createGravityCartesianPlane(divisions, gridColor);
       gridXY.rotation.x = Math.PI / 2;
       gridXZ = Grids.createGravityCartesianPlane(divisions, gridColor);

@@ -628,7 +628,8 @@ RT.Gravity = {
 | | Phase 1 planning | Decided to implement G-Quadray grids (Central Angle gravity intervals) before G-Cartesian, since the Central Angle tessellation is the more architecturally interesting target. Chordal (straight lines) first, Spherical (arcs) as Phase 3. |
 | | cumDist technique | Key insight: replace constant `edgeLength × i` with a cumulative distance lookup `cumDist[i]` in `createIVMGrid()`. Same loop, same topology — only spacing changes. Thread `gridMode` parameter through the full call chain. ~100 lines across 6 files. |
 | | Phase reordering | Phase 1 = G-Quadray (was Phase 2). Phase 1b = G-Cartesian (was Phase 1). Rationale: Quadray tessellation is the core geometry; Cartesian warping is a simpler derivative. |
-| Feb 14, 2026 | Inward bowing bug | Per-axis cumDist (tensor product of 1D warping) pulls off-axis vertices inward. Midpoints at half the correct radius. Fix: radial warping — compute uniform-space direction, warp radius as continuous function, scale outward to spherical shell. Axis ticks unchanged; off-axis points inflate to shells. Renders Phase 3 (explicit arcs) less urgent since tessellation approximates shell arcs. |
+| Feb 14, 2026 | Inward bowing bug | Per-axis cumDist (tensor product of 1D warping) pulls off-axis vertices inward. Midpoints at half the correct radius. Fix: radial shell projection via `shellProjectionScale(Q, shellRadius)` — one √ per vertex at GPU boundary. Axis ticks unchanged; off-axis points inflate to shells. Committed `e63f64b`. |
+| | Chord sag observed | Shell projection places vertices correctly on shells, but straight line segments between them sag below the shell surface. Visible in orthographic on-axis views as slight under-inflation vs true great-circle arcs. Phase 3 (arc subdivision) now the immediate next step. |
 
 ---
 
@@ -871,7 +872,7 @@ Link | s = 0.XXX (spread) | Q = X.XX | θ ≈ XX.X°
 
 ## Bug: Inward Bowing of Central Angle Gridlines (Phase 1)
 
-**Status:** Open — identified Feb 14, 2026
+**Status:** Fixed — `e63f64b` (radial shell projection via `shellProjectionScale`)
 **Symptom:** Gravity-mode gridlines on central angle planes bow **inward** toward the origin, producing a concave star-like shape. The correct behavior is either straight chords (Phase 1) or outward arcs along concentric spherical shells (Phase 3).
 
 ### Root Cause: Per-Axis Tensor Product vs. Radial Warping
@@ -1001,8 +1002,10 @@ With radial warping, the "gravity-chordal" mode already produces outward-curving
   - [x] ~~Thread `gridMode` through `createIVMPlanes()`, `rebuildQuadrayGrids()`, rt-rendering.js wrapper~~
   - [x] ~~Add Grid Mode UI buttons (Uniform / Gravity / Spherical-disabled)~~
   - [x] ~~Wire buttons in rt-init.js and update tessellation slider binding~~
-  - [ ] **BUG FIX: Replace per-axis cumDist with radial gravity warping** (see bug section above)
-  - [ ] Browser verify: uniform regression, gravity visual (outward shell arcs), slider + checkboxes preserved
+  - [x] ~~**BUG FIX: Replace per-axis cumDist with radial gravity warping** (e63f64b)~~
+  - [x] ~~Browser verify: outward shell arcs confirmed, uniform regression OK~~
+  - [ ] **Phase 3: Spherical shell arcs — subdivide ring edges to eliminate chord sag** (see below)
 - [ ] Phase 1b: G-Cartesian Planes (non-uniform XYZ grids)
+  - [ ] Add Uniform / Gravity / Spherical buttons to Cartesian Planes UI section (currently only in Central Angle section — buttons already wire to both grids via rt-init.js, just need UI duplication)
 - [ ] Phase 3: Curved gridlines (Weierstrass rational arcs replacing straight chords)
 - [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)
