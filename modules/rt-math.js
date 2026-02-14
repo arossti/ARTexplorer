@@ -2684,6 +2684,142 @@ export const RT = {
      */
     midpointToOppositeMidpoint: edgeQ => edgeQ / 2,
   },
+
+  /**
+   * Gravity field calculations for non-uniform grid intervals.
+   * Used by Gravity Grid visualization and Gravity Numberline demo.
+   *
+   * Design: GM = 1 (normalized) is the default. Body presets provide
+   * physical GM values. The grid structure (topology) is body-agnostic;
+   * only absolute scale changes per body.
+   *
+   * @namespace Gravity
+   */
+  Gravity: {
+    /** Standard gravity — exactly rational, defined by 3rd CGPM 1901 */
+    g_standard: 196133 / 20000, // 9.80665 m/s²
+
+    /** Body presets: { name, GM, surfaceG, radius } */
+    BODIES: {
+      normalized: {
+        name: "Normalized",
+        GM: 1.0,
+        surfaceG: null,
+        radius: null,
+      },
+      earth: {
+        name: "Earth",
+        GM: 3.986004e14,
+        surfaceG: 9.807,
+        radius: 6.371e6,
+      },
+      moon: {
+        name: "Moon",
+        GM: 4.9048695e12,
+        surfaceG: 1.625,
+        radius: 1.7374e6,
+      },
+      mars: {
+        name: "Mars",
+        GM: 4.2828e13,
+        surfaceG: 3.721,
+        radius: 3.3895e6,
+      },
+      jupiter: {
+        name: "Jupiter",
+        GM: 1.26687e17,
+        surfaceG: 24.79,
+        radius: 6.9911e7,
+      },
+      sun: {
+        name: "Sun",
+        GM: 1.32712e20,
+        surfaceG: 274.0,
+        radius: 6.957e8,
+      },
+      blackhole: {
+        name: "Black Hole (1M\u2609)",
+        GM: 1.32712e20,
+        surfaceG: null,
+        radius: null,
+      },
+    },
+
+    /**
+     * Compute N gravity-warped shell radii for inverse-square field.
+     * r_k = GM / (k · ΔΦ) = N/k (when GM=1, ΔΦ=1/N)
+     *
+     * Returns array of radii [r_1, r_2, ..., r_N] (outermost first)
+     * and gaps [Δr_1, Δr_2, ..., Δr_{N-1}].
+     *
+     * @param {number} N - Number of shells
+     * @param {number} [GM=1] - Gravitational parameter
+     * @returns {{ radii: number[], gaps: number[], totalExtent: number }}
+     */
+    computeGravityIntervals: (N, GM = 1) => {
+      const deltaPhi = GM / N;
+      const radii = [];
+      const gaps = [];
+      for (let k = 1; k <= N; k++) {
+        radii.push(GM / (k * deltaPhi)); // = N/k when GM=1
+      }
+      for (let i = 0; i < radii.length - 1; i++) {
+        gaps.push(radii[i] - radii[i + 1]);
+      }
+      return { radii, gaps, totalExtent: radii[0] };
+    },
+
+    /**
+     * For uniform-g (constant acceleration) model:
+     * Position of body dropped from height H after crossing k shells.
+     * x_k = H · k² / N²  (quadratic in k)
+     *
+     * @param {number} k - Shell index (0 to N)
+     * @param {number} N - Total shells
+     * @param {number} H - Total drop height
+     * @returns {number} Position at shell k
+     */
+    uniformGPosition: (k, N, H) => H * (k * k) / (N * N),
+
+    /**
+     * Time to reach position x under uniform g from rest.
+     * t = sqrt(2x / g)
+     *
+     * @param {number} x - Position (distance fallen)
+     * @param {number} [g] - Acceleration (defaults to g_standard)
+     * @returns {number} Time at position x
+     */
+    timeAtPosition: (x, g) => {
+      const gVal = g || 196133 / 20000;
+      return Math.sqrt((2 * x) / gVal);
+    },
+
+    /**
+     * Position under uniform g at time t from rest.
+     * x = ½gt²
+     *
+     * @param {number} t - Elapsed time
+     * @param {number} [g] - Acceleration (defaults to g_standard)
+     * @returns {number} Position
+     */
+    positionAtTime: (t, g) => {
+      const gVal = g || 196133 / 20000;
+      return 0.5 * gVal * t * t;
+    },
+
+    /**
+     * Velocity under uniform g at time t from rest.
+     * v = gt
+     *
+     * @param {number} t - Elapsed time
+     * @param {number} [g] - Acceleration (defaults to g_standard)
+     * @returns {number} Velocity
+     */
+    velocityAtTime: (t, g) => {
+      const gVal = g || 196133 / 20000;
+      return gVal * t;
+    },
+  },
 };
 
 /**
