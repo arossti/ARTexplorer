@@ -23,6 +23,46 @@ import { MetaLog } from "./rt-metalog.js";
 import { Polyhedra } from "./rt-polyhedra.js";
 
 // ============================================================================
+// SPATIAL VERTEX DEDUPLICATION
+// ============================================================================
+
+/**
+ * Spatial hash for vertex deduplication without string allocation.
+ * Precision: 1e-6 (same as original toFixed(6))
+ */
+class SpatialVertexSet {
+  constructor() {
+    this.map = new Map();
+    this.positions = [];
+  }
+
+  _key(x, y, z) {
+    const ix = Math.round(x * 1e6);
+    const iy = Math.round(y * 1e6);
+    const iz = Math.round(z * 1e6);
+    return `${ix},${iy},${iz}`;
+  }
+
+  add(x, y, z) {
+    const key = this._key(x, y, z);
+    if (!this.map.has(key)) {
+      this.map.set(key, this.positions.length / 3);
+      this.positions.push(x, y, z);
+    }
+  }
+
+  get size() {
+    return this.map.size;
+  }
+
+  forEach(callback) {
+    for (let i = 0; i < this.positions.length; i += 3) {
+      callback(this.positions[i], this.positions[i + 1], this.positions[i + 2]);
+    }
+  }
+}
+
+// ============================================================================
 // MODULE-LEVEL STATE
 // ============================================================================
 
@@ -681,7 +721,7 @@ function addMatrixNodes(
   });
 
   // Collect all unique vertex positions from matrix
-  const vertexPositions = new Set();
+  const vertexPositions = new SpatialVertexSet();
 
   // Calculate spacing based on polyhedron type
   // - All matrices use 2 * halfSize spacing (cube-compatible)
@@ -743,9 +783,7 @@ function addMatrixNodes(
           y = y_rot;
         }
 
-        // Use string key for deduplication
-        const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
-        vertexPositions.add(key);
+        vertexPositions.add(x, y, z);
       });
     }
   }
@@ -773,9 +811,7 @@ function addMatrixNodes(
             y = y_rot;
           }
 
-          // Use string key for deduplication
-          const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
-          vertexPositions.add(key);
+          vertexPositions.add(x, y, z);
         });
       }
     }
@@ -804,28 +840,25 @@ function addMatrixNodes(
             y = y_rot;
           }
 
-          // Use string key for deduplication
-          const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
-          vertexPositions.add(key);
+          vertexPositions.add(x, y, z);
         });
       }
     }
   }
 
   // Create instanced nodes at unique positions
-  const positionsArray = Array.from(vertexPositions);
-  if (positionsArray.length > 0) {
+  if (vertexPositions.size > 0) {
     const instancedNodes = new THREE.InstancedMesh(
-      nodeGeometry, nodeMaterial, positionsArray.length
+      nodeGeometry, nodeMaterial, vertexPositions.size
     );
     instancedNodes.renderOrder = 3;
 
     const tempMatrix = new THREE.Matrix4();
     const storedPositions = [];
-    positionsArray.forEach((key, i) => {
-      const [x, y, z] = key.split(",").map(parseFloat);
+    let nodeIndex = 0;
+    vertexPositions.forEach((x, y, z) => {
       tempMatrix.setPosition(x, y, z);
-      instancedNodes.setMatrixAt(i, tempMatrix);
+      instancedNodes.setMatrixAt(nodeIndex++, tempMatrix);
       storedPositions.push(new THREE.Vector3(x, y, z));
     });
     instancedNodes.instanceMatrix.needsUpdate = true;
@@ -898,7 +931,7 @@ function addRadialMatrixNodes(
   });
 
   // Collect all unique vertex positions from matrix
-  const vertexPositions = new Set();
+  const vertexPositions = new SpatialVertexSet();
 
   // Generate polyhedron vertices at each center position
   // Get the appropriate polyhedron geometry
@@ -976,26 +1009,23 @@ function addRadialMatrixNodes(
         vz = v.z + pos.z;
       }
 
-      // Use string key for deduplication
-      const key = `${vx.toFixed(6)},${vy.toFixed(6)},${vz.toFixed(6)}`;
-      vertexPositions.add(key);
+      vertexPositions.add(vx, vy, vz);
     });
   });
 
   // Create instanced nodes at unique positions
-  const positionsArray = Array.from(vertexPositions);
-  if (positionsArray.length > 0) {
+  if (vertexPositions.size > 0) {
     const instancedNodes = new THREE.InstancedMesh(
-      nodeGeometry, nodeMaterial, positionsArray.length
+      nodeGeometry, nodeMaterial, vertexPositions.size
     );
     instancedNodes.renderOrder = 3;
 
     const tempMatrix = new THREE.Matrix4();
     const storedPositions = [];
-    positionsArray.forEach((key, i) => {
-      const [x, y, z] = key.split(",").map(parseFloat);
+    let nodeIndex = 0;
+    vertexPositions.forEach((x, y, z) => {
       tempMatrix.setPosition(x, y, z);
-      instancedNodes.setMatrixAt(i, tempMatrix);
+      instancedNodes.setMatrixAt(nodeIndex++, tempMatrix);
       storedPositions.push(new THREE.Vector3(x, y, z));
     });
     instancedNodes.instanceMatrix.needsUpdate = true;
