@@ -704,6 +704,29 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   /**
+   * Dispose all GPU resources in a group and remove all children.
+   * Must be called instead of raw while-loop removal to prevent VRAM leaks.
+   * @param {THREE.Group} group - Group to clear
+   */
+  function disposeGroup(group) {
+    group.traverse(child => {
+      if (child.geometry) {
+        child.geometry.dispose();
+      }
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(m => m.dispose());
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
+    while (group.children.length > 0) {
+      group.remove(group.children[0]);
+    }
+  }
+
+  /**
    * Render a polyhedron from vertices, edges, faces
    * Uses proper geometry with indexed faces for clean rendering
    * @param {THREE.Group} group - Group to render into
@@ -714,10 +737,8 @@ export function initScene(THREE, OrbitControls, RT) {
    * @param {number} options.lineWidth - Edge line width (default 1)
    */
   function renderPolyhedron(group, geometry, color, opacity, options = {}) {
-    // Clear existing geometry
-    while (group.children.length > 0) {
-      group.remove(group.children[0]);
-    }
+    // Clear existing geometry and free GPU resources
+    disposeGroup(group);
 
     const { vertices, edges, faces } = geometry;
 
@@ -1917,9 +1938,7 @@ export function initScene(THREE, OrbitControls, RT) {
         tetrahelix2Group.visible = false;
       } else {
         // Clear existing geometry
-        while (tetrahelix2Group.children.length > 0) {
-          tetrahelix2Group.remove(tetrahelix2Group.children[0]);
-        }
+        disposeGroup(tetrahelix2Group);
 
         // Single call with both direction flags
         const tetrahelix2Data = Helices.tetrahelix2(scale, {
@@ -2023,9 +2042,7 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("cubeMatrixRotate45")?.checked || false;
 
       // Clear existing cube matrix group
-      while (cubeMatrixGroup.children.length > 0) {
-        cubeMatrixGroup.remove(cubeMatrixGroup.children[0]);
-      }
+      disposeGroup(cubeMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = cubeMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2202,9 +2219,7 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("tetMatrixRotate45")?.checked || false;
 
       // Clear existing tet matrix group
-      while (tetMatrixGroup.children.length > 0) {
-        tetMatrixGroup.remove(tetMatrixGroup.children[0]);
-      }
+      disposeGroup(tetMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = tetMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2284,9 +2299,7 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("octaMatrixColinearEdges")?.checked || false;
 
       // Clear existing octa matrix group
-      while (octaMatrixGroup.children.length > 0) {
-        octaMatrixGroup.remove(octaMatrixGroup.children[0]);
-      }
+      disposeGroup(octaMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = octaMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2514,9 +2527,7 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("cuboctaMatrixRotate45")?.checked || false;
 
       // Clear existing cubocta matrix group
-      while (cuboctaMatrixGroup.children.length > 0) {
-        cuboctaMatrixGroup.remove(cuboctaMatrixGroup.children[0]);
-      }
+      disposeGroup(cuboctaMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = cuboctaMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2734,9 +2745,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // Prime Truncated Tetrahedron (5-gon)
     if (document.getElementById("showPrimeTruncTet")?.checked) {
       // Clear existing group
-      while (primeTruncTetGroup.children.length > 0) {
-        primeTruncTetGroup.remove(primeTruncTetGroup.children[0]);
-      }
+      disposeGroup(primeTruncTetGroup);
 
       // Use base truncated tetrahedron - matches Python rt_polyhedra.py exactly
       const truncTet = Polyhedra.truncatedTetrahedron(scale, 1 / 3);
@@ -2761,9 +2770,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // Uses dual tet with unit-sphere normalization for robust hull projection
     if (document.getElementById("showPrimeCompoundTet")?.checked) {
       // Clear existing group
-      while (primeCompoundTetGroup.children.length > 0) {
-        primeCompoundTetGroup.remove(primeCompoundTetGroup.children[0]);
-      }
+      disposeGroup(primeCompoundTetGroup);
 
       // Dual tet compound: all vertices on unit sphere × scale
       const compound = Polyhedra.compoundTruncTetDualTet(scale, 1 / 3);
@@ -2806,9 +2813,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // Prime Compound (TruncTet + Icosa) for 11/13-gon
     if (document.getElementById("showPrimeCompoundIcosa")?.checked) {
       // Clear existing group
-      while (primeCompoundIcosaGroup.children.length > 0) {
-        primeCompoundIcosaGroup.remove(primeCompoundIcosaGroup.children[0]);
-      }
+      disposeGroup(primeCompoundIcosaGroup);
 
       // Use base compound function - matches Python rt_polyhedra.py exactly
       const compound = Polyhedra.compoundTruncTetIcosa(scale, 1 / 3);
@@ -2850,9 +2855,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Prime Geodesic Tet f=2 (single-poly 7-gon)
     if (document.getElementById("showPrimeGeoTetF2")?.checked) {
-      while (primeGeoTetF2Group.children.length > 0) {
-        primeGeoTetF2Group.remove(primeGeoTetF2Group.children[0]);
-      }
+      disposeGroup(primeGeoTetF2Group);
 
       const geoTet = Polyhedra.geodesicTetrahedron(scale, 2, "out");
       renderPolyhedron(
@@ -2873,9 +2876,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Prime Geodesic Tet f=4 (single-poly 11/13-gon)
     if (document.getElementById("showPrimeGeoTetF4")?.checked) {
-      while (primeGeoTetF4Group.children.length > 0) {
-        primeGeoTetF4Group.remove(primeGeoTetF4Group.children[0]);
-      }
+      disposeGroup(primeGeoTetF4Group);
 
       const geoTet = Polyhedra.geodesicTetrahedron(scale, 4, "out");
       renderPolyhedron(
@@ -2906,9 +2907,7 @@ export function initScene(THREE, OrbitControls, RT) {
         false;
 
       // Clear existing rhombic dodec matrix group
-      while (rhombicDodecMatrixGroup.children.length > 0) {
-        rhombicDodecMatrixGroup.remove(rhombicDodecMatrixGroup.children[0]);
-      }
+      disposeGroup(rhombicDodecMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = rhombicDodecMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2970,9 +2969,7 @@ export function initScene(THREE, OrbitControls, RT) {
         document.getElementById("radialCubeSpaceFill")?.checked ?? true;
 
       // Clear existing radial cube matrix group
-      while (radialCubeMatrixGroup.children.length > 0) {
-        radialCubeMatrixGroup.remove(radialCubeMatrixGroup.children[0]);
-      }
+      disposeGroup(radialCubeMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = radialCubeMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -3034,11 +3031,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const spaceFilling = true; // RD always space-fills (no voids possible)
 
       // Clear existing radial rhombic dodec matrix group
-      while (radialRhombicDodecMatrixGroup.children.length > 0) {
-        radialRhombicDodecMatrixGroup.remove(
-          radialRhombicDodecMatrixGroup.children[0]
-        );
-      }
+      disposeGroup(radialRhombicDodecMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = radialRhombicDodecMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -3099,9 +3092,7 @@ export function initScene(THREE, OrbitControls, RT) {
       );
 
       // Clear existing radial tet matrix group
-      while (radialTetMatrixGroup.children.length > 0) {
-        radialTetMatrixGroup.remove(radialTetMatrixGroup.children[0]);
-      }
+      disposeGroup(radialTetMatrixGroup);
 
       // Get IVM Mode checkbox value
       const ivmMode =
@@ -3166,9 +3157,7 @@ export function initScene(THREE, OrbitControls, RT) {
       );
 
       // Clear existing radial oct matrix group
-      while (radialOctMatrixGroup.children.length > 0) {
-        radialOctMatrixGroup.remove(radialOctMatrixGroup.children[0]);
-      }
+      disposeGroup(radialOctMatrixGroup);
 
       // Get IVM scale checkbox value
       // ivmScaleOnly = true: 2× size with taxicab positioning (for nesting into tet matrix)
@@ -3248,9 +3237,7 @@ export function initScene(THREE, OrbitControls, RT) {
       );
 
       // Clear existing radial VE matrix group
-      while (radialVEMatrixGroup.children.length > 0) {
-        radialVEMatrixGroup.remove(radialVEMatrixGroup.children[0]);
-      }
+      disposeGroup(radialVEMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = radialVEMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -3315,9 +3302,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // (tetEdge already declared at top of function)
     if (quadrayBasis) {
       // Clear existing basis
-      while (quadrayBasis.children.length > 0) {
-        quadrayBasis.remove(quadrayBasis.children[0]);
-      }
+      disposeGroup(quadrayBasis);
 
       // Recreate with current tetEdge value
       const gridInterval = RT.PureRadicals.QUADRAY_GRID_INTERVAL; // √6/4 ≈ 0.612
