@@ -977,7 +977,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
         // Mark as vertex node for Papercut section cut detection
         node.userData.isVertexNode = true;
-        node.userData.nodeType = "sphere"; // "sphere" (current) vs "polyhedron" (future)
+        node.userData.nodeType = "sphere";
         node.userData.nodeRadius = nodeRadius;
         node.userData.nodeGeometry = getUseRTNodeGeometry()
           ? "rt"

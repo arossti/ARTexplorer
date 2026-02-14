@@ -805,6 +805,25 @@ export const RTPapercut = {
 
         // CURRENT: Sphere nodes (analytical circle)
         if (object.userData.nodeType === "sphere") {
+          // Handle InstancedMesh (matrix nodes store positions in userData)
+          if (object.isInstancedMesh && object.userData.vertexPositions) {
+            const sphereRadius = object.userData.nodeRadius;
+            object.userData.vertexPositions.forEach(pos => {
+              const sphereCenter = pos.clone();
+              object.localToWorld(sphereCenter);
+              const circle = RTPapercut._spherePlaneIntersection(
+                sphereCenter, sphereRadius, plane, 36
+              );
+              if (circle) {
+                RTPapercut._addCircleToIntersectionGroup(
+                  circle, intersectionGroup, intersectionMaterial
+                );
+              }
+            });
+            return;
+          }
+
+          // Regular individual node mesh
           const sphereCenter = object.getWorldPosition(new THREE.Vector3());
           const sphereRadius = object.userData.nodeRadius;
 
