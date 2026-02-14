@@ -814,21 +814,32 @@ function addMatrixNodes(
       }
     }
 
-    // Create nodes at unique positions
-    vertexPositions.forEach(key => {
-      const [x, y, z] = key.split(",").map(parseFloat);
-      const node = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
-      node.position.set(x, y, z);
-      node.renderOrder = 3;
+    // Create instanced nodes at unique positions
+    const positionsArray = Array.from(vertexPositions);
+    if (positionsArray.length > 0) {
+      const instancedNodes = new THREE.InstancedMesh(
+        nodeGeometry, nodeMaterial, positionsArray.length
+      );
+      instancedNodes.renderOrder = 3;
 
-      // Mark as vertex node for Papercut section cut detection
-      node.userData.isVertexNode = true;
-      node.userData.nodeType = "sphere"; // "sphere" (current) vs "polyhedron" (future)
-      node.userData.nodeRadius = nodeRadius;
-      node.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
+      const tempMatrix = new THREE.Matrix4();
+      const storedPositions = [];
+      positionsArray.forEach((key, i) => {
+        const [x, y, z] = key.split(",").map(parseFloat);
+        tempMatrix.setPosition(x, y, z);
+        instancedNodes.setMatrixAt(i, tempMatrix);
+        storedPositions.push(new THREE.Vector3(x, y, z));
+      });
+      instancedNodes.instanceMatrix.needsUpdate = true;
 
-      matrixGroup.add(node);
-    });
+      instancedNodes.userData.isVertexNode = true;
+      instancedNodes.userData.nodeType = "sphere";
+      instancedNodes.userData.nodeRadius = nodeRadius;
+      instancedNodes.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
+      instancedNodes.userData.vertexPositions = storedPositions;
+
+      matrixGroup.add(instancedNodes);
+    }
 
     MetaLog.log(
       MetaLog.SUMMARY,
@@ -977,21 +988,32 @@ function addRadialMatrixNodes(
       });
     });
 
-    // Create nodes at unique positions
-    vertexPositions.forEach(key => {
-      const [x, y, z] = key.split(",").map(parseFloat);
-      const node = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
-      node.position.set(x, y, z);
-      node.renderOrder = 3;
+    // Create instanced nodes at unique positions
+    const positionsArray = Array.from(vertexPositions);
+    if (positionsArray.length > 0) {
+      const instancedNodes = new THREE.InstancedMesh(
+        nodeGeometry, nodeMaterial, positionsArray.length
+      );
+      instancedNodes.renderOrder = 3;
 
-      // Mark as vertex node for Papercut section cut detection
-      node.userData.isVertexNode = true;
-      node.userData.nodeType = "sphere";
-      node.userData.nodeRadius = nodeRadius;
-      node.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
+      const tempMatrix = new THREE.Matrix4();
+      const storedPositions = [];
+      positionsArray.forEach((key, i) => {
+        const [x, y, z] = key.split(",").map(parseFloat);
+        tempMatrix.setPosition(x, y, z);
+        instancedNodes.setMatrixAt(i, tempMatrix);
+        storedPositions.push(new THREE.Vector3(x, y, z));
+      });
+      instancedNodes.instanceMatrix.needsUpdate = true;
 
-      matrixGroup.add(node);
-    });
+      instancedNodes.userData.isVertexNode = true;
+      instancedNodes.userData.nodeType = "sphere";
+      instancedNodes.userData.nodeRadius = nodeRadius;
+      instancedNodes.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
+      instancedNodes.userData.vertexPositions = storedPositions;
+
+      matrixGroup.add(instancedNodes);
+    }
 
     MetaLog.log(
       MetaLog.SUMMARY,
