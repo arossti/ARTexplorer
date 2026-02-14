@@ -628,6 +628,7 @@ RT.Gravity = {
 | | Phase 1 planning | Decided to implement G-Quadray grids (Central Angle gravity intervals) before G-Cartesian, since the Central Angle tessellation is the more architecturally interesting target. Chordal (straight lines) first, Spherical (arcs) as Phase 3. |
 | | cumDist technique | Key insight: replace constant `edgeLength × i` with a cumulative distance lookup `cumDist[i]` in `createIVMGrid()`. Same loop, same topology — only spacing changes. Thread `gridMode` parameter through the full call chain. ~100 lines across 6 files. |
 | | Phase reordering | Phase 1 = G-Quadray (was Phase 2). Phase 1b = G-Cartesian (was Phase 1). Rationale: Quadray tessellation is the core geometry; Cartesian warping is a simpler derivative. |
+| Feb 14, 2026 | Inward bowing bug | Per-axis cumDist (tensor product of 1D warping) pulls off-axis vertices inward. Midpoints at half the correct radius. Fix: radial warping — compute uniform-space direction, warp radius as continuous function, scale outward to spherical shell. Axis ticks unchanged; off-axis points inflate to shells. Renders Phase 3 (explicit arcs) less urgent since tessellation approximates shell arcs. |
 
 ---
 
@@ -868,6 +869,124 @@ Link | s = 0.XXX (spread) | Q = X.XX | θ ≈ XX.X°
 
 ---
 
+## Bug: Inward Bowing of Central Angle Gridlines (Phase 1)
+
+**Status:** Open — identified Feb 14, 2026
+**Symptom:** Gravity-mode gridlines on central angle planes bow **inward** toward the origin, producing a concave star-like shape. The correct behavior is either straight chords (Phase 1) or outward arcs along concentric spherical shells (Phase 3).
+
+### Root Cause: Per-Axis Tensor Product vs. Radial Warping
+
+The current `createIVMGrid()` computes each vertex as:
+
+```
+P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
+```
+
+Where `cumDist[k] = totalExtent × (k/N)²` (quadratic gravity spacing).
+
+This applies the nonlinear warping **independently to each axis component** — a tensor product of two 1D gravity functions. For points on the axes (where one index is zero), this is correct: axis tick k sits at cumDist[k] from the origin. But for off-axis points (both i > 0 and j > 0), the independent application **double-compresses** the position toward the origin.
+
+### Concrete Example
+
+Consider the diagonal "ring" line connecting axis1-tick-k to axis2-tick-k (i+j = k). With E = totalExtent:
+
+| Point | Grid formula | Distance from origin |
+|-------|-------------|---------------------|
+| Axis1 endpoint (i=k, j=0) | `basis1 × E·k²/N²` | `E·k²/N²` (correct) |
+| Axis2 endpoint (i=0, j=k) | `basis2 × E·k²/N²` | `E·k²/N²` (correct) |
+| **Midpoint (i=k/2, j=k/2)** | `(b1+b2) × E·k²/(4N²)` | **`E·k²/(4N²) × |b1+b2|`** |
+| **Correct chord midpoint** | `(b1+b2) × E·k²/(2N²)` | **`E·k²/(2N²) × |b1+b2|`** |
+
+The grid midpoint is at **half** the radial distance of the correct chord midpoint. The quadratic function satisfies `f(a) + f(b) ≤ f(a+b)` — it's subadditive — so splitting the index between two axes always yields a smaller total displacement than keeping it on one axis.
+
+This is why the gridlines bow inward: intermediate points are pulled toward the origin by the independent quadratic compression on each component.
+
+### Why the 1D Numberline Doesn't Show This
+
+The gravity numberline demo is purely axial — all motion is along a single axis. The quadratic cumDist correctly spaces ticks along that one dimension. The bug only manifests when the same 1D gravity function is applied as a separable product across two axes in 2D.
+
+### Proposed Fix: Radial Gravity Warping
+
+Replace per-axis cumDist lookup with **radial** warping that preserves angular direction from the uniform grid:
+
+```javascript
+// CURRENT (buggy): per-axis tensor product
+P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
+
+// FIXED: radial warping
+P_uniform = basis1 × (i × edgeLength) + basis2 × (j × edgeLength)
+r_uniform = |P_uniform|
+r_gravity = gravityWarp(r_uniform)
+P_gravity = P_uniform × (r_gravity / r_uniform)
+```
+
+Where `gravityWarp(r)` maps a uniform-space radius to a gravity-warped radius:
+
+```javascript
+// For quadratic (uniform-g) model:
+gravityWarp(r) = totalExtent × (r / uniformExtent)²
+
+// Or equivalently, using the continuous form:
+gravityWarp(r) = totalExtent × (r / (N × edgeLength))²
+```
+
+#### What This Produces
+
+- **Every vertex lies on a spherical shell** at the gravity-warped radius
+- **Axis ticks are unchanged** — on the axes, the uniform radius equals k × edgeLength, so gravityWarp gives exactly cumDist[k]
+- **Off-axis points maintain their angular direction** from the uniform tessellation but are pushed out to the correct shell radius
+- **Diagonal "ring" lines trace outward arcs** along the spherical shells — the gridlines inflate outward, creating the concentric shell geometry described in the Phase 0 derivation
+
+This naturally produces the **spherical shell** behavior. The "chordal" (straight-line) variant would then be a separate mode that connects axis ticks with straight chords, skipping the intermediate tessellation points entirely on the ring lines.
+
+#### Implementation Sketch
+
+In `createIVMGrid()`, replace the vertex computation block:
+
+```javascript
+if (gridMode === "gravity-chordal") {
+  // Radial warping: compute uniform position, warp radius
+  const uniformExtent = tessellations * edgeLength;
+  const uniformExtent2 = uniformExtent * uniformExtent;
+
+  for (let i = 0; i <= tessellations; i++) {
+    for (let j = 0; j <= tessellations - i; j++) {
+      const ui  = i * edgeLength, ui1 = (i+1) * edgeLength;
+      const uj  = j * edgeLength, uj1 = (j+1) * edgeLength;
+
+      // Uniform-space vertex, then radially warp
+      // P_uniform = basis1 × ui + basis2 × uj
+      // r² = |P_uniform|² = ui² + uj² + 2·ui·uj·dot(b1,b2)
+      // P_gravity = P_uniform × (totalExtent × r² / uniformExtent²) / r
+      //           = P_uniform × totalExtent × r / uniformExtent²
+      // (using gravityWarp(r) = totalExtent × r²/uniformExtent²)
+
+      function warpVertex(ci, cj) {
+        const px = b1x*ci + b2x*cj;
+        const py = b1y*ci + b2y*cj;
+        const pz = b1z*ci + b2z*cj;
+        const r2 = px*px + py*py + pz*pz;
+        if (r2 < 1e-12) return [0, 0, 0]; // origin stays at origin
+        const r = Math.sqrt(r2);
+        const scale = totalExtent * r / uniformExtent2;  // = r_gravity / r
+        return [px*scale, py*scale, pz*scale];
+      }
+
+      const p0 = warpVertex(ui, uj);
+      const p1 = warpVertex(ui1, uj);
+      const p2 = warpVertex(ui, uj1);
+      // ... emit triangle edges as before
+    }
+  }
+}
+```
+
+#### Revisiting Phase 1 / Phase 3 Distinction
+
+With radial warping, the "gravity-chordal" mode already produces outward-curving arcs (points lie on spherical shells, but edges are straight line segments between adjacent vertices). At high tessellation counts, these approximate the spherical shell surface closely. This may make the separate "Spherical" (Phase 3 rational arc) mode less urgent — the tessellation density already approximates arcs. The Phase 3 rational arcs would then be an optimization for visual quality at low tessellation counts, not a geometric correction.
+
+---
+
 ## Next Steps
 
 - [x] ~~Validate Phase 0 math: compute and plot 1D gravity intervals for N=144~~
@@ -877,12 +996,13 @@ Link | s = 0.XXX (spread) | Q = X.XX | θ ≈ XX.X°
 - [x] ~~Create `modules/rt-ik-solvers.js` with `solveRigid2D()` (Phase 5a)~~
 - [x] ~~Add rigid link visual to Gravity Numberline demo (Phase 5a)~~
 - [ ] **Phase 1: G-Quadray gravity grids (IN PROGRESS)**
-  - [ ] Add `computeGravityCumulativeDistances()` to `RT.Gravity` namespace
-  - [ ] Add `gridMode` param to `createIVMGrid()` with cumDist branching
-  - [ ] Thread `gridMode` through `createIVMPlanes()`, `rebuildQuadrayGrids()`, rt-rendering.js wrapper
-  - [ ] Add Grid Mode UI buttons (Uniform / Gravity / Spherical-disabled)
-  - [ ] Wire buttons in rt-init.js and update tessellation slider binding
-  - [ ] Browser verify: uniform regression, gravity visual, slider + checkboxes preserved
+  - [x] ~~Add `computeGravityCumulativeDistances()` to `RT.Gravity` namespace~~
+  - [x] ~~Add `gridMode` param to `createIVMGrid()` with cumDist branching~~
+  - [x] ~~Thread `gridMode` through `createIVMPlanes()`, `rebuildQuadrayGrids()`, rt-rendering.js wrapper~~
+  - [x] ~~Add Grid Mode UI buttons (Uniform / Gravity / Spherical-disabled)~~
+  - [x] ~~Wire buttons in rt-init.js and update tessellation slider binding~~
+  - [ ] **BUG FIX: Replace per-axis cumDist with radial gravity warping** (see bug section above)
+  - [ ] Browser verify: uniform regression, gravity visual (outward shell arcs), slider + checkboxes preserved
 - [ ] Phase 1b: G-Cartesian Planes (non-uniform XYZ grids)
 - [ ] Phase 3: Curved gridlines (Weierstrass rational arcs replacing straight chords)
 - [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)

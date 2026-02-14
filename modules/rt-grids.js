@@ -417,24 +417,6 @@ export const Grids = {
       window.gridIntervalLogged = true;
     }
 
-    // Build cumulative distance table based on grid mode
-    // Uniform: cumDist[k] = k × edgeLength (constant intervals)
-    // Gravity: cumDist[k] = reversed shell radii × scale (harmonic compression)
-    let cumDist;
-    if (gridMode === "gravity-chordal") {
-      const totalExtent = tessellations * edgeLength;
-      cumDist = RT.Gravity.computeGravityCumulativeDistances(
-        tessellations,
-        totalExtent
-      );
-    } else {
-      // Uniform mode (default) — +1 extra for boundary triangle safety
-      cumDist = [];
-      for (let k = 0; k <= tessellations + 1; k++) {
-        cumDist.push(k * edgeLength);
-      }
-    }
-
     // Extract basis components for inline vertex math (avoids .clone() per vertex)
     const b1x = basis1.x,
       b1y = basis1.y,
@@ -443,33 +425,95 @@ export const Grids = {
       b2y = basis2.y,
       b2z = basis2.z;
 
-    // Tessellate triangle outward (same topology for both modes)
-    for (let i = 0; i <= tessellations; i++) {
-      for (let j = 0; j <= tessellations - i; j++) {
-        const di = cumDist[i],
-          di1 = cumDist[i + 1];
-        const dj = cumDist[j],
-          dj1 = cumDist[j + 1];
+    if (gridMode === "gravity-chordal") {
+      // --- Radial shell projection (gravity mode) ---
+      // Each vertex (i,j) is projected onto the spherical shell at cumDist[i+j].
+      // 1. Compute uniform-space position: P = basis1×(i×e) + basis2×(j×e)
+      // 2. Get quadrance Q = |P|² (RT-pure, no √)
+      // 3. Scale to shell: P_gravity = P × shellProjectionScale(Q, cumDist[i+j])
+      //    (one √ per vertex — the GPU boundary)
+      //
+      // This places ALL vertices on ring k (i+j = k) at the SAME radial distance
+      // cumDist[k], producing outward-arcing gridlines along concentric shells.
+      const totalExtent = tessellations * edgeLength;
+      const cumDist = RT.Gravity.computeGravityCumulativeDistances(
+        tessellations,
+        totalExtent
+      );
 
-        // P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
-        const p0x = b1x * di + b2x * dj;
-        const p0y = b1y * di + b2y * dj;
-        const p0z = b1z * di + b2z * dj;
+      for (let i = 0; i <= tessellations; i++) {
+        for (let j = 0; j <= tessellations - i; j++) {
+          // Uniform-space coordinates (linear spacing)
+          const ui = i * edgeLength, ui1 = (i + 1) * edgeLength;
+          const uj = j * edgeLength, uj1 = (j + 1) * edgeLength;
 
-        // P(i+1,j)
-        const p1x = b1x * di1 + b2x * dj;
-        const p1y = b1y * di1 + b2y * dj;
-        const p1z = b1z * di1 + b2z * dj;
+          let px, py, pz, Q, scale;
 
-        // P(i,j+1)
-        const p2x = b1x * di + b2x * dj1;
-        const p2y = b1y * di + b2y * dj1;
-        const p2z = b1z * di + b2z * dj1;
+          // Vertex 0: (i,j) → shell at cumDist[i+j]
+          px = b1x * ui + b2x * uj;
+          py = b1y * ui + b2y * uj;
+          pz = b1z * ui + b2z * uj;
+          Q = px * px + py * py + pz * pz;
+          scale = RT.Gravity.shellProjectionScale(Q, cumDist[i + j]);
+          const p0x = px * scale, p0y = py * scale, p0z = pz * scale;
 
-        // Three edges (triangle outline)
-        vertices.push(p0x, p0y, p0z, p1x, p1y, p1z);
-        vertices.push(p1x, p1y, p1z, p2x, p2y, p2z);
-        vertices.push(p2x, p2y, p2z, p0x, p0y, p0z);
+          // Vertex 1: (i+1,j) → shell at cumDist[i+1+j]
+          px = b1x * ui1 + b2x * uj;
+          py = b1y * ui1 + b2y * uj;
+          pz = b1z * ui1 + b2z * uj;
+          Q = px * px + py * py + pz * pz;
+          scale = RT.Gravity.shellProjectionScale(Q, cumDist[i + 1 + j]);
+          const p1x = px * scale, p1y = py * scale, p1z = pz * scale;
+
+          // Vertex 2: (i,j+1) → shell at cumDist[i+j+1]
+          px = b1x * ui + b2x * uj1;
+          py = b1y * ui + b2y * uj1;
+          pz = b1z * ui + b2z * uj1;
+          Q = px * px + py * py + pz * pz;
+          scale = RT.Gravity.shellProjectionScale(Q, cumDist[i + j + 1]);
+          const p2x = px * scale, p2y = py * scale, p2z = pz * scale;
+
+          // Three edges (triangle outline)
+          vertices.push(p0x, p0y, p0z, p1x, p1y, p1z);
+          vertices.push(p1x, p1y, p1z, p2x, p2y, p2z);
+          vertices.push(p2x, p2y, p2z, p0x, p0y, p0z);
+        }
+      }
+    } else {
+      // --- Uniform mode (default) ---
+      // cumDist[k] = k × edgeLength (constant intervals)
+      const cumDist = [];
+      for (let k = 0; k <= tessellations + 1; k++) {
+        cumDist.push(k * edgeLength);
+      }
+
+      for (let i = 0; i <= tessellations; i++) {
+        for (let j = 0; j <= tessellations - i; j++) {
+          const di = cumDist[i],
+            di1 = cumDist[i + 1];
+          const dj = cumDist[j],
+            dj1 = cumDist[j + 1];
+
+          // P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
+          const p0x = b1x * di + b2x * dj;
+          const p0y = b1y * di + b2y * dj;
+          const p0z = b1z * di + b2z * dj;
+
+          // P(i+1,j)
+          const p1x = b1x * di1 + b2x * dj;
+          const p1y = b1y * di1 + b2y * dj;
+          const p1z = b1z * di1 + b2z * dj;
+
+          // P(i,j+1)
+          const p2x = b1x * di + b2x * dj1;
+          const p2y = b1y * di + b2y * dj1;
+          const p2z = b1z * di + b2z * dj1;
+
+          // Three edges (triangle outline)
+          vertices.push(p0x, p0y, p0z, p1x, p1y, p1z);
+          vertices.push(p1x, p1y, p1z, p2x, p2y, p2z);
+          vertices.push(p2x, p2y, p2z, p0x, p0y, p0z);
+        }
       }
     }
 
