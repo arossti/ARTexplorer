@@ -1,0 +1,397 @@
+# Gravity Grids — Workplan
+
+**Branch:** TBD (new feature branch from `main`)
+**Goal:** Build warped coordinate grids where intervals encode gravitational acceleration rather than equal spatial distance — so a freely falling object appears to traverse gridlines at constant visual speed.
+**Status:** Conceptual design / Phase 0
+
+---
+
+## The Core Idea
+
+In a standard Cartesian or Quadray grid, gridlines are equally spaced. An object falling under gravity accelerates through these equal intervals — it crosses distant gridlines slowly, then near ones rapidly. The visual effect is acceleration.
+
+**Gravity Grids invert this.** The grid is a series of concentric **spherical shells** centered on the gravity source (origin). Each shell represents one increment of gravitational acceleration (g = 9.8 m/s²). The shells **condense near the origin** where the gravitational field is strongest, and **spread apart far from the origin** where the field weakens. The shape of each shell remains a sphere — the warping is in the *spacing*, not the *shape*.
+
+The arcs connecting intersection points on a given shell are **outward sweeps of the radius** — great-circle arcs along the spherical surface, curving away from the chord that would connect the points through the interior.
+
+The result: an object falling inward crosses shells at a **constant visual rate**, because the shell density matches the object's increasing velocity. The acceleration is encoded in the grid geometry itself rather than in the object's motion.
+
+This is a coordinate system where **the grid does the physics** — analogous to how curved spacetime in GR encodes gravity in the metric rather than as a force.
+
+---
+
+## Phase 0: The 1D Number Line — Mathematical Foundation
+
+Before touching any rendering code, derive the shell radii on a simple radial number line.
+
+### The Spherical Shell Model
+
+The gravity grid is a set of concentric spherical shells centered on the gravity source (origin). Each shell boundary represents a surface of equal gravitational potential increment.
+
+For a point mass M at the origin, the gravitational potential is:
+
+```
+Φ(r) = -GM/r
+```
+
+If we divide the total potential range into N equal increments ΔΦ, each shell boundary sits at:
+
+```
+r_k = GM / (k · ΔΦ)    for k = 1, 2, 3, ... N
+```
+
+### Shell Spacing
+
+The gap between consecutive shells:
+
+```
+Δr_k = r_k - r_{k+1}
+      = GM/ΔΦ · [1/k - 1/(k+1)]
+      = GM/ΔΦ · 1/(k(k+1))
+```
+
+This is a **harmonic compression**: gaps shrink as 1/k² toward the origin.
+
+- **Outermost shells** (small k): widely spaced — weak field, gentle gradient
+- **Innermost shells** (large k): tightly packed — strong field, steep gradient
+
+### Why This Produces Constant Visual Speed
+
+An object falling from rest at shell 1 (outermost) toward the origin:
+
+- Far from origin: **slow** (barely accelerating), but shells are **far apart** → crosses shells at moderate rate
+- Near origin: **fast** (heavily accelerated), but shells are **tightly packed** → still crosses shells at moderate rate
+
+The shell density compensates for the velocity. Each shell-crossing takes approximately equal time — the acceleration is absorbed by the grid.
+
+### Concrete Example: N = 144 shells
+
+Set GM = 1 and ΔΦ = 1/N (so total potential range spans the grid):
+
+```
+r_k = N/k = 144/k
+
+k=1:   r = 144.000  (outermost shell)
+k=2:   r = 72.000   (Δr = 72.000 — huge gap)
+k=3:   r = 48.000   (Δr = 24.000)
+k=10:  r = 14.400   (Δr = 1.600)
+k=12:  r = 12.000   (Δr = 1.091)
+k=72:  r = 2.000    (Δr = 0.028)
+k=143: r = 1.007    (Δr = 0.005)
+k=144: r = 1.000    (Δr = 0.005)
+```
+
+The grid is **dense near the origin** (strong field) and **sparse far out** (weak field). Each shell is a sphere at radius r_k.
+
+### Alternative: Uniform-g Approximation (Near-Surface)
+
+For a uniform field (constant g, like near Earth's surface), each shell represents equal velocity increments rather than equal potential increments:
+
+```
+r_k = H · (1 - k²/N²)
+```
+
+This produces a quadratic compression toward the origin. Useful for the simplified "object dropped from height H" scenario before introducing inverse-square fields.
+
+### Choosing Between Models
+
+| Model | Shell spacing | Best for |
+|-------|--------------|----------|
+| Inverse-square (1/r) | Harmonic: 1/k² | Realistic gravity, planetary scales |
+| Uniform-g | Quadratic: (2k+1)/N² | Near-surface approximation, simpler math |
+
+Phase 1 implements uniform-g first (simpler). Phase 2 upgrades to inverse-square.
+
+---
+
+## Phase 1: G-Cartesian Planes — Warped XYZ Grids
+
+### Implementation Strategy
+
+Extend `rt-grids.js` with a new function `createGravityCartesianGrid()` that replaces `THREE.GridHelper` with custom line geometry using the non-uniform interval sequence from Phase 0.
+
+### Architecture
+
+```
+createGravityCartesianGrid(scene, divisions, gravityCenter)
+├── computeGravityIntervals(divisions, totalExtent, g)  // Phase 0 formula
+├── buildGravityPlane(intervals, axis1, axis2)           // Line geometry
+│   ├── Lines along axis1 at gravity-spaced positions on axis2
+│   └── Lines along axis2 at gravity-spaced positions on axis1
+└── Assemble 3 planes (XY, XZ, YZ) into group
+```
+
+### Key Decisions
+
+1. **Gravity center**: The origin (0,0,0) by default. All intervals compress toward the gravity center. Future: movable gravity source.
+
+2. **Bidirectional intervals**: The grid extends in both directions from the gravity center. Intervals are symmetric (or asymmetric if gravity source is off-center).
+
+3. **Grid extent**: Matches existing Cartesian grid — `divisions` parameter controls how many gridlines. The outermost gridline is at `divisions × baseUnit` (same total extent as the equal-spaced grid), but inner lines are redistributed.
+
+4. **UI toggle**: Add "G-Cartesian Planes" option to the Coordinate Systems section. When toggled, replaces the standard Cartesian grid with the gravity-warped version. The existing plane visibility toggles (XY, XZ, YZ) still apply.
+
+### Naming Convention
+
+| Standard Grid     | Gravity Grid        |
+|-------------------|---------------------|
+| Cartesian Planes  | G-Cartesian Planes  |
+| Quadray Grids     | G-Quadray Grids     |
+
+### What Changes vs. Standard Grid
+
+| Property         | Standard              | G-Grid                                    |
+|------------------|-----------------------|-------------------------------------------|
+| Shell/line shape | Flat planes           | Spherical shells (concentric)             |
+| Interval spacing | Equal (1.0 units)     | Condensing toward origin (1/k² or quadratic) |
+| Lines between points | Straight          | Straight (Phase 1) → Outward arcs (Phase 3) |
+| Total extent     | Same                  | Same                                      |
+| Shell/line count | Same (N)              | Same (N)                                  |
+| Visual effect    | Acceleration visible  | Acceleration hidden in grid               |
+
+---
+
+## Phase 2: G-Quadray Grids — Warped Tetrahedral Grids
+
+### The Challenge
+
+Quadray grids are triangular tessellations on 6 planes (WX, WY, WZ, XY, XZ, YZ). The current `createIVMGrid()` uses a constant `edgeLength = RT.PureRadicals.QUADRAY_GRID_INTERVAL` (√6/4 ≈ 0.612) for every triangle.
+
+For gravity grids, each successive tessellation ring outward from the origin must use a **different** edge length, derived from the gravity interval sequence.
+
+### Implementation Strategy
+
+Modify `createIVMGrid()` (or create `createGravityIVMGrid()`) to accept a **variable interval array** instead of a constant edge length:
+
+```javascript
+createGravityIVMGrid: (basis1, basis2, intervals, color) => {
+    // intervals = [Δr₀, Δr₁, Δr₂, ...] from computeGravityIntervals()
+    // Each tessellation ring uses cumulative sum of intervals
+    // Triangle vertices at ring k are at distance Σ(Δr₀..Δr_k) from origin
+}
+```
+
+### Tessellation Modification
+
+Current uniform tessellation:
+```
+Ring k: vertices at k × edgeLength along each basis direction
+```
+
+Gravity tessellation:
+```
+Ring k: vertices at Σ(intervals[0..k]) along each basis direction
+```
+
+The triangular topology is preserved — same number of triangles, same connectivity — but the **metric is warped**. Triangles near the origin are **small** (condensed shells = strong field), triangles far from origin are **large** (spread shells = weak field).
+
+### RT Purity Consideration
+
+The gravity intervals are inherently irrational (they involve √(2H/g) and k²/N² terms). This is acceptable because the gravity grid represents a **physical metric** (spacetime curvature), not a pure geometric construction. The base Quadray interval (√6/4) remains the RT-pure reference; the gravity warping is an applied distortion.
+
+Document this distinction clearly in code comments: RT-pure geometry vs. physics-applied metric.
+
+---
+
+## Phase 3: Curved Gridlines — Outward Arcs
+
+### The Problem with Straight Chords
+
+Phases 1–2 connect grid intersection points with straight line segments. But two points on the same spherical shell, connected by a straight chord, cut *through* the interior — below the shell surface. This misrepresents the geometry: the actual path along the shell surface curves **outward** from the chord.
+
+### The Solution: Great-Circle Arcs
+
+Replace straight chords with **arc segments** that follow the spherical shell surface. Each segment between two points on shell k sweeps **outward** at radius r_k — a great-circle arc on the sphere.
+
+#### Visualizing the Arcs
+
+```
+Straight chord (Phase 1):     A ———————— B     (cuts through interior)
+Great-circle arc (Phase 3):   A ⌒⌒⌒⌒⌒⌒ B     (sweeps outward along shell)
+```
+
+The arc bulges outward from the origin. The "outward sweep" is the key visual: the grid is not just non-uniformly spaced, it is **curved** — each shell is visibly spherical.
+
+#### For G-Cartesian Planes
+
+Instead of straight horizontal/vertical lines, each "gridline" is a circular arc at radius r_k:
+
+```
+Standard grid:  y = k        (horizontal line)
+Gravity grid:   |r| = r_k    (circular arc, centered on gravity source)
+```
+
+In a 2D plane slice, these are circles. In 3D, sections of spheres.
+
+#### For G-Quadray Grids
+
+Each tessellation ring's edges become geodesic arcs on the sphere at radius r_k. The triangular tessellation vertices remain at the same angular positions, but edges curve outward to follow the spherical surface. Visually, the triangular grid on each shell looks like a **spherical tiling** rather than a flat tessellation.
+
+### Implementation
+
+Discretize each arc into ~16 segments (configurable):
+
+```javascript
+function arcBetween(pointA, pointB, center, segments = 16) {
+    // Both points lie on the same sphere centered at 'center'
+    const radius = pointA.distanceTo(center);
+    const results = [];
+    for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        // Spherical interpolation (SLERP) between A and B
+        const p = slerpOnSphere(pointA, pointB, center, radius, t);
+        results.push(p);
+    }
+    return results;
+}
+```
+
+### Implementation Notes
+
+- Arc resolution: ~16 segments per arc should suffice visually. Configurable.
+- Performance: More vertices per gridline (16× vs 2 for straight). Monitor frame rate.
+- Use THREE.js `slerp` utilities or manual spherical interpolation.
+- The arcs are the **true geometry** of the grid — they show the actual shell surface, not an approximation.
+
+---
+
+## Phase 4: Distorted Polyhedra — Geometry in Curved Space
+
+### The Question
+
+If coordinates (1,1,1) represent a point in gravity-warped space, how do polyhedra render?
+
+### The Approach
+
+A polyhedron defined by its vertex coordinates in flat space gets **remapped** through the gravity metric:
+
+```javascript
+function gravityWarp(vertex, gravityCenter, intervals) {
+    // 1. Find radial distance from gravity center
+    const r = vertex.distanceTo(gravityCenter);
+
+    // 2. Map through gravity interval function
+    //    Equal-space radius r → gravity-warped radius R(r)
+    const R = mapToGravityRadius(r, intervals);
+
+    // 3. Scale vertex radially
+    const direction = vertex.clone().sub(gravityCenter).normalize();
+    return gravityCenter.clone().add(direction.multiplyScalar(R));
+}
+```
+
+Each vertex is radially displaced according to the gravity interval mapping. Edges between vertices become curves (following the warped metric), not straight lines.
+
+### Visual Effect
+
+- A polyhedron **far from the origin** appears nearly normal (shells are widely spaced, close to uniform)
+- A polyhedron **near the origin** appears **radially compressed** (shells are tightly packed) and **tangentially stretched** (shell surfaces curve more steeply)
+- This mimics gravitational tidal distortion — objects are squeezed radially and stretched tangentially as they approach the gravity source
+- A polyhedron **at** the origin collapses toward a point — the Janus Point / singularity
+
+### Mesh Strategy
+
+For visual fidelity, subdivide polyhedron faces before warping. A triangle with 3 vertices maps poorly to a curved space — subdivide each face into ~16 sub-triangles, warp each vertex, and the curved surface emerges.
+
+Use `THREE.SubdivisionModifier` or manual tessellation before applying `gravityWarp()`.
+
+---
+
+## Integration with Existing Codebase
+
+### Files to Modify
+
+| File | Changes |
+|------|---------|
+| `modules/rt-grids.js` | New functions: `computeGravityIntervals()`, `createGravityCartesianGrid()`, `createGravityIVMGrid()`, `createGravityArcGrid()` |
+| `modules/rt-init.js` | UI toggles for G-Cartesian and G-Quadray in Coordinate Systems section |
+| `modules/rt-rendering.js` | `updateGeometry()` to handle gravity grid scaling |
+| `modules/rt-state-manager.js` | Persist gravity grid on/off state and parameters |
+| `modules/rt-math.js` | `computeGravityIntervals(N, H, g)` utility function |
+
+### UI Design
+
+Add to the existing **Coordinate Systems** section:
+
+```
+┌─ Coordinate Systems ─────────────────────┐
+│  ○ Cartesian Planes    ○ G-Cartesian Planes │
+│  ○ Quadray Grids       ○ G-Quadray Grids    │
+│                                              │
+│  Gravity:  g = [9.8] m/s²                   │
+│  Height:   N = [144] gridlines               │
+│  [Curved gridlines ☐]                        │
+└──────────────────────────────────────────────┘
+```
+
+Or simpler: a single toggle "Gravity Warp" that transforms whichever grid system is currently active.
+
+### Existing Infrastructure to Reuse
+
+- **`RT.PureRadicals.QUADRAY_GRID_INTERVAL`** — base interval, becomes the unit that gravity warping distorts
+- **`createIVMGrid(basis1, basis2, halfSize, tessellations, color)`** — tessellation logic, fork for variable intervals
+- **`rebuildQuadrayGrids()`** — pattern for destroying/rebuilding grids on parameter change
+- **`Grids.createCartesianTetraArrow()`** — basis vector arrows (unchanged by gravity warp)
+- **Tessellation slider** — already controls grid extent; gravity warp adds interval redistribution on top
+
+---
+
+## Connection to Janus Inversion
+
+The Gravity Grid concept connects directly to Section 5 of Janus10.tex (The Inversion Manifold):
+
+> "Any point can serve as a local inversion locus through which a form contracts, inverts, and re-expands."
+
+A gravity grid with its center at the origin **is** the Inversion Manifold made visible: intervals compress toward the singular point (the Janus Point / gravity center), and an object falling inward traces the path of contraction toward inversion. The grid doesn't just show *where* things are — it shows the **metric structure** of the space around an inversion locus.
+
+If we extend the grid through the origin into negative radii (the "other side" of the Janus Point), the intervals **re-expand** symmetrically — a visual demonstration of the paired-space thesis: contraction → singularity → re-expansion into the dual arena.
+
+---
+
+## Open Questions
+
+1. **Normalize g or use physical units?** Phase 0 works in abstract units. Should the implementation use g = 9.8 m/s² literally, or normalize to g = 1 with a "physical units" display option?
+
+2. **Gravity center mobility?** Initially at origin. Later: could the gravity center be attached to a polyhedron or draggable point?
+
+3. **Multiple gravity sources?** The interval formula assumes a single source. Two sources would require summing fields — possible but a later-phase complexity.
+
+4. **Inverse-square vs. constant g?** Phase 0 uses constant g (uniform field, like near Earth's surface). Phase 3's curved gridlines imply a point-source (inverse-square) field. These are different regimes — document which applies where.
+
+5. **Performance budget?** Curved gridlines (Phase 3) and subdivided warped polyhedra (Phase 4) multiply vertex count significantly. Profile and set limits.
+
+6. **What does a Quadray basis vector look like in gravity space?** The four tetrahedral basis directions remain angular constants, but their *lengths* now vary with the gravity metric. The basis "arrows" could be drawn with variable thickness or curvature to indicate the local metric distortion.
+
+---
+
+## Phased Delivery
+
+| Phase | Deliverable | Depends On |
+|-------|-------------|------------|
+| 0     | Mathematical model: 1D interval sequence, worked examples | Nothing |
+| 1     | G-Cartesian Planes: non-uniform straight-line grids in XYZ | Phase 0 |
+| 2     | G-Quadray Grids: non-uniform triangular tessellation | Phase 0, Phase 1 patterns |
+| 3     | Curved gridlines: arcs replacing straight lines | Phase 1 or 2 |
+| 4     | Distorted polyhedra: vertex remapping through gravity metric | Phase 2 |
+
+---
+
+## Discussion Log
+
+| Date | Topic | Key Decisions |
+|------|-------|---------------|
+| Feb 13, 2026 | Initial concept | Warped grids encoding g = 9.8 m/s². Start with 1D number line. Name: G-Cartesian / G-Quadray. |
+| | Spherical shells | Grid = concentric spherical shells. Shells condense near origin (strong field), spread far out (weak field). Shape remains spherical — warping is in spacing, not shape. |
+| | Outward arcs | Arcs between grid points on the same shell sweep outward along the shell surface (great-circle arcs), not straight chords through the interior. |
+| | Polyhedra | Later phase: render shapes with gravity distortion applied to vertices. Compressed near origin, normal far out. |
+| | Janus connection | Gravity grid as visible Inversion Manifold — compression toward singular point, re-expansion on the other side. |
+
+---
+
+## Next Steps
+
+- [ ] Validate Phase 0 math: compute and plot 1D gravity intervals for N=144
+- [ ] Prototype `computeGravityIntervals()` in `rt-math.js`
+- [ ] Build `createGravityCartesianGrid()` in `rt-grids.js`
+- [ ] Add UI toggle to Coordinate Systems panel
+- [ ] Test visual effect: drop a marker and verify constant-rate gridline crossings
