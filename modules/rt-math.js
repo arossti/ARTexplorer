@@ -2740,8 +2740,8 @@ export const RT = {
       blackhole: {
         name: "Black Hole (1M\u2609)",
         GM: 1.32712e20,
-        surfaceG: null,
-        radius: null,
+        surfaceG: 1.52e13, // at Schwarzschild radius: c⁴/(4GM)
+        radius: 2953, // r_s = 2GM/c² ≈ 2953 m
       },
     },
 

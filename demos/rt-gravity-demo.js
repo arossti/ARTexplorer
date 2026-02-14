@@ -132,7 +132,6 @@ export function initGravityDemo() {
   createBodies();
   createHandle();
   createFormulaDisplay(container);
-  createDropButton(container);
 
   // Set up interaction
   setupInteraction(container);
@@ -322,9 +321,9 @@ function createFormulaDisplay(container) {
   botLabel.textContent = "GRAVITY GRID \u2014 body at constant velocity (x = vt)";
   container.appendChild(botLabel);
 
-  // Body selector
+  // Body selector + Drop button wrapper (inline)
   const selectorWrap = document.createElement("div");
-  selectorWrap.style.cssText = `position: absolute; top: 50px; left: 15px; z-index: 10;`;
+  selectorWrap.style.cssText = `position: absolute; top: 50px; left: 15px; z-index: 10; display: flex; gap: 8px; align-items: center;`;
 
   bodySelector = document.createElement("select");
   bodySelector.style.cssText = `
@@ -334,10 +333,12 @@ function createFormulaDisplay(container) {
   `;
 
   Object.entries(RT.Gravity.BODIES).forEach(([key, body]) => {
-    if (!body.surfaceG) return;
+    if (key === "normalized") return; // skip abstract preset
     const opt = document.createElement("option");
     opt.value = key;
-    opt.textContent = `${body.name} (g = ${body.surfaceG} m/s\u00B2)`;
+    const gLabel = body.surfaceG >= 1e6
+      ? body.surfaceG.toExponential(2) : body.surfaceG.toFixed(3);
+    opt.textContent = `${body.name} (g = ${gLabel} m/s\u00B2)`;
     if (key === selectedBody) opt.selected = true;
     bodySelector.appendChild(opt);
   });
@@ -351,6 +352,27 @@ function createFormulaDisplay(container) {
   });
 
   selectorWrap.appendChild(bodySelector);
+
+  // Drop/Stop button — inline next to body selector
+  dropButton = document.createElement("button");
+  dropButton.textContent = "Drop";
+  dropButton.style.cssText = `
+    padding: 4px 14px; background: rgba(0, 26, 26, 0.95);
+    border: 1px solid #00cccc; border-radius: 4px;
+    color: #00cccc; font-family: 'Courier New', monospace;
+    font-size: 11px; font-weight: bold; cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  `;
+  dropButton.onmouseover = () => {
+    dropButton.style.background = isAnimating
+      ? "rgba(255, 60, 30, 0.3)" : "rgba(0, 204, 204, 0.2)";
+  };
+  dropButton.onmouseout = () => {
+    dropButton.style.background = "rgba(0, 26, 26, 0.95)";
+  };
+  dropButton.addEventListener("click", toggleAnimation);
+  selectorWrap.appendChild(dropButton);
+
   container.appendChild(selectorWrap);
 
   // Close button
@@ -373,31 +395,6 @@ function createFormulaDisplay(container) {
   formulaElement = document.createElement("div");
   formulaElement.className = "gravity-panel gravity-formula-panel";
   container.appendChild(formulaElement);
-}
-
-/**
- * Create the Drop/Stop toggle button
- */
-function createDropButton(container) {
-  dropButton = document.createElement("button");
-  dropButton.textContent = "Drop";
-  dropButton.style.cssText = `
-    position: absolute; top: 50px; right: 15px;
-    padding: 6px 18px; background: rgba(0, 26, 26, 0.95);
-    border: 1px solid #00cccc; border-radius: 4px;
-    color: #00cccc; font-family: 'Courier New', monospace;
-    font-size: 13px; font-weight: bold; cursor: pointer;
-    z-index: 10; transition: background 0.2s, color 0.2s;
-  `;
-  dropButton.onmouseover = () => {
-    dropButton.style.background = isAnimating
-      ? "rgba(255, 60, 30, 0.3)" : "rgba(0, 204, 204, 0.2)";
-  };
-  dropButton.onmouseout = () => {
-    dropButton.style.background = "rgba(0, 26, 26, 0.95)";
-  };
-  dropButton.addEventListener("click", toggleAnimation);
-  container.appendChild(dropButton);
 }
 
 /**
