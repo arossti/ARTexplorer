@@ -2783,18 +2783,16 @@ export const RT = {
      *
      * @param {number} N - Number of intervals (tessellation count)
      * @param {number} totalExtent - Total extent to scale to
-     * @param {number} [GM=1] - Gravitational parameter
      * @returns {number[]} Cumulative distances [0, d1, ..., dN, dN+extrapolated]
      */
-    computeGravityCumulativeDistances: (N, totalExtent, GM = 1) => {
-      const { radii } = RT.Gravity.computeGravityIntervals(N, GM);
-      // radii = [N/1, N/2, ..., N/N] outermost first
-      // Reverse: [N/N, N/(N-1), ..., N/1] = [1, ...] innermost first
-      const reversed = [...radii].reverse();
-      const scale = totalExtent / reversed[reversed.length - 1];
+    computeGravityCumulativeDistances: (N, totalExtent) => {
+      // Quadratic (uniform-g) model: cumDist[k] = totalExtent × (k/N)²
+      // Gaps grow linearly: (2k+1)/N² — dense near origin, sparse far out
+      // Matches the numberline demo spacing pattern (1, 4, 9, 16, ... 144)
       const cumDist = [0];
-      for (let k = 0; k < N; k++) {
-        cumDist.push(reversed[k] * scale);
+      const N2 = N * N;
+      for (let k = 1; k <= N; k++) {
+        cumDist.push(totalExtent * (k * k) / N2);
       }
       // Extrapolate one step beyond for boundary triangle safety
       const lastGap = cumDist[N] - cumDist[N - 1];
