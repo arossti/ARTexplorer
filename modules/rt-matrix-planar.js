@@ -66,6 +66,122 @@ import { MetaLog } from "./rt-metalog.js";
 import { Polyhedra } from "./rt-polyhedra.js";
 
 /**
+ * Build merged face and edge geometry for an entire matrix in a single pass.
+ * Creates ONE face mesh + ONE edge LineSegments instead of N² separate objects.
+ * @param {Object} baseGeom - {vertices, edges, faces} from Polyhedra
+ * @param {Array} cellPositions - Array of {x, y, z, flipZ} offset objects
+ * @param {number} opacity - Face opacity
+ * @param {number} color - Hex color
+ * @param {number} side - THREE side constant (FrontSide or DoubleSide)
+ * @param {Object} THREE - THREE.js library
+ * @returns {THREE.Group} Group with 2 children: face mesh + edge lines
+ */
+function buildMergedMatrix(baseGeom, cellPositions, opacity, color, side, THREE) {
+  const { vertices, edges, faces } = baseGeom;
+  const totalCells = cellPositions.length;
+  const vertsPerCell = vertices.length;
+
+  // Pre-compute face index template (triangulated)
+  const faceIndexTemplate = [];
+  faces.forEach(faceIndices => {
+    for (let k = 1; k < faceIndices.length - 1; k++) {
+      faceIndexTemplate.push(faceIndices[0], faceIndices[k], faceIndices[k + 1]);
+    }
+  });
+
+  // Pre-allocate merged arrays
+  const allPositions = new Float32Array(totalCells * vertsPerCell * 3);
+  const allIndices = [];
+  const allEdgePositions = new Float32Array(totalCells * edges.length * 6);
+
+  let posIdx = 0;
+  let edgeIdx = 0;
+  let vertexOffset = 0;
+
+  for (let c = 0; c < totalCells; c++) {
+    const { x: ox, y: oy, z: oz, flipZ } = cellPositions[c];
+
+    // Write vertices into typed array (with optional 180° Z rotation: x=-x, y=-y)
+    for (let v = 0; v < vertsPerCell; v++) {
+      if (flipZ) {
+        allPositions[posIdx++] = -vertices[v].x + ox;
+        allPositions[posIdx++] = -vertices[v].y + oy;
+        allPositions[posIdx++] = vertices[v].z + oz;
+      } else {
+        allPositions[posIdx++] = vertices[v].x + ox;
+        allPositions[posIdx++] = vertices[v].y + oy;
+        allPositions[posIdx++] = vertices[v].z + oz;
+      }
+    }
+
+    // Offset face indices for this cell
+    for (let fi = 0; fi < faceIndexTemplate.length; fi++) {
+      allIndices.push(faceIndexTemplate[fi] + vertexOffset);
+    }
+
+    // Write edge positions
+    for (let e = 0; e < edges.length; e++) {
+      const [vi, vj] = edges[e];
+      if (flipZ) {
+        allEdgePositions[edgeIdx++] = -vertices[vi].x + ox;
+        allEdgePositions[edgeIdx++] = -vertices[vi].y + oy;
+        allEdgePositions[edgeIdx++] = vertices[vi].z + oz;
+        allEdgePositions[edgeIdx++] = -vertices[vj].x + ox;
+        allEdgePositions[edgeIdx++] = -vertices[vj].y + oy;
+        allEdgePositions[edgeIdx++] = vertices[vj].z + oz;
+      } else {
+        allEdgePositions[edgeIdx++] = vertices[vi].x + ox;
+        allEdgePositions[edgeIdx++] = vertices[vi].y + oy;
+        allEdgePositions[edgeIdx++] = vertices[vi].z + oz;
+        allEdgePositions[edgeIdx++] = vertices[vj].x + ox;
+        allEdgePositions[edgeIdx++] = vertices[vj].y + oy;
+        allEdgePositions[edgeIdx++] = vertices[vj].z + oz;
+      }
+    }
+
+    vertexOffset += vertsPerCell;
+  }
+
+  const group = new THREE.Group();
+
+  // ONE face geometry for entire matrix
+  const faceGeometry = new THREE.BufferGeometry();
+  faceGeometry.setAttribute("position", new THREE.BufferAttribute(allPositions, 3));
+  faceGeometry.setIndex(allIndices);
+  faceGeometry.computeVertexNormals();
+
+  const faceMaterial = new THREE.MeshStandardMaterial({
+    color: color,
+    transparent: true,
+    opacity: opacity,
+    side: side,
+    depthWrite: opacity >= 0.99,
+    flatShading: true,
+  });
+
+  const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
+  faceMesh.renderOrder = 1;
+  group.add(faceMesh);
+
+  // ONE edge geometry for entire matrix
+  const edgeGeometry = new THREE.BufferGeometry();
+  edgeGeometry.setAttribute("position", new THREE.BufferAttribute(allEdgePositions, 3));
+
+  const edgeMaterial = new THREE.LineBasicMaterial({
+    color: color,
+    linewidth: 1,
+    depthTest: true,
+    depthWrite: true,
+  });
+
+  const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+  edgeLines.renderOrder = 2;
+  group.add(edgeLines);
+
+  return group;
+}
+
+/**
  * Matrix generation module for IVM spatial arrays
  * @namespace RTMatrix
  */
@@ -86,95 +202,25 @@ export const RTMatrix = {
    * // Creates 5×5 grid of 25 cubes
    */
   createCubeMatrix: (matrixSize, halfSize, rotate45, opacity, color, THREE) => {
-    const matrixGroup = new THREE.Group();
-    const cubeEdge = halfSize * 2; // Full edge length
-    const spacing = cubeEdge; // Edge-to-edge contact
-
-    // Get base cube geometry
+    const spacing = halfSize * 2; // Edge-to-edge contact
     const cubeGeom = Polyhedra.cube(halfSize);
-    const { vertices, edges, faces } = cubeGeom;
 
-    // Generate N×N grid centered at origin
+    // Collect cell positions
+    const cellPositions = [];
     for (let i = 0; i < matrixSize; i++) {
       for (let j = 0; j < matrixSize; j++) {
-        // Calculate position: centered at origin
-        // offset = (index - N/2 + 0.5) * spacing
-        const offset_x = (i - matrixSize / 2 + 0.5) * spacing;
-        const offset_y = (j - matrixSize / 2 + 0.5) * spacing;
-        const offset_z = 0; // Z-centered at origin
-
-        // Create cube instance at this grid position
-        const cubeGroup = new THREE.Group();
-
-        // Build indexed face geometry
-        const positions = [];
-        const indices = [];
-
-        // Add all vertices to positions array (with offset)
-        vertices.forEach(v => {
-          positions.push(v.x + offset_x, v.y + offset_y, v.z + offset_z);
+        cellPositions.push({
+          x: (i - matrixSize / 2 + 0.5) * spacing,
+          y: (j - matrixSize / 2 + 0.5) * spacing,
+          z: 0,
         });
-
-        // Build face indices (triangulate quads if needed)
-        faces.forEach(faceIndices => {
-          // Fan triangulation from first vertex
-          for (let k = 1; k < faceIndices.length - 1; k++) {
-            indices.push(faceIndices[0], faceIndices[k], faceIndices[k + 1]);
-          }
-        });
-
-        const faceGeometry = new THREE.BufferGeometry();
-        faceGeometry.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(positions, 3)
-        );
-        faceGeometry.setIndex(indices);
-        faceGeometry.computeVertexNormals();
-
-        const faceMaterial = new THREE.MeshStandardMaterial({
-          color: color,
-          transparent: true,
-          opacity: opacity,
-          side: THREE.FrontSide, // Backface culling enabled - all polyhedra winding corrected (2026-01-11)
-          depthWrite: opacity >= 0.99,
-          flatShading: true,
-        });
-
-        const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
-        faceMesh.renderOrder = 1;
-        cubeGroup.add(faceMesh);
-
-        // Render edges
-        const edgePositions = [];
-        edges.forEach(([vi, vj]) => {
-          const v1 = vertices[vi];
-          const v2 = vertices[vj];
-          edgePositions.push(v1.x + offset_x, v1.y + offset_y, v1.z + offset_z);
-          edgePositions.push(v2.x + offset_x, v2.y + offset_y, v2.z + offset_z);
-        });
-
-        const edgeGeometry = new THREE.BufferGeometry();
-        edgeGeometry.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(edgePositions, 3)
-        );
-
-        const edgeMaterial = new THREE.LineBasicMaterial({
-          color: color,
-          linewidth: 1,
-          depthTest: true,
-          depthWrite: true,
-        });
-
-        const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-        edgeLines.renderOrder = 2;
-        cubeGroup.add(edgeLines);
-
-        matrixGroup.add(cubeGroup);
       }
     }
 
-    // Apply 45° rotation if requested (RT-pure)
+    const matrixGroup = buildMergedMatrix(
+      cubeGeom, cellPositions, opacity, color, THREE.FrontSide, THREE
+    );
+
     if (rotate45) {
       RT.applyRotation45(matrixGroup);
     }
@@ -214,100 +260,30 @@ export const RTMatrix = {
     halfSize,
     rotate45,
     opacity,
-    color = 0x00ff88, // Lime-cyan (Vector Equilibrium color)
+    color = 0x00ff88,
     THREE
   ) => {
-    const matrixGroup = new THREE.Group();
-
-    // Scale by √2 to match rhombic dodec midsphere (vertices at halfSize, not halfSize/√2)
+    // Scale by √2 to match rhombic dodec midsphere
     const scaledHalfSize = halfSize * Math.sqrt(2);
     const edgeLength = scaledHalfSize * Math.sqrt(2); // = 2 * halfSize
-    const spacing = edgeLength; // Face-to-face spacing
-
-    // Get base cuboctahedron geometry (scaled up)
+    const spacing = edgeLength;
     const cuboctaGeom = Polyhedra.cuboctahedron(scaledHalfSize);
-    const { vertices, edges, faces } = cuboctaGeom;
 
-    // Generate N×N grid centered at origin
+    const cellPositions = [];
     for (let i = 0; i < matrixSize; i++) {
       for (let j = 0; j < matrixSize; j++) {
-        // Calculate position: centered at origin
-        const offset_x = (i - matrixSize / 2 + 0.5) * spacing;
-        const offset_y = (j - matrixSize / 2 + 0.5) * spacing;
-        const offset_z = 0; // Z-centered at origin
-
-        // Create cuboctahedron instance at this grid position
-        const cuboctaGroup = new THREE.Group();
-
-        // Build indexed face geometry
-        const positions = [];
-        const indices = [];
-
-        // Add all vertices to positions array (with offset)
-        vertices.forEach(v => {
-          positions.push(v.x + offset_x, v.y + offset_y, v.z + offset_z);
+        cellPositions.push({
+          x: (i - matrixSize / 2 + 0.5) * spacing,
+          y: (j - matrixSize / 2 + 0.5) * spacing,
+          z: 0,
         });
-
-        // Build face indices (triangulate triangles and squares)
-        faces.forEach(faceIndices => {
-          // Fan triangulation from first vertex
-          for (let k = 1; k < faceIndices.length - 1; k++) {
-            indices.push(faceIndices[0], faceIndices[k], faceIndices[k + 1]);
-          }
-        });
-
-        const faceGeometry = new THREE.BufferGeometry();
-        faceGeometry.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(positions, 3)
-        );
-        faceGeometry.setIndex(indices);
-        faceGeometry.computeVertexNormals();
-
-        const faceMaterial = new THREE.MeshStandardMaterial({
-          color: color,
-          transparent: true,
-          opacity: opacity,
-          side: THREE.FrontSide, // Backface culling enabled - all polyhedra winding corrected (2026-01-11)
-          depthWrite: opacity >= 0.99,
-          flatShading: true,
-        });
-
-        const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
-        faceMesh.renderOrder = 1;
-        cuboctaGroup.add(faceMesh);
-
-        // Render edges
-        const edgePositions = [];
-        edges.forEach(([vi, vj]) => {
-          const v1 = vertices[vi];
-          const v2 = vertices[vj];
-          edgePositions.push(v1.x + offset_x, v1.y + offset_y, v1.z + offset_z);
-          edgePositions.push(v2.x + offset_x, v2.y + offset_y, v2.z + offset_z);
-        });
-
-        const edgeGeometry = new THREE.BufferGeometry();
-        edgeGeometry.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(edgePositions, 3)
-        );
-
-        const edgeMaterial = new THREE.LineBasicMaterial({
-          color: color,
-          linewidth: 1,
-          depthTest: true,
-          depthWrite: true,
-        });
-
-        const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-        edgeLines.renderOrder = 2;
-        cuboctaGroup.add(edgeLines);
-
-        matrixGroup.add(cuboctaGroup);
       }
     }
 
-    // Apply 45° rotation if requested (RT-pure)
+    const matrixGroup = buildMergedMatrix(
+      cuboctaGeom, cellPositions, opacity, color, THREE.FrontSide, THREE
+    );
+
     if (rotate45) {
       RT.applyRotation45(matrixGroup);
     }
@@ -350,124 +326,47 @@ export const RTMatrix = {
     rotate45,
     faceCoplanar,
     opacity,
-    color = 0xff8800, // Orange (Rhombic Dodecahedron color)
+    color = 0xff8800,
     THREE
   ) => {
-    const matrixGroup = new THREE.Group();
-
-    // Always use default cube-compatible spacing
-    const spacing = 2 * halfSize; // Cube edge - rhombic dodec is space-filling like cube
-
-    // Get base rhombic dodecahedron geometry
-    // Scale by √2 because rhombicDodecahedron(s) has axial vertices at s/√2, but we need them at halfSize
+    const spacing = 2 * halfSize;
     const rhombicDodecGeom = Polyhedra.rhombicDodecahedron(
       halfSize * Math.sqrt(2)
     );
-    const { vertices, edges, faces } = rhombicDodecGeom;
 
-    // Helper function to create a single rhombic dodecahedron at given position
-    const createRhombicDodec = (offset_x, offset_y, offset_z) => {
-      const rhombicDodecGroup = new THREE.Group();
-
-      // Build indexed face geometry
-      const positions = [];
-      const indices = [];
-
-      // Add all vertices to positions array (with offset)
-      vertices.forEach(v => {
-        positions.push(v.x + offset_x, v.y + offset_y, v.z + offset_z);
-      });
-
-      // Build face indices (triangulate rhombic faces)
-      faces.forEach(faceIndices => {
-        // Fan triangulation from first vertex
-        for (let k = 1; k < faceIndices.length - 1; k++) {
-          indices.push(faceIndices[0], faceIndices[k], faceIndices[k + 1]);
-        }
-      });
-
-      const faceGeometry = new THREE.BufferGeometry();
-      faceGeometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(positions, 3)
-      );
-      faceGeometry.setIndex(indices);
-      faceGeometry.computeVertexNormals();
-
-      const faceMaterial = new THREE.MeshStandardMaterial({
-        color: color,
-        transparent: true,
-        opacity: opacity,
-        side: THREE.DoubleSide,
-        depthWrite: opacity >= 0.99,
-        flatShading: true,
-      });
-
-      const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
-      faceMesh.renderOrder = 1;
-      rhombicDodecGroup.add(faceMesh);
-
-      // Render edges
-      const edgePositions = [];
-      edges.forEach(([vi, vj]) => {
-        const v1 = vertices[vi];
-        const v2 = vertices[vj];
-        edgePositions.push(v1.x + offset_x, v1.y + offset_y, v1.z + offset_z);
-        edgePositions.push(v2.x + offset_x, v2.y + offset_y, v2.z + offset_z);
-      });
-
-      const edgeGeometry = new THREE.BufferGeometry();
-      edgeGeometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(edgePositions, 3)
-      );
-
-      const edgeMaterial = new THREE.LineBasicMaterial({
-        color: color,
-        linewidth: 1,
-        depthTest: true,
-        depthWrite: true,
-      });
-
-      const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-      edgeLines.renderOrder = 2;
-      rhombicDodecGroup.add(edgeLines);
-
-      matrixGroup.add(rhombicDodecGroup);
-    };
-
-    // Generate primary N×N grid centered at origin
-    let polyhedraCount = 0;
+    // Collect all cell positions (primary grid + optional interstitial)
+    const cellPositions = [];
     for (let i = 0; i < matrixSize; i++) {
       for (let j = 0; j < matrixSize; j++) {
-        const offset_x = (i - matrixSize / 2 + 0.5) * spacing;
-        const offset_y = (j - matrixSize / 2 + 0.5) * spacing;
-        const offset_z = 0;
-        createRhombicDodec(offset_x, offset_y, offset_z);
-        polyhedraCount++;
+        cellPositions.push({
+          x: (i - matrixSize / 2 + 0.5) * spacing,
+          y: (j - matrixSize / 2 + 0.5) * spacing,
+          z: 0,
+        });
       }
     }
 
-    // If faceCoplanar mode is enabled, add interstitial rhombic dodecahedra
-    // to fill the gaps and create true space-filling tessellation
     if (faceCoplanar) {
-      // Add interstitial polyhedra offset by (halfSize, halfSize, 0)
       for (let i = 0; i < matrixSize - 1; i++) {
         for (let j = 0; j < matrixSize - 1; j++) {
-          const offset_x = (i - matrixSize / 2 + 1.0) * spacing;
-          const offset_y = (j - matrixSize / 2 + 1.0) * spacing;
-          const offset_z = 0;
-          createRhombicDodec(offset_x, offset_y, offset_z);
-          polyhedraCount++;
+          cellPositions.push({
+            x: (i - matrixSize / 2 + 1.0) * spacing,
+            y: (j - matrixSize / 2 + 1.0) * spacing,
+            z: 0,
+          });
         }
       }
     }
 
-    // Apply 45° rotation if requested (RT-pure)
+    const matrixGroup = buildMergedMatrix(
+      rhombicDodecGeom, cellPositions, opacity, color, THREE.DoubleSide, THREE
+    );
+
     if (rotate45) {
       RT.applyRotation45(matrixGroup);
     }
 
+    const polyhedraCount = cellPositions.length;
     MetaLog.log(
       MetaLog.SUMMARY,
       `[RTMatrix] Rhombic dodecahedron matrix: ${matrixSize}×${matrixSize} primary grid${
@@ -503,106 +402,31 @@ export const RTMatrix = {
     color,
     THREE
   ) => {
-    const matrixGroup = new THREE.Group();
-
     // Spacing: Distance between tet centers in grid
     // Tetrahedra inscribe in cubes (vertices at alternating cube vertices)
     // Therefore spacing MUST match cube spacing for proper nesting
-    // Cube edge = 2 * halfSize (NOT tetEdge!)
-    // Note: Tet edge length = 2 * halfSize * √2 (NOT used for spacing)
     const spacing = 2 * halfSize; // Same as cube matrix!
-
-    // Get base tetrahedron geometry
     const tetGeom = Polyhedra.tetrahedron(halfSize);
-    const { vertices, edges, faces } = tetGeom;
 
     // Generate N×N grid with alternating orientations
+    // (i + j) % 2 === 0 → up, else → down (180° Z rotation)
+    const cellPositions = [];
     for (let i = 0; i < matrixSize; i++) {
       for (let j = 0; j < matrixSize; j++) {
-        // Calculate position: centered at origin
-        const offset_x = (i - matrixSize / 2 + 0.5) * spacing;
-        const offset_y = (j - matrixSize / 2 + 0.5) * spacing;
-        const offset_z = 0; // Z-centered at origin
-
-        // Determine orientation: checkerboard pattern (up vs down)
-        // (i + j) % 2 === 0 → up, else → down (inverted)
         const isUp = (i + j) % 2 === 0;
-
-        // Create tetrahedron instance at this grid position
-        const tetGroup = new THREE.Group();
-
-        // Build indexed face geometry
-        const positions = [];
-        const indices = [];
-
-        // Add all vertices to positions array (with offset)
-        vertices.forEach(v => {
-          positions.push(v.x + offset_x, v.y + offset_y, v.z + offset_z);
+        cellPositions.push({
+          x: (i - matrixSize / 2 + 0.5) * spacing,
+          y: (j - matrixSize / 2 + 0.5) * spacing,
+          z: 0,
+          flipZ: !isUp, // 180° rotation around Z: x=-x, y=-y
         });
-
-        // Build face indices (triangles)
-        faces.forEach(faceIndices => {
-          indices.push(faceIndices[0], faceIndices[1], faceIndices[2]);
-        });
-
-        const faceGeometry = new THREE.BufferGeometry();
-        faceGeometry.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(positions, 3)
-        );
-        faceGeometry.setIndex(indices);
-        faceGeometry.computeVertexNormals();
-
-        const faceMaterial = new THREE.MeshStandardMaterial({
-          color: color,
-          transparent: true,
-          opacity: opacity,
-          side: THREE.FrontSide, // Backface culling enabled - all polyhedra winding corrected (2026-01-11)
-          depthWrite: opacity >= 0.99,
-          flatShading: true,
-        });
-
-        const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
-        faceMesh.renderOrder = 1;
-        tetGroup.add(faceMesh);
-
-        // Render edges
-        const edgePositions = [];
-        edges.forEach(([vi, vj]) => {
-          const v1 = vertices[vi];
-          const v2 = vertices[vj];
-          edgePositions.push(v1.x + offset_x, v1.y + offset_y, v1.z + offset_z);
-          edgePositions.push(v2.x + offset_x, v2.y + offset_y, v2.z + offset_z);
-        });
-
-        const edgeGeometry = new THREE.BufferGeometry();
-        edgeGeometry.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(edgePositions, 3)
-        );
-
-        const edgeMaterial = new THREE.LineBasicMaterial({
-          color: color,
-          linewidth: 1,
-          depthTest: true,
-          depthWrite: true,
-        });
-
-        const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-        edgeLines.renderOrder = 2;
-        tetGroup.add(edgeLines);
-
-        // Apply orientation rotation (180° around Z for down-facing tets)
-        // RT-PURE: Uses spread/cross methodology, not Math.PI
-        if (!isUp) {
-          RT.applyRotation180(tetGroup); // Flip 180° (s=0, c=1)
-        }
-
-        matrixGroup.add(tetGroup);
       }
     }
 
-    // Apply 45° rotation if requested (RT-pure)
+    const matrixGroup = buildMergedMatrix(
+      tetGeom, cellPositions, opacity, color, THREE.FrontSide, THREE
+    );
+
     if (rotate45) {
       RT.applyRotation45(matrixGroup);
     }
@@ -639,115 +463,42 @@ export const RTMatrix = {
     color,
     THREE
   ) => {
-    const matrixGroup = new THREE.Group();
-
-    // Always use default cube-compatible spacing
-    const spacing = 2 * halfSize; // Same as cube matrix!
-
-    // Get base octahedron geometry
+    const spacing = 2 * halfSize;
     const octaGeom = Polyhedra.octahedron(halfSize);
-    const { vertices, edges, faces } = octaGeom;
 
-    // Helper function to create a single octahedron at given position
-    const createOctahedron = (offset_x, offset_y, offset_z) => {
-      const octaGroup = new THREE.Group();
-
-      // Build indexed face geometry
-      const positions = [];
-      const indices = [];
-
-      // Add all vertices to positions array (with offset)
-      vertices.forEach(v => {
-        positions.push(v.x + offset_x, v.y + offset_y, v.z + offset_z);
-      });
-
-      // Build face indices (triangles)
-      faces.forEach(faceIndices => {
-        indices.push(faceIndices[0], faceIndices[1], faceIndices[2]);
-      });
-
-      const faceGeometry = new THREE.BufferGeometry();
-      faceGeometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(positions, 3)
-      );
-      faceGeometry.setIndex(indices);
-      faceGeometry.computeVertexNormals();
-
-      const faceMaterial = new THREE.MeshStandardMaterial({
-        color: color,
-        transparent: true,
-        opacity: opacity,
-        side: THREE.DoubleSide,
-        depthWrite: opacity >= 0.99,
-        flatShading: true,
-      });
-
-      const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
-      faceMesh.renderOrder = 1;
-      octaGroup.add(faceMesh);
-
-      // Render edges
-      const edgePositions = [];
-      edges.forEach(([vi, vj]) => {
-        const v1 = vertices[vi];
-        const v2 = vertices[vj];
-        edgePositions.push(v1.x + offset_x, v1.y + offset_y, v1.z + offset_z);
-        edgePositions.push(v2.x + offset_x, v2.y + offset_y, v2.z + offset_z);
-      });
-
-      const edgeGeometry = new THREE.BufferGeometry();
-      edgeGeometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(edgePositions, 3)
-      );
-
-      const edgeMaterial = new THREE.LineBasicMaterial({
-        color: color,
-        linewidth: 1,
-        depthTest: true,
-        depthWrite: true,
-      });
-
-      const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-      edgeLines.renderOrder = 2;
-      octaGroup.add(edgeLines);
-
-      matrixGroup.add(octaGroup);
-    };
-
-    // Generate primary N×N grid centered at origin
-    let polyhedraCount = 0;
+    // Collect all cell positions (primary grid + optional interstitial)
+    const cellPositions = [];
     for (let i = 0; i < matrixSize; i++) {
       for (let j = 0; j < matrixSize; j++) {
-        const offset_x = (i - matrixSize / 2 + 0.5) * spacing;
-        const offset_y = (j - matrixSize / 2 + 0.5) * spacing;
-        const offset_z = 0;
-        createOctahedron(offset_x, offset_y, offset_z);
-        polyhedraCount++;
+        cellPositions.push({
+          x: (i - matrixSize / 2 + 0.5) * spacing,
+          y: (j - matrixSize / 2 + 0.5) * spacing,
+          z: 0,
+        });
       }
     }
 
-    // If colinearEdges mode is enabled, add interstitial octahedra
-    // to fill the gaps and create true space-filling tessellation
     if (colinearEdges) {
-      // Add interstitial octahedra offset by (halfSize, halfSize, 0)
       for (let i = 0; i < matrixSize - 1; i++) {
         for (let j = 0; j < matrixSize - 1; j++) {
-          const offset_x = (i - matrixSize / 2 + 1.0) * spacing;
-          const offset_y = (j - matrixSize / 2 + 1.0) * spacing;
-          const offset_z = 0;
-          createOctahedron(offset_x, offset_y, offset_z);
-          polyhedraCount++;
+          cellPositions.push({
+            x: (i - matrixSize / 2 + 1.0) * spacing,
+            y: (j - matrixSize / 2 + 1.0) * spacing,
+            z: 0,
+          });
         }
       }
     }
 
-    // Apply 45° rotation if requested (RT-pure)
+    const matrixGroup = buildMergedMatrix(
+      octaGeom, cellPositions, opacity, color, THREE.DoubleSide, THREE
+    );
+
     if (rotate45) {
       RT.applyRotation45(matrixGroup);
     }
 
+    const polyhedraCount = cellPositions.length;
     MetaLog.log(
       MetaLog.SUMMARY,
       `[RTMatrix] Octahedron matrix: ${matrixSize}×${matrixSize} primary grid${
