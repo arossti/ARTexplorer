@@ -1,0 +1,824 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{parskip}
+\usepackage{tcolorbox}
+\usepackage{endnotes}
+
+\geometry{margin=1in}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{definition}{Definition}
+\newtheorem{observation}{Observation}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+
+\title{Geometric Janus Inversion -- v10 (Feb 2026)\\
+\large Tetrahedral Coordinates, the Inversion Manifold,\\
+and the Three-State Geometry of Inside-Outing}
+
+\author{Andrew Thomson\\
+\small Open Building / ARTexplorer Project\\
+\small \href{mailto:andy@openbuilding.ca}{andy@openbuilding.ca}}
+
+\date{February 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+When a tetrahedron in Quadray coordinates contracts through the origin, all four coordinate signs flip and a structurally identical form re-expands in a complementary signed space. This paper proposes that the positive and negative Quadray arenas are not notational variants but two complete geometric states connected at the origin---a geometric Janus Point. We develop three consequences: (1) the origin is not unique; any point can serve as a local inversion locus, yielding an \emph{inversion manifold} operating at all scales from photon to black hole; (2) Janus Inversion produces a natural three-state geometry---positive, negative, and the singular boundary between them---structurally parallel to quantum spin's $\{+, -, \text{superposition}\}$; and (3) the framework is productive, having generated non-constructible prime polygon projections at rational spreads and gimbal-lock-free rotation representations. We build on Julian Barbour's Janus Point, Fuller's synergetic geometry, and Wildberger's Rational Trigonometry, distinguishing carefully between proven mathematics, demonstrated results, and open conjectures---without retreating from the central claim that tetrahedral coordinates reveal geometric structure that Cartesian coordinates structurally obscure.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%==============================================================================
+\section{Introduction}
+%==============================================================================
+
+In Quadray coordinates, four basis vectors point from a central origin toward the vertices of a regular tetrahedron. Every point in three-dimensional space can be reached using only non-negative values along these four directions. No negative values are needed; no directions are missing. All of ordinary space lives within the positive span.
+
+This raises a question that Cartesian coordinates never prompt: if positive values already cover all positions, what does the negative region represent?
+
+In Cartesian coordinates, the answer would be trivial. The point $(-1, -1, -1)$ is simply ``the opposite octant''---still ordinary space, just in another direction. The symmetric $\pm$ structure of orthogonal axes makes negative values unremarkable. But in Quadray coordinates, all-negative values have no directional interpretation. The opposite direction of any basis vector is already expressible as the positive sum of the other three. The all-negative state $[-,-,-,-]$ points nowhere in ordinary space. It points \emph{through} the origin and out the other side.
+
+This paper proposes that the other side is neither a total collision, an infinite contraction, a complete negation, nor empty. When a tetrahedron contracts through the origin to zero extent and re-expands with all signs flipped, it enters a complementary geometric arena---structurally identical to the positive space it departed, but orientation-reversed. The positive and negative Quadray arenas are two complete geometric states, connected at the origin like two rooms sharing a single door.
+
+We develop this proposal through three ideas:
+
+\begin{enumerate}
+\item \textbf{The Paired-Space Thesis.} The sign-flip at origin is not mere notation. It maps the tetrahedron to its dual---vertices become face-centers and vice versa---producing a genuinely different structure. The two arenas, positive and negative, are complete and self-consistent.
+
+\item \textbf{The Inversion Manifold.} The origin is not unique. Any point in space can serve as a local inversion locus. This yields a manifold of potential Janus Points operating at all scales, from the zero spatial extent of a photon to the singularity of a black hole.
+
+\item \textbf{Three-State Geometry.} The Janus framework produces a natural triad: positive state, negative state, and the singular boundary between them. This three-state structure---$\{+, -, \text{boundary}\}$---is structurally parallel to quantum spin's $\{+, -, \text{superposition}\}$. We note the isomorphism without claiming identity.
+\end{enumerate}
+
+\textbf{On the status of claims.} This paper contains proven mathematics (the involution, quadrance preservation, the tet-dual correspondence), demonstrated results (prime polygon projections, rotation representations, interactive software), and open conjectures (the inversion manifold, the quantum parallel). We label each clearly and will not reiterate this disclaimer.
+
+\subsection{Acknowledgments}
+
+This work draws on Julian Barbour's \emph{The Janus Point} (2020), R.\ Buckminster Fuller's Synergetic geometry, Kirby Urner's extension of Synergetics with Quadray coordinates, Tom Ace's rotation formulas and XYZ/Quadray conversion matrix, and N.J.\ Wildberger's Rational Trigonometry. The geometric intuitions emerged from decades of architectural and BIM/BEM programming practice, and a very real struggle to accurately model polyhedral relationships with computational and machine precision.
+
+%==============================================================================
+\section{Tetrahedral Coordinates}
+\label{sec:coordinates}
+%==============================================================================
+
+\subsection{Selecting an Origin}
+
+Before basis vectors, before numbers, a coordinate system requires a more primitive commitment: the selection of an \emph{origin}---a point from which all directions emanate and all positions are measured.
+
+This choice is never absolute. Every origin is local, defined relative to some broader context. ``Where I stand'' is an origin for navigating a room. The chosen datum or survey benchmark defines a building origin for architectural drawings. The gravitational center of the solar system is an origin for planetary mechanics. Each is local, practical, and relative to a still-larger frame. Even the Big Bang---the cosmological origin---is not a point \emph{in} space but an origin \emph{of} space, a boundary condition rather than a location.
+
+Mathematics operates in a more abstract register. The origin $(0,0,0)$ or $[0,0,0,0]$ is defined by fiat: we declare a point and measure everything from it. No physical location is implied. But this abstraction conceals a genuine question: what \emph{is} the origin, geometrically? In Cartesian coordinates, it is simply the intersection of three perpendicular number lines---unremarkable, a spatial bookkeeping convenience. In Quadray coordinates, the origin is the common source of four tetrahedral basis vectors, the center of the minimum structural system. It is where all four directions balance to zero (vectorial neutrality). It is the unique point that belongs to both the positive and negative arenas. It is, as we will argue, a structural feature of space rather than an arbitrary label.
+
+The origin's relativity is precisely what makes the Inversion Manifold (Section~\ref{sec:manifold}) possible. If every point can serve as a local origin, then the Janus transition---contraction through zero, sign-flip, re-expansion---is available everywhere, at every scale. The choice of origin is local; the \emph{structure} of the origin (as a Janus Point connecting paired arenas) may be universal.
+
+\subsection{Basis Vectors: Directions Before Numbers}
+
+With an origin selected, a coordinate system requires directions. Before assigning any scale, unit, or metric, we establish the geometric skeleton: a set of basis vectors and the angular relationships between them.
+
+\begin{definition}[Quadray Basis Vectors]
+Four basis vectors $\mathbf{W}, \mathbf{X}, \mathbf{Y}, \mathbf{Z}$ (or alternatively $\mathbf{A}, \mathbf{B}, \mathbf{C}, \mathbf{D}$, or even $\mathbf{QW}, \mathbf{QX}, \mathbf{QY}, \mathbf{QZ}$-- a disambiguation we deploy in ARTexplorer) point from a common origin toward the four vertices of a regular tetrahedron. Each pair of basis vectors is separated by the same spread:
+\begin{equation}
+s(\mathbf{W}, \mathbf{X}) = s(\mathbf{W}, \mathbf{Y}) = \cdots = s(\mathbf{Y}, \mathbf{Z}) = \frac{8}{9}
+\end{equation}
+This spread corresponds to classical trigonometry's tetrahedral angle $\arccos(-\tfrac{1}{3}) \approx 109.47°$.
+\end{definition}
+
+At this stage, the basis vectors are pure directions. They have no magnitude, no assigned length, no numbers attached. They define a \emph{framework of directions} with a single angular relationship: the tetrahedral spread $\tfrac{8}{9}$, which is exact and rational.
+
+For comparison, the Cartesian basis vectors $\mathbf{i}, \mathbf{j}, \mathbf{k}$ define three mutually orthogonal directions, each pair separated by spread $s = 1$ (a right angle). Three directions, one angular relationship. Quadray defines four directions, one angular relationship. The difference is structural: three orthogonal rays versus four tetrahedral rays.
+
+\subsection{Key Properties}
+
+\begin{enumerate}[label=(\roman*)]
+\item \textbf{Vectorial Neutrality:} $\mathbf{W} + \mathbf{X} + \mathbf{Y} + \mathbf{Z} = \mathbf{0}$. The four basis vectors, when expressed in any embedding space, sum to the zero vector. This is a consequence of the regular tetrahedron's symmetry: no direction is privileged.
+
+\item \textbf{All-Positive Spanning:} Every point in ordinary 3D space lies within the positive span of at least three of the four basis vectors. No negative values are needed to reach any point. This follows from vectorial neutrality: $-\mathbf{W} = \mathbf{X} + \mathbf{Y} + \mathbf{Z}$, so the ``opposite'' of any basis direction is the positive combination of the other three.
+
+\item \textbf{Zero-Sum Constraint:} When enforced* ($w + x + y + z = k$ for constant $k$), the four values reduce to three independent degrees of freedom, making the Quadray system isomorphic to Cartesian $\mathbb{R}^3$. \textit{*enforcement can be relaxed}
+\end{enumerate}
+
+\subsection{From Directions to Coordinates}
+
+Basis vectors are directions. To create a coordinate space---a system in which points have numerical addresses---we must assign a \emph{scale or metric}: a unit of measurement along each direction. This is a separate, deliberate step.
+
+Once a unit is chosen, every point in the space receives a \emph{coordinate tuple}: a set of equivalent values specifying how much of each basis direction is needed to reach that point from the origin. In Cartesian, a point receives three values $(x, y, z)$. In Quadray, a point receives four values $[w, x, y, z]$.
+
+Throughout this paper, we use parentheses for Cartesian coordinates and square brackets for Quadray coordinates to keep the two systems visually distinct.
+
+\begin{definition}[Quadray Coordinates]
+Given the four basis vectors with an assigned unit scale, the \textbf{Quadray coordinates} of a point $P$ are the four values $[w, x, y, z]$ such that:
+\begin{equation}
+P = w\,\mathbf{W} + x\,\mathbf{X} + y\,\mathbf{Y} + z\,\mathbf{Z}
+\end{equation}
+\end{definition}
+
+The Cartesian equivalents of the basis vectors, for a tetrahedron with edge length 2, are:
+\begin{align}
+\mathbf{W} &\longleftrightarrow \tfrac{1}{\sqrt{3}}(+1, +1, +1) &
+\mathbf{X} &\longleftrightarrow \tfrac{1}{\sqrt{3}}(+1, -1, -1)\\
+\mathbf{Y} &\longleftrightarrow \tfrac{1}{\sqrt{3}}(-1, +1, -1) &
+\mathbf{Z} &\longleftrightarrow \tfrac{1}{\sqrt{3}}(-1, -1, +1)
+\end{align}
+
+Note the $\tfrac{1}{\sqrt{3}}$ factor. This is not a property of the Quadray directions themselves---it is the price of expressing tetrahedral directions in a cubic coordinate system. This leads directly to the rationality question---and to the choice of mathematical framework we use to address it.
+
+\subsection{Why Rational Trigonometry?}
+
+Classical trigonometry measures geometry with \emph{distance} and \emph{angle}. Both are computationally expensive. Distance requires a square root ($d = \sqrt{Q}$); angle requires transcendental functions ($\theta = \arccos(\ldots)$). Every intermediate $\sqrt{}$, $\sin$, or $\cos$ introduces an irrational mantissa that must be truncated to fit a finite machine word. The truncation is small at each step, but it accumulates: a chain of ten trigonometric operations can degrade precision by several decimal places, and the error is neither predictable nor recoverable.
+
+N.J.\ Wildberger's Rational Trigonometry (RT) replaces these two measures with algebraic equivalents:
+
+\begin{itemize}
+\item \textbf{Quadrance} $Q = d^2$ replaces distance. No square root is taken.
+\item \textbf{Spread} $s = \sin^2\theta$ replaces angle. No transcendental function is evaluated.
+\end{itemize}
+
+The classical laws---Pythagoras, sine rule, cosine rule---have exact RT counterparts (the Triple Quad Formula, the Spread Law, the Cross Law) that use only addition, subtraction, multiplication, and division. Algebraic identities remain algebraic throughout the calculation. The $\sqrt{}$ expansion is deferred to a single, final step: the moment a numerical coordinate must be handed to a GPU or display pipeline --a practical necessity until we code a purpose-built 4D$^\pm$ rendering engine.
+
+This is not merely a notational preference. In ARTexplorer's \texttt{rt-math.js} library, the design rule is explicit: \emph{no square roots needed, no transcendental functions, algebraic identities remain exact}. The tetrahedral spread $s = \tfrac{8}{9}$ is stored as a rational fraction, not as $\arccos(-\tfrac{1}{3}) \approx 109.4712\ldots°$. The golden ratio is maintained in symbolic form $(a + b\sqrt{5})/c$ until the final vertex is written to a GPU buffer. The result is geometry that stays exact for as long as the mathematics permits, and truncates only once, at the boundary between algebra and hardware.
+
+This matters for Janus Inversion because the key relationships---the tet-dual correspondence, the quadrance ratio between tetrahedron and cube, the spread between basis vectors---are all rational in RT. They become irrational only when forced through the classical $\sqrt{}$ and $\sin$ machinery. Rational Trigonometry lets us state these relationships exactly, verify them algebraically, and implement them without accumulated truncation error. It is the natural language for tetrahedral geometry.
+
+\subsection{The Rationality Reciprocity}
+\label{sec:rationality}
+
+When assigning numerical scales to coordinate systems, a choice must be made: which system gets rational (integer or fractional) edge lengths? This choice is not free---it is constrained by the geometric relationship between the tetrahedron and the cube.
+
+The edge length of a regular tetrahedron inscribed in a cube of edge $a$ is $a\sqrt{2}$, the face diagonal of the square. This $\sqrt{2}$ factor is irreducible. It means:
+
+\begin{itemize}
+\item If the \textbf{tetrahedron} edge is rational (say, edge $= 2$), then the cube edge is $\tfrac{2}{\sqrt{2}} = \sqrt{2} \approx 1.4142$---irrational.
+\item If the \textbf{cube} edge is rational (say, edge $= 1$), then the tetrahedron edge is $\sqrt{2} \approx 1.4142$---irrational, resulting in interminable mantissa, and the computational requirement of numeric truncation to operate in finite time.
+\end{itemize}
+
+You cannot have both systems function rationally simultaneously. Granting rationality to one coordinate system forces the other into irrationality. This is not a limitation of either system---it is a geometric fact about the relationship between tetrahedral and cubic geometry.
+
+\begin{observation}[Rationality Reciprocity]
+The ratio between tetrahedron edge length and cube edge length is always $\sqrt{2}$. In quadrance terms (Rational Trigonometry), the quadrance ratio is $Q_{\text{tet}} / Q_{\text{cube}} = 2$---exactly rational. But the distance ratio $\sqrt{2}$ is irrational. Choosing which coordinate system receives rational edge lengths is a genuine geometric commitment, not a neutral convention.
+\end{observation}
+
+ARTexplorer demonstrates this directly. The Scale panel displays linked sliders for Cube Edge Length and Tetrahedron Edge Length. When the tetrahedron edge is set to $2.0000$ (a clean rational value), the cube edge automatically reads $1.4142$ ($= \sqrt{2}$), and vice versa. Adjusting either slider forces the other to follow, always maintaining the $\sqrt{2}$ ratio. The linkage makes the reciprocity visible: you see one system become irrational the moment you grant rationality to the other.
+
+This reciprocity has a deeper consequence. Cartesian coordinates privilege cubic geometry: the unit cube has integer vertex coordinates, right-angle spreads ($s = 1$), and rational edge quadrances. But the regular tetrahedron inscribed in that unit cube inherits $\sqrt{2}$ edge lengths and $\tfrac{1}{\sqrt{3}}$ vertex coordinates---irrational at both levels.
+
+Quadray coordinates reverse this privilege. The unit tetrahedron has integer coordinates ($[1,0,0,0]$, $[0,1,0,0]$, etc.), a rational inter-basis spread ($s = \tfrac{8}{9}$), and rational edge quadrances. The price is that cubic geometry, when expressed in Quadray, inherits the irrationals.
+
+Neither system is ``more correct.'' But the choice of which geometry receives rational coordinates determines which relationships remain algebraically exact throughout computation, and which require irrational approximation. Wildberger's Rational Trigonometry---which works with quadrance and spread rather than distance and angle---mitigates this by keeping computations in squared quantities where both systems have rational relationships. But at the coordinate level, the reciprocity is inescapable.
+
+\subsection{Standard Quadray Rules and Our Extension}
+
+Kirby Urner's Quadray coordinates\endnote{\url{http://www.grunch.net/synergetics/quadintro.html}} define two rules: (1) at least one coordinate is always zero, and (2) only non-negative values are needed. These rules follow from vectorial neutrality: since $-\mathbf{W} = \mathbf{X} + \mathbf{Y} + \mathbf{Z}$, any negative coordinate can be replaced by positive contributions from the other three basis directions.
+
+\textbf{Our extension:} ARTexplorer deliberately permits negative coordinates. The all-positive rule is a representational convenience, not a geometric necessity. When a form scales continuously through the origin, its coordinates must pass through zero and become negative. Enforcing the substitution rule at that boundary would hide the very phenomenon we wish to study.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Standard Quadray} & \textbf{ARTexplorer Extension}\\
+\midrule
+Negative coordinates & Substituted (hidden) & Permitted (meaningful)\\
+Zero-sum constraint & Enforced (3 DOF) & Optional (native 4 DOF)\\
+Coordinate space & Isomorphic to $\mathbb{R}^3$ & Extends to $\mathbb{R}^4$\\
+Janus Inversion & Not representable & Core operation\\
+\bottomrule
+\end{tabular}
+\caption{Standard Quadray (Urner/Ace) vs.\ ARTexplorer's signed extension}
+\end{table}
+
+%==============================================================================
+\section{The Janus Inversion}
+\label{sec:inversion}
+%==============================================================================
+
+\subsection{Definition}
+
+\begin{definition}[Janus Inversion]
+For a form defined by vertices $\{P_i\}$ in Quadray coordinates, the \textbf{Janus Inversion} is the map:
+\begin{equation}
+P_i \mapsto -P_i \quad \text{for all } i
+\end{equation}
+Equivalently: multiplication by $-1$, central inversion through the origin, or application of $\text{diag}(-1, -1, -1, -1)$.
+\end{definition}
+
+The transformation $P \mapsto -P$ is standard central symmetry, well known in any vector space. We do not claim a new transformation. The interest lies entirely in what the tetrahedral basis makes this transformation \emph{mean}.
+
+\subsection{The Tetrahedron--Dual Correspondence}
+
+The unit tetrahedron in Quadray has vertices at $[1,0,0,0]$, $[0,1,0,0]$, $[0,0,1,0]$, $[0,0,0,1]$. Under Janus Inversion:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccc}
+\toprule
+\textbf{Original} & \textbf{Inverted} & \textbf{Positive form (via $+(1,1,1,1)$)}\\
+\midrule
+$[1, 0, 0, 0]$ & $[-1, 0, 0, 0]$ & $[0, 1, 1, 1]$\\
+$[0, 1, 0, 0]$ & $[0, -1, 0, 0]$ & $[1, 0, 1, 1]$\\
+$[0, 0, 1, 0]$ & $[0, 0, -1, 0]$ & $[1, 1, 0, 1]$\\
+$[0, 0, 0, 1]$ & $[0, 0, 0, -1]$ & $[1, 1, 1, 0]$\\
+\bottomrule
+\end{tabular}
+\caption{Janus Inversion maps tetrahedron vertices to dual tetrahedron vertices}
+\end{table}
+
+The positive form uses the vectorial neutrality property: $-\mathbf{W} = \mathbf{X} + \mathbf{Y} + \mathbf{Z}$, so the inverted W-vertex $[-1,0,0,0]$ points toward $[0,1,1,1]$---the center of the face \emph{opposite} the original W-vertex. Each vertex maps to its opposing face-center. This is the standard tetrahedron--dual relationship, expressed here as a coordinate inversion.
+
+This is what makes the tetrahedral case special among Platonic solids. The cube, octahedron, icosahedron, and dodecahedron are all \emph{centrosymmetric}: for each, $P \mapsto -P$ maps every vertex to another vertex of the \emph{same} solid. Inversion is a symmetry operation---it is in their symmetry group. Nothing structurally changes; the positive and negative vertex sets are identical.
+
+The tetrahedron is different. Its inversion $P \mapsto -P$ maps each vertex to a point that is \emph{not} a vertex of the original. The dual tetrahedron is congruent to the original---same edge lengths, same spreads, same symmetry group---and a 90° rotation about a cube axis maps one to the other. But it is not the same object. It occupies the complementary four vertices of the inscribing cube. The two tetrahedra together form the stella octangula (the compound of two tetrahedra), but separately each fills only half the cube's vertices. Crucially, inversion is \emph{not} a symmetry of the tetrahedron ($P \mapsto -P \notin T_d$). It is the only Platonic solid for which the sign-flip produces a second, distinct solid rather than reproducing itself.
+
+\subsection{Invariants Under Inversion}
+
+In Rational Trigonometry terms, Janus Inversion preserves all quadrances: for any point $P$, $Q(P, O) = Q(-P, O)$ where $Q$ denotes quadrance (squared distance from origin). All edge quadrances between vertices are preserved. The spread between each basis vector and its inverted counterpart is zero (anti-parallel). The inverted form has identical metric relationships to the original; only the tetrahedral parity changes.
+
+\subsection{Continuous Scaling Through Origin}
+
+In ARTexplorer, Janus Inversion is implemented as continuous scaling through zero:
+
+\begin{enumerate}
+\item A form at scale $s > 0$ is in positive state. Its Quadray coordinates are all non-negative.
+\item As $s$ decreases toward zero, all vertices converge toward the origin.
+\item At $s = 0$, the form has no spatial extent. All vertices coincide at the origin---a singular, dimensionless state.
+\item For $s < 0$, the form re-expands with all coordinate signs flipped. It is now in the dual configuration.
+\item We mark the transition visually: a golden flash at $s = 0$, background inversion from black to white, and a ghosting of non-selected forms which remain in positive-signed Quadray space.
+\end{enumerate}
+
+The label beneath the Scale slider reads: \emph{``Negative = inverted through origin (Janus Point).''} This is the central operation of the paper, implemented and demonstrable.
+
+\subsection{Translation vs.\ Scaling: The 16 Regions}
+
+In full signed Quadray space (without the zero-sum constraint), there are $2^4 = 16$ sign-pattern regions. A crucial distinction:
+
+\textbf{Translation} moves a form through space. When you translate along $-\mathbf{W}$, the W-coordinate becomes negative, but the form remains in ordinary space. One or two negative coordinates simply mean the form has moved past the origin along those directions. No dimensional transition occurs.
+
+\textbf{Scaling through zero} collapses the entire form through the origin. All four coordinates pass through zero simultaneously. This is the Janus transition.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccp{6cm}}
+\toprule
+\textbf{Sign Pattern} & \textbf{\# Negative} & \textbf{Geometric Status}\\
+\midrule
+$[+,+,+,+]$ & 0 & Positive tetrahedral arena\\
+$[+,+,+,-]$ etc. & 1--3 & Ordinary navigable space (mixed signs)\\
+$[-,-,-,-]$ & 4 & Negative (dual) tetrahedral arena\\
+\bottomrule
+\end{tabular}
+\caption{The 16 sign-pattern regions. Only the all-positive and all-negative regions represent the paired arenas connected by Janus Inversion. The 14 mixed-sign regions are ordinary space.}
+\end{table}
+
+\subsection{The Normalization Bridge}
+
+The inverted form can always be re-expressed in positive coordinates:
+\begin{equation}
+P'_{\text{positive}} = -P + k \cdot [1, 1, 1, 1]
+\end{equation}
+where $k$ is the original scale. This is the ``normalization bridge''---an affine transformation that embeds the dual form back into positive coordinate space. Standard Quadray implementations use this bridge implicitly: replacing $[-1,0,0,0]$ with $[0,1,1,1]$ is precisely this operation with $k=1$.
+
+Our extension preserves the negative coordinates deliberately, because the bridge erases the distinction between original and dual. If you always normalize to positive values, you cannot tell which side of the origin you are on. The sign carries information that normalization destroys.
+
+%==============================================================================
+\section{The Paired-Space Thesis}
+\label{sec:paired-space}
+%==============================================================================
+
+\subsection{The Central Proposal}
+
+We propose that the positive and negative Quadray arenas are not two ways of writing the same space. They are two complete geometric states---two arenas, each capable of hosting the full range of geometric structure---connected at the origin.
+
+When a tetrahedron contracts through the origin and re-expands with flipped signs, it does not merely acquire a notational label. It enters a space where all four basis directions are reversed, where what was interior becomes exterior, where the tetrahedron has become its dual. The new arena is structurally identical to the old one---same quadrances, same spreads, same internal geometry---but it is \emph{the other one}. The positive arena and the negative arena coexist, separated by the singular boundary at the origin.
+
+This is not a claim about hidden physical dimensions, and it is not a claim about coordinate systems. The inversion $P \mapsto -P$ is a vector operation in Euclidean space---it works identically in Cartesian, Quadray, or any other coordinate representation. One could inscribe a tetrahedron in a Cartesian cube, negate all vertex coordinates, and obtain the same tet-to-dual mapping. The geometric fact is coordinate-independent. Vectors define the relationships; coordinates merely record them.
+
+What differs between coordinate systems is which relationships the notation makes \emph{visible}. Synergetics and Quadray coordinates are fundamentally systems of vector relationships between close-packed spheres. Their four tetrahedral basis vectors define exact vertexial relationships---vertices, edges, face-centers, duals---that constitute the geometry of close-packing. When these vector relationships are granted rational status (tetrahedral edge as the unit), more polyhedral relationships remain algebraically exact than when the cubic edge is chosen as unit (Section~\ref{sec:rationality}). The Quadray system foregrounds the tet-dual structure because its all-positive spanning makes the all-negative state structurally remarkable. Cartesian has no convention for treating $(-,-,-)$ as a distinct geometric state, because negative coordinates are required infrastructure for seven of its eight octants---there is nothing to notice. The inversion is available in both systems; only one system prompts you to ask what it means.
+
+\subsection{Why the Tetrahedral Case Is Special}
+
+The standard objection is that any overcomplete basis (e.g., three vectors at $120°$ in 2D) has an all-positive span covering the full space, so there is nothing special about Quadray's positive cone. This objection is mathematically correct and geometrically incomplete.
+
+\textbf{The tetrahedron is the minimum closed form.} Three vectors at $120°$ in 2D form an arbitrary overcomplete set---there is no geometric reason to prefer three over four or five. But four vectors to tetrahedron vertices are the minimum overcomplete set for 3D that forms a \emph{closed polyhedron}: the simplest structure with distinguishable interior and exterior. This is not an arbitrary choice; it is the structural threshold of enclosed space.
+
+\textbf{The inversion produces the dual, not a copy.} In any centrosymmetric polyhedron (cube, octahedron, icosahedron), the map $P \mapsto -P$ returns the same form, possibly rotated. But the tetrahedron is \emph{not} centrosymmetric. Its inversion produces the dual tetrahedron---a genuinely different structure. This is a property of the tetrahedron specifically, not of overcomplete bases in general.
+
+\textbf{Interior and exterior exchange.} Because the tetrahedron is the minimum closed form, its inversion is the minimum possible exchange of interior and exterior. Fuller's ``inside-outing'' is not metaphorical here---it is a precise description of what the tet-to-dual mapping does to the enclosed volume.
+
+\subsection{The Cartesian Blind Spot}
+\label{sec:blind-spot}
+
+The ``blind spot'' is not a limitation of Cartesian mathematics. Cartesian and Quadray are fully interconvertible; any operation in one can be performed in the other. The blind spot is a consequence of Cartesian \emph{signing conventions}.
+
+In Cartesian space, the three orthogonal basis vectors $\mathbf{i}, \mathbf{j}, \mathbf{k}$ each extend in both positive and negative directions. Negative coordinates are not optional---they are required to reach seven of the eight octants. The point $(-1, -1, -1)$ is ordinary: it is simply ``the opposite corner of the cube,'' still in the same space, still navigable by the same rules. There is no structural asymmetry between the positive octant and any other, so the all-negative state carries no special significance. A Janus-style inversion could be defined in Cartesian coordinates---negate all three values, and the inscribed tetrahedron maps to its dual---but nothing in the Cartesian framework flags this operation as remarkable. It is one transformation among many, with no established convention to distinguish it.
+
+In Quadray space, the situation is structurally different. The four tetrahedral basis vectors, through vectorial neutrality, span all of 3D space using only non-negative values. Negative coordinates are never \emph{needed}. They are structurally surplus. When the all-negative state $[-,-,-,-]$ appears, it cannot mean ``the other direction''---every direction is already reachable with positive values. The sign flip is foregrounded as a question that demands interpretation.
+
+This is the blind spot: not that Cartesian \emph{cannot} perform the inversion, but that its symmetric $\pm$ structure gives no reason to \emph{look}. The tetrahedron's lack of central symmetry, the tet-to-dual mapping under negation, the paired-arena structure---these are properties of vectors in Euclidean space, available to any coordinate system. Quadray's contribution is making them visible by separating the all-positive span (ordinary space) from the all-negative span (the dual arena), where Cartesian's signing convention conflates the two.
+
+A programmer might object: ``ARTexplorer renders through THREE.js, which uses $(x,y,z)$. The Janus Inversion is simply \texttt{scale.set(-1,-1,-1)}.'' This is correct about the implementation and irrelevant to the thesis. The question is not whether Cartesian \emph{can} represent inverted geometry---it obviously can---but whether working in Cartesian would ever prompt you to investigate the relationship between a coordinate system's positive span and its complementary region. It would not.
+
+%==============================================================================
+\section{The Inversion Manifold}
+\label{sec:manifold}
+%==============================================================================
+
+\subsection{The Origin Is Not Unique}
+
+Everything in Sections~\ref{sec:inversion}--\ref{sec:paired-space} treats the origin as \emph{the} origin: a single fixed point through which inversion occurs. But mathematically, any point can serve as a local origin. The inversion $P \mapsto 2C - P$ (reflection through point $C$) is well-defined for every point $C$ in space.
+
+This means the Janus operation is not a global property of ``the'' origin. It is a \emph{local} operation available at every point. Each point in space is a potential Janus Point---a locus through which a form could contract, invert, and re-expand into the complementary arena.
+
+\begin{conjecture}[The Inversion Manifold]
+The set of all potential Janus Points forms a manifold coextensive with space itself. Every point is a potential inversion locus connecting positive and negative geometric arenas. The Janus transition is not a single event at a privileged location but a structural possibility inherent in every point.
+\end{conjecture}
+
+\subsection{Scale Invariance}
+
+If the Janus operation is available at every point, it operates at every scale. Consider two extremes:
+
+\textbf{Macro scale.} A black hole is a region where matter contracts to a singularity---a point of zero spatial extent. The interior of a black hole, beyond the event horizon, is a domain where standard spatial coordinates break down. The Janus framework suggests a geometric interpretation: the singularity is a local inversion locus, and the ``other side'' is the negative arena as seen from that local origin. We do not claim this \emph{is} the physics of black holes. We observe that the geometric structure maps naturally onto the phenomenology: contraction to zero extent, breakdown of spatial description, potential re-emergence in a complementary state.
+
+\textbf{Micro scale.} A photon has zero rest mass and, in its own reference frame, zero spatial extent along its direction of travel. It exists at the boundary condition---the Janus Point---between spatial extension and its absence. If the inversion manifold is real, a photon is not merely ``small''; it is a permanent resident of the singular boundary, the zero-measure state between positive and negative arenas.
+
+These are conjectures, not claims. But they arise naturally from the geometric framework, and they illustrate why the inversion manifold---if it has physical content---would be a scale-invariant principle rather than a coordinate curiosity.
+
+\subsection{The Field of Potential Inversions}
+
+The inversion manifold reframes Janus Inversion from a single operation (``invert this form through the origin'') to a structural principle (``every point in space connects two geometric arenas''). Space, in this view, is not a single arena but a \emph{paired} structure: at every point, positive and negative states coexist, separated by the zero-measure boundary of the inversion locus.
+
+Whether this pairing has physical consequences---whether the negative arena carries energy, structure, or observable effects---is an open question. We offer the geometric framework and note that it predicts a paired structure at all scales.
+
+%==============================================================================
+\section{Three-State Geometry}
+\label{sec:three-state}
+%==============================================================================
+
+\subsection{The Triad}
+
+The Janus framework does not produce a binary geometry. It produces a \emph{triad}:
+
+\begin{enumerate}
+\item \textbf{Positive state} ($s > 0$): The form exists in the positive Quadray arena. Coordinates are non-negative. The tetrahedron points outward.
+\item \textbf{Negative state} ($s < 0$): The form exists in the negative arena. All coordinates are sign-flipped. The dual tetrahedron points outward from its own perspective.
+\item \textbf{The boundary} ($s = 0$): The origin. Zero spatial extent. The form has no size, no interior, no exterior---yet its shape (the ratios between vertex positions) is preserved in the limiting behavior from both directions.
+\end{enumerate}
+
+The boundary state is not ``nothing.'' It is the unique point that belongs to both arenas---the only point where positive and negative touch. It is dimensionless but not structureless: Barbour calls the analogous state in N-body dynamics a ``central configuration,'' noting that the shape remains ``well defined despite the vanishing size.''\endnote{Barbour, J. (2020). \emph{The Janus Point}, Chapter 16.}
+
+\subsection{A Structural Parallel: Quantum Spin}
+
+Quantum mechanics describes spin as a binary observable: measure along any axis and you get spin-up ($+$) or spin-down ($-$). Before measurement, the system exists in a superposition---a state that contains both possibilities without being either.
+
+The Janus triad has the same logical structure:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{3.5cm}p{5cm}p{5cm}}
+\toprule
+\textbf{Property} & \textbf{Quantum Spin} & \textbf{Janus Geometry}\\
+\midrule
+Positive state & Spin-up ($+\tfrac{1}{2}$) & Positive arena ($s > 0$)\\
+\addlinespace
+Negative state & Spin-down ($-\tfrac{1}{2}$) & Negative arena ($s < 0$)\\
+\addlinespace
+Boundary state & Superposition (pre-measurement) & Origin ($s = 0$)\\
+\addlinespace
+Observation constraint & Cannot observe superposition directly & Cannot observe from the origin (zero extent)\\
+\addlinespace
+State symmetry & Neither spin state is privileged & Neither arena is privileged\\
+\addlinespace
+Determination & Measurement axis determines outcome & Vantage point determines which arena is ``positive''\\
+\bottomrule
+\end{tabular}
+\caption{Structural parallel between quantum spin and Janus geometry}
+\end{table}
+
+The parallels are structural, not mechanical. Quantum superposition is a probability amplitude in Hilbert space; the Janus boundary is a geometric singularity in coordinate space. ``Observation'' means physical interaction (decoherence) in quantum mechanics; it means choosing a vantage point (which side of the origin) in Janus geometry. These are related conceptually but not equivalent.
+
+\subsection{Observation and Polarity}
+
+The deepest parallel is about observation itself. In quantum mechanics, the observer cannot access the superposition state directly---measurement collapses it into one of the two eigenstates. In Janus geometry, the observer cannot occupy the origin---it has zero spatial extent. To observe anything, you must be on one side or the other. And whichever side you are on appears to you as ``positive''---the normal, outward-pointing, expansive state.
+
+This means the labels ``positive'' and ``negative'' are not absolute properties of the arenas. They are \emph{relative to the observer}. An observer in the negative arena would see their own space as positive and ours as the inverted complement---just as Barbour's temporal Janus Point produces two arrows of time, each appearing ``forward'' to observers on its side.
+
+The triad $\{+, -, \text{boundary}\}$ is thus not merely a classification of three states. It encodes a relationship between \emph{observation and polarity}: you cannot determine which arena is ``really'' positive without specifying where the observer stands. The boundary, where both arenas touch and neither dominates, is the one state from which no observation is possible.
+
+Whether this structural isomorphism with quantum measurement reflects a deep connection or a surface resemblance is an open question. We present it as a geometric observation and leave the physics to physicists.
+
+%==============================================================================
+\section{Productive Consequences}
+\label{sec:consequences}
+%==============================================================================
+
+The strongest argument for any mathematical framework is that it leads somewhere unexpected. The Janus/Quadray program has produced concrete results in adjacent domains.
+
+\subsection{Prime Polygon Projections}
+
+Working in signed Quadray coordinates led to the discovery that non-constructible prime polygons emerge as rational-spread projections of algebraically-defined polyhedra:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{clcl}
+\toprule
+\textbf{Prime} & \textbf{Source Polyhedron} & \textbf{Projection Spreads} & \textbf{Radical Family}\\
+\midrule
+5 & Truncated Tetrahedron (12v) & $(\tfrac{0}{1}, \tfrac{1}{2}, \tfrac{0}{1})$ & $\sqrt{2}$\\
+7 & Geodesic Tet f=2 (10v) & $(\tfrac{0}{1}, \tfrac{1}{3}, \tfrac{1}{3})$ & $\sqrt{2}, \sqrt{3}$\\
+11 & Geodesic Tet f=4 (34v) & $(\tfrac{3}{4}, \tfrac{1}{3}, \tfrac{1}{3})$ & $\sqrt{2}, \sqrt{3}$\\
+13 & Geodesic Tet f=4 (34v) & $(\tfrac{1}{2}, \tfrac{3}{4}, \tfrac{3}{4})$ & $\sqrt{2}$\\
+\bottomrule
+\end{tabular}
+\caption{Non-constructible prime polygons at exact rational spreads}
+\end{table}
+
+The truncated tetrahedron's vertices are all-rational in Quadray coordinates (permutations of $[2,1,0,0]$). Its lack of central symmetry---a direct consequence of tetrahedral geometry---is what makes prime hull counts possible. The Central Symmetry Barrier (proven in the companion paper) shows that centrosymmetric polyhedra can only produce even hull counts under projection. The tetrahedron-derived polyhedra escape this barrier precisely because the tetrahedron is not centrosymmetric.
+
+The entire pipeline from vertex definition through rational-spread rotation to convex hull counting operates within Wildberger's algebraic framework. All results verified with exact arithmetic.\endnote{Full details in Thomson (2026a), \emph{The 4D$\pm$ Prime Projection Conjecture}.}
+
+\subsection{Spread-Quadray Rotors}
+
+The signed Quadray framework led to a gimbal-lock-free rotation representation:
+
+\begin{itemize}
+\item Full 4D Quadray coordinates (without zero-sum constraint) as rotation parameters
+\item Spread and cross measures from Rational Trigonometry replace $\sin/\cos$
+\item Explicit Janus polarity ($\mathbb{Z}_2$) for the double-cover that quaternions handle implicitly
+\item Tom Ace's F, G, H rotation coefficients verified identical to quaternion rotation at machine precision ($10^{-16}$)
+\end{itemize}
+
+The rotors offer algebraic exactness for rotation angles whose spreads are rational ($30°, 45°, 60°, 90°, 120°, 180°$) and are geometrically native to tetrahedral structures.\endnote{Full details in Thomson (2026b), \emph{Spread-Quadray Rotors}.}
+
+\subsection{The Pattern}
+
+These results are not isolated applications that happen to use Quadray coordinates. They emerge from the same structural source:
+
+\begin{itemize}
+\item \textbf{Prime projections} depend on the truncated tetrahedron's lack of central symmetry---visible in Quadray as the asymmetry between $[2,1,0,0]$ and its negation.
+\item \textbf{Gimbal-lock freedom} depends on the 4D lift that tetrahedral coordinates provide when the zero-sum constraint is released.
+\item \textbf{Rational exactness} depends on the tetrahedral spread's rationality ($\tfrac{8}{9}$) and the integer Quadray coordinates of fundamental polyhedra.
+\end{itemize}
+
+The Janus framework did not merely label these results; it motivated the search for them. The question ``what does the negative region mean?'' led to investigating duality, which led to studying asymmetric projections, which led to prime polygons. The question ``how do we rotate in 4D Quadray?'' led to Spread-Quadray Rotors. Productivity is evidence---not proof, but evidence---that the framework is tracking real structure.
+
+%==============================================================================
+\section{Barbour's Janus Point: Analogy and Distinction}
+\label{sec:barbour}
+%==============================================================================
+
+\subsection{The Temporal Janus Point}
+
+Julian Barbour proposed that the Big Bang may represent not a beginning but a pivot---the Janus Point---from which time extends in two directions, each with increasing complexity. Observers on either side perceive their direction as ``forward.'' This concept, developed with Koslowski and Mercati (2014), offers a time-symmetric cosmology that resolves the arrow of time without initial conditions.
+
+\subsection{Our Geometric Analog}
+
+We draw an analogy---not an identity---between Barbour's temporal pivot and our geometric origin:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{6cm}p{6cm}}
+\toprule
+\textbf{Barbour's Janus Point} & \textbf{Geometric Janus Point}\\
+\midrule
+Temporal pivot: time extends in two directions & Geometric pivot: forms scale in two directions (positive/negative)\\
+\addlinespace
+Minimal size/complexity at the pivot & Zero spatial extent at the origin\\
+\addlinespace
+Two arrows of time, each with increasing complexity & Two geometric arenas, each with complete structure\\
+\addlinespace
+Observers on either side see ``forward'' & Observers in either arena see their state as ``positive''\\
+\bottomrule
+\end{tabular}
+\caption{Analogy between temporal and geometric Janus Points}
+\end{table}
+
+\subsection{Barbour's Updated Position}
+
+In correspondence (January 2026), Dr.\ Barbour noted that he is ``now not quite so keen on the Janus-point solutions in Newton gravity''---not because the mathematics is wrong, but because eliminating Newtonian absolute elements (absolute space, absolute time, absolute scale) leaves only monodirectional Big Bang solutions. The bidirectional Janus Point may be an artifact of residual absolute structure in Newton's theory.
+
+This distinction matters. Our geometric Janus Point is defined by the internal structure of a coordinate system, not by dynamical equations or absolute elements. Whether or not the temporal Janus Point survives the transition to fully relational physics, the geometric observation---that Quadray coordinates produce a natural involution mapping tetrahedra to duals---stands independently.
+
+\subsection{Shapes Over Dynamics}
+
+In the same correspondence, Barbour expressed a conviction that ``science should be about shapes rather than dynamics,'' tracing this intuition to early Greek thinking and suggesting that the development of dynamics ``may have marked a wrong turn.''
+
+This resonates with the entire program behind this paper. Fuller emphasized structure over motion. Wildberger's Rational Trigonometry works with static relationships (quadrance, spread) rather than dynamic processes (integration, limits). The tetrahedron is fundamentally a shape---a configuration of relationships that exists prior to any dynamics. Janus Inversion describes a geometric transformation, not a temporal process. If Barbour is right that shapes are more fundamental than dynamics, then a geometric Janus Point may be more fundamental than a temporal one.\endnote{Barbour's full remarks are reproduced in the Acknowledgments.}
+
+%==============================================================================
+\section{Linking Concepts: Independent Convergence}
+\label{sec:linking}
+%==============================================================================
+
+The Inversion Manifold and Three-State Geometry are conjectures within this paper. But several independent research programs in theoretical physics have arrived at structurally similar conclusions---paired spaces connected at inversion loci, singularity resolution through geometric ``bounce,'' and parity reversal at boundary states---from entirely different starting points. We note the convergence without claiming identity.
+
+\subsection{CPT-Symmetric Cosmology (Boyle, Finn, Turok 2018)}
+
+Latham Boyle, Kieran Finn, and Neil Turok at the Perimeter Institute proposed that the universe after the Big Bang is the CPT image of the universe before it.\endnote{Boyle, L., Finn, K., \& Turok, N. (2018). ``CPT-Symmetric Universe.'' \emph{Physical Review Letters}, 121:251301. arXiv:1803.08928.} CPT symmetry combines charge conjugation (C), parity inversion (P), and time reversal (T). In their model, the pre- and post-bang epochs form a \emph{universe/anti-universe pair}, emerging from nothing directly into a hot, radiation-dominated era.
+
+Turok describes the symmetry as ``a sort of mathematical device to do something sensible with the singularity. You have a picture of an extended spacetime and impose a symmetry on it, so you can flip it around.''
+
+\textbf{Structural parallel.} The Big Bang in Boyle-Turok is a CPT inversion locus connecting two mirror-image spacetimes---directly analogous to the Janus Point connecting positive and negative arenas. The parity inversion (P) in CPT is the spatial mirror operation; the time reversal (T) extends the pairing to temporal as well as spatial structure. Our geometric Janus Point sits between Barbour's purely temporal pivot and Boyle-Turok's full CPT inversion: we propose spatial parity reversal at the origin, while they propose charge, parity, and time reversal at the Bang.
+
+\subsection{Black Mirrors (Tzanavaris, Boyle, Turok 2024)}
+
+The same group extended their CPT framework to black holes.\endnote{Tzanavaris, K., Boyle, L., \& Turok, N. (2024). ``Black Mirrors: CPT-Symmetric Alternatives to Black Holes.'' arXiv:2412.09558.} In their ``black mirror'' model, the event horizon connects the exterior metric to its own CPT mirror image, yielding a solution with smooth, bounded curvature---no singularity. The two mirror-image sheets of spacetime ``split at the Bang, and merge at black holes.''
+
+\textbf{Structural parallel.} The black mirror horizon functions as a local Janus Point: an inversion locus connecting paired geometric states. This is precisely the structure proposed by the Inversion Manifold (Section~\ref{sec:manifold})---not a single privileged origin, but a field of potential inversion loci, here realized at every black hole horizon.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{5.5cm}p{5.5cm}}
+\toprule
+\textbf{Boyle-Turok (Black Mirrors)} & \textbf{Janus Inversion}\\
+\midrule
+Horizon = CPT inversion interface & Origin = Janus Point\\
+\addlinespace
+Two mirror-image sheets of spacetime & Positive and negative arenas\\
+\addlinespace
+Parity inversion (P in CPT) at boundary & Sign-flip $P \mapsto -P$ at origin\\
+\addlinespace
+Smooth bounded curvature (no singularity) & Shape ``well defined despite vanishing size''\\
+\addlinespace
+Split at Bang, merge at black holes & Inversion Manifold: available at every point, every scale\\
+\bottomrule
+\end{tabular}
+\caption{Structural comparison: Black Mirrors and Janus Inversion}
+\end{table}
+
+\subsection{Planck Stars (Rovelli, Vidotto 2014)}
+
+In loop quantum gravity, Carlo Rovelli and Francesca Vidotto proposed that black hole singularities are replaced by a quantum \emph{bounce}.\endnote{Rovelli, C. \& Vidotto, F. (2014). ``Planck Stars.'' \emph{International Journal of Modern Physics D}, 23:1442026. arXiv:1401.6562.} Matter contracting under gravity reaches Planck density, at which point quantum-gravitational pressure halts the collapse and the black hole ``bounces'' into a white hole. The interior of the black hole becomes the exterior of the white hole---an interior/exterior exchange.
+
+The transitional state at maximum compression is the \emph{Planck star}: a compact object of zero classical volume but well-defined quantum geometry. The bounce is extremely short in the star's proper time but $\sim$14 billion years as seen from outside, due to gravitational time dilation. In Rovelli's 2024 update, stable remnants from black-to-white transitions may constitute dark matter---Planck-mass quasi-particles permanently at the boundary state.\endnote{Rovelli, C. (2024). ``Planck Stars, White Holes, Remnants and Planck-mass Quasi-particles.'' arXiv:2407.09584.}
+
+\textbf{Structural parallel.} The Planck star mechanism maps directly onto Janus Inversion's three-state structure:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{5.5cm}p{5.5cm}}
+\toprule
+\textbf{Rovelli-Vidotto (Planck Stars)} & \textbf{Janus Inversion}\\
+\midrule
+Black hole (contracting) & Positive arena, scale decreasing\\
+\addlinespace
+Planck star (maximum compression) & Origin ($s = 0$), zero spatial extent\\
+\addlinespace
+White hole (re-expanding) & Negative arena, scale increasing\\
+\addlinespace
+Interior becomes exterior & Inside-outing through the origin\\
+\addlinespace
+Bounce (not destruction) & Continuous scaling through zero\\
+\bottomrule
+\end{tabular}
+\caption{Structural comparison: Planck Stars and Janus Inversion}
+\end{table}
+
+Fuller's ``inside-outing'' finds its closest physical analog here: the black hole's interior literally becomes the white hole's exterior, passing through a state of zero classical extent but preserved geometric relationships.
+
+\subsection{ER = EPR (Maldacena, Susskind 2013)}
+
+Juan Maldacena and Leonard Susskind conjectured that every pair of entangled particles is connected by a wormhole (Einstein-Rosen bridge).\endnote{Maldacena, J. \& Susskind, L. (2013). ``Cool Horizons for Entangled Black Holes.'' \emph{Fortschritte der Physik}, 61:781--811. arXiv:1306.0533.} If correct, the geometry of spacetime is \emph{determined} by entanglement: without these geometric bridges, space would ``atomize.'' Entanglement---a quantum phenomenon---produces geometric connectivity---a classical phenomenon.
+
+\textbf{Structural parallel.} If every entangled pair is a geometric bridge between regions, and entanglement is ubiquitous, then something structurally similar to ``every point is a potential inversion locus'' emerges from mainstream quantum gravity. The ER = EPR conjecture provides the micro-scale end of our Inversion Manifold: geometric connections between paired regions, operating at all scales from individual particle pairs to entangled black holes.
+
+\subsection{What the Convergence Does and Does Not Mean}
+
+These four programs---CPT-symmetric cosmology, black mirrors, Planck star bounces, and ER = EPR---were developed independently, using different formalisms (quantum field theory, loop quantum gravity, string theory), for different purposes (cosmological initial conditions, singularity resolution, information paradox). None reference tetrahedral coordinates or Quadray geometry.
+
+Yet they converge on the same structural elements that the Janus framework proposes:
+
+\begin{enumerate}
+\item \textbf{Paired spaces.} Two complete regions (universe/anti-universe, black hole exterior/interior, pre-/post-bounce) connected at a boundary.
+\item \textbf{Parity inversion at the boundary.} The spatial mirror operation (P in CPT, sign-flip in Janus) relates the two regions.
+\item \textbf{Scale invariance.} The pairing operates at cosmological scale (Bang), stellar scale (black holes), and quantum scale (entangled pairs).
+\item \textbf{The boundary is not nothing.} The singular state (Planck star, central configuration, Janus origin) preserves geometric structure despite zero classical extent.
+\end{enumerate}
+
+We do not claim that Janus Inversion \emph{is} any of these theories. We claim that the \emph{geometric structure} we observe in tetrahedral coordinates---paired arenas, parity inversion at a boundary, scale-invariant availability---is independently motivated by research programs that approach the same questions through standard physics. The convergence is structural, not causal. But it suggests that the Inversion Manifold conjecture, whatever its ultimate status, is asking questions that physics is also asking.
+
+%==============================================================================
+\section{The Dimension Question}
+\label{sec:dimension}
+%==============================================================================
+
+\subsection{Dimensions of Space vs.\ Parameters of Coordinates}
+
+The word ``dimension'' carries multiple meanings, and conflating them has produced confusion in discussions of tetrahedral coordinates. We disambiguate briefly.
+
+\textbf{Euclidean 3-space} has three independent directions: three numbers suffice to reach any point from any other. This is a property of the \emph{space}, not of any coordinate system. Cartesian uses three parameters (matching the dimensionality). Quadray uses four parameters with one degree of freedom constrained away by the zero-sum condition. Polar uses three parameters with a different topology. The space is always three-dimensional; the parameterization varies.
+
+When we say ``4D$^\pm$,'' we mean:
+
+\begin{tcolorbox}[colback=gray!10, colframe=gray!50]
+\textbf{4D$^\pm$}: A coordinate system with four continuous parameters (unconstrained Quadray) plus a discrete binary state (tetrahedral parity). This describes the \emph{parameterization}, not the dimensionality of physical space.
+\end{tcolorbox}
+
+With the zero-sum constraint enforced, 4D$^\pm$ collapses to ordinary 3D geometry plus a parity label. With the constraint released, the four parameters span a mathematical $\mathbb{R}^4$ that contains 3D space as a subspace. Whether this larger space has physical meaning is open.
+
+\subsection{Fuller's Structural ``4D''}
+
+Fuller argued that space is ``inherently 4-dimensional'' because the tetrahedron---the minimum structural system---requires four vertices. His ``dimension begins at four'' counts the minimum number of structural elements needed to create a closed system (interior/exterior distinction), not independent spatial directions. By ``fourth- and fifth-dimensional aggregations,'' he means combinatorial growth patterns in tetrahedral close-packing, not hidden spatial dimensions.
+
+We adopt Fuller's insight as a structural observation. The tetrahedron is indeed the minimum closed polyhedron. Four basis vectors to its vertices do span 3D with one dependency. Releasing the zero-sum constraint does yield four independent parameters. Whether this justifies calling space ``4D'' depends on what you mean by dimension---a question this paper raises but does not resolve.
+
+\subsection{Degrees of Freedom}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccp{6cm}}
+\toprule
+\textbf{Framing} & \textbf{DOF} & \textbf{Description}\\
+\midrule
+Quadray with zero-sum & 3 & Isomorphic to Cartesian $\mathbb{R}^3$\\
+Quadray without zero-sum & 4 & Native tetrahedral $\mathbb{R}^4$\\
+Quadray with Janus parity & 4 + 1 binary & Position plus tetrahedral parity\\
+\bottomrule
+\end{tabular}
+\caption{Degrees of freedom under different interpretations}
+\end{table}
+
+%==============================================================================
+\section{On the Topology of Inside-Outing}
+\label{sec:topology}
+%==============================================================================
+
+Fuller spoke of the tetrahedron ``inside-outing'' through the origin. This language is evocative but topologically imprecise.
+
+\textbf{What is formally true:} The map $P \mapsto -P$ is a well-defined, orientation-reversing isometry. It maps the tetrahedron to its dual. It preserves all quadrances and spreads. The origin is its unique fixed point.
+
+\textbf{What requires care:} Standard topology says a closed genus-0 surface cannot be turned inside-out in 3D without tearing or self-intersection. The Janus transition passes through a degenerate state (zero volume) that is neither a tear nor a self-intersection---it is a collapse to a point. Whether passage through a dimensionless singularity constitutes ``self-intersection'' in any meaningful sense is a question we pose to topologists.
+
+We retain ``inside-outing'' because the tetrahedron is the minimum closed form---the simplest structure with distinguishable interior and exterior. Under Janus Inversion, what was interior becomes exterior and vice versa. This interior/exterior exchange is the geometric content that ``inside-outing'' describes, even if the topological formalization remains open.
+
+Barbour identifies the analogous state in N-body dynamics as a ``central configuration''---a shape that remains ``well defined despite the vanishing size.'' The mathematical problem is that equations of motion provide no mechanism to continue solutions through total collision. The geometric framework of Quadray coordinates provides a natural language for describing both sides of the transition, with the origin as the shared boundary. Whether this geometric language can inform a dynamical resolution is a question for mathematical physics.
+
+%==============================================================================
+\section{Fuller's IN/OUT and the Experiential Origin}
+\label{sec:fuller-inout}
+%==============================================================================
+
+Fuller criticized ``Up'' and ``Down'' as flat-earth artifacts. On a sphere, the only absolute directions are \textbf{IN} (toward center) and \textbf{OUT} (away from center). We map:
+
+\begin{align}
+\text{Positive } (+) &\longleftrightarrow \text{OUT: expansion away from origin}\\
+\text{Negative } (-) &\longleftrightarrow \text{IN: contraction through origin}
+\end{align}
+
+A form scaling from positive through zero to negative traverses: OUT $\to$ origin $\to$ IN. The Janus Point is the moment of zero extent---the boundary between outward expansion and inward contraction.
+
+\subsection{An Honest Statement of Origin}
+
+The Janus Inversion framework did not begin with mathematics. It began with an experiential intuition---a sense, developed through decades of contemplative practice, that the relationship between interior and exterior is more fundamental than either term alone. The tetrahedron's inside-outing felt like a geometric expression of boundary dissolution: the recognition that ``inside'' and ``outside'' are perspectives on a single structure.
+
+We cannot formalize this intuition. We can report that pursuing it geometrically---asking ``what does the negative region of an all-positive coordinate system mean?''---has been productive in ways we did not anticipate. The prime polygon projections, the rotation representations, the interactive software: none were predicted by the original intuition. They emerged from following the geometry.
+
+Whether the intuition points toward something real about the structure of space, or whether it merely generated productive questions, we present both the results and their origin honestly.
+
+%==============================================================================
+\section{Visualization and Implementation}
+%==============================================================================
+
+ARTexplorer implements the full Janus framework as interactive 3D geometry visualization:
+
+\begin{itemize}
+\item Forms scale continuously through zero via direct manipulation
+\item Crossing the origin triggers the Janus transition: golden flash, background inversion (black $\leftrightarrow$ white), ghosting of non-selected forms
+\item Linked scale sliders display both Cube Edge Length and Tetrahedron Edge Length, demonstrating the Rationality Reciprocity (Section~\ref{sec:rationality}): when one reads a rational value, the other reads $\sqrt{2}$ times that value
+\item Quadray and Cartesian coordinate displays update in real-time
+\item The scale slider label reads: \emph{``Negative = inverted through origin (Janus Point)''}
+\end{itemize}
+
+The software is available at: \url{https://arossti.github.io/ARTexplorer/}
+
+\begin{figure}[h!]
+    \centering
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{24.png}
+        \caption{Negative space (4D$^-$): After Janus Inversion, basis vectors point inward, background inverts to white.}
+        \label{fig:negative-space}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{37.png}
+        \caption{Positive space (4D$^+$): Quadray basis vectors point outward from origin.}
+        \label{fig:positive-space}
+    \end{subfigure}
+    \caption{The Janus Inversion visualized in ARTexplorer. Scaling through the origin exchanges the tetrahedron for its dual, with visual signals (golden flash, background inversion) marking the transition.}
+    \label{fig:janus-transition}
+\end{figure}
+
+%==============================================================================
+\section{Open Questions}
+%==============================================================================
+
+In decreasing order of tractability:
+
+\begin{enumerate}
+\item \textbf{Topological formalization.} Can the inside-outing of the tetrahedron through the origin be formalized in terms of oriented simplicial complexes or configuration spaces? The continuous scaling through a degenerate state (zero volume) requires careful treatment.
+
+\item \textbf{The fourth coordinate.} Is there a physically meaningful interpretation of the fourth Quadray value (beyond shape parameterization) when the zero-sum constraint is released? The analogy to quaternions---which also use a fourth parameter to escape 3D constraints---is suggestive.
+
+\item \textbf{The inversion manifold.} Does the non-uniqueness of the origin have physical content? If every point is a potential Janus Point, does the ``negative arena'' at each point carry energy, structure, or observable consequences?
+
+\item \textbf{The three-state parallel.} Is the structural isomorphism between Janus geometry and quantum spin a deep connection or a surface resemblance? Could the Janus triad $\{+, -, \text{boundary}\}$ be formalized in a framework compatible with quantum state spaces?
+
+\item \textbf{Higher primes.} The geodesic tetrahedron family has produced prime projections for 5, 7, 11, and 13 at rational spreads. Does it continue for all primes? Is there a prime for which no tetrahedral source produces a clean projection?
+\end{enumerate}
+
+%==============================================================================
+\section{Conclusion}
+%==============================================================================
+
+We have proposed that tetrahedral coordinates, through the Janus Inversion operation, reveal a paired geometric structure that Cartesian coordinates render invisible: two complete arenas, positive and negative, connected at the origin.
+
+This proposal has three levels. At the mathematical level, the involution $P \mapsto -P$ in Quadray coordinates maps the tetrahedron to its dual, the signed framework preserves all metric relationships, and the rationality reciprocity between tetrahedral and cubic scales is exact. These are verifiable algebraic facts.
+
+At the demonstrated level, the framework has been productive---yielding prime polygon projections, gimbal-lock-free rotation representations, and interactive visualization software. These results exist independently of any interpretation of the paired-space thesis.
+
+At the conjectural level, we have proposed the inversion manifold (every point as a potential Janus locus) and the three-state geometry (structural parallel to quantum spin). These are open questions with structural motivation, not proven results.
+
+The paper's central conviction is that coordinate systems are not neutral lenses. They shape what we see and what we think to ask. Cartesian coordinates, by making negative values unremarkable, made the paired-space question invisible. Quadray coordinates, by covering all directions with positive values, force the question into view. Whether the answer to that question is a deep truth about geometric structure or an elegant property of a particular coordinate system, the geometry rewards investigation.
+
+\begin{center}
+\textit{``The question simply cannot arise within Cartesian assumptions.\\
+Only by adopting a coordinate system where `negative' has no directional meaning\\
+does the deeper question emerge: negative \textbf{what}, exactly?''}
+\end{center}
+
+%==============================================================================
+\section*{Acknowledgments}
+%==============================================================================
+
+Special thanks to:
+\begin{itemize}
+\item Julian Barbour, for correspondence and the foundational concept
+\item Rudolf Dorenach, Bucky's German associate and my first Synergetics mentor
+\item Kirby Urner, for introducing me to Quadray coordinates
+\item Tom Ace, for the basis vector conversion methodology and rotation formulas
+\item Gerald DeJong, for introducing me to Wildberger's Rational Trigonometry
+\item Dawn Danby and David McConville, for moral support and enthusiasm
+\item Bonnie DeVarco, for tireless preservation and engagement with Fuller's original work
+\item Mark Pavlidis, for teaching me Git discipline and clean code
+\item Enzyme APD, for encouraging the pursuit of these ideas against all odds
+\item Anthropic/Claude 4.6 Opus for being our harshest critic and best calculator
+\end{itemize}
+
+\subsection*{Note on the Janus Point (January 2026)}
+
+In correspondence with the author (22 January 2026, by email), Dr.\ Julian Barbour responded to an early draft of this work:
+
+\begin{tcolorbox}[colback=gray!5, colframe=gray!40, title=\textbf{From Dr.\ Julian Barbour (22 January 2026)}]
+``I do find things like the Platonic solids very interesting. This is because I'm getting more and more convinced that science should be about shapes rather than dynamics. In fact one can see from early Greek thinking, starting with the myths associated with the constellations, and then the ideas of Plato and the atomists, who according to Lucretius were trying to explain the shapes of microscopic object and creatures of different genera, that very naturally they were trying to understand the origin of shapes. I think it is just possible that the development of dynamics, which happened at about the same time as Lucretius wrote his book when Hipparchus developed the first dynamical theory, his theory of the motion of the Sun around the ecliptic with the rotation of the Earth defining time, may have marked a wrong turn. I'm currently writing a book which will include discussion of that.
+
+One other thing that I might say is that I am now not quite so keen on the Janus-point solutions in Newton gravity. That is not because there is anything wrong in what I said about them in my recent book but rather that if one eliminates all the absolute elements with which I would say Newton corrupted his own theory, then all that is left is Big Bang solutions as described in chapter 16 of my book. In this case bidirectional arrows of time are replaced by a monodirectional one.''
+\end{tcolorbox}
+
+We are grateful for Dr.\ Barbour's engagement and intellectual generosity.
+
+\theendnotes
+
+%==============================================================================
+\section*{References}
+%==============================================================================
+
+\begin{enumerate}
+\item Barbour, J. (2020). \emph{The Janus Point: A New Theory of Time}. Basic Books.
+\item Barbour, J., Koslowski, T., \& Mercati, F. (2014). ``Identification of a Gravitational Arrow of Time.'' \emph{Physical Review Letters}, 113:181101.
+\item Fuller, R.B. (1975). \emph{Synergetics: Explorations in the Geometry of Thinking}. Macmillan.
+\item Wildberger, N.J. (2005). \emph{Divine Proportions: Rational Trigonometry to Universal Geometry}. Wild Egg Books.
+\item Urner, K. ``Quadray Coordinates: A Logical Alternative.'' \url{http://www.grunch.net/synergetics/quadintro.html}
+\item Ace, T. ``Quadray Coordinates.'' \url{http://minortriad.com/quadray.html}
+\item Thomson, A. (2026a). ``The 4D$\pm$ Prime Projection Conjecture: Rational-Spread Projections as a Source of Non-Constructible Prime $n$-Gons.'' Open Building / ARTexplorer Project. DOI: 10.13140/RG.2.2.23043.98089
+\item Thomson, A. (2026b). ``Spread-Quadray Rotors: A Tetrahedral Alternative to Quaternions for Gimbal-Lock-Free Rotation Representation.'' Open Building / ARTexplorer Project. DOI: 10.13140/RG.2.2.23476.51846
+\item Thomson, A. (2026). \emph{ARTexplorer: Interactive Tetrahedral Geometry Visualization}. \url{https://arossti.github.io/ARTexplorer/}
+\item Boyle, L., Finn, K., \& Turok, N. (2018). ``CPT-Symmetric Universe.'' \emph{Physical Review Letters}, 121:251301. arXiv:1803.08928.
+\item Tzanavaris, K., Boyle, L., \& Turok, N. (2024). ``Black Mirrors: CPT-Symmetric Alternatives to Black Holes.'' arXiv:2412.09558.
+\item Rovelli, C. \& Vidotto, F. (2014). ``Planck Stars.'' \emph{International Journal of Modern Physics D}, 23:1442026. arXiv:1401.6562.
+\item Rovelli, C. (2024). ``Planck Stars, White Holes, Remnants and Planck-mass Quasi-particles.'' arXiv:2407.09584.
+\item Maldacena, J. \& Susskind, L. (2013). ``Cool Horizons for Entangled Black Holes.'' \emph{Fortschritte der Physik}, 61:781--811. arXiv:1306.0533.
+\item DOI: 10.13140/RG.2.2.10492.19848 | CC BY-NC-ND 4.0
+\end{enumerate}
+
+\end{document}

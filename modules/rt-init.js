@@ -8,6 +8,7 @@ import { RTViewManager } from "./rt-viewmanager.js";
 import { initQuadranceDemo } from "../demos/rt-quadrance-demo.js";
 import { initCrossDemo } from "../demos/rt-cross-demo.js";
 import { initWeierstrassDemo } from "../demos/rt-weierstrass-demo.js";
+import { initGravityDemo } from "../demos/rt-gravity-demo.js";
 import { openDemoModal } from "../demos/rt-demo-utils.js";
 import { colorTheoryModal } from "./color-theory-modal.js";
 import { initScene as createRenderingAPI } from "./rt-rendering.js";
@@ -668,6 +669,7 @@ function startARTexplorer(
     quadrance: false,
     cross: false,
     weierstrass: false,
+    gravity: false,
   };
 
   document
@@ -704,6 +706,19 @@ function startARTexplorer(
         setTimeout(() => {
           initWeierstrassDemo();
           demosInitialized.weierstrass = true;
+        }, 50);
+      }
+    });
+
+  document
+    .getElementById("open-gravity-demo")
+    .addEventListener("click", e => {
+      e.preventDefault();
+      openDemoModal("gravity-modal");
+      if (!demosInitialized.gravity) {
+        setTimeout(() => {
+          initGravityDemo();
+          demosInitialized.gravity = true;
         }, 50);
       }
     });
