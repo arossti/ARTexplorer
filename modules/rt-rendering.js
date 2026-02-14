@@ -23,6 +23,8 @@ import { RTPapercut } from "./rt-papercut.js";
 import { RTPrimeCuts } from "./rt-prime-cuts.js";
 import { Grids } from "./rt-grids.js";
 import { Nodes } from "./rt-nodes.js";
+import { RTMatrix } from "./rt-matrix-planar.js";
+import { RTRadialMatrix } from "./rt-matrix-radial.js";
 import { Helices } from "./rt-helices.js";
 import { MetaLog } from "./rt-metalog.js";
 import { PenroseTiles, PenroseTiling } from "./rt-penrose.js";
@@ -2057,19 +2059,18 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate cube matrix
-      import("./rt-matrix-planar.js").then(MatrixModule => {
-        const { RTMatrix } = MatrixModule;
-        const cubeMatrix = RTMatrix.createCubeMatrix(
-          matrixSize,
-          scale,
-          rotate45,
-          effectiveOpacity,
-          colorPalette.cubeMatrix,
-          THREE
-        );
-        cubeMatrixGroup.add(cubeMatrix);
+      const cubeMatrix = RTMatrix.createCubeMatrix(
+        matrixSize,
+        scale,
+        rotate45,
+        effectiveOpacity,
+        colorPalette.cubeMatrix,
+        THREE
+      );
+      cubeMatrixGroup.add(cubeMatrix);
 
-        // Add vertex nodes if enabled
+      // Add vertex nodes if enabled
+      {
         const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
@@ -2083,7 +2084,7 @@ export function initScene(THREE, OrbitControls, RT) {
             nodeSize
           );
         }
-      });
+      }
       cubeMatrixGroup.visible = true;
     } else {
       cubeMatrixGroup.visible = false;
@@ -2234,8 +2235,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate tet matrix
-      import("./rt-matrix-planar.js").then(MatrixModule => {
-        const { RTMatrix } = MatrixModule;
+      {
         const tetMatrix = RTMatrix.createTetrahedronMatrix(
           matrixSize,
           scale,
@@ -2261,7 +2261,7 @@ export function initScene(THREE, OrbitControls, RT) {
             "tetrahedron"
           );
         }
-      });
+      }
       tetMatrixGroup.visible = true;
     } else {
       tetMatrixGroup.visible = false;
@@ -2315,8 +2315,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate octa matrix
-      import("./rt-matrix-planar.js").then(MatrixModule => {
-        const { RTMatrix } = MatrixModule;
+      {
         const octaMatrix = RTMatrix.createOctahedronMatrix(
           matrixSize,
           scale,
@@ -2344,7 +2343,7 @@ export function initScene(THREE, OrbitControls, RT) {
             colinearEdges
           );
         }
-      });
+      }
       octaMatrixGroup.visible = true;
     } else {
       octaMatrixGroup.visible = false;
@@ -2542,8 +2541,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate cuboctahedron matrix
-      import("./rt-matrix-planar.js").then(MatrixModule => {
-        const { RTMatrix } = MatrixModule;
+      {
         const cuboctaMatrix = RTMatrix.createCuboctahedronMatrix(
           matrixSize,
           scale,
@@ -2569,7 +2567,7 @@ export function initScene(THREE, OrbitControls, RT) {
             "cuboctahedron"
           );
         }
-      });
+      }
       cuboctaMatrixGroup.visible = true;
     } else {
       cuboctaMatrixGroup.visible = false;
@@ -2923,8 +2921,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate rhombic dodecahedron matrix
-      import("./rt-matrix-planar.js").then(MatrixModule => {
-        const { RTMatrix } = MatrixModule;
+      {
         const rhombicDodecMatrix = RTMatrix.createRhombicDodecahedronMatrix(
           matrixSize,
           scale,
@@ -2952,7 +2949,7 @@ export function initScene(THREE, OrbitControls, RT) {
             faceCoplanar
           );
         }
-      });
+      }
       rhombicDodecMatrixGroup.visible = true;
     } else {
       rhombicDodecMatrixGroup.visible = false;
@@ -2984,8 +2981,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate radial cube matrix
-      import("./rt-matrix-radial.js").then(RadialModule => {
-        const { RTRadialMatrix } = RadialModule;
+      {
         const radialCubeMatrix = RTRadialMatrix.createRadialCubeMatrix(
           frequency,
           scale,
@@ -3016,7 +3012,7 @@ export function initScene(THREE, OrbitControls, RT) {
             "cube"
           );
         }
-      });
+      }
       radialCubeMatrixGroup.visible = true;
     } else {
       radialCubeMatrixGroup.visible = false;
@@ -3046,8 +3042,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate radial rhombic dodecahedron matrix
-      import("./rt-matrix-radial.js").then(RadialModule => {
-        const { RTRadialMatrix } = RadialModule;
+      {
         const radialRhombicDodecMatrix =
           RTRadialMatrix.createRadialRhombicDodecMatrix(
             frequency,
@@ -3079,7 +3074,7 @@ export function initScene(THREE, OrbitControls, RT) {
             "rhombicDodecahedron"
           );
         }
-      });
+      }
       radialRhombicDodecMatrixGroup.visible = true;
     } else {
       radialRhombicDodecMatrixGroup.visible = false;
@@ -3111,8 +3106,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate radial tetrahedron matrix
-      import("./rt-matrix-radial.js").then(RadialModule => {
-        const { RTRadialMatrix } = RadialModule;
+      {
         const radialTetMatrix = RTRadialMatrix.createRadialTetrahedronMatrix(
           frequency,
           scale,
@@ -3144,7 +3138,7 @@ export function initScene(THREE, OrbitControls, RT) {
             "tetrahedron"
           );
         }
-      });
+      }
       radialTetMatrixGroup.visible = true;
     } else {
       radialTetMatrixGroup.visible = false;
@@ -3178,8 +3172,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate radial octahedron matrix
-      import("./rt-matrix-radial.js").then(RadialModule => {
-        const { RTRadialMatrix } = RadialModule;
+      {
         const radialOctMatrix = RTRadialMatrix.createRadialOctahedronMatrix(
           frequency,
           scale,
@@ -3224,7 +3217,7 @@ export function initScene(THREE, OrbitControls, RT) {
             ivmScaleOnly // Apply 45° rotation for IVM mode
           );
         }
-      });
+      }
       radialOctMatrixGroup.visible = true;
     } else {
       radialOctMatrixGroup.visible = false;
@@ -3251,8 +3244,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate radial cuboctahedron matrix
-      import("./rt-matrix-radial.js").then(RadialModule => {
-        const { RTRadialMatrix } = RadialModule;
+      {
         const radialVEMatrix = RTRadialMatrix.createRadialCuboctahedronMatrix(
           frequency,
           scale,
@@ -3282,7 +3274,7 @@ export function initScene(THREE, OrbitControls, RT) {
             "cuboctahedron"
           );
         }
-      });
+      }
       radialVEMatrixGroup.visible = true;
     } else {
       radialVEMatrixGroup.visible = false;
@@ -5023,8 +5015,6 @@ export function initScene(THREE, OrbitControls, RT) {
           "rhombicDodecMatrix",
         ].includes(type)
       ) {
-        const { RTMatrix } = await import("./rt-matrix-planar.js");
-
         let matrix;
         switch (type) {
           case "cubeMatrix":
@@ -5095,8 +5085,6 @@ export function initScene(THREE, OrbitControls, RT) {
           "radialVEMatrix",
         ].includes(type)
       ) {
-        const { RTRadialMatrix } = await import("./rt-matrix-radial.js");
-
         let matrix;
         switch (type) {
           case "radialCubeMatrix":

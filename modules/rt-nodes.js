@@ -20,6 +20,7 @@
 
 import { RT } from "./rt-math.js";
 import { MetaLog } from "./rt-metalog.js";
+import { Polyhedra } from "./rt-polyhedra.js";
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -687,53 +688,80 @@ function addMatrixNodes(
   const spacing = scale * 2;
 
   // Generate polyhedron vertices at each grid position
-  import("./rt-polyhedra.js").then(PolyModule => {
-    const { Polyhedra } = PolyModule;
+  // Get the appropriate polyhedron geometry
+  let polyGeom;
+  if (polyhedronType === "cube") {
+    polyGeom = Polyhedra.cube(scale, { silent: true });
+  } else if (polyhedronType === "tetrahedron") {
+    polyGeom = Polyhedra.tetrahedron(scale, { silent: true });
+  } else if (polyhedronType === "octahedron") {
+    polyGeom = Polyhedra.octahedron(scale, { silent: true });
+  } else if (polyhedronType === "cuboctahedron") {
+    // Scale by √2 to match matrix geometry (vertices at scale, not scale/√2)
+    polyGeom = Polyhedra.cuboctahedron(scale * Math.sqrt(2), {
+      silent: true,
+    });
+  } else if (polyhedronType === "rhombicDodecahedron") {
+    // Scale by √2 to match matrix geometry (rhombic dodec axial vertices at scale, not scale/√2)
+    polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2), {
+      silent: true,
+    });
+  }
 
-    // Get the appropriate polyhedron geometry
-    let polyGeom;
-    if (polyhedronType === "cube") {
-      polyGeom = Polyhedra.cube(scale, { silent: true });
-    } else if (polyhedronType === "tetrahedron") {
-      polyGeom = Polyhedra.tetrahedron(scale, { silent: true });
-    } else if (polyhedronType === "octahedron") {
-      polyGeom = Polyhedra.octahedron(scale, { silent: true });
-    } else if (polyhedronType === "cuboctahedron") {
-      // Scale by √2 to match matrix geometry (vertices at scale, not scale/√2)
-      polyGeom = Polyhedra.cuboctahedron(scale * Math.sqrt(2), {
-        silent: true,
-      });
-    } else if (polyhedronType === "rhombicDodecahedron") {
-      // Scale by √2 to match matrix geometry (rhombic dodec axial vertices at scale, not scale/√2)
-      polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2), {
-        silent: true,
+  const { vertices } = polyGeom;
+
+  // For each grid position, add transformed vertices
+  for (let i = 0; i < matrixSize; i++) {
+    for (let j = 0; j < matrixSize; j++) {
+      const offset_x = (i - matrixSize / 2 + 0.5) * spacing;
+      const offset_y = (j - matrixSize / 2 + 0.5) * spacing;
+      const offset_z = 0;
+
+      // For tetrahedra, handle alternating orientations
+      const isUp =
+        polyhedronType === "tetrahedron" ? (i + j) % 2 === 0 : true;
+
+      vertices.forEach(v => {
+        let x = v.x + offset_x;
+        let y = v.y + offset_y;
+        let z = v.z + offset_z;
+
+        // Apply 180° rotation for down-facing tets
+        if (polyhedronType === "tetrahedron" && !isUp) {
+          // Rotate 180° around Z-axis
+          x = -(v.x + offset_x);
+          y = -(v.y + offset_y);
+        }
+
+        // Apply 45° rotation if enabled
+        if (rotate45) {
+          const cos45 = Math.sqrt(0.5);
+          const sin45 = Math.sqrt(0.5);
+          const x_rot = cos45 * x - sin45 * y;
+          const y_rot = sin45 * x + cos45 * y;
+          x = x_rot;
+          y = y_rot;
+        }
+
+        // Use string key for deduplication
+        const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+        vertexPositions.add(key);
       });
     }
+  }
 
-    const { vertices } = polyGeom;
-
-    // For each grid position, add transformed vertices
-    for (let i = 0; i < matrixSize; i++) {
-      for (let j = 0; j < matrixSize; j++) {
-        const offset_x = (i - matrixSize / 2 + 0.5) * spacing;
-        const offset_y = (j - matrixSize / 2 + 0.5) * spacing;
+  // For rhombic dodecahedra with faceCoplanar mode, add interstitial vertices
+  if (polyhedronType === "rhombicDodecahedron" && faceCoplanar) {
+    for (let i = 0; i < matrixSize - 1; i++) {
+      for (let j = 0; j < matrixSize - 1; j++) {
+        const offset_x = (i - matrixSize / 2 + 1.0) * spacing;
+        const offset_y = (j - matrixSize / 2 + 1.0) * spacing;
         const offset_z = 0;
-
-        // For tetrahedra, handle alternating orientations
-        const isUp =
-          polyhedronType === "tetrahedron" ? (i + j) % 2 === 0 : true;
 
         vertices.forEach(v => {
           let x = v.x + offset_x;
           let y = v.y + offset_y;
           let z = v.z + offset_z;
-
-          // Apply 180° rotation for down-facing tets
-          if (polyhedronType === "tetrahedron" && !isUp) {
-            // Rotate 180° around Z-axis
-            x = -(v.x + offset_x);
-            y = -(v.y + offset_y);
-          }
 
           // Apply 45° rotation if enabled
           if (rotate45) {
@@ -751,101 +779,70 @@ function addMatrixNodes(
         });
       }
     }
+  }
 
-    // For rhombic dodecahedra with faceCoplanar mode, add interstitial vertices
-    if (polyhedronType === "rhombicDodecahedron" && faceCoplanar) {
-      for (let i = 0; i < matrixSize - 1; i++) {
-        for (let j = 0; j < matrixSize - 1; j++) {
-          const offset_x = (i - matrixSize / 2 + 1.0) * spacing;
-          const offset_y = (j - matrixSize / 2 + 1.0) * spacing;
-          const offset_z = 0;
+  // For octahedra with colinearEdges mode, add interstitial vertices
+  if (polyhedronType === "octahedron" && faceCoplanar) {
+    for (let i = 0; i < matrixSize - 1; i++) {
+      for (let j = 0; j < matrixSize - 1; j++) {
+        const offset_x = (i - matrixSize / 2 + 1.0) * spacing;
+        const offset_y = (j - matrixSize / 2 + 1.0) * spacing;
+        const offset_z = 0;
 
-          vertices.forEach(v => {
-            let x = v.x + offset_x;
-            let y = v.y + offset_y;
-            let z = v.z + offset_z;
+        vertices.forEach(v => {
+          let x = v.x + offset_x;
+          let y = v.y + offset_y;
+          let z = v.z + offset_z;
 
-            // Apply 45° rotation if enabled
-            if (rotate45) {
-              const cos45 = Math.sqrt(0.5);
-              const sin45 = Math.sqrt(0.5);
-              const x_rot = cos45 * x - sin45 * y;
-              const y_rot = sin45 * x + cos45 * y;
-              x = x_rot;
-              y = y_rot;
-            }
+          // Apply 45° rotation if enabled
+          if (rotate45) {
+            const cos45 = Math.sqrt(0.5);
+            const sin45 = Math.sqrt(0.5);
+            const x_rot = cos45 * x - sin45 * y;
+            const y_rot = sin45 * x + cos45 * y;
+            x = x_rot;
+            y = y_rot;
+          }
 
-            // Use string key for deduplication
-            const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
-            vertexPositions.add(key);
-          });
-        }
+          // Use string key for deduplication
+          const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+          vertexPositions.add(key);
+        });
       }
     }
+  }
 
-    // For octahedra with colinearEdges mode, add interstitial vertices
-    if (polyhedronType === "octahedron" && faceCoplanar) {
-      for (let i = 0; i < matrixSize - 1; i++) {
-        for (let j = 0; j < matrixSize - 1; j++) {
-          const offset_x = (i - matrixSize / 2 + 1.0) * spacing;
-          const offset_y = (j - matrixSize / 2 + 1.0) * spacing;
-          const offset_z = 0;
-
-          vertices.forEach(v => {
-            let x = v.x + offset_x;
-            let y = v.y + offset_y;
-            let z = v.z + offset_z;
-
-            // Apply 45° rotation if enabled
-            if (rotate45) {
-              const cos45 = Math.sqrt(0.5);
-              const sin45 = Math.sqrt(0.5);
-              const x_rot = cos45 * x - sin45 * y;
-              const y_rot = sin45 * x + cos45 * y;
-              x = x_rot;
-              y = y_rot;
-            }
-
-            // Use string key for deduplication
-            const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
-            vertexPositions.add(key);
-          });
-        }
-      }
-    }
-
-    // Create instanced nodes at unique positions
-    const positionsArray = Array.from(vertexPositions);
-    if (positionsArray.length > 0) {
-      const instancedNodes = new THREE.InstancedMesh(
-        nodeGeometry, nodeMaterial, positionsArray.length
-      );
-      instancedNodes.renderOrder = 3;
-
-      const tempMatrix = new THREE.Matrix4();
-      const storedPositions = [];
-      positionsArray.forEach((key, i) => {
-        const [x, y, z] = key.split(",").map(parseFloat);
-        tempMatrix.setPosition(x, y, z);
-        instancedNodes.setMatrixAt(i, tempMatrix);
-        storedPositions.push(new THREE.Vector3(x, y, z));
-      });
-      instancedNodes.instanceMatrix.needsUpdate = true;
-
-      instancedNodes.userData.isVertexNode = true;
-      instancedNodes.userData.nodeType = "sphere";
-      instancedNodes.userData.nodeRadius = nodeRadius;
-      instancedNodes.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
-      instancedNodes.userData.vertexPositions = storedPositions;
-
-      matrixGroup.add(instancedNodes);
-    }
-
-    MetaLog.log(
-      MetaLog.SUMMARY,
-      `[Matrix Nodes] Added ${vertexPositions.size} nodes to ${matrixSize}×${matrixSize} ${polyhedronType} matrix`
+  // Create instanced nodes at unique positions
+  const positionsArray = Array.from(vertexPositions);
+  if (positionsArray.length > 0) {
+    const instancedNodes = new THREE.InstancedMesh(
+      nodeGeometry, nodeMaterial, positionsArray.length
     );
-  });
+    instancedNodes.renderOrder = 3;
+
+    const tempMatrix = new THREE.Matrix4();
+    const storedPositions = [];
+    positionsArray.forEach((key, i) => {
+      const [x, y, z] = key.split(",").map(parseFloat);
+      tempMatrix.setPosition(x, y, z);
+      instancedNodes.setMatrixAt(i, tempMatrix);
+      storedPositions.push(new THREE.Vector3(x, y, z));
+    });
+    instancedNodes.instanceMatrix.needsUpdate = true;
+
+    instancedNodes.userData.isVertexNode = true;
+    instancedNodes.userData.nodeType = "sphere";
+    instancedNodes.userData.nodeRadius = nodeRadius;
+    instancedNodes.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
+    instancedNodes.userData.vertexPositions = storedPositions;
+
+    matrixGroup.add(instancedNodes);
+  }
+
+  MetaLog.log(
+    MetaLog.SUMMARY,
+    `[Matrix Nodes] Added ${vertexPositions.size} nodes to ${matrixSize}×${matrixSize} ${polyhedronType} matrix`
+  );
 }
 
 /**
@@ -904,122 +901,118 @@ function addRadialMatrixNodes(
   const vertexPositions = new Set();
 
   // Generate polyhedron vertices at each center position
-  import("./rt-polyhedra.js").then(PolyModule => {
-    const { Polyhedra } = PolyModule;
+  // Get the appropriate polyhedron geometry
+  let polyGeom;
+  if (polyhedronType === "cube") {
+    polyGeom = Polyhedra.cube(scale, { silent: true });
+  } else if (polyhedronType === "rhombicDodecahedron") {
+    // Scale by √2 to match matrix geometry
+    polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2), {
+      silent: true,
+    });
+  } else if (polyhedronType === "tetrahedron") {
+    polyGeom = Polyhedra.tetrahedron(scale, { silent: true });
+  } else if (polyhedronType === "octahedron") {
+    polyGeom = Polyhedra.octahedron(scale, { silent: true });
+  } else if (polyhedronType === "cuboctahedron") {
+    // Scale by √2 to match matrix geometry (vertices at scale from center)
+    polyGeom = Polyhedra.cuboctahedron(scale * Math.sqrt(2), {
+      silent: true,
+    });
+  }
 
-    // Get the appropriate polyhedron geometry
-    let polyGeom;
-    if (polyhedronType === "cube") {
-      polyGeom = Polyhedra.cube(scale, { silent: true });
-    } else if (polyhedronType === "rhombicDodecahedron") {
-      // Scale by √2 to match matrix geometry
-      polyGeom = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2), {
-        silent: true,
-      });
-    } else if (polyhedronType === "tetrahedron") {
-      polyGeom = Polyhedra.tetrahedron(scale, { silent: true });
-    } else if (polyhedronType === "octahedron") {
-      polyGeom = Polyhedra.octahedron(scale, { silent: true });
-    } else if (polyhedronType === "cuboctahedron") {
-      // Scale by √2 to match matrix geometry (vertices at scale from center)
-      polyGeom = Polyhedra.cuboctahedron(scale * Math.sqrt(2), {
-        silent: true,
-      });
+  // For each center position, add transformed vertices
+  // Tetrahedra have orientation ("up" or "down") that affects vertex positions
+  // IVM octahedra need 45° rotation applied to both vertices and positions
+
+  // 45° rotation matrix (RT-pure: s=0.5, c=0.5 → cos=sin=√0.5)
+  // [cos, -sin, 0]   [√0.5, -√0.5, 0]
+  // [sin,  cos, 0] = [√0.5,  √0.5, 0]
+  // [0,    0,   1]   [0,     0,    1]
+  const sqrt05 = Math.sqrt(0.5);
+  const rotate45 = (x, y, z) => ({
+    x: x * sqrt05 - y * sqrt05,
+    y: x * sqrt05 + y * sqrt05,
+    z: z,
+  });
+
+  centerPositions.forEach(pos => {
+    let vertices;
+    if (polyhedronType === "tetrahedron" && pos.orientation) {
+      // Use base or dual tetrahedron based on orientation
+      const tetGeom =
+        pos.orientation === "up"
+          ? Polyhedra.tetrahedron(scale, { silent: true })
+          : Polyhedra.dualTetrahedron(scale, { silent: true });
+      vertices = tetGeom.vertices;
+    } else {
+      vertices = polyGeom.vertices;
     }
 
-    // For each center position, add transformed vertices
-    // Tetrahedra have orientation ("up" or "down") that affects vertex positions
-    // IVM octahedra need 45° rotation applied to both vertices and positions
+    vertices.forEach(v => {
+      let vx = v.x,
+        vy = v.y,
+        vz = v.z;
+      let px = pos.x,
+        py = pos.y,
+        pz = pos.z;
 
-    // 45° rotation matrix (RT-pure: s=0.5, c=0.5 → cos=sin=√0.5)
-    // [cos, -sin, 0]   [√0.5, -√0.5, 0]
-    // [sin,  cos, 0] = [√0.5,  √0.5, 0]
-    // [0,    0,   1]   [0,     0,    1]
-    const sqrt05 = Math.sqrt(0.5);
-    const rotate45 = (x, y, z) => ({
-      x: x * sqrt05 - y * sqrt05,
-      y: x * sqrt05 + y * sqrt05,
-      z: z,
-    });
-
-    centerPositions.forEach(pos => {
-      let vertices;
-      if (polyhedronType === "tetrahedron" && pos.orientation) {
-        // Use base or dual tetrahedron based on orientation
-        const tetGeom =
-          pos.orientation === "up"
-            ? Polyhedra.tetrahedron(scale, { silent: true })
-            : Polyhedra.dualTetrahedron(scale, { silent: true });
-        vertices = tetGeom.vertices;
+      if (ivmRotation) {
+        // For IVM octahedra: rotate vertex 45°, then translate, then rotate result 45°
+        // Step 1: Rotate vertex around origin
+        const rv = rotate45(vx, vy, vz);
+        // Step 2: Add position (position is in pre-rotated coords)
+        const tx = rv.x + px;
+        const ty = rv.y + py;
+        const tz = rv.z + pz;
+        // Step 3: Rotate the whole thing (constellation rotation)
+        const final = rotate45(tx, ty, tz);
+        vx = final.x;
+        vy = final.y;
+        vz = final.z;
       } else {
-        vertices = polyGeom.vertices;
+        vx = v.x + pos.x;
+        vy = v.y + pos.y;
+        vz = v.z + pos.z;
       }
 
-      vertices.forEach(v => {
-        let vx = v.x,
-          vy = v.y,
-          vz = v.z;
-        let px = pos.x,
-          py = pos.y,
-          pz = pos.z;
-
-        if (ivmRotation) {
-          // For IVM octahedra: rotate vertex 45°, then translate, then rotate result 45°
-          // Step 1: Rotate vertex around origin
-          const rv = rotate45(vx, vy, vz);
-          // Step 2: Add position (position is in pre-rotated coords)
-          const tx = rv.x + px;
-          const ty = rv.y + py;
-          const tz = rv.z + pz;
-          // Step 3: Rotate the whole thing (constellation rotation)
-          const final = rotate45(tx, ty, tz);
-          vx = final.x;
-          vy = final.y;
-          vz = final.z;
-        } else {
-          vx = v.x + pos.x;
-          vy = v.y + pos.y;
-          vz = v.z + pos.z;
-        }
-
-        // Use string key for deduplication
-        const key = `${vx.toFixed(6)},${vy.toFixed(6)},${vz.toFixed(6)}`;
-        vertexPositions.add(key);
-      });
+      // Use string key for deduplication
+      const key = `${vx.toFixed(6)},${vy.toFixed(6)},${vz.toFixed(6)}`;
+      vertexPositions.add(key);
     });
-
-    // Create instanced nodes at unique positions
-    const positionsArray = Array.from(vertexPositions);
-    if (positionsArray.length > 0) {
-      const instancedNodes = new THREE.InstancedMesh(
-        nodeGeometry, nodeMaterial, positionsArray.length
-      );
-      instancedNodes.renderOrder = 3;
-
-      const tempMatrix = new THREE.Matrix4();
-      const storedPositions = [];
-      positionsArray.forEach((key, i) => {
-        const [x, y, z] = key.split(",").map(parseFloat);
-        tempMatrix.setPosition(x, y, z);
-        instancedNodes.setMatrixAt(i, tempMatrix);
-        storedPositions.push(new THREE.Vector3(x, y, z));
-      });
-      instancedNodes.instanceMatrix.needsUpdate = true;
-
-      instancedNodes.userData.isVertexNode = true;
-      instancedNodes.userData.nodeType = "sphere";
-      instancedNodes.userData.nodeRadius = nodeRadius;
-      instancedNodes.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
-      instancedNodes.userData.vertexPositions = storedPositions;
-
-      matrixGroup.add(instancedNodes);
-    }
-
-    MetaLog.log(
-      MetaLog.SUMMARY,
-      `[Radial Matrix Nodes] Added ${vertexPositions.size} nodes to ${centerPositions.length} ${polyhedronType} radial matrix`
-    );
   });
+
+  // Create instanced nodes at unique positions
+  const positionsArray = Array.from(vertexPositions);
+  if (positionsArray.length > 0) {
+    const instancedNodes = new THREE.InstancedMesh(
+      nodeGeometry, nodeMaterial, positionsArray.length
+    );
+    instancedNodes.renderOrder = 3;
+
+    const tempMatrix = new THREE.Matrix4();
+    const storedPositions = [];
+    positionsArray.forEach((key, i) => {
+      const [x, y, z] = key.split(",").map(parseFloat);
+      tempMatrix.setPosition(x, y, z);
+      instancedNodes.setMatrixAt(i, tempMatrix);
+      storedPositions.push(new THREE.Vector3(x, y, z));
+    });
+    instancedNodes.instanceMatrix.needsUpdate = true;
+
+    instancedNodes.userData.isVertexNode = true;
+    instancedNodes.userData.nodeType = "sphere";
+    instancedNodes.userData.nodeRadius = nodeRadius;
+    instancedNodes.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
+    instancedNodes.userData.vertexPositions = storedPositions;
+
+    matrixGroup.add(instancedNodes);
+  }
+
+  MetaLog.log(
+    MetaLog.SUMMARY,
+    `[Radial Matrix Nodes] Added ${vertexPositions.size} nodes to ${centerPositions.length} ${polyhedronType} radial matrix`
+  );
 }
 
 // ============================================================================
