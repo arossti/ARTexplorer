@@ -2850,6 +2850,29 @@ export const RT = {
       const gVal = g || 196133 / 20000;
       return gVal * t;
     },
+
+    /**
+     * Shell projection scale factor for radial gravity warping.
+     *
+     * Projects a vertex at quadrance Q from origin onto a gravity shell
+     * at the given shellRadius. RT-pure approach: quadrance (Q = r²) keeps
+     * all intermediate math algebraic; the single √Q here is the GPU boundary.
+     *
+     * Formula: scale = shellRadius / √Q
+     * Apply as: P_gravity = P_uniform × scale
+     *
+     * Used by createIVMGrid() to place tessellation vertices on concentric
+     * spherical shells rather than applying gravity warping per-axis
+     * (which causes inward bowing — see Gravity-Grids.md bug section).
+     *
+     * @param {number} Q - Quadrance from origin (r²) in uniform grid space
+     * @param {number} shellRadius - Target gravity shell radius (cumDist[k])
+     * @returns {number} Scale factor to multiply uniform position vector by
+     */
+    shellProjectionScale: (Q, shellRadius) => {
+      if (Q < 1e-24) return 0; // origin maps to origin
+      return shellRadius / Math.sqrt(Q); // single √ at GPU boundary
+    },
   },
 };
 
