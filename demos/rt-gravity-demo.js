@@ -64,10 +64,19 @@ function getG() {
 }
 
 /**
- * Get total height (normalized to LINE_LENGTH for display)
+ * Get drop height for current body.
+ *
+ * Default: 144 m  (1 m per cell, matching Quadray tessellation at N = 144).
+ * Black Hole only: auto-scale so the animation lasts ~5 s (H = ½gT²).
+ * All other bodies use 144 m — fast drops (Sun, Jupiter) are educational.
  */
 function getH() {
-  return 100; // 100 meters
+  if (selectedBody === "blackhole") {
+    const g = getG();
+    const T_target = 5.0;
+    return 0.5 * g * T_target * T_target; // ≈ 1.9e14 m (~1.27 AU)
+  }
+  return 144;
 }
 
 /**
@@ -75,6 +84,31 @@ function getH() {
  */
 function getTotalTime() {
   return Math.sqrt((2 * getH()) / getG());
+}
+
+/**
+ * Format a value with SI prefix for readability.
+ * Keeps 3 significant digits for large/small values, .toFixed(2) for normal.
+ */
+function fmtVal(v, unit = "m") {
+  const abs = Math.abs(v);
+  if (abs === 0) return `0 ${unit}`;
+  if (abs >= 1e12) return `${(v / 1e12).toFixed(2)} T${unit}`;
+  if (abs >= 1e9) return `${(v / 1e9).toFixed(2)} G${unit}`;
+  if (abs >= 1e6) return `${(v / 1e6).toFixed(2)} M${unit}`;
+  if (abs >= 1e4) return `${(v / 1e3).toFixed(2)} k${unit}`;
+  if (abs >= 1) return `${v.toFixed(2)} ${unit}`;
+  if (abs >= 1e-3) return `${(v * 1e3).toFixed(2)} m${unit}`;
+  if (abs >= 1e-6) return `${(v * 1e6).toFixed(2)} \u00B5${unit}`;
+  return `${v.toExponential(2)} ${unit}`;
+}
+
+/**
+ * Format gravity value (g) for display
+ */
+function fmtG(g) {
+  if (g >= 1e6) return g.toExponential(2);
+  return g.toFixed(3);
 }
 
 /**
@@ -306,7 +340,7 @@ function createFormulaDisplay(container) {
   const topLabel = document.createElement("div");
   topLabel.style.cssText = `
     position: absolute; top: 22%; left: 15px;
-    font-family: 'Courier New', monospace; font-size: 11px;
+    font-family: 'Courier New', monospace; font-size: 14px;
     color: #ff6644; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
   `;
   topLabel.textContent = "UNIFORM GRID \u2014 body accelerates (x = \u00BDgt\u00B2)";
@@ -315,7 +349,7 @@ function createFormulaDisplay(container) {
   const botLabel = document.createElement("div");
   botLabel.style.cssText = `
     position: absolute; top: 62%; left: 15px;
-    font-family: 'Courier New', monospace; font-size: 11px;
+    font-family: 'Courier New', monospace; font-size: 14px;
     color: #00cccc; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
   `;
   botLabel.textContent = "GRAVITY GRID \u2014 body at constant velocity (x = vt)";
@@ -329,7 +363,7 @@ function createFormulaDisplay(container) {
   bodySelector.style.cssText = `
     padding: 4px 8px; background: rgba(0, 26, 26, 0.95);
     border: 1px solid #00cccc; border-radius: 4px; color: #ffffff;
-    font-family: 'Courier New', monospace; font-size: 11px; cursor: pointer;
+    font-family: 'Courier New', monospace; font-size: 13px; cursor: pointer;
   `;
 
   Object.entries(RT.Gravity.BODIES).forEach(([key, body]) => {
@@ -360,7 +394,7 @@ function createFormulaDisplay(container) {
     padding: 4px 14px; background: rgba(0, 26, 26, 0.95);
     border: 1px solid #00cccc; border-radius: 4px;
     color: #00cccc; font-family: 'Courier New', monospace;
-    font-size: 11px; font-weight: bold; cursor: pointer;
+    font-size: 13px; font-weight: bold; cursor: pointer;
     transition: background 0.2s, color 0.2s;
   `;
   dropButton.onmouseover = () => {
@@ -556,16 +590,16 @@ function updateVisualization() {
     <div class="gravity-section-divider">
       <strong class="gravity-section-title" style="color: #ff6644;">Accelerating</strong>
       <div class="gravity-section-content">
-        x = \u00BDgt\u00B2 = <span class="gravity-color-position">${position.toFixed(2)} m</span><br>
-        <span class="gravity-text-muted">v = ${velocity.toFixed(2)} m/s</span>
+        x = \u00BDgt\u00B2 = <span class="gravity-color-position">${fmtVal(position)}</span><br>
+        <span class="gravity-text-muted">v = ${fmtVal(velocity, "m/s")}</span>
       </div>
     </div>
 
     <div class="gravity-section-divider">
       <strong class="gravity-section-title" style="color: #00cccc;">Constant v</strong>
       <div class="gravity-section-content">
-        x = vt = <span style="color: #44dddd; font-weight: bold;">${(H * f).toFixed(2)} m</span><br>
-        <span class="gravity-text-muted">v = ${constVelocity.toFixed(2)} m/s</span>
+        x = vt = <span style="color: #44dddd; font-weight: bold;">${fmtVal(H * f)}</span><br>
+        <span class="gravity-text-muted">v = ${fmtVal(constVelocity, "m/s")}</span>
       </div>
     </div>
 
@@ -573,15 +607,15 @@ function updateVisualization() {
       <strong class="gravity-section-title" style="color: #ffaa00;">Grid Cell</strong>
       <div class="gravity-section-content">
         Cell <span class="gravity-color-velocity">${uniformCell}</span> of ${N}<br>
-        <span class="gravity-text-muted">(both bodies, same cell)</span>
+        <span class="gravity-text-muted">${fmtVal(H)} drop, ${N} cells</span>
       </div>
     </div>
 
     <div class="gravity-section-divider">
       <strong class="gravity-section-title" style="color: #888;">Separation</strong>
       <div class="gravity-section-content">
-        \u0394x = <span style="color: #fff;">${separationPhysical.toFixed(2)} m</span><br>
-        <span class="gravity-text-muted">${bodyInfo.name}, g = ${g.toFixed(3)}</span>
+        \u0394x = <span style="color: #fff;">${fmtVal(separationPhysical)}</span><br>
+        <span class="gravity-text-muted">${bodyInfo.name}, g = ${fmtG(g)} m/s\u00B2</span>
       </div>
     </div>
   `;

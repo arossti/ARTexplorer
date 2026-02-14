@@ -2699,19 +2699,13 @@ export const RT = {
     /** Standard gravity — exactly rational, defined by 3rd CGPM 1901 */
     g_standard: 196133 / 20000, // 9.80665 m/s²
 
-    /** Body presets: { name, GM, surfaceG, radius } */
+    /** Body presets ordered by surface gravity (slowest drop → fastest) */
     BODIES: {
       normalized: {
         name: "Normalized",
         GM: 1.0,
         surfaceG: null,
         radius: null,
-      },
-      earth: {
-        name: "Earth",
-        GM: 3.986004e14,
-        surfaceG: 9.807,
-        radius: 6.371e6,
       },
       moon: {
         name: "Moon",
@@ -2724,6 +2718,12 @@ export const RT = {
         GM: 4.2828e13,
         surfaceG: 3.721,
         radius: 3.3895e6,
+      },
+      earth: {
+        name: "Earth",
+        GM: 3.986004e14,
+        surfaceG: 9.807,
+        radius: 6.371e6,
       },
       jupiter: {
         name: "Jupiter",

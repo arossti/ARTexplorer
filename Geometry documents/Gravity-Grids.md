@@ -1,8 +1,8 @@
 # Gravity Grids — Workplan
 
-**Branch:** TBD (new feature branch from `main`)
+**Branch:** `main` (Gravity Numberline demo merged via PR #93)
 **Goal:** Build warped coordinate grids where intervals encode gravitational acceleration rather than equal spatial distance — so a freely falling object appears to traverse gridlines at constant visual speed.
-**Status:** Conceptual design / Phase 0
+**Status:** Phase 0 complete — Gravity Numberline demo deployed and verified
 
 ---
 
@@ -552,13 +552,17 @@ RT.Gravity = {
 
 ## Phased Delivery
 
-| Phase | Deliverable | Depends On |
-|-------|-------------|------------|
-| 0     | Mathematical model: 1D interval sequence, worked examples | Nothing |
-| 1     | G-Cartesian Planes: non-uniform straight-line grids in XYZ | Phase 0 |
-| 2     | G-Quadray Grids: non-uniform triangular tessellation | Phase 0, Phase 1 patterns |
-| 3     | Curved gridlines: arcs replacing straight lines | Phase 1 or 2 |
-| 4     | Distorted polyhedra: vertex remapping through gravity metric | Phase 2 |
+| Phase | Deliverable | Depends On | Status |
+|-------|-------------|------------|--------|
+| 0     | Mathematical model + Gravity Numberline demo | Nothing | **Done** (PR #93) |
+| 1     | G-Cartesian Planes: non-uniform straight-line grids in XYZ | Phase 0 | Pending |
+| 2     | G-Quadray Grids: non-uniform triangular tessellation | Phase 0, Phase 1 patterns | Pending |
+| 3     | Curved gridlines: arcs replacing straight lines | Phase 1 or 2 | Pending |
+| 4     | Distorted polyhedra: vertex remapping through gravity metric | Phase 2 | Pending |
+| 5a    | IK rigid link in Gravity Numberline demo | Phase 0 | Planned |
+| 5b    | Pin joints and hinges | Phase 5a | Planned |
+| 5c    | Elastic, tension, compression members | Phase 5a | Planned |
+| 5d    | Pneumatic soft compression | Phase 5c | Planned |
 
 ---
 
@@ -574,13 +578,176 @@ RT.Gravity = {
 | | GM clarification | G is universal, M is body-specific, GM is body-specific (like ATM). Default GM = 1 (normalized, body-agnostic). Body presets: Earth, Moon, Mars, Jupiter, Sun, Black Hole, Custom. |
 | | Body selection UI | Dropdown in Coordinate Systems panel. Presets fill GM/g/radius (read-only). Custom unlocks GM input. Topology invariant across bodies; only absolute scale changes. |
 | | RT-pure arcs | Great-circle arcs via Weierstrass rational parameterization, NOT classical SLERP. Zero trig calls; 2√ per arc at GPU boundary. Spread replaces angle; quadrance replaces distance. Consistent with RT design rule. |
+| Feb 14, 2026 | Gravity Numberline demo | Phase 0 complete. Demo deployed via PR #93. Two numberlines: uniform (acceleration) vs gravity (constant v). N=144, body selector, Drop/Stop animation, draggable handle. |
+| | Black Hole body | Added to presets with computed Schwarzschild values: surfaceG = 1.52e13 m/s² (c⁴/4GM), radius = 2953 m (2GM/c²). |
+| | IK solver planning | New module `rt-ik-solvers.js` planned. Rigid link between demo bodies as first consumer. Future: pin joints, hinges, elastic, tension, compression, pneumatic connections. |
+
+---
+
+## Deployed: Gravity Numberline Demo (Phase 0)
+
+**PR #93** — merged to `main` on Feb 13, 2026.
+
+The first integration test of `RT.Gravity` is live as an interactive 2D demo accessible from **Math Demos > Gravity Numberline** in the main app.
+
+### What It Shows
+
+Two horizontal numberlines stacked vertically:
+
+- **Top line (UNIFORM GRID):** 144 equally-spaced tick marks. Body accelerates under gravity — quadratic position in time: `x = ½gt²`. Slow at left, fast at right.
+- **Bottom line (GRAVITY GRID):** 144 non-uniformly spaced tick marks at `√(k/N)` screen fraction. Body travels at constant velocity — linear position in time: `x = vt`. Steady rate across compressed ticks.
+
+Both bodies start at left and reach the right side at the same total time T. They diverge mid-flight: the accelerating body lags early, catches up late. Despite the visual separation, **both bodies are always in the same grid cell index** — because `f² ≥ k/N` iff `f ≥ √(k/N)`.
+
+### Files Created/Modified
+
+| File | Purpose |
+|------|---------|
+| `demos/rt-gravity-demo.js` | ~700 lines — the demo module |
+| `modules/rt-math.js` | `RT.Gravity` namespace: `g_standard`, `BODIES`, `computeGravityIntervals()`, `uniformGPosition()`, `uniformGTime()` |
+| `index.html` | UI link + modal HTML |
+| `modules/rt-init.js` | Import + registration |
+| `art.css` | Horizontal formula panel styles |
+
+### Features
+
+- **N = 144 intervals** matching Quadray tessellation max extent
+- **Major/minor tick hierarchy**: major every 12th tick (12 major divisions)
+- **Body selector dropdown**: Earth, Moon, Mars, Jupiter, Sun, Black Hole (1M☉)
+- **Black Hole**: computed Schwarzschild values — `surfaceG = 1.52e13 m/s²`, `radius = 2953 m`
+- **Drop/Stop animation**: real-time physics with looping, 500ms pause between loops
+- **Draggable time handle**: horizontal-constrained with snap to quarter marks and major grid crossings
+- **Horizontal formula panel**: time, accelerating body stats, constant-v body stats, grid cell, separation
+- **Handle drag interrupts animation**, body change stops and resets
+
+### Key Physics
+
+```
+f = t/T (time fraction, 0 to 1)
+
+Top body (accelerating):   screen position = f² · LINE_LENGTH
+Bottom body (constant v):  screen position = f · LINE_LENGTH
+
+Gravity tick k at screen fraction √(k/N)
+Both bodies always in same cell: uniformCell === gravityCell
+```
+
+### Verified Behavior
+
+- `RT.Gravity.g_standard` → `9.80665` (exactly rational: 196133/20000)
+- `RT.Gravity.BODIES.earth.GM` → `3.986004e14`
+- `RT.Gravity.computeGravityIntervals(24)` → 24 radii with harmonic compression
+- Bodies diverge visually, converge at endpoints, share cell index throughout
+- Black Hole animation essentially instantaneous (T ≈ 3.6 µs for 100m drop)
+
+---
+
+## Phase 5: Inverse Kinematics — Connecting Bodies Across Grids
+
+### The Idea
+
+The Gravity Numberline demo shows two bodies on different grids diverging and reconverging. The natural next question: **what happens when they are connected?**
+
+A rigid link between the accelerating body (top) and the constant-velocity body (bottom) creates differential rotation as the bodies separate and rejoin. This is the simplest possible IK (inverse kinematics) problem: two nodes, one rigid constraint, two different motion laws.
+
+This extends naturally into a general-purpose **connection solver** for ARTexplorer — any two nodes (vertices, body markers, polyhedra vertices) connected by constraints of varying types.
+
+### Module: `modules/rt-ik-solvers.js`
+
+A new module providing constraint solvers for connected nodes. Designed to be consumed by demos (gravity numberline IK link), future gravity grid visualizations (connected shells), and eventually the main 3D scene (polyhedra joint systems).
+
+### Connection Types (Phased)
+
+| Type | Behavior | DOF | Phase |
+|------|----------|-----|-------|
+| **Rigid** | Fixed length, no deformation. Differential rotation only. | 1 (rotation) | 5a |
+| **Pin Joint** | Two members sharing a point. Each rotates freely. | 2 (rotation per member) | 5b |
+| **Hinge** | Rotation constrained to a single axis (like a door hinge). | 1 (axis rotation) | 5b |
+| **Elastic** | Length varies under tension/compression. Spring constant k. | 1 (extension) | 5c |
+| **Tension-only** | Resists extension (cable/rope). Zero compression resistance. | 1 (extension, clamped ≥ 0) | 5c |
+| **Compression-only** | Resists compression (strut). Zero tension resistance. | 1 (compression, clamped ≤ 0) | 5c |
+| **Pneumatic** | Soft compression with nonlinear resistance (gas law). | 1 (volume) | 5d |
+
+### Architecture
+
+```javascript
+// modules/rt-ik-solvers.js
+
+import { RT } from "./rt-math.js";
+
+/**
+ * RT.IK — Inverse kinematics constraint solvers.
+ *
+ * Each solver takes two node positions and a constraint definition,
+ * and returns the resolved positions (or forces/torques for dynamic solvers).
+ *
+ * Design principle: solvers are pure functions (position in → position out).
+ * They don't own the nodes. The caller (demo, renderer) owns node positions
+ * and calls the solver each frame.
+ */
+
+/** Connection constraint definition */
+// { type: "rigid"|"pin"|"hinge"|"elastic"|"tension"|"compression"|"pneumatic",
+//   length: number,           // rest length (rigid, elastic, tension, compression)
+//   stiffness: number,        // spring constant k (elastic, pneumatic)
+//   axis: Vector3,            // hinge axis (hinge only)
+//   damping: number,          // velocity damping (elastic, pneumatic)
+//   pressureCoeff: number,    // PV = nRT coefficient (pneumatic)
+// }
+
+/** Solve a rigid constraint between two 2D points.
+ *  Given anchor A (fixed) and target B (desired position),
+ *  returns the resolved position of B on the circle of radius L around A.
+ */
+function solveRigid2D(anchorA, targetB, length) { ... }
+
+/** Solve a rigid constraint between two 3D points.
+ *  Same as 2D but in 3D space — B is placed on the sphere of radius L around A.
+ */
+function solveRigid3D(anchorA, targetB, length) { ... }
+
+/** Solve an elastic constraint — returns force vector, not position.
+ *  F = -k * (currentLength - restLength) * direction
+ */
+function solveElastic(nodeA, nodeB, restLength, stiffness) { ... }
+```
+
+### Phase 5a: Rigid Link in Gravity Numberline
+
+The first consumer. Connect the two body markers with a rigid bar:
+
+- **Anchor**: midpoint between the two bodies (or one body is anchor, the other follows)
+- **Length**: fixed at the initial separation (or configurable)
+- **Visual**: a line (or narrow rectangle) connecting the two dots, rotating as they separate
+- **Physics**: the link constrains the system — neither body follows its pure trajectory. The actual positions are a compromise between the two motion laws and the rigid constraint.
+- **Educational value**: shows how a rigid connection between two reference frames (uniform vs gravity grid) produces rotation — a mechanical analog of the grid warping
+
+#### Solver Strategy for the Demo
+
+Two approaches:
+
+1. **Display-only (no physics feedback)**: Both bodies follow their pure trajectories. The link is drawn between them but doesn't affect their motion. The link stretches/compresses and rotates, showing the *differential* without enforcing the constraint. Simpler to implement.
+
+2. **Constrained (IK feedback)**: One body is the "driver" (follows its trajectory), the other is constrained to stay at distance L from the driver. The constrained body slides along its numberline to satisfy the rigid constraint. More physically meaningful.
+
+Start with approach 1 (display-only) to visualize the differential, then optionally add approach 2.
+
+### Future Extensions
+
+- **Tensegrity structures**: tension members (cables) and compression members (struts) in 3D. The classic Fuller application.
+- **Polyhedra edge constraints**: each edge of a polyhedron is a rigid member. Apply gravity warping to vertices and use IK to resolve the constrained shape.
+- **Multi-body chains**: chains of connected nodes with different constraint types. FABRIK or CCD solvers for longer chains.
+- **Pneumatic soft bodies**: nodes connected by pneumatic constraints, creating deformable volumes that resist compression according to gas law (PV = nRT analog).
 
 ---
 
 ## Next Steps
 
-- [ ] Validate Phase 0 math: compute and plot 1D gravity intervals for N=144
-- [ ] Prototype `computeGravityIntervals()` in `rt-math.js`
-- [ ] Build `createGravityCartesianGrid()` in `rt-grids.js`
-- [ ] Add UI toggle to Coordinate Systems panel
-- [ ] Test visual effect: drop a marker and verify constant-rate gridline crossings
+- [x] ~~Validate Phase 0 math: compute and plot 1D gravity intervals for N=144~~
+- [x] ~~Prototype `computeGravityIntervals()` in `rt-math.js`~~
+- [x] ~~Test visual effect: drop a marker and verify constant-rate gridline crossings~~
+- [ ] Build `createGravityCartesianGrid()` in `rt-grids.js` (Phase 1)
+- [ ] Add UI toggle to Coordinate Systems panel (Phase 1)
+- [ ] Create `modules/rt-ik-solvers.js` with `solveRigid2D()` (Phase 5a)
+- [ ] Add rigid link visual to Gravity Numberline demo (Phase 5a)
+- [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)
