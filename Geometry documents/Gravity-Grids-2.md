@@ -1,0 +1,208 @@
+# Gravity Grids 2 — Remaining Work & Future Directions
+
+> **Previous document:** `Gravity-Grids.md` covers Phases 0–3, 5a and the full development history.
+> This document focuses on **what's next**.
+
+---
+
+## Status Summary
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 0 | Mathematical model + Gravity Numberline demo | **Done** (PR #93) |
+| 1 | G-Quadray grids: gravity-warped Central Angle tessellation | **Done** |
+| 1b | G-Cartesian: Weierstrass polar circles on XYZ planes | **Done** |
+| 2 | Quadrance-based shell spacing | Pending |
+| 3 | Quadray polar: 4 face planes with Weierstrass circles | **Done** (`df49fb3`) |
+| 4 | Distorted polyhedra: vertex remapping through gravity metric | Pending |
+| 5a | IK rigid link in Gravity Numberline demo | **Done** (`df0faf0`) |
+| 5b–d | Pin joints, hinges, elastic, tension, pneumatic | Planned |
+| 6 | Great-circle-as-N-gon: polygonal geodesic generation | Planned |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `modules/rt-grids.js` | `createGravityCartesianPlane()`, `createQuadrayPolarPlane()`, `createIVMGrid()` (uniform only) |
+| `modules/rt-math.js` | `RT.Gravity` namespace — `computeGravityCumulativeDistances()`, `rationalArc()` |
+| `modules/rt-init.js` | Grid mode button handlers (now scoped per section: `data-cartesian-mode`, `data-quadray-mode`) |
+| `modules/rt-rendering.js` | Grid group visibility API: `setCartesianGridVisible()`, `setQuadrayGridVisible()` |
+| `modules/rt-ik-solvers.js` | `solveRigid2D()`, `linkAngle2D()`, `linkSpread2D()` |
+| `index.html` | Cartesian: Uniform/Polar. Central Angle: Uniform/Polar |
+
+### Recent Fixes (PR #97)
+
+- Ortho camera near-plane clipping fixed (`near = -10000`)
+- Ortho camera `onWindowResize` properly updates frustum bounds
+- Grid mode toggles scoped per section (no cross-contamination)
+- Section collapse hides entire THREE.Group (fixes polar face plane cleanup)
+
+---
+
+## Phase 2: Quadrance-Based Shell Spacing
+
+**Goal:** Eliminate per-shell `√` from the spacing formula by working in quadrance space.
+
+Current formula (distance-based):
+```
+cumDist[k] = E × (1 - √(1 - k/N))
+```
+One `√` per shell at the GPU boundary.
+
+Quadrance-native approach: store `Q_k = r_k²` directly, defer `√` to rendering:
+```
+Q_k = E² × k/N
+```
+This is **uniform in quadrance** — the shell spacing becomes a simple linear function when measured in quadrance rather than distance. The `√` moves to the final rendering step where it's already needed for vertex positions.
+
+### Why This Matters
+
+- Maintains RT algebraic exactness deeper into the pipeline
+- Shell spacing formula becomes trivially rational: `Q_k = E² × k/N`
+- Consistent with the RT design principle: work in quadrance, expand to distance only at GPU boundary
+
+### Implementation
+
+Modify `computeGravityCumulativeDistances()` in `rt-math.js` to optionally return quadrances. Consumers (`createGravityCartesianPlane`, `createQuadrayPolarPlane`) take `√` at vertex emission time.
+
+---
+
+## Phase 4: Distorted Polyhedra — Geometry in Curved Space
+
+**Goal:** Render polyhedra with vertices remapped through the gravity metric, showing tidal distortion.
+
+### The Approach
+
+Each vertex is radially displaced according to the gravity interval mapping:
+
+```javascript
+function gravityWarp(vertex, gravityCenter, intervals) {
+    const r = vertex.distanceTo(gravityCenter);
+    const R = mapToGravityRadius(r, intervals);
+    const direction = vertex.clone().sub(gravityCenter).normalize();
+    return gravityCenter.clone().add(direction.multiplyScalar(R));
+}
+```
+
+### Visual Effect
+
+- **Far from origin**: nearly normal (shells widely spaced, close to uniform)
+- **Near origin**: radially compressed, tangentially stretched (tidal distortion)
+- **At origin**: collapses toward a point — the Janus Point / singularity
+
+### Mesh Strategy
+
+Subdivide polyhedron faces before warping (a triangle with 3 vertices maps poorly to curved space). Subdivide each face into ~16 sub-triangles, warp each vertex, and the curved surface emerges.
+
+### Dependencies
+
+- Phase 2 (body selector UI) for choosing which gravity field to apply
+- Existing polyhedra generation pipeline in `rt-polyhedra.js`
+
+---
+
+## Phase 5b–d: Extended IK Solvers
+
+Building on `rt-ik-solvers.js` (Phase 5a: rigid link).
+
+| Phase | Type | Behavior | DOF |
+|-------|------|----------|-----|
+| 5b | Pin Joint | Two members sharing a point, each rotates freely | 2 |
+| 5b | Hinge | Rotation constrained to a single axis | 1 |
+| 5c | Elastic | Length varies under tension/compression, spring constant k | 1 |
+| 5c | Tension-only | Resists extension (cable/rope), zero compression resistance | 1 |
+| 5c | Compression-only | Resists compression (strut), zero tension resistance | 1 |
+| 5d | Pneumatic | Soft compression with nonlinear resistance (gas law) | 1 |
+
+### Future Extensions
+
+- **Tensegrity structures**: tension + compression members in 3D (the classic Fuller application)
+- **Polyhedra edge constraints**: each edge is a rigid member; gravity warping + IK resolves the constrained shape
+- **Multi-body chains**: FABRIK or CCD solvers for longer chains
+- **Pneumatic soft bodies**: deformable volumes resisting compression per PV = nRT
+
+---
+
+## Phase 6: Great-Circle-as-N-gon — Polygonal Geodesic Generation
+
+**Goal:** Replace the fixed 64-segment circle approximation with explicit N-gon inscriptions, opening a family of geodesic constructions.
+
+### The Family
+
+| N | Shape | Radial Lines | Pattern |
+|---|-------|-------------|---------|
+| 3 | Triangle | 3 per plane | Triangulated disc — natural match for tetrahedral face planes |
+| 4 | Square | 4 per plane | Current radial crosshair, but explicit |
+| 6 | Hexagon | 6 per plane | Hexagonal tessellation disc — IVM-like pattern |
+| 12 | Dodecagon | 12 per plane | High-resolution polygonal |
+| 64 | 64-gon | 64 per plane | Visually smooth circle (current rendering) |
+
+### Geodesic Generation via N-gon Subdivision
+
+The key insight: geodesic frequency can be generated NOT by projecting polyhedron edges onto a sphere, but by **subdividing great circles with N-gons and connecting their vertices**:
+
+1. Take a great circle on a tetrahedral face plane
+2. Inscribe an N-gon (vertices at equal angular spacing)
+3. Take the concentric circle at the next gravity shell
+4. Inscribe the same N-gon, possibly rotated by half a vertex angle
+5. Connect corresponding and adjacent vertices between shells
+
+This produces geodesic-like triangulations that:
+- Work on **any** plane (not just icosahedral symmetry)
+- Naturally adapt to gravity-spaced shells (non-uniform radial distribution)
+- Are conformal to the polar grid structure
+- Can use any polygon — hexagonal, pentagonal, etc.
+
+### Implementation
+
+Modify `createQuadrayPolarPlane()` to accept an `nGon` parameter (default 64 for backward compat):
+
+```javascript
+createQuadrayPolarPlane: (normal, divisions, color, nGon = 64) => {
+  // For each shell k:
+  //   Place nGon vertices at equal angular spacing (Weierstrass u-values)
+  //   Draw polygon edges (vertex to vertex)
+  //   Optionally draw radial lines to previous shell's vertices
+}
+```
+
+### Verification
+
+- **N=64**: Visually identical to current
+- **N=3 on QW plane**: Equilateral triangle per shell, 3 radial lines — should align with tet face geometry
+- **N=6 on QW plane**: Hexagonal rings — should produce IVM-like pattern
+
+### Radial Lines
+
+Currently removed from Quadray polar planes (the XYZ "+" crosshair didn't align with basis vectors). N-gon inscriptions generate radial lines naturally by connecting corresponding vertices between concentric N-gons — no arbitrary axis alignment needed.
+
+### Dual Tet Planes
+
+The 4 face planes are parallel to the base tetrahedron's faces. Rotating 180° gives the dual tetrahedron's face planes (8 planes total). These are NOT coplanar with the 6 Central Angle planes. Future option once N-gon generation is working.
+
+---
+
+## Open Questions
+
+1. **Quadrance-based spacing** (Phase 2): Does storing Q_k instead of r_k require changes downstream in the Weierstrass parameterization, which currently takes radius r directly?
+
+2. **Gravity center mobility**: Initially at origin. Could the gravity center be attached to a polyhedron or draggable point?
+
+3. **Multiple gravity sources**: The interval formula assumes a single source. Two sources would require summing fields.
+
+4. **Body selector UI** (Phase 2): Dropdown for GM presets (Earth, Moon, Mars, Jupiter, Sun, Black Hole, Custom). Currently only the Gravity Numberline demo has this. Should the 3D grid also get a body selector?
+
+5. **Performance budget**: N-gon generation (Phase 6) and subdivided warped polyhedra (Phase 4) multiply vertex count. Profile and set limits.
+
+6. **Basis vectors in gravity space**: The four tetrahedral basis directions remain angular constants, but their lengths now vary with the gravity metric. Variable thickness or curvature to indicate local distortion?
+
+---
+
+## Immediate TODOs
+
+- [ ] **Phase 6: N-gon parameter for `createQuadrayPolarPlane()`** — start with N=3 (triangle) and N=6 (hexagon) to validate the geodesic construction
+- [ ] **Radial line generation** via N-gon vertex connections between concentric shells
+- [ ] **Phase 2: Quadrance-based shell spacing** — algebraic exactness improvement
+- [ ] **Body selector UI** for the 3D gravity grids (port from Gravity Numberline demo)
+- [ ] **Phase 4: Gravity-warped polyhedra** — vertex remapping prototype
+- [ ] **Phase 5b: Pin joints and hinges** in `rt-ik-solvers.js`
