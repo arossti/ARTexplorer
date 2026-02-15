@@ -18,6 +18,7 @@
 | 5a | IK rigid link in Gravity Numberline demo | **Done** (`df0faf0`) |
 | 5b–d | Pin joints, hinges, elastic, tension, pneumatic | Planned |
 | 6 | Great-circle-as-N-gon: polygonal geodesic generation | Planned |
+| 7 | 4D± Gravity + Inversion demo: Quadray Janus drop | **In Progress** |
 
 ### Key Files
 
@@ -182,6 +183,87 @@ The 4 face planes are parallel to the base tetrahedron's faces. Rotating 180° g
 
 ---
 
+## Phase 7: 4D± Gravity + Inversion Demo
+
+**Goal:** Extend the 2D Gravity Numberline demo into 3D/4D Quadray space. Four geodesic icosahedron nodes fall along the four Quadray basis vectors through a gravity-spherical (Polar great circles) grid, collide at the origin (Janus Singularity), invert into negative Quadray space, and oscillate continuously.
+
+### Architecture
+
+Follows the **in-scene floating panel** pattern established by the Rotor demo (`rt-rotor-demo.js`), NOT a modal. Class `Drop4DDemo` with constructor `(scene, THREE, camera, controls)`.
+
+| File | Action |
+|------|--------|
+| `demos/4D-Drop.js` | **New** — full demo module (~400 lines) |
+| `index.html` | Add list item in Math Demos section |
+| `modules/rt-init.js` | Add import + event handler |
+
+### Lifecycle
+
+- `enable()` → saveSceneState → configureSceneForDemo → createDemoObjects → createInfoPanel → startAnimation
+- `disable()` → stopAnimation → removeDemoObjects → removeInfoPanel → restoreSceneState
+- `toggle()` → enable/disable, returns `this.enabled`
+
+### Scene Configuration
+
+On enable, the demo saves all current checkbox/slider state and configures:
+- Quadray basis vectors visible, grids in **gravity-spherical** (Polar) mode
+- Tessellation slider set to **144** divisions
+- All 4 IVM face plane checkboxes enabled
+- Distractions hidden (Cube, Dual Tet, Cartesian basis/grid)
+
+### Demo Objects
+
+4 geodesic icosahedron nodes (`Nodes.getCachedNodeGeometry`, 3F, size "7" = 0.12 radius) placed at the outermost extent of each Quadray basis axis:
+- **QX** (A axis): Red
+- **QZ** (B axis): Green
+- **QY** (C axis): Blue
+- **QW** (D axis): Yellow
+
+Axis extent = `cumDist[N]` from `RT.Gravity.computeGravityCumulativeDistances(144, 72)`.
+
+### Physics (reused from `rt-gravity-demo.js`)
+
+- Surface gravity: `RT.Gravity.BODIES[selectedBody].surfaceG`
+- Fall time: `T = √(2H/g)`
+- Constant velocity on gravity grid = acceleration in physical space (the grid encodes the metric)
+
+### Animation — 4-Phase State Machine
+
+Each phase takes `T = √(2H/g)` seconds. Nodes move at constant velocity (linear fraction `f = elapsed/T`):
+
+| Phase | Start | End | Node position |
+|-------|-------|-----|---------------|
+| `pos_to_origin` | +extent×basis[i] | origin | `(1-f) × extent × basis[i]` |
+| `origin_to_neg` | origin | -extent×basis[i] | `-f × extent × basis[i]` |
+| `neg_to_origin` | -extent×basis[i] | origin | `-(1-f) × extent × basis[i]` |
+| `origin_to_pos` | origin | +extent×basis[i] | `+f × extent × basis[i]` |
+
+At origin arrivals (end of `pos_to_origin` and `neg_to_origin`): `createJanusFlash()` + 500ms pause before next phase.
+
+### Control Panel
+
+Fixed-position DOM panel (top-left, `rgba(0,0,0,0.85)`, z-index 1000, draggable header):
+- Title: "4D± Gravity + Inversion"
+- Body selector dropdown (populated from `RT.Gravity.BODIES`)
+- Drop/Stop toggle button
+- Status readout: phase, elapsed time, current cell, surface g
+
+### Key Reuse
+
+| What | From |
+|------|------|
+| Scene access | `rt-init.js` constructor params |
+| Floating panel + drag | `rt-rotor-demo.js` pattern |
+| Save/restore scene state | `rt-rotor-demo.js` checkpoint approach |
+| Node geometry | `rt-nodes.js` `getCachedNodeGeometry()` |
+| Physics constants | `RT.Gravity.BODIES` from `rt-math.js` |
+| Grid configuration | UI button click `[data-quadray-mode="gravity-spherical"]` |
+| Janus flash | `rt-janus.js` `createJanusFlash()` |
+| Quadray basis vectors | `Quadray.basisVectors[0..3]` from `rt-math.js` |
+| Gravity shell radii | `RT.Gravity.computeGravityCumulativeDistances()` |
+
+---
+
 ## Open Questions
 
 1. **Quadrance-based spacing** (Phase 2): Does storing Q_k instead of r_k require changes downstream in the Weierstrass parameterization, which currently takes radius r directly?
@@ -200,6 +282,7 @@ The 4 face planes are parallel to the base tetrahedron's faces. Rotating 180° g
 
 ## Immediate TODOs
 
+- [ ] **Phase 7: `demos/4D-Drop.js`** — implement 4D± Gravity + Inversion demo (in progress)
 - [ ] **Phase 6: N-gon parameter for `createQuadrayPolarPlane()`** — start with N=3 (triangle) and N=6 (hexagon) to validate the geodesic construction
 - [ ] **Radial line generation** via N-gon vertex connections between concentric shells
 - [ ] **Phase 2: Quadrance-based shell spacing** — algebraic exactness improvement
