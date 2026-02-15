@@ -26,7 +26,6 @@ import { MetaLog } from "./rt-metalog.js";
 
 // Module constants
 const GRID_LINE_OPACITY = 0.4; // Dimmed to match Quadray IVM grid intensity
-const ARC_SEGMENTS_PER_EDGE = 8; // Weierstrass arc subdivisions for spherical mode
 
 // Module-level flag (avoids window.* global pollution)
 let gridIntervalLogged = false;
@@ -36,6 +35,13 @@ let gridIntervalLogged = false;
 const COLOR_XY = 0xffff00;
 const COLOR_XZ = 0xff00ff;
 const COLOR_YZ = 0x00ffff;
+
+// Quadray face-perpendicular plane colors: match the Quadray axis color convention
+// Each plane is ⊥ to one Quadray basis vector → colored by that axis
+const COLOR_FACE_W = 0xffff00; // Yellow (QW axis)
+const COLOR_FACE_X = 0xff0000; // Red    (QX axis)
+const COLOR_FACE_Y = 0x0000ff; // Blue   (QY axis)
+const COLOR_FACE_Z = 0x00ff00; // Green  (QZ axis)
 
 /**
  * Build Cartesian grid planes (3 planes: XY, XZ, YZ) for a given mode.
@@ -77,13 +83,32 @@ function buildCartesianPlanes(divisions, gridMode) {
 /**
  * Build the 6 Quadray Central Angle planes for a given mode.
  * Shared by createIVMPlanes and rebuildQuadrayGrids.
- * @param {number} halfSize - Tetrahedron halfSize
  * @param {number} tessellations - Triangle copies per direction
- * @param {string} gridMode - 'uniform', 'gravity-chordal', or 'gravity-spherical'
- * @returns {{ ivmWX, ivmWY, ivmWZ, ivmXY, ivmXZ, ivmYZ: THREE.LineSegments }}
+ * @param {string} gridMode - 'uniform' or 'gravity-spherical'
+ * @returns {Object} Keyed plane objects (6 Central Angle planes for uniform, 4 face planes for polar)
  */
-function buildQuadrayPlanes(halfSize, tessellations, gridMode) {
-  // 6 planes from 6 combinations of 4 basis vectors
+function buildQuadrayPlanes(tessellations, gridMode) {
+  if (gridMode === "gravity-spherical") {
+    // Polar mode: 4 planes ⊥ to Quadray basis vectors (tetrahedral face planes)
+    // Concentric Weierstrass circles — same algorithm as Cartesian polar
+    const axisConfigs = [
+      { key: "faceW", axisName: "qw", color: COLOR_FACE_W, name: "QuadrayPolar_W" },
+      { key: "faceX", axisName: "qx", color: COLOR_FACE_X, name: "QuadrayPolar_X" },
+      { key: "faceY", axisName: "qy", color: COLOR_FACE_Y, name: "QuadrayPolar_Y" },
+      { key: "faceZ", axisName: "qz", color: COLOR_FACE_Z, name: "QuadrayPolar_Z" },
+    ];
+
+    const result = {};
+    for (const cfg of axisConfigs) {
+      const normal = Quadray.getAxisVector(cfg.axisName);
+      const plane = Grids.createQuadrayPolarPlane(normal, tessellations, cfg.color);
+      plane.name = cfg.name;
+      result[cfg.key] = plane;
+    }
+    return result;
+  }
+
+  // Uniform mode: 6 Central Angle planes from pairs of basis vectors
   // Color scheme: W=Yellow, X=Red, Y=Blue, Z=Green → RGB two-color mixes
   const planeConfigs = [
     { key: "ivmWX", b1: 0, b2: 1, color: 0xffaa00, name: "CentralAngle_WX" },
@@ -99,10 +124,8 @@ function buildQuadrayPlanes(halfSize, tessellations, gridMode) {
     const plane = Grids.createIVMGrid(
       Quadray.basisVectors[cfg.b1],
       Quadray.basisVectors[cfg.b2],
-      halfSize,
       tessellations,
-      cfg.color,
-      gridMode
+      cfg.color
     );
     plane.name = cfg.name;
     result[cfg.key] = plane;
@@ -216,6 +239,98 @@ export const Grids = {
         vertices.push(pos, 0, -extent, pos, 0, extent);
         if (k > 0) {
           vertices.push(-pos, 0, -extent, -pos, 0, extent);
+        }
+      }
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(vertices, 3)
+    );
+    return new THREE.LineSegments(
+      geometry,
+      new THREE.LineBasicMaterial({
+        color,
+        transparent: true,
+        opacity: GRID_LINE_OPACITY,
+      })
+    );
+  },
+
+  /**
+   * Create a polar grid (concentric circles + radial lines) on a plane
+   * perpendicular to a Quadray basis vector. Each plane is a tetrahedral
+   * face plane — ⊥QW, ⊥QX, ⊥QY, or ⊥QZ.
+   *
+   * Uses Weierstrass rational parameterization — same math as
+   * createGravityCartesianPlane() but generates 3D vertices directly
+   * via in-plane orthonormal basis (no axis rotation needed).
+   *
+   * @param {THREE.Vector3} normal - Unit normal to the plane (a Quadray basis vector)
+   * @param {number} divisions - Number of concentric circles (from tessellation slider)
+   * @param {number} color - Line color (hex)
+   * @returns {THREE.LineSegments} Polar grid geometry centered at origin
+   */
+  createQuadrayPolarPlane: (normal, divisions, color) => {
+    // Construct orthonormal basis in the plane ⊥ normal
+    const n = normal.clone().normalize();
+    const ref = Math.abs(n.y) < 0.9
+      ? new THREE.Vector3(0, 1, 0)
+      : new THREE.Vector3(1, 0, 0);
+    const localX = new THREE.Vector3().crossVectors(ref, n).normalize();
+    const localZ = new THREE.Vector3().crossVectors(n, localX).normalize();
+
+    // Precompute basis components for inline vertex math
+    const lxx = localX.x, lxy = localX.y, lxz = localX.z;
+    const lzx = localZ.x, lzy = localZ.y, lzz = localZ.z;
+
+    const halfExtent = Math.floor(divisions / 2);
+    const numCircles = divisions;
+    const cumDist = RT.Gravity.computeGravityCumulativeDistances(
+      numCircles,
+      halfExtent
+    );
+    const vertices = [];
+    const SPQ = 16; // segments per quadrant → 64 per full circle
+
+    for (let k = 1; k <= numCircles; k++) {
+      const r = cumDist[k];
+
+      for (let q = 0; q < 4; q++) {
+        // Starting point on the quadrant boundary (in local 2D coords)
+        let p2d, pz2d;
+        if (q === 0) { p2d = r; pz2d = 0; }
+        else if (q === 1) { p2d = 0; pz2d = r; }
+        else if (q === 2) { p2d = -r; pz2d = 0; }
+        else { p2d = 0; pz2d = -r; }
+
+        // Convert to 3D: point = localX * p2d + localZ * pz2d
+        let px = lxx * p2d + lzx * pz2d;
+        let py = lxy * p2d + lzy * pz2d;
+        let pz = lxz * p2d + lzz * pz2d;
+
+        for (let s = 1; s <= SPQ; s++) {
+          const u = s / SPQ;
+          const u2 = u * u;
+          const d = 1 + u2;
+          const c = r * (1 - u2) / d;  // Weierstrass rational cosine
+          const sn = r * 2 * u / d;    // Weierstrass rational sine
+
+          // Quadrant-specific 2D mapping (same pattern as Cartesian)
+          let nx2d, nz2d;
+          if (q === 0) { nx2d = c; nz2d = sn; }
+          else if (q === 1) { nx2d = -sn; nz2d = c; }
+          else if (q === 2) { nx2d = -c; nz2d = -sn; }
+          else { nx2d = sn; nz2d = -c; }
+
+          // Convert to 3D
+          const nx = lxx * nx2d + lzx * nz2d;
+          const ny = lxy * nx2d + lzy * nz2d;
+          const nz = lxz * nx2d + lzz * nz2d;
+
+          vertices.push(px, py, pz, nx, ny, nz);
+          px = nx; py = ny; pz = nz;
         }
       }
     }
@@ -454,21 +569,15 @@ export const Grids = {
    * Tessellates triangular faces vertex-to-vertex - NO extraneous lines!
    * RT-PURE: Uses tetrahedron edge length as unit increment
    *
+   * Uniform mode only. Polar/gravity modes use createQuadrayPolarPlane() instead.
+   *
    * @param {THREE.Vector3} basis1 - First basis vector (e.g., W)
    * @param {THREE.Vector3} basis2 - Second basis vector (e.g., X)
-   * @param {number} halfSize - Tetrahedron halfSize (s)
    * @param {number} tessellations - Number of triangle copies in each direction
    * @param {number} color - Grid line color
    * @returns {THREE.LineSegments} Central Angle grid geometry
    */
-  createIVMGrid: (
-    basis1,
-    basis2,
-    halfSize,
-    tessellations,
-    color,
-    gridMode = "uniform"
-  ) => {
+  createIVMGrid: (basis1, basis2, tessellations, color) => {
     const geometry = new THREE.BufferGeometry();
     const vertices = [];
 
@@ -494,119 +603,38 @@ export const Grids = {
       b2y = basis2.y,
       b2z = basis2.z;
 
-    if (gridMode === "gravity-chordal" || gridMode === "gravity-spherical") {
-      // --- Radial shell projection (gravity mode) ---
-      // Each vertex (i,j) is projected onto the spherical shell at cumDist[i+j].
-      // 1. Compute uniform-space position: P = basis1×(i×e) + basis2×(j×e)
-      // 2. Get quadrance Q = |P|² (RT-pure, no √)
-      // 3. Scale to shell: P_gravity = P × shellProjectionScale(Q, cumDist[i+j])
-      //    (one √ per vertex — the GPU boundary)
-      //
-      // This places ALL vertices on ring k (i+j = k) at the SAME radial distance
-      // cumDist[k], producing outward-arcing gridlines along concentric shells.
-      //
-      // Spherical mode: ring edges (P1→P2, same shell) are traced as great-circle
-      // arcs via Weierstrass rational parameterization. Every intermediate point
-      // lies exactly on the shell — no chord sag. 2√ per arc at GPU boundary.
-      const totalExtent = tessellations * edgeLength;
-      const cumDist = RT.Gravity.computeGravityCumulativeDistances(
-        tessellations,
-        totalExtent
-      );
-      const arcSub = gridMode === "gravity-spherical" ? ARC_SEGMENTS_PER_EDGE : 0;
+    // cumDist[k] = k × edgeLength (constant intervals)
+    const cumDist = [];
+    for (let k = 0; k <= tessellations + 1; k++) {
+      cumDist.push(k * edgeLength);
+    }
 
-      for (let i = 0; i <= tessellations; i++) {
-        for (let j = 0; j <= tessellations - i; j++) {
-          // Uniform-space coordinates (linear spacing)
-          const ui = i * edgeLength, ui1 = (i + 1) * edgeLength;
-          const uj = j * edgeLength, uj1 = (j + 1) * edgeLength;
+    for (let i = 0; i <= tessellations; i++) {
+      for (let j = 0; j <= tessellations - i; j++) {
+        const di = cumDist[i],
+          di1 = cumDist[i + 1];
+        const dj = cumDist[j],
+          dj1 = cumDist[j + 1];
 
-          let px, py, pz, Q, scale;
+        // P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
+        const p0x = b1x * di + b2x * dj;
+        const p0y = b1y * di + b2y * dj;
+        const p0z = b1z * di + b2z * dj;
 
-          // Vertex 0: (i,j) → shell at cumDist[i+j]
-          px = b1x * ui + b2x * uj;
-          py = b1y * ui + b2y * uj;
-          pz = b1z * ui + b2z * uj;
-          Q = px * px + py * py + pz * pz;
-          scale = RT.Gravity.shellProjectionScale(Q, cumDist[i + j]);
-          const p0x = px * scale, p0y = py * scale, p0z = pz * scale;
+        // P(i+1,j)
+        const p1x = b1x * di1 + b2x * dj;
+        const p1y = b1y * di1 + b2y * dj;
+        const p1z = b1z * di1 + b2z * dj;
 
-          // Vertex 1: (i+1,j) → shell at cumDist[i+1+j]
-          px = b1x * ui1 + b2x * uj;
-          py = b1y * ui1 + b2y * uj;
-          pz = b1z * ui1 + b2z * uj;
-          Q = px * px + py * py + pz * pz;
-          scale = RT.Gravity.shellProjectionScale(Q, cumDist[i + 1 + j]);
-          const p1x = px * scale, p1y = py * scale, p1z = pz * scale;
+        // P(i,j+1)
+        const p2x = b1x * di + b2x * dj1;
+        const p2y = b1y * di + b2y * dj1;
+        const p2z = b1z * di + b2z * dj1;
 
-          // Vertex 2: (i,j+1) → shell at cumDist[i+j+1]
-          px = b1x * ui + b2x * uj1;
-          py = b1y * ui + b2y * uj1;
-          pz = b1z * ui + b2z * uj1;
-          Q = px * px + py * py + pz * pz;
-          scale = RT.Gravity.shellProjectionScale(Q, cumDist[i + j + 1]);
-          const p2x = px * scale, p2y = py * scale, p2z = pz * scale;
-
-          // Edge P0→P1: radial (different shells) — always straight
-          vertices.push(p0x, p0y, p0z, p1x, p1y, p1z);
-
-          // Edge P1→P2: RING (same shell i+j+1) — rational arc if spherical
-          if (arcSub > 0) {
-            // Weierstrass great-circle arc: every point exactly on shell
-            const shellR = cumDist[i + j + 1];
-            const arcPts = RT.Gravity.rationalArc(
-              p1x, p1y, p1z, p2x, p2y, p2z, shellR, arcSub
-            );
-            for (let s = 0; s < arcSub; s++) {
-              const off = s * 3;
-              vertices.push(
-                arcPts[off], arcPts[off + 1], arcPts[off + 2],
-                arcPts[off + 3], arcPts[off + 4], arcPts[off + 5]
-              );
-            }
-          } else {
-            vertices.push(p1x, p1y, p1z, p2x, p2y, p2z);
-          }
-
-          // Edge P2→P0: radial (different shells) — always straight
-          vertices.push(p2x, p2y, p2z, p0x, p0y, p0z);
-        }
-      }
-    } else {
-      // --- Uniform mode (default) ---
-      // cumDist[k] = k × edgeLength (constant intervals)
-      const cumDist = [];
-      for (let k = 0; k <= tessellations + 1; k++) {
-        cumDist.push(k * edgeLength);
-      }
-
-      for (let i = 0; i <= tessellations; i++) {
-        for (let j = 0; j <= tessellations - i; j++) {
-          const di = cumDist[i],
-            di1 = cumDist[i + 1];
-          const dj = cumDist[j],
-            dj1 = cumDist[j + 1];
-
-          // P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
-          const p0x = b1x * di + b2x * dj;
-          const p0y = b1y * di + b2y * dj;
-          const p0z = b1z * di + b2z * dj;
-
-          // P(i+1,j)
-          const p1x = b1x * di1 + b2x * dj;
-          const p1y = b1y * di1 + b2y * dj;
-          const p1z = b1z * di1 + b2z * dj;
-
-          // P(i,j+1)
-          const p2x = b1x * di + b2x * dj1;
-          const p2y = b1y * di + b2y * dj1;
-          const p2z = b1z * di + b2z * dj1;
-
-          // Three edges (triangle outline)
-          vertices.push(p0x, p0y, p0z, p1x, p1y, p1z);
-          vertices.push(p1x, p1y, p1z, p2x, p2y, p2z);
-          vertices.push(p2x, p2y, p2z, p0x, p0y, p0z);
-        }
+        // Three edges (triangle outline)
+        vertices.push(p0x, p0y, p0z, p1x, p1y, p1z);
+        vertices.push(p1x, p1y, p1z, p2x, p2y, p2z);
+        vertices.push(p2x, p2y, p2z, p0x, p0y, p0z);
       }
     }
 
@@ -634,18 +662,17 @@ export const Grids = {
    */
   createIVMPlanes: (scene, tessellations = 12, gridMode = "uniform") => {
     const ivmPlanes = new THREE.Group();
-    const halfSize = 1.0;
-    const planes = buildQuadrayPlanes(halfSize, tessellations, gridMode);
+    const planes = buildQuadrayPlanes(tessellations, gridMode);
 
     for (const key of Object.keys(planes)) {
       planes[key].visible = true;
       ivmPlanes.add(planes[key]);
     }
 
+    const planeCount = Object.keys(planes).length;
     MetaLog.log(
       MetaLog.SUMMARY,
-      "✅ Central Angle grids created (corrected tessellation, 6 planes) with edge length:",
-      (2 * halfSize * Math.sqrt(2)).toFixed(4)
+      `✅ Quadray grids created (${planeCount} planes, mode: ${gridMode})`
     );
 
     scene.add(ivmPlanes);
@@ -673,8 +700,7 @@ export const Grids = {
     }
 
     const ivmPlanes = new THREE.Group();
-    const halfSize = 1.0;
-    const planes = buildQuadrayPlanes(halfSize, tessellations, gridMode);
+    const planes = buildQuadrayPlanes(tessellations, gridMode);
 
     for (const key of Object.keys(planes)) {
       planes[key].visible = visibilityState[key] ?? true;

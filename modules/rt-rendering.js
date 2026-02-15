@@ -582,14 +582,11 @@ export function initScene(THREE, OrbitControls, RT) {
     // Delegate to Grids module
     const result = Grids.createIVMPlanes(scene, tessellations);
 
-    // Store references for later use
+    // Store references for later use (dynamic keys: IVM or face planes)
     ivmPlanes = result.ivmPlanes;
-    window.ivmWX = result.ivmWX;
-    window.ivmWY = result.ivmWY;
-    window.ivmWZ = result.ivmWZ;
-    window.ivmXY = result.ivmXY;
-    window.ivmXZ = result.ivmXZ;
-    window.ivmYZ = result.ivmYZ;
+    for (const key of Object.keys(result)) {
+      if (key !== "ivmPlanes") window[key] = result[key];
+    }
   }
 
   // ========================================================================
@@ -4353,14 +4350,11 @@ export function initScene(THREE, OrbitControls, RT) {
       gridMode
     );
 
-    // Store references for later use
+    // Store references for later use (dynamic keys: IVM or face planes)
     ivmPlanes = result.ivmPlanes;
-    window.ivmWX = result.ivmWX;
-    window.ivmWY = result.ivmWY;
-    window.ivmWZ = result.ivmWZ;
-    window.ivmXY = result.ivmXY;
-    window.ivmXZ = result.ivmXZ;
-    window.ivmYZ = result.ivmYZ;
+    for (const key of Object.keys(result)) {
+      if (key !== "ivmPlanes") window[key] = result[key];
+    }
   }
 
   /**
