@@ -2786,13 +2786,13 @@ export const RT = {
      * @returns {number[]} Cumulative distances [0, d1, ..., dN, dN+extrapolated]
      */
     computeGravityCumulativeDistances: (N, totalExtent) => {
-      // Quadratic (uniform-g) model: cumDist[k] = totalExtent × (k/N)²
-      // Gaps grow linearly: (2k+1)/N² — dense near origin, sparse far out
-      // Matches the numberline demo spacing pattern (1, 4, 9, 16, ... 144)
+      // Numberline-derived spacing: cumDist[k] = E × (1 - √(1 - k/N))
+      // Applies the gravity numberline tick distribution to each axis.
+      // Close together near origin (strong field), expanding outward (weak field).
+      // One √ per shell at GPU boundary.
       const cumDist = [0];
-      const N2 = N * N;
       for (let k = 1; k <= N; k++) {
-        cumDist.push(totalExtent * (k * k) / N2);
+        cumDist.push(totalExtent * (1 - Math.sqrt(1 - k / N)));
       }
       // Extrapolate one step beyond for boundary triangle safety
       const lastGap = cumDist[N] - cumDist[N - 1];
