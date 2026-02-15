@@ -11,26 +11,34 @@
 > - Code: `modules/rt-grids.js` → `createGravityCartesianPlane()` (~line 48)
 > - UI: "Polar" button on Cartesian section, handler in `modules/rt-init.js` (~line 1039)
 >
-> ### NEXT — Quadray Polar Grids (great circles NOT yet working)
-> - **The problem**: Quadray "Gravity"/"Polar" modes warp a triangular tessellation mesh, producing butterfly/fan shapes — NOT concentric circles. The triangular topology prevents circles from emerging.
-> - **The fix**: For Quadray "Polar" mode, replace the triangular mesh with concentric circles (same as XYZ), drawn on the 6 tetrahedral planes instead of 3 Cartesian planes.
-> - **How**: `createIVMGrid()` in `modules/rt-grids.js` (~line 380) receives `basisA` and `basisB` vectors defining each plane. Use these as the local X/Z axes for the same Weierstrass circle parameterization that works in the Cartesian case. Add radial lines along the two basis directions.
-> - **Key principle**: Axis orientation is immaterial. Same radius + same divisions from origin = same circles, whether the axis is X, Y, Z, QW, QX, QY, or QZ.
-> - **Verify**: On-axis orthographic view (QW/QX/QY/QZ) should show concentric circles identical to Cartesian on-axis views.
-> - **See**: Phase 3 checklist near end of this file for full details.
+> ### DONE — Quadray Polar Grids (4 tetrahedral face planes)
+> - **4 planes ⊥ to Quadray basis vectors** (QW, QX, QY, QZ) — tetrahedral face planes
+> - Same Weierstrass concentric circles as Cartesian, but on arbitrary 3D planes via in-plane orthonormal basis
+> - Code: `modules/rt-grids.js` → `createQuadrayPolarPlane()` (~line 260)
+> - `buildQuadrayPlanes()` branches: polar → 4 face planes, uniform → 6 Central Angle planes
+> - Retired: `gravity-chordal` mode and "Gravity" button removed from Central Angle UI
+> - `createIVMGrid()` simplified to uniform-only; gravity modes stripped
+> - Colors: QW=Yellow, QX=Red, QY=Blue, QZ=Green (axis color convention)
+> - Committed: `df49fb3`
+>
+> ### NEXT — Great-Circle-as-N-gon & Radial Features
+> - **Radial lines**: Currently removed from Quadray polar planes (XYZ artifacts). Future: generate rays aligned to polygon edge directions or basis vector projections.
+> - **N-gon great circles**: Replace the 64-segment approximation with explicit N-gon inscriptions. An N-gon inscribed in a great circle has N vertices — connecting corresponding vertices on concentric N-gons generates radial lines naturally. Varying N (triangle, square, pentagon, hexagon, ...) produces different geodesic subdivision patterns.
+> - **Dual tet planes**: Rotate the 4 face planes 180° to get the dual tetrahedron's face planes (8 planes total). These are NOT coplanar with the Central Angle planes.
+> - See Phase 6 (Great-Circle-as-Polygon) section for details.
 >
 > ### Key Files
 > | File | What |
 > |------|------|
-> | `modules/rt-grids.js` | Grid rendering — `createGravityCartesianPlane()` (working), `createIVMGrid()` (to fix) |
+> | `modules/rt-grids.js` | Grid rendering — `createGravityCartesianPlane()`, `createQuadrayPolarPlane()`, `createIVMGrid()` (uniform only) |
 > | `modules/rt-math.js` | `RT.Gravity` namespace — `computeGravityCumulativeDistances()`, `rationalArc()` |
 > | `modules/rt-init.js` | UI handler for grid mode buttons (~line 1039) |
-> | `index.html` | Cartesian: Uniform/Polar buttons. Central Angle: Uniform/Gravity/Polar buttons |
+> | `index.html` | Cartesian: Uniform/Polar. Central Angle: Uniform/Polar (Gravity button removed) |
 
 ---
 
 **Goal:** Build warped coordinate grids where intervals encode gravitational acceleration rather than equal spatial distance — so a freely falling object appears to traverse gridlines at constant visual speed.
-**Status:** XYZ Cartesian great circles RESOLVED. Quadray great circles next (Phase 3).
+**Status:** XYZ Cartesian + Quadray polar great circles RESOLVED. Next: N-gon great circles (Phase 6), body selector UI (Phase 2).
 
 ---
 
@@ -625,15 +633,16 @@ RT.Gravity = {
 | Phase | Deliverable | Depends On | Status |
 |-------|-------------|------------|--------|
 | 0     | Mathematical model + Gravity Numberline demo | Nothing | **Done** (PR #93) |
-| 1     | G-Quadray Grids: gravity-warped Central Angle tessellation (chordal) | Phase 0 | **In Progress** |
-| 1b    | G-Cartesian Planes: non-uniform straight-line grids in XYZ | Phase 1 patterns | Pending |
+| 1     | G-Quadray Grids: gravity-warped Central Angle tessellation (chordal) | Phase 0 | **Done** |
+| 1b    | G-Cartesian Planes: Weierstrass polar circles on XYZ planes | Phase 1 patterns | **Done** |
 | 2     | G-Quadray + G-Cartesian with body selector UI | Phase 1 | Pending |
-| 3     | Curved gridlines: arcs replacing straight lines | Phase 1 or 2 | Pending |
+| 3     | Quadray polar: 4 tetrahedral face planes with Weierstrass circles | Phase 1b | **Done** (`df49fb3`) |
 | 4     | Distorted polyhedra: vertex remapping through gravity metric | Phase 2 | Pending |
 | 5a    | IK rigid link in Gravity Numberline demo | Phase 0 | **Done** (df0faf0) |
 | 5b    | Pin joints and hinges | Phase 5a | Planned |
 | 5c    | Elastic, tension, compression members | Phase 5a | Planned |
 | 5d    | Pneumatic soft compression | Phase 5c | Planned |
+| 6     | Great-circle-as-N-gon: polygonal geodesic generation | Phase 3 | Planned |
 
 ---
 
@@ -669,6 +678,10 @@ RT.Gravity = {
 | | Circle count fix + opacity | Polar grid now draws `divisions` circles (full slider value) within `halfExtent` radius. All Cartesian grids (uniform + polar) use opacity 0.4, matching Quadray IVM grid intensity. Committed `1ebfd56`. |
 | | **XYZ great circles RESOLVED** | Cartesian polar gravity grids now show true concentric great circles with correct gravity-derived spacing, RT-pure Weierstrass parameterization, per-plane axis-mixed coloring, and matched opacity. The Cartesian implementation is complete and serves as the reference for the next phase. |
 | | Quadray path forward | The same radial sweep model must apply to Quadray. Key principle: any basis vector from origin with the same division count sweeps the same circles — radius and distance from origin determine the circle, not the axis orientation. X, Y, Z, QW, QX, QY, QZ are immaterial; same intervals → same circles → same spheres. The current Quadray "Gravity" mode produces butterfly/fan shapes instead of great circles — the XYZ polar implementation provides the diagnostic reference to identify where the Quadray path diverges. |
+| Feb 15, 2026 | **Quadray polar: 4 face planes** | Replaced broken triangular tessellation gravity modes with 4 planes ⊥ to QW/QX/QY/QZ. These are tetrahedral face planes (same as camera view angles and Papercut cutting planes). New `createQuadrayPolarPlane()` constructs in-plane orthonormal basis via cross-product, then runs the same Weierstrass 4-quadrant circle parameterization. `buildQuadrayPlanes()` branches: polar → 4 face planes, uniform → 6 Central Angle. `createIVMGrid()` stripped to uniform-only. "Gravity" button retired from Central Angle UI. Committed `df49fb3`. |
+| | Radial lines removed | The "+" crosshair radial lines from the Cartesian implementation don't align with Quadray basis vectors on the face planes — removed as XYZ artifacts. Future: generate radial lines from N-gon polygon edge directions instead. |
+| | **Great-circle-as-N-gon concept** | Instead of fixed 64-segment circle approximation, inscribe explicit N-gons in great circles. N=3 (triangle), N=4 (square), N=6 (hexagon), N=64 (current smooth). Key insight: geodesic frequency can be generated by subdividing great circles with N-gons and connecting vertices between concentric shells — NOT by projecting polyhedron edges onto spheres. This produces geodesic-like triangulations conformal to the polar grid structure, works on any plane (not just icosahedral symmetry), and naturally adapts to gravity-spaced shells. See `^DEV-PRIVATE.md` §6.1. Added as Phase 6. |
+| | Dual tet planes (future) | The 4 face planes are parallel to the base tet's faces. Rotating 180° gives the dual tet's face planes (8 planes total). These are NOT coplanar with the 6 Central Angle planes. |
 
 ---
 
@@ -1099,29 +1112,63 @@ Every point for every u lies exactly on the circle of radius R. No chord sag at 
   - [x] ~~Circle count = full slider value (not halfDiv)~~ (`1ebfd56`)
   - [x] ~~Opacity 0.4 on all Cartesian grids (uniform + polar), matching Quadray IVM~~ (`1ebfd56`)
 - [ ] **Phase 2: Quadrance-based shell spacing** — replace `1-√(1-k/N)` distance formula with quadrance-native approach. Eliminates per-shell √ and stays algebraically exact until GPU boundary.
-- [ ] **Phase 3: Quadray polar mode — great circles on tetrahedral planes**
+- [x] **Phase 3: Quadray polar mode — great circles on tetrahedral face planes** (`df49fb3`)
+  - [x] ~~Replace triangular tessellation with concentric Weierstrass circles~~
+  - [x] ~~4 planes ⊥ to QW/QX/QY/QZ (tetrahedral face planes, NOT the 6 Central Angle planes)~~
+  - [x] ~~New function `createQuadrayPolarPlane(normal, divisions, color)` with in-plane orthonormal basis~~
+  - [x] ~~`buildQuadrayPlanes()` branches: polar → 4 face planes, uniform → 6 Central Angle~~
+  - [x] ~~Strip gravity-chordal/gravity-spherical from `createIVMGrid()` (uniform only)~~
+  - [x] ~~Remove "Gravity" button from Central Angle UI~~
+  - [x] ~~Dynamic window globals in rt-rendering.js (handles both IVM and face plane keys)~~
+  - [x] ~~Remove radial lines from Quadray polar planes (XYZ artifacts, don't align with basis vectors)~~
 
-  ### Status
-  XYZ Cartesian great circles are RESOLVED. The same technique must apply to Quadray.
+  ### What Changed vs. Original Plan
+  The original Phase 3 plan proposed circles on the **6 Central Angle planes** (spanned by pairs of basis vectors). The actual implementation uses **4 tetrahedral face planes** (⊥ to individual basis vectors) — a simpler and more natural choice:
+  - 4 planes (one per Quadray axis) vs 6 planes (one per axis pair)
+  - Face planes are parallel to the base tetrahedron's faces
+  - Same precedent as camera views and Papercut module cutting planes
+  - Future: rotate 180° for dual tet planes (8 planes total)
 
-  ### Key Principle
-  Any basis vector from origin with the same division count sweeps the same circles. Circles are a function of radius and distance from origin — the axis orientation (X, Y, Z, QW, QX, QY, QZ) is immaterial. Same distribution, same intervals → same circles → same spheres.
+- [ ] **Phase 6: Great-Circle-as-N-gon — Polygonal Geodesic Generation**
 
-  ### What Works (XYZ reference implementation)
-  - **File**: `modules/rt-grids.js`, function `createGravityCartesianPlane()` (~line 48)
-  - **Spacing**: `RT.Gravity.computeGravityCumulativeDistances(N, extent)` in `modules/rt-math.js` (~line 2788). Formula: `cumDist[k] = E × (1 - √(1 - k/N))`
-  - **Circle geometry**: Weierstrass rational parameterization, 4 quadrants × 16 segments. For each radius `r = cumDist[k]`, parameterize u = 0..1 per quadrant: `x = r(1-u²)/(1+u²)`, `z = r·2u/(1+u²)`. Rotate per quadrant. RT-pure: add/mul/div only.
-  - **Material**: `opacity: 0.4, transparent: true`
-  - **UI**: "Polar" button sets `data-grid-mode="gravity-spherical"`. Handler in `modules/rt-init.js` (~line 1039) dispatches to both Cartesian and Quadray rebuild functions.
+  ### Concept
+  Instead of approximating great circles with a fixed segment count (currently 64 = 4 quadrants × 16 segments), inscribe an explicit **N-gon** in each great circle. This opens a family of geometric constructions:
 
-  ### What's Broken (Quadray)
-  - **File**: `modules/rt-grids.js`, function `createIVMGrid()` (~line 380). This is the Quadray equivalent of `createGravityCartesianPlane()`.
-  - **Current behavior**: "Gravity" mode produces butterfly/fan shapes on-axis, NOT great circles. "Polar" mode uses `rationalArc()` for ring edges but the underlying triangular topology still doesn't produce concentric circles.
-  - **Root cause (suspected)**: The Quadray grid uses a triangular tessellation topology (vertex-to-vertex along tetrahedral planes). Gravity spacing is applied to this triangular mesh, producing warped triangles — NOT concentric circles. The topology itself prevents circular geometry from emerging.
+  - **N=3** (triangle): Each great circle becomes a triangle. Connecting corresponding vertices on concentric triangles produces 3 radial lines per plane. The resulting pattern is a triangulated disc — a natural match for the tetrahedral face planes.
+  - **N=4** (square): Current radial cross-hair pattern, but explicit rather than hardcoded.
+  - **N=6** (hexagon): Each circle becomes a hexagon. Radial connections produce a hexagonal tessellation disc.
+  - **N=64** (current): Visually smooth circle. High N recovers the current rendering.
 
-  ### Approach
-  For the Quadray "Polar" mode, replace the triangular tessellation with concentric circles + radial lines (same as XYZ), but on the 6 tetrahedral planes instead of the 3 Cartesian planes. Each tetrahedral plane is defined by two Quadray basis vectors — use these to define the 2D coordinate system for the Weierstrass circle parameterization. The `createIVMGrid()` function receives `basisA` and `basisB` vectors — these define the plane. The circle at radius `r` centered at origin, lying in the plane spanned by `basisA` and `basisB`, can be parameterized exactly as in the Cartesian case but using the two basis vectors as the local X and Z axes.
+  ### Geodesic Generation via N-gon Subdivision
+  The key insight (see `^DEV-PRIVATE.md` §6.1): geodesic frequency can be generated NOT by projecting edges from a polyhedron onto a sphere, but by **subdividing great circles with N-gons and connecting their vertices**:
+
+  1. Take a great circle (e.g., on a tetrahedral face plane)
+  2. Inscribe an N-gon (vertices at equal angular spacing on the circle)
+  3. Take the concentric circle at the next gravity shell
+  4. Inscribe the same N-gon, possibly rotated by half a vertex angle
+  5. Connect corresponding and adjacent vertices between shells
+
+  This produces a geodesic-like triangulation of the annular region between shells. The frequency is controlled by N (circumferential resolution) and the shell count (radial resolution). Unlike classical geodesic construction (project icosahedron faces → subdivide → re-project), this method:
+  - Works on any plane, not just icosahedral symmetry
+  - Naturally adapts to gravity-spaced shells (non-uniform radial distribution)
+  - Produces triangulations that are conformal to the polar grid structure
+  - Can use any polygon, not just triangles — hexagonal, pentagonal, etc.
+
+  ### Implementation Sketch
+  Modify `createQuadrayPolarPlane()` to accept an `nGon` parameter (default: 64 for backward compat). When `nGon < 64`, generate explicit polygon vertices and optional radial connections:
+
+  ```javascript
+  createQuadrayPolarPlane: (normal, divisions, color, nGon = 64) => {
+    // For each shell k:
+    //   Place nGon vertices at equal angular spacing (Weierstrass u-values)
+    //   Draw polygon edges (vertex to vertex)
+    //   Optionally draw radial lines to previous shell's vertices
+  }
+  ```
 
   ### Verification
-  When viewed on-axis (QW, QX, QY, or QZ orthographic view), each Quadray plane should show concentric circles identical to the Cartesian planes. The 6 Quadray planes will show 6 sets of circles at tetrahedral angles (109.47°) vs the 3 Cartesian planes at 90°, but each individual plane's circles should be indistinguishable from the Cartesian version.
+  - **N=64**: Visually identical to current implementation
+  - **N=3 on QW plane**: Equilateral triangle per shell, 3 radial lines — should align with tetrahedral face geometry
+  - **N=6 on QW plane**: Hexagonal rings — should produce IVM-like pattern on face planes
+
 - [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)
