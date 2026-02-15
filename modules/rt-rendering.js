@@ -4007,6 +4007,26 @@ export function initScene(THREE, OrbitControls, RT) {
     }
   }
 
+  /**
+   * Set Cartesian grid group visibility (hides/shows entire group including polar circles)
+   * @param {boolean} visible - true to show, false to hide
+   */
+  function setCartesianGridVisible(visible) {
+    if (cartesianGrid) {
+      cartesianGrid.visible = visible;
+    }
+  }
+
+  /**
+   * Set Quadray/IVM grid group visibility (hides/shows entire group including polar face planes)
+   * @param {boolean} visible - true to show, false to hide
+   */
+  function setQuadrayGridVisible(visible) {
+    if (ivmPlanes) {
+      ivmPlanes.visible = visible;
+    }
+  }
+
   // Variables for camera switching
   let orthographicCamera = null;
   let originalPerspectiveCamera = null;
@@ -5260,6 +5280,10 @@ export function initScene(THREE, OrbitControls, RT) {
     // Basis visibility controls
     setCartesianBasisVisible,
     setQuadrayBasisVisible,
+
+    // Grid group visibility controls
+    setCartesianGridVisible,
+    setQuadrayGridVisible,
 
     // Camera controls
     switchCameraType,
