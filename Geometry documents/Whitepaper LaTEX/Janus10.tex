@@ -28,15 +28,15 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}{Proposition}
 
-\title{Geometric Janus Inversion -- v10 (Feb 2026)\\
+\title{Geometric Janus Inversion -- v10.4 (Feb 2026)\\
 \large Tetrahedral Coordinates, the Inversion Manifold,\\
 and the Three-State Geometry of Inside-Outing}
 
-\author{Andrew Thomson\\
+\author{Andrew Thomson, M.Arch, OAA, with Kieran Thomson, P.Eng\\
 \small Open Building / ARTexplorer Project\\
 \small \href{mailto:andy@openbuilding.ca}{andy@openbuilding.ca}}
 
-\date{February 2026}
+\date{February 15, 2026}
 
 \begin{document}
 
@@ -159,6 +159,8 @@ The classical laws---Pythagoras, sine rule, cosine rule---have exact RT counterp
 This is not merely a notational preference. In ARTexplorer's \texttt{rt-math.js} library, the design rule is explicit: \emph{no square roots needed, no transcendental functions, algebraic identities remain exact}. The tetrahedral spread $s = \tfrac{8}{9}$ is stored as a rational fraction, not as $\arccos(-\tfrac{1}{3}) \approx 109.4712\ldots°$. The golden ratio is maintained in symbolic form $(a + b\sqrt{5})/c$ until the final vertex is written to a GPU buffer. The result is geometry that stays exact for as long as the mathematics permits, and truncates only once, at the boundary between algebra and hardware.
 
 This matters for Janus Inversion because the key relationships---the tet-dual correspondence, the quadrance ratio between tetrahedron and cube, the spread between basis vectors---are all rational in RT. They become irrational only when forced through the classical $\sqrt{}$ and $\sin$ machinery. Rational Trigonometry lets us state these relationships exactly, verify them algebraically, and implement them without accumulated truncation error. It is the natural language for tetrahedral geometry.
+
+There is a deeper point. RT's quantities---quadrance and spread---are not coordinate projections. They are \emph{relational observables}: properties of pairs of points (quadrance) and pairs of lines (spread). The laws of RT (Triple Quad Formula, Spread Law, Cross Law) operate on these relational quantities using only rational operations. This means RT is already a \emph{relational} geometry in the sense of Leibniz: it describes the structure of space through relationships between objects, not through an imposed coordinate grid. The Quadray coordinate system and RT's relational algebra are complementary tools---the first provides a representational framework native to tetrahedral structure, the second provides the coordinate-free algebraic laws that govern relationships within it.
 
 \subsection{The Rationality Reciprocity}
 \label{sec:rationality}
@@ -352,6 +354,8 @@ This means the Janus operation is not a global property of ``the'' origin. It is
 \begin{conjecture}[The Inversion Manifold]
 The set of all potential Janus Points forms a manifold coextensive with space itself. Every point is a potential inversion locus connecting positive and negative geometric arenas. The Janus transition is not a single event at a privileged location but a structural possibility inherent in every point.
 \end{conjecture}
+
+This conjecture has a natural differential-geometric reading. In general relativity, every point of a curved manifold carries a \emph{tangent space}---a complete flat spacetime ``tangent'' to the curvature at that location. \'Elie Cartan generalized this: the tangent model at each point need not be flat but can be a full Klein geometry $G/H$, with the Cartan connection encoding how these model spaces relate as one moves across the manifold.\endnote{Sharpe, R.W. (1997). \emph{Differential Geometry: Cartan's Generalization of Klein's Erlangen Program}. Springer GTM 166. See also Wise, D.K. (2010). ``MacDowell-Mansouri Gravity and Cartan Geometry.'' \emph{Class.\ Quant.\ Grav.}, 27:155010. arXiv:gr-qc/0611154.} The Inversion Manifold proposes that this tangent structure at each point carries an additional feature: an \emph{involution}---a built-in coordinate inversion that doubles the local geometry into paired arenas. In the language of Freidel, Leigh, and Minic's Born geometry, this involution is formalized as a \emph{para-complex structure} $K$ satisfying $K^2 = +1$ (not $-1$ as in ordinary complex geometry), whose eigenspaces split each tangent space into two complementary halves.\endnote{Freidel, L., Leigh, R.G., \& Minic, D. (2014). ``Born Reciprocity in String Theory and the Nature of Spacetime.'' \emph{Phys.\ Lett.\ B}, 730:302--306. arXiv:1307.7080. See also Freidel, L., Rudolph, F.J., \& Svoboda, D. (2019). ``Born Geometry in a Nutshell.'' arXiv:1904.06989.} The Janus Point at each location is then not a metaphor but the fixed point of this involution---the zero-measure boundary where the two halves of the doubled tangent space meet.
 
 \subsection{Scale Invariance}
 
@@ -601,9 +605,69 @@ Juan Maldacena and Leonard Susskind conjectured that every pair of entangled par
 
 \textbf{Structural parallel.} If every entangled pair is a geometric bridge between regions, and entanglement is ubiquitous, then something structurally similar to ``every point is a potential inversion locus'' emerges from mainstream quantum gravity. The ER = EPR conjecture provides the micro-scale end of our Inversion Manifold: geometric connections between paired regions, operating at all scales from individual particle pairs to entangled black holes.
 
+\subsection{T-Duality and Double Field Theory (Hull, Zwiebach 2009)}
+
+In string theory, a closed string propagating on a circle of radius $R$ has two kinds of excitation: momentum modes (quantized as $n/R$) and winding modes (quantized as $wR$). The mass spectrum is symmetric under $R \leftrightarrow 1/R$ with simultaneous exchange of momentum and winding numbers. This is T-duality: a string on a circle of radius $R$ is physically indistinguishable from a string on a circle of radius $1/R$.\endnote{Hull, C. \& Zwiebach, B. (2009). ``Double Field Theory.'' \emph{JHEP}, 09:099. arXiv:0904.4664. For review: Giveon, A., Porrati, M., \& Rabinovitch, E. (1994). ``Target Space Duality in String Theory.'' \emph{Phys.\ Rep.}, 244:77--202. arXiv:hep-th/9401139.}
+
+The self-dual radius $R = \sqrt{\alpha'}$ represents a minimum distinguishable scale---below it, the dual radius $1/R$ grows, and the geometry re-emerges in the dual description. To make this symmetry manifest, Hull and Zwiebach introduced \emph{Double Field Theory} (DFT): for each spatial direction $x^i$, a dual coordinate $\tilde{x}_i$ is introduced, doubling the tangent space at every point. The T-duality group $O(d,d;\mathbb{Z})$ acts naturally on this doubled space. A ``section condition'' then selects which $d$ of the $2d$ coordinates are physical---analogous to the observer's choice of vantage point.
+
+\textbf{Structural parallel.} T-duality may be the tightest structural analog to Janus Inversion in mainstream physics:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{5.5cm}p{5.5cm}}
+\toprule
+\textbf{T-Duality / DFT} & \textbf{Janus Inversion}\\
+\midrule
+Radius $R$ shrinks toward zero & Scale $s$ decreases toward zero\\
+\addlinespace
+Self-dual point: geometry minimal but non-singular & Origin ($s = 0$): zero extent but shape preserved\\
+\addlinespace
+Below $R = \sqrt{\alpha'}$, dual radius $1/R$ grows---re-expansion in dual description & For $s < 0$, form re-expands in negative arena\\
+\addlinespace
+Doubled tangent space $(x^i, \tilde{x}_i)$ at every point & Paired arenas $(+, -)$ available at every point\\
+\addlinespace
+Section condition selects physical coordinates & Observer's vantage selects which arena is ``positive''\\
+\bottomrule
+\end{tabular}
+\caption{Structural comparison: T-Duality and Janus Inversion}
+\end{table}
+
+The self-dual point in T-duality is the string-theoretic analog of the Janus Point: a minimal-scale boundary between two complete geometric descriptions, neither of which is privileged.
+
+\subsection{Born Geometry and the Doubled Phase Space (Freidel, Leigh, Minic 2014)}
+
+Max Born observed in 1938 that quantum mechanics is symmetric under the exchange $x \to p$, $p \to -x$ (position and momentum). He proposed that a fundamental theory should exhibit \emph{Born reciprocity}---invariance under this exchange---as a principle as deep as relativity.\endnote{Born, M. (1938). ``A Suggestion for Unifying Quantum Theory and Relativity.'' \emph{Proc.\ Roy.\ Soc.\ A}, 165:291--303.}
+
+Laurent Freidel, Robert Leigh, and Djordje Minic realized that string theory naturally implements Born reciprocity. In their \emph{metastring theory}, the fundamental arena is not spacetime but \emph{phase space}---a doubled manifold with coordinates $(x^\mu, \tilde{x}_\mu)$, where $\tilde{x}$ is conjugate to momentum. Born reciprocity is the statement that physics is invariant under exchange of these two coordinate sets. The geometry of this doubled space---\emph{Born geometry}---is defined by three compatible structures: an $O(d,d)$ metric $\eta$ of split signature $(d,d)$, a positive-definite generalized metric $H$, and a symplectic form $\omega$. Their compatibility defines a \emph{para-Hermitian structure}, whose key algebraic object is a para-complex structure $K$ satisfying $K^2 = +1$. The eigenspaces of $K$ split each tangent space into two complementary halves---and $K$ itself is the local algebraic expression of coordinate inversion.\endnote{Freidel, L., Leigh, R.G., \& Minic, D. (2014). ``Born Reciprocity in String Theory and the Nature of Spacetime.'' \emph{Phys.\ Lett.\ B}, 730:302--306. arXiv:1307.7080. See also Freidel, L., Rudolph, F.J., \& Svoboda, D. (2019). ``Born Geometry in a Nutshell.'' arXiv:1904.06989.}
+
+Physical spacetime emerges as a choice of \emph{Lagrangian submanifold}---a $d$-dimensional subspace of the $2d$-dimensional phase space. Born reciprocity exchanges one Lagrangian subspace for its complement. Spacetime is derived, not fundamental.
+
+\textbf{Structural parallel.} Born geometry may be the most complete existing formalization of the Inversion Manifold idea within mainstream physics:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{5.5cm}p{5.5cm}}
+\toprule
+\textbf{Born Geometry} & \textbf{Janus Inversion}\\
+\midrule
+Doubled tangent space at every point & Paired arenas at every point\\
+\addlinespace
+Para-complex structure $K^2 = +1$ splits tangent bundle into two halves & Janus parity splits geometry into positive and negative arenas\\
+\addlinespace
+Born reciprocity: involutive exchange of the two halves & Janus Inversion: sign-flip $P \mapsto -P$\\
+\addlinespace
+Physical spacetime = choice of Lagrangian submanifold & Observer's arena = choice of vantage point\\
+\addlinespace
+Observables must be Born-reciprocity invariant & Neither arena is privileged\\
+\bottomrule
+\end{tabular}
+\caption{Structural comparison: Born Geometry and Janus Inversion}
+\end{table}
+
 \subsection{What the Convergence Does and Does Not Mean}
 
-These four programs---CPT-symmetric cosmology, black mirrors, Planck star bounces, and ER = EPR---were developed independently, using different formalisms (quantum field theory, loop quantum gravity, string theory), for different purposes (cosmological initial conditions, singularity resolution, information paradox). None reference tetrahedral coordinates or Quadray geometry.
+These six programs---CPT-symmetric cosmology, black mirrors, Planck star bounces, ER = EPR, T-duality, and Born geometry---were developed independently, using different formalisms (quantum field theory, loop quantum gravity, string theory, doubled geometry), for different purposes (cosmological initial conditions, singularity resolution, information paradox, duality symmetries). None reference tetrahedral coordinates or Quadray geometry.
 
 Yet they converge on the same structural elements that the Janus framework proposes:
 
@@ -612,6 +676,7 @@ Yet they converge on the same structural elements that the Janus framework propo
 \item \textbf{Parity inversion at the boundary.} The spatial mirror operation (P in CPT, sign-flip in Janus) relates the two regions.
 \item \textbf{Scale invariance.} The pairing operates at cosmological scale (Bang), stellar scale (black holes), and quantum scale (entangled pairs).
 \item \textbf{The boundary is not nothing.} The singular state (Planck star, central configuration, Janus origin) preserves geometric structure despite zero classical extent.
+\item \textbf{Doubled local structure.} The tangent data at each point is richer than a vector space, carrying an involutive symmetry that splits it into complementary halves (position/momentum in Born geometry, $x/\tilde{x}$ in DFT, positive/negative arenas in Janus).
 \end{enumerate}
 
 We do not claim that Janus Inversion \emph{is} any of these theories. We claim that the \emph{geometric structure} we observe in tetrahedral coordinates---paired arenas, parity inversion at a boundary, scale-invariant availability---is independently motivated by research programs that approach the same questions through standard physics. The convergence is structural, not causal. But it suggests that the Inversion Manifold conjecture, whatever its ultimate status, is asking questions that physics is also asking.
@@ -657,12 +722,14 @@ Quadray with Janus parity & 4 + 1 binary & Position plus tetrahedral parity\\
 \caption{Degrees of freedom under different interpretations}
 \end{table}
 
+The discrete binary parity in the last row has an established formalization in differential geometry. The rotation group $SO(n)$ has a double cover called $\text{Spin}(n)$, which is the structure group for spinor fields (fermions). But $SO(n)$ handles only proper rotations (determinant $+1$). The full orthogonal group $O(n)$, which includes reflections and parity reversal (determinant $-1$), has a double cover called the \textbf{Pin group}.\endnote{Dabrowski, L. \& Trautman, A. (1986). ``Spinor Structures on Spheres and Projective Spaces.'' \emph{J.\ Math.\ Phys.}, 27:2022--2028. For modern treatment: Freed, D.S. \& Hopkins, M.J. (2021). ``Reflection Positivity and Invertible Topological Phases.'' \emph{Geometry \& Topology}, 25:1165--1330. arXiv:1604.06527.} A Spin structure assigns a rotation double-cover fiber to each point of a manifold; a \emph{Pin structure} extends this to include parity inversions at every point. The Janus parity label---the $\pm$ in 4D$^\pm$---is precisely the discrete data that a Pin structure encodes beyond what a Spin structure provides. Whether a theory admits the Pin$^+$ or Pin$^-$ variant determines how fermions transform under spatial parity (P) and time reversal (T)---the same discrete symmetries that appear in the Boyle-Turok CPT cosmology (Section~\ref{sec:linking}).
+
 %==============================================================================
 \section{On the Topology of Inside-Outing}
 \label{sec:topology}
 %==============================================================================
 
-Fuller spoke of the tetrahedron ``inside-outing'' through the origin. This language is evocative but topologically imprecise.
+Fuller devoted extensive treatment to the tetrahedron ``inside-outing'' through its center.\endnote{Fuller, \emph{Synergetics}, \S\S624.00--06, 625.00--06, 632.03, 633.01, 634.01, 635.01. Key passages: ``The tetrahedron is the only polyhedron, the only structural system that can be turned inside out and vice versa by one energy event'' (\S624.01). ``Making first a positive and then a negative [tetrahedron]'' (\S624.02). ``An inside-out tetrahedron is conceptual and of no known size'' (\S624.06). ``Each tetrahedron has its negative tetrahedron produced through its interior apex'' (\S633.01).} His language is vivid and geometrically precise, though topologically informal.
 
 \textbf{What is formally true:} The map $P \mapsto -P$ is a well-defined, orientation-reversing isometry. It maps the tetrahedron to its dual. It preserves all quadrances and spreads. The origin is its unique fixed point.
 
@@ -745,6 +812,8 @@ In decreasing order of tractability:
 \item \textbf{The three-state parallel.} Is the structural isomorphism between Janus geometry and quantum spin a deep connection or a surface resemblance? Could the Janus triad $\{+, -, \text{boundary}\}$ be formalized in a framework compatible with quantum state spaces?
 
 \item \textbf{Higher primes.} The geodesic tetrahedron family has produced prime projections for 5, 7, 11, and 13 at rational spreads. Does it continue for all primes? Is there a prime for which no tetrahedral source produces a clean projection?
+
+\item \textbf{Relational formulation.} The Janus framework is presented here in coordinate language---the sign-flip of Quadray values, the paired arenas of positive and negative coordinate space. But Rational Trigonometry's core quantities (quadrance, spread) are relational observables, not coordinate projections. Can the Inversion Manifold be reformulated purely in terms of quadrance relations between points, without reference to any coordinate system? If so, the paired-arena structure would be a property of Euclidean geometry itself---visible in any relational description---rather than a feature of a particular parameterization. The tetrahedron's role as the minimum closed form suggests that the minimal Cayley-Menger configuration\endnote{The Cayley-Menger determinant gives the necessary and sufficient conditions for a set of pairwise distances to be embeddable in Euclidean space of a given dimension. In standard form it uses squared distances---i.e., quadrances. The constraints are polynomial: no square roots, no transcendentals. In RT terms, the embeddability conditions are already rational.} (four points in 3D) may carry the Janus structure intrinsically, in its quadrance relationships rather than its coordinate representations.
 \end{enumerate}
 
 %==============================================================================
@@ -773,6 +842,7 @@ does the deeper question emerge: negative \textbf{what}, exactly?''}
 
 Special thanks to:
 \begin{itemize}
+\item Kieran Thomson, P.Eng, for the observation that the Inversion Manifold is structurally a tangent space with involution---connecting the conjecture to Cartan geometry, Born geometry, and Pin structures
 \item Julian Barbour, for correspondence and the foundational concept
 \item Rudolf Dorenach, Bucky's German associate and my first Synergetics mentor
 \item Kirby Urner, for introducing me to Quadray coordinates
@@ -818,6 +888,14 @@ We are grateful for Dr.\ Barbour's engagement and intellectual generosity.
 \item Rovelli, C. \& Vidotto, F. (2014). ``Planck Stars.'' \emph{International Journal of Modern Physics D}, 23:1442026. arXiv:1401.6562.
 \item Rovelli, C. (2024). ``Planck Stars, White Holes, Remnants and Planck-mass Quasi-particles.'' arXiv:2407.09584.
 \item Maldacena, J. \& Susskind, L. (2013). ``Cool Horizons for Entangled Black Holes.'' \emph{Fortschritte der Physik}, 61:781--811. arXiv:1306.0533.
+\item Sharpe, R.W. (1997). \emph{Differential Geometry: Cartan's Generalization of Klein's Erlangen Program}. Springer GTM 166.
+\item Wise, D.K. (2010). ``MacDowell-Mansouri Gravity and Cartan Geometry.'' \emph{Classical and Quantum Gravity}, 27:155010. arXiv:gr-qc/0611154.
+\item Hull, C. \& Zwiebach, B. (2009). ``Double Field Theory.'' \emph{JHEP}, 09:099. arXiv:0904.4664.
+\item Born, M. (1938). ``A Suggestion for Unifying Quantum Theory and Relativity.'' \emph{Proc.\ Roy.\ Soc.\ A}, 165:291--303.
+\item Freidel, L., Leigh, R.G., \& Minic, D. (2014). ``Born Reciprocity in String Theory and the Nature of Spacetime.'' \emph{Physics Letters B}, 730:302--306. arXiv:1307.7080.
+\item Freidel, L., Rudolph, F.J., \& Svoboda, D. (2019). ``Born Geometry in a Nutshell.'' arXiv:1904.06989.
+\item Dabrowski, L. \& Trautman, A. (1986). ``Spinor Structures on Spheres and Projective Spaces.'' \emph{Journal of Mathematical Physics}, 27:2022--2028.
+\item Freed, D.S. \& Hopkins, M.J. (2021). ``Reflection Positivity and Invertible Topological Phases.'' \emph{Geometry \& Topology}, 25:1165--1330. arXiv:1604.06527.
 \item DOI: 10.13140/RG.2.2.10492.19848 | CC BY-NC-ND 4.0
 \end{enumerate}
 
