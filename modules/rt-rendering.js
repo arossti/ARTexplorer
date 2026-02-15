@@ -220,7 +220,7 @@ export function initScene(THREE, OrbitControls, RT) {
     const aspect = width / height;
 
     // Camera (Z-up coordinate system for CAD/BIM compatibility)
-    camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 10000);
 
     // Z-up convention: Position camera for isometric-like view
     // Blue axis (Z) will point vertically upward
@@ -582,14 +582,11 @@ export function initScene(THREE, OrbitControls, RT) {
     // Delegate to Grids module
     const result = Grids.createIVMPlanes(scene, tessellations);
 
-    // Store references for later use
+    // Store references for later use (dynamic keys: IVM or face planes)
     ivmPlanes = result.ivmPlanes;
-    window.ivmWX = result.ivmWX;
-    window.ivmWY = result.ivmWY;
-    window.ivmWZ = result.ivmWZ;
-    window.ivmXY = result.ivmXY;
-    window.ivmXZ = result.ivmXZ;
-    window.ivmYZ = result.ivmYZ;
+    for (const key of Object.keys(result)) {
+      if (key !== "ivmPlanes") window[key] = result[key];
+    }
   }
 
   // ========================================================================
@@ -4244,7 +4241,7 @@ export function initScene(THREE, OrbitControls, RT) {
         frustumSize / 2,
         frustumSize / -2,
         0.1,
-        1000
+        10000
       );
 
       // Copy position and orientation from perspective camera
@@ -4353,14 +4350,11 @@ export function initScene(THREE, OrbitControls, RT) {
       gridMode
     );
 
-    // Store references for later use
+    // Store references for later use (dynamic keys: IVM or face planes)
     ivmPlanes = result.ivmPlanes;
-    window.ivmWX = result.ivmWX;
-    window.ivmWY = result.ivmWY;
-    window.ivmWZ = result.ivmWZ;
-    window.ivmXY = result.ivmXY;
-    window.ivmXZ = result.ivmXZ;
-    window.ivmYZ = result.ivmYZ;
+    for (const key of Object.keys(result)) {
+      if (key !== "ivmPlanes") window[key] = result[key];
+    }
   }
 
   /**
