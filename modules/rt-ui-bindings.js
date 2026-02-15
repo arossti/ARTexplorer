@@ -31,6 +31,7 @@ export class RTUIBindings {
   constructor() {
     this.bindings = [];
     this.updateGeometry = null;
+    this.requestGeometryUpdate = null;
     this.renderingAPI = null;
     this.RT = null;
     this.Quadray = null;
@@ -39,10 +40,11 @@ export class RTUIBindings {
 
   /**
    * Initialize with dependencies
-   * @param {Object} deps - { updateGeometry, renderingAPI, RT, Quadray }
+   * @param {Object} deps - { updateGeometry, requestGeometryUpdate, renderingAPI, RT, Quadray }
    */
   init(deps) {
     this.updateGeometry = deps.updateGeometry;
+    this.requestGeometryUpdate = deps.requestGeometryUpdate || deps.updateGeometry;
     this.renderingAPI = deps.renderingAPI;
     this.RT = deps.RT;
     this.Quadray = deps.Quadray;
@@ -220,9 +222,9 @@ export class RTUIBindings {
         binding.onInput(value, this.renderingAPI, this.RT, this.Quadray);
       }
 
-      // Update geometry (unless explicitly disabled)
+      // Debounced geometry update for sliders (unless explicitly disabled)
       if (binding.updateGeometry !== false) {
-        this.updateGeometry();
+        this.requestGeometryUpdate();
       }
     });
 
@@ -273,7 +275,7 @@ export class RTUIBindings {
       secondaryEl.value = secondaryValue.toFixed(4);
 
       if (binding.updateGeometry !== false) {
-        this.updateGeometry();
+        this.requestGeometryUpdate();
       }
     });
 
@@ -284,7 +286,7 @@ export class RTUIBindings {
       primaryEl.value = primaryValue.toFixed(4);
 
       if (binding.updateGeometry !== false) {
-        this.updateGeometry();
+        this.requestGeometryUpdate();
       }
     });
 
