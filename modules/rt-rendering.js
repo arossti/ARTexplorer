@@ -3952,9 +3952,22 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function onWindowResize() {
     const container = document.getElementById("canvas-container");
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    const aspect = width / height;
+
+    if (isOrthographic && orthographicCamera) {
+      // Update ortho frustum bounds preserving current vertical size
+      const frustumHalfHeight = (orthographicCamera.top - orthographicCamera.bottom) / 2;
+      orthographicCamera.left = -frustumHalfHeight * aspect;
+      orthographicCamera.right = frustumHalfHeight * aspect;
+      orthographicCamera.updateProjectionMatrix();
+    } else {
+      camera.aspect = aspect;
+      camera.updateProjectionMatrix();
+    }
+
+    renderer.setSize(width, height);
   }
 
   // Node configuration functions - delegated to rt-nodes.js
@@ -4243,7 +4256,7 @@ export function initScene(THREE, OrbitControls, RT) {
         (frustumSize * aspect) / 2,
         frustumSize / 2,
         frustumSize / -2,
-        0.1,
+        -10000,
         10000
       );
 
