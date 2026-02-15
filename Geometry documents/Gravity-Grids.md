@@ -638,6 +638,9 @@ RT.Gravity = {
 | | Cartesian polar grid | Weierstrass 4-quadrant circle parameterization for concentric gravity-spaced circles. RT-pure: add/mul/div only, no sin/cos. 64 segments per circle (SPQ=16). XYZ "Gravity" button removed (illogical for point-convergent gravity); replaced with "Uniform" and "Polar". Committed `6c5b3cf`. |
 | | Per-plane coloring | XYZ grid planes now colored by additive axis mix: XY=Yellow (R+G), XZ=Magenta (R+B), YZ=Cyan (G+B). Matches the Quadray Central Angle plane coloring convention. |
 | | Quadrance spacing (future) | Current shell radii use distance formula `1-√(1-k/N)` with one √ per shell. A quadrance-native approach would store Q_k = r_k² directly, deferring √ to GPU boundary. This would make the spacing formula fully algebraic: Q_k = E²×(1-(1-k/N)) = E²×k/N — uniform in quadrance! The √ moves to the rendering step where it's already needed. |
+| | Circle count fix + opacity | Polar grid now draws `divisions` circles (full slider value) within `halfExtent` radius. All Cartesian grids (uniform + polar) use opacity 0.4, matching Quadray IVM grid intensity. Committed `1ebfd56`. |
+| | **XYZ great circles RESOLVED** | Cartesian polar gravity grids now show true concentric great circles with correct gravity-derived spacing, RT-pure Weierstrass parameterization, per-plane axis-mixed coloring, and matched opacity. The Cartesian implementation is complete and serves as the reference for the next phase. |
+| | Quadray path forward | The same radial sweep model must apply to Quadray. Key principle: any basis vector from origin with the same division count sweeps the same circles — radius and distance from origin determine the circle, not the axis orientation. X, Y, Z, QW, QX, QY, QZ are immaterial; same intervals → same circles → same spheres. The current Quadray "Gravity" mode produces butterfly/fan shapes instead of great circles — the XYZ polar implementation provides the diagnostic reference to identify where the Quadray path diverges. |
 
 ---
 
@@ -1065,6 +1068,12 @@ Every point for every u lies exactly on the circle of radius R. No chord sag at 
   - [x] ~~Rename Spherical → Polar in UI; remove Gravity button from Cartesian section~~
   - [x] ~~Per-plane axis-mixed coloring: XY=Yellow, XZ=Magenta, YZ=Cyan~~
   - [x] ~~Circle resolution: 64 segments per circle (SPQ=16)~~
+  - [x] ~~Circle count = full slider value (not halfDiv)~~ (`1ebfd56`)
+  - [x] ~~Opacity 0.4 on all Cartesian grids (uniform + polar), matching Quadray IVM~~ (`1ebfd56`)
 - [ ] **Phase 2: Quadrance-based shell spacing** — replace `1-√(1-k/N)` distance formula with quadrance-native approach. Eliminates per-shell √ and stays algebraically exact until GPU boundary.
-- [ ] **Phase 3: Quadray polar mode** — apply same concentric-circle topology to Central Angle grids for true great circles on tetrahedral planes
+- [ ] **Phase 3: Quadray polar mode — great circles on tetrahedral planes**
+  - XYZ Cartesian great circles are now RESOLVED. The same technique must apply to Quadray.
+  - **Key insight**: Any basis vector from origin with the same division count sweeps the same circles. Circles are a function of radius and distance from origin — the axis orientation (X, Y, Z, QW, QX, QY, QZ) is immaterial. Same distribution, same intervals → same circles → same spheres.
+  - The XYZ polar implementation (Weierstrass concentric circles + gravity spacing) can serve as the reference to diagnose what the Quadray implementation is doing differently. The current Quadray "Gravity" mode produces a butterfly/building pattern, not great circles — something in its topology or spacing diverges from the radial sweep model.
+  - Approach: compare the XYZ and Quadray paths side-by-side. Both should produce identical concentric circles when viewed on-axis, differing only in which axis defines the viewing plane.
 - [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)
