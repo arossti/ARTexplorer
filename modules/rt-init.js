@@ -15,6 +15,7 @@ import { initScene as createRenderingAPI } from "./rt-rendering.js";
 import { initInfoModal } from "./rt-info-modal.js";
 import * as RTJanus from "./rt-janus.js";
 import { getRotorDemo, destroyRotorDemo } from "./rt-rotor-demo.js";
+import { get4DDropDemo, destroy4DDropDemo } from "../demos/4D-Drop.js";
 import {
   getPolyhedronVertices as getVertices,
   getPolyhedronEdgeMidpoints as getEdgeMidpoints,
@@ -763,6 +764,24 @@ function startARTexplorer(
 
   // Make rotorDemo globally accessible for debugging
   window.getRotorDemo = () => rotorDemo;
+
+  // 4D± Gravity + Inversion Demo - Quadray Janus drop
+  let dropDemo4D = null;
+  document.getElementById("open-4d-drop-demo").addEventListener("click", e => {
+    e.preventDefault();
+    if (!dropDemo4D) {
+      dropDemo4D = get4DDropDemo(scene, THREE, camera, controls);
+    }
+    const isEnabled = dropDemo4D.toggle();
+    const link = e.target;
+    if (isEnabled) {
+      link.style.color = "#0f0";
+      link.textContent = "4D\u00B1 Gravity + Inversion \u2713";
+    } else {
+      link.style.color = "#7ab8ff";
+      link.textContent = "4D\u00B1 Gravity + Inversion";
+    }
+  });
 
   // Prime Projections Demo - Floating preset panel
   document
