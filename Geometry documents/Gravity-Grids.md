@@ -1,8 +1,36 @@
 # Gravity Grids — Workplan
 
-**Branch:** TBD (new feature branch from `main`)
+> ## QUICKSTART — What's Done, What's Next
+>
+> **Branch:** `Gravity` (push before switching!)
+>
+> ### DONE — XYZ Cartesian Polar Grids (great circles working)
+> - Concentric circles at gravity-spaced radii on 3 Cartesian planes (XY, XZ, YZ)
+> - Weierstrass rational parameterization (RT-pure, no trig): `x = r(1-u²)/(1+u²)`, `z = r·2u/(1+u²)`
+> - Spacing: `cumDist[k] = E × (1 - √(1 - k/N))` via `RT.Gravity.computeGravityCumulativeDistances()`
+> - Code: `modules/rt-grids.js` → `createGravityCartesianPlane()` (~line 48)
+> - UI: "Polar" button on Cartesian section, handler in `modules/rt-init.js` (~line 1039)
+>
+> ### NEXT — Quadray Polar Grids (great circles NOT yet working)
+> - **The problem**: Quadray "Gravity"/"Polar" modes warp a triangular tessellation mesh, producing butterfly/fan shapes — NOT concentric circles. The triangular topology prevents circles from emerging.
+> - **The fix**: For Quadray "Polar" mode, replace the triangular mesh with concentric circles (same as XYZ), drawn on the 6 tetrahedral planes instead of 3 Cartesian planes.
+> - **How**: `createIVMGrid()` in `modules/rt-grids.js` (~line 380) receives `basisA` and `basisB` vectors defining each plane. Use these as the local X/Z axes for the same Weierstrass circle parameterization that works in the Cartesian case. Add radial lines along the two basis directions.
+> - **Key principle**: Axis orientation is immaterial. Same radius + same divisions from origin = same circles, whether the axis is X, Y, Z, QW, QX, QY, or QZ.
+> - **Verify**: On-axis orthographic view (QW/QX/QY/QZ) should show concentric circles identical to Cartesian on-axis views.
+> - **See**: Phase 3 checklist near end of this file for full details.
+>
+> ### Key Files
+> | File | What |
+> |------|------|
+> | `modules/rt-grids.js` | Grid rendering — `createGravityCartesianPlane()` (working), `createIVMGrid()` (to fix) |
+> | `modules/rt-math.js` | `RT.Gravity` namespace — `computeGravityCumulativeDistances()`, `rationalArc()` |
+> | `modules/rt-init.js` | UI handler for grid mode buttons (~line 1039) |
+> | `index.html` | Cartesian: Uniform/Polar buttons. Central Angle: Uniform/Gravity/Polar buttons |
+
+---
+
 **Goal:** Build warped coordinate grids where intervals encode gravitational acceleration rather than equal spatial distance — so a freely falling object appears to traverse gridlines at constant visual speed.
-**Status:** Conceptual design / Phase 0
+**Status:** XYZ Cartesian great circles RESOLVED. Quadray great circles next (Phase 3).
 
 ---
 
@@ -123,7 +151,7 @@ createGravityCartesianGrid(scene, divisions, gravityCenter)
 
 ### Key Decisions
 
-1. **Gravity center**: The origin (0,0,0) by default. All intervals compress toward the gravity center. Future: movable gravity source.
+1. **Gravity center**: The origin (0,0,0) by default. All intervals compress toward the gravity center. Future: movable gravity source(s) for n-Body studies.
 
 2. **Bidirectional intervals**: The grid extends in both directions from the gravity center. Intervals are symmetric (or asymmetric if gravity source is off-center).
 
@@ -151,43 +179,85 @@ createGravityCartesianGrid(scene, divisions, gravityCenter)
 
 ---
 
-## Phase 2: G-Quadray Grids — Warped Tetrahedral Grids
+## Phase 1: G-Quadray Grids — Gravity-Warped Central Angle Tessellation
 
-### The Challenge
+**Status: In Progress**
+**Approach: Modify existing `createIVMGrid()` with `gridMode` parameter**
 
-Quadray grids are triangular tessellations on 6 planes (WX, WY, WZ, XY, XZ, YZ). The current `createIVMGrid()` uses a constant `edgeLength = RT.PureRadicals.QUADRAY_GRID_INTERVAL` (√6/4 ≈ 0.612) for every triangle.
+### The Core Technique: cumDist Lookup Table
 
-For gravity grids, each successive tessellation ring outward from the origin must use a **different** edge length, derived from the gravity interval sequence.
-
-### Implementation Strategy
-
-Modify `createIVMGrid()` (or create `createGravityIVMGrid()`) to accept a **variable interval array** instead of a constant edge length:
-
-```javascript
-createGravityIVMGrid: (basis1, basis2, intervals, color) => {
-    // intervals = [Δr₀, Δr₁, Δr₂, ...] from computeGravityIntervals()
-    // Each tessellation ring uses cumulative sum of intervals
-    // Triangle vertices at ring k are at distance Σ(Δr₀..Δr_k) from origin
-}
+The existing `createIVMGrid()` computes each vertex as:
+```
+P(i,j) = basis1 × (i × edgeLength) + basis2 × (j × edgeLength)
 ```
 
-### Tessellation Modification
-
-Current uniform tessellation:
+The gravity variant replaces this with a **cumulative distance lookup**:
 ```
-Ring k: vertices at k × edgeLength along each basis direction
+P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
 ```
 
-Gravity tessellation:
+Where `cumDist[k]` encodes the gravity-warped distance from origin to grid line k.
+
+- **Uniform mode:** `cumDist[k] = k × edgeLength` (constant intervals, current behavior)
+- **Gravity mode:** `cumDist[k] = reversed_radii[k] × scaleFactor` (harmonic compression — small steps near origin, large steps far out)
+
+**Same loop body, same topology, same triangle count.** Only the spacing changes.
+
+### Mathematical Derivation
+
+From `computeGravityIntervals(N)`:
+- `radii = [N/1, N/2, N/3, ..., N/N]` (outermost → innermost)
+- Reverse for origin-outward: `[1, N/(N-1), ..., N]` (innermost → outermost)
+- Scale to match uniform grid extent: `scaleFactor = (N × QUADRAY_GRID_INTERVAL) / N = QUADRAY_GRID_INTERVAL`
+- `cumDist[k] = reversed_radii[k] × QUADRAY_GRID_INTERVAL`
+
+Result: dense small triangles near origin (strong field), sparse large triangles far out (weak field).
+
+### New Function: `RT.Gravity.computeGravityCumulativeDistances(N, totalExtent)`
+
+Added to `rt-math.js` inside `RT.Gravity` namespace. Returns N+2 cumulative distances (extra element for boundary triangle safety — the tessellation loop accesses `cumDist[i+1]` where `i` can reach `tessellations`).
+
+### Grid Mode UI
+
+Three-button toggle in the Central Angle Grids section (same `toggle-btn variant-objsnap` pattern as coordinate mode):
+
+| Button | Mode | Status |
+|--------|------|--------|
+| **Uniform** | Standard equal-interval tessellation | Active (default) |
+| **Gravity** | Gravity-warped intervals, chordal (straight lines) | Phase 1 |
+| **Spherical** | Gravity-warped intervals, great-circle arcs | Disabled (Phase 3 placeholder) |
+
+Mode change triggers grid rebuild via existing `rebuildQuadrayGrids()` pattern. Tessellation slider controls number of intervals (N) in both modes.
+
+### Threading `gridMode` Through the Call Chain
+
 ```
-Ring k: vertices at Σ(intervals[0..k]) along each basis direction
+UI button click / slider change
+  → rt-init.js reads active mode from data-grid-mode attribute
+  → rt-ui-binding-defs.js passes gridMode to renderingAPI
+  → rt-rendering.js wrapper forwards to Grids module
+  → rt-grids.js: rebuildQuadrayGrids() → createIVMPlanes() → createIVMGrid()
+  → createIVMGrid() branches on gridMode to build cumDist table
 ```
 
-The triangular topology is preserved — same number of triangles, same connectivity — but the **metric is warped**. Triangles near the origin are **small** (condensed shells = strong field), triangles far from origin are **large** (spread shells = weak field).
+All parameters have `= 'uniform'` defaults — fully backward-compatible.
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `modules/rt-math.js` | +25 lines: `computeGravityCumulativeDistances()` in `RT.Gravity` |
+| `modules/rt-grids.js` | ~30 lines: `gridMode` param + cumDist logic in 3 functions |
+| `modules/rt-rendering.js` | ~5 lines: thread `gridMode` through wrapper |
+| `index.html` | +15 lines: Grid Mode button group |
+| `modules/rt-init.js` | +20 lines: grid mode button handler |
+| `modules/rt-ui-binding-defs.js` | ~3 lines: slider reads/passes gridMode |
+
+~100 lines total. No new files.
 
 ### RT Purity Consideration
 
-The gravity intervals are inherently irrational (they involve √(2H/g) and k²/N² terms). This is acceptable because the gravity grid represents a **physical metric** (spacetime curvature), not a pure geometric construction. The base Quadray interval (√6/4) remains the RT-pure reference; the gravity warping is an applied distortion.
+The gravity intervals are inherently irrational (they involve the harmonic series N/k). This is acceptable because the gravity grid represents a **physical metric** (spacetime curvature), not a pure geometric construction. The base Quadray interval (√6/4) remains the RT-pure reference; the gravity warping is an applied distortion.
 
 Document this distinction clearly in code comments: RT-pure geometry vs. physics-applied metric.
 
@@ -552,13 +622,18 @@ RT.Gravity = {
 
 ## Phased Delivery
 
-| Phase | Deliverable | Depends On |
-|-------|-------------|------------|
-| 0     | Mathematical model: 1D interval sequence, worked examples | Nothing |
-| 1     | G-Cartesian Planes: non-uniform straight-line grids in XYZ | Phase 0 |
-| 2     | G-Quadray Grids: non-uniform triangular tessellation | Phase 0, Phase 1 patterns |
-| 3     | Curved gridlines: arcs replacing straight lines | Phase 1 or 2 |
-| 4     | Distorted polyhedra: vertex remapping through gravity metric | Phase 2 |
+| Phase | Deliverable | Depends On | Status |
+|-------|-------------|------------|--------|
+| 0     | Mathematical model + Gravity Numberline demo | Nothing | **Done** (PR #93) |
+| 1     | G-Quadray Grids: gravity-warped Central Angle tessellation (chordal) | Phase 0 | **In Progress** |
+| 1b    | G-Cartesian Planes: non-uniform straight-line grids in XYZ | Phase 1 patterns | Pending |
+| 2     | G-Quadray + G-Cartesian with body selector UI | Phase 1 | Pending |
+| 3     | Curved gridlines: arcs replacing straight lines | Phase 1 or 2 | Pending |
+| 4     | Distorted polyhedra: vertex remapping through gravity metric | Phase 2 | Pending |
+| 5a    | IK rigid link in Gravity Numberline demo | Phase 0 | **Done** (df0faf0) |
+| 5b    | Pin joints and hinges | Phase 5a | Planned |
+| 5c    | Elastic, tension, compression members | Phase 5a | Planned |
+| 5d    | Pneumatic soft compression | Phase 5c | Planned |
 
 ---
 
@@ -574,13 +649,479 @@ RT.Gravity = {
 | | GM clarification | G is universal, M is body-specific, GM is body-specific (like ATM). Default GM = 1 (normalized, body-agnostic). Body presets: Earth, Moon, Mars, Jupiter, Sun, Black Hole, Custom. |
 | | Body selection UI | Dropdown in Coordinate Systems panel. Presets fill GM/g/radius (read-only). Custom unlocks GM input. Topology invariant across bodies; only absolute scale changes. |
 | | RT-pure arcs | Great-circle arcs via Weierstrass rational parameterization, NOT classical SLERP. Zero trig calls; 2√ per arc at GPU boundary. Spread replaces angle; quadrance replaces distance. Consistent with RT design rule. |
+| Feb 14, 2026 | Gravity Numberline demo | Phase 0 complete. Demo deployed via PR #93. Two numberlines: uniform (acceleration) vs gravity (constant v). N=144, body selector, Drop/Stop animation, draggable handle. |
+| | Black Hole body | Added to presets with computed Schwarzschild values: surfaceG = 1.52e13 m/s² (c⁴/4GM), radius = 2953 m (2GM/c²). |
+| | IK solver planning | New module `rt-ik-solvers.js` planned. Rigid link between demo bodies as first consumer. Future: pin joints, hinges, elastic, tension, compression, pneumatic connections. |
+| Feb 14, 2026 | Phase 5a complete | `rt-ik-solvers.js` created with `linkSpread2D()`, `linkAngle2D()`, `solveRigid2D()`, `solveRigid3D()`. Display-only rigid link added to Gravity Numberline demo. Committed as `df0faf0` on `Gravity` branch. |
+| | Phase 1 planning | Decided to implement G-Quadray grids (Central Angle gravity intervals) before G-Cartesian, since the Central Angle tessellation is the more architecturally interesting target. Chordal (straight lines) first, Spherical (arcs) as Phase 3. |
+| | cumDist technique | Key insight: replace constant `edgeLength × i` with a cumulative distance lookup `cumDist[i]` in `createIVMGrid()`. Same loop, same topology — only spacing changes. Thread `gridMode` parameter through the full call chain. ~100 lines across 6 files. |
+| | Phase reordering | Phase 1 = G-Quadray (was Phase 2). Phase 1b = G-Cartesian (was Phase 1). Rationale: Quadray tessellation is the core geometry; Cartesian warping is a simpler derivative. |
+| Feb 14, 2026 | Inward bowing bug | Per-axis cumDist (tensor product of 1D warping) pulls off-axis vertices inward. Midpoints at half the correct radius. Fix: radial shell projection via `shellProjectionScale(Q, shellRadius)` — one √ per vertex at GPU boundary. Axis ticks unchanged; off-axis points inflate to shells. Committed `e63f64b`. |
+| | Chord sag observed | Shell projection places vertices correctly on shells, but straight line segments between them sag below the shell surface. Visible in orthographic on-axis views as slight under-inflation vs true great-circle arcs. Phase 3 (arc subdivision) now the immediate next step. |
+| | Spherical mode + Cartesian UI | Arc subdivision (8 segments per ring edge, lerp + shellProjectionScale) committed as `4d6243e`. Grid Mode buttons added to Cartesian Planes section (synced via shared `data-grid-mode` handler). |
+| | Chord sag persists in spherical mode | Even with 8 arc subdivisions, the outermost shells still show visible under-inflation vs true spherical profile. The lerp-then-project approach (linear interpolation in 3D, then radial projection) does **not** trace a true great-circle arc — it produces a polygonal approximation with diminishing but nonzero chord sag. Increasing subdivisions reduces sag but never eliminates it. The correct solution is **Phase 3: Weierstrass rational arcs**, which parameterize the arc algebraically and produce points *on* the shell surface by construction. |
+| | Phase 3: Weierstrass rationalArc() | `RT.Gravity.rationalArc()` added to rt-math.js. Generates great-circle arc points via u = tan(θ/2) parameterization: x(u) = R(1-u²)/(1+u²), y(u) = R·2u/(1+u²). Two √ per arc at GPU boundary, zero trig. Every point lies exactly on the shell. Committed `4961b4e`. |
+| | Spacing formula fix | `computeGravityCumulativeDistances` was using `E×(k/N)²` — all compression invisible near origin, outer shells nearly uniform. User identified mismatch with gravity numberline demo. Correct formula: `E×(1-√(1-k/N))` matching numberline-derived distribution. ~24:1 compression ratio. Committed `1bbddc3`. |
+| | Gravity converges to a point | User insight: rectangular Cartesian gravity grid (lines parallel to axes at gravity-spaced positions) is spatially wrong. Gravity converges to the *origin*, not to an *axis*. Polar topology (concentric circles + radial lines) is the only correct representation on Cartesian planes. Rectangular axis compression kept only for Quadray refinement. |
+| | Cartesian polar grid | Weierstrass 4-quadrant circle parameterization for concentric gravity-spaced circles. RT-pure: add/mul/div only, no sin/cos. 64 segments per circle (SPQ=16). XYZ "Gravity" button removed (illogical for point-convergent gravity); replaced with "Uniform" and "Polar". Committed `6c5b3cf`. |
+| | Per-plane coloring | XYZ grid planes now colored by additive axis mix: XY=Yellow (R+G), XZ=Magenta (R+B), YZ=Cyan (G+B). Matches the Quadray Central Angle plane coloring convention. |
+| | Quadrance spacing (future) | Current shell radii use distance formula `1-√(1-k/N)` with one √ per shell. A quadrance-native approach would store Q_k = r_k² directly, deferring √ to GPU boundary. This would make the spacing formula fully algebraic: Q_k = E²×(1-(1-k/N)) = E²×k/N — uniform in quadrance! The √ moves to the rendering step where it's already needed. |
+| | Circle count fix + opacity | Polar grid now draws `divisions` circles (full slider value) within `halfExtent` radius. All Cartesian grids (uniform + polar) use opacity 0.4, matching Quadray IVM grid intensity. Committed `1ebfd56`. |
+| | **XYZ great circles RESOLVED** | Cartesian polar gravity grids now show true concentric great circles with correct gravity-derived spacing, RT-pure Weierstrass parameterization, per-plane axis-mixed coloring, and matched opacity. The Cartesian implementation is complete and serves as the reference for the next phase. |
+| | Quadray path forward | The same radial sweep model must apply to Quadray. Key principle: any basis vector from origin with the same division count sweeps the same circles — radius and distance from origin determine the circle, not the axis orientation. X, Y, Z, QW, QX, QY, QZ are immaterial; same intervals → same circles → same spheres. The current Quadray "Gravity" mode produces butterfly/fan shapes instead of great circles — the XYZ polar implementation provides the diagnostic reference to identify where the Quadray path diverges. |
+
+---
+
+## Deployed: Gravity Numberline Demo (Phase 0)
+
+**PR #93** — merged to `main` on Feb 13, 2026.
+
+The first integration test of `RT.Gravity` is live as an interactive 2D demo accessible from **Math Demos > Gravity Numberline** in the main app.
+
+### What It Shows
+
+Two horizontal numberlines stacked vertically:
+
+- **Top line (UNIFORM GRID):** 144 equally-spaced tick marks. Body accelerates under gravity — quadratic position in time: `x = ½gt²`. Slow at left, fast at right.
+- **Bottom line (GRAVITY GRID):** 144 non-uniformly spaced tick marks at `√(k/N)` screen fraction. Body travels at constant velocity — linear position in time: `x = vt`. Steady rate across compressed ticks.
+
+Both bodies start at left and reach the right side at the same total time T. They diverge mid-flight: the accelerating body lags early, catches up late. Despite the visual separation, **both bodies are always in the same grid cell index** — because `f² ≥ k/N` iff `f ≥ √(k/N)`.
+
+### Files Created/Modified
+
+| File | Purpose |
+|------|---------|
+| `demos/rt-gravity-demo.js` | ~700 lines — the demo module |
+| `modules/rt-math.js` | `RT.Gravity` namespace: `g_standard`, `BODIES`, `computeGravityIntervals()`, `uniformGPosition()`, `uniformGTime()` |
+| `index.html` | UI link + modal HTML |
+| `modules/rt-init.js` | Import + registration |
+| `art.css` | Horizontal formula panel styles |
+
+### Features
+
+- **N = 144 intervals** matching Quadray tessellation max extent
+- **Major/minor tick hierarchy**: major every 12th tick (12 major divisions)
+- **Body selector dropdown**: Earth, Moon, Mars, Jupiter, Sun, Black Hole (1M☉)
+- **Black Hole**: computed Schwarzschild values — `surfaceG = 1.52e13 m/s²`, `radius = 2953 m`
+- **Drop/Stop animation**: real-time physics with looping, 500ms pause between loops
+- **Draggable time handle**: horizontal-constrained with snap to quarter marks and major grid crossings
+- **Horizontal formula panel**: time, accelerating body stats, constant-v body stats, grid cell, separation
+- **Handle drag interrupts animation**, body change stops and resets
+
+### Key Physics
+
+```
+f = t/T (time fraction, 0 to 1)
+
+Top body (accelerating):   screen position = f² · LINE_LENGTH
+Bottom body (constant v):  screen position = f · LINE_LENGTH
+
+Gravity tick k at screen fraction √(k/N)
+Both bodies always in same cell: uniformCell === gravityCell
+```
+
+### Verified Behavior
+
+- `RT.Gravity.g_standard` → `9.80665` (exactly rational: 196133/20000)
+- `RT.Gravity.BODIES.earth.GM` → `3.986004e14`
+- `RT.Gravity.computeGravityIntervals(24)` → 24 radii with harmonic compression
+- Bodies diverge visually, converge at endpoints, share cell index throughout
+- Black Hole animation essentially instantaneous (T ≈ 3.6 µs for 100m drop)
+
+---
+
+## Phase 5: Inverse Kinematics — Connecting Bodies Across Grids
+
+### The Idea
+
+The Gravity Numberline demo shows two bodies on different grids diverging and reconverging. The natural next question: **what happens when they are connected?**
+
+A rigid link between the accelerating body (top) and the constant-velocity body (bottom) creates differential rotation as the bodies separate and rejoin. This is the simplest possible IK (inverse kinematics) problem: two nodes, one rigid constraint, two different motion laws.
+
+This extends naturally into a general-purpose **connection solver** for ARTexplorer — any two nodes (vertices, body markers, polyhedra vertices) connected by constraints of varying types.
+
+### Module: `modules/rt-ik-solvers.js`
+
+A new module providing constraint solvers for connected nodes. Designed to be consumed by demos (gravity numberline IK link), future gravity grid visualizations (connected shells), and eventually the main 3D scene (polyhedra joint systems).
+
+### Connection Types (Phased)
+
+| Type | Behavior | DOF | Phase |
+|------|----------|-----|-------|
+| **Rigid** | Fixed length, no deformation. Differential rotation only. | 1 (rotation) | 5a |
+| **Pin Joint** | Two members sharing a point. Each rotates freely. | 2 (rotation per member) | 5b |
+| **Hinge** | Rotation constrained to a single axis (like a door hinge). | 1 (axis rotation) | 5b |
+| **Elastic** | Length varies under tension/compression. Spring constant k. | 1 (extension) | 5c |
+| **Tension-only** | Resists extension (cable/rope). Zero compression resistance. | 1 (extension, clamped ≥ 0) | 5c |
+| **Compression-only** | Resists compression (strut). Zero tension resistance. | 1 (compression, clamped ≤ 0) | 5c |
+| **Pneumatic** | Soft compression with nonlinear resistance (gas law). | 1 (volume) | 5d |
+
+### Architecture
+
+```javascript
+// modules/rt-ik-solvers.js
+
+import { RT } from "./rt-math.js";
+
+/**
+ * RT.IK — Inverse kinematics constraint solvers.
+ *
+ * Each solver takes two node positions and a constraint definition,
+ * and returns the resolved positions (or forces/torques for dynamic solvers).
+ *
+ * Design principle: solvers are pure functions (position in → position out).
+ * They don't own the nodes. The caller (demo, renderer) owns node positions
+ * and calls the solver each frame.
+ */
+
+/** Connection constraint definition */
+// { type: "rigid"|"pin"|"hinge"|"elastic"|"tension"|"compression"|"pneumatic",
+//   length: number,           // rest length (rigid, elastic, tension, compression)
+//   stiffness: number,        // spring constant k (elastic, pneumatic)
+//   axis: Vector3,            // hinge axis (hinge only)
+//   damping: number,          // velocity damping (elastic, pneumatic)
+//   pressureCoeff: number,    // PV = nRT coefficient (pneumatic)
+// }
+
+/** Solve a rigid constraint between two 2D points.
+ *  Given anchor A (fixed) and target B (desired position),
+ *  returns the resolved position of B on the circle of radius L around A.
+ */
+function solveRigid2D(anchorA, targetB, length) { ... }
+
+/** Solve a rigid constraint between two 3D points.
+ *  Same as 2D but in 3D space — B is placed on the sphere of radius L around A.
+ */
+function solveRigid3D(anchorA, targetB, length) { ... }
+
+/** Solve an elastic constraint — returns force vector, not position.
+ *  F = -k * (currentLength - restLength) * direction
+ */
+function solveElastic(nodeA, nodeB, restLength, stiffness) { ... }
+```
+
+### Phase 5a: Rigid Link in Gravity Numberline
+
+The first consumer. Connect the two body markers with a rigid bar:
+
+- **Anchor**: midpoint between the two bodies (or one body is anchor, the other follows)
+- **Length**: fixed at the initial separation (or configurable)
+- **Visual**: a line (or narrow rectangle) connecting the two dots, rotating as they separate
+- **Physics**: the link constrains the system — neither body follows its pure trajectory. The actual positions are a compromise between the two motion laws and the rigid constraint.
+- **Educational value**: shows how a rigid connection between two reference frames (uniform vs gravity grid) produces rotation — a mechanical analog of the grid warping
+
+#### Solver Strategy for the Demo
+
+Two approaches:
+
+1. **Display-only (no physics feedback)**: Both bodies follow their pure trajectories. The link is drawn between them but doesn't affect their motion. The link stretches/compresses and rotates, showing the *differential* without enforcing the constraint. Simpler to implement.
+
+2. **Constrained (IK feedback)**: One body is the "driver" (follows its trajectory), the other is constrained to stay at distance L from the driver. The constrained body slides along its numberline to satisfy the rigid constraint. More physically meaningful.
+
+Start with approach 1 (display-only) to visualize the differential, then optionally add approach 2.
+
+### Future Extensions
+
+- **Tensegrity structures**: tension members (cables) and compression members (struts) in 3D. The classic Fuller application.
+- **Polyhedra edge constraints**: each edge of a polyhedron is a rigid member. Apply gravity warping to vertices and use IK to resolve the constrained shape.
+- **Multi-body chains**: chains of connected nodes with different constraint types. FABRIK or CCD solvers for longer chains.
+- **Pneumatic soft bodies**: nodes connected by pneumatic constraints, creating deformable volumes that resist compression according to gas law (PV = nRT analog).
+
+---
+
+## Phase 5a Implementation: Rigid Link in Gravity Numberline
+
+### Overview
+
+Add a **display-only rigid link** between bodyA (top, accelerating) and bodyB (bottom, constant velocity). The link is a straight line connecting the two body positions — it rotates and changes angle as the bodies diverge, then returns to vertical as they reconverge at f=1.
+
+**No physics feedback** — both bodies continue to follow their pure trajectories. The link visualizes the *differential* without enforcing the constraint. This is approach 1 from Phase 5 above.
+
+### Files to Modify/Create
+
+| File | Action | Change |
+|------|--------|--------|
+| `modules/rt-ik-solvers.js` | **CREATE** (~80 lines) | New module: `solveRigid2D()`, `linkAngle2D()`, `linkSpread2D()` |
+| `demos/rt-gravity-demo.js` | **MODIFY** (~30 lines added) | Import solver, create link Line2, update in `updateVisualization()`, add link stats to formula panel |
+
+### rt-ik-solvers.js — API
+
+```javascript
+import { RT } from "./rt-math.js";
+
+/**
+ * Compute the angle (in radians) of the line from A to B.
+ * Returns atan2(dy, dx). For display/formula purposes.
+ */
+export function linkAngle2D(ax, ay, bx, by) { ... }
+
+/**
+ * Compute the spread (sin²θ) of the link relative to vertical.
+ * RT-pure: no trig — uses the quadrance cross-ratio.
+ *
+ *   vertical = (0, 1)
+ *   link     = (bx - ax, by - ay)
+ *   spread   = 1 - (dot²) / (Q_link · Q_vert)
+ *            = (dx²) / (dx² + dy²)
+ *
+ * Returns { spread, quadrance, dx, dy }
+ */
+export function linkSpread2D(ax, ay, bx, by) { ... }
+
+/**
+ * Solve rigid constraint: given anchor A (fixed), target B (desired),
+ * return the position of B constrained to distance L from A.
+ * B is projected onto the circle of radius L centered at A,
+ * preserving the direction from A to B.
+ *
+ * For the display-only demo this isn't used yet, but it's the
+ * foundation for Phase 5b (constrained mode).
+ */
+export function solveRigid2D(ax, ay, bx, by, length) { ... }
+```
+
+### Gravity Demo Integration
+
+**New visual element:** `linkLine` — a `Line2` from `(topScreenX, TOP_Y)` to `(botScreenX, BOT_Y)`, colored white with partial opacity.
+
+**In `updateVisualization()`:**
+1. Compute link endpoints from body positions
+2. Call `linkSpread2D()` to get spread and quadrance
+3. Update `linkLine` geometry
+4. Add link stats to formula panel: spread value, angle (from spread via arcsin), screen length
+
+**Link behavior over time:**
+- `f=0`: both bodies at LINE_LEFT → link is vertical (spread = 0)
+- `f=0.5`: top body at 25% (f²=0.25), bottom at 50% → link angles backward (spread > 0)
+- `f≈0.71`: maximum separation → maximum spread
+- `f=1`: both at LINE_RIGHT → link is vertical again (spread = 0)
+
+**Formula panel addition** (new section after Separation):
+```
+Link | s = 0.XXX (spread) | Q = X.XX | θ ≈ XX.X°
+```
+
+### Visual Design
+
+- **Color**: white, 50% opacity — neutral between orange (top) and teal (bottom)
+- **Width**: 1.5px (same as handle line)
+- **Z-order**: behind bodies (z = 0.003), in front of trails
+
+---
+
+## Bug: Inward Bowing of Central Angle Gridlines (Phase 1)
+
+**Status:** Fixed — `e63f64b` (radial shell projection via `shellProjectionScale`)
+**Symptom:** Gravity-mode gridlines on central angle planes bow **inward** toward the origin, producing a concave star-like shape. The correct behavior is either straight chords (Phase 1) or outward arcs along concentric spherical shells (Phase 3).
+
+### Root Cause: Per-Axis Tensor Product vs. Radial Warping
+
+The current `createIVMGrid()` computes each vertex as:
+
+```
+P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
+```
+
+Where `cumDist[k] = totalExtent × (k/N)²` (quadratic gravity spacing).
+
+This applies the nonlinear warping **independently to each axis component** — a tensor product of two 1D gravity functions. For points on the axes (where one index is zero), this is correct: axis tick k sits at cumDist[k] from the origin. But for off-axis points (both i > 0 and j > 0), the independent application **double-compresses** the position toward the origin.
+
+### Concrete Example
+
+Consider the diagonal "ring" line connecting axis1-tick-k to axis2-tick-k (i+j = k). With E = totalExtent:
+
+| Point | Grid formula | Distance from origin |
+|-------|-------------|---------------------|
+| Axis1 endpoint (i=k, j=0) | `basis1 × E·k²/N²` | `E·k²/N²` (correct) |
+| Axis2 endpoint (i=0, j=k) | `basis2 × E·k²/N²` | `E·k²/N²` (correct) |
+| **Midpoint (i=k/2, j=k/2)** | `(b1+b2) × E·k²/(4N²)` | **`E·k²/(4N²) × |b1+b2|`** |
+| **Correct chord midpoint** | `(b1+b2) × E·k²/(2N²)` | **`E·k²/(2N²) × |b1+b2|`** |
+
+The grid midpoint is at **half** the radial distance of the correct chord midpoint. The quadratic function satisfies `f(a) + f(b) ≤ f(a+b)` — it's subadditive — so splitting the index between two axes always yields a smaller total displacement than keeping it on one axis.
+
+This is why the gridlines bow inward: intermediate points are pulled toward the origin by the independent quadratic compression on each component.
+
+### Why the 1D Numberline Doesn't Show This
+
+The gravity numberline demo is purely axial — all motion is along a single axis. The quadratic cumDist correctly spaces ticks along that one dimension. The bug only manifests when the same 1D gravity function is applied as a separable product across two axes in 2D.
+
+### Proposed Fix: Radial Gravity Warping
+
+Replace per-axis cumDist lookup with **radial** warping that preserves angular direction from the uniform grid:
+
+```javascript
+// CURRENT (buggy): per-axis tensor product
+P(i,j) = basis1 × cumDist[i] + basis2 × cumDist[j]
+
+// FIXED: radial warping
+P_uniform = basis1 × (i × edgeLength) + basis2 × (j × edgeLength)
+r_uniform = |P_uniform|
+r_gravity = gravityWarp(r_uniform)
+P_gravity = P_uniform × (r_gravity / r_uniform)
+```
+
+Where `gravityWarp(r)` maps a uniform-space radius to a gravity-warped radius:
+
+```javascript
+// For quadratic (uniform-g) model:
+gravityWarp(r) = totalExtent × (r / uniformExtent)²
+
+// Or equivalently, using the continuous form:
+gravityWarp(r) = totalExtent × (r / (N × edgeLength))²
+```
+
+#### What This Produces
+
+- **Every vertex lies on a spherical shell** at the gravity-warped radius
+- **Axis ticks are unchanged** — on the axes, the uniform radius equals k × edgeLength, so gravityWarp gives exactly cumDist[k]
+- **Off-axis points maintain their angular direction** from the uniform tessellation but are pushed out to the correct shell radius
+- **Diagonal "ring" lines trace outward arcs** along the spherical shells — the gridlines inflate outward, creating the concentric shell geometry described in the Phase 0 derivation
+
+This naturally produces the **spherical shell** behavior. The "chordal" (straight-line) variant would then be a separate mode that connects axis ticks with straight chords, skipping the intermediate tessellation points entirely on the ring lines.
+
+#### Implementation Sketch
+
+In `createIVMGrid()`, replace the vertex computation block:
+
+```javascript
+if (gridMode === "gravity-chordal") {
+  // Radial warping: compute uniform position, warp radius
+  const uniformExtent = tessellations * edgeLength;
+  const uniformExtent2 = uniformExtent * uniformExtent;
+
+  for (let i = 0; i <= tessellations; i++) {
+    for (let j = 0; j <= tessellations - i; j++) {
+      const ui  = i * edgeLength, ui1 = (i+1) * edgeLength;
+      const uj  = j * edgeLength, uj1 = (j+1) * edgeLength;
+
+      // Uniform-space vertex, then radially warp
+      // P_uniform = basis1 × ui + basis2 × uj
+      // r² = |P_uniform|² = ui² + uj² + 2·ui·uj·dot(b1,b2)
+      // P_gravity = P_uniform × (totalExtent × r² / uniformExtent²) / r
+      //           = P_uniform × totalExtent × r / uniformExtent²
+      // (using gravityWarp(r) = totalExtent × r²/uniformExtent²)
+
+      function warpVertex(ci, cj) {
+        const px = b1x*ci + b2x*cj;
+        const py = b1y*ci + b2y*cj;
+        const pz = b1z*ci + b2z*cj;
+        const r2 = px*px + py*py + pz*pz;
+        if (r2 < 1e-12) return [0, 0, 0]; // origin stays at origin
+        const r = Math.sqrt(r2);
+        const scale = totalExtent * r / uniformExtent2;  // = r_gravity / r
+        return [px*scale, py*scale, pz*scale];
+      }
+
+      const p0 = warpVertex(ui, uj);
+      const p1 = warpVertex(ui1, uj);
+      const p2 = warpVertex(ui, uj1);
+      // ... emit triangle edges as before
+    }
+  }
+}
+```
+
+#### Revisiting Phase 1 / Phase 3 Distinction
+
+With radial warping, the "gravity-chordal" mode already produces outward-curving arcs (points lie on spherical shells, but edges are straight line segments between adjacent vertices). At high tessellation counts, these approximate the spherical shell surface closely. This may make the separate "Spherical" (Phase 3 rational arc) mode less urgent — the tessellation density already approximates arcs. The Phase 3 rational arcs would then be an optimization for visual quality at low tessellation counts, not a geometric correction.
+
+---
+
+## Observation: Chord Sag Persists in Spherical Mode
+
+**Status:** Open — requires Phase 3 (Weierstrass rational arcs) for proper fix
+
+### What We See
+
+With spherical mode active (8 arc subdivisions per ring edge), the outermost shells still appear slightly "under-inflated" compared to a true spherical profile. The effect is most visible in orthographic on-axis views (e.g. looking down the W quadray axis), where the outer shell boundary should trace a perfect circle but instead shows a subtle polygonal flattening.
+
+### Why Lerp-Then-Project Isn't Enough
+
+The current spherical mode algorithm:
+1. **Lerp** in 3D between two vertices on the same shell: `M = P1 + t × (P2 - P1)`
+2. **Project** M onto the shell: `M' = M × (shellRadius / |M|)`
+
+Step 1 produces a point *inside* the shell (the chord). Step 2 pushes it back out to the shell surface. But the resulting arc is a **polygonal approximation** — a sequence of chords between projected points. Each sub-segment still sags below the shell.
+
+With N subdivisions, the maximum chord sag for a circular arc of half-angle α is:
+```
+sag ≈ R × (1 - cos(α/N))
+```
+
+For our outermost shell with wide-angle edges (α ~ 30-60°), even 8 subdivisions leave measurable sag. Doubling to 16 or 32 would reduce it but at the cost of ~2-4× more vertices — and it's still an approximation.
+
+### The Proper Fix: Phase 3 Weierstrass Rational Arcs
+
+The Weierstrass rational parameterization (already sketched in the Phase 3 section above) produces points **on the arc by construction**, not by projection:
+
+```
+x(u) = R × (1 - u²) / (1 + u²)
+y(u) = R × (2u) / (1 + u²)
+```
+
+Every point for every u lies exactly on the circle of radius R. No chord sag at any subdivision level. And it's RT-pure: addition, multiplication, division only — no sin, cos, or arccos.
+
+### Recommended Path Forward
+
+1. **Current spherical mode (lerp + project, 8 subdivisions)**: Keep as-is for now. It's a visible improvement over straight chords and demonstrates the concept.
+2. **Phase 3**: Replace the lerp-then-project loop with `RT.Gravity.rationalArc()` using the Weierstrass parameterization. Same vertex count, true arcs, RT-pure math. This is the definitive fix.
+3. **Optional**: The current "Spherical" button could be renamed or the Phase 3 implementation could replace it in-place, since the rational arc is strictly superior.
 
 ---
 
 ## Next Steps
 
-- [ ] Validate Phase 0 math: compute and plot 1D gravity intervals for N=144
-- [ ] Prototype `computeGravityIntervals()` in `rt-math.js`
-- [ ] Build `createGravityCartesianGrid()` in `rt-grids.js`
-- [ ] Add UI toggle to Coordinate Systems panel
-- [ ] Test visual effect: drop a marker and verify constant-rate gridline crossings
+- [x] ~~Validate Phase 0 math: compute and plot 1D gravity intervals for N=144~~
+- [x] ~~Prototype `computeGravityIntervals()` in `rt-math.js`~~
+- [x] ~~Test visual effect: drop a marker and verify constant-rate gridline crossings~~
+- [x] ~~Write Phase 5a workplan into Gravity-Grids.md~~
+- [x] ~~Create `modules/rt-ik-solvers.js` with `solveRigid2D()` (Phase 5a)~~
+- [x] ~~Add rigid link visual to Gravity Numberline demo (Phase 5a)~~
+- [ ] **Phase 1: G-Quadray gravity grids (IN PROGRESS)**
+  - [x] ~~Add `computeGravityCumulativeDistances()` to `RT.Gravity` namespace~~
+  - [x] ~~Add `gridMode` param to `createIVMGrid()` with cumDist branching~~
+  - [x] ~~Thread `gridMode` through `createIVMPlanes()`, `rebuildQuadrayGrids()`, rt-rendering.js wrapper~~
+  - [x] ~~Add Grid Mode UI buttons (Uniform / Gravity / Spherical-disabled)~~
+  - [x] ~~Wire buttons in rt-init.js and update tessellation slider binding~~
+  - [x] ~~**BUG FIX: Replace per-axis cumDist with radial gravity warping** (e63f64b)~~
+  - [x] ~~Browser verify: outward shell arcs confirmed, uniform regression OK~~
+  - [x] ~~Spherical mode: arc-subdivided ring edges (8 segments, lerp + shellProjectionScale)~~ (`4d6243e`)
+  - [x] ~~**Chord sag persists in spherical mode** — see observation below~~
+  - [x] ~~Phase 3: Weierstrass rational arcs (`rationalArc()`) replace lerp-then-project~~ (`4961b4e`)
+  - [x] ~~Fix spacing formula: `E×(k/N)²` → `E×(1-√(1-k/N))` (numberline-derived)~~ (`1bbddc3`)
+- [x] Phase 1b: G-Cartesian Planes (non-uniform XYZ grids)
+  - [x] ~~Add Uniform / Gravity / Spherical buttons to Cartesian Planes UI section~~ (`4d6243e`)
+  - [x] ~~Polar concentric circles via Weierstrass parameterization (RT-pure, no trig)~~ (`6c5b3cf`)
+  - [x] ~~Remove rectangular gravity from XYZ (gravity converges to point, not axis)~~
+  - [x] ~~Rename Spherical → Polar in UI; remove Gravity button from Cartesian section~~
+  - [x] ~~Per-plane axis-mixed coloring: XY=Yellow, XZ=Magenta, YZ=Cyan~~
+  - [x] ~~Circle resolution: 64 segments per circle (SPQ=16)~~
+  - [x] ~~Circle count = full slider value (not halfDiv)~~ (`1ebfd56`)
+  - [x] ~~Opacity 0.4 on all Cartesian grids (uniform + polar), matching Quadray IVM~~ (`1ebfd56`)
+- [ ] **Phase 2: Quadrance-based shell spacing** — replace `1-√(1-k/N)` distance formula with quadrance-native approach. Eliminates per-shell √ and stays algebraically exact until GPU boundary.
+- [ ] **Phase 3: Quadray polar mode — great circles on tetrahedral planes**
+
+  ### Status
+  XYZ Cartesian great circles are RESOLVED. The same technique must apply to Quadray.
+
+  ### Key Principle
+  Any basis vector from origin with the same division count sweeps the same circles. Circles are a function of radius and distance from origin — the axis orientation (X, Y, Z, QW, QX, QY, QZ) is immaterial. Same distribution, same intervals → same circles → same spheres.
+
+  ### What Works (XYZ reference implementation)
+  - **File**: `modules/rt-grids.js`, function `createGravityCartesianPlane()` (~line 48)
+  - **Spacing**: `RT.Gravity.computeGravityCumulativeDistances(N, extent)` in `modules/rt-math.js` (~line 2788). Formula: `cumDist[k] = E × (1 - √(1 - k/N))`
+  - **Circle geometry**: Weierstrass rational parameterization, 4 quadrants × 16 segments. For each radius `r = cumDist[k]`, parameterize u = 0..1 per quadrant: `x = r(1-u²)/(1+u²)`, `z = r·2u/(1+u²)`. Rotate per quadrant. RT-pure: add/mul/div only.
+  - **Material**: `opacity: 0.4, transparent: true`
+  - **UI**: "Polar" button sets `data-grid-mode="gravity-spherical"`. Handler in `modules/rt-init.js` (~line 1039) dispatches to both Cartesian and Quadray rebuild functions.
+
+  ### What's Broken (Quadray)
+  - **File**: `modules/rt-grids.js`, function `createIVMGrid()` (~line 380). This is the Quadray equivalent of `createGravityCartesianPlane()`.
+  - **Current behavior**: "Gravity" mode produces butterfly/fan shapes on-axis, NOT great circles. "Polar" mode uses `rationalArc()` for ring edges but the underlying triangular topology still doesn't produce concentric circles.
+  - **Root cause (suspected)**: The Quadray grid uses a triangular tessellation topology (vertex-to-vertex along tetrahedral planes). Gravity spacing is applied to this triangular mesh, producing warped triangles — NOT concentric circles. The topology itself prevents circular geometry from emerging.
+
+  ### Approach
+  For the Quadray "Polar" mode, replace the triangular tessellation with concentric circles + radial lines (same as XYZ), but on the 6 tetrahedral planes instead of the 3 Cartesian planes. Each tetrahedral plane is defined by two Quadray basis vectors — use these to define the 2D coordinate system for the Weierstrass circle parameterization. The `createIVMGrid()` function receives `basisA` and `basisB` vectors — these define the plane. The circle at radius `r` centered at origin, lying in the plane spanned by `basisA` and `basisB`, can be parameterized exactly as in the Cartesian case but using the two basis vectors as the local X and Z axes.
+
+  ### Verification
+  When viewed on-axis (QW, QX, QY, or QZ orthographic view), each Quadray plane should show concentric circles identical to the Cartesian planes. The 6 Quadray planes will show 6 sets of circles at tetrahedral angles (109.47°) vs the 3 Cartesian planes at 90°, but each individual plane's circles should be indistinguishable from the Cartesian version.
+- [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)

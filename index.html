@@ -603,6 +603,25 @@
                   </label>
                 </div>
                 <div class="spacing-top-large">
+                  <label class="label-subsection">Grid Mode</label>
+                  <div class="toggle-btn-group">
+                    <button
+                      class="toggle-btn variant-objsnap active"
+                      data-grid-mode="uniform"
+                      title="Standard uniform-interval Cartesian grid"
+                    >
+                      Uniform
+                    </button>
+                    <button
+                      class="toggle-btn variant-objsnap"
+                      data-grid-mode="gravity-spherical"
+                      title="Polar grid: concentric circles at gravity-spaced radii"
+                    >
+                      Polar
+                    </button>
+                  </div>
+                </div>
+                <div class="spacing-top-large">
                   <label class="label-subsection">Grid Intervals</label>
                   <div class="slider-container">
                     <input
@@ -711,6 +730,32 @@
                   <label class="checkbox-label" style="font-size: 0.85em">
                     <input type="checkbox" id="planeIvmYZ" checked /> YZ
                   </label>
+                </div>
+                <div class="spacing-top-large">
+                  <label class="label-subsection">Grid Mode</label>
+                  <div class="toggle-btn-group">
+                    <button
+                      class="toggle-btn variant-objsnap active"
+                      data-grid-mode="uniform"
+                      title="Standard uniform-interval triangular tessellation"
+                    >
+                      Uniform
+                    </button>
+                    <button
+                      class="toggle-btn variant-objsnap"
+                      data-grid-mode="gravity-chordal"
+                      title="Gravity-warped intervals (chordal straight lines)"
+                    >
+                      Gravity
+                    </button>
+                    <button
+                      class="toggle-btn variant-objsnap"
+                      data-grid-mode="gravity-spherical"
+                      title="Gravity shells with arc-subdivided ring edges"
+                    >
+                      Polar
+                    </button>
+                  </div>
                 </div>
                 <div class="spacing-top-large">
                   <label class="label-subsection">Grid Intervals</label>
@@ -3184,7 +3229,7 @@
                   id="tetScaleSlider"
                   min="-5.0"
                   max="5.0"
-                  step="0.1"
+                  step="any"
                   value="2.0"
                 />
                 <span class="slider-value" id="tetScaleValue">2.0000</span>

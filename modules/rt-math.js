@@ -2699,19 +2699,13 @@ export const RT = {
     /** Standard gravity — exactly rational, defined by 3rd CGPM 1901 */
     g_standard: 196133 / 20000, // 9.80665 m/s²
 
-    /** Body presets: { name, GM, surfaceG, radius } */
+    /** Body presets ordered by surface gravity (slowest drop → fastest) */
     BODIES: {
       normalized: {
         name: "Normalized",
         GM: 1.0,
         surfaceG: null,
         radius: null,
-      },
-      earth: {
-        name: "Earth",
-        GM: 3.986004e14,
-        surfaceG: 9.807,
-        radius: 6.371e6,
       },
       moon: {
         name: "Moon",
@@ -2724,6 +2718,12 @@ export const RT = {
         GM: 4.2828e13,
         surfaceG: 3.721,
         radius: 3.3895e6,
+      },
+      earth: {
+        name: "Earth",
+        GM: 3.986004e14,
+        surfaceG: 9.807,
+        radius: 6.371e6,
       },
       jupiter: {
         name: "Jupiter",
@@ -2767,6 +2767,37 @@ export const RT = {
         gaps.push(radii[i] - radii[i + 1]);
       }
       return { radii, gaps, totalExtent: radii[0] };
+    },
+
+    /**
+     * Compute cumulative distances from origin for gravity-warped grid.
+     * Returns array of N+2 cumulative positions: [0, d1, d2, ..., dN, dN+1]
+     * where d_k is the distance from origin to the k-th gridline.
+     *
+     * Innermost gridlines are close together (strong field),
+     * outermost gridlines are far apart (weak field).
+     *
+     * The extra (N+2)th element extrapolates one step beyond for boundary
+     * triangle safety — the tessellation loop accesses cumDist[i+1]
+     * where i can reach N.
+     *
+     * @param {number} N - Number of intervals (tessellation count)
+     * @param {number} totalExtent - Total extent to scale to
+     * @returns {number[]} Cumulative distances [0, d1, ..., dN, dN+extrapolated]
+     */
+    computeGravityCumulativeDistances: (N, totalExtent) => {
+      // Numberline-derived spacing: cumDist[k] = E × (1 - √(1 - k/N))
+      // Applies the gravity numberline tick distribution to each axis.
+      // Close together near origin (strong field), expanding outward (weak field).
+      // One √ per shell at GPU boundary.
+      const cumDist = [0];
+      for (let k = 1; k <= N; k++) {
+        cumDist.push(totalExtent * (1 - Math.sqrt(1 - k / N)));
+      }
+      // Extrapolate one step beyond for boundary triangle safety
+      const lastGap = cumDist[N] - cumDist[N - 1];
+      cumDist.push(cumDist[N] + lastGap);
+      return cumDist;
     },
 
     /**
@@ -2818,6 +2849,106 @@ export const RT = {
     velocityAtTime: (t, g) => {
       const gVal = g || 196133 / 20000;
       return gVal * t;
+    },
+
+    /**
+     * Shell projection scale factor for radial gravity warping.
+     *
+     * Projects a vertex at quadrance Q from origin onto a gravity shell
+     * at the given shellRadius. RT-pure approach: quadrance (Q = r²) keeps
+     * all intermediate math algebraic; the single √Q here is the GPU boundary.
+     *
+     * Formula: scale = shellRadius / √Q
+     * Apply as: P_gravity = P_uniform × scale
+     *
+     * Used by createIVMGrid() to place tessellation vertices on concentric
+     * spherical shells rather than applying gravity warping per-axis
+     * (which causes inward bowing — see Gravity-Grids.md bug section).
+     *
+     * @param {number} Q - Quadrance from origin (r²) in uniform grid space
+     * @param {number} shellRadius - Target gravity shell radius (cumDist[k])
+     * @returns {number} Scale factor to multiply uniform position vector by
+     */
+    shellProjectionScale: (Q, shellRadius) => {
+      if (Q < 1e-24) return 0; // origin → origin (1e-24: safe zero for Q = r² in Float64)
+      return shellRadius / Math.sqrt(Q); // single √ at GPU boundary
+    },
+
+    /**
+     * Great-circle arc via Weierstrass rational parameterization.
+     *
+     * P1 and P2 must lie on a sphere of radius R centered at the origin.
+     * Returns (segments+1) points as a flat array [x0,y0,z0, x1,y1,z1, ...].
+     * Point 0 = P1, point[segments] = P2, intermediates lie exactly on the arc.
+     *
+     * RT-pure: all intermediate math is rational (add, mul, div).
+     * Only 2√ per arc at the GPU boundary (e2 normalization + u_max).
+     *
+     * Parameterization: u = tan(θ/2) gives
+     *   x(u) = R(1 − u²)/(1 + u²)
+     *   y(u) = R · 2u/(1 + u²)
+     * in the plane basis {e1, e2} where e1 = P1/R, e2 ⊥ e1 in the arc plane.
+     *
+     * @param {number} p1x - First endpoint x (on shell)
+     * @param {number} p1y - First endpoint y
+     * @param {number} p1z - First endpoint z
+     * @param {number} p2x - Second endpoint x (on shell)
+     * @param {number} p2y - Second endpoint y
+     * @param {number} p2z - Second endpoint z
+     * @param {number} R   - Shell radius (known, avoids computing |P1|)
+     * @param {number} segments - Number of arc subdivisions
+     * @returns {number[]} Flat array of (segments+1)×3 coordinates
+     */
+    rationalArc: (p1x, p1y, p1z, p2x, p2y, p2z, R, segments) => {
+      const R2 = R * R;
+
+      // e1 = P1 / R (unit vector — division only, no √)
+      const e1x = p1x / R, e1y = p1y / R, e1z = p1z / R;
+
+      // dot = P1·P2 (fully rational)
+      const dot = p1x * p2x + p1y * p2y + p1z * p2z;
+
+      // e2_raw = P2 − (dot/R²)·P1 (P2's component orthogonal to e1)
+      const proj = dot / R2;
+      const e2rx = p2x - proj * p1x;
+      const e2ry = p2y - proj * p1y;
+      const e2rz = p2z - proj * p1z;
+      const e2Q = e2rx * e2rx + e2ry * e2ry + e2rz * e2rz;
+
+      // Degenerate: P1 ≈ P2 — fall back to straight line
+      // 1e-20: orthogonal component quadrance below Float64 meaningful precision
+      if (e2Q < 1e-20) {
+        const pts = new Array((segments + 1) * 3);
+        for (let s = 0; s <= segments; s++) {
+          const t = s / segments;
+          pts[s * 3] = p1x + (p2x - p1x) * t;
+          pts[s * 3 + 1] = p1y + (p2y - p1y) * t;
+          pts[s * 3 + 2] = p1z + (p2z - p1z) * t;
+        }
+        return pts;
+      }
+
+      // √ #1: normalize e2 (GPU boundary)
+      const e2len = Math.sqrt(e2Q);
+      const e2x = e2rx / e2len, e2y = e2ry / e2len, e2z = e2rz / e2len;
+
+      // √ #2: u_max = tan(θ/2) = √((1−d)/(1+d)), d = cos(θ) = dot/R²
+      const d = dot / R2;
+      const u_max = Math.sqrt((1 - d) / (1 + d));
+
+      // Weierstrass rational parameterization — no trig, no further √
+      const pts = new Array((segments + 1) * 3);
+      for (let s = 0; s <= segments; s++) {
+        const u = (s / segments) * u_max;
+        const u2 = u * u;
+        const denom = 1 + u2;
+        const xc = R * (1 - u2) / denom; // rational in u
+        const yc = R * (2 * u) / denom;  // rational in u
+        pts[s * 3] = xc * e1x + yc * e2x;
+        pts[s * 3 + 1] = xc * e1y + yc * e2y;
+        pts[s * 3 + 2] = xc * e1z + yc * e2z;
+      }
+      return pts;
     },
   },
 };
