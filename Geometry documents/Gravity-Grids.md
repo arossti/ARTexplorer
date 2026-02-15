@@ -1,8 +1,36 @@
 # Gravity Grids — Workplan
 
-**Branch:** `main` (Gravity Numberline demo merged via PR #93)
+> ## QUICKSTART — What's Done, What's Next
+>
+> **Branch:** `Gravity` (push before switching!)
+>
+> ### DONE — XYZ Cartesian Polar Grids (great circles working)
+> - Concentric circles at gravity-spaced radii on 3 Cartesian planes (XY, XZ, YZ)
+> - Weierstrass rational parameterization (RT-pure, no trig): `x = r(1-u²)/(1+u²)`, `z = r·2u/(1+u²)`
+> - Spacing: `cumDist[k] = E × (1 - √(1 - k/N))` via `RT.Gravity.computeGravityCumulativeDistances()`
+> - Code: `modules/rt-grids.js` → `createGravityCartesianPlane()` (~line 48)
+> - UI: "Polar" button on Cartesian section, handler in `modules/rt-init.js` (~line 1039)
+>
+> ### NEXT — Quadray Polar Grids (great circles NOT yet working)
+> - **The problem**: Quadray "Gravity"/"Polar" modes warp a triangular tessellation mesh, producing butterfly/fan shapes — NOT concentric circles. The triangular topology prevents circles from emerging.
+> - **The fix**: For Quadray "Polar" mode, replace the triangular mesh with concentric circles (same as XYZ), drawn on the 6 tetrahedral planes instead of 3 Cartesian planes.
+> - **How**: `createIVMGrid()` in `modules/rt-grids.js` (~line 380) receives `basisA` and `basisB` vectors defining each plane. Use these as the local X/Z axes for the same Weierstrass circle parameterization that works in the Cartesian case. Add radial lines along the two basis directions.
+> - **Key principle**: Axis orientation is immaterial. Same radius + same divisions from origin = same circles, whether the axis is X, Y, Z, QW, QX, QY, or QZ.
+> - **Verify**: On-axis orthographic view (QW/QX/QY/QZ) should show concentric circles identical to Cartesian on-axis views.
+> - **See**: Phase 3 checklist near end of this file for full details.
+>
+> ### Key Files
+> | File | What |
+> |------|------|
+> | `modules/rt-grids.js` | Grid rendering — `createGravityCartesianPlane()` (working), `createIVMGrid()` (to fix) |
+> | `modules/rt-math.js` | `RT.Gravity` namespace — `computeGravityCumulativeDistances()`, `rationalArc()` |
+> | `modules/rt-init.js` | UI handler for grid mode buttons (~line 1039) |
+> | `index.html` | Cartesian: Uniform/Polar buttons. Central Angle: Uniform/Gravity/Polar buttons |
+
+---
+
 **Goal:** Build warped coordinate grids where intervals encode gravitational acceleration rather than equal spatial distance — so a freely falling object appears to traverse gridlines at constant visual speed.
-**Status:** Phase 0 complete — Gravity Numberline demo deployed and verified
+**Status:** XYZ Cartesian great circles RESOLVED. Quadray great circles next (Phase 3).
 
 ---
 
