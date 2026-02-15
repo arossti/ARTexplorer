@@ -19,8 +19,8 @@
 | 5b–d | Pin joints, hinges, elastic, tension, pneumatic | Planned |
 | 6 | Great-circle-as-N-gon: polygonal geodesic generation | Planned |
 | 7 | 4D± Gravity + Inversion demo: Quadray Janus drop | **Done** (core) |
-| 7b | Cell slider: manual scrubbing +144 to −144 | Planned |
-| 7c | Circumsphere boundary visualization (7F wireframe) | Planned |
+| 7b | Cell slider: manual scrubbing +144 to −144 | **Done** |
+| 7c | Circumsphere boundary visualization (7F wireframe) | **Done** |
 
 ### Key Files
 
@@ -203,8 +203,8 @@ Core demo is **functional** (`demos/4D-Drop.js`, ~750 lines). Remaining work is 
 | 4-phase animation with continuous global time | **Done** |
 | Janus flash + background inversion at origin crossings | **Done** |
 | Seamless oscillation (no pause at origin) | **Done** |
-| Cell slider for manual scrubbing (+144 to −144) | Planned (§7b) |
-| Circumsphere boundary visualization | Planned (§7c) |
+| Cell slider for manual scrubbing (+144 to −144), steps of 12 | **Done** (§7b) |
+| Circumsphere boundary: 7F geodesic icosahedron wireframe, toggleable | **Done** (§7c) |
 
 ### Architecture
 
@@ -360,8 +360,8 @@ From the README: *"Compute all relationships in quadrance space. Only take √ a
 ## Immediate TODOs
 
 - [x] **Phase 7: `demos/4D-Drop.js`** — core demo implemented (`55e730c`–`8dcc616`)
-- [ ] **Phase 7b: Cell slider** — manual scrubbing +144 to −144, steps of 12
-- [ ] **Phase 7c: Circumsphere boundary** — 7F geodesic icosahedron wireframe at extent radius
+- [x] **Phase 7b: Cell slider** — manual scrubbing +144 to −144, steps of 12
+- [x] **Phase 7c: Circumsphere boundary** — 7F geodesic icosahedron wireframe at extent radius
 - [ ] **Phase 6: N-gon parameter for `createQuadrayPolarPlane()`** — start with N=3 (triangle) and N=6 (hexagon) to validate the geodesic construction
 - [ ] **Radial line generation** via N-gon vertex connections between concentric shells
 - [ ] **Phase 2: Quadrance-based shell spacing** — algebraic exactness improvement
