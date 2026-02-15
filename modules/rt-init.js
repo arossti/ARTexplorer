@@ -1034,6 +1034,46 @@ function startARTexplorer(
     });
   });
 
+  // Grid mode toggle — mutually exclusive (uniform / gravity-chordal / gravity-spherical)
+  // Applies to both Central Angle and Cartesian grids simultaneously
+  document.querySelectorAll("[data-grid-mode]").forEach(btn => {
+    btn.addEventListener("click", function () {
+      if (this.disabled) return;
+      const mode = this.dataset.gridMode;
+      document
+        .querySelectorAll("[data-grid-mode]")
+        .forEach(b => b.classList.remove("active"));
+      this.classList.add("active");
+
+      // Rebuild Central Angle grids with new mode
+      const quadrayTess = parseInt(
+        document.getElementById("quadrayTessSlider")?.value || "12"
+      );
+      const ivmVisibility = {
+        ivmWX: document.getElementById("planeIvmWX")?.checked ?? true,
+        ivmWY: document.getElementById("planeIvmWY")?.checked ?? true,
+        ivmWZ: document.getElementById("planeIvmWZ")?.checked ?? true,
+        ivmXY: document.getElementById("planeIvmXY")?.checked ?? true,
+        ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
+        ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
+      };
+      renderingAPI.rebuildQuadrayGrids(quadrayTess, ivmVisibility, mode);
+
+      // Rebuild Cartesian grids with same mode
+      const cartesianTess = parseInt(
+        document.getElementById("cartesianTessSlider")?.value || "10"
+      );
+      const cartVisibility = {
+        gridXY: document.getElementById("planeXY")?.checked ?? false,
+        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
+        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
+        cartesianBasis:
+          document.getElementById("showCartesianBasis")?.checked ?? false,
+      };
+      renderingAPI.rebuildCartesianGrids(cartesianTess, cartVisibility, mode);
+    });
+  });
+
   // ========================================================================
   // ROTATION INPUT FIELDS - Per-Axis Bidirectional Conversion (Degrees ↔ Spread)
   // ========================================================================
