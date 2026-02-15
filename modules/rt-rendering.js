@@ -23,6 +23,8 @@ import { RTPapercut } from "./rt-papercut.js";
 import { RTPrimeCuts } from "./rt-prime-cuts.js";
 import { Grids } from "./rt-grids.js";
 import { Nodes } from "./rt-nodes.js";
+import { RTMatrix } from "./rt-matrix-planar.js";
+import { RTRadialMatrix } from "./rt-matrix-radial.js";
 import { Helices } from "./rt-helices.js";
 import { MetaLog } from "./rt-metalog.js";
 import { PenroseTiles, PenroseTiling } from "./rt-penrose.js";
@@ -34,6 +36,18 @@ import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 
 // Re-export PerformanceClock so rt-init.js can import it from here
 export { PerformanceClock };
+
+/** Cached DOM element references — populated once during initScene() */
+const el = {};
+
+function cacheElements() {
+  document.querySelectorAll("[id]").forEach(elem => {
+    // Only cache camelCase IDs (valid JS identifiers)
+    if (/^[a-zA-Z_]\w*$/.test(elem.id)) {
+      el[elem.id] = elem;
+    }
+  });
+}
 
 /**
  * Camera view presets configuration
@@ -533,6 +547,9 @@ export function initScene(THREE, OrbitControls, RT) {
       quadrayCuboctahedronGroup,
     ]);
 
+    // Cache all DOM element references for fast lookup
+    cacheElements();
+
     // Initial render
     updateGeometry();
 
@@ -546,7 +563,7 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function createCartesianGrid() {
     // Read tessellation from slider (dynamic control)
-    const sliderElement = document.getElementById("cartesianTessSlider");
+    const sliderElement = el.cartesianTessSlider;
     const divisions = sliderElement ? parseInt(sliderElement.value) : 10;
 
     // Delegate to Grids module
@@ -576,7 +593,7 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function createIVMPlanes() {
     // Read tessellation from slider (dynamic control)
-    const sliderElement = document.getElementById("quadrayTessSlider");
+    const sliderElement = el.quadrayTessSlider;
     const tessellations = sliderElement ? parseInt(sliderElement.value) : 12;
 
     // Delegate to Grids module
@@ -670,7 +687,7 @@ export function initScene(THREE, OrbitControls, RT) {
    * @returns {string} nodeSize key ("off", "1"-"7", or "packed")
    */
   function getNodeSize() {
-    const slider = document.getElementById("nodeSizeSlider");
+    const slider = el.nodeSizeSlider;
     return slider
       ? Nodes.getNodeSizeFromSlider(slider.value)
       : "4"; // default to Md
@@ -701,6 +718,29 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   /**
+   * Dispose all GPU resources in a group and remove all children.
+   * Must be called instead of raw while-loop removal to prevent VRAM leaks.
+   * @param {THREE.Group} group - Group to clear
+   */
+  function disposeGroup(group) {
+    group.traverse(child => {
+      if (child.geometry) {
+        child.geometry.dispose();
+      }
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(m => m.dispose());
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
+    while (group.children.length > 0) {
+      group.remove(group.children[0]);
+    }
+  }
+
+  /**
    * Render a polyhedron from vertices, edges, faces
    * Uses proper geometry with indexed faces for clean rendering
    * @param {THREE.Group} group - Group to render into
@@ -711,10 +751,8 @@ export function initScene(THREE, OrbitControls, RT) {
    * @param {number} options.lineWidth - Edge line width (default 1)
    */
   function renderPolyhedron(group, geometry, color, opacity, options = {}) {
-    // Clear existing geometry
-    while (group.children.length > 0) {
-      group.remove(group.children[0]);
-    }
+    // Clear existing geometry and free GPU resources
+    disposeGroup(group);
 
     const { vertices, edges, faces } = geometry;
 
@@ -892,7 +930,7 @@ export function initScene(THREE, OrbitControls, RT) {
         // Frequency: edge Q divides by freq²
         // Projection: edge lengths vary based on sphere projection type (in/mid/out/off)
         const tetEdge = parseFloat(
-          document.getElementById("tetScaleSlider").value
+          el.tetScaleSlider.value
         );
         scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
         nodeOptions = {
@@ -901,7 +939,7 @@ export function initScene(THREE, OrbitControls, RT) {
         };
       } else {
         const tetEdge = parseFloat(
-          document.getElementById("tetScaleSlider").value
+          el.tetScaleSlider.value
         );
         scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
       }
@@ -931,7 +969,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
       // Get flatShading preference from checkbox
       const useFlatShading =
-        document.getElementById("nodeFlatShading")?.checked || false;
+        el.nodeFlatShading?.checked || false;
 
       const currentNodeOpacity = getNodeOpacity();
       const effectiveNodeOpacity = currentNodeOpacity * dissolveOpacity;
@@ -953,7 +991,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
         // Mark as vertex node for Papercut section cut detection
         node.userData.isVertexNode = true;
-        node.userData.nodeType = "sphere"; // "sphere" (current) vs "polyhedron" (future)
+        node.userData.nodeType = "sphere";
         node.userData.nodeRadius = nodeRadius;
         node.userData.nodeGeometry = getUseRTNodeGeometry()
           ? "rt"
@@ -1069,8 +1107,8 @@ export function initScene(THREE, OrbitControls, RT) {
       // ═══════════════════════════════════════════════════════════════════════════
       // Prefer numeric input (more precise) over slider
       const userScale = parseFloat(
-        document.getElementById("dodecTilingScaleInput")?.value ||
-          document.getElementById("dodecTilingScale")?.value ||
+        el.dodecTilingScaleInput?.value ||
+          el.dodecTilingScale?.value ||
           "1.0"
       );
       const tilingScale = (faceCircumradius * userScale) / maxExtent;
@@ -1219,6 +1257,21 @@ export function initScene(THREE, OrbitControls, RT) {
   }
 
   /**
+   * Debounced wrapper for slider input events.
+   * Coalesces rapid slider drags to one updateGeometry per animation frame.
+   */
+  let geometryUpdatePending = false;
+  function requestGeometryUpdate() {
+    if (!geometryUpdatePending) {
+      geometryUpdatePending = true;
+      requestAnimationFrame(() => {
+        updateGeometry();
+        geometryUpdatePending = false;
+      });
+    }
+  }
+
+  /**
    * Update all geometry based on current settings
    */
   function updateGeometry() {
@@ -1227,12 +1280,12 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // QUADRAY SYSTEM: Use tet edge length as primary unit
     // For tetrahedron edge length e: halfSize = e / (2√2)
-    const tetEdge = parseFloat(document.getElementById("tetScaleSlider").value);
+    const tetEdge = parseFloat(el.tetScaleSlider.value);
     const scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
-    const opacity = parseFloat(document.getElementById("opacitySlider").value);
+    const opacity = parseFloat(el.opacitySlider.value);
 
     // Point (single vertex - coordinate exploration tool)
-    if (document.getElementById("showPoint")?.checked) {
+    if (el.showPoint?.checked) {
       const pointData = Polyhedra.point(scale);
       renderPolyhedron(pointGroup, pointData, colorPalette.point, opacity);
       pointGroup.userData.type = "point";
@@ -1243,14 +1296,14 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Line (1D primitive - two vertices, one edge)
-    if (document.getElementById("showLine")?.checked) {
+    if (el.showLine?.checked) {
       // Get quadrance from input field (default 1)
       const lineQuadrance = parseFloat(
-        document.getElementById("lineQuadrance")?.value || "1"
+        el.lineQuadrance?.value || "1"
       );
       // Get lineweight from input field (default 2)
       const lineWeight = parseFloat(
-        document.getElementById("lineWeight")?.value || "2"
+        el.lineWeight?.value || "2"
       );
       const lineData = Polyhedra.line(lineQuadrance);
       renderPolyhedron(lineGroup, lineData, colorPalette.line, opacity, {
@@ -1268,22 +1321,22 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Polygon (2D primitive - n vertices, n edges, 1 face)
-    if (document.getElementById("showPolygon")?.checked) {
+    if (el.showPolygon?.checked) {
       // Get circumradius quadrance from input field (default 1)
       const polygonQuadrance = parseFloat(
-        document.getElementById("polygonQuadrance")?.value || "1"
+        el.polygonQuadrance?.value || "1"
       );
       // Get number of sides (default 3 = triangle)
       // Read from numeric input to allow values > 24, fallback to slider
       const polygonSides = parseInt(
-        document.getElementById("polygonSidesInput")?.value ||
-          document.getElementById("polygonSides")?.value ||
+        el.polygonSidesInput?.value ||
+          el.polygonSides?.value ||
           "3"
       );
 
       // Update method info text based on n-gon type (Gauss-Wantzel constructibility)
       // See: Geometry documents/Polygon-Rationalize.md for full classification
-      const polygonMethodInfo = document.getElementById("polygonMethodInfo");
+      const polygonMethodInfo = el.polygonMethodInfo;
       if (polygonMethodInfo) {
         let methodText;
         const names = [
@@ -1358,23 +1411,23 @@ export function initScene(THREE, OrbitControls, RT) {
 
       // Get edge weight from input field (default 2)
       const polygonEdgeWeight = parseFloat(
-        document.getElementById("polygonEdgeWeight")?.value || "2"
+        el.polygonEdgeWeight?.value || "2"
       );
       // Get face visibility
       const polygonShowFace =
-        document.getElementById("polygonShowFace")?.checked !== false;
+        el.polygonShowFace?.checked !== false;
 
       // Check if tiling is enabled
       const tilingEnabled =
-        document.getElementById("polygonEnableTiling")?.checked || false;
+        el.polygonEnableTiling?.checked || false;
       const tilingGenerations = tilingEnabled
         ? parseInt(
-            document.getElementById("polygonTilingGenerations")?.value || "2"
+            el.polygonTilingGenerations?.value || "2"
           )
         : 1;
 
       // Update tiling info text based on polygon type
-      const tilingInfoEl = document.getElementById("polygonTilingInfo");
+      const tilingInfoEl = el.polygonTilingInfo;
       if (tilingInfoEl) {
         if (polygonSides === 3) {
           const tileCount = Math.pow(4, tilingGenerations - 1);
@@ -1554,25 +1607,25 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Prism (3D primitive - 2 N-gon caps + rectangular sides)
-    if (document.getElementById("showPrism")?.checked) {
+    if (el.showPrism?.checked) {
       // Get base circumradius quadrance from input field (default 1)
       const prismBaseQ = parseFloat(
-        document.getElementById("prismBaseQuadrance")?.value || "1"
+        el.prismBaseQuadrance?.value || "1"
       );
       // Get height quadrance from input field (default 1)
       const prismHeightQ = parseFloat(
-        document.getElementById("prismHeightQuadrance")?.value || "1"
+        el.prismHeightQuadrance?.value || "1"
       );
       // Get number of sides (default 6 = hexagonal prism)
       // Read from numeric input to allow values > 24, fallback to slider
       const prismSides = parseInt(
-        document.getElementById("prismSidesInput")?.value ||
-          document.getElementById("prismSides")?.value ||
+        el.prismSidesInput?.value ||
+          el.prismSides?.value ||
           "6"
       );
       // Get face visibility
       const prismShowFaces =
-        document.getElementById("prismShowFaces")?.checked !== false;
+        el.prismShowFaces?.checked !== false;
 
       const prismData = Primitives.prism(prismBaseQ, prismHeightQ, {
         sides: prismSides,
@@ -1594,7 +1647,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
       // Update method info text based on n-gon type (Gauss-Wantzel constructibility)
       // See: Geometry documents/Polygon-Rationalize.md for full classification
-      const prismMethodInfo = document.getElementById("prismMethodInfo");
+      const prismMethodInfo = el.prismMethodInfo;
       if (prismMethodInfo) {
         let methodText;
         const names = [
@@ -1677,22 +1730,22 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Cone (3D primitive - N-gon base + point apex)
-    if (document.getElementById("showCone")?.checked) {
+    if (el.showCone?.checked) {
       // Get base circumradius quadrance from input field (default 1)
       const coneBaseQ = parseFloat(
-        document.getElementById("coneBaseQuadrance")?.value || "1"
+        el.coneBaseQuadrance?.value || "1"
       );
       // Get height quadrance from input field (default 1)
       const coneHeightQ = parseFloat(
-        document.getElementById("coneHeightQuadrance")?.value || "1"
+        el.coneHeightQuadrance?.value || "1"
       );
       // Get number of sides (default 6 = hexagonal cone)
       const coneSides = parseInt(
-        document.getElementById("coneSides")?.value || "6"
+        el.coneSides?.value || "6"
       );
       // Get face visibility
       const coneShowFaces =
-        document.getElementById("coneShowFaces")?.checked !== false;
+        el.coneShowFaces?.checked !== false;
 
       const coneData = Primitives.cone(coneBaseQ, coneHeightQ, {
         sides: coneSides,
@@ -1716,20 +1769,20 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Penrose Tiling (aperiodic tiling with golden ratio)
-    if (document.getElementById("showPenroseTiling")?.checked) {
+    if (el.showPenroseTiling?.checked) {
       // Get common parameters
       const penroseQuadrance = parseFloat(
-        document.getElementById("penroseQuadrance")?.value || "1"
+        el.penroseQuadrance?.value || "1"
       );
       const penroseEdgeWeight = parseFloat(
-        document.getElementById("penroseEdgeWeight")?.value || "2"
+        el.penroseEdgeWeight?.value || "2"
       );
       const penroseShowFace =
-        document.getElementById("penroseShowFace")?.checked !== false;
+        el.penroseShowFace?.checked !== false;
 
       // Check if tiling (deflation) mode is enabled
       const tilingEnabled =
-        document.getElementById("penroseTilingEnabled")?.checked || false;
+        el.penroseTilingEnabled?.checked || false;
 
       let penroseData;
       let tileColor = colorPalette.penroseThick; // Default color
@@ -1741,7 +1794,7 @@ export function initScene(THREE, OrbitControls, RT) {
         );
         const seed = seedRadio ? seedRadio.value : "star";
         const generations = parseInt(
-          document.getElementById("penroseGenerations")?.value || "2"
+          el.penroseGenerations?.value || "2"
         );
 
         // Generate tiling via deflation
@@ -1822,9 +1875,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Tetrahelix 1: Toroidal - uses Quadray axis notation (QW, QX, QY, QZ)
-    if (document.getElementById("showTetrahelix1")?.checked) {
+    if (el.showTetrahelix1?.checked) {
       const tetrahelix1Count = parseInt(
-        document.getElementById("tetrahelix1CountSlider")?.value || "10"
+        el.tetrahelix1CountSlider?.value || "10"
       );
       // Read Quadray axis (QW, QX, QY, QZ) - maps to old A, B, C, D faces
       const axisRadio = document.querySelector(
@@ -1859,9 +1912,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Tetrahelix 2: Linear - Javelin model with both + and - directions
-    if (document.getElementById("showTetrahelix2")?.checked) {
+    if (el.showTetrahelix2?.checked) {
       const tetrahelix2Count = parseInt(
-        document.getElementById("tetrahelix2CountSlider")?.value || "10"
+        el.tetrahelix2CountSlider?.value || "10"
       );
       // Read Quadray axis (QW, QX, QY, QZ)
       const axisRadio = document.querySelector(
@@ -1870,9 +1923,9 @@ export function initScene(THREE, OrbitControls, RT) {
       const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
       // Read direction checkboxes - javelin can show both + and -
       const showPlus =
-        document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
+        el.tetrahelix2DirPlus?.checked ?? true;
       const showMinus =
-        document.getElementById("tetrahelix2DirMinus")?.checked ?? false;
+        el.tetrahelix2DirMinus?.checked ?? false;
 
       // 3021 Rule: Map QW→B, QX→A, QY→C, QZ→D for generator compatibility
       const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
@@ -1914,9 +1967,7 @@ export function initScene(THREE, OrbitControls, RT) {
         tetrahelix2Group.visible = false;
       } else {
         // Clear existing geometry
-        while (tetrahelix2Group.children.length > 0) {
-          tetrahelix2Group.remove(tetrahelix2Group.children[0]);
-        }
+        disposeGroup(tetrahelix2Group);
 
         // Single call with both direction flags
         const tetrahelix2Data = Helices.tetrahelix2(scale, {
@@ -1953,31 +2004,31 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Tetrahelix 3: Linear with octahedral seed
-    if (document.getElementById("showTetrahelix3")?.checked) {
+    if (el.showTetrahelix3?.checked) {
       const tetrahelix3Count = parseInt(
-        document.getElementById("tetrahelix3CountSlider")?.value || "10"
+        el.tetrahelix3CountSlider?.value || "10"
       );
       // Read individual strand checkboxes A-H
       const enabledStrands = {
-        A: document.getElementById("tetrahelix3StrandA")?.checked || false,
-        B: document.getElementById("tetrahelix3StrandB")?.checked || false,
-        C: document.getElementById("tetrahelix3StrandC")?.checked || false,
-        D: document.getElementById("tetrahelix3StrandD")?.checked || false,
-        E: document.getElementById("tetrahelix3StrandE")?.checked || false,
-        F: document.getElementById("tetrahelix3StrandF")?.checked || false,
-        G: document.getElementById("tetrahelix3StrandG")?.checked || false,
-        H: document.getElementById("tetrahelix3StrandH")?.checked || false,
+        A: el.tetrahelix3StrandA?.checked || false,
+        B: el.tetrahelix3StrandB?.checked || false,
+        C: el.tetrahelix3StrandC?.checked || false,
+        D: el.tetrahelix3StrandD?.checked || false,
+        E: el.tetrahelix3StrandE?.checked || false,
+        F: el.tetrahelix3StrandF?.checked || false,
+        G: el.tetrahelix3StrandG?.checked || false,
+        H: el.tetrahelix3StrandH?.checked || false,
       };
       // Read chirality checkboxes A-H (checked = RH, unchecked = LH)
       const strandChirality = {
-        A: document.getElementById("tetrahelix3ChiralA")?.checked !== false,
-        B: document.getElementById("tetrahelix3ChiralB")?.checked !== false,
-        C: document.getElementById("tetrahelix3ChiralC")?.checked !== false,
-        D: document.getElementById("tetrahelix3ChiralD")?.checked !== false,
-        E: document.getElementById("tetrahelix3ChiralE")?.checked !== false,
-        F: document.getElementById("tetrahelix3ChiralF")?.checked !== false,
-        G: document.getElementById("tetrahelix3ChiralG")?.checked !== false,
-        H: document.getElementById("tetrahelix3ChiralH")?.checked !== false,
+        A: el.tetrahelix3ChiralA?.checked !== false,
+        B: el.tetrahelix3ChiralB?.checked !== false,
+        C: el.tetrahelix3ChiralC?.checked !== false,
+        D: el.tetrahelix3ChiralD?.checked !== false,
+        E: el.tetrahelix3ChiralE?.checked !== false,
+        F: el.tetrahelix3ChiralF?.checked !== false,
+        G: el.tetrahelix3ChiralG?.checked !== false,
+        H: el.tetrahelix3ChiralH?.checked !== false,
       };
 
       const tetrahelix3Data = Helices.tetrahelix3(scale, {
@@ -2003,7 +2054,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Cube (Blue)
-    if (document.getElementById("showCube").checked) {
+    if (el.showCube.checked) {
       const cube = Polyhedra.cube(scale);
       renderPolyhedron(cubeGroup, cube, colorPalette.cube, opacity);
       cubeGroup.visible = true;
@@ -2012,17 +2063,15 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Cube Matrix (IVM Array)
-    if (document.getElementById("showCubeMatrix").checked) {
+    if (el.showCubeMatrix.checked) {
       const matrixSize = parseInt(
-        document.getElementById("cubeMatrixSizeSlider")?.value || "1"
+        el.cubeMatrixSizeSlider?.value || "1"
       );
       const rotate45 =
-        document.getElementById("cubeMatrixRotate45")?.checked || false;
+        el.cubeMatrixRotate45?.checked || false;
 
       // Clear existing cube matrix group
-      while (cubeMatrixGroup.children.length > 0) {
-        cubeMatrixGroup.remove(cubeMatrixGroup.children[0]);
-      }
+      disposeGroup(cubeMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = cubeMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2037,19 +2086,18 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate cube matrix
-      import("./rt-matrix-planar.js").then(MatrixModule => {
-        const { RTMatrix } = MatrixModule;
-        const cubeMatrix = RTMatrix.createCubeMatrix(
-          matrixSize,
-          scale,
-          rotate45,
-          effectiveOpacity,
-          colorPalette.cubeMatrix,
-          THREE
-        );
-        cubeMatrixGroup.add(cubeMatrix);
+      const cubeMatrix = RTMatrix.createCubeMatrix(
+        matrixSize,
+        scale,
+        rotate45,
+        effectiveOpacity,
+        colorPalette.cubeMatrix,
+        THREE
+      );
+      cubeMatrixGroup.add(cubeMatrix);
 
-        // Add vertex nodes if enabled
+      // Add vertex nodes if enabled
+      {
         const nodeSize = getNodeSize();
         const showNodes = nodeSize !== "off";
 
@@ -2063,21 +2111,21 @@ export function initScene(THREE, OrbitControls, RT) {
             nodeSize
           );
         }
-      });
+      }
       cubeMatrixGroup.visible = true;
     } else {
       cubeMatrixGroup.visible = false;
     }
 
     // Tetrahedron (Yellow) - with optional truncation
-    if (document.getElementById("showTetrahedron").checked) {
+    if (el.showTetrahedron.checked) {
       let tetra;
 
       // Check if truncation is enabled
-      const truncCheckbox = document.getElementById("showTruncatedTetrahedron");
+      const truncCheckbox = el.showTruncatedTetrahedron;
       if (truncCheckbox && truncCheckbox.checked) {
         // Get truncation value from slider
-        const truncSlider = document.getElementById("truncationTetraSlider");
+        const truncSlider = el.truncationTetraSlider;
         const truncation = truncSlider ? parseFloat(truncSlider.value) : 1 / 3;
         tetra = Polyhedra.truncatedTetrahedron(scale, truncation);
       } else {
@@ -2147,18 +2195,14 @@ export function initScene(THREE, OrbitControls, RT) {
     });
 
     // Dual Tetrahedron (Magenta) - with optional truncation
-    if (document.getElementById("showDualTetrahedron").checked) {
+    if (el.showDualTetrahedron.checked) {
       let dualTetra;
 
       // Check if truncation is enabled
-      const truncDualCheckbox = document.getElementById(
-        "showTruncatedDualTetrahedron"
-      );
+      const truncDualCheckbox = el.showTruncatedDualTetrahedron;
       if (truncDualCheckbox && truncDualCheckbox.checked) {
         // Get truncation value from slider
-        const truncDualSlider = document.getElementById(
-          "truncationDualTetraSlider"
-        );
+        const truncDualSlider = el.truncationDualTetraSlider;
         const truncation = truncDualSlider
           ? parseFloat(truncDualSlider.value)
           : 1 / 3;
@@ -2191,17 +2235,15 @@ export function initScene(THREE, OrbitControls, RT) {
     });
 
     // Tet Matrix (IVM Array)
-    if (document.getElementById("showTetMatrix").checked) {
+    if (el.showTetMatrix.checked) {
       const matrixSize = parseInt(
-        document.getElementById("tetMatrixSizeSlider")?.value || "1"
+        el.tetMatrixSizeSlider?.value || "1"
       );
       const rotate45 =
-        document.getElementById("tetMatrixRotate45")?.checked || false;
+        el.tetMatrixRotate45?.checked || false;
 
       // Clear existing tet matrix group
-      while (tetMatrixGroup.children.length > 0) {
-        tetMatrixGroup.remove(tetMatrixGroup.children[0]);
-      }
+      disposeGroup(tetMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = tetMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2216,8 +2258,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate tet matrix
-      import("./rt-matrix-planar.js").then(MatrixModule => {
-        const { RTMatrix } = MatrixModule;
+      {
         const tetMatrix = RTMatrix.createTetrahedronMatrix(
           matrixSize,
           scale,
@@ -2243,14 +2284,14 @@ export function initScene(THREE, OrbitControls, RT) {
             "tetrahedron"
           );
         }
-      });
+      }
       tetMatrixGroup.visible = true;
     } else {
       tetMatrixGroup.visible = false;
     }
 
     // Octahedron (Green)
-    if (document.getElementById("showOctahedron").checked) {
+    if (el.showOctahedron.checked) {
       const octa = Polyhedra.octahedron(scale);
       renderPolyhedron(octahedronGroup, octa, colorPalette.octahedron, opacity);
       octahedronGroup.visible = true;
@@ -2271,19 +2312,17 @@ export function initScene(THREE, OrbitControls, RT) {
     });
 
     // Octa Matrix (IVM Array)
-    if (document.getElementById("showOctaMatrix").checked) {
+    if (el.showOctaMatrix.checked) {
       const matrixSize = parseInt(
-        document.getElementById("octaMatrixSizeSlider")?.value || "1"
+        el.octaMatrixSizeSlider?.value || "1"
       );
       const rotate45 =
-        document.getElementById("octaMatrixRotate45")?.checked || false;
+        el.octaMatrixRotate45?.checked || false;
       const colinearEdges =
-        document.getElementById("octaMatrixColinearEdges")?.checked || false;
+        el.octaMatrixColinearEdges?.checked || false;
 
       // Clear existing octa matrix group
-      while (octaMatrixGroup.children.length > 0) {
-        octaMatrixGroup.remove(octaMatrixGroup.children[0]);
-      }
+      disposeGroup(octaMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = octaMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2299,8 +2338,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate octa matrix
-      import("./rt-matrix-planar.js").then(MatrixModule => {
-        const { RTMatrix } = MatrixModule;
+      {
         const octaMatrix = RTMatrix.createOctahedronMatrix(
           matrixSize,
           scale,
@@ -2328,14 +2366,14 @@ export function initScene(THREE, OrbitControls, RT) {
             colinearEdges
           );
         }
-      });
+      }
       octaMatrixGroup.visible = true;
     } else {
       octaMatrixGroup.visible = false;
     }
 
     // Icosahedron (Cyan)
-    if (document.getElementById("showIcosahedron").checked) {
+    if (el.showIcosahedron.checked) {
       const icosa = Polyhedra.icosahedron(scale);
       renderPolyhedron(
         icosahedronGroup,
@@ -2349,13 +2387,13 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Dodecahedron (Yellow) - with Face Tiling option
-    if (document.getElementById("showDodecahedron").checked) {
+    if (el.showDodecahedron.checked) {
       // Check for face tiling - applies pentagon tiling to each pentagonal face
       const faceTilingEnabled =
-        document.getElementById("dodecahedronFaceTiling")?.checked || false;
+        el.dodecahedronFaceTiling?.checked || false;
       const tilingGenerations = faceTilingEnabled
         ? parseInt(
-            document.getElementById("polygonTilingGenerations")?.value || "1"
+            el.polygonTilingGenerations?.value || "1"
           )
         : 1;
 
@@ -2402,9 +2440,9 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Geodesic Icosahedron (Orange - complementary to base Cyan)
     // Custom handling to support Face Tiling option
-    if (document.getElementById("showGeodesicIcosahedron").checked) {
+    if (el.showGeodesicIcosahedron.checked) {
       const frequency = parseInt(
-        document.getElementById("geodesicIcosaFrequency").value
+        el.geodesicIcosaFrequency.value
       );
       const projectionRadio = document.querySelector(
         'input[name="geodesicIcosaProjection"]:checked'
@@ -2414,10 +2452,10 @@ export function initScene(THREE, OrbitControls, RT) {
 
       // Check for face tiling - multiplies effective frequency
       const faceTilingEnabled =
-        document.getElementById("geodesicIcosaFaceTiling")?.checked || false;
+        el.geodesicIcosaFaceTiling?.checked || false;
       const tilingGenerations = faceTilingEnabled
         ? parseInt(
-            document.getElementById("polygonTilingGenerations")?.value || "1"
+            el.polygonTilingGenerations?.value || "1"
           )
         : 1;
 
@@ -2462,7 +2500,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Dual Icosahedron (Orange - reciprocal complementary: matches base geodesic)
-    if (document.getElementById("showDualIcosahedron").checked) {
+    if (el.showDualIcosahedron.checked) {
       const dualIcosa = Polyhedra.dualIcosahedron(scale);
       renderPolyhedron(
         dualIcosahedronGroup,
@@ -2488,7 +2526,7 @@ export function initScene(THREE, OrbitControls, RT) {
     });
 
     // Cuboctahedron (Lime green - Vector Equilibrium)
-    if (document.getElementById("showCuboctahedron").checked) {
+    if (el.showCuboctahedron.checked) {
       // Scale by √2 to match matrix geometry (vertices at scale, not scale/√2)
       const cubocta = Polyhedra.cuboctahedron(scale * Math.sqrt(2));
       renderPolyhedron(
@@ -2503,17 +2541,15 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Cuboctahedron Matrix (Vector Equilibrium Array)
-    if (document.getElementById("showCuboctahedronMatrix").checked) {
+    if (el.showCuboctahedronMatrix.checked) {
       const matrixSize = parseInt(
-        document.getElementById("cuboctaMatrixSizeSlider")?.value || "1"
+        el.cuboctaMatrixSizeSlider?.value || "1"
       );
       const rotate45 =
-        document.getElementById("cuboctaMatrixRotate45")?.checked || false;
+        el.cuboctaMatrixRotate45?.checked || false;
 
       // Clear existing cubocta matrix group
-      while (cuboctaMatrixGroup.children.length > 0) {
-        cuboctaMatrixGroup.remove(cuboctaMatrixGroup.children[0]);
-      }
+      disposeGroup(cuboctaMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = cuboctaMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2528,8 +2564,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate cuboctahedron matrix
-      import("./rt-matrix-planar.js").then(MatrixModule => {
-        const { RTMatrix } = MatrixModule;
+      {
         const cuboctaMatrix = RTMatrix.createCuboctahedronMatrix(
           matrixSize,
           scale,
@@ -2555,14 +2590,14 @@ export function initScene(THREE, OrbitControls, RT) {
             "cuboctahedron"
           );
         }
-      });
+      }
       cuboctaMatrixGroup.visible = true;
     } else {
       cuboctaMatrixGroup.visible = false;
     }
 
     // Rhombic Dodecahedron (Golden Orange)
-    if (document.getElementById("showRhombicDodecahedron").checked) {
+    if (el.showRhombicDodecahedron.checked) {
       // Scale by √2 to match matrix geometry (axial vertices at scale, not scale/√2)
       const rhombicDodec = Polyhedra.rhombicDodecahedron(scale * Math.sqrt(2));
       renderPolyhedron(
@@ -2579,9 +2614,9 @@ export function initScene(THREE, OrbitControls, RT) {
     // ========== QUADRAY DEMONSTRATORS ==========
 
     // Quadray Tetrahedron (Native WXYZ definition)
-    if (document.getElementById("showQuadrayTetrahedron")?.checked) {
+    if (el.showQuadrayTetrahedron?.checked) {
       const normalize =
-        document.getElementById("quadrayTetraNormalize")?.checked ?? true;
+        el.quadrayTetraNormalize?.checked ?? true;
       const quadrayTet = Polyhedra.quadrayTetrahedron(scale, {
         normalize: normalize,
       });
@@ -2602,9 +2637,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Quadray Tetrahedron Deformed (Demonstrates 4th DOF)
-    if (document.getElementById("showQuadrayTetraDeformed")?.checked) {
+    if (el.showQuadrayTetraDeformed?.checked) {
       const zStretch = parseFloat(
-        document.getElementById("quadrayTetraZStretch")?.value || "2"
+        el.quadrayTetraZStretch?.value || "2"
       );
       const quadrayTetDeformed = Polyhedra.quadrayTetrahedronDeformed(
         scale,
@@ -2629,9 +2664,9 @@ export function initScene(THREE, OrbitControls, RT) {
     // Quadray Cuboctahedron (Vector Equilibrium - 4D Native)
     // NOTE: The central vectors visible when this is shown are from quadrayBasis (WXYZ arrows),
     // not from the cuboctahedron edges. Toggle "Show Quadray Basis" to hide them if desired.
-    if (document.getElementById("showQuadrayCuboctahedron")?.checked) {
+    if (el.showQuadrayCuboctahedron?.checked) {
       const normalize =
-        document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
+        el.quadrayCuboctaNormalize?.checked ?? true;
       // Scale by 1/2 to match XYZ cuboctahedron size
       // Quadray {2,1,1,0} normalized produces vertices at distance 2√2 from origin
       // XYZ cuboctahedron (at same slider scale) has vertices at distance √2 from origin
@@ -2655,9 +2690,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Quadray Octahedron
-    if (document.getElementById("showQuadrayOctahedron")?.checked) {
+    if (el.showQuadrayOctahedron?.checked) {
       const normalize =
-        document.getElementById("quadrayOctaNormalize")?.checked ?? true;
+        el.quadrayOctaNormalize?.checked ?? true;
       const quadrayOcta = Polyhedra.quadrayOctahedron(scale, {
         normalize: normalize,
       });
@@ -2677,9 +2712,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Quadray Truncated Tetrahedron (7-gon projection source)
-    if (document.getElementById("showQuadrayTruncatedTet")?.checked) {
+    if (el.showQuadrayTruncatedTet?.checked) {
       const normalize =
-        document.getElementById("quadrayTruncTetNormalize")?.checked ?? true;
+        el.quadrayTruncTetNormalize?.checked ?? true;
       const quadrayTruncTet = Polyhedra.quadrayTruncatedTetrahedron(scale, {
         normalize: normalize,
       });
@@ -2702,9 +2737,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Quadray Stella Octangula (Star Tetrahedron - compound of two tetrahedra)
-    if (document.getElementById("showQuadrayStellaOctangula")?.checked) {
+    if (el.showQuadrayStellaOctangula?.checked) {
       const normalize =
-        document.getElementById("quadrayStellaOctangulaNormalize")?.checked ??
+        el.quadrayStellaOctangulaNormalize?.checked ??
         true;
       const stellaOcta = Polyhedra.quadrayStellaOctangula(scale, {
         normalize: normalize,
@@ -2729,11 +2764,9 @@ export function initScene(THREE, OrbitControls, RT) {
     // Single source of truth for prime hull projections
 
     // Prime Truncated Tetrahedron (5-gon)
-    if (document.getElementById("showPrimeTruncTet")?.checked) {
+    if (el.showPrimeTruncTet?.checked) {
       // Clear existing group
-      while (primeTruncTetGroup.children.length > 0) {
-        primeTruncTetGroup.remove(primeTruncTetGroup.children[0]);
-      }
+      disposeGroup(primeTruncTetGroup);
 
       // Use base truncated tetrahedron - matches Python rt_polyhedra.py exactly
       const truncTet = Polyhedra.truncatedTetrahedron(scale, 1 / 3);
@@ -2756,11 +2789,9 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Prime Compound (TruncTet + DualTet) for 7-gon
     // Uses dual tet with unit-sphere normalization for robust hull projection
-    if (document.getElementById("showPrimeCompoundTet")?.checked) {
+    if (el.showPrimeCompoundTet?.checked) {
       // Clear existing group
-      while (primeCompoundTetGroup.children.length > 0) {
-        primeCompoundTetGroup.remove(primeCompoundTetGroup.children[0]);
-      }
+      disposeGroup(primeCompoundTetGroup);
 
       // Dual tet compound: all vertices on unit sphere × scale
       const compound = Polyhedra.compoundTruncTetDualTet(scale, 1 / 3);
@@ -2801,11 +2832,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Prime Compound (TruncTet + Icosa) for 11/13-gon
-    if (document.getElementById("showPrimeCompoundIcosa")?.checked) {
+    if (el.showPrimeCompoundIcosa?.checked) {
       // Clear existing group
-      while (primeCompoundIcosaGroup.children.length > 0) {
-        primeCompoundIcosaGroup.remove(primeCompoundIcosaGroup.children[0]);
-      }
+      disposeGroup(primeCompoundIcosaGroup);
 
       // Use base compound function - matches Python rt_polyhedra.py exactly
       const compound = Polyhedra.compoundTruncTetIcosa(scale, 1 / 3);
@@ -2846,10 +2875,8 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Prime Geodesic Tet f=2 (single-poly 7-gon)
-    if (document.getElementById("showPrimeGeoTetF2")?.checked) {
-      while (primeGeoTetF2Group.children.length > 0) {
-        primeGeoTetF2Group.remove(primeGeoTetF2Group.children[0]);
-      }
+    if (el.showPrimeGeoTetF2?.checked) {
+      disposeGroup(primeGeoTetF2Group);
 
       const geoTet = Polyhedra.geodesicTetrahedron(scale, 2, "out");
       renderPolyhedron(
@@ -2869,10 +2896,8 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Prime Geodesic Tet f=4 (single-poly 11/13-gon)
-    if (document.getElementById("showPrimeGeoTetF4")?.checked) {
-      while (primeGeoTetF4Group.children.length > 0) {
-        primeGeoTetF4Group.remove(primeGeoTetF4Group.children[0]);
-      }
+    if (el.showPrimeGeoTetF4?.checked) {
+      disposeGroup(primeGeoTetF4Group);
 
       const geoTet = Polyhedra.geodesicTetrahedron(scale, 4, "out");
       renderPolyhedron(
@@ -2892,20 +2917,18 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
-    if (document.getElementById("showRhombicDodecMatrix").checked) {
+    if (el.showRhombicDodecMatrix.checked) {
       const matrixSize = parseInt(
-        document.getElementById("rhombicDodecMatrixSizeSlider")?.value || "1"
+        el.rhombicDodecMatrixSizeSlider?.value || "1"
       );
       const rotate45 =
-        document.getElementById("rhombicDodecMatrixRotate45")?.checked || false;
+        el.rhombicDodecMatrixRotate45?.checked || false;
       const faceCoplanar =
-        document.getElementById("rhombicDodecMatrixFaceCoplanar")?.checked ||
+        el.rhombicDodecMatrixFaceCoplanar?.checked ||
         false;
 
       // Clear existing rhombic dodec matrix group
-      while (rhombicDodecMatrixGroup.children.length > 0) {
-        rhombicDodecMatrixGroup.remove(rhombicDodecMatrixGroup.children[0]);
-      }
+      disposeGroup(rhombicDodecMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = rhombicDodecMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2921,8 +2944,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate rhombic dodecahedron matrix
-      import("./rt-matrix-planar.js").then(MatrixModule => {
-        const { RTMatrix } = MatrixModule;
+      {
         const rhombicDodecMatrix = RTMatrix.createRhombicDodecahedronMatrix(
           matrixSize,
           scale,
@@ -2950,7 +2972,7 @@ export function initScene(THREE, OrbitControls, RT) {
             faceCoplanar
           );
         }
-      });
+      }
       rhombicDodecMatrixGroup.visible = true;
     } else {
       rhombicDodecMatrixGroup.visible = false;
@@ -2959,17 +2981,15 @@ export function initScene(THREE, OrbitControls, RT) {
     // ========== RADIAL MATRICES ==========
 
     // Radial Cube Matrix (concentric shell expansion)
-    if (document.getElementById("showRadialCubeMatrix")?.checked) {
+    if (el.showRadialCubeMatrix?.checked) {
       const frequency = parseInt(
-        document.getElementById("radialCubeFreqSlider")?.value || "1"
+        el.radialCubeFreqSlider?.value || "1"
       );
       const spaceFilling =
-        document.getElementById("radialCubeSpaceFill")?.checked ?? true;
+        el.radialCubeSpaceFill?.checked ?? true;
 
       // Clear existing radial cube matrix group
-      while (radialCubeMatrixGroup.children.length > 0) {
-        radialCubeMatrixGroup.remove(radialCubeMatrixGroup.children[0]);
-      }
+      disposeGroup(radialCubeMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = radialCubeMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -2984,8 +3004,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate radial cube matrix
-      import("./rt-matrix-radial.js").then(RadialModule => {
-        const { RTRadialMatrix } = RadialModule;
+      {
         const radialCubeMatrix = RTRadialMatrix.createRadialCubeMatrix(
           frequency,
           scale,
@@ -3016,7 +3035,7 @@ export function initScene(THREE, OrbitControls, RT) {
             "cube"
           );
         }
-      });
+      }
       radialCubeMatrixGroup.visible = true;
     } else {
       radialCubeMatrixGroup.visible = false;
@@ -3024,18 +3043,14 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Radial Rhombic Dodecahedron Matrix (FCC lattice expansion)
     // RD is inherently space-filling - no toggle needed
-    if (document.getElementById("showRadialRhombicDodecMatrix")?.checked) {
+    if (el.showRadialRhombicDodecMatrix?.checked) {
       const frequency = parseInt(
-        document.getElementById("radialRhombicDodecFreqSlider")?.value || "1"
+        el.radialRhombicDodecFreqSlider?.value || "1"
       );
       const spaceFilling = true; // RD always space-fills (no voids possible)
 
       // Clear existing radial rhombic dodec matrix group
-      while (radialRhombicDodecMatrixGroup.children.length > 0) {
-        radialRhombicDodecMatrixGroup.remove(
-          radialRhombicDodecMatrixGroup.children[0]
-        );
-      }
+      disposeGroup(radialRhombicDodecMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = radialRhombicDodecMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -3050,8 +3065,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate radial rhombic dodecahedron matrix
-      import("./rt-matrix-radial.js").then(RadialModule => {
-        const { RTRadialMatrix } = RadialModule;
+      {
         const radialRhombicDodecMatrix =
           RTRadialMatrix.createRadialRhombicDodecMatrix(
             frequency,
@@ -3083,26 +3097,24 @@ export function initScene(THREE, OrbitControls, RT) {
             "rhombicDodecahedron"
           );
         }
-      });
+      }
       radialRhombicDodecMatrixGroup.visible = true;
     } else {
       radialRhombicDodecMatrixGroup.visible = false;
     }
 
     // Radial Tetrahedron Matrix (Phase 3)
-    if (document.getElementById("showRadialTetrahedronMatrix")?.checked) {
+    if (el.showRadialTetrahedronMatrix?.checked) {
       const frequency = parseInt(
-        document.getElementById("radialTetFreqSlider")?.value || "1"
+        el.radialTetFreqSlider?.value || "1"
       );
 
       // Clear existing radial tet matrix group
-      while (radialTetMatrixGroup.children.length > 0) {
-        radialTetMatrixGroup.remove(radialTetMatrixGroup.children[0]);
-      }
+      disposeGroup(radialTetMatrixGroup);
 
       // Get IVM Mode checkbox value
       const ivmMode =
-        document.getElementById("radialTetIVMMode")?.checked || false;
+        el.radialTetIVMMode?.checked || false;
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = radialTetMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -3117,8 +3129,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate radial tetrahedron matrix
-      import("./rt-matrix-radial.js").then(RadialModule => {
-        const { RTRadialMatrix } = RadialModule;
+      {
         const radialTetMatrix = RTRadialMatrix.createRadialTetrahedronMatrix(
           frequency,
           scale,
@@ -3150,28 +3161,26 @@ export function initScene(THREE, OrbitControls, RT) {
             "tetrahedron"
           );
         }
-      });
+      }
       radialTetMatrixGroup.visible = true;
     } else {
       radialTetMatrixGroup.visible = false;
     }
 
     // Radial Octahedron Matrix (Phase 3)
-    if (document.getElementById("showRadialOctahedronMatrix")?.checked) {
+    if (el.showRadialOctahedronMatrix?.checked) {
       const frequency = parseInt(
-        document.getElementById("radialOctFreqSlider")?.value || "1"
+        el.radialOctFreqSlider?.value || "1"
       );
 
       // Clear existing radial oct matrix group
-      while (radialOctMatrixGroup.children.length > 0) {
-        radialOctMatrixGroup.remove(radialOctMatrixGroup.children[0]);
-      }
+      disposeGroup(radialOctMatrixGroup);
 
       // Get IVM scale checkbox value
       // ivmScaleOnly = true: 2× size with taxicab positioning (for nesting into tet matrix)
       // ivmScale = false: keeps taxicab positioning (not FCC lattice)
       const ivmScaleOnly =
-        document.getElementById("radialOctIVMScale")?.checked || false;
+        el.radialOctIVMScale?.checked || false;
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = radialOctMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -3186,8 +3195,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate radial octahedron matrix
-      import("./rt-matrix-radial.js").then(RadialModule => {
-        const { RTRadialMatrix } = RadialModule;
+      {
         const radialOctMatrix = RTRadialMatrix.createRadialOctahedronMatrix(
           frequency,
           scale,
@@ -3232,22 +3240,20 @@ export function initScene(THREE, OrbitControls, RT) {
             ivmScaleOnly // Apply 45° rotation for IVM mode
           );
         }
-      });
+      }
       radialOctMatrixGroup.visible = true;
     } else {
       radialOctMatrixGroup.visible = false;
     }
 
     // Radial Cuboctahedron (VE) Matrix (Phase 3)
-    if (document.getElementById("showRadialCuboctahedronMatrix")?.checked) {
+    if (el.showRadialCuboctahedronMatrix?.checked) {
       const frequency = parseInt(
-        document.getElementById("radialVEFreqSlider")?.value || "1"
+        el.radialVEFreqSlider?.value || "1"
       );
 
       // Clear existing radial VE matrix group
-      while (radialVEMatrixGroup.children.length > 0) {
-        radialVEMatrixGroup.remove(radialVEMatrixGroup.children[0]);
-      }
+      disposeGroup(radialVEMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
       const dissolveOpacity = radialVEMatrixGroup.userData.dissolveOpacity ?? 1.0;
@@ -3261,8 +3267,7 @@ export function initScene(THREE, OrbitControls, RT) {
       };
 
       // Generate radial cuboctahedron matrix
-      import("./rt-matrix-radial.js").then(RadialModule => {
-        const { RTRadialMatrix } = RadialModule;
+      {
         const radialVEMatrix = RTRadialMatrix.createRadialCuboctahedronMatrix(
           frequency,
           scale,
@@ -3292,7 +3297,7 @@ export function initScene(THREE, OrbitControls, RT) {
             "cuboctahedron"
           );
         }
-      });
+      }
       radialVEMatrixGroup.visible = true;
     } else {
       radialVEMatrixGroup.visible = false;
@@ -3300,7 +3305,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Scale basis vectors to match current slider values
     // Cartesian basis vectors scale with cube edge length
-    const cubeEdge = parseFloat(document.getElementById("scaleSlider").value);
+    const cubeEdge = parseFloat(el.scaleSlider.value);
     if (cartesianBasis) {
       cartesianBasis.scale.set(cubeEdge, cubeEdge, cubeEdge);
     }
@@ -3312,9 +3317,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // (tetEdge already declared at top of function)
     if (quadrayBasis) {
       // Clear existing basis
-      while (quadrayBasis.children.length > 0) {
-        quadrayBasis.remove(quadrayBasis.children[0]);
-      }
+      disposeGroup(quadrayBasis);
 
       // Recreate with current tetEdge value
       const gridInterval = RT.PureRadicals.QUADRAY_GRID_INTERVAL; // √6/4 ≈ 0.612
@@ -3344,7 +3347,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Auto-refresh projection if user has it enabled (check DOM checkbox as source of truth,
     // since hideProjection() may have been called during the geometry rebuild cycle)
-    const projCheckbox = document.getElementById("enableProjection");
+    const projCheckbox = el.enableProjection;
     if (projCheckbox?.checked && window.RTProjections) {
       // Re-find the current visible polyhedron (may have changed during rebuild)
       let projTarget = null;
@@ -3389,18 +3392,18 @@ export function initScene(THREE, OrbitControls, RT) {
     // Suppress MetaLog during stats rebuild — these Polyhedra calls exist
     // only to extract V/E/F counts for the info panel, not to log geometry.
     MetaLog.suppress();
-    const stats = document.getElementById("polyhedraStats");
+    const stats = el.polyhedraStats;
     let html = "";
 
-    if (document.getElementById("showPoint")?.checked) {
+    if (el.showPoint?.checked) {
       html += `<div><strong>Point:</strong></div>`;
       html += `<div>V: 1, E: 0, F: 0</div>`;
       html += `<div>Euler: N/A (degenerate)</div>`;
     }
 
-    if (document.getElementById("showLine")?.checked) {
+    if (el.showLine?.checked) {
       const lineQ = parseFloat(
-        document.getElementById("lineQuadrance")?.value || "1"
+        el.lineQuadrance?.value || "1"
       );
       const lineL = Math.sqrt(lineQ);
       html += `<div style="margin-top: 10px;"><strong>Line:</strong></div>`;
@@ -3409,13 +3412,13 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Q: ${lineQ.toFixed(4)}, L: ${lineL.toFixed(4)}</div>`;
     }
 
-    if (document.getElementById("showPolygon")?.checked) {
+    if (el.showPolygon?.checked) {
       const polyQ = parseFloat(
-        document.getElementById("polygonQuadrance")?.value || "1"
+        el.polygonQuadrance?.value || "1"
       );
       const polySides = parseInt(
-        document.getElementById("polygonSidesInput")?.value ||
-          document.getElementById("polygonSides")?.value ||
+        el.polygonSidesInput?.value ||
+          el.polygonSides?.value ||
           "3"
       );
       const polyR = Math.sqrt(polyQ);
@@ -3423,7 +3426,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const spread = Math.pow(Math.sin(Math.PI / polySides), 2);
       const polyEdgeQ = 4 * polyQ * spread; // RT-pure formula
       const polyEdgeL = Math.sqrt(polyEdgeQ);
-      const showFace = document.getElementById("polygonShowFace")?.checked;
+      const showFace = el.polygonShowFace?.checked;
       const faceCount = showFace ? 1 : 0;
       html += `<div style="margin-top: 10px;"><strong>Polygon (${polySides}-gon):</strong></div>`;
       html += `<div>V: ${polySides}, E: ${polySides}, F: ${faceCount}</div>`;
@@ -3432,20 +3435,20 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Q_edge: ${polyEdgeQ.toFixed(4)}, edge: ${polyEdgeL.toFixed(4)}</div>`;
     }
 
-    if (document.getElementById("showPrism")?.checked) {
+    if (el.showPrism?.checked) {
       const prismBaseQ = parseFloat(
-        document.getElementById("prismBaseQuadrance")?.value || "1"
+        el.prismBaseQuadrance?.value || "1"
       );
       const prismHeightQ = parseFloat(
-        document.getElementById("prismHeightQuadrance")?.value || "1"
+        el.prismHeightQuadrance?.value || "1"
       );
       const prismSides = parseInt(
-        document.getElementById("prismSidesInput")?.value ||
-          document.getElementById("prismSides")?.value ||
+        el.prismSidesInput?.value ||
+          el.prismSides?.value ||
           "6"
       );
       const prismShowFaces =
-        document.getElementById("prismShowFaces")?.checked !== false;
+        el.prismShowFaces?.checked !== false;
       const prismR = Math.sqrt(prismBaseQ);
       const prismH = Math.sqrt(prismHeightQ);
       // Math.sin justified: arbitrary n-gon spread calculation
@@ -3463,18 +3466,18 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Q_baseEdge: ${prismEdgeQ.toFixed(4)}</div>`;
     }
 
-    if (document.getElementById("showCone")?.checked) {
+    if (el.showCone?.checked) {
       const coneBaseQ = parseFloat(
-        document.getElementById("coneBaseQuadrance")?.value || "1"
+        el.coneBaseQuadrance?.value || "1"
       );
       const coneHeightQ = parseFloat(
-        document.getElementById("coneHeightQuadrance")?.value || "1"
+        el.coneHeightQuadrance?.value || "1"
       );
       const coneSides = parseInt(
-        document.getElementById("coneSides")?.value || "6"
+        el.coneSides?.value || "6"
       );
       const coneShowFaces =
-        document.getElementById("coneShowFaces")?.checked !== false;
+        el.coneShowFaces?.checked !== false;
       const coneR = Math.sqrt(coneBaseQ);
       const coneH = Math.sqrt(coneHeightQ);
       const coneSlantQ = coneBaseQ + coneHeightQ;
@@ -3491,9 +3494,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Tetrahelix 1 stats (toroidal)
-    if (document.getElementById("showTetrahelix1")?.checked) {
+    if (el.showTetrahelix1?.checked) {
       const tetrahelix1Count = parseInt(
-        document.getElementById("tetrahelix1CountSlider")?.value || "10"
+        el.tetrahelix1CountSlider?.value || "10"
       );
       const axisRadio = document.querySelector(
         'input[name="tetrahelix1Axis"]:checked'
@@ -3516,9 +3519,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Tetrahelix 2 stats (linear with strands) - uses Quadray axis notation
-    if (document.getElementById("showTetrahelix2")?.checked) {
+    if (el.showTetrahelix2?.checked) {
       const tetrahelix2Count = parseInt(
-        document.getElementById("tetrahelix2CountSlider")?.value || "10"
+        el.tetrahelix2CountSlider?.value || "10"
       );
       const axisRadio = document.querySelector(
         'input[name="tetrahelix2Axis"]:checked'
@@ -3526,9 +3529,9 @@ export function initScene(THREE, OrbitControls, RT) {
       const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
       // Read direction checkboxes (javelin model)
       const showPlus =
-        document.getElementById("tetrahelix2DirPlus")?.checked ?? true;
+        el.tetrahelix2DirPlus?.checked ?? true;
       const showMinus =
-        document.getElementById("tetrahelix2DirMinus")?.checked ?? true;
+        el.tetrahelix2DirMinus?.checked ?? true;
       // 3021 Rule mapping
       const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
       const tetrahelix2StartFace = axisToFace[tetrahelix2Axis] || "B";
@@ -3582,31 +3585,31 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Tetrahelix 3 stats (octahedral seed)
-    if (document.getElementById("showTetrahelix3")?.checked) {
+    if (el.showTetrahelix3?.checked) {
       const tetrahelix3Count = parseInt(
-        document.getElementById("tetrahelix3CountSlider")?.value || "10"
+        el.tetrahelix3CountSlider?.value || "10"
       );
       // Read individual strand checkboxes A-H
       const enabledStrands = {
-        A: document.getElementById("tetrahelix3StrandA")?.checked || false,
-        B: document.getElementById("tetrahelix3StrandB")?.checked || false,
-        C: document.getElementById("tetrahelix3StrandC")?.checked || false,
-        D: document.getElementById("tetrahelix3StrandD")?.checked || false,
-        E: document.getElementById("tetrahelix3StrandE")?.checked || false,
-        F: document.getElementById("tetrahelix3StrandF")?.checked || false,
-        G: document.getElementById("tetrahelix3StrandG")?.checked || false,
-        H: document.getElementById("tetrahelix3StrandH")?.checked || false,
+        A: el.tetrahelix3StrandA?.checked || false,
+        B: el.tetrahelix3StrandB?.checked || false,
+        C: el.tetrahelix3StrandC?.checked || false,
+        D: el.tetrahelix3StrandD?.checked || false,
+        E: el.tetrahelix3StrandE?.checked || false,
+        F: el.tetrahelix3StrandF?.checked || false,
+        G: el.tetrahelix3StrandG?.checked || false,
+        H: el.tetrahelix3StrandH?.checked || false,
       };
       // Read chirality checkboxes A-H
       const strandChirality = {
-        A: document.getElementById("tetrahelix3ChiralA")?.checked !== false,
-        B: document.getElementById("tetrahelix3ChiralB")?.checked !== false,
-        C: document.getElementById("tetrahelix3ChiralC")?.checked !== false,
-        D: document.getElementById("tetrahelix3ChiralD")?.checked !== false,
-        E: document.getElementById("tetrahelix3ChiralE")?.checked !== false,
-        F: document.getElementById("tetrahelix3ChiralF")?.checked !== false,
-        G: document.getElementById("tetrahelix3ChiralG")?.checked !== false,
-        H: document.getElementById("tetrahelix3ChiralH")?.checked !== false,
+        A: el.tetrahelix3ChiralA?.checked !== false,
+        B: el.tetrahelix3ChiralB?.checked !== false,
+        C: el.tetrahelix3ChiralC?.checked !== false,
+        D: el.tetrahelix3ChiralD?.checked !== false,
+        E: el.tetrahelix3ChiralE?.checked !== false,
+        F: el.tetrahelix3ChiralF?.checked !== false,
+        G: el.tetrahelix3ChiralG?.checked !== false,
+        H: el.tetrahelix3ChiralH?.checked !== false,
       };
       const tetrahelix3Data = Helices.tetrahelix3(1, {
         count: tetrahelix3Count,
@@ -3628,7 +3631,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Strands: ${activeStrands.join(", ") || "none"}</div>`;
     }
 
-    if (document.getElementById("showCube").checked) {
+    if (el.showCube.checked) {
       const cube = Polyhedra.cube(1);
       const eulerOK = RT.verifyEuler(
         cube.vertices.length,
@@ -3642,7 +3645,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Face Spread: 1 (90° dihedral)</div>`;
     }
 
-    if (document.getElementById("showTetrahedron").checked) {
+    if (el.showTetrahedron.checked) {
       const tetra = Polyhedra.tetrahedron(1);
       const eulerOK = RT.verifyEuler(
         tetra.vertices.length,
@@ -3656,7 +3659,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Face Spread: 8/9 (≈70.53° dihedral)</div>`;
     }
 
-    if (document.getElementById("showDualTetrahedron").checked) {
+    if (el.showDualTetrahedron.checked) {
       const tetra = Polyhedra.tetrahedron(1);
       const eulerOK = RT.verifyEuler(
         tetra.vertices.length,
@@ -3670,7 +3673,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Face Spread: 8/9 (≈70.53° dihedral)</div>`;
     }
 
-    if (document.getElementById("showOctahedron").checked) {
+    if (el.showOctahedron.checked) {
       const octa = Polyhedra.octahedron(1);
       const eulerOK = RT.verifyEuler(
         octa.vertices.length,
@@ -3684,7 +3687,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Face Spread: 8/9 (≈109.47° dihedral)</div>`;
     }
 
-    if (document.getElementById("showIcosahedron").checked) {
+    if (el.showIcosahedron.checked) {
       const icosa = Polyhedra.icosahedron(1);
       const eulerOK = RT.verifyEuler(
         icosa.vertices.length,
@@ -3698,7 +3701,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Face Spread: 4/9 (≈138.19° dihedral)</div>`;
     }
 
-    if (document.getElementById("showDualIcosahedron").checked) {
+    if (el.showDualIcosahedron.checked) {
       const icosa = Polyhedra.icosahedron(1);
       const eulerOK = RT.verifyEuler(
         icosa.vertices.length,
@@ -3712,7 +3715,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Face Spread: 4/9 (≈138.19° dihedral)</div>`;
     }
 
-    if (document.getElementById("showDodecahedron").checked) {
+    if (el.showDodecahedron.checked) {
       const dodec = Polyhedra.dodecahedron(1);
       const eulerOK = RT.verifyEuler(
         dodec.vertices.length,
@@ -3726,7 +3729,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Face Spread: 4/5 (≈116.57° dihedral)</div>`;
     }
 
-    if (document.getElementById("showRhombicDodecahedron").checked) {
+    if (el.showRhombicDodecahedron.checked) {
       // Use √2 scaling to match rendering (stats use scale=1 for display)
       const rhombicDodec = Polyhedra.rhombicDodecahedron(Math.sqrt(2));
       const eulerOK = RT.verifyEuler(
@@ -3740,7 +3743,7 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
     }
 
-    if (document.getElementById("showCuboctahedron").checked) {
+    if (el.showCuboctahedron.checked) {
       // Use √2 scaling to match rendering (stats use scale=1 for display)
       const cubocta = Polyhedra.cuboctahedron(Math.sqrt(2));
       const eulerOK = RT.verifyEuler(
@@ -3755,9 +3758,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Geodesic Tetrahedron
-    if (document.getElementById("showGeodesicTetrahedron").checked) {
+    if (el.showGeodesicTetrahedron.checked) {
       const frequency = parseInt(
-        document.getElementById("geodesicTetraFrequency").value
+        el.geodesicTetraFrequency.value
       );
       const projectionRadio = document.querySelector(
         'input[name="geodesicTetraProjection"]:checked'
@@ -3782,9 +3785,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Geodesic Octahedron
-    if (document.getElementById("showGeodesicOctahedron").checked) {
+    if (el.showGeodesicOctahedron.checked) {
       const frequency = parseInt(
-        document.getElementById("geodesicOctaFrequency").value
+        el.geodesicOctaFrequency.value
       );
       const projectionRadio = document.querySelector(
         'input[name="geodesicOctaProjection"]:checked'
@@ -3809,9 +3812,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Geodesic Icosahedron
-    if (document.getElementById("showGeodesicIcosahedron").checked) {
+    if (el.showGeodesicIcosahedron.checked) {
       const frequency = parseInt(
-        document.getElementById("geodesicIcosaFrequency").value
+        el.geodesicIcosaFrequency.value
       );
       const projectionRadio = document.querySelector(
         'input[name="geodesicIcosaProjection"]:checked'
@@ -3836,9 +3839,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Quadray Tetrahedron (4D Native)
-    if (document.getElementById("showQuadrayTetrahedron")?.checked) {
+    if (el.showQuadrayTetrahedron?.checked) {
       const normalize =
-        document.getElementById("quadrayTetraNormalize")?.checked ?? true;
+        el.quadrayTetraNormalize?.checked ?? true;
       const quadrayTet = Polyhedra.quadrayTetrahedron(1, { normalize });
       const eulerOK = RT.verifyEuler(
         quadrayTet.vertices.length,
@@ -3853,9 +3856,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Quadray Cuboctahedron (Vector Equilibrium)
-    if (document.getElementById("showQuadrayCuboctahedron")?.checked) {
+    if (el.showQuadrayCuboctahedron?.checked) {
       const normalize =
-        document.getElementById("quadrayCuboctaNormalize")?.checked ?? true;
+        el.quadrayCuboctaNormalize?.checked ?? true;
       const quadrayCubocta = Polyhedra.quadrayCuboctahedron(1, { normalize });
       const eulerOK = RT.verifyEuler(
         quadrayCubocta.vertices.length,
@@ -3874,9 +3877,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Quadray Octahedron
-    if (document.getElementById("showQuadrayOctahedron")?.checked) {
+    if (el.showQuadrayOctahedron?.checked) {
       const normalize =
-        document.getElementById("quadrayOctaNormalize")?.checked ?? true;
+        el.quadrayOctaNormalize?.checked ?? true;
       const quadrayOcta = Polyhedra.quadrayOctahedron(1, { normalize });
       const eulerOK = RT.verifyEuler(
         quadrayOcta.vertices.length,
@@ -3891,9 +3894,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Quadray Truncated Tetrahedron (7-gon projection source)
-    if (document.getElementById("showQuadrayTruncatedTet")?.checked) {
+    if (el.showQuadrayTruncatedTet?.checked) {
       const normalize =
-        document.getElementById("quadrayTruncTetNormalize")?.checked ?? true;
+        el.quadrayTruncTetNormalize?.checked ?? true;
       const quadrayTruncTet = Polyhedra.quadrayTruncatedTetrahedron(1, {
         normalize,
       });
@@ -4157,7 +4160,7 @@ export function initScene(THREE, OrbitControls, RT) {
         if (isOrthographic) {
           switchCameraType(false); // Switch to perspective internally
           // Also update the checkbox in the UI
-          const orthoCheckbox = document.getElementById("orthoPerspective");
+          const orthoCheckbox = el.orthoPerspective;
           if (orthoCheckbox) {
             orthoCheckbox.checked = false;
           }
@@ -4450,13 +4453,13 @@ export function initScene(THREE, OrbitControls, RT) {
   function createPolyhedronByType(type, options = {}) {
     // Default options
     const tetEdge = parseFloat(
-      document.getElementById("tetScaleSlider")?.value || "1"
+      el.tetScaleSlider?.value || "1"
     );
     const defaultScale = tetEdge / (2 * Math.sqrt(2));
     const scale = options.scale ?? defaultScale;
     const opacity =
       options.opacity ??
-      parseFloat(document.getElementById("opacitySlider")?.value || "0.25");
+      parseFloat(el.opacitySlider?.value || "0.25");
     const frequency = options.frequency ?? 1;
     const projection = options.projection ?? "out";
     // Note: Matrix types are handled by createPolyhedronByTypeAsync()
@@ -4950,13 +4953,13 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Matrix-specific options - use stored parameters from options if available
     const tetEdge = parseFloat(
-      document.getElementById("tetScaleSlider")?.value || "1"
+      el.tetScaleSlider?.value || "1"
     );
     const defaultScale = tetEdge / (2 * Math.sqrt(2));
     const scale = options.scale ?? defaultScale;
     const opacity =
       options.opacity ??
-      parseFloat(document.getElementById("opacitySlider")?.value || "0.25");
+      parseFloat(el.opacitySlider?.value || "0.25");
 
     // Planar matrix parameters
     const matrixSize = options.matrixSize ?? 1;
@@ -5042,8 +5045,6 @@ export function initScene(THREE, OrbitControls, RT) {
           "rhombicDodecMatrix",
         ].includes(type)
       ) {
-        const { RTMatrix } = await import("./rt-matrix-planar.js");
-
         let matrix;
         switch (type) {
           case "cubeMatrix":
@@ -5114,8 +5115,6 @@ export function initScene(THREE, OrbitControls, RT) {
           "radialVEMatrix",
         ].includes(type)
       ) {
-        const { RTRadialMatrix } = await import("./rt-matrix-radial.js");
-
         let matrix;
         switch (type) {
           case "radialCubeMatrix":
@@ -5236,6 +5235,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Rendering functions
     updateGeometry,
+    requestGeometryUpdate,
     updateGeometryStats,
 
     // Node configuration

@@ -1146,49 +1146,18 @@ export const RTViewManager = {
     const cutplaneEnabled = this._papercut?.state?.cutplaneEnabled;
     const cutplane = this._papercut?.state?.cutplaneNormal;
 
-    this._scene.traverse(object => {
-      // Only process vertex nodes
-      if (!object.userData.isVertexNode) return;
-      if (object.type !== "Mesh") return;
-
-      // Skip invisible objects
-      if (!object.visible) return;
-      let ancestor = object.parent;
-      while (ancestor) {
-        if (!ancestor.visible) return;
-        ancestor = ancestor.parent;
-      }
-
-      // Get node center and radius
-      const center = object.getWorldPosition(new THREE.Vector3());
-      const radius = object.userData.nodeRadius || 0.1;
-
+    // Helper to process a single node position
+    const processNodePosition = (center, radius, fillColor, fillOpacity) => {
       // If cutplane is enabled, skip nodes behind the cutplane
       if (cutplaneEnabled && cutplane) {
         const dist = cutplane.distanceToPoint(center);
-        if (dist < -radius) return; // Fully behind cutplane
-      }
-
-      // Get material color
-      let fillColor = "#ff8800";
-      let fillOpacity = 0.8;
-      if (object.material) {
-        const mat = Array.isArray(object.material)
-          ? object.material[0]
-          : object.material;
-        if (mat.color) {
-          fillColor = `#${mat.color.getHexString()}`;
-        }
-        if (mat.opacity !== undefined) {
-          fillOpacity = mat.opacity;
-        }
+        if (dist < -radius) return;
       }
 
       // Project center to screen
       const screenCenter = this._projectToScreen(center, width, height);
 
       // Calculate projected radius (approximate)
-      // Create a point offset by radius in camera space and project it
       const cameraRight = new THREE.Vector3();
       this._camera.matrixWorld.extractBasis(
         cameraRight,
@@ -1219,6 +1188,51 @@ export const RTViewManager = {
         strokeWidth: 0.5,
         depth: depth,
       });
+    };
+
+    this._scene.traverse(object => {
+      // Only process vertex nodes
+      if (!object.userData.isVertexNode) return;
+      if (object.type !== "Mesh") return;
+
+      // Skip invisible objects
+      if (!object.visible) return;
+      let ancestor = object.parent;
+      while (ancestor) {
+        if (!ancestor.visible) return;
+        ancestor = ancestor.parent;
+      }
+
+      // Get material color
+      let fillColor = "#ff8800";
+      let fillOpacity = 0.8;
+      if (object.material) {
+        const mat = Array.isArray(object.material)
+          ? object.material[0]
+          : object.material;
+        if (mat.color) {
+          fillColor = `#${mat.color.getHexString()}`;
+        }
+        if (mat.opacity !== undefined) {
+          fillOpacity = mat.opacity;
+        }
+      }
+
+      const radius = object.userData.nodeRadius || 0.1;
+
+      // Handle InstancedMesh (matrix nodes store positions in userData)
+      if (object.isInstancedMesh && object.userData.vertexPositions) {
+        object.userData.vertexPositions.forEach(pos => {
+          const center = pos.clone();
+          object.localToWorld(center);
+          processNodePosition(center, radius, fillColor, fillOpacity);
+        });
+        return;
+      }
+
+      // Regular individual node mesh
+      const center = object.getWorldPosition(new THREE.Vector3());
+      processNodePosition(center, radius, fillColor, fillOpacity);
     });
 
     // Sort by depth (back to front)
