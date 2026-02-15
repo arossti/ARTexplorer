@@ -46,25 +46,25 @@ export const Grids = {
    * @returns {THREE.LineSegments} The grid plane (in XZ plane, like GridHelper)
    */
   createGravityCartesianPlane: (divisions, color, gridMode = "gravity-chordal") => {
-    const halfDiv = Math.floor(divisions / 2);
-    const halfExtent = halfDiv;
-
-    const cumDist = RT.Gravity.computeGravityCumulativeDistances(
-      halfDiv,
-      halfExtent
-    );
-
+    const halfExtent = Math.floor(divisions / 2);
     const vertices = [];
-    const extent = cumDist[halfDiv];
 
     if (gridMode === "gravity-spherical") {
       // Polar grid: concentric circles at gravity-spaced radii + radial lines.
-      // Gravity converges to a POINT (origin), not an axis — rectangular
-      // topology is wrong; polar correctly shows spherical shell cross-sections.
+      // Gravity converges to a POINT (origin), not an axis — polar topology
+      // correctly shows spherical shell cross-sections.
+      // Circle count = full divisions (slider value), extent = halfExtent.
+      const numCircles = divisions;
+      const cumDist = RT.Gravity.computeGravityCumulativeDistances(
+        numCircles,
+        halfExtent
+      );
+      const extent = cumDist[numCircles];
+
       // Circles via Weierstrass rational parameterization (RT-pure, no trig).
       const SPQ = 16; // segments per quadrant → 64 per full circle
 
-      for (let k = 1; k <= halfDiv; k++) {
+      for (let k = 1; k <= numCircles; k++) {
         const r = cumDist[k];
         // 4 quadrants, each parameterized u = 0..1
         for (let q = 0; q < 4; q++) {
@@ -96,7 +96,14 @@ export const Grids = {
       vertices.push(0, 0, 0, 0, 0, -extent);
     } else {
       // Rectangular gravity grid: straight lines at gravity-spaced positions.
-      // GridHelper convention: XZ plane, Y=0.
+      // GridHelper convention: XZ plane, Y=0. halfDiv lines each side of center.
+      const halfDiv = halfExtent;
+      const cumDist = RT.Gravity.computeGravityCumulativeDistances(
+        halfDiv,
+        halfExtent
+      );
+      const extent = cumDist[halfDiv];
+
       for (let k = 0; k <= halfDiv; k++) {
         const pos = cumDist[k];
 
@@ -119,7 +126,11 @@ export const Grids = {
     );
     return new THREE.LineSegments(
       geometry,
-      new THREE.LineBasicMaterial({ color })
+      new THREE.LineBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.4,
+      })
     );
   },
 
@@ -161,11 +172,17 @@ export const Grids = {
       gridYZ = Grids.createGravityCartesianPlane(divisions, colorYZ, "gravity-spherical");
       gridYZ.rotation.z = Math.PI / 2;
     } else {
-      // Uniform mode: standard THREE.GridHelper
+      // Uniform mode: standard THREE.GridHelper, dimmed to match Quadray grids
       gridXY = new THREE.GridHelper(gridSize, divisions, colorXY, colorXY);
+      gridXY.material.transparent = true;
+      gridXY.material.opacity = 0.4;
       gridXY.rotation.x = Math.PI / 2;
       gridXZ = new THREE.GridHelper(gridSize, divisions, colorXZ, colorXZ);
+      gridXZ.material.transparent = true;
+      gridXZ.material.opacity = 0.4;
       gridYZ = new THREE.GridHelper(gridSize, divisions, colorYZ, colorYZ);
+      gridYZ.material.transparent = true;
+      gridYZ.material.opacity = 0.4;
       gridYZ.rotation.z = Math.PI / 2;
     }
 
@@ -843,9 +860,15 @@ export const Grids = {
       gridYZ.rotation.z = Math.PI / 2;
     } else {
       gridXY = new THREE.GridHelper(gridSize, divisions, colorXY, colorXY);
+      gridXY.material.transparent = true;
+      gridXY.material.opacity = 0.4;
       gridXY.rotation.x = Math.PI / 2;
       gridXZ = new THREE.GridHelper(gridSize, divisions, colorXZ, colorXZ);
+      gridXZ.material.transparent = true;
+      gridXZ.material.opacity = 0.4;
       gridYZ = new THREE.GridHelper(gridSize, divisions, colorYZ, colorYZ);
+      gridYZ.material.transparent = true;
+      gridYZ.material.opacity = 0.4;
       gridYZ.rotation.z = Math.PI / 2;
     }
 
