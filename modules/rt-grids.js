@@ -35,42 +35,80 @@ import { MetaLog } from "./rt-metalog.js";
 export const Grids = {
   /**
    * Create a single gravity-warped Cartesian plane as LineSegments.
-   * Replaces THREE.GridHelper when gridMode is 'gravity-chordal'.
-   * Lines are gravity-spaced from center outward (bidirectional).
+   * Chordal: rectangular grid with gravity-spaced lines (kept for Quadray refinement).
+   * Polar (gravity-spherical): concentric circles at gravity-spaced radii + 4 radial
+   * lines. Gravity converges to a point — polar is the only correct XYZ representation.
+   * Circles via Weierstrass rational parameterization (RT-pure, no trig).
    *
    * @param {number} divisions - Total number of grid divisions
    * @param {number} color - Line color (hex)
+   * @param {string} gridMode - 'gravity-chordal' or 'gravity-spherical'
    * @returns {THREE.LineSegments} The grid plane (in XZ plane, like GridHelper)
    */
-  createGravityCartesianPlane: (divisions, color) => {
+  createGravityCartesianPlane: (divisions, color, gridMode = "gravity-chordal") => {
     const halfDiv = Math.floor(divisions / 2);
-    const halfExtent = halfDiv; // Match GridHelper: divisions/2 units each side
+    const halfExtent = halfDiv;
 
-    // Gravity intervals from center outward
     const cumDist = RT.Gravity.computeGravityCumulativeDistances(
       halfDiv,
       halfExtent
     );
-    // cumDist = [0, d1, ..., dHalf, dExtra]
 
     const vertices = [];
-    const extent = cumDist[halfDiv]; // Actual half-extent after scaling
+    const extent = cumDist[halfDiv];
 
-    // Lines along X at gravity-spaced Z positions (and vice versa)
-    // GridHelper convention: grid lies in XZ plane, Y=0
-    for (let k = 0; k <= halfDiv; k++) {
-      const pos = cumDist[k];
+    if (gridMode === "gravity-spherical") {
+      // Polar grid: concentric circles at gravity-spaced radii + radial lines.
+      // Gravity converges to a POINT (origin), not an axis — rectangular
+      // topology is wrong; polar correctly shows spherical shell cross-sections.
+      // Circles via Weierstrass rational parameterization (RT-pure, no trig).
+      const SPQ = 8; // segments per quadrant → 32 per full circle
 
-      // Lines along X at +Z and -Z positions
-      vertices.push(-extent, 0, pos, extent, 0, pos);
-      if (k > 0) {
-        vertices.push(-extent, 0, -pos, extent, 0, -pos);
+      for (let k = 1; k <= halfDiv; k++) {
+        const r = cumDist[k];
+        // 4 quadrants, each parameterized u = 0..1
+        for (let q = 0; q < 4; q++) {
+          let px = q === 0 ? r : q === 2 ? -r : 0;
+          let pz = q === 1 ? r : q === 3 ? -r : 0;
+
+          for (let s = 1; s <= SPQ; s++) {
+            const u = s / SPQ;
+            const u2 = u * u;
+            const d = 1 + u2;
+            const c = r * (1 - u2) / d;  // rational in u
+            const sn = r * 2 * u / d;    // rational in u
+            let nx, nz;
+            if (q === 0)      { nx = c;   nz = sn;  }
+            else if (q === 1) { nx = -sn; nz = c;   }
+            else if (q === 2) { nx = -c;  nz = -sn; }
+            else              { nx = sn;  nz = -c;  }
+
+            vertices.push(px, 0, pz, nx, 0, nz);
+            px = nx; pz = nz;
+          }
+        }
       }
 
-      // Lines along Z at +X and -X positions
-      vertices.push(pos, 0, -extent, pos, 0, extent);
-      if (k > 0) {
-        vertices.push(-pos, 0, -extent, -pos, 0, extent);
+      // Radial lines along ±X and ±Z from origin to outer extent
+      vertices.push(0, 0, 0, extent, 0, 0);
+      vertices.push(0, 0, 0, -extent, 0, 0);
+      vertices.push(0, 0, 0, 0, 0, extent);
+      vertices.push(0, 0, 0, 0, 0, -extent);
+    } else {
+      // Rectangular gravity grid: straight lines at gravity-spaced positions.
+      // GridHelper convention: XZ plane, Y=0.
+      for (let k = 0; k <= halfDiv; k++) {
+        const pos = cumDist[k];
+
+        vertices.push(-extent, 0, pos, extent, 0, pos);
+        if (k > 0) {
+          vertices.push(-extent, 0, -pos, extent, 0, -pos);
+        }
+
+        vertices.push(pos, 0, -extent, pos, 0, extent);
+        if (k > 0) {
+          vertices.push(-pos, 0, -extent, -pos, 0, extent);
+        }
       }
     }
 
@@ -111,13 +149,13 @@ export const Grids = {
     let gridXY, gridXZ, gridYZ;
 
     if (gridMode === "gravity-chordal" || gridMode === "gravity-spherical") {
-      // Gravity mode: custom LineSegments with non-uniform spacing
-      // (Cartesian lines are straight by definition — spherical arc subdivision
-      // only applies to Central Angle grids where ring edges trace shell surfaces)
-      gridXY = Grids.createGravityCartesianPlane(divisions, gridColor);
+      // Cartesian gravity is strictly polar: concentric circles at gravity-spaced
+      // radii. Gravity converges to a point (origin), not an axis — polar topology
+      // is the only correct representation on Cartesian planes.
+      gridXY = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
       gridXY.rotation.x = Math.PI / 2;
-      gridXZ = Grids.createGravityCartesianPlane(divisions, gridColor);
-      gridYZ = Grids.createGravityCartesianPlane(divisions, gridColor);
+      gridXZ = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
+      gridYZ = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
       gridYZ.rotation.z = Math.PI / 2;
     } else {
       // Uniform mode: standard THREE.GridHelper
@@ -805,10 +843,11 @@ export const Grids = {
     let gridXY, gridXZ, gridYZ;
 
     if (gridMode === "gravity-chordal" || gridMode === "gravity-spherical") {
-      gridXY = Grids.createGravityCartesianPlane(divisions, gridColor);
+      // Cartesian gravity is strictly polar (see createCartesianGrid)
+      gridXY = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
       gridXY.rotation.x = Math.PI / 2;
-      gridXZ = Grids.createGravityCartesianPlane(divisions, gridColor);
-      gridYZ = Grids.createGravityCartesianPlane(divisions, gridColor);
+      gridXZ = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
+      gridYZ = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
       gridYZ.rotation.z = Math.PI / 2;
     } else {
       gridXY = new THREE.GridHelper(
