@@ -18,7 +18,9 @@
 | 5a | IK rigid link in Gravity Numberline demo | **Done** (`df0faf0`) |
 | 5b–d | Pin joints, hinges, elastic, tension, pneumatic | Planned |
 | 6 | Great-circle-as-N-gon: polygonal geodesic generation | Planned |
-| 7 | 4D± Gravity + Inversion demo: Quadray Janus drop | **In Progress** |
+| 7 | 4D± Gravity + Inversion demo: Quadray Janus drop | **Done** (core) |
+| 7b | Cell slider: manual scrubbing +144 to −144 | Planned |
+| 7c | Circumsphere boundary visualization (7F wireframe) | Planned |
 
 ### Key Files
 
@@ -29,7 +31,8 @@
 | `modules/rt-init.js` | Grid mode button handlers (now scoped per section: `data-cartesian-mode`, `data-quadray-mode`) |
 | `modules/rt-rendering.js` | Grid group visibility API: `setCartesianGridVisible()`, `setQuadrayGridVisible()` |
 | `modules/rt-ik-solvers.js` | `solveRigid2D()`, `linkAngle2D()`, `linkSpread2D()` |
-| `index.html` | Cartesian: Uniform/Polar. Central Angle: Uniform/Polar |
+| `demos/4D-Drop.js` | `Drop4DDemo` class — 4D± Gravity + Inversion demo |
+| `index.html` | Cartesian: Uniform/Polar. Central Angle: Uniform/Polar. 4D± demo link |
 
 ### Recent Fixes (PR #97)
 
@@ -185,21 +188,37 @@ The 4 face planes are parallel to the base tetrahedron's faces. Rotating 180° g
 
 ## Phase 7: 4D± Gravity + Inversion Demo
 
-**Goal:** Extend the 2D Gravity Numberline demo into 3D/4D Quadray space. Four geodesic icosahedron nodes fall along the four Quadray basis vectors through a gravity-spherical (Polar great circles) grid, collide at the origin (Janus Singularity), invert into negative Quadray space, and oscillate continuously.
+**Goal:** Extend the 2D Gravity Numberline demo into 3D/4D Quadray space. Four polyhedra fall along the four Quadray basis vectors through a gravity-spherical (Polar great circles) grid, collide at the origin (Janus Singularity), invert into negative Quadray space, and oscillate continuously.
+
+### Implementation Status
+
+Core demo is **functional** (`demos/4D-Drop.js`, ~750 lines). Remaining work is visual aids for spatial comprehension (see §7b–7c below).
+
+| Component | Status |
+|-----------|--------|
+| Class `Drop4DDemo` with full lifecycle | **Done** |
+| Floating panel (draggable, body selector, shape toggle, status) | **Done** |
+| Save/restore scene state on enable/disable | **Done** |
+| Falling bodies: Tetrahedra + 3F Geodesic Icosahedra with toggle | **Done** |
+| 4-phase animation with continuous global time | **Done** |
+| Janus flash + background inversion at origin crossings | **Done** |
+| Seamless oscillation (no pause at origin) | **Done** |
+| Cell slider for manual scrubbing (+144 to −144) | Planned (§7b) |
+| Circumsphere boundary visualization | Planned (§7c) |
 
 ### Architecture
 
-Follows the **in-scene floating panel** pattern established by the Rotor demo (`rt-rotor-demo.js`), NOT a modal. Class `Drop4DDemo` with constructor `(scene, THREE, camera, controls)`.
+Follows the **in-scene floating panel** pattern from the Rotor demo (`rt-rotor-demo.js`). Class `Drop4DDemo` with constructor `(scene, THREE, camera, controls)`.
 
 | File | Action |
 |------|--------|
-| `demos/4D-Drop.js` | **New** — full demo module (~400 lines) |
-| `index.html` | Add list item in Math Demos section |
-| `modules/rt-init.js` | Add import + event handler |
+| `demos/4D-Drop.js` | **Done** — full demo module (~750 lines) |
+| `index.html` | **Done** — list item in Math Demos section |
+| `modules/rt-init.js` | **Done** — import + event handler |
 
 ### Lifecycle
 
-- `enable()` → saveSceneState → configureSceneForDemo → createDemoObjects → createInfoPanel → startAnimation
+- `enable()` → saveSceneState → configureSceneForDemo → createDemoObjects → createInfoPanel
 - `disable()` → stopAnimation → removeDemoObjects → removeInfoPanel → restoreSceneState
 - `toggle()` → enable/disable, returns `this.enabled`
 
@@ -211,15 +230,19 @@ On enable, the demo saves all current checkbox/slider state and configures:
 - All 4 IVM face plane checkboxes enabled
 - Distractions hidden (Cube, Dual Tet, Cartesian basis/grid)
 
-### Demo Objects
+### Demo Objects — The Circumsphere
 
-4 geodesic icosahedron nodes (`Nodes.getCachedNodeGeometry`, 3F, size "7" = 0.12 radius) placed at the outermost extent of each Quadray basis axis:
+4 polyhedra (Tetrahedra by default, toggle to 3F Geodesic Icosahedra) placed at the outermost extent of each Quadray basis axis:
 - **QX** (A axis): Red
 - **QZ** (B axis): Green
 - **QY** (C axis): Blue
 - **QW** (D axis): Yellow
 
-Axis extent = `cumDist[N]` from `RT.Gravity.computeGravityCumulativeDistances(144, 72)`.
+Axis extent = `cumDist[144]` from `RT.Gravity.computeGravityCumulativeDistances(144, 72)` = **72.0** (the outermost shell radius).
+
+**Critical geometric insight:** The 4 Quadray basis vectors point to the vertices of a regular tetrahedron. The bodies at `extent × basis[i]` therefore sit on the **circumsphere** of this tetrahedron (radius 72). The gravity grid's great circles, however, are drawn on the 4 **face planes** through the origin. These face planes do not pass through the tetrahedral vertices — a vertex is at distance `extent/3 = 24` from the opposite face plane, and projects onto adjacent face planes at reduced radii.
+
+This means **from most camera angles, the bodies appear to be at a different distance than the outermost visible circle**, even though both are at radius 72 from the origin. The circles are 2D cross-sections of the sphere on specific planes; the bodies are on the sphere itself at directions that don't lie in those planes.
 
 ### Physics (reused from `rt-gravity-demo.js`)
 
@@ -229,24 +252,26 @@ Axis extent = `cumDist[N]` from `RT.Gravity.computeGravityCumulativeDistances(14
 
 ### Animation — 4-Phase State Machine
 
-Each phase takes `T = √(2H/g)` seconds. Nodes move at constant velocity (linear fraction `f = elapsed/T`):
+Uses **continuous global time**: a single `animationStartTime` drives all timing. Phase and fraction are derived mathematically — no per-phase timers, no overflow carry. Each phase takes `T = √(2H/g)` seconds. Bodies move at constant velocity (linear fraction `f`):
 
 | Phase | Start | End | Node position |
 |-------|-------|-----|---------------|
 | `pos_to_origin` | +extent×basis[i] | origin | `(1-f) × extent × basis[i]` |
-| `origin_to_neg` | origin | -extent×basis[i] | `-f × extent × basis[i]` |
-| `neg_to_origin` | -extent×basis[i] | origin | `-(1-f) × extent × basis[i]` |
+| `origin_to_neg` | origin | −extent×basis[i] | `−f × extent × basis[i]` |
+| `neg_to_origin` | −extent×basis[i] | origin | `−(1-f) × extent × basis[i]` |
 | `origin_to_pos` | origin | +extent×basis[i] | `+f × extent × basis[i]` |
 
-At origin arrivals (end of `pos_to_origin` and `neg_to_origin`): `createJanusFlash()` + 500ms pause before next phase.
+At origin arrivals (end of `pos_to_origin` and `neg_to_origin`): `createJanusFlash()` at origin + background inversion (white for negative space, dark for positive). Seamless transition — no pause.
 
 ### Control Panel
 
 Fixed-position DOM panel (top-left, `rgba(0,0,0,0.85)`, z-index 1000, draggable header):
 - Title: "4D± Gravity + Inversion"
 - Body selector dropdown (populated from `RT.Gravity.BODIES`)
+- Shape toggle: Tetrahedron / 3F Icosahedron (button pair, matching Rotor demo pattern)
 - Drop/Stop toggle button
-- Status readout: phase, elapsed time, current cell, surface g
+- Status readout: phase, elapsed time, current cell, surface g, fall time T
+- Per-axis readout: QX/QZ/QY/QW with +extent/−extent/origin status
 
 ### Key Reuse
 
@@ -255,12 +280,44 @@ Fixed-position DOM panel (top-left, `rgba(0,0,0,0.85)`, z-index 1000, draggable 
 | Scene access | `rt-init.js` constructor params |
 | Floating panel + drag | `rt-rotor-demo.js` pattern |
 | Save/restore scene state | `rt-rotor-demo.js` checkpoint approach |
-| Node geometry | `rt-nodes.js` `getCachedNodeGeometry()` |
+| Body geometry | `rt-polyhedra.js` `Polyhedra.tetrahedron()` / `Polyhedra.geodesicIcosahedron()` |
 | Physics constants | `RT.Gravity.BODIES` from `rt-math.js` |
 | Grid configuration | UI button click `[data-quadray-mode="gravity-spherical"]` |
-| Janus flash | `rt-janus.js` `createJanusFlash()` |
+| Janus flash + background | `rt-janus.js` `createJanusFlash()`, `animateBackgroundColor()` |
 | Quadray basis vectors | `Quadray.basisVectors[0..3]` from `rt-math.js` |
 | Gravity shell radii | `RT.Gravity.computeGravityCumulativeDistances()` |
+
+---
+
+### Phase 7b: Cell Slider — Manual Scrubbing
+
+**Goal:** Let the user manually drag the bodies from +144 through 0 (origin/Janus Point) to −144, controlling position directly.
+
+When the animation is stopped, a **range slider** on the control panel maps cell position:
+- Range: **−144** to **+144** (0 = origin)
+- Steps of **12** (to fit the limited panel width — 24 discrete positions: −144, −132, ..., −12, 0, +12, ..., +132, +144)
+- Positive values: bodies at `(cell/144) × extent × basis[i]`
+- Negative values: bodies at `(cell/144) × extent × basis[i]` (negative cell flips sign)
+- At cell 0: bodies at origin — Janus Point
+- Background inversion triggers when crossing 0 (positive→negative or vice versa)
+
+The slider provides tactile control, letting the user observe the gravity grid spacing at each cell and see how the Janus inversion works at their own pace.
+
+### Phase 7c: Circumsphere Boundary Visualization
+
+**Goal:** Make the outer boundary visible from all camera angles by drawing the circumsphere itself, not just its face-plane cross-sections.
+
+**Approach:** Render a **7F Geodesic Icosahedron** (`Polyhedra.geodesicIcosahedron(extent, 7, "out")`) as a wireframe or edge-only mesh at radius 72 (= extent). This shows the spherical boundary that the bodies drop from, visible from any viewing angle. No nodes — edges only.
+
+**Visual properties:**
+- Very thin lines or wireframe mesh
+- Low opacity (0.15–0.25) so it doesn't obscure the gravity grid
+- Neutral color (white or light grey) to distinguish from the colored grid circles
+- Toggle on/off from the control panel
+
+**Why 7F:** High enough frequency to read as spherical from any angle, available in the existing `Polyhedra.geodesicIcosahedron()` pipeline without new code.
+
+**Geometric significance:** This sphere is the circumsphere of the tetrahedron whose 4 vertices are the drop positions. The great circles on the face planes are the intersections of this sphere with those planes — but they're **small circles** of the sphere (not great circles of the sphere), because the face planes don't pass through the sphere's center at the tetrahedral face distance. The grid circles DO pass through the origin (the planes pass through the origin), so they are actually great circles. But the key point stands: the body positions are on the sphere at directions that don't intersect any face plane at max radius.
 
 ---
 
@@ -280,9 +337,31 @@ Fixed-position DOM panel (top-left, `rgba(0,0,0,0.85)`, z-index 1000, draggable 
 
 ---
 
+## RT Compliance Review
+
+All gravity modules should follow the RT deferred-√ pattern: work in quadrance space, take √ only at GPU/animation boundary. Current status:
+
+| Module | Item | Status |
+|--------|------|--------|
+| `4D-Drop.js` | Fall time `T = √(2H/g)` | **Fixed** — `computePhysics()` caches `Q_T = 2H/g` (quadrance), single deferred `√` |
+| `4D-Drop.js` | Position calculations | **Clean** — pure Quadray vector algebra, no trig |
+| `rt-gravity-demo.js` | Fall time `T = √(2H/g)` | TODO — adopt `computePhysics()` caching pattern |
+| `rt-gravity-demo.js` | Link angle: `Math.asin(Math.sqrt(s)) × 180/π` | TODO — display spread directly, use `RT.spreadToDegrees()` for annotation only |
+| `rt-gravity-demo.js` | Gravity gap: two `Math.sqrt()` calls | TODO — defer to quadrance |
+| `rt-math.js` | `computeGravityCumulativeDistances()`: one `√` per shell | Phase 2 — quadrance-native `Q_k = E²·k/N` eliminates all `√` |
+| `rt-grids.js` | Consumers of cumDist take `√` at vertex emission | Phase 2 — move `√` to final vertex creation |
+
+### Principle
+
+From the README: *"Compute all relationships in quadrance space. Only take √ at final THREE.Vector3 creation."* The physics analogue: compute in time-quadrance space (`Q_T = 2H/g`), take √ once at the animation-boundary where real seconds are needed for `requestAnimationFrame` timing.
+
+---
+
 ## Immediate TODOs
 
-- [ ] **Phase 7: `demos/4D-Drop.js`** — implement 4D± Gravity + Inversion demo (in progress)
+- [x] **Phase 7: `demos/4D-Drop.js`** — core demo implemented (`55e730c`–`8dcc616`)
+- [ ] **Phase 7b: Cell slider** — manual scrubbing +144 to −144, steps of 12
+- [ ] **Phase 7c: Circumsphere boundary** — 7F geodesic icosahedron wireframe at extent radius
 - [ ] **Phase 6: N-gon parameter for `createQuadrayPolarPlane()`** — start with N=3 (triangle) and N=6 (hexagon) to validate the geodesic construction
 - [ ] **Radial line generation** via N-gon vertex connections between concentric shells
 - [ ] **Phase 2: Quadrance-based shell spacing** — algebraic exactness improvement

@@ -70,8 +70,9 @@ class Drop4DDemo {
     // Animation state
     this.isAnimating = false;
     this.animationId = null;
-    this.phaseIndex = 0;
-    this.phaseStartTime = null;
+    this.animationStartTime = null;
+    this._lastPhaseIndex = 0;
+    this._maxFPerPhase = 0;
   }
 
   // ========================================================================
@@ -208,8 +209,20 @@ class Drop4DDemo {
     return 144;
   }
 
+  /**
+   * Recompute cached physics values when body changes.
+   * RT approach: store time-quadrance Q_T = 2H/g (pure algebra),
+   * defer single √ to this boundary. Cached — not recomputed per frame.
+   */
+  computePhysics() {
+    this._cachedG = this.getG();
+    this._cachedH = this.getH();
+    this._cachedTQ = (2 * this._cachedH) / this._cachedG; // time quadrance (no √)
+    this._cachedT = Math.sqrt(this._cachedTQ); // single deferred √
+  }
+
   getTotalTime() {
-    return Math.sqrt((2 * this.getH()) / this.getG());
+    return this._cachedT;
   }
 
   computeExtent() {
@@ -217,6 +230,7 @@ class Drop4DDemo {
     // 144 divisions, halfExtent = 72 (matches grid computation)
     const cumDist = RT.Gravity.computeGravityCumulativeDistances(144, 72);
     this.extent = cumDist[144]; // outermost circle radius
+    this.computePhysics(); // cache T alongside extent
   }
 
   // ========================================================================
@@ -501,8 +515,8 @@ class Drop4DDemo {
         <div class="row"><span class="label">Phase:</span><span class="value" id="d4d-phase">Ready</span></div>
         <div class="row"><span class="label">Time:</span><span class="value" id="d4d-time">0.000 s</span></div>
         <div class="row"><span class="label">Cell:</span><span class="value" id="d4d-cell">0 / 144</span></div>
-        <div class="row"><span class="label">g:</span><span class="value" id="d4d-g">${this.getG().toFixed(3)} m/s\u00B2</span></div>
-        <div class="row"><span class="label">T:</span><span class="value" id="d4d-totaltime">${this.getTotalTime().toFixed(3)} s</span></div>
+        <div class="row"><span class="label">g:</span><span class="value" id="d4d-g">${this._cachedG.toFixed(3)} m/s\u00B2</span></div>
+        <div class="row"><span class="label">T:</span><span class="value" id="d4d-totaltime">${this._cachedT.toFixed(3)} s</span></div>
       </div>
 
       <div class="section">
@@ -535,7 +549,7 @@ class Drop4DDemo {
     bodySelector.addEventListener("change", () => {
       this.selectedBody = bodySelector.value;
       if (this.isAnimating) this.stopAnimation();
-      this.computeExtent();
+      this.computeExtent(); // also recomputes physics (cached T)
       this.resetNodePositions();
       this.updatePanel();
     });
@@ -637,8 +651,9 @@ class Drop4DDemo {
 
   startAnimation() {
     this.isAnimating = true;
-    this.phaseIndex = 0;
-    this.phaseStartTime = performance.now();
+    this.animationStartTime = performance.now();
+    this._lastPhaseIndex = 0;
+    this._maxFPerPhase = 0;
 
     const btn = document.getElementById("d4d-drop-btn");
     if (btn) {
@@ -674,7 +689,6 @@ class Drop4DDemo {
 
     // Reset to positive extent
     this.resetNodePositions();
-    this.phaseIndex = 0;
     this.updatePanel();
   }
 
@@ -683,40 +697,37 @@ class Drop4DDemo {
 
     const now = performance.now();
     const T = this.getTotalTime();
-    const elapsed = (now - this.phaseStartTime) / 1000;
-    let f = elapsed / T;
+    const cycleTime = 4 * T; // 4 phases per full cycle
 
-    // Phase completion: render at f=1.0 first, then advance next frame
-    if (f >= 1.0) {
-      if (!this._phaseComplete) {
-        // First frame past completion: clamp to 1.0 and render the endpoint
-        f = 1.0;
-        this._phaseComplete = true;
-      } else {
-        // Second frame: now advance phase with overflow carry
-        const phase = PHASES[this.phaseIndex];
+    // Continuous global time → derive phase and fraction mathematically
+    const globalElapsed = (now - this.animationStartTime) / 1000;
+    const cycleElapsed = globalElapsed % cycleTime;
+    const phaseIndex = Math.min(Math.floor(cycleElapsed / T), 3);
+    const f = (cycleElapsed / T) - phaseIndex; // [0, ~0.997)
+    const phase = PHASES[phaseIndex];
 
-        // Trigger Janus flash + background inversion at origin arrivals
-        if (phase === "pos_to_origin") {
-          createJanusFlash(new this.THREE.Vector3(0, 0, 0));
-          this.inNegativeSpace = true;
-          animateBackgroundColor(0xffffff, 300);
-        } else if (phase === "neg_to_origin") {
-          createJanusFlash(new this.THREE.Vector3(0, 0, 0));
-          this.inNegativeSpace = false;
-          animateBackgroundColor(0x1a1a1a, 300);
-        }
+    // Detect phase transitions for Janus flash + background inversion
+    if (phaseIndex !== this._lastPhaseIndex) {
+      const prevPhase = PHASES[this._lastPhaseIndex];
+      // Log diagnostic: max fraction reached in the completed phase
+      const cell = Math.round(this._maxFPerPhase * 144);
+      console.log(`📊 ${prevPhase} → ${phase} | max f=${this._maxFPerPhase.toFixed(4)} (cell ${cell}/144)`);
 
-        // Advance phase, carry overflow time
-        const overflowSeconds = (f - 1.0) * T;
-        this.phaseIndex = (this.phaseIndex + 1) % PHASES.length;
-        this.phaseStartTime = now - overflowSeconds * 1000;
-        f = overflowSeconds / T;
-        this._phaseComplete = false;
+      // Janus flash at origin arrivals
+      if (prevPhase === "pos_to_origin") {
+        createJanusFlash(new this.THREE.Vector3(0, 0, 0));
+        this.inNegativeSpace = true;
+        animateBackgroundColor(0xffffff, 300);
+      } else if (prevPhase === "neg_to_origin") {
+        createJanusFlash(new this.THREE.Vector3(0, 0, 0));
+        this.inNegativeSpace = false;
+        animateBackgroundColor(0x1a1a1a, 300);
       }
-    }
 
-    const phase = PHASES[this.phaseIndex];
+      this._lastPhaseIndex = phaseIndex;
+      this._maxFPerPhase = 0;
+    }
+    this._maxFPerPhase = Math.max(this._maxFPerPhase, f);
 
     // Position each node based on current phase
     for (let i = 0; i < this.nodeMeshes.length; i++) {
@@ -741,7 +752,8 @@ class Drop4DDemo {
       this.nodeMeshes[i].position.copy(pos);
     }
 
-    this.updatePanel(phase, elapsed > T ? elapsed % T : elapsed, f);
+    const phaseElapsed = cycleElapsed - phaseIndex * T;
+    this.updatePanel(phase, phaseElapsed, f);
     this.animationId = requestAnimationFrame(() => this.animationLoop());
   }
 
@@ -754,8 +766,8 @@ class Drop4DDemo {
 
     if (!phaseEl) return;
 
-    const g = this.getG();
-    const T = this.getTotalTime();
+    const g = this._cachedG;
+    const T = this._cachedT;
 
     gEl.textContent = g >= 1e6 ? `${g.toExponential(2)} m/s\u00B2` : `${g.toFixed(3)} m/s\u00B2`;
     ttEl.textContent = `${T.toFixed(3)} s`;
