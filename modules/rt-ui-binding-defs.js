@@ -355,9 +355,9 @@ export const simpleSliderBindings = [
         ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
         ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
       };
-      // Read active grid mode from UI
-      const activeBtn = document.querySelector("[data-grid-mode].active");
-      const gridMode = activeBtn ? activeBtn.dataset.gridMode : "uniform";
+      // Read active grid mode from Quadray section
+      const activeBtn = document.querySelector("[data-quadray-mode].active");
+      const gridMode = activeBtn ? activeBtn.dataset.quadrayMode : "uniform";
       renderingAPI.rebuildQuadrayGrids(
         parseInt(value),
         visibilityState,
@@ -379,9 +379,9 @@ export const simpleSliderBindings = [
         cartesianBasis:
           document.getElementById("showCartesianBasis")?.checked ?? false,
       };
-      // Read active grid mode from UI
-      const activeBtn = document.querySelector("[data-grid-mode].active");
-      const gridMode = activeBtn ? activeBtn.dataset.gridMode : "uniform";
+      // Read active grid mode from Cartesian section
+      const activeBtn = document.querySelector("[data-cartesian-mode].active");
+      const gridMode = activeBtn ? activeBtn.dataset.cartesianMode : "uniform";
       renderingAPI.rebuildCartesianGrids(
         parseInt(value),
         visibilityState,

@@ -568,6 +568,14 @@ function startARTexplorer(
         const { label, checkboxIds } = gridMasterToggles[targetId];
         const shouldEnable = wasCollapsed; // Expanding = turn all ON, Collapsing = turn all OFF
 
+        // Set GROUP visibility directly — this covers all objects regardless of
+        // mode-specific keys (e.g. polar face planes vs uniform IVM planes)
+        if (targetId === "central-angle-grids") {
+          renderingAPI.setQuadrayGridVisible(shouldEnable);
+        } else if (targetId === "cartesian-planes") {
+          renderingAPI.setCartesianGridVisible(shouldEnable);
+        }
+
         checkboxIds.forEach(id => {
           const checkbox = document.getElementById(id);
           if (checkbox && checkbox.checked !== shouldEnable) {
@@ -1036,18 +1044,40 @@ function startARTexplorer(
     });
   });
 
-  // Grid mode toggle — mutually exclusive (uniform / gravity-chordal / gravity-spherical)
-  // Applies to both Central Angle and Cartesian grids simultaneously
-  document.querySelectorAll("[data-grid-mode]").forEach(btn => {
+  // Cartesian grid mode toggle — scoped to Cartesian section only
+  document.querySelectorAll("[data-cartesian-mode]").forEach(btn => {
     btn.addEventListener("click", function () {
       if (this.disabled) return;
-      const mode = this.dataset.gridMode;
+      const mode = this.dataset.cartesianMode;
       document
-        .querySelectorAll("[data-grid-mode]")
+        .querySelectorAll("[data-cartesian-mode]")
         .forEach(b => b.classList.remove("active"));
       this.classList.add("active");
 
-      // Rebuild Central Angle grids with new mode
+      const cartesianTess = parseInt(
+        document.getElementById("cartesianTessSlider")?.value || "10"
+      );
+      const cartVisibility = {
+        gridXY: document.getElementById("planeXY")?.checked ?? false,
+        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
+        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
+        cartesianBasis:
+          document.getElementById("showCartesianBasis")?.checked ?? false,
+      };
+      renderingAPI.rebuildCartesianGrids(cartesianTess, cartVisibility, mode);
+    });
+  });
+
+  // Quadray grid mode toggle — scoped to Central Angle section only
+  document.querySelectorAll("[data-quadray-mode]").forEach(btn => {
+    btn.addEventListener("click", function () {
+      if (this.disabled) return;
+      const mode = this.dataset.quadrayMode;
+      document
+        .querySelectorAll("[data-quadray-mode]")
+        .forEach(b => b.classList.remove("active"));
+      this.classList.add("active");
+
       const quadrayTess = parseInt(
         document.getElementById("quadrayTessSlider")?.value || "12"
       );
@@ -1060,19 +1090,6 @@ function startARTexplorer(
         ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
       };
       renderingAPI.rebuildQuadrayGrids(quadrayTess, ivmVisibility, mode);
-
-      // Rebuild Cartesian grids with same mode
-      const cartesianTess = parseInt(
-        document.getElementById("cartesianTessSlider")?.value || "10"
-      );
-      const cartVisibility = {
-        gridXY: document.getElementById("planeXY")?.checked ?? false,
-        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
-        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
-        cartesianBasis:
-          document.getElementById("showCartesianBasis")?.checked ?? false,
-      };
-      renderingAPI.rebuildCartesianGrids(cartesianTess, cartVisibility, mode);
     });
   });
 
