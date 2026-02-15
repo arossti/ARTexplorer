@@ -28,7 +28,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}{Proposition}
 
-\title{Geometric Janus Inversion -- v10.4 (Feb 2026)\\
+\title{Geometric Janus Inversion -- v10.5 (Feb 2026)\\
 \large Tetrahedral Coordinates, the Inversion Manifold,\\
 and the Three-State Geometry of Inside-Outing}
 
@@ -796,6 +796,25 @@ The software is available at: \url{https://arossti.github.io/ARTexplorer/}
     \label{fig:janus-transition}
 \end{figure}
 
+\subsection{Gravity Demos: Metric Geometry Over Dynamical Force}
+
+Two interactive demonstrations extend the Janus framework into gravitational physics, approaching acceleration geometrically rather than dynamically.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{Gravity-Demo.png}
+    \caption{Math Demo: 4-bodies drop along Tetrahedral axes to a common origin/centre of gravity and emerge through the Janus Point}
+    \label{fig:placeholder}
+\end{figure}
+
+Instead of applying $F = ma$ to falling bodies, both demos encode gravity in the \emph{metric of the space itself}. A gravity grid's non-uniform shell spacing compresses intervals near the origin (strong field) and expands them at distance (weak field). Bodies move at \textbf{constant coordinate velocity} through this warped grid; what an external observer interprets as gravitational acceleration is the compression of the space, not a force on the object. The grid does the physics. In RT terms, the time-quadrance for the fall is $Q_T = 2H/g$---pure rational algebra. A single deferred $\sqrt{}$ converts to seconds at the animation boundary.
+
+The \emph{Gravity Numberline} (2D) demonstrates the principle along a single axis: a body traverses gravity-spaced intervals at constant grid-velocity, accelerating visually as the intervals compress toward the origin. A celestial body selector (Earth, Moon, Jupiter, Sun, black hole) varies the metric, showing how the same constant-velocity motion through differently warped spaces produces different observable accelerations.
+
+The \emph{4D$^\pm$ Quadray Janus Drop} extends the principle to four bodies falling simultaneously along the four Quadray basis vectors through a gravity-spherical grid. These four bodies constitute the minimum Cayley-Menger configuration for three-dimensional Euclidean space: four points whose six pairwise quadrances are constrained by embeddability. As the bodies fall at constant grid-velocity through the compressed metric, all six mutual quadrances shrink proportionally---the \emph{shape} (the ratios of pairwise separations) is preserved as an invariant. At total collision, all quadrances reach zero simultaneously while the shape remains well-defined---the ``central configuration'' of Section~\ref{sec:three-state}. The bodies pass through the Janus Point and re-emerge in the dual arena with preserved metric relationships and flipped tetrahedral parity.
+
+The metric approach separates shape from dynamics. The falling bodies carry no momentum, no force vectors---only position in a metric space. The relational observables (inter-body quadrances) change; the relational structure (their constrained ratios) does not. Acceleration is not applied to objects; it is a property of the space they traverse.
+
 %==============================================================================
 \section{Open Questions}
 %==============================================================================
@@ -813,7 +832,7 @@ In decreasing order of tractability:
 
 \item \textbf{Higher primes.} The geodesic tetrahedron family has produced prime projections for 5, 7, 11, and 13 at rational spreads. Does it continue for all primes? Is there a prime for which no tetrahedral source produces a clean projection?
 
-\item \textbf{Relational formulation.} The Janus framework is presented here in coordinate language---the sign-flip of Quadray values, the paired arenas of positive and negative coordinate space. But Rational Trigonometry's core quantities (quadrance, spread) are relational observables, not coordinate projections. Can the Inversion Manifold be reformulated purely in terms of quadrance relations between points, without reference to any coordinate system? If so, the paired-arena structure would be a property of Euclidean geometry itself---visible in any relational description---rather than a feature of a particular parameterization. The tetrahedron's role as the minimum closed form suggests that the minimal Cayley-Menger configuration\endnote{The Cayley-Menger determinant gives the necessary and sufficient conditions for a set of pairwise distances to be embeddable in Euclidean space of a given dimension. In standard form it uses squared distances---i.e., quadrances. The constraints are polynomial: no square roots, no transcendentals. In RT terms, the embeddability conditions are already rational.} (four points in 3D) may carry the Janus structure intrinsically, in its quadrance relationships rather than its coordinate representations.
+\item \textbf{Relational formulation.} The Janus framework is presented here in coordinate language---the sign-flip of Quadray values, the paired arenas of positive and negative coordinate space. But Rational Trigonometry's core quantities (quadrance, spread) are relational observables, not coordinate projections. Can the Inversion Manifold be reformulated purely in terms of quadrance relations between points, without reference to any coordinate system? If so, the paired-arena structure would be a property of Euclidean geometry itself---visible in any relational description---rather than a feature of a particular parameterization. The tetrahedron's role as the minimum closed form suggests that the minimal Cayley-Menger configuration\endnote{The Cayley-Menger determinant gives the necessary and sufficient conditions for a set of pairwise distances to be embeddable in Euclidean space of a given dimension. In standard form it uses squared distances---i.e., quadrances. The constraints are polynomial: no square roots, no transcendentals. In RT terms, the embeddability conditions are already rational.} (four points in 3D) may carry the Janus structure intrinsically, in its quadrance relationships rather than its coordinate representations. The 4D$^\pm$ Quadray Janus Drop demo (Section~8) provides a concrete instance: four bodies whose six mutual quadrances are always positive, always constrained by tetrahedral embeddability, and whose ratios are preserved through total collision---the relational content of Janus Inversion expressed entirely in positive pairwise separations, without any coordinate sign entering the observables. The question is whether the parity flip (tetrahedron to dual) can be detected from within the quadrance data alone, or whether it requires the coordinate representation to distinguish the two arenas.
 \end{enumerate}
 
 %==============================================================================
