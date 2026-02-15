@@ -630,6 +630,8 @@ RT.Gravity = {
 | | Phase reordering | Phase 1 = G-Quadray (was Phase 2). Phase 1b = G-Cartesian (was Phase 1). Rationale: Quadray tessellation is the core geometry; Cartesian warping is a simpler derivative. |
 | Feb 14, 2026 | Inward bowing bug | Per-axis cumDist (tensor product of 1D warping) pulls off-axis vertices inward. Midpoints at half the correct radius. Fix: radial shell projection via `shellProjectionScale(Q, shellRadius)` — one √ per vertex at GPU boundary. Axis ticks unchanged; off-axis points inflate to shells. Committed `e63f64b`. |
 | | Chord sag observed | Shell projection places vertices correctly on shells, but straight line segments between them sag below the shell surface. Visible in orthographic on-axis views as slight under-inflation vs true great-circle arcs. Phase 3 (arc subdivision) now the immediate next step. |
+| | Spherical mode + Cartesian UI | Arc subdivision (8 segments per ring edge, lerp + shellProjectionScale) committed as `4d6243e`. Grid Mode buttons added to Cartesian Planes section (synced via shared `data-grid-mode` handler). |
+| | Chord sag persists in spherical mode | Even with 8 arc subdivisions, the outermost shells still show visible under-inflation vs true spherical profile. The lerp-then-project approach (linear interpolation in 3D, then radial projection) does **not** trace a true great-circle arc — it produces a polygonal approximation with diminishing but nonzero chord sag. Increasing subdivisions reduces sag but never eliminates it. The correct solution is **Phase 3: Weierstrass rational arcs**, which parameterize the arc algebraically and produce points *on* the shell surface by construction. |
 
 ---
 
@@ -988,6 +990,48 @@ With radial warping, the "gravity-chordal" mode already produces outward-curving
 
 ---
 
+## Observation: Chord Sag Persists in Spherical Mode
+
+**Status:** Open — requires Phase 3 (Weierstrass rational arcs) for proper fix
+
+### What We See
+
+With spherical mode active (8 arc subdivisions per ring edge), the outermost shells still appear slightly "under-inflated" compared to a true spherical profile. The effect is most visible in orthographic on-axis views (e.g. looking down the W quadray axis), where the outer shell boundary should trace a perfect circle but instead shows a subtle polygonal flattening.
+
+### Why Lerp-Then-Project Isn't Enough
+
+The current spherical mode algorithm:
+1. **Lerp** in 3D between two vertices on the same shell: `M = P1 + t × (P2 - P1)`
+2. **Project** M onto the shell: `M' = M × (shellRadius / |M|)`
+
+Step 1 produces a point *inside* the shell (the chord). Step 2 pushes it back out to the shell surface. But the resulting arc is a **polygonal approximation** — a sequence of chords between projected points. Each sub-segment still sags below the shell.
+
+With N subdivisions, the maximum chord sag for a circular arc of half-angle α is:
+```
+sag ≈ R × (1 - cos(α/N))
+```
+
+For our outermost shell with wide-angle edges (α ~ 30-60°), even 8 subdivisions leave measurable sag. Doubling to 16 or 32 would reduce it but at the cost of ~2-4× more vertices — and it's still an approximation.
+
+### The Proper Fix: Phase 3 Weierstrass Rational Arcs
+
+The Weierstrass rational parameterization (already sketched in the Phase 3 section above) produces points **on the arc by construction**, not by projection:
+
+```
+x(u) = R × (1 - u²) / (1 + u²)
+y(u) = R × (2u) / (1 + u²)
+```
+
+Every point for every u lies exactly on the circle of radius R. No chord sag at any subdivision level. And it's RT-pure: addition, multiplication, division only — no sin, cos, or arccos.
+
+### Recommended Path Forward
+
+1. **Current spherical mode (lerp + project, 8 subdivisions)**: Keep as-is for now. It's a visible improvement over straight chords and demonstrates the concept.
+2. **Phase 3**: Replace the lerp-then-project loop with `RT.Gravity.rationalArc()` using the Weierstrass parameterization. Same vertex count, true arcs, RT-pure math. This is the definitive fix.
+3. **Optional**: The current "Spherical" button could be renamed or the Phase 3 implementation could replace it in-place, since the rational arc is strictly superior.
+
+---
+
 ## Next Steps
 
 - [x] ~~Validate Phase 0 math: compute and plot 1D gravity intervals for N=144~~
@@ -1004,8 +1048,9 @@ With radial warping, the "gravity-chordal" mode already produces outward-curving
   - [x] ~~Wire buttons in rt-init.js and update tessellation slider binding~~
   - [x] ~~**BUG FIX: Replace per-axis cumDist with radial gravity warping** (e63f64b)~~
   - [x] ~~Browser verify: outward shell arcs confirmed, uniform regression OK~~
-  - [ ] **Phase 3: Spherical shell arcs — subdivide ring edges to eliminate chord sag** (see below)
+  - [x] ~~Spherical mode: arc-subdivided ring edges (8 segments, lerp + shellProjectionScale)~~ (`4d6243e`)
+  - [ ] **Chord sag persists in spherical mode** — see observation below
 - [ ] Phase 1b: G-Cartesian Planes (non-uniform XYZ grids)
-  - [ ] Add Uniform / Gravity / Spherical buttons to Cartesian Planes UI section (currently only in Central Angle section — buttons already wire to both grids via rt-init.js, just need UI duplication)
-- [ ] Phase 3: Curved gridlines (Weierstrass rational arcs replacing straight chords)
+  - [x] ~~Add Uniform / Gravity / Spherical buttons to Cartesian Planes UI section~~ (`4d6243e`)
+- [ ] Phase 3: Curved gridlines (Weierstrass rational arcs replacing straight chords) — **key next step for chord sag**
 - [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)
