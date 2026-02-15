@@ -17,8 +17,8 @@
  */
 
 import { RT, Quadray } from "../modules/rt-math.js";
-import { Nodes } from "../modules/rt-nodes.js";
-import { createJanusFlash } from "../modules/rt-janus.js";
+import { Polyhedra } from "../modules/rt-polyhedra.js";
+import { createJanusFlash, animateBackgroundColor } from "../modules/rt-janus.js";
 
 // Animation phases
 const PHASES = ["pos_to_origin", "origin_to_neg", "neg_to_origin", "origin_to_pos"];
@@ -35,6 +35,7 @@ const AXIS_COLORS = [
 const AXIS_LABELS = ["QX", "QZ", "QY", "QW"];
 
 const PAUSE_DURATION = 500; // ms pause at origin before next phase
+const BODY_HALF_SIZE = 1.0; // halfSize for polyhedra bodies (standard scale)
 
 /**
  * Drop4DDemo - 4D± Gravity + Inversion controller
@@ -60,6 +61,12 @@ class Drop4DDemo {
     // Physics state
     this.selectedBody = "earth";
     this.extent = 0; // outermost shell radius
+
+    // Body shape: "tetrahedron" or "icosahedron"
+    this.bodyShape = "tetrahedron";
+
+    // Dimensional state tracking for background inversion
+    this.inNegativeSpace = false;
 
     // Animation state
     this.isAnimating = false;
@@ -219,6 +226,42 @@ class Drop4DDemo {
   // DEMO OBJECTS
   // ========================================================================
 
+  /**
+   * Build a THREE.BufferGeometry from Polyhedra output {vertices, faces}
+   */
+  buildGeometry(polyData) {
+    const THREE = this.THREE;
+    const positions = [];
+    const indices = [];
+
+    polyData.vertices.forEach(v => positions.push(v.x, v.y, v.z));
+    polyData.faces.forEach(faceIndices => {
+      for (let i = 1; i < faceIndices.length - 1; i++) {
+        indices.push(faceIndices[0], faceIndices[i], faceIndices[i + 1]);
+      }
+    });
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    return geometry;
+  }
+
+  /**
+   * Get geometry for current body shape
+   */
+  getBodyGeometry() {
+    if (this.bodyShape === "icosahedron") {
+      return this.buildGeometry(
+        Polyhedra.geodesicIcosahedron(BODY_HALF_SIZE, 3, "out")
+      );
+    }
+    return this.buildGeometry(
+      Polyhedra.tetrahedron(BODY_HALF_SIZE, { silent: true })
+    );
+  }
+
   createDemoObjects() {
     const THREE = this.THREE;
 
@@ -232,10 +275,9 @@ class Drop4DDemo {
     this.demoGroup = new THREE.Group();
     this.demoGroup.name = "Drop4DDemo";
 
-    // Get node geometry (3F geodesic icosahedron, size "7" = 0.12 radius)
-    const nodeData = Nodes.getCachedNodeGeometry(true, "7", "tetrahedron", 1);
+    const bodyGeometry = this.getBodyGeometry();
 
-    // Create 4 node meshes at outermost extent of each Quadray axis
+    // Create 4 body meshes at outermost extent of each Quadray axis
     for (let i = 0; i < 4; i++) {
       const material = new THREE.MeshStandardMaterial({
         color: AXIS_COLORS[i],
@@ -245,7 +287,7 @@ class Drop4DDemo {
         side: THREE.FrontSide,
       });
 
-      const mesh = new THREE.Mesh(nodeData.geometry, material);
+      const mesh = new THREE.Mesh(bodyGeometry, material);
       const basisDir = Quadray.basisVectors[i].clone();
       mesh.position.copy(basisDir.multiplyScalar(this.extent));
       mesh.userData = { axisIndex: i, axisLabel: AXIS_LABELS[i] };
@@ -255,19 +297,59 @@ class Drop4DDemo {
     }
 
     this.scene.add(this.demoGroup);
-    console.log(`🔵 4D Drop: Created 4 nodes at extent=${this.extent.toFixed(3)}`);
+    const shapeName = this.bodyShape === "icosahedron" ? "3F Geodesic Icosahedra" : "Tetrahedra";
+    console.log(`🔵 4D Drop: Created 4 ${shapeName} at extent=${this.extent.toFixed(3)}`);
   }
 
   removeDemoObjects() {
     if (this.demoGroup) {
-      // Dispose materials (geometry is cached, don't dispose)
+      // Dispose geometry and materials
       this.nodeMeshes.forEach(mesh => {
+        if (mesh.geometry) mesh.geometry.dispose();
         if (mesh.material) mesh.material.dispose();
       });
       this.scene.remove(this.demoGroup);
       this.demoGroup = null;
       this.nodeMeshes = [];
     }
+  }
+
+  /**
+   * Switch body shape and rebuild meshes in place
+   */
+  setBodyShape(shape) {
+    if (shape === this.bodyShape) return;
+    this.bodyShape = shape;
+
+    if (!this.demoGroup || this.nodeMeshes.length === 0) return;
+
+    const newGeometry = this.getBodyGeometry();
+
+    // Replace geometry on each existing mesh (preserves positions/materials)
+    this.nodeMeshes.forEach(mesh => {
+      if (mesh.geometry) mesh.geometry.dispose();
+      mesh.geometry = newGeometry;
+    });
+
+    // Update shape buttons
+    const tetraBtn = document.getElementById("d4d-shape-tetra");
+    const icoBtn = document.getElementById("d4d-shape-ico");
+    if (tetraBtn && icoBtn) {
+      if (shape === "tetrahedron") {
+        tetraBtn.style.background = "#353";
+        tetraBtn.style.borderColor = "#8f8";
+        icoBtn.style.background = "#333";
+        icoBtn.style.borderColor = "#0ff";
+      } else {
+        icoBtn.style.background = "#353";
+        icoBtn.style.borderColor = "#8f8";
+        tetraBtn.style.background = "#333";
+        tetraBtn.style.borderColor = "#0ff";
+      }
+    }
+
+    const shapeName = shape === "icosahedron" ? "3F Geodesic Icosahedra" : "Tetrahedra";
+    console.log(`🔵 4D Drop: Switched to ${shapeName}`);
   }
 
   // ========================================================================
@@ -401,6 +483,18 @@ class Drop4DDemo {
         <select id="d4d-body-selector"></select>
       </div>
 
+      <div class="section">
+        <div class="section-title">Falling Bodies</div>
+        <div class="controls" style="margin-top: 4px;">
+          <button class="ctrl-btn" id="d4d-shape-tetra" style="flex: 1; background: #353; border-color: #8f8;">
+            Tetrahedron
+          </button>
+          <button class="ctrl-btn" id="d4d-shape-ico" style="flex: 1;">
+            3F Icosahedron
+          </button>
+        </div>
+      </div>
+
       <div class="controls">
         <button class="ctrl-btn" id="d4d-drop-btn">Drop</button>
       </div>
@@ -447,6 +541,14 @@ class Drop4DDemo {
       this.computeExtent();
       this.resetNodePositions();
       this.updatePanel();
+    });
+
+    // Shape toggle buttons
+    document.getElementById("d4d-shape-tetra").addEventListener("click", () => {
+      this.setBodyShape("tetrahedron");
+    });
+    document.getElementById("d4d-shape-ico").addEventListener("click", () => {
+      this.setBodyShape("icosahedron");
     });
 
     // Drop/Stop toggle
@@ -568,6 +670,12 @@ class Drop4DDemo {
       btn.style.borderColor = "#0ff";
     }
 
+    // Restore background if in negative space
+    if (this.inNegativeSpace) {
+      this.inNegativeSpace = false;
+      animateBackgroundColor(0x1a1a1a, 300);
+    }
+
     // Reset to positive extent
     this.resetNodePositions();
     this.phaseIndex = 0;
@@ -629,16 +737,20 @@ class Drop4DDemo {
 
     // Check phase completion
     if (f >= 1.0) {
-      // Trigger Janus flash at origin arrivals
-      if (phase === "pos_to_origin" || phase === "neg_to_origin") {
+      // Trigger Janus flash + background inversion at origin arrivals
+      if (phase === "pos_to_origin") {
+        // Entering negative space
         createJanusFlash(new this.THREE.Vector3(0, 0, 0));
-        this.isPaused = true;
-        this.pauseStartTime = now;
-      } else {
-        // Non-origin arrivals: brief pause at extent, then continue
-        this.isPaused = true;
-        this.pauseStartTime = now;
+        this.inNegativeSpace = true;
+        animateBackgroundColor(0xffffff, 300); // White background
+      } else if (phase === "neg_to_origin") {
+        // Returning to positive space
+        createJanusFlash(new this.THREE.Vector3(0, 0, 0));
+        this.inNegativeSpace = false;
+        animateBackgroundColor(0x1a1a1a, 300); // Dark background
       }
+      this.isPaused = true;
+      this.pauseStartTime = now;
     }
 
     this.animationId = requestAnimationFrame(() => this.animationLoop());
