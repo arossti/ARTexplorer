@@ -438,9 +438,9 @@ export const Grids = {
       // This places ALL vertices on ring k (i+j = k) at the SAME radial distance
       // cumDist[k], producing outward-arcing gridlines along concentric shells.
       //
-      // Spherical mode: ring edges (P1→P2, same shell) are subdivided into arc
-      // segments, each intermediate point projected onto the shell. This eliminates
-      // chord sag where straight segments cut below the shell surface.
+      // Spherical mode: ring edges (P1→P2, same shell) are traced as great-circle
+      // arcs via Weierstrass rational parameterization. Every intermediate point
+      // lies exactly on the shell — no chord sag. 2√ per arc at GPU boundary.
       const totalExtent = tessellations * edgeLength;
       const cumDist = RT.Gravity.computeGravityCumulativeDistances(
         tessellations,
@@ -483,23 +483,19 @@ export const Grids = {
           // Edge P0→P1: radial (different shells) — always straight
           vertices.push(p0x, p0y, p0z, p1x, p1y, p1z);
 
-          // Edge P1→P2: RING (same shell i+j+1) — arc subdivide if spherical
+          // Edge P1→P2: RING (same shell i+j+1) — rational arc if spherical
           if (arcSub > 0) {
-            // Subdivide chord P1→P2, project each point onto shell
+            // Weierstrass great-circle arc: every point exactly on shell
             const shellR = cumDist[i + j + 1];
-            let prevAx = p1x, prevAy = p1y, prevAz = p1z;
-            for (let s = 1; s <= arcSub; s++) {
-              const t = s / arcSub;
-              // Lerp along chord in 3D
-              const ax = p1x + (p2x - p1x) * t;
-              const ay = p1y + (p2y - p1y) * t;
-              const az = p1z + (p2z - p1z) * t;
-              // Project onto shell (one √ per arc point — GPU boundary)
-              const aQ = ax * ax + ay * ay + az * az;
-              const aScale = RT.Gravity.shellProjectionScale(aQ, shellR);
-              const cx = ax * aScale, cy = ay * aScale, cz = az * aScale;
-              vertices.push(prevAx, prevAy, prevAz, cx, cy, cz);
-              prevAx = cx; prevAy = cy; prevAz = cz;
+            const arcPts = RT.Gravity.rationalArc(
+              p1x, p1y, p1z, p2x, p2y, p2z, shellR, arcSub
+            );
+            for (let s = 0; s < arcSub; s++) {
+              const off = s * 3;
+              vertices.push(
+                arcPts[off], arcPts[off + 1], arcPts[off + 2],
+                arcPts[off + 3], arcPts[off + 4], arcPts[off + 5]
+              );
             }
           } else {
             vertices.push(p1x, p1y, p1z, p2x, p2y, p2z);

@@ -2873,6 +2873,82 @@ export const RT = {
       if (Q < 1e-24) return 0; // origin maps to origin
       return shellRadius / Math.sqrt(Q); // single √ at GPU boundary
     },
+
+    /**
+     * Great-circle arc via Weierstrass rational parameterization.
+     *
+     * P1 and P2 must lie on a sphere of radius R centered at the origin.
+     * Returns (segments+1) points as a flat array [x0,y0,z0, x1,y1,z1, ...].
+     * Point 0 = P1, point[segments] = P2, intermediates lie exactly on the arc.
+     *
+     * RT-pure: all intermediate math is rational (add, mul, div).
+     * Only 2√ per arc at the GPU boundary (e2 normalization + u_max).
+     *
+     * Parameterization: u = tan(θ/2) gives
+     *   x(u) = R(1 − u²)/(1 + u²)
+     *   y(u) = R · 2u/(1 + u²)
+     * in the plane basis {e1, e2} where e1 = P1/R, e2 ⊥ e1 in the arc plane.
+     *
+     * @param {number} p1x - First endpoint x (on shell)
+     * @param {number} p1y - First endpoint y
+     * @param {number} p1z - First endpoint z
+     * @param {number} p2x - Second endpoint x (on shell)
+     * @param {number} p2y - Second endpoint y
+     * @param {number} p2z - Second endpoint z
+     * @param {number} R   - Shell radius (known, avoids computing |P1|)
+     * @param {number} segments - Number of arc subdivisions
+     * @returns {number[]} Flat array of (segments+1)×3 coordinates
+     */
+    rationalArc: (p1x, p1y, p1z, p2x, p2y, p2z, R, segments) => {
+      const R2 = R * R;
+
+      // e1 = P1 / R (unit vector — division only, no √)
+      const e1x = p1x / R, e1y = p1y / R, e1z = p1z / R;
+
+      // dot = P1·P2 (fully rational)
+      const dot = p1x * p2x + p1y * p2y + p1z * p2z;
+
+      // e2_raw = P2 − (dot/R²)·P1 (P2's component orthogonal to e1)
+      const proj = dot / R2;
+      const e2rx = p2x - proj * p1x;
+      const e2ry = p2y - proj * p1y;
+      const e2rz = p2z - proj * p1z;
+      const e2Q = e2rx * e2rx + e2ry * e2ry + e2rz * e2rz;
+
+      // Degenerate: P1 ≈ P2 — fall back to straight line
+      if (e2Q < 1e-20) {
+        const pts = new Array((segments + 1) * 3);
+        for (let s = 0; s <= segments; s++) {
+          const t = s / segments;
+          pts[s * 3] = p1x + (p2x - p1x) * t;
+          pts[s * 3 + 1] = p1y + (p2y - p1y) * t;
+          pts[s * 3 + 2] = p1z + (p2z - p1z) * t;
+        }
+        return pts;
+      }
+
+      // √ #1: normalize e2 (GPU boundary)
+      const e2len = Math.sqrt(e2Q);
+      const e2x = e2rx / e2len, e2y = e2ry / e2len, e2z = e2rz / e2len;
+
+      // √ #2: u_max = tan(θ/2) = √((1−d)/(1+d)), d = cos(θ) = dot/R²
+      const d = dot / R2;
+      const u_max = Math.sqrt((1 - d) / (1 + d));
+
+      // Weierstrass rational parameterization — no trig, no further √
+      const pts = new Array((segments + 1) * 3);
+      for (let s = 0; s <= segments; s++) {
+        const u = (s / segments) * u_max;
+        const u2 = u * u;
+        const denom = 1 + u2;
+        const xc = R * (1 - u2) / denom; // rational in u
+        const yc = R * (2 * u) / denom;  // rational in u
+        pts[s * 3] = xc * e1x + yc * e2x;
+        pts[s * 3 + 1] = xc * e1y + yc * e2y;
+        pts[s * 3 + 2] = xc * e1z + yc * e2z;
+      }
+      return pts;
+    },
   },
 };
 
