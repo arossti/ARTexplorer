@@ -34,7 +34,6 @@ const AXIS_COLORS = [
 // Quadray axis labels (ordered by basisVectors index: A=0, B=1, C=2, D=3)
 const AXIS_LABELS = ["QX", "QZ", "QY", "QW"];
 
-const PAUSE_DURATION = 500; // ms pause at origin before next phase
 const BODY_HALF_SIZE = 1.0; // halfSize for polyhedra bodies (standard scale)
 
 /**
@@ -73,8 +72,6 @@ class Drop4DDemo {
     this.animationId = null;
     this.phaseIndex = 0;
     this.phaseStartTime = null;
-    this.isPaused = false;
-    this.pauseStartTime = null;
   }
 
   // ========================================================================
@@ -642,7 +639,6 @@ class Drop4DDemo {
     this.isAnimating = true;
     this.phaseIndex = 0;
     this.phaseStartTime = performance.now();
-    this.isPaused = false;
 
     const btn = document.getElementById("d4d-drop-btn");
     if (btn) {
@@ -686,22 +682,39 @@ class Drop4DDemo {
     if (!this.isAnimating) return;
 
     const now = performance.now();
-
-    // Handle pause at origin
-    if (this.isPaused) {
-      if (now - this.pauseStartTime >= PAUSE_DURATION) {
-        this.isPaused = false;
-        this.phaseIndex = (this.phaseIndex + 1) % PHASES.length;
-        this.phaseStartTime = now;
-      } else {
-        this.animationId = requestAnimationFrame(() => this.animationLoop());
-        return;
-      }
-    }
-
     const T = this.getTotalTime();
     const elapsed = (now - this.phaseStartTime) / 1000;
-    let f = Math.min(elapsed / T, 1.0);
+    let f = elapsed / T;
+
+    // Phase completion: render at f=1.0 first, then advance next frame
+    if (f >= 1.0) {
+      if (!this._phaseComplete) {
+        // First frame past completion: clamp to 1.0 and render the endpoint
+        f = 1.0;
+        this._phaseComplete = true;
+      } else {
+        // Second frame: now advance phase with overflow carry
+        const phase = PHASES[this.phaseIndex];
+
+        // Trigger Janus flash + background inversion at origin arrivals
+        if (phase === "pos_to_origin") {
+          createJanusFlash(new this.THREE.Vector3(0, 0, 0));
+          this.inNegativeSpace = true;
+          animateBackgroundColor(0xffffff, 300);
+        } else if (phase === "neg_to_origin") {
+          createJanusFlash(new this.THREE.Vector3(0, 0, 0));
+          this.inNegativeSpace = false;
+          animateBackgroundColor(0x1a1a1a, 300);
+        }
+
+        // Advance phase, carry overflow time
+        const overflowSeconds = (f - 1.0) * T;
+        this.phaseIndex = (this.phaseIndex + 1) % PHASES.length;
+        this.phaseStartTime = now - overflowSeconds * 1000;
+        f = overflowSeconds / T;
+        this._phaseComplete = false;
+      }
+    }
 
     const phase = PHASES[this.phaseIndex];
 
@@ -712,19 +725,15 @@ class Drop4DDemo {
 
       switch (phase) {
         case "pos_to_origin":
-          // From +extent toward origin
           pos = basisDir.multiplyScalar(this.extent * (1 - f));
           break;
         case "origin_to_neg":
-          // From origin to -extent
           pos = basisDir.multiplyScalar(-this.extent * f);
           break;
         case "neg_to_origin":
-          // From -extent toward origin
           pos = basisDir.multiplyScalar(-this.extent * (1 - f));
           break;
         case "origin_to_pos":
-          // From origin to +extent
           pos = basisDir.multiplyScalar(this.extent * f);
           break;
       }
@@ -732,27 +741,7 @@ class Drop4DDemo {
       this.nodeMeshes[i].position.copy(pos);
     }
 
-    // Update panel readout
-    this.updatePanel(phase, elapsed, f);
-
-    // Check phase completion
-    if (f >= 1.0) {
-      // Trigger Janus flash + background inversion at origin arrivals
-      if (phase === "pos_to_origin") {
-        // Entering negative space
-        createJanusFlash(new this.THREE.Vector3(0, 0, 0));
-        this.inNegativeSpace = true;
-        animateBackgroundColor(0xffffff, 300); // White background
-      } else if (phase === "neg_to_origin") {
-        // Returning to positive space
-        createJanusFlash(new this.THREE.Vector3(0, 0, 0));
-        this.inNegativeSpace = false;
-        animateBackgroundColor(0x1a1a1a, 300); // Dark background
-      }
-      this.isPaused = true;
-      this.pauseStartTime = now;
-    }
-
+    this.updatePanel(phase, elapsed > T ? elapsed % T : elapsed, f);
     this.animationId = requestAnimationFrame(() => this.animationLoop());
   }
 
