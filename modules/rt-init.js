@@ -139,6 +139,7 @@ function startARTexplorer(
 
   // Assign updateGeometry EARLY so event listeners can reference it
   let updateGeometry = renderingAPI.updateGeometry;
+  let requestGeometryUpdate = renderingAPI.requestGeometryUpdate;
 
   // Scene objects - assigned after initScene() is called
   let scene, camera, renderer, controls;
@@ -182,6 +183,7 @@ function startARTexplorer(
     // Initialize new declarative binding system
     uiBindings.init({
       updateGeometry: updateGeometry,
+      requestGeometryUpdate: requestGeometryUpdate,
       renderingAPI: renderingAPI,
       RT: RT,
       Quadray: Quadray,
@@ -389,7 +391,7 @@ function startARTexplorer(
       RTJanus.createJanusFlash(new THREE.Vector3(0, 0, 0));
     }
 
-    updateGeometry();
+    requestGeometryUpdate();
   });
 
   document.getElementById("tetScaleSlider").addEventListener("input", e => {
@@ -428,13 +430,13 @@ function startARTexplorer(
       RTJanus.createJanusFlash(new THREE.Vector3(0, 0, 0));
     }
 
-    updateGeometry();
+    requestGeometryUpdate();
   });
 
   // Face Opacity slider
   document.getElementById("opacitySlider").addEventListener("input", e => {
     document.getElementById("opacityValue").textContent = e.target.value;
-    updateGeometry();
+    requestGeometryUpdate();
   });
 
   // Node Opacity slider
@@ -442,7 +444,7 @@ function startARTexplorer(
     const opacity = parseFloat(e.target.value);
     document.getElementById("nodeOpacityValue").textContent = opacity;
     renderingAPI.setNodeOpacity(opacity);
-    updateGeometry();
+    requestGeometryUpdate();
   });
 
   // NOTE: Tessellation slider handlers are now in rt-ui-binding-defs.js
@@ -623,7 +625,7 @@ function startARTexplorer(
       // Clear geometry cache when size changes
       renderingAPI.clearNodeCache();
       // Trigger re-render
-      updateGeometry();
+      requestGeometryUpdate();
     });
   }
 
