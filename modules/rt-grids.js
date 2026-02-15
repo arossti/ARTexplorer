@@ -62,7 +62,7 @@ export const Grids = {
       // Gravity converges to a POINT (origin), not an axis — rectangular
       // topology is wrong; polar correctly shows spherical shell cross-sections.
       // Circles via Weierstrass rational parameterization (RT-pure, no trig).
-      const SPQ = 8; // segments per quadrant → 32 per full circle
+      const SPQ = 16; // segments per quadrant → 64 per full circle
 
       for (let k = 1; k <= halfDiv; k++) {
         const r = cumDist[k];
@@ -140,8 +140,11 @@ export const Grids = {
     // divisions=10 → 10-unit extent (-5 to +5) with 1.0 unit squares
     const gridSize = divisions;
 
-    // Simple grey grid color - subtle and non-distracting
-    const gridColor = 0x444444;
+    // Per-plane colors: additive mix of the two axis colors it contains
+    // X=Red, Y=Green, Z=Blue → XY=Yellow, XZ=Magenta, YZ=Cyan
+    const colorXY = 0xffff00; // Red + Green = Yellow
+    const colorXZ = 0xff00ff; // Red + Blue  = Magenta
+    const colorYZ = 0x00ffff; // Green + Blue = Cyan
 
     // Z-UP CONVENTION: Notation swap from Y-up
     // In Z-up: XY is horizontal, XZ is vertical, YZ is vertical
@@ -152,32 +155,17 @@ export const Grids = {
       // Cartesian gravity is strictly polar: concentric circles at gravity-spaced
       // radii. Gravity converges to a point (origin), not an axis — polar topology
       // is the only correct representation on Cartesian planes.
-      gridXY = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
+      gridXY = Grids.createGravityCartesianPlane(divisions, colorXY, "gravity-spherical");
       gridXY.rotation.x = Math.PI / 2;
-      gridXZ = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
-      gridYZ = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
+      gridXZ = Grids.createGravityCartesianPlane(divisions, colorXZ, "gravity-spherical");
+      gridYZ = Grids.createGravityCartesianPlane(divisions, colorYZ, "gravity-spherical");
       gridYZ.rotation.z = Math.PI / 2;
     } else {
       // Uniform mode: standard THREE.GridHelper
-      gridXY = new THREE.GridHelper(
-        gridSize,
-        divisions,
-        gridColor,
-        gridColor
-      );
+      gridXY = new THREE.GridHelper(gridSize, divisions, colorXY, colorXY);
       gridXY.rotation.x = Math.PI / 2;
-      gridXZ = new THREE.GridHelper(
-        gridSize,
-        divisions,
-        gridColor,
-        gridColor
-      );
-      gridYZ = new THREE.GridHelper(
-        gridSize,
-        divisions,
-        gridColor,
-        gridColor
-      );
+      gridXZ = new THREE.GridHelper(gridSize, divisions, colorXZ, colorXZ);
+      gridYZ = new THREE.GridHelper(gridSize, divisions, colorYZ, colorYZ);
       gridYZ.rotation.z = Math.PI / 2;
     }
 
@@ -838,37 +826,26 @@ export const Grids = {
     // Recreate grid
     const cartesianGrid = new THREE.Group();
     const gridSize = divisions;
-    const gridColor = 0x444444;
+
+    // Per-plane colors: additive mix of the two axis colors it contains
+    const colorXY = 0xffff00; // Red + Green = Yellow
+    const colorXZ = 0xff00ff; // Red + Blue  = Magenta
+    const colorYZ = 0x00ffff; // Green + Blue = Cyan
 
     let gridXY, gridXZ, gridYZ;
 
     if (gridMode === "gravity-chordal" || gridMode === "gravity-spherical") {
       // Cartesian gravity is strictly polar (see createCartesianGrid)
-      gridXY = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
+      gridXY = Grids.createGravityCartesianPlane(divisions, colorXY, "gravity-spherical");
       gridXY.rotation.x = Math.PI / 2;
-      gridXZ = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
-      gridYZ = Grids.createGravityCartesianPlane(divisions, gridColor, "gravity-spherical");
+      gridXZ = Grids.createGravityCartesianPlane(divisions, colorXZ, "gravity-spherical");
+      gridYZ = Grids.createGravityCartesianPlane(divisions, colorYZ, "gravity-spherical");
       gridYZ.rotation.z = Math.PI / 2;
     } else {
-      gridXY = new THREE.GridHelper(
-        gridSize,
-        divisions,
-        gridColor,
-        gridColor
-      );
+      gridXY = new THREE.GridHelper(gridSize, divisions, colorXY, colorXY);
       gridXY.rotation.x = Math.PI / 2;
-      gridXZ = new THREE.GridHelper(
-        gridSize,
-        divisions,
-        gridColor,
-        gridColor
-      );
-      gridYZ = new THREE.GridHelper(
-        gridSize,
-        divisions,
-        gridColor,
-        gridColor
-      );
+      gridXZ = new THREE.GridHelper(gridSize, divisions, colorXZ, colorXZ);
+      gridYZ = new THREE.GridHelper(gridSize, divisions, colorYZ, colorYZ);
       gridYZ.rotation.z = Math.PI / 2;
     }
 

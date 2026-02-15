@@ -123,7 +123,7 @@ createGravityCartesianGrid(scene, divisions, gravityCenter)
 
 ### Key Decisions
 
-1. **Gravity center**: The origin (0,0,0) by default. All intervals compress toward the gravity center. Future: movable gravity source.
+1. **Gravity center**: The origin (0,0,0) by default. All intervals compress toward the gravity center. Future: movable gravity source(s) for n-Body studies.
 
 2. **Bidirectional intervals**: The grid extends in both directions from the gravity center. Intervals are symmetric (or asymmetric if gravity source is off-center).
 
@@ -632,6 +632,12 @@ RT.Gravity = {
 | | Chord sag observed | Shell projection places vertices correctly on shells, but straight line segments between them sag below the shell surface. Visible in orthographic on-axis views as slight under-inflation vs true great-circle arcs. Phase 3 (arc subdivision) now the immediate next step. |
 | | Spherical mode + Cartesian UI | Arc subdivision (8 segments per ring edge, lerp + shellProjectionScale) committed as `4d6243e`. Grid Mode buttons added to Cartesian Planes section (synced via shared `data-grid-mode` handler). |
 | | Chord sag persists in spherical mode | Even with 8 arc subdivisions, the outermost shells still show visible under-inflation vs true spherical profile. The lerp-then-project approach (linear interpolation in 3D, then radial projection) does **not** trace a true great-circle arc — it produces a polygonal approximation with diminishing but nonzero chord sag. Increasing subdivisions reduces sag but never eliminates it. The correct solution is **Phase 3: Weierstrass rational arcs**, which parameterize the arc algebraically and produce points *on* the shell surface by construction. |
+| | Phase 3: Weierstrass rationalArc() | `RT.Gravity.rationalArc()` added to rt-math.js. Generates great-circle arc points via u = tan(θ/2) parameterization: x(u) = R(1-u²)/(1+u²), y(u) = R·2u/(1+u²). Two √ per arc at GPU boundary, zero trig. Every point lies exactly on the shell. Committed `4961b4e`. |
+| | Spacing formula fix | `computeGravityCumulativeDistances` was using `E×(k/N)²` — all compression invisible near origin, outer shells nearly uniform. User identified mismatch with gravity numberline demo. Correct formula: `E×(1-√(1-k/N))` matching numberline-derived distribution. ~24:1 compression ratio. Committed `1bbddc3`. |
+| | Gravity converges to a point | User insight: rectangular Cartesian gravity grid (lines parallel to axes at gravity-spaced positions) is spatially wrong. Gravity converges to the *origin*, not to an *axis*. Polar topology (concentric circles + radial lines) is the only correct representation on Cartesian planes. Rectangular axis compression kept only for Quadray refinement. |
+| | Cartesian polar grid | Weierstrass 4-quadrant circle parameterization for concentric gravity-spaced circles. RT-pure: add/mul/div only, no sin/cos. 64 segments per circle (SPQ=16). XYZ "Gravity" button removed (illogical for point-convergent gravity); replaced with "Uniform" and "Polar". Committed `6c5b3cf`. |
+| | Per-plane coloring | XYZ grid planes now colored by additive axis mix: XY=Yellow (R+G), XZ=Magenta (R+B), YZ=Cyan (G+B). Matches the Quadray Central Angle plane coloring convention. |
+| | Quadrance spacing (future) | Current shell radii use distance formula `1-√(1-k/N)` with one √ per shell. A quadrance-native approach would store Q_k = r_k² directly, deferring √ to GPU boundary. This would make the spacing formula fully algebraic: Q_k = E²×(1-(1-k/N)) = E²×k/N — uniform in quadrance! The √ moves to the rendering step where it's already needed. |
 
 ---
 
@@ -1049,8 +1055,16 @@ Every point for every u lies exactly on the circle of radius R. No chord sag at 
   - [x] ~~**BUG FIX: Replace per-axis cumDist with radial gravity warping** (e63f64b)~~
   - [x] ~~Browser verify: outward shell arcs confirmed, uniform regression OK~~
   - [x] ~~Spherical mode: arc-subdivided ring edges (8 segments, lerp + shellProjectionScale)~~ (`4d6243e`)
-  - [ ] **Chord sag persists in spherical mode** — see observation below
-- [ ] Phase 1b: G-Cartesian Planes (non-uniform XYZ grids)
+  - [x] ~~**Chord sag persists in spherical mode** — see observation below~~
+  - [x] ~~Phase 3: Weierstrass rational arcs (`rationalArc()`) replace lerp-then-project~~ (`4961b4e`)
+  - [x] ~~Fix spacing formula: `E×(k/N)²` → `E×(1-√(1-k/N))` (numberline-derived)~~ (`1bbddc3`)
+- [x] Phase 1b: G-Cartesian Planes (non-uniform XYZ grids)
   - [x] ~~Add Uniform / Gravity / Spherical buttons to Cartesian Planes UI section~~ (`4d6243e`)
-- [ ] Phase 3: Curved gridlines (Weierstrass rational arcs replacing straight chords) — **key next step for chord sag**
+  - [x] ~~Polar concentric circles via Weierstrass parameterization (RT-pure, no trig)~~ (`6c5b3cf`)
+  - [x] ~~Remove rectangular gravity from XYZ (gravity converges to point, not axis)~~
+  - [x] ~~Rename Spherical → Polar in UI; remove Gravity button from Cartesian section~~
+  - [x] ~~Per-plane axis-mixed coloring: XY=Yellow, XZ=Magenta, YZ=Cyan~~
+  - [x] ~~Circle resolution: 64 segments per circle (SPQ=16)~~
+- [ ] **Phase 2: Quadrance-based shell spacing** — replace `1-√(1-k/N)` distance formula with quadrance-native approach. Eliminates per-shell √ and stays algebraically exact until GPU boundary.
+- [ ] **Phase 3: Quadray polar mode** — apply same concentric-circle topology to Central Angle grids for true great circles on tetrahedral planes
 - [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)
