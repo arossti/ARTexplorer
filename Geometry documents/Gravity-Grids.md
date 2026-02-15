@@ -1072,8 +1072,28 @@ Every point for every u lies exactly on the circle of radius R. No chord sag at 
   - [x] ~~Opacity 0.4 on all Cartesian grids (uniform + polar), matching Quadray IVM~~ (`1ebfd56`)
 - [ ] **Phase 2: Quadrance-based shell spacing** — replace `1-√(1-k/N)` distance formula with quadrance-native approach. Eliminates per-shell √ and stays algebraically exact until GPU boundary.
 - [ ] **Phase 3: Quadray polar mode — great circles on tetrahedral planes**
-  - XYZ Cartesian great circles are now RESOLVED. The same technique must apply to Quadray.
-  - **Key insight**: Any basis vector from origin with the same division count sweeps the same circles. Circles are a function of radius and distance from origin — the axis orientation (X, Y, Z, QW, QX, QY, QZ) is immaterial. Same distribution, same intervals → same circles → same spheres.
-  - The XYZ polar implementation (Weierstrass concentric circles + gravity spacing) can serve as the reference to diagnose what the Quadray implementation is doing differently. The current Quadray "Gravity" mode produces a butterfly/building pattern, not great circles — something in its topology or spacing diverges from the radial sweep model.
-  - Approach: compare the XYZ and Quadray paths side-by-side. Both should produce identical concentric circles when viewed on-axis, differing only in which axis defines the viewing plane.
+
+  ### Status
+  XYZ Cartesian great circles are RESOLVED. The same technique must apply to Quadray.
+
+  ### Key Principle
+  Any basis vector from origin with the same division count sweeps the same circles. Circles are a function of radius and distance from origin — the axis orientation (X, Y, Z, QW, QX, QY, QZ) is immaterial. Same distribution, same intervals → same circles → same spheres.
+
+  ### What Works (XYZ reference implementation)
+  - **File**: `modules/rt-grids.js`, function `createGravityCartesianPlane()` (~line 48)
+  - **Spacing**: `RT.Gravity.computeGravityCumulativeDistances(N, extent)` in `modules/rt-math.js` (~line 2788). Formula: `cumDist[k] = E × (1 - √(1 - k/N))`
+  - **Circle geometry**: Weierstrass rational parameterization, 4 quadrants × 16 segments. For each radius `r = cumDist[k]`, parameterize u = 0..1 per quadrant: `x = r(1-u²)/(1+u²)`, `z = r·2u/(1+u²)`. Rotate per quadrant. RT-pure: add/mul/div only.
+  - **Material**: `opacity: 0.4, transparent: true`
+  - **UI**: "Polar" button sets `data-grid-mode="gravity-spherical"`. Handler in `modules/rt-init.js` (~line 1039) dispatches to both Cartesian and Quadray rebuild functions.
+
+  ### What's Broken (Quadray)
+  - **File**: `modules/rt-grids.js`, function `createIVMGrid()` (~line 380). This is the Quadray equivalent of `createGravityCartesianPlane()`.
+  - **Current behavior**: "Gravity" mode produces butterfly/fan shapes on-axis, NOT great circles. "Polar" mode uses `rationalArc()` for ring edges but the underlying triangular topology still doesn't produce concentric circles.
+  - **Root cause (suspected)**: The Quadray grid uses a triangular tessellation topology (vertex-to-vertex along tetrahedral planes). Gravity spacing is applied to this triangular mesh, producing warped triangles — NOT concentric circles. The topology itself prevents circular geometry from emerging.
+
+  ### Approach
+  For the Quadray "Polar" mode, replace the triangular tessellation with concentric circles + radial lines (same as XYZ), but on the 6 tetrahedral planes instead of the 3 Cartesian planes. Each tetrahedral plane is defined by two Quadray basis vectors — use these to define the 2D coordinate system for the Weierstrass circle parameterization. The `createIVMGrid()` function receives `basisA` and `basisB` vectors — these define the plane. The circle at radius `r` centered at origin, lying in the plane spanned by `basisA` and `basisB`, can be parameterized exactly as in the Cartesian case but using the two basis vectors as the local X and Z axes.
+
+  ### Verification
+  When viewed on-axis (QW, QX, QY, or QZ orthographic view), each Quadray plane should show concentric circles identical to the Cartesian planes. The 6 Quadray planes will show 6 sets of circles at tetrahedral angles (109.47°) vs the 3 Cartesian planes at 90°, but each individual plane's circles should be indistinguishable from the Cartesian version.
 - [ ] Extend IK solvers with elastic, tension, compression types (Phase 5c)
