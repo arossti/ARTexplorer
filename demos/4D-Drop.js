@@ -72,7 +72,11 @@ class Drop4DDemo {
     this.animationId = null;
     this.animationStartTime = null;
     this._lastPhaseIndex = 0;
-    this._maxFPerPhase = 0;
+    this._pausedCycleElapsed = null; // non-null when paused (vs. fresh/reset)
+
+    // Circumsphere wireframe
+    this.circumsphereMesh = null;
+    this.showCircumsphere = true;
   }
 
   // ========================================================================
@@ -307,18 +311,59 @@ class Drop4DDemo {
       this.nodeMeshes.push(mesh);
     }
 
+    // Create circumsphere wireframe (7F geodesic icosahedron at extent radius)
+    this.createCircumsphere();
+
     this.scene.add(this.demoGroup);
     const shapeName = this.bodyShape === "icosahedron" ? "3F Geodesic Icosahedra" : "Tetrahedra";
     console.log(`🔵 4D Drop: Created 4 ${shapeName} at extent=${this.extent.toFixed(3)}`);
   }
 
+  /**
+   * Create circumsphere boundary — 7F geodesic icosahedron wireframe at extent radius.
+   * Makes the spherical boundary visible from all camera angles.
+   */
+  createCircumsphere() {
+    const THREE = this.THREE;
+    const geoData = Polyhedra.geodesicIcosahedron(this.extent, 7, "out");
+
+    // Build wireframe from edges
+    const positions = [];
+    for (const [a, b] of geoData.edges) {
+      const va = geoData.vertices[a];
+      const vb = geoData.vertices[b];
+      positions.push(va.x, va.y, va.z, vb.x, vb.y, vb.z);
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+
+    const material = new THREE.LineBasicMaterial({
+      color: 0x00cccc,
+      transparent: true,
+      opacity: 0.2,
+      depthWrite: false,
+    });
+
+    this.circumsphereMesh = new THREE.LineSegments(geometry, material);
+    this.circumsphereMesh.name = "Drop4D_Circumsphere";
+    this.circumsphereMesh.visible = this.showCircumsphere;
+    this.demoGroup.add(this.circumsphereMesh);
+  }
+
   removeDemoObjects() {
     if (this.demoGroup) {
-      // Dispose geometry and materials
+      // Dispose body meshes
       this.nodeMeshes.forEach(mesh => {
         if (mesh.geometry) mesh.geometry.dispose();
         if (mesh.material) mesh.material.dispose();
       });
+      // Dispose circumsphere
+      if (this.circumsphereMesh) {
+        if (this.circumsphereMesh.geometry) this.circumsphereMesh.geometry.dispose();
+        if (this.circumsphereMesh.material) this.circumsphereMesh.material.dispose();
+        this.circumsphereMesh = null;
+      }
       this.scene.remove(this.demoGroup);
       this.demoGroup = null;
       this.nodeMeshes = [];
@@ -510,6 +555,24 @@ class Drop4DDemo {
         <button class="ctrl-btn" id="d4d-drop-btn">Drop</button>
       </div>
 
+      <div class="section" id="d4d-slider-section">
+        <div class="section-title">Cell Scrubber</div>
+        <div class="slider-container">
+          <input type="range" id="d4d-cell-slider" min="-144" max="144" step="12" value="144">
+          <span class="slider-value" id="d4d-slider-val">+144</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Circumsphere</span>
+          <label style="font-size: 10px; color: #0ff; cursor: pointer; text-transform: none;">
+            <input type="checkbox" id="d4d-circumsphere-toggle" checked style="accent-color: #0ff; cursor: pointer;">
+            7F Wireframe
+          </label>
+        </div>
+      </div>
+
       <div class="section">
         <div class="section-title">Status</div>
         <div class="row"><span class="label">Phase:</span><span class="value" id="d4d-phase">Ready</span></div>
@@ -548,7 +611,7 @@ class Drop4DDemo {
     // Body selector change
     bodySelector.addEventListener("change", () => {
       this.selectedBody = bodySelector.value;
-      if (this.isAnimating) this.stopAnimation();
+      this.resetToStart();
       this.computeExtent(); // also recomputes physics (cached T)
       this.resetNodePositions();
       this.updatePanel();
@@ -560,6 +623,22 @@ class Drop4DDemo {
     });
     document.getElementById("d4d-shape-ico").addEventListener("click", () => {
       this.setBodyShape("icosahedron");
+    });
+
+    // Cell scrubber slider
+    const slider = document.getElementById("d4d-cell-slider");
+    slider.addEventListener("input", () => {
+      if (this.isAnimating) return; // ignore during animation
+      const cell = parseInt(slider.value, 10);
+      this.positionBodiesAtCell(cell);
+    });
+
+    // Circumsphere toggle
+    document.getElementById("d4d-circumsphere-toggle").addEventListener("change", (e) => {
+      this.showCircumsphere = e.target.checked;
+      if (this.circumsphereMesh) {
+        this.circumsphereMesh.visible = this.showCircumsphere;
+      }
     });
 
     // Drop/Stop toggle
@@ -641,9 +720,63 @@ class Drop4DDemo {
     }
   }
 
+  /**
+   * Map a slider cell value to a cycle elapsed time for resume.
+   * Uses "falling toward origin" as the resume direction.
+   */
+  _cellToCycleElapsed(cell) {
+    const T = this._cachedT;
+    if (cell > 0) {
+      // Phase 0: pos_to_origin — body falling toward origin
+      return (1 - cell / 144) * T;
+    } else if (cell < 0) {
+      // Phase 2: neg_to_origin — body returning toward origin
+      return 3 * T + (cell / 144) * T;
+    } else {
+      // cell = 0: at origin. Direction depends on dimensional state.
+      return this.inNegativeSpace ? 3 * T : T;
+    }
+  }
+
+  /**
+   * Position bodies at a specific cell value (-144 to +144).
+   * Used by the manual scrubbing slider.
+   */
+  positionBodiesAtCell(cell) {
+    const fraction = cell / 144; // -1.0 to +1.0
+    for (let i = 0; i < this.nodeMeshes.length; i++) {
+      const basisDir = Quadray.basisVectors[i].clone();
+      this.nodeMeshes[i].position.copy(basisDir.multiplyScalar(this.extent * fraction));
+    }
+
+    // Background inversion based on sign crossing
+    const wasNegative = this.inNegativeSpace;
+    const isNegative = cell < 0;
+    if (isNegative !== wasNegative) {
+      this.inNegativeSpace = isNegative;
+      animateBackgroundColor(isNegative ? 0xffffff : 0x1a1a1a, 200);
+      // Janus flash when crossing through origin
+      createJanusFlash(new this.THREE.Vector3(0, 0, 0));
+    }
+
+    // Update pause point so resume picks up from slider position
+    if (this._pausedCycleElapsed !== null) {
+      this._pausedCycleElapsed = this._cellToCycleElapsed(cell);
+    }
+
+    // Update panel readout
+    const absCell = Math.abs(cell);
+    const sign = cell >= 0 ? "+" : "\u2013";
+    this.updatePanel(`scrub_${sign}`, 0, absCell / 144);
+
+    // Update slider label
+    const sliderLabel = document.getElementById("d4d-slider-val");
+    if (sliderLabel) sliderLabel.textContent = `${cell >= 0 ? "+" : ""}${cell}`;
+  }
+
   toggleAnimation() {
     if (this.isAnimating) {
-      this.stopAnimation();
+      this.pauseAnimation();
     } else {
       this.startAnimation();
     }
@@ -651,24 +784,75 @@ class Drop4DDemo {
 
   startAnimation() {
     this.isAnimating = true;
-    this.animationStartTime = performance.now();
-    this._lastPhaseIndex = 0;
-    this._maxFPerPhase = 0;
+
+    const now = performance.now();
+    if (this._pausedCycleElapsed !== null) {
+      // Resume from pause — rewind animationStartTime so cycle picks up where it left off
+      this.animationStartTime = now - this._pausedCycleElapsed * 1000;
+      // Set _lastPhaseIndex to current phase so transition detector doesn't misfire
+      const T = this._cachedT;
+      this._lastPhaseIndex = Math.min(Math.floor(this._pausedCycleElapsed / T), 3);
+      this._pausedCycleElapsed = null;
+    } else {
+      // Fresh start from +extent
+      this.animationStartTime = now;
+      this._lastPhaseIndex = 0;
+      this.resetNodePositions();
+    }
 
     const btn = document.getElementById("d4d-drop-btn");
     if (btn) {
-      btn.textContent = "Stop";
+      btn.textContent = "Pause";
       btn.style.color = "#ff6644";
       btn.style.borderColor = "#ff6644";
     }
 
-    // Place nodes at positive extent
-    this.resetNodePositions();
+    // Disable slider during animation
+    const slider = document.getElementById("d4d-cell-slider");
+    if (slider) {
+      slider.disabled = true;
+      slider.style.opacity = "0.4";
+    }
+
     this.animationLoop();
   }
 
-  stopAnimation() {
+  pauseAnimation() {
+    // Store exact cycle position for seamless resume
+    const now = performance.now();
+    const T = this._cachedT;
+    const cycleTime = 4 * T;
+    const globalElapsed = (now - this.animationStartTime) / 1000;
+    this._pausedCycleElapsed = globalElapsed % cycleTime;
+
     this.isAnimating = false;
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+
+    const btn = document.getElementById("d4d-drop-btn");
+    if (btn) {
+      btn.textContent = "Drop";
+      btn.style.color = "#0ff";
+      btn.style.borderColor = "#0ff";
+    }
+
+    // Enable slider at current position (already synced by animation loop)
+    const slider = document.getElementById("d4d-cell-slider");
+    if (slider) {
+      slider.disabled = false;
+      slider.style.opacity = "1";
+    }
+  }
+
+  /**
+   * Full reset — used by disable() and body selector change.
+   * Restores background and positions to initial state.
+   */
+  resetToStart() {
+    this.isAnimating = false;
+    this._pausedCycleElapsed = null;
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
@@ -687,7 +871,16 @@ class Drop4DDemo {
       animateBackgroundColor(0x1a1a1a, 300);
     }
 
-    // Reset to positive extent
+    // Re-enable slider and reset to +144
+    const slider = document.getElementById("d4d-cell-slider");
+    if (slider) {
+      slider.disabled = false;
+      slider.style.opacity = "1";
+      slider.value = "144";
+    }
+    const sliderLabel = document.getElementById("d4d-slider-val");
+    if (sliderLabel) sliderLabel.textContent = "+144";
+
     this.resetNodePositions();
     this.updatePanel();
   }
@@ -709,9 +902,6 @@ class Drop4DDemo {
     // Detect phase transitions for Janus flash + background inversion
     if (phaseIndex !== this._lastPhaseIndex) {
       const prevPhase = PHASES[this._lastPhaseIndex];
-      // Log diagnostic: max fraction reached in the completed phase
-      const cell = Math.round(this._maxFPerPhase * 144);
-      console.log(`📊 ${prevPhase} → ${phase} | max f=${this._maxFPerPhase.toFixed(4)} (cell ${cell}/144)`);
 
       // Janus flash at origin arrivals
       if (prevPhase === "pos_to_origin") {
@@ -725,9 +915,7 @@ class Drop4DDemo {
       }
 
       this._lastPhaseIndex = phaseIndex;
-      this._maxFPerPhase = 0;
     }
-    this._maxFPerPhase = Math.max(this._maxFPerPhase, f);
 
     // Position each node based on current phase
     for (let i = 0; i < this.nodeMeshes.length; i++) {
@@ -751,6 +939,19 @@ class Drop4DDemo {
 
       this.nodeMeshes[i].position.copy(pos);
     }
+
+    // Sync slider with animation — map phase+fraction to cell value
+    let sliderCell;
+    switch (phase) {
+      case "pos_to_origin": sliderCell = Math.round((1 - f) * 144); break;
+      case "origin_to_neg": sliderCell = Math.round(-f * 144); break;
+      case "neg_to_origin": sliderCell = Math.round(-(1 - f) * 144); break;
+      case "origin_to_pos": sliderCell = Math.round(f * 144); break;
+    }
+    const slider = document.getElementById("d4d-cell-slider");
+    const sliderLabel = document.getElementById("d4d-slider-val");
+    if (slider) slider.value = sliderCell;
+    if (sliderLabel) sliderLabel.textContent = `${sliderCell >= 0 ? "+" : ""}${sliderCell}`;
 
     const phaseElapsed = cycleElapsed - phaseIndex * T;
     this.updatePanel(phase, phaseElapsed, f);
@@ -783,6 +984,8 @@ class Drop4DDemo {
         origin_to_neg: "Origin \u2192 \u2013Ext",
         neg_to_origin: "\u2013Ext \u2192 Origin",
         origin_to_pos: "Origin \u2192 +Ext",
+        "scrub_+": "Scrub +",
+        "scrub_\u2013": "Scrub \u2013",
       };
       phaseEl.textContent = phaseLabels[phase] || phase;
       timeEl.textContent = `${(elapsed || 0).toFixed(3)} s`;
@@ -827,7 +1030,7 @@ class Drop4DDemo {
     if (!this.enabled) return;
     this.enabled = false;
 
-    if (this.isAnimating) this.stopAnimation();
+    this.resetToStart();
     this.removeDemoObjects();
     this.removeInfoPanel();
     this.restoreSceneState();
