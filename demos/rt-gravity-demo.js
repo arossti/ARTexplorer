@@ -13,6 +13,16 @@
  * tick k at the same instant the accelerating body crosses uniform tick k.
  *
  * First integration test of RT.Gravity namespace (rt-math.js).
+ *
+ * RT COMPLIANCE REVIEW (TODO):
+ * - getTotalTime() uses Math.sqrt(2H/g) — could cache as time-quadrance
+ *   Q_T = 2H/g with single deferred √ (see 4D-Drop.js computePhysics pattern)
+ * - computeGravityTickPositions() uses Math.sqrt(k/N) per tick — pending Phase 2
+ *   quadrance-based shell spacing (see Gravity-Grids-2.md)
+ * - Line 609: Math.asin(Math.sqrt(link.spread)) * (180/Math.PI) converts spread
+ *   to degrees via transcendental asin — should display spread directly with
+ *   optional RT.spreadToDegrees() only for the ≈ degree annotation
+ * - gravityGap (line 594) uses two Math.sqrt() calls — could defer to quadrance
  */
 
 import * as THREE from "three";
