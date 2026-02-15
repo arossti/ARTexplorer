@@ -40,7 +40,7 @@ const COLOR_YZ = 0x00ffff;
 // Each plane is ⊥ to one Quadray basis vector → colored by that axis
 const COLOR_FACE_W = 0xffff00; // Yellow (QW axis)
 const COLOR_FACE_X = 0xff0000; // Red    (QX axis)
-const COLOR_FACE_Y = 0x0000ff; // Blue   (QY axis)
+const COLOR_FACE_Y = 0x00ffff; // Cyan   (QY axis)
 const COLOR_FACE_Z = 0x00ff00; // Green  (QZ axis)
 
 /**
