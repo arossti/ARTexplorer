@@ -2870,7 +2870,7 @@ export const RT = {
      * @returns {number} Scale factor to multiply uniform position vector by
      */
     shellProjectionScale: (Q, shellRadius) => {
-      if (Q < 1e-24) return 0; // origin maps to origin
+      if (Q < 1e-24) return 0; // origin → origin (1e-24: safe zero for Q = r² in Float64)
       return shellRadius / Math.sqrt(Q); // single √ at GPU boundary
     },
 
@@ -2916,6 +2916,7 @@ export const RT = {
       const e2Q = e2rx * e2rx + e2ry * e2ry + e2rz * e2rz;
 
       // Degenerate: P1 ≈ P2 — fall back to straight line
+      // 1e-20: orthogonal component quadrance below Float64 meaningful precision
       if (e2Q < 1e-20) {
         const pts = new Array((segments + 1) * 3);
         for (let s = 0; s <= segments; s++) {
