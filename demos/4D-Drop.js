@@ -120,6 +120,7 @@ class Drop4DDemo {
       planeIvmXZ: document.getElementById("planeIvmXZ")?.checked,
       planeIvmYZ: document.getElementById("planeIvmYZ")?.checked,
       quadrayTessSlider: document.getElementById("quadrayTessSlider")?.value,
+      nGonSlider: document.getElementById("nGonSlider")?.value,
       quadrayMode: activeQuadrayMode,
     };
     console.log("📦 4D Drop: Saved scene state");
@@ -158,6 +159,13 @@ class Drop4DDemo {
     if (slider && state.quadrayTessSlider) {
       slider.value = state.quadrayTessSlider;
       slider.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    // Restore N-gon slider
+    const nGonSlider = document.getElementById("nGonSlider");
+    if (nGonSlider && state.nGonSlider) {
+      nGonSlider.value = state.nGonSlider;
+      nGonSlider.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
     // Restore quadray grid mode

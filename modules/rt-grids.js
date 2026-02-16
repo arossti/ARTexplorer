@@ -50,7 +50,7 @@ const COLOR_FACE_Z = 0x00ff00; // Green  (QZ axis)
  * @param {string} gridMode - 'uniform', 'gravity-chordal', or 'gravity-spherical'
  * @returns {{ gridXY: THREE.Object3D, gridXZ: THREE.Object3D, gridYZ: THREE.Object3D }}
  */
-function buildCartesianPlanes(divisions, gridMode) {
+function buildCartesianPlanes(divisions, gridMode, nGon = 64) {
   const gridSize = divisions;
   let gridXY, gridXZ, gridYZ;
 
@@ -60,18 +60,21 @@ function buildCartesianPlanes(divisions, gridMode) {
     gridXY = Grids.createGravityCartesianPlane(
       divisions,
       COLOR_XY,
-      "gravity-spherical"
+      "gravity-spherical",
+      nGon
     );
     gridXY.rotation.x = Math.PI / 2;
     gridXZ = Grids.createGravityCartesianPlane(
       divisions,
       COLOR_XZ,
-      "gravity-spherical"
+      "gravity-spherical",
+      nGon
     );
     gridYZ = Grids.createGravityCartesianPlane(
       divisions,
       COLOR_YZ,
-      "gravity-spherical"
+      "gravity-spherical",
+      nGon
     );
     gridYZ.rotation.z = Math.PI / 2;
   } else {
@@ -99,7 +102,7 @@ function buildCartesianPlanes(divisions, gridMode) {
  * @param {string} gridMode - 'uniform' or 'gravity-spherical'
  * @returns {Object} Keyed plane objects (6 Central Angle planes for uniform, 4 face planes for polar)
  */
-function buildQuadrayPlanes(tessellations, gridMode) {
+function buildQuadrayPlanes(tessellations, gridMode, nGon = 64) {
   if (gridMode === "gravity-spherical") {
     // Polar mode: 4 planes ⊥ to Quadray basis vectors (tetrahedral face planes)
     // Concentric Weierstrass circles — same algorithm as Cartesian polar
@@ -136,7 +139,8 @@ function buildQuadrayPlanes(tessellations, gridMode) {
       const plane = Grids.createQuadrayPolarPlane(
         normal,
         tessellations,
-        cfg.color
+        cfg.color,
+        nGon
       );
       plane.name = cfg.name;
       result[cfg.key] = plane;
@@ -242,11 +246,13 @@ export const Grids = {
         }
       }
 
-      // Radial lines along ±X and ±Z from origin to outer extent
-      vertices.push(0, 0, 0, extent, 0, 0);
-      vertices.push(0, 0, 0, -extent, 0, 0);
-      vertices.push(0, 0, 0, 0, 0, extent);
-      vertices.push(0, 0, 0, 0, 0, -extent);
+      // Radial lines from origin to each N-gon vertex on outermost shell.
+      // Naturally aligns with polygon geometry — replaces hardcoded ±X/±Z crosshair.
+      const outerVerts = RT.nGonVertices(nGon, extent).vertices;
+      for (let i = 0; i < nGon; i++) {
+        const v = outerVerts[i];
+        vertices.push(0, 0, 0, v.x, 0, v.y); // XZ plane (Y = 0)
+      }
     } else {
       // Rectangular gravity grid: straight lines at gravity-spaced positions.
       // GridHelper convention: XZ plane, Y=0. halfDiv lines each side of center.
@@ -350,6 +356,18 @@ export const Grids = {
       }
     }
 
+    // Radial lines from origin to each N-gon vertex on outermost shell.
+    // Naturally aligns with polygon geometry — no arbitrary axis alignment.
+    const outerR = cumDist[numCircles];
+    const outerVerts = RT.nGonVertices(nGon, outerR).vertices;
+    for (let i = 0; i < nGon; i++) {
+      const v = outerVerts[i];
+      const vx = lxx * v.x + lzx * v.y;
+      const vy = lxy * v.x + lzy * v.y;
+      const vz = lxz * v.x + lzz * v.y;
+      vertices.push(0, 0, 0, vx, vy, vz);
+    }
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(
       "position",
@@ -374,11 +392,17 @@ export const Grids = {
    * @param {string} gridMode - Grid mode: 'uniform' or 'gravity-chordal'
    * @returns {Object} { cartesianGrid, cartesianBasis, gridXY, gridXZ, gridYZ }
    */
-  createCartesianGrid: (scene, divisions = 10, gridMode = "uniform") => {
+  createCartesianGrid: (
+    scene,
+    divisions = 10,
+    gridMode = "uniform",
+    nGon = 64
+  ) => {
     const cartesianGrid = new THREE.Group();
     const { gridXY, gridXZ, gridYZ } = buildCartesianPlanes(
       divisions,
-      gridMode
+      gridMode,
+      nGon
     );
 
     // Z-UP CONVENTION: XY is horizontal ground, XZ/YZ are vertical walls
@@ -678,9 +702,14 @@ export const Grids = {
    * @param {number} tessellations - Number of triangle copies in each direction
    * @returns {Object} { ivmPlanes, ivmWX, ivmWY, ivmWZ, ivmXY, ivmXZ, ivmYZ }
    */
-  createIVMPlanes: (scene, tessellations = 12, gridMode = "uniform") => {
+  createIVMPlanes: (
+    scene,
+    tessellations = 12,
+    gridMode = "uniform",
+    nGon = 64
+  ) => {
     const ivmPlanes = new THREE.Group();
-    const planes = buildQuadrayPlanes(tessellations, gridMode);
+    const planes = buildQuadrayPlanes(tessellations, gridMode, nGon);
 
     for (const key of Object.keys(planes)) {
       planes[key].visible = true;
@@ -711,14 +740,15 @@ export const Grids = {
     existingIvmPlanes,
     tessellations,
     visibilityState = {},
-    gridMode = "uniform"
+    gridMode = "uniform",
+    nGon = 64
   ) => {
     if (existingIvmPlanes) {
       scene.remove(existingIvmPlanes);
     }
 
     const ivmPlanes = new THREE.Group();
-    const planes = buildQuadrayPlanes(tessellations, gridMode);
+    const planes = buildQuadrayPlanes(tessellations, gridMode, nGon);
 
     for (const key of Object.keys(planes)) {
       planes[key].visible = visibilityState[key] ?? true;
@@ -750,7 +780,8 @@ export const Grids = {
     existingCartesianBasis,
     divisions,
     visibilityState = {},
-    gridMode = "uniform"
+    gridMode = "uniform",
+    nGon = 64
   ) => {
     if (existingCartesianGrid) {
       scene.remove(existingCartesianGrid);
@@ -762,7 +793,8 @@ export const Grids = {
     const cartesianGrid = new THREE.Group();
     const { gridXY, gridXZ, gridYZ } = buildCartesianPlanes(
       divisions,
-      gridMode
+      gridMode,
+      nGon
     );
 
     gridXY.visible = visibilityState.gridXY ?? false;
