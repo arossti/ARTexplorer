@@ -3,8 +3,8 @@
  * Interactive demonstration of gravity grid intervals vs uniform spacing.
  *
  * Two numberlines:
- *   Top — uniform grid, body ACCELERATES (quadratic position in time).
- *   Bottom — gravity-warped grid, body at CONSTANT VELOCITY (linear in time).
+ *   Top — NEWTONIAN: uniform grid, force on object, body ACCELERATES (x = ½gt²).
+ *   Bottom — METRIC: field-strength grid, physics in the space, body at CONSTANT VELOCITY (x = vt).
  *
  * Both bodies start at left and reach right at the same total time T.
  * The bodies diverge mid-flight: the accelerating body lags early, catches up late.
@@ -375,7 +375,7 @@ function createFormulaDisplay(container) {
     font-family: 'Courier New', monospace; font-size: 14px;
     color: #ff6644; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
   `;
-  topLabel.textContent = "UNIFORM GRID \u2014 body accelerates (x = \u00BDgt\u00B2)";
+  topLabel.innerHTML = "NEWTONIAN \u2014 Uniform grid, force on object<br><span style='font-size:12px;opacity:0.8;'>Body accelerates (x = \u00BDgt\u00B2)</span>";
   container.appendChild(topLabel);
 
   const botLabel = document.createElement("div");
@@ -384,7 +384,7 @@ function createFormulaDisplay(container) {
     font-family: 'Courier New', monospace; font-size: 14px;
     color: #00cccc; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
   `;
-  botLabel.textContent = "GRAVITY GRID \u2014 body at constant velocity (x = vt)";
+  botLabel.innerHTML = "METRIC \u2014 Field-strength grid, physics in the space<br><span style='font-size:12px;opacity:0.8;'>Body at constant velocity (x = vt)</span>";
   container.appendChild(botLabel);
 
   // Body selector + Drop button wrapper (inline)
@@ -456,6 +456,21 @@ function createFormulaDisplay(container) {
     document.getElementById("gravity-modal").style.display = "none";
   };
   container.appendChild(closeBtn);
+
+  // Explanatory text between numberlines and formula panel
+  const explainEl = document.createElement("div");
+  explainEl.style.cssText = `
+    position: absolute; bottom: 110px; left: 15px; right: 15px;
+    font-family: 'Courier New', monospace; font-size: 12px;
+    color: #88aaaacc; line-height: 1.5; pointer-events: none;
+    text-align: center;
+  `;
+  explainEl.innerHTML =
+    "Both bodies fall 144 m in the same total time. " +
+    "The <span style='color:#ff6644;'>top grid</span> is uniform\u2014each cell is 1 m\u2014so the body must accelerate (force on object). " +
+    "The <span style='color:#00cccc;'>bottom grid</span> compresses space toward the ground (right) " +
+    "and expands it at the drop (left), so the body moves at constant velocity\u2014the metric <em>is</em> the field.";
+  container.appendChild(explainEl);
 
   // Formula panel (bottom, horizontal)
   formulaElement = document.createElement("div");
