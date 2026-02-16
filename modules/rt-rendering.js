@@ -70,7 +70,7 @@ function nGonMethodText(n) {
     const spreadLabels = {
       3: "s = 3/4",
       4: "s = 1/2",
-      5: "s = (5+√5)/8",
+      5: "s = (5−√5)/8",
       6: "s = 1/4",
       8: "s = (2−√2)/4",
       10: "s = (3−√5)/8",

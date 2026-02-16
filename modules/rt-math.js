@@ -1456,11 +1456,14 @@ export const RT = {
     square: () => 1 / 2,
 
     /**
-     * Pentagon (n=5): s = (5+√5)/8 = β
+     * Pentagon (n=5): s = (5-√5)/8 = α = sin²(π/5)
      * Theorem 96 (p.161) and Exercise 14.3 (p.166)
-     * @returns {number} ≈ 0.904508497187474
+     * NOTE: This is α (half-central-angle spread), not β (apex spread).
+     * β = (5+√5)/8 = sin²(2π/5) is the spread of the full central angle;
+     * nGonVertices needs sin²(π/N) for the Weierstrass half-angle param.
+     * @returns {number} ≈ 0.345491502812526
      */
-    pentagon: () => (5 + RT.PurePhi.sqrt5()) / 8,
+    pentagon: () => (5 - RT.PurePhi.sqrt5()) / 8,
 
     /**
      * Hexagon (n=6): s = 1/4
