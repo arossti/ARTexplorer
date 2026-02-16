@@ -15,7 +15,7 @@
  * @requires rt-nodes.js
  */
 
-import { Quadray } from "./rt-math.js";
+import { RT, Quadray } from "./rt-math.js";
 import { Polyhedra } from "./rt-polyhedra.js";
 import { Primitives } from "./rt-primitives.js";
 import { PerformanceClock } from "./performance-clock.js";
@@ -36,6 +36,57 @@ import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 
 // Re-export PerformanceClock so rt-init.js can import it from here
 export { PerformanceClock };
+
+/**
+ * N-gon method description for UI feedback — matches RT.nGonVertices() classification.
+ * Wildberger reflection: 1√ for any N. Method depends on star spread source.
+ *
+ * @param {number} n - Number of polygon sides
+ * @returns {string} Human-readable method description, e.g. "Pentagon: Algebraic (s = β)"
+ */
+const NGON_NAMES = [
+  "",
+  "Monogon",
+  "Digon",
+  "Triangle",
+  "Square",
+  "Pentagon",
+  "Hexagon",
+  "Heptagon",
+  "Octagon",
+  "Nonagon",
+  "Decagon",
+  "Hendecagon",
+  "Dodecagon",
+];
+function nGonMethodText(n) {
+  const name = NGON_NAMES[n] || `${n}-gon`;
+  if (n < 3) return `${name}: Degenerate`;
+
+  // Check if star spread is cached (algebraic or cubic)
+  const exact = RT.StarSpreads.forN(n);
+  if (exact !== null) {
+    // Algebraic: Gauss-Wantzel constructible (exact radical spreads)
+    const spreadLabels = {
+      3: "s = 3/4",
+      4: "s = 1/2",
+      5: "s = (5+√5)/8",
+      6: "s = 1/4",
+      8: "s = (2−√2)/4",
+      10: "s = (3−√5)/8",
+      12: "s = (2−√3)/4",
+    };
+    if (spreadLabels[n]) {
+      return `${name}: Algebraic (${spreadLabels[n]})`;
+    }
+    // Cubic-cached: 7, 9
+    if (n === 7) return `${name}: Cubic (8x³ − 4x² − 4x + 1 = 0)`;
+    if (n === 9) return `${name}: Cubic (8x³ − 6x − 1 = 0)`;
+  }
+
+  // Transcendental fallback — star spread from sin²(π/N)
+  return `${name}: Transcendental (sin²π/${n})`;
+}
 
 /** Cached DOM element references — populated once during initScene() */
 const el = {};
@@ -203,7 +254,7 @@ export function initScene(THREE, OrbitControls, RT) {
   const _qOrbitAxis = new THREE.Vector3();
   const _qOrbitOffset = new THREE.Vector3();
   const _qOrbitDir = new THREE.Vector3();
-  const ORBIT_SPEED = 2 * Math.PI / 1800;
+  const ORBIT_SPEED = (2 * Math.PI) / 1800;
 
   function _applyOrbitRotation(dx, dy) {
     _qOrbitOffset.copy(camera.position).sub(controls.target);
@@ -688,9 +739,7 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function getNodeSize() {
     const slider = el.nodeSizeSlider;
-    return slider
-      ? Nodes.getNodeSizeFromSlider(slider.value)
-      : "4"; // default to Md
+    return slider ? Nodes.getNodeSizeFromSlider(slider.value) : "4"; // default to Md
   }
 
   // Original node functions moved to rt-nodes.js (Phase 3 extraction, Jan 2026)
@@ -929,18 +978,14 @@ export function initScene(THREE, OrbitControls, RT) {
         // Geodesic: pass frequency and projection for edge quadrance scaling
         // Frequency: edge Q divides by freq²
         // Projection: edge lengths vary based on sphere projection type (in/mid/out/off)
-        const tetEdge = parseFloat(
-          el.tetScaleSlider.value
-        );
+        const tetEdge = parseFloat(el.tetScaleSlider.value);
         scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
         nodeOptions = {
           frequency: group.userData.parameters.frequency,
           projection: group.userData.parameters.projection || "out",
         };
       } else {
-        const tetEdge = parseFloat(
-          el.tetScaleSlider.value
-        );
+        const tetEdge = parseFloat(el.tetScaleSlider.value);
         scale = tetEdge / (2 * Math.sqrt(2)); // Convert tet edge to halfSize
       }
 
@@ -968,8 +1013,7 @@ export function initScene(THREE, OrbitControls, RT) {
       }
 
       // Get flatShading preference from checkbox
-      const useFlatShading =
-        el.nodeFlatShading?.checked || false;
+      const useFlatShading = el.nodeFlatShading?.checked || false;
 
       const currentNodeOpacity = getNodeOpacity();
       const effectiveNodeOpacity = currentNodeOpacity * dissolveOpacity;
@@ -1107,9 +1151,7 @@ export function initScene(THREE, OrbitControls, RT) {
       // ═══════════════════════════════════════════════════════════════════════════
       // Prefer numeric input (more precise) over slider
       const userScale = parseFloat(
-        el.dodecTilingScaleInput?.value ||
-          el.dodecTilingScale?.value ||
-          "1.0"
+        el.dodecTilingScaleInput?.value || el.dodecTilingScale?.value || "1.0"
       );
       const tilingScale = (faceCircumradius * userScale) / maxExtent;
 
@@ -1298,13 +1340,9 @@ export function initScene(THREE, OrbitControls, RT) {
     // Line (1D primitive - two vertices, one edge)
     if (el.showLine?.checked) {
       // Get quadrance from input field (default 1)
-      const lineQuadrance = parseFloat(
-        el.lineQuadrance?.value || "1"
-      );
+      const lineQuadrance = parseFloat(el.lineQuadrance?.value || "1");
       // Get lineweight from input field (default 2)
-      const lineWeight = parseFloat(
-        el.lineWeight?.value || "2"
-      );
+      const lineWeight = parseFloat(el.lineWeight?.value || "2");
       const lineData = Polyhedra.line(lineQuadrance);
       renderPolyhedron(lineGroup, lineData, colorPalette.line, opacity, {
         lineWidth: lineWeight,
@@ -1323,107 +1361,29 @@ export function initScene(THREE, OrbitControls, RT) {
     // Polygon (2D primitive - n vertices, n edges, 1 face)
     if (el.showPolygon?.checked) {
       // Get circumradius quadrance from input field (default 1)
-      const polygonQuadrance = parseFloat(
-        el.polygonQuadrance?.value || "1"
-      );
+      const polygonQuadrance = parseFloat(el.polygonQuadrance?.value || "1");
       // Get number of sides (default 3 = triangle)
       // Read from numeric input to allow values > 24, fallback to slider
       const polygonSides = parseInt(
-        el.polygonSidesInput?.value ||
-          el.polygonSides?.value ||
-          "3"
+        el.polygonSidesInput?.value || el.polygonSides?.value || "3"
       );
 
-      // Update method info text based on n-gon type (Gauss-Wantzel constructibility)
-      // See: Geometry documents/Polygon-Rationalize.md for full classification
+      // Update method info text — matches RT.nGonVertices() classification
+      // Wildberger reflection: 1√ for any N. Method depends on star spread source.
       const polygonMethodInfo = el.polygonMethodInfo;
       if (polygonMethodInfo) {
-        let methodText;
-        const names = [
-          "",
-          "Line",
-          "Digon",
-          "Triangle",
-          "Square",
-          "Pentagon",
-          "Hexagon",
-          "Heptagon",
-          "Octagon",
-          "Nonagon",
-          "Decagon",
-          "Hendecagon",
-          "Dodecagon",
-        ];
-        const name = names[polygonSides] || `${polygonSides}-gon`;
-
-        // RT-Pure: rational spreads only
-        if (polygonSides === 3) {
-          methodText = `${name}: RT-Pure (s = 3/4)`;
-        } else if (polygonSides === 4) {
-          methodText = `${name}: RT-Pure (s = 1)`;
-        } else if (polygonSides === 6) {
-          methodText = `${name}: RT-Pure (2×3 @ 60°)`;
-        } else if (polygonSides === 12) {
-          methodText = `${name}: RT-Pure (2×6 @ 30°)`;
-        }
-        // φ-Rational: uses √5 / golden ratio
-        else if (polygonSides === 5) {
-          methodText = `${name}: φ-Rational (s = β)`;
-        } else if (polygonSides === 10) {
-          methodText = `${name}: φ-Rational (2×5 @ 36°)`;
-        } else if (polygonSides === 15) {
-          methodText = `${name}: φ-Rational (3×5 GCD)`;
-        } else if (polygonSides === 20) {
-          methodText = `${name}: φ-Rational (2×10 @ 18°)`;
-        }
-        // Algebraic: uses √2, √3
-        else if (polygonSides === 8) {
-          methodText = `${name}: Algebraic (2×4 @ 45°)`;
-        } else if (polygonSides === 16) {
-          methodText = `${name}: Algebraic (2×8 @ 22.5°)`;
-        } else if (polygonSides === 24) {
-          methodText = `${name}: Algebraic (2×12 @ 15°)`;
-        }
-        // Cubic: requires solving cubic equation once, then cache
-        else if (polygonSides === 7) {
-          methodText = `${name}: Cubic (cos 360°/7)`;
-        } else if (polygonSides === 9) {
-          methodText = `${name}: Cubic (3×3 @ 40°)`;
-        } else if (polygonSides === 14) {
-          methodText = `${name}: Cubic (2×7 @ 25.7°)`;
-        } else if (polygonSides === 18) {
-          methodText = `${name}: Cubic (6×3 @ 20°)`;
-        } else if (polygonSides === 21) {
-          methodText = `${name}: Cubic (3×7 @ 17.1°)`;
-        } else if (polygonSides % 9 === 0) {
-          // Multiples of 9: use nonagon cubic
-          methodText = `${name}: Cubic (${polygonSides / 3}×3)`;
-        } else if (polygonSides % 7 === 0) {
-          // Multiples of 7: use heptagon cubic
-          methodText = `${name}: Cubic (${polygonSides / 7}×7)`;
-        }
-        // Classical: requires sin(π/n) - no algebraic shortcut
-        else {
-          methodText = `${name}: Classical (sin π/${polygonSides})`;
-        }
-        polygonMethodInfo.textContent = methodText;
+        polygonMethodInfo.textContent = nGonMethodText(polygonSides);
       }
 
       // Get edge weight from input field (default 2)
-      const polygonEdgeWeight = parseFloat(
-        el.polygonEdgeWeight?.value || "2"
-      );
+      const polygonEdgeWeight = parseFloat(el.polygonEdgeWeight?.value || "2");
       // Get face visibility
-      const polygonShowFace =
-        el.polygonShowFace?.checked !== false;
+      const polygonShowFace = el.polygonShowFace?.checked !== false;
 
       // Check if tiling is enabled
-      const tilingEnabled =
-        el.polygonEnableTiling?.checked || false;
+      const tilingEnabled = el.polygonEnableTiling?.checked || false;
       const tilingGenerations = tilingEnabled
-        ? parseInt(
-            el.polygonTilingGenerations?.value || "2"
-          )
+        ? parseInt(el.polygonTilingGenerations?.value || "2")
         : 1;
 
       // Update tiling info text based on polygon type
@@ -1609,23 +1569,16 @@ export function initScene(THREE, OrbitControls, RT) {
     // Prism (3D primitive - 2 N-gon caps + rectangular sides)
     if (el.showPrism?.checked) {
       // Get base circumradius quadrance from input field (default 1)
-      const prismBaseQ = parseFloat(
-        el.prismBaseQuadrance?.value || "1"
-      );
+      const prismBaseQ = parseFloat(el.prismBaseQuadrance?.value || "1");
       // Get height quadrance from input field (default 1)
-      const prismHeightQ = parseFloat(
-        el.prismHeightQuadrance?.value || "1"
-      );
+      const prismHeightQ = parseFloat(el.prismHeightQuadrance?.value || "1");
       // Get number of sides (default 6 = hexagonal prism)
       // Read from numeric input to allow values > 24, fallback to slider
       const prismSides = parseInt(
-        el.prismSidesInput?.value ||
-          el.prismSides?.value ||
-          "6"
+        el.prismSidesInput?.value || el.prismSides?.value || "6"
       );
       // Get face visibility
-      const prismShowFaces =
-        el.prismShowFaces?.checked !== false;
+      const prismShowFaces = el.prismShowFaces?.checked !== false;
 
       const prismData = Primitives.prism(prismBaseQ, prismHeightQ, {
         sides: prismSides,
@@ -1645,85 +1598,10 @@ export function initScene(THREE, OrbitControls, RT) {
       };
       prismGroup.visible = true;
 
-      // Update method info text based on n-gon type (Gauss-Wantzel constructibility)
-      // See: Geometry documents/Polygon-Rationalize.md for full classification
+      // Update method info text — matches RT.nGonVertices() classification
       const prismMethodInfo = el.prismMethodInfo;
       if (prismMethodInfo) {
-        let methodText;
-        const names = [
-          "",
-          "Line",
-          "Digon",
-          "Triangle",
-          "Square",
-          "Pentagon",
-          "Hexagon",
-          "Heptagon",
-          "Octagon",
-          "Nonagon",
-          "Decagon",
-          "Hendecagon",
-          "Dodecagon",
-        ];
-        const name = names[prismSides] || `${prismSides}-gon`;
-
-        // Degenerate cases (prism-specific)
-        if (prismSides === 1) {
-          methodText = `${name}: Degenerate (1D segment)`;
-        } else if (prismSides === 2) {
-          methodText = `${name}: Degenerate (2D plane)`;
-        }
-        // RT-Pure: rational spreads only
-        else if (prismSides === 3) {
-          methodText = `${name}: RT-Pure (s = 3/4)`;
-        } else if (prismSides === 4) {
-          methodText = `${name}: RT-Pure (s = 1)`;
-        } else if (prismSides === 6) {
-          methodText = `${name}: RT-Pure (2×3 @ 60°)`;
-        } else if (prismSides === 12) {
-          methodText = `${name}: RT-Pure (2×6 @ 30°)`;
-        }
-        // φ-Rational: uses √5 / golden ratio
-        else if (prismSides === 5) {
-          methodText = `${name}: φ-Rational (s = β)`;
-        } else if (prismSides === 10) {
-          methodText = `${name}: φ-Rational (2×5 @ 36°)`;
-        } else if (prismSides === 15) {
-          methodText = `${name}: φ-Rational (3×5 GCD)`;
-        } else if (prismSides === 20) {
-          methodText = `${name}: φ-Rational (2×10 @ 18°)`;
-        }
-        // Algebraic: uses √2, √3
-        else if (prismSides === 8) {
-          methodText = `${name}: Algebraic (2×4 @ 45°)`;
-        } else if (prismSides === 16) {
-          methodText = `${name}: Algebraic (2×8 @ 22.5°)`;
-        } else if (prismSides === 24) {
-          methodText = `${name}: Algebraic (2×12 @ 15°)`;
-        }
-        // Cubic: requires solving cubic equation once, then cache
-        else if (prismSides === 7) {
-          methodText = `${name}: Cubic (cos 360°/7)`;
-        } else if (prismSides === 9) {
-          methodText = `${name}: Cubic (3×3 @ 40°)`;
-        } else if (prismSides === 14) {
-          methodText = `${name}: Cubic (2×7 @ 25.7°)`;
-        } else if (prismSides === 18) {
-          methodText = `${name}: Cubic (6×3 @ 20°)`;
-        } else if (prismSides === 21) {
-          methodText = `${name}: Cubic (3×7 @ 17.1°)`;
-        } else if (prismSides % 9 === 0) {
-          // Multiples of 9: use nonagon cubic
-          methodText = `${name}: Cubic (${prismSides / 3}×3)`;
-        } else if (prismSides % 7 === 0) {
-          // Multiples of 7: use heptagon cubic
-          methodText = `${name}: Cubic (${prismSides / 7}×7)`;
-        }
-        // Classical: requires sin(π/n) - no algebraic shortcut
-        else {
-          methodText = `${name}: Classical (sin π/${prismSides})`;
-        }
-        prismMethodInfo.textContent = methodText;
+        prismMethodInfo.textContent = nGonMethodText(prismSides);
       }
     } else {
       prismGroup.visible = false;
@@ -1732,20 +1610,13 @@ export function initScene(THREE, OrbitControls, RT) {
     // Cone (3D primitive - N-gon base + point apex)
     if (el.showCone?.checked) {
       // Get base circumradius quadrance from input field (default 1)
-      const coneBaseQ = parseFloat(
-        el.coneBaseQuadrance?.value || "1"
-      );
+      const coneBaseQ = parseFloat(el.coneBaseQuadrance?.value || "1");
       // Get height quadrance from input field (default 1)
-      const coneHeightQ = parseFloat(
-        el.coneHeightQuadrance?.value || "1"
-      );
+      const coneHeightQ = parseFloat(el.coneHeightQuadrance?.value || "1");
       // Get number of sides (default 6 = hexagonal cone)
-      const coneSides = parseInt(
-        el.coneSides?.value || "6"
-      );
+      const coneSides = parseInt(el.coneSides?.value || "6");
       // Get face visibility
-      const coneShowFaces =
-        el.coneShowFaces?.checked !== false;
+      const coneShowFaces = el.coneShowFaces?.checked !== false;
 
       const coneData = Primitives.cone(coneBaseQ, coneHeightQ, {
         sides: coneSides,
@@ -1771,18 +1642,12 @@ export function initScene(THREE, OrbitControls, RT) {
     // Penrose Tiling (aperiodic tiling with golden ratio)
     if (el.showPenroseTiling?.checked) {
       // Get common parameters
-      const penroseQuadrance = parseFloat(
-        el.penroseQuadrance?.value || "1"
-      );
-      const penroseEdgeWeight = parseFloat(
-        el.penroseEdgeWeight?.value || "2"
-      );
-      const penroseShowFace =
-        el.penroseShowFace?.checked !== false;
+      const penroseQuadrance = parseFloat(el.penroseQuadrance?.value || "1");
+      const penroseEdgeWeight = parseFloat(el.penroseEdgeWeight?.value || "2");
+      const penroseShowFace = el.penroseShowFace?.checked !== false;
 
       // Check if tiling (deflation) mode is enabled
-      const tilingEnabled =
-        el.penroseTilingEnabled?.checked || false;
+      const tilingEnabled = el.penroseTilingEnabled?.checked || false;
 
       let penroseData;
       let tileColor = colorPalette.penroseThick; // Default color
@@ -1793,9 +1658,7 @@ export function initScene(THREE, OrbitControls, RT) {
           'input[name="penroseSeed"]:checked'
         );
         const seed = seedRadio ? seedRadio.value : "star";
-        const generations = parseInt(
-          el.penroseGenerations?.value || "2"
-        );
+        const generations = parseInt(el.penroseGenerations?.value || "2");
 
         // Generate tiling via deflation
         const tiles = PenroseTiling.generate(
@@ -1922,10 +1785,8 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
       // Read direction checkboxes - javelin can show both + and -
-      const showPlus =
-        el.tetrahelix2DirPlus?.checked ?? true;
-      const showMinus =
-        el.tetrahelix2DirMinus?.checked ?? false;
+      const showPlus = el.tetrahelix2DirPlus?.checked ?? true;
+      const showMinus = el.tetrahelix2DirMinus?.checked ?? false;
 
       // 3021 Rule: Map QW→B, QX→A, QY→C, QZ→D for generator compatibility
       const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
@@ -2064,11 +1925,8 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Cube Matrix (IVM Array)
     if (el.showCubeMatrix.checked) {
-      const matrixSize = parseInt(
-        el.cubeMatrixSizeSlider?.value || "1"
-      );
-      const rotate45 =
-        el.cubeMatrixRotate45?.checked || false;
+      const matrixSize = parseInt(el.cubeMatrixSizeSlider?.value || "1");
+      const rotate45 = el.cubeMatrixRotate45?.checked || false;
 
       // Clear existing cube matrix group
       disposeGroup(cubeMatrixGroup);
@@ -2236,11 +2094,8 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Tet Matrix (IVM Array)
     if (el.showTetMatrix.checked) {
-      const matrixSize = parseInt(
-        el.tetMatrixSizeSlider?.value || "1"
-      );
-      const rotate45 =
-        el.tetMatrixRotate45?.checked || false;
+      const matrixSize = parseInt(el.tetMatrixSizeSlider?.value || "1");
+      const rotate45 = el.tetMatrixRotate45?.checked || false;
 
       // Clear existing tet matrix group
       disposeGroup(tetMatrixGroup);
@@ -2313,13 +2168,9 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Octa Matrix (IVM Array)
     if (el.showOctaMatrix.checked) {
-      const matrixSize = parseInt(
-        el.octaMatrixSizeSlider?.value || "1"
-      );
-      const rotate45 =
-        el.octaMatrixRotate45?.checked || false;
-      const colinearEdges =
-        el.octaMatrixColinearEdges?.checked || false;
+      const matrixSize = parseInt(el.octaMatrixSizeSlider?.value || "1");
+      const rotate45 = el.octaMatrixRotate45?.checked || false;
+      const colinearEdges = el.octaMatrixColinearEdges?.checked || false;
 
       // Clear existing octa matrix group
       disposeGroup(octaMatrixGroup);
@@ -2389,12 +2240,9 @@ export function initScene(THREE, OrbitControls, RT) {
     // Dodecahedron (Yellow) - with Face Tiling option
     if (el.showDodecahedron.checked) {
       // Check for face tiling - applies pentagon tiling to each pentagonal face
-      const faceTilingEnabled =
-        el.dodecahedronFaceTiling?.checked || false;
+      const faceTilingEnabled = el.dodecahedronFaceTiling?.checked || false;
       const tilingGenerations = faceTilingEnabled
-        ? parseInt(
-            el.polygonTilingGenerations?.value || "1"
-          )
+        ? parseInt(el.polygonTilingGenerations?.value || "1")
         : 1;
 
       // Store parameters for potential future use (e.g., PACKED nodes)
@@ -2441,9 +2289,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // Geodesic Icosahedron (Orange - complementary to base Cyan)
     // Custom handling to support Face Tiling option
     if (el.showGeodesicIcosahedron.checked) {
-      const frequency = parseInt(
-        el.geodesicIcosaFrequency.value
-      );
+      const frequency = parseInt(el.geodesicIcosaFrequency.value);
       const projectionRadio = document.querySelector(
         'input[name="geodesicIcosaProjection"]:checked'
       );
@@ -2451,12 +2297,9 @@ export function initScene(THREE, OrbitControls, RT) {
       const actualFrequency = isNaN(frequency) ? 1 : frequency;
 
       // Check for face tiling - multiplies effective frequency
-      const faceTilingEnabled =
-        el.geodesicIcosaFaceTiling?.checked || false;
+      const faceTilingEnabled = el.geodesicIcosaFaceTiling?.checked || false;
       const tilingGenerations = faceTilingEnabled
-        ? parseInt(
-            el.polygonTilingGenerations?.value || "1"
-          )
+        ? parseInt(el.polygonTilingGenerations?.value || "1")
         : 1;
 
       // Effective frequency = base frequency × tiling divisions
@@ -2542,17 +2385,15 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Cuboctahedron Matrix (Vector Equilibrium Array)
     if (el.showCuboctahedronMatrix.checked) {
-      const matrixSize = parseInt(
-        el.cuboctaMatrixSizeSlider?.value || "1"
-      );
-      const rotate45 =
-        el.cuboctaMatrixRotate45?.checked || false;
+      const matrixSize = parseInt(el.cuboctaMatrixSizeSlider?.value || "1");
+      const rotate45 = el.cuboctaMatrixRotate45?.checked || false;
 
       // Clear existing cubocta matrix group
       disposeGroup(cuboctaMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
-      const dissolveOpacity = cuboctaMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const dissolveOpacity =
+        cuboctaMatrixGroup.userData.dissolveOpacity ?? 1.0;
       const effectiveOpacity = opacity * dissolveOpacity;
 
       // Store parameters for instance creation/export
@@ -2615,8 +2456,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Tetrahedron (Native WXYZ definition)
     if (el.showQuadrayTetrahedron?.checked) {
-      const normalize =
-        el.quadrayTetraNormalize?.checked ?? true;
+      const normalize = el.quadrayTetraNormalize?.checked ?? true;
       const quadrayTet = Polyhedra.quadrayTetrahedron(scale, {
         normalize: normalize,
       });
@@ -2638,9 +2478,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Tetrahedron Deformed (Demonstrates 4th DOF)
     if (el.showQuadrayTetraDeformed?.checked) {
-      const zStretch = parseFloat(
-        el.quadrayTetraZStretch?.value || "2"
-      );
+      const zStretch = parseFloat(el.quadrayTetraZStretch?.value || "2");
       const quadrayTetDeformed = Polyhedra.quadrayTetrahedronDeformed(
         scale,
         zStretch
@@ -2665,8 +2503,7 @@ export function initScene(THREE, OrbitControls, RT) {
     // NOTE: The central vectors visible when this is shown are from quadrayBasis (WXYZ arrows),
     // not from the cuboctahedron edges. Toggle "Show Quadray Basis" to hide them if desired.
     if (el.showQuadrayCuboctahedron?.checked) {
-      const normalize =
-        el.quadrayCuboctaNormalize?.checked ?? true;
+      const normalize = el.quadrayCuboctaNormalize?.checked ?? true;
       // Scale by 1/2 to match XYZ cuboctahedron size
       // Quadray {2,1,1,0} normalized produces vertices at distance 2√2 from origin
       // XYZ cuboctahedron (at same slider scale) has vertices at distance √2 from origin
@@ -2691,8 +2528,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Octahedron
     if (el.showQuadrayOctahedron?.checked) {
-      const normalize =
-        el.quadrayOctaNormalize?.checked ?? true;
+      const normalize = el.quadrayOctaNormalize?.checked ?? true;
       const quadrayOcta = Polyhedra.quadrayOctahedron(scale, {
         normalize: normalize,
       });
@@ -2713,8 +2549,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Truncated Tetrahedron (7-gon projection source)
     if (el.showQuadrayTruncatedTet?.checked) {
-      const normalize =
-        el.quadrayTruncTetNormalize?.checked ?? true;
+      const normalize = el.quadrayTruncTetNormalize?.checked ?? true;
       const quadrayTruncTet = Polyhedra.quadrayTruncatedTetrahedron(scale, {
         normalize: normalize,
       });
@@ -2738,9 +2573,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Stella Octangula (Star Tetrahedron - compound of two tetrahedra)
     if (el.showQuadrayStellaOctangula?.checked) {
-      const normalize =
-        el.quadrayStellaOctangulaNormalize?.checked ??
-        true;
+      const normalize = el.quadrayStellaOctangulaNormalize?.checked ?? true;
       const stellaOcta = Polyhedra.quadrayStellaOctangula(scale, {
         normalize: normalize,
       });
@@ -2921,17 +2754,15 @@ export function initScene(THREE, OrbitControls, RT) {
       const matrixSize = parseInt(
         el.rhombicDodecMatrixSizeSlider?.value || "1"
       );
-      const rotate45 =
-        el.rhombicDodecMatrixRotate45?.checked || false;
-      const faceCoplanar =
-        el.rhombicDodecMatrixFaceCoplanar?.checked ||
-        false;
+      const rotate45 = el.rhombicDodecMatrixRotate45?.checked || false;
+      const faceCoplanar = el.rhombicDodecMatrixFaceCoplanar?.checked || false;
 
       // Clear existing rhombic dodec matrix group
       disposeGroup(rhombicDodecMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
-      const dissolveOpacity = rhombicDodecMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const dissolveOpacity =
+        rhombicDodecMatrixGroup.userData.dissolveOpacity ?? 1.0;
       const effectiveOpacity = opacity * dissolveOpacity;
 
       // Store parameters for instance creation/export
@@ -2982,17 +2813,15 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Radial Cube Matrix (concentric shell expansion)
     if (el.showRadialCubeMatrix?.checked) {
-      const frequency = parseInt(
-        el.radialCubeFreqSlider?.value || "1"
-      );
-      const spaceFilling =
-        el.radialCubeSpaceFill?.checked ?? true;
+      const frequency = parseInt(el.radialCubeFreqSlider?.value || "1");
+      const spaceFilling = el.radialCubeSpaceFill?.checked ?? true;
 
       // Clear existing radial cube matrix group
       disposeGroup(radialCubeMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
-      const dissolveOpacity = radialCubeMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const dissolveOpacity =
+        radialCubeMatrixGroup.userData.dissolveOpacity ?? 1.0;
       const effectiveOpacity = opacity * dissolveOpacity;
 
       // Store parameters for instance creation/export
@@ -3044,16 +2873,15 @@ export function initScene(THREE, OrbitControls, RT) {
     // Radial Rhombic Dodecahedron Matrix (FCC lattice expansion)
     // RD is inherently space-filling - no toggle needed
     if (el.showRadialRhombicDodecMatrix?.checked) {
-      const frequency = parseInt(
-        el.radialRhombicDodecFreqSlider?.value || "1"
-      );
+      const frequency = parseInt(el.radialRhombicDodecFreqSlider?.value || "1");
       const spaceFilling = true; // RD always space-fills (no voids possible)
 
       // Clear existing radial rhombic dodec matrix group
       disposeGroup(radialRhombicDodecMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
-      const dissolveOpacity = radialRhombicDodecMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const dissolveOpacity =
+        radialRhombicDodecMatrixGroup.userData.dissolveOpacity ?? 1.0;
       const effectiveOpacity = opacity * dissolveOpacity;
 
       // Store parameters for instance creation/export
@@ -3105,19 +2933,17 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Radial Tetrahedron Matrix (Phase 3)
     if (el.showRadialTetrahedronMatrix?.checked) {
-      const frequency = parseInt(
-        el.radialTetFreqSlider?.value || "1"
-      );
+      const frequency = parseInt(el.radialTetFreqSlider?.value || "1");
 
       // Clear existing radial tet matrix group
       disposeGroup(radialTetMatrixGroup);
 
       // Get IVM Mode checkbox value
-      const ivmMode =
-        el.radialTetIVMMode?.checked || false;
+      const ivmMode = el.radialTetIVMMode?.checked || false;
 
       // Apply dissolve opacity for smooth fade transitions
-      const dissolveOpacity = radialTetMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const dissolveOpacity =
+        radialTetMatrixGroup.userData.dissolveOpacity ?? 1.0;
       const effectiveOpacity = opacity * dissolveOpacity;
 
       // Store parameters for instance creation/export
@@ -3169,9 +2995,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Radial Octahedron Matrix (Phase 3)
     if (el.showRadialOctahedronMatrix?.checked) {
-      const frequency = parseInt(
-        el.radialOctFreqSlider?.value || "1"
-      );
+      const frequency = parseInt(el.radialOctFreqSlider?.value || "1");
 
       // Clear existing radial oct matrix group
       disposeGroup(radialOctMatrixGroup);
@@ -3179,11 +3003,11 @@ export function initScene(THREE, OrbitControls, RT) {
       // Get IVM scale checkbox value
       // ivmScaleOnly = true: 2× size with taxicab positioning (for nesting into tet matrix)
       // ivmScale = false: keeps taxicab positioning (not FCC lattice)
-      const ivmScaleOnly =
-        el.radialOctIVMScale?.checked || false;
+      const ivmScaleOnly = el.radialOctIVMScale?.checked || false;
 
       // Apply dissolve opacity for smooth fade transitions
-      const dissolveOpacity = radialOctMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const dissolveOpacity =
+        radialOctMatrixGroup.userData.dissolveOpacity ?? 1.0;
       const effectiveOpacity = opacity * dissolveOpacity;
 
       // Store parameters for instance creation/export
@@ -3248,15 +3072,14 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Radial Cuboctahedron (VE) Matrix (Phase 3)
     if (el.showRadialCuboctahedronMatrix?.checked) {
-      const frequency = parseInt(
-        el.radialVEFreqSlider?.value || "1"
-      );
+      const frequency = parseInt(el.radialVEFreqSlider?.value || "1");
 
       // Clear existing radial VE matrix group
       disposeGroup(radialVEMatrixGroup);
 
       // Apply dissolve opacity for smooth fade transitions
-      const dissolveOpacity = radialVEMatrixGroup.userData.dissolveOpacity ?? 1.0;
+      const dissolveOpacity =
+        radialVEMatrixGroup.userData.dissolveOpacity ?? 1.0;
       const effectiveOpacity = opacity * dissolveOpacity;
 
       // Store parameters for instance creation/export
@@ -3402,9 +3225,7 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (el.showLine?.checked) {
-      const lineQ = parseFloat(
-        el.lineQuadrance?.value || "1"
-      );
+      const lineQ = parseFloat(el.lineQuadrance?.value || "1");
       const lineL = Math.sqrt(lineQ);
       html += `<div style="margin-top: 10px;"><strong>Line:</strong></div>`;
       html += `<div>V: 2, E: 1, F: 0</div>`;
@@ -3413,13 +3234,9 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (el.showPolygon?.checked) {
-      const polyQ = parseFloat(
-        el.polygonQuadrance?.value || "1"
-      );
+      const polyQ = parseFloat(el.polygonQuadrance?.value || "1");
       const polySides = parseInt(
-        el.polygonSidesInput?.value ||
-          el.polygonSides?.value ||
-          "3"
+        el.polygonSidesInput?.value || el.polygonSides?.value || "3"
       );
       const polyR = Math.sqrt(polyQ);
       // Math.sin justified: arbitrary n-gon spread calculation (see CODE-QUALITY-AUDIT.md)
@@ -3436,19 +3253,12 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (el.showPrism?.checked) {
-      const prismBaseQ = parseFloat(
-        el.prismBaseQuadrance?.value || "1"
-      );
-      const prismHeightQ = parseFloat(
-        el.prismHeightQuadrance?.value || "1"
-      );
+      const prismBaseQ = parseFloat(el.prismBaseQuadrance?.value || "1");
+      const prismHeightQ = parseFloat(el.prismHeightQuadrance?.value || "1");
       const prismSides = parseInt(
-        el.prismSidesInput?.value ||
-          el.prismSides?.value ||
-          "6"
+        el.prismSidesInput?.value || el.prismSides?.value || "6"
       );
-      const prismShowFaces =
-        el.prismShowFaces?.checked !== false;
+      const prismShowFaces = el.prismShowFaces?.checked !== false;
       const prismR = Math.sqrt(prismBaseQ);
       const prismH = Math.sqrt(prismHeightQ);
       // Math.sin justified: arbitrary n-gon spread calculation
@@ -3467,17 +3277,10 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     if (el.showCone?.checked) {
-      const coneBaseQ = parseFloat(
-        el.coneBaseQuadrance?.value || "1"
-      );
-      const coneHeightQ = parseFloat(
-        el.coneHeightQuadrance?.value || "1"
-      );
-      const coneSides = parseInt(
-        el.coneSides?.value || "6"
-      );
-      const coneShowFaces =
-        el.coneShowFaces?.checked !== false;
+      const coneBaseQ = parseFloat(el.coneBaseQuadrance?.value || "1");
+      const coneHeightQ = parseFloat(el.coneHeightQuadrance?.value || "1");
+      const coneSides = parseInt(el.coneSides?.value || "6");
+      const coneShowFaces = el.coneShowFaces?.checked !== false;
       const coneR = Math.sqrt(coneBaseQ);
       const coneH = Math.sqrt(coneHeightQ);
       const coneSlantQ = coneBaseQ + coneHeightQ;
@@ -3528,10 +3331,8 @@ export function initScene(THREE, OrbitControls, RT) {
       );
       const tetrahelix2Axis = axisRadio ? axisRadio.value : "QW";
       // Read direction checkboxes (javelin model)
-      const showPlus =
-        el.tetrahelix2DirPlus?.checked ?? true;
-      const showMinus =
-        el.tetrahelix2DirMinus?.checked ?? true;
+      const showPlus = el.tetrahelix2DirPlus?.checked ?? true;
+      const showMinus = el.tetrahelix2DirMinus?.checked ?? true;
       // 3021 Rule mapping
       const axisToFace = { QW: "B", QX: "A", QY: "C", QZ: "D" };
       const tetrahelix2StartFace = axisToFace[tetrahelix2Axis] || "B";
@@ -3759,9 +3560,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Geodesic Tetrahedron
     if (el.showGeodesicTetrahedron.checked) {
-      const frequency = parseInt(
-        el.geodesicTetraFrequency.value
-      );
+      const frequency = parseInt(el.geodesicTetraFrequency.value);
       const projectionRadio = document.querySelector(
         'input[name="geodesicTetraProjection"]:checked'
       );
@@ -3786,9 +3585,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Geodesic Octahedron
     if (el.showGeodesicOctahedron.checked) {
-      const frequency = parseInt(
-        el.geodesicOctaFrequency.value
-      );
+      const frequency = parseInt(el.geodesicOctaFrequency.value);
       const projectionRadio = document.querySelector(
         'input[name="geodesicOctaProjection"]:checked'
       );
@@ -3813,9 +3610,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Geodesic Icosahedron
     if (el.showGeodesicIcosahedron.checked) {
-      const frequency = parseInt(
-        el.geodesicIcosaFrequency.value
-      );
+      const frequency = parseInt(el.geodesicIcosaFrequency.value);
       const projectionRadio = document.querySelector(
         'input[name="geodesicIcosaProjection"]:checked'
       );
@@ -3840,8 +3635,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Tetrahedron (4D Native)
     if (el.showQuadrayTetrahedron?.checked) {
-      const normalize =
-        el.quadrayTetraNormalize?.checked ?? true;
+      const normalize = el.quadrayTetraNormalize?.checked ?? true;
       const quadrayTet = Polyhedra.quadrayTetrahedron(1, { normalize });
       const eulerOK = RT.verifyEuler(
         quadrayTet.vertices.length,
@@ -3857,8 +3651,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Cuboctahedron (Vector Equilibrium)
     if (el.showQuadrayCuboctahedron?.checked) {
-      const normalize =
-        el.quadrayCuboctaNormalize?.checked ?? true;
+      const normalize = el.quadrayCuboctaNormalize?.checked ?? true;
       const quadrayCubocta = Polyhedra.quadrayCuboctahedron(1, { normalize });
       const eulerOK = RT.verifyEuler(
         quadrayCubocta.vertices.length,
@@ -3878,8 +3671,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Octahedron
     if (el.showQuadrayOctahedron?.checked) {
-      const normalize =
-        el.quadrayOctaNormalize?.checked ?? true;
+      const normalize = el.quadrayOctaNormalize?.checked ?? true;
       const quadrayOcta = Polyhedra.quadrayOctahedron(1, { normalize });
       const eulerOK = RT.verifyEuler(
         quadrayOcta.vertices.length,
@@ -3895,8 +3687,7 @@ export function initScene(THREE, OrbitControls, RT) {
 
     // Quadray Truncated Tetrahedron (7-gon projection source)
     if (el.showQuadrayTruncatedTet?.checked) {
-      const normalize =
-        el.quadrayTruncTetNormalize?.checked ?? true;
+      const normalize = el.quadrayTruncTetNormalize?.checked ?? true;
       const quadrayTruncTet = Polyhedra.quadrayTruncatedTetrahedron(1, {
         normalize,
       });
@@ -3929,7 +3720,10 @@ export function initScene(THREE, OrbitControls, RT) {
     requestAnimationFrame(animate);
 
     // Quaternion orbit damping — apply residual velocity after pointer release
-    if (!_qOrbitActive && (Math.abs(_qOrbitVelX) > 0.0001 || Math.abs(_qOrbitVelY) > 0.0001)) {
+    if (
+      !_qOrbitActive &&
+      (Math.abs(_qOrbitVelX) > 0.0001 || Math.abs(_qOrbitVelY) > 0.0001)
+    ) {
       _applyOrbitRotation(_qOrbitVelX, _qOrbitVelY);
       _qOrbitVelX *= 1 - controls.dampingFactor;
       _qOrbitVelY *= 1 - controls.dampingFactor;
@@ -3958,7 +3752,8 @@ export function initScene(THREE, OrbitControls, RT) {
 
     if (isOrthographic && orthographicCamera) {
       // Update ortho frustum bounds preserving current vertical size
-      const frustumHalfHeight = (orthographicCamera.top - orthographicCamera.bottom) / 2;
+      const frustumHalfHeight =
+        (orthographicCamera.top - orthographicCamera.bottom) / 2;
       orthographicCamera.left = -frustumHalfHeight * aspect;
       orthographicCamera.right = frustumHalfHeight * aspect;
       orthographicCamera.updateProjectionMatrix();
@@ -4485,14 +4280,11 @@ export function initScene(THREE, OrbitControls, RT) {
    */
   function createPolyhedronByType(type, options = {}) {
     // Default options
-    const tetEdge = parseFloat(
-      el.tetScaleSlider?.value || "1"
-    );
+    const tetEdge = parseFloat(el.tetScaleSlider?.value || "1");
     const defaultScale = tetEdge / (2 * Math.sqrt(2));
     const scale = options.scale ?? defaultScale;
     const opacity =
-      options.opacity ??
-      parseFloat(el.opacitySlider?.value || "0.25");
+      options.opacity ?? parseFloat(el.opacitySlider?.value || "0.25");
     const frequency = options.frequency ?? 1;
     const projection = options.projection ?? "out";
     // Note: Matrix types are handled by createPolyhedronByTypeAsync()
@@ -4985,14 +4777,11 @@ export function initScene(THREE, OrbitControls, RT) {
     }
 
     // Matrix-specific options - use stored parameters from options if available
-    const tetEdge = parseFloat(
-      el.tetScaleSlider?.value || "1"
-    );
+    const tetEdge = parseFloat(el.tetScaleSlider?.value || "1");
     const defaultScale = tetEdge / (2 * Math.sqrt(2));
     const scale = options.scale ?? defaultScale;
     const opacity =
-      options.opacity ??
-      parseFloat(el.opacitySlider?.value || "0.25");
+      options.opacity ?? parseFloat(el.opacitySlider?.value || "0.25");
 
     // Planar matrix parameters
     const matrixSize = options.matrixSize ?? 1;
