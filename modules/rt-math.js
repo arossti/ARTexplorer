@@ -1853,6 +1853,224 @@ export const RT = {
     return { vertices, starSpread, method };
   },
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * SYMBOLIC N-GON VERTICES
+   * ═══════════════════════════════════════════════════════════════════════════
+   * Exact algebraic vertex generation in Q(√D) — zero float expansion
+   * until the GPU boundary. Generalizes PurePhi.Symbolic (D=5) to any D.
+   *
+   * Supported: N = 3, 4, 6, 8, 12 (Gauss-Wantzel constructible with
+   * rational D). Pentagon/Decagon have nested radicals; Heptagon/Nonagon
+   * are cubic — both fall back to nGonVertices (float path, 1 √).
+   *
+   * See Geometry documents/Pure-Polygon.md for derivation.
+   * ═══════════════════════════════════════════════════════════════════════════ */
+
+  /**
+   * SymbolicCoord — Exact algebraic coordinate: (a + b√D) / c
+   *
+   * All arithmetic stays in Q(√D) with zero float expansion.
+   * Call .toDecimal() only at the GPU boundary (THREE.Vector3).
+   *
+   * Generalizes PurePhi.Symbolic (hardcoded D=5) to arbitrary D.
+   *
+   * @class SymbolicCoord
+   * @param {number} a - Rational part (integer)
+   * @param {number} b - Radical coefficient (integer)
+   * @param {number} D - Radicand (the number under √)
+   * @param {number} c - Denominator (positive integer, default 1)
+   *
+   * @example
+   * const s = new RT.SymbolicCoord(0, 1, 3, 1);  // √3
+   * s.toDecimal();  // 1.7320508...
+   */
+  SymbolicCoord: class {
+    constructor(a, b, D, c = 1) {
+      this.a = a;
+      this.b = b;
+      this.D = D;
+      this.c = c;
+    }
+
+    /** GCD of two integers (Euclidean algorithm) */
+    static gcd(x, y) {
+      x = Math.abs(x);
+      y = Math.abs(y);
+      while (y) {
+        [x, y] = [y, x % y];
+      }
+      return x;
+    }
+
+    /** Reduce (a + b√D)/c by GCD, keep c positive */
+    simplify() {
+      if (this.a === 0 && this.b === 0)
+        return new RT.SymbolicCoord(0, 0, this.D, 1);
+      let g = RT.SymbolicCoord.gcd(Math.abs(this.a), Math.abs(this.b));
+      g = RT.SymbolicCoord.gcd(g, Math.abs(this.c));
+      if (g <= 1) {
+        // Just fix sign of c
+        if (this.c < 0)
+          return new RT.SymbolicCoord(-this.a, -this.b, this.D, -this.c);
+        return this;
+      }
+      const sign = this.c < 0 ? -1 : 1;
+      return new RT.SymbolicCoord(
+        (sign * this.a) / g,
+        (sign * this.b) / g,
+        this.D,
+        (sign * this.c) / g
+      );
+    }
+
+    /** (a + b√D)/c as IEEE 754 — THE expansion point */
+    toDecimal() {
+      return (this.a + this.b * Math.sqrt(this.D)) / this.c;
+    }
+
+    /** Add: same D required */
+    add(other) {
+      return new RT.SymbolicCoord(
+        this.a * other.c + other.a * this.c,
+        this.b * other.c + other.b * this.c,
+        this.D,
+        this.c * other.c
+      ).simplify();
+    }
+
+    /** Subtract: same D required */
+    sub(other) {
+      return new RT.SymbolicCoord(
+        this.a * other.c - other.a * this.c,
+        this.b * other.c - other.b * this.c,
+        this.D,
+        this.c * other.c
+      ).simplify();
+    }
+
+    /** Multiply: (a₁+b₁√D)(a₂+b₂√D) = (a₁a₂+D·b₁b₂) + (a₁b₂+b₁a₂)√D */
+    mul(other) {
+      return new RT.SymbolicCoord(
+        this.a * other.a + this.D * this.b * other.b,
+        this.a * other.b + this.b * other.a,
+        this.D,
+        this.c * other.c
+      ).simplify();
+    }
+
+    /**
+     * Divide: (a₁+b₁√D)/c₁ ÷ (a₂+b₂√D)/c₂
+     * Rationalize: multiply by conjugate (a₂-b₂√D)/(a₂²-D·b₂²)
+     */
+    div(other) {
+      const { a: a1, b: b1, c: c1, D } = this;
+      const { a: a2, b: b2, c: c2 } = other;
+      // Numerator: (a₁+b₁√D)(a₂-b₂√D) = (a₁a₂-D·b₁b₂) + (b₁a₂-a₁b₂)√D
+      const na = a1 * a2 - D * b1 * b2;
+      const nb = b1 * a2 - a1 * b2;
+      // Denominator: c₁(a₂²-D·b₂²) / c₂
+      const norm = a2 * a2 - D * b2 * b2;
+      return new RT.SymbolicCoord(na * c2, nb * c2, D, c1 * norm).simplify();
+    }
+
+    /** Scale by integer */
+    scale(k) {
+      return new RT.SymbolicCoord(
+        this.a * k,
+        this.b * k,
+        this.D,
+        this.c
+      ).simplify();
+    }
+
+    /** Negate */
+    neg() {
+      return new RT.SymbolicCoord(-this.a, -this.b, this.D, this.c);
+    }
+
+    /** Debug string */
+    toString() {
+      const sign = this.b >= 0 ? "+" : "";
+      return `(${this.a} ${sign} ${this.b}√${this.D}) / ${this.c}`;
+    }
+  },
+
+  /**
+   * Cached symbolic slope decompositions for each supported N-gon.
+   * Returns m₁ as a SymbolicCoord in Q(√D), or null if not symbolizable.
+   *
+   * Key denesting identities:
+   *   Octagon:   √(3-2√2) = √2 - 1
+   *   Dodecagon: √(7-4√3) = 2 - √3
+   *
+   * @param {number} N - Polygon sides
+   * @returns {Object|null} { D, m1: SymbolicCoord } or null
+   */
+  slopeSymbolic: N => {
+    const table = {
+      3: { D: 3, m1: new RT.SymbolicCoord(0, 1, 3) }, // √3
+      4: { D: 1, m1: new RT.SymbolicCoord(1, 0, 1) }, // 1 (rational)
+      6: { D: 3, m1: new RT.SymbolicCoord(0, 1, 3, 3) }, // √3/3
+      8: { D: 2, m1: new RT.SymbolicCoord(-1, 1, 2) }, // √2 - 1
+      12: { D: 3, m1: new RT.SymbolicCoord(2, -1, 3) }, // 2 - √3
+    };
+    return table[N] || null;
+  },
+
+  /**
+   * Generate N-gon vertices in exact symbolic form: (a + b√D) / c
+   *
+   * Zero float expansion — every coordinate is a SymbolicCoord.
+   * Call .toDecimal() on each coordinate at the GPU boundary.
+   *
+   * Supported: N = 3, 4, 6, 8, 12. Returns null for other N
+   * (use nGonVertices float path instead).
+   *
+   * @param {number} N - Number of polygon sides
+   * @returns {Object|null} { vertices: [{x,y}], D, method: 'symbolic' }
+   */
+  nGonVerticesSymbolic: N => {
+    const slope = RT.slopeSymbolic(N);
+    if (!slope) return null;
+
+    const { D, m1 } = slope;
+    const S = RT.SymbolicCoord; // alias
+    const ONE = new S(1, 0, D);
+    const ZERO = new S(0, 0, D);
+
+    const vertices = new Array(N);
+
+    // v₀ = (1, 0) — scaled by R at GPU boundary
+    vertices[0] = { x: ONE, y: ZERO };
+
+    // Antipodal vertex for even N
+    if (N % 2 === 0) {
+      vertices[N / 2] = { x: ONE.neg(), y: ZERO };
+    }
+
+    // Tangent addition recurrence in Q(√D)
+    let mk = m1;
+    const half = Math.floor((N - 1) / 2);
+
+    for (let k = 1; k <= half; k++) {
+      // Weierstrass at t = mk: x = (1-t²)/(1+t²), y = 2t/(1+t²)
+      const mk2 = mk.mul(mk); // mₖ²
+      const denom = ONE.add(mk2); // 1 + mₖ²
+      const vx = ONE.sub(mk2).div(denom); // (1-mₖ²)/(1+mₖ²)
+      const vy = mk.scale(2).div(denom); // 2mₖ/(1+mₖ²)
+
+      vertices[k] = { x: vx, y: vy };
+      vertices[N - k] = { x: vx, y: vy.neg() }; // symmetry
+
+      // Tangent addition: m_{k+1} = (mₖ + m₁) / (1 - mₖ·m₁)
+      if (k < half) {
+        mk = mk.add(m1).div(ONE.sub(mk.mul(m1)));
+      }
+    }
+
+    return { vertices, D, method: "symbolic" };
+  },
+
   /**
    * ProjectionPolygons - Shadow polygons from 3D polyhedra projections
    *

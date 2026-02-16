@@ -77,7 +77,9 @@ function nGonMethodText(n) {
       12: "s = (2−√3)/4",
     };
     if (spreadLabels[n]) {
-      return `${name}: Algebraic (${spreadLabels[n]})`;
+      const sym = RT.slopeSymbolic(n);
+      const tag = sym ? "Symbolic" : "Algebraic";
+      return `${name}: ${tag} (${spreadLabels[n]})`;
     }
     // Cubic-cached: 7, 9
     if (n === 7) return `${name}: Cubic (8x³ − 4x² − 4x + 1 = 0)`;

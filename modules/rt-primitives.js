@@ -122,11 +122,24 @@ export const Primitives = {
     const showFace = options.showFace !== false;
     const R = Math.sqrt(quadrance); // circumradius √ (GPU boundary)
 
-    // Unified vertex generation via Wildberger reflection
-    const { vertices: verts2D, starSpread, method } = RT.nGonVertices(n, R);
+    // Try symbolic path first (exact Q(√D) arithmetic, zero intermediate float)
+    const sym = RT.nGonVerticesSymbolic(n);
+    let vertices, starSpread, method;
 
-    // Convert to THREE.Vector3 (z=0 for flat polygon)
-    const vertices = verts2D.map(v => new THREE.Vector3(v.x, v.y, 0));
+    if (sym) {
+      // Symbolic path: exact Q(√D) → expand to decimal at GPU boundary only
+      starSpread = RT.StarSpreads.forN(n);
+      method = "symbolic";
+      vertices = sym.vertices.map(
+        v => new THREE.Vector3(v.x.toDecimal() * R, v.y.toDecimal() * R, 0)
+      );
+    } else {
+      // Float fallback: Wildberger reflection with 1 √
+      const floatResult = RT.nGonVertices(n, R);
+      starSpread = floatResult.starSpread;
+      method = floatResult.method;
+      vertices = floatResult.vertices.map(v => new THREE.Vector3(v.x, v.y, 0));
+    }
 
     // Edges and faces (identical for all N)
     const edges = [];
@@ -135,7 +148,13 @@ export const Primitives = {
     const Q_edge = 4 * starSpread * quadrance;
 
     const rtPure =
-      method === "algebraic" ? true : method === "cubic" ? "cubic" : false;
+      method === "symbolic"
+        ? true
+        : method === "algebraic"
+          ? true
+          : method === "cubic"
+            ? "cubic"
+            : false;
     const names = {
       3: "Triangle",
       4: "Square",
@@ -155,7 +174,7 @@ export const Primitives = {
       constructionLines: [
         `Q_R: ${quadrance.toFixed(6)}, R: ${R.toFixed(6)}`,
         `Star spread s: ${starSpread.toFixed(6)} (${method})`,
-        `√ count: 1 (slope from spread)`,
+        `√ count: ${method === "symbolic" ? "0 (symbolic Q(√D))" : "1 (slope from spread)"}`,
       ],
     });
 
