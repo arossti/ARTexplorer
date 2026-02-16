@@ -77,6 +77,13 @@ class Drop4DDemo {
     // Circumsphere wireframe
     this.circumsphereMesh = null;
     this.showCircumsphere = true;
+
+    // Auto-rotation: slow orbit so user sees 3D dimensionality
+    this._autoRotateId = null;
+    this._autoRotateActive = false;
+    this._autoRotateSpeed = 0.12; // radians per second
+    this._autoRotateLastTime = 0;
+    this._pointerDownHandler = null;
   }
 
   // ========================================================================
@@ -235,6 +242,69 @@ class Drop4DDemo {
     const cumDist = RT.Gravity.computeGravityCumulativeDistances(144, 72);
     this.extent = cumDist[144]; // outermost circle radius
     this.computePhysics(); // cache T alongside extent
+  }
+
+  // ========================================================================
+  // AUTO-ROTATION — slow camera orbit for 3D dimensionality
+  // ========================================================================
+
+  /**
+   * Start the auto-rotation loop. Rotates camera around the Z axis
+   * (scene up vector) at a slow rate. Runs continuously while the
+   * demo is enabled, independent of the drop animation.
+   */
+  startAutoRotate() {
+    if (this._autoRotateId) return;
+    this._autoRotateActive = true;
+    this._autoRotateLastTime = performance.now();
+
+    // Stop auto-rotate if user drags to orbit manually (canvas only, not panel UI)
+    this._pointerDownHandler = (e) => {
+      if (e.target.tagName === "CANVAS") {
+        this.stopAutoRotate();
+      }
+    };
+    window.addEventListener("pointerdown", this._pointerDownHandler);
+
+    const rotate = () => {
+      if (!this._autoRotateActive) return;
+
+      const now = performance.now();
+      const dt = (now - this._autoRotateLastTime) / 1000;
+      this._autoRotateLastTime = now;
+
+      // Rotate camera position around Z axis (up vector)
+      const target = this.controls.target;
+      const offset = this.camera.position.clone().sub(target);
+      const cos = Math.cos(this._autoRotateSpeed * dt);
+      const sin = Math.sin(this._autoRotateSpeed * dt);
+      const x = offset.x * cos - offset.y * sin;
+      const y = offset.x * sin + offset.y * cos;
+      offset.x = x;
+      offset.y = y;
+
+      this.camera.position.copy(target).add(offset);
+      this.camera.lookAt(target);
+
+      this._autoRotateId = requestAnimationFrame(rotate);
+    };
+
+    this._autoRotateId = requestAnimationFrame(rotate);
+  }
+
+  /**
+   * Stop auto-rotation. Only resumes on a fresh Drop command.
+   */
+  stopAutoRotate() {
+    this._autoRotateActive = false;
+    if (this._autoRotateId) {
+      cancelAnimationFrame(this._autoRotateId);
+      this._autoRotateId = null;
+    }
+    if (this._pointerDownHandler) {
+      window.removeEventListener("pointerdown", this._pointerDownHandler);
+      this._pointerDownHandler = null;
+    }
   }
 
   // ========================================================================
@@ -785,6 +855,11 @@ class Drop4DDemo {
   startAnimation() {
     this.isAnimating = true;
 
+    // Restart auto-rotation on each fresh Drop
+    if (!this._autoRotateActive) {
+      this.startAutoRotate();
+    }
+
     const now = performance.now();
     if (this._pausedCycleElapsed !== null) {
       // Resume from pause — rewind animationStartTime so cycle picks up where it left off
@@ -1022,6 +1097,7 @@ class Drop4DDemo {
     this.configureSceneForDemo();
     this.createDemoObjects();
     this.createInfoPanel();
+    this.startAutoRotate();
 
     console.log("4D\u00B1 Gravity + Inversion Demo enabled");
   }
@@ -1030,6 +1106,7 @@ class Drop4DDemo {
     if (!this.enabled) return;
     this.enabled = false;
 
+    this.stopAutoRotate();
     this.resetToStart();
     this.removeDemoObjects();
     this.removeInfoPanel();
