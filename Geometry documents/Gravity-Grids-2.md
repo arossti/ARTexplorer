@@ -239,6 +239,13 @@ The unified `RT.nGonVertices(N, R)` function generates regular N-gon vertices fo
 
 This single function serves **both** the Primitives polygon panel AND great circle grids — full code reuse.
 
+**Symbolic upgrade (Feb 2026)**: For N ∈ {3, 4, 6, 8, 12}, `RT.nGonVerticesSymbolic()` now
+computes vertices in exact Q(√D) arithmetic with zero intermediate float expansion. The
+Weierstrass slopes are expressed as `SymbolicCoord` values — e.g., octagon m₁ = √2−1 via
+the denesting identity √(3−2√2) = √2−1. GCD reduction keeps all coefficients ≤ 2.
+`Primitives.polygon()` uses this symbolic path first, with `nGonVertices()` as float
+fallback for other N. See `Geometry documents/Pure-Polygon.md` for derivation.
+
 ### Implementation
 
 #### 6a: Core N-gon generator — `RT.nGonVertices(N, R)` [DONE]
