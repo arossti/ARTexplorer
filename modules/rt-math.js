@@ -561,6 +561,11 @@ export const RT = {
      *
      * All values computed once and cached for IEEE 754 precision consistency.
      *
+     * NOTE: These cos/sin values are ACTIVELY USED by rt-penrose.js for
+     * Penrose tiling rotations (36°/72° steps). They are NOT deprecated.
+     * However, polygon vertex generation no longer uses these directly —
+     * it goes through RT.nGonVertices() → StarSpreads.pentagon() instead.
+     *
      * @namespace pentagon
      * @memberof RT.PurePhi
      */
@@ -1424,6 +1429,13 @@ export const RT = {
    *   - Edge quadrance: Q_edge = 4sQ (Theorem 98)
    *   - Diagonal quadrance: Q(A₀,A₂ₖ) = 4·Sₖ(s)·Q (Exercise 14.2)
    *
+   * CANONICAL USAGE (Feb 2026):
+   * StarSpreads.forN(n) is the entry point for RT.nGonVertices(), which is
+   * the SOLE polygon vertex generator for all N ≥ 3. The individual named
+   * spreads (triangle, square, pentagon, ...) feed into forN(). Do NOT
+   * create separate per-polygon generators — nGonVertices() handles all N
+   * via a single Wildberger reflection construction with exactly 1 √.
+   *
    * Uses existing RT.PurePhi and RT.PureRadicals for cached radicals.
    *
    * @namespace StarSpreads
@@ -1513,6 +1525,15 @@ export const RT = {
    * While Gauss-Wantzel constructible polygons use only √ radicals,
    * some polygons (7, 9, 14, 18, 21...) require solving cubic equations.
    * We solve these cubics ONCE and cache the results.
+   *
+   * POLYGON GENERATION NOTE (Feb 2026):
+   * Individual cos/sin values (cos1, sin1, cos2, sin2, ...) are NO LONGER
+   * used for polygon vertex generation. All N-gon generation now goes through
+   * RT.nGonVertices(N, R) which only needs .starSpread() from each entry.
+   * The individual trig values are retained for potential future use (e.g.,
+   * direct rotation, Penrose-like constructions) but are NOT called by any
+   * current code. Do NOT create per-polygon vertex generators from these —
+   * use RT.nGonVertices() instead.
    *
    * Philosophy (same as PurePhi/PureRadicals):
    * - Solve cubic algebraically or numerically ONCE
