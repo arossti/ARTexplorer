@@ -17,7 +17,10 @@
 | 4 | Distorted polyhedra: vertex remapping through gravity metric | Pending |
 | 5a | IK rigid link in Gravity Numberline demo | **Done** (`df0faf0`) |
 | 5b–d | Pin joints, hinges, elastic, tension, pneumatic | Planned |
-| 6 | Great-circle-as-N-gon: polygonal geodesic generation | Planned |
+| 6a | N-gon generator: `RT.nGonVertices()` Wildberger reflection method | **Done** |
+| 6a+ | Primitives refactor: unified `polygon()` via `RT.nGonVertices()` | **Done** |
+| 6b | Grid integration: `nGon` parameter in polar planes | **Done** |
+| 6c | UI slider (3–128) in Grid controls panel | Planned |
 | 7 | 4D± Gravity + Inversion demo: Quadray Janus drop | **Done** (core) |
 | 7b | Cell slider: manual scrubbing +144 to −144 | **Done** |
 | 7c | Circumsphere boundary visualization (7F wireframe) | **Done** |
@@ -184,7 +187,7 @@ Building on `rt-ik-solvers.js` (Phase 5a: rigid link).
 
 ## Phase 6: Great-Circle-as-N-gon — Polygonal Geodesic Generation
 
-**Goal:** Replace the fixed 64-segment circle approximation with explicit N-gon inscriptions, opening a family of geodesic constructions.
+**Goal:** Replace the fixed 64-segment circle approximation with explicit N-gon inscriptions, opening a family of geodesic constructions. User-facing slider (3–128) controls polygon resolution per great circle.
 
 ### The Family
 
@@ -195,6 +198,7 @@ Building on `rt-ik-solvers.js` (Phase 5a: rigid link).
 | 6 | Hexagon | 6 per plane | Hexagonal tessellation disc — IVM-like pattern |
 | 12 | Dodecagon | 12 per plane | High-resolution polygonal |
 | 64 | 64-gon | 64 per plane | Visually smooth circle (current rendering) |
+| 128 | 128-gon | 128 per plane | Maximum resolution |
 
 ### Geodesic Generation via N-gon Subdivision
 
@@ -212,24 +216,60 @@ This produces geodesic-like triangulations that:
 - Are conformal to the polar grid structure
 - Can use any polygon — hexagonal, pentagonal, etc.
 
+### Wildberger Reflection Method (Chapter 14, §14.5)
+
+**Supersedes the hybrid Weierstrass/algebraic u-value strategy.**
+
+The unified `RT.nGonVertices(N, R)` function generates regular N-gon vertices for **any** N using Wildberger's successive reflection construction:
+
+1. **Star spread** `s = sin²(π/N)` — algebraic for N=3,4,5,6,8,10,12, cubic-cached for 7,9, transcendental fallback otherwise
+2. **ONE √**: `m₁ = tan(π/N) = √(s/(1−s))` — the only irrational operation
+3. **Tangent addition recurrence**: `m_{k+1} = (mₖ + m₁) / (1 − mₖ·m₁)` — purely rational
+4. **Weierstrass at slopes**: vertex k = `(R(1−mₖ²)/(1+mₖ²), R·2mₖ/(1+mₖ²))` — rational in mₖ
+5. **Symmetry**: lower-half vertices by y → −y
+
+**Key identity**: reflecting (R, 0) across a line with slope m gives exactly `R · circleParam(m)`. The reflection construction IS the Weierstrass parameterization evaluated at successive tangent slopes.
+
+**√ count comparison**:
+| Method | √ per N-gon | Notes |
+|--------|-------------|-------|
+| Gauss-Wantzel (old generators) | O(N) | Each vertex needs independent √ |
+| Classical trig | 0 √, N transcendentals | sin/cos are infinitely irrational |
+| **Wildberger reflection** | **1** | Same for any N |
+
+This single function serves **both** the Primitives polygon panel AND great circle grids — full code reuse.
+
 ### Implementation
 
-Modify `createQuadrayPolarPlane()` to accept an `nGon` parameter (default 64 for backward compat):
+#### 6a: Core N-gon generator — `RT.nGonVertices(N, R)` [DONE]
 
-```javascript
-createQuadrayPolarPlane: (normal, divisions, color, nGon = 64) => {
-  // For each shell k:
-  //   Place nGon vertices at equal angular spacing (Weierstrass u-values)
-  //   Draw polygon edges (vertex to vertex)
-  //   Optionally draw radial lines to previous shell's vertices
-}
-```
+Added to `rt-math.js`. Also added supporting primitives:
+- `RT.reflectInLine(x, y, m)` — rational 2D reflection
+- `RT.slopeFromSpread(s)` — the ONE √ boundary
+- Extended `RT.StarSpreads.forN()` to include N=7,9 from PureCubics
+
+#### 6a+: Primitives refactor [DONE]
+
+Replaced 9 hand-coded polygon generators + classical trig fallback in `rt-primitives.js` (~636 lines) with a single unified `polygon()` that calls `RT.nGonVertices()`. Prism, cone, cylinder inherit the improvement automatically.
+
+#### 6b: Grid integration [DONE]
+
+Both `createGravityCartesianPlane()` and `createQuadrayPolarPlane()` in `rt-grids.js` now accept `nGon` parameter (default 64 for backward compatibility) and use `RT.nGonVertices()` instead of the hardcoded SPQ=16 Weierstrass quadrant loop.
+
+#### 6c: UI slider [Planned]
+
+Add slider to Grid controls panel (matches Primitives polygon sides slider):
+- Range: 3–128
+- Default: 64 (backward compatible)
+- Step: 1 for 3–12, then jumps: 16, 24, 32, 48, 64, 96, 128
+- Label: "N-gon" with current value display
 
 ### Verification
 
-- **N=64**: Visually identical to current
+- **N=64**: Visually identical to current rendering
 - **N=3 on QW plane**: Equilateral triangle per shell, 3 radial lines — should align with tet face geometry
 - **N=6 on QW plane**: Hexagonal rings — should produce IVM-like pattern
+- **N=4 on XYZ plane**: Square rings — should align with Cartesian crosshair
 
 ### Radial Lines
 

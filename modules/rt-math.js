@@ -165,6 +165,52 @@ export const RT = {
   },
 
   /**
+   * Reflect point (x, y) across a line through the origin with slope m.
+   * Purely rational: add, mul, div only (no √).
+   *
+   * Formula (Wildberger "Divine Proportions" §14.5):
+   *   x' = ((1 − m²)x + 2my) / (1 + m²)
+   *   y' = (2mx − (1 − m²)y) / (1 + m²)
+   *
+   * Key identity: reflectInLine(R, 0, m) === R · circleParam(m).
+   * Reflecting (R, 0) across a line with slope m is exactly the Weierstrass
+   * parameterization evaluated at t = m. This connects Wildberger's reflection
+   * construction to the rational circle.
+   *
+   * @param {number} x - Point x-coordinate
+   * @param {number} y - Point y-coordinate
+   * @param {number} m - Slope of line through origin
+   * @returns {Object} {x, y} - Reflected point
+   *
+   * @example
+   * RT.reflectInLine(1, 0, 1); // {x: 0, y: 1} — reflect (1,0) across y=x
+   */
+  reflectInLine: (x, y, m) => {
+    const m2 = m * m;
+    const d = 1 + m2;
+    return {
+      x: ((1 - m2) * x + 2 * m * y) / d,
+      y: (2 * m * x - (1 - m2) * y) / d,
+    };
+  },
+
+  /**
+   * Compute slope from star spread: m = tan(π/N) = √(s / (1 − s)).
+   * This is the ONE √ in Wildberger's reflection-based N-gon construction.
+   *
+   * Given star spread s = sin²(π/N), returns the slope of the first star line.
+   * All subsequent slopes are computed via rational tangent addition.
+   *
+   * @param {number} s - Star spread (sin²(π/N))
+   * @returns {number} Slope m = tan(π/N)
+   *
+   * @example
+   * RT.slopeFromSpread(3/4);  // √3 ≈ 1.732 (triangle: tan(60°))
+   * RT.slopeFromSpread(1/2);  // 1.0 (square: tan(45°))
+   */
+  slopeFromSpread: s => Math.sqrt(s / (1 - s)),
+
+  /**
    * Convert spread to angle parameter 't' using rational circle parameterization
    * Solves: 4t² / (1 + t²)² = spread for t
    *
@@ -1432,14 +1478,18 @@ export const RT = {
 
     /**
      * Get star spread for any supported n
-     * Returns null for n values without algebraically exact spreads
+     * Returns null for n values without exact cached spreads
+     *
+     * Includes Gauss-Wantzel constructible (3,4,5,6,8,10,12) AND
+     * cubic-cached (7,9) from RT.PureCubics.
      *
      * @param {number} n - Number of sides
-     * @returns {number|null} Star spread or null if not algebraically exact
+     * @returns {number|null} Star spread or null if not cached
      *
      * @example
-     * RT.StarSpreads.forN(5);  // ≈ 0.9045 (pentagon)
-     * RT.StarSpreads.forN(7);  // null (heptagon requires cubic solution)
+     * RT.StarSpreads.forN(5);  // ≈ 0.9045 (pentagon, algebraic)
+     * RT.StarSpreads.forN(7);  // ≈ 0.1883 (heptagon, cubic-cached)
+     * RT.StarSpreads.forN(11); // null (no cached solution)
      */
     forN: n => {
       const spreads = {
@@ -1447,7 +1497,9 @@ export const RT = {
         4: RT.StarSpreads.square,
         5: RT.StarSpreads.pentagon,
         6: RT.StarSpreads.hexagon,
+        7: () => RT.PureCubics.heptagon.starSpread(), // cubic-cached
         8: RT.StarSpreads.octagon,
+        9: () => RT.PureCubics.nonagon.starSpread(), // cubic-cached
         10: RT.StarSpreads.decagon,
         12: RT.StarSpreads.dodecagon,
       };
@@ -1690,6 +1742,91 @@ export const RT = {
         return () => cached;
       })(),
     },
+  },
+
+  /**
+   * Unified N-gon Vertex Generator — Wildberger Reflection Method
+   *
+   * Generates N vertices of a regular N-gon inscribed in a circle of radius R.
+   * Uses successive reflections through star lines (Chapter 14, §14.5).
+   *
+   * Algorithm:
+   * 1. Star spread s = sin²(π/N) — algebraic for N≤12, cubic for 7,9, else transcendental
+   * 2. m₁ = √(s/(1−s)) = tan(π/N) — THE one √ in the entire construction
+   * 3. Tangent addition recurrence: m_{k+1} = (mₖ + m₁) / (1 − mₖ·m₁) — rational
+   * 4. Vertex k: Weierstrass at t = mₖ — rational in mₖ
+   * 5. Lower-half vertices by symmetry: y → −y
+   *
+   * √ count: Exactly 1 (for m₁), regardless of N.
+   * Compare: Gauss-Wantzel O(N) √, classical trig O(N) transcendentals.
+   *
+   * The key identity: reflecting (R, 0) across a line with slope mₖ gives
+   * the same result as R · circleParam(mₖ). The reflection construction IS
+   * the Weierstrass parameterization evaluated at successive tangent slopes.
+   *
+   * @param {number} N - Number of sides (≥ 3)
+   * @param {number} R - Circumradius (√quadrance, the GPU-boundary √)
+   * @returns {Object} { vertices: [{x,y},...], starSpread, method }
+   *   - vertices: N points in counterclockwise order, starting at (R, 0)
+   *   - method: 'algebraic' | 'cubic' | 'transcendental'
+   *
+   * @example
+   * const tri = RT.nGonVertices(3, 1.0);
+   * // tri.vertices[0] = {x: 1, y: 0}
+   * // tri.vertices[1] = {x: -0.5, y: 0.866...}
+   * // tri.method = 'algebraic'
+   *
+   * @see RT.StarSpreads — exact spreads for N=3,4,5,6,7,8,9,10,12
+   * @see RT.slopeFromSpread — the ONE √
+   * @see RT.reflectInLine — the rational reflection primitive
+   * @see Wildberger "Divine Proportions" Chapter 14, §14.5, pp. 163-165
+   */
+  nGonVertices: (N, R) => {
+    if (N < 3) throw new Error(`nGonVertices: N must be ≥ 3, got ${N}`);
+
+    // Star spread: sin²(π/N)
+    let starSpread = RT.StarSpreads.forN(N);
+    let method;
+    if (starSpread !== null) {
+      method = N === 7 || N === 9 ? "cubic" : "algebraic";
+    } else {
+      // Transcendental fallback for N without cached exact spreads
+      const sinPiN = Math.sin(Math.PI / N);
+      starSpread = sinPiN * sinPiN;
+      method = "transcendental";
+    }
+
+    const vertices = new Array(N);
+    vertices[0] = { x: R, y: 0 };
+
+    // Special case: N even → antipodal vertex is exact
+    if (N % 2 === 0) {
+      vertices[N / 2] = { x: -R, y: 0 };
+    }
+
+    // The ONE √: m₁ = tan(π/N) = √(s/(1-s))
+    const m1 = RT.slopeFromSpread(starSpread);
+
+    // Generate upper-half vertices via tangent addition recurrence
+    let mk = m1; // current slope = tan(k·π/N), starts at k=1
+    const half = Math.floor((N - 1) / 2);
+
+    for (let k = 1; k <= half; k++) {
+      // Vertex k from Weierstrass at t = mk (= reflectInLine(R, 0, mk))
+      const mk2 = mk * mk;
+      const d = 1 + mk2;
+      const vx = (R * (1 - mk2)) / d;
+      const vy = (R * 2 * mk) / d;
+      vertices[k] = { x: vx, y: vy };
+      vertices[N - k] = { x: vx, y: -vy }; // symmetry
+
+      // Tangent addition for next slope: m_{k+1} = (mk + m1) / (1 - mk·m1)
+      if (k < half) {
+        mk = (mk + m1) / (1 - mk * m1);
+      }
+    }
+
+    return { vertices, starSpread, method };
   },
 
   /**
@@ -2810,7 +2947,7 @@ export const RT = {
      * @param {number} H - Total drop height
      * @returns {number} Position at shell k
      */
-    uniformGPosition: (k, N, H) => H * (k * k) / (N * N),
+    uniformGPosition: (k, N, H) => (H * (k * k)) / (N * N),
 
     /**
      * Time to reach position x under uniform g from rest.
@@ -2903,7 +3040,9 @@ export const RT = {
       const R2 = R * R;
 
       // e1 = P1 / R (unit vector — division only, no √)
-      const e1x = p1x / R, e1y = p1y / R, e1z = p1z / R;
+      const e1x = p1x / R,
+        e1y = p1y / R,
+        e1z = p1z / R;
 
       // dot = P1·P2 (fully rational)
       const dot = p1x * p2x + p1y * p2y + p1z * p2z;
@@ -2930,7 +3069,9 @@ export const RT = {
 
       // √ #1: normalize e2 (GPU boundary)
       const e2len = Math.sqrt(e2Q);
-      const e2x = e2rx / e2len, e2y = e2ry / e2len, e2z = e2rz / e2len;
+      const e2x = e2rx / e2len,
+        e2y = e2ry / e2len,
+        e2z = e2rz / e2len;
 
       // √ #2: u_max = tan(θ/2) = √((1−d)/(1+d)), d = cos(θ) = dot/R²
       const d = dot / R2;
@@ -2942,8 +3083,8 @@ export const RT = {
         const u = (s / segments) * u_max;
         const u2 = u * u;
         const denom = 1 + u2;
-        const xc = R * (1 - u2) / denom; // rational in u
-        const yc = R * (2 * u) / denom;  // rational in u
+        const xc = (R * (1 - u2)) / denom; // rational in u
+        const yc = (R * (2 * u)) / denom; // rational in u
         pts[s * 3] = xc * e1x + yc * e2x;
         pts[s * 3 + 1] = xc * e1y + yc * e2y;
         pts[s * 3 + 2] = xc * e1z + yc * e2z;
