@@ -28,7 +28,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}{Proposition}
 
-\title{Geometric Janus Inversion -- v10.4 (Feb 2026)\\
+\title{Geometric Janus Inversion -- v10.6 (Feb 2026)\\
 \large Tetrahedral Coordinates, the Inversion Manifold,\\
 and the Three-State Geometry of Inside-Outing}
 
@@ -796,6 +796,55 @@ The software is available at: \url{https://arossti.github.io/ARTexplorer/}
     \label{fig:janus-transition}
 \end{figure}
 
+\subsection{Gravity Demos: Metric Geometry Over Dynamical Force}
+
+Two interactive demonstrations extend the Janus framework into gravitational physics, approaching acceleration geometrically rather than dynamically.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1\linewidth]{Gravity-Demo.png}
+    \caption{The 4D$^\pm$ Quadray Janus Drop: four bodies fall along tetrahedral basis vectors through a gravity-compressed grid, pass through the origin (Janus Point), and re-emerge in the dual arena.}
+    \label{fig:gravity-demo}
+\end{figure}
+
+A gravity grid conceals a choice that is usually invisible: whether to parameterize by \emph{field strength} or by \emph{time} ($t$). The two produce inverse compression patterns, and a third option---the Newtonian default---avoids non-uniform grids entirely by assigning force to the object.
+
+\textbf{Metric spacing} (field-strength parameterized). Grid shells represent the gravitational field itself---dense where the field is strong (near the origin), sparse where it is weak (at the periphery). The cells are not equal in physical distance, nor equal in time; they are unequal in both, with wide cells at the edge and narrow cells at the center. A body moving at constant coordinate velocity through this grid lingers in the wide outer cells (appearing slow) and crosses the narrow inner cells rapidly (appearing fast)---producing the visual appearance of gravitational acceleration. The grid density \emph{is} the field; the body has no dynamics of its own.
+
+\textbf{Time spacing} ($t$-parameterized). Grid shells mark where the body is at equal time intervals. Under uniform gravity, the body covers more distance per tick as it accelerates: the first tick barely moves it, the last tick carries it far. Shell gaps follow Galileo's law of odd numbers---$1, 3, 5, 7, \ldots$---whose cumulative sum gives the quadratic fall law. The grid is \emph{sparse at the center, dense at the edge}: the exact inverse of the metric case. Each cell takes equal time to cross. A body crossing one cell per tick appears to accelerate because the cells widen toward the origin.
+
+\textbf{Newtonian dynamics} (uniform grid). The grid is uniform---equal spacing everywhere. The body carries the physics: $F = ma$ produces a quadratic trajectory $r = E(1 - t^2/T^2)$ through evenly-spaced cells. Acceleration is a property of the \emph{object}, applied by a force, visible as changing velocity against a neutral backdrop.
+
+All three produce the same observable---a body that appears to accelerate toward the origin---but they differ in where the physics is assigned:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{p{3.5cm}p{3.5cm}p{3cm}p{3cm}}
+\toprule
+\textbf{Approach} & \textbf{Grid} & \textbf{Body motion} & \textbf{Physics lives in}\\
+\midrule
+Metric (field) & Dense at center & Constant velocity & The metric (space)\\
+\addlinespace
+Time ($t$) & Dense at edge & Constant cell rate & The cells (discrete steps)\\
+\addlinespace
+Newtonian ($F = ma$) & Uniform & Quadratic trajectory & The object (force)\\
+\bottomrule
+\end{tabular}
+\caption{Three representations of the same gravitational fall}
+\end{table}
+
+The parallel to general relativity is structural, not claimed as equivalent. Einstein's key insight was precisely this reassignment: a body in free fall carries no force; what Newton attributed to a force on the object, general relativity attributes to the curvature of spacetime. The body follows a geodesic---the straightest possible path---through a curved metric. The ``acceleration'' is not in the body but in the geometry.
+
+The metric grid enacts this principle directly. The body moves at constant coordinate velocity---a straight line in grid coordinates---through a non-uniform metric. An observer reading the body's position against a uniform ruler sees acceleration; an observer reading it against the grid sees constant motion. The choice of ruler determines whether you perceive dynamics or geometry---and neither observer is wrong. This is the equivalence principle rendered as a visualization choice.
+
+We adopt the metric parameterization because it places the physics in the shape of the space rather than in the motion of the object. The grid \emph{is} the gravitational field. The body has no dynamics to explain, no force to attribute, no mechanism to specify. It moves; the space it moves through determines what that motion looks like. This is consistent with the broader program of this paper: structure precedes dynamics, and the geometry of the coordinate system is not a neutral backdrop but an active participant in what we observe.
+
+The \emph{Gravity Numberline} (2D) demonstrates this principle along a single axis: a body traverses gravity-spaced intervals at constant grid-velocity, accelerating visually as the intervals compress toward the origin. A celestial body selector (Earth, Moon, Jupiter, Sun, black hole) varies the metric, showing how the same constant-velocity motion through differently warped spaces produces different observable accelerations. In RT terms, the time-quadrance for the fall is $Q_T = 2H/g$---pure rational algebra. A single deferred $\sqrt{}$ converts to seconds at the animation boundary.
+
+The \emph{4D$^\pm$ Quadray Janus Drop} (Figure~\ref{fig:gravity-demo}) extends the principle to four bodies falling simultaneously along the four Quadray basis vectors through a gravity-spherical grid. These four bodies constitute the minimum Cayley-Menger configuration for three-dimensional Euclidean space: four points whose six pairwise quadrances are constrained by embeddability. As the bodies fall at constant grid-velocity through the compressed metric, all six mutual quadrances shrink proportionally---the \emph{shape} (the ratios of pairwise separations) is preserved as an invariant. At total collision, all quadrances reach zero simultaneously while the shape remains well-defined---the ``central configuration'' of Section~\ref{sec:three-state}. The bodies pass through the Janus Point and re-emerge in the dual arena with preserved metric relationships and flipped tetrahedral parity.
+
+The metric approach separates shape from dynamics. The falling bodies carry no momentum, no force vectors---only position in a metric space. The relational observables (inter-body quadrances) change; the relational structure (their constrained ratios) does not. Acceleration is not applied to objects; it is a property of the space they traverse.
+
 %==============================================================================
 \section{Open Questions}
 %==============================================================================
@@ -813,7 +862,7 @@ In decreasing order of tractability:
 
 \item \textbf{Higher primes.} The geodesic tetrahedron family has produced prime projections for 5, 7, 11, and 13 at rational spreads. Does it continue for all primes? Is there a prime for which no tetrahedral source produces a clean projection?
 
-\item \textbf{Relational formulation.} The Janus framework is presented here in coordinate language---the sign-flip of Quadray values, the paired arenas of positive and negative coordinate space. But Rational Trigonometry's core quantities (quadrance, spread) are relational observables, not coordinate projections. Can the Inversion Manifold be reformulated purely in terms of quadrance relations between points, without reference to any coordinate system? If so, the paired-arena structure would be a property of Euclidean geometry itself---visible in any relational description---rather than a feature of a particular parameterization. The tetrahedron's role as the minimum closed form suggests that the minimal Cayley-Menger configuration\endnote{The Cayley-Menger determinant gives the necessary and sufficient conditions for a set of pairwise distances to be embeddable in Euclidean space of a given dimension. In standard form it uses squared distances---i.e., quadrances. The constraints are polynomial: no square roots, no transcendentals. In RT terms, the embeddability conditions are already rational.} (four points in 3D) may carry the Janus structure intrinsically, in its quadrance relationships rather than its coordinate representations.
+\item \textbf{Relational formulation.} The Janus framework is presented here in coordinate language---the sign-flip of Quadray values, the paired arenas of positive and negative coordinate space. But Rational Trigonometry's core quantities (quadrance, spread) are relational observables, not coordinate projections. Can the Inversion Manifold be reformulated purely in terms of quadrance relations between points, without reference to any coordinate system? If so, the paired-arena structure would be a property of Euclidean geometry itself---visible in any relational description---rather than a feature of a particular parameterization. The tetrahedron's role as the minimum closed form suggests that the minimal Cayley-Menger configuration\endnote{The Cayley-Menger determinant gives the necessary and sufficient conditions for a set of pairwise distances to be embeddable in Euclidean space of a given dimension. In standard form it uses squared distances---i.e., quadrances. The constraints are polynomial: no square roots, no transcendentals. In RT terms, the embeddability conditions are already rational.} (four points in 3D) may carry the Janus structure intrinsically, in its quadrance relationships rather than its coordinate representations. The 4D$^\pm$ Quadray Janus Drop demo (Section~8) provides a concrete instance: four bodies whose six mutual quadrances are always positive, always constrained by tetrahedral embeddability, and whose ratios are preserved through total collision---the relational content of Janus Inversion expressed entirely in positive pairwise separations, without any coordinate sign entering the observables. The question is whether the parity flip (tetrahedron to dual) can be detected from within the quadrance data alone, or whether it requires the coordinate representation to distinguish the two arenas.
 \end{enumerate}
 
 %==============================================================================

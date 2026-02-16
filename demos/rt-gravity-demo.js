@@ -3,8 +3,8 @@
  * Interactive demonstration of gravity grid intervals vs uniform spacing.
  *
  * Two numberlines:
- *   Top — uniform grid, body ACCELERATES (quadratic position in time).
- *   Bottom — gravity-warped grid, body at CONSTANT VELOCITY (linear in time).
+ *   Top — NEWTONIAN: uniform grid, force on object, body ACCELERATES (x = ½gt²).
+ *   Bottom — METRIC: field-strength grid, physics in the space, body at CONSTANT VELOCITY (x = vt).
  *
  * Both bodies start at left and reach right at the same total time T.
  * The bodies diverge mid-flight: the accelerating body lags early, catches up late.
@@ -220,8 +220,14 @@ function createNumberlines() {
  */
 function createTicks() {
   // Clear existing
-  uniformTicks.forEach(t => { scene.remove(t); t.geometry.dispose(); });
-  gravityTicks.forEach(t => { scene.remove(t); t.geometry.dispose(); });
+  uniformTicks.forEach(t => {
+    scene.remove(t);
+    t.geometry.dispose();
+  });
+  gravityTicks.forEach(t => {
+    scene.remove(t);
+    t.geometry.dispose();
+  });
   uniformTicks = [];
   gravityTicks = [];
 
@@ -232,9 +238,11 @@ function createTicks() {
   uniformPositions.forEach((x, i) => {
     const isEndpoint = i === 0 || i === N;
     const isMajor = i % MAJOR_TICK_INTERVAL === 0;
-    const height = isEndpoint ? TICK_HEIGHT * 1.8
-      : isMajor ? TICK_HEIGHT * 1.2
-      : TICK_HEIGHT * 0.5;
+    const height = isEndpoint
+      ? TICK_HEIGHT * 1.8
+      : isMajor
+        ? TICK_HEIGHT * 1.2
+        : TICK_HEIGHT * 0.5;
     const color = isEndpoint ? 0xff6644 : isMajor ? 0xcc5533 : 0x663322;
     const width = isEndpoint ? 2 : isMajor ? 1.5 : 1;
 
@@ -251,9 +259,11 @@ function createTicks() {
   gravityPositions.forEach((x, i) => {
     const isEndpoint = i === 0 || i === N;
     const isMajor = i % MAJOR_TICK_INTERVAL === 0;
-    const height = isEndpoint ? TICK_HEIGHT * 1.8
-      : isMajor ? TICK_HEIGHT * 1.2
-      : TICK_HEIGHT * 0.5;
+    const height = isEndpoint
+      ? TICK_HEIGHT * 1.8
+      : isMajor
+        ? TICK_HEIGHT * 1.2
+        : TICK_HEIGHT * 0.5;
     const color = isEndpoint ? 0x00cccc : isMajor ? 0x009999 : 0x004d4d;
     const width = isEndpoint ? 2 : isMajor ? 1.5 : 1;
 
@@ -282,7 +292,10 @@ function createBodies() {
   const trailGeoA = new LineGeometry();
   trailGeoA.setPositions([LINE_LEFT, TOP_Y, 0, LINE_LEFT, TOP_Y, 0]);
   const trailMatA = new LineMaterial({
-    color: 0xff6644, linewidth: 3, transparent: true, opacity: 0.6,
+    color: 0xff6644,
+    linewidth: 3,
+    transparent: true,
+    opacity: 0.6,
   });
   trailMatA.resolution.set(window.innerWidth, window.innerHeight);
   trailA = new Line2(trailGeoA, trailMatA);
@@ -300,7 +313,10 @@ function createBodies() {
   const trailGeoB = new LineGeometry();
   trailGeoB.setPositions([LINE_LEFT, BOT_Y, 0, LINE_LEFT, BOT_Y, 0]);
   const trailMatB = new LineMaterial({
-    color: 0x00cccc, linewidth: 3, transparent: true, opacity: 0.6,
+    color: 0x00cccc,
+    linewidth: 3,
+    transparent: true,
+    opacity: 0.6,
   });
   trailMatB.resolution.set(window.innerWidth, window.innerHeight);
   trailB = new Line2(trailGeoB, trailMatB);
@@ -314,11 +330,18 @@ function createBodies() {
 function createHandle() {
   const lineGeom = new LineGeometry();
   lineGeom.setPositions([
-    LINE_LEFT, TOP_Y + TICK_HEIGHT * 2, 0,
-    LINE_LEFT, BOT_Y - TICK_HEIGHT * 2, 0,
+    LINE_LEFT,
+    TOP_Y + TICK_HEIGHT * 2,
+    0,
+    LINE_LEFT,
+    BOT_Y - TICK_HEIGHT * 2,
+    0,
   ]);
   const lineMat = new LineMaterial({
-    color: 0xffffff, linewidth: 1.5, transparent: true, opacity: 0.4,
+    color: 0xffffff,
+    linewidth: 1.5,
+    transparent: true,
+    opacity: 0.4,
   });
   lineMat.resolution.set(window.innerWidth, window.innerHeight);
   handleLine = new Line2(lineGeom, lineMat);
@@ -328,7 +351,8 @@ function createHandle() {
   // Ring handle at midpoint between lines
   const ringGeom = new THREE.RingGeometry(0.08, 0.1, 32);
   const ringMat = new THREE.MeshBasicMaterial({
-    color: 0xffffff, side: THREE.FrontSide,
+    color: 0xffffff,
+    side: THREE.FrontSide,
   });
   handleRing = new THREE.Mesh(ringGeom, ringMat);
   handleRing.position.set(LINE_LEFT, 0, 0.02);
@@ -375,7 +399,8 @@ function createFormulaDisplay(container) {
     font-family: 'Courier New', monospace; font-size: 14px;
     color: #ff6644; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
   `;
-  topLabel.textContent = "UNIFORM GRID \u2014 body accelerates (x = \u00BDgt\u00B2)";
+  topLabel.innerHTML =
+    "NEWTONIAN \u2014 Uniform grid, force on object<br><span style='font-size:12px;opacity:0.8;'>Body accelerates (x = \u00BDgt\u00B2)</span>";
   container.appendChild(topLabel);
 
   const botLabel = document.createElement("div");
@@ -384,7 +409,8 @@ function createFormulaDisplay(container) {
     font-family: 'Courier New', monospace; font-size: 14px;
     color: #00cccc; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
   `;
-  botLabel.textContent = "GRAVITY GRID \u2014 body at constant velocity (x = vt)";
+  botLabel.innerHTML =
+    "METRIC \u2014 Field-strength grid, physics in the space<br><span style='font-size:12px;opacity:0.8;'>Body at constant velocity (x = vt)</span>";
   container.appendChild(botLabel);
 
   // Body selector + Drop button wrapper (inline)
@@ -402,8 +428,10 @@ function createFormulaDisplay(container) {
     if (key === "normalized") return; // skip abstract preset
     const opt = document.createElement("option");
     opt.value = key;
-    const gLabel = body.surfaceG >= 1e6
-      ? body.surfaceG.toExponential(2) : body.surfaceG.toFixed(3);
+    const gLabel =
+      body.surfaceG >= 1e6
+        ? body.surfaceG.toExponential(2)
+        : body.surfaceG.toFixed(3);
     opt.textContent = `${body.name} (g = ${gLabel} m/s\u00B2)`;
     if (key === selectedBody) opt.selected = true;
     bodySelector.appendChild(opt);
@@ -431,7 +459,8 @@ function createFormulaDisplay(container) {
   `;
   dropButton.onmouseover = () => {
     dropButton.style.background = isAnimating
-      ? "rgba(255, 60, 30, 0.3)" : "rgba(0, 204, 204, 0.2)";
+      ? "rgba(255, 60, 30, 0.3)"
+      : "rgba(0, 204, 204, 0.2)";
   };
   dropButton.onmouseout = () => {
     dropButton.style.background = "rgba(0, 26, 26, 0.95)";
@@ -449,13 +478,32 @@ function createFormulaDisplay(container) {
     border: none; color: #888; font-size: 28px; cursor: pointer;
     padding: 0; width: 28px; height: 28px; line-height: 1; z-index: 10;
   `;
-  closeBtn.onmouseover = () => { closeBtn.style.color = "#fff"; };
-  closeBtn.onmouseout = () => { closeBtn.style.color = "#888"; };
+  closeBtn.onmouseover = () => {
+    closeBtn.style.color = "#fff";
+  };
+  closeBtn.onmouseout = () => {
+    closeBtn.style.color = "#888";
+  };
   closeBtn.onclick = () => {
     if (isAnimating) stopAnimation();
     document.getElementById("gravity-modal").style.display = "none";
   };
   container.appendChild(closeBtn);
+
+  // Explanatory text between numberlines and formula panel
+  const explainEl = document.createElement("div");
+  explainEl.style.cssText = `
+    position: absolute; bottom: 110px; left: 15px; right: 15px;
+    font-family: 'Courier New', monospace; font-size: 12px;
+    color: #88aaaacc; line-height: 1.5; pointer-events: none;
+    text-align: center;
+  `;
+  explainEl.innerHTML =
+    "Both bodies fall 144 m in the same total time. " +
+    "The <span style='color:#ff6644;'>top grid</span> is uniform\u2014each cell is 1 m\u2014so the body must accelerate (force on object). " +
+    "The <span style='color:#00cccc;'>bottom grid</span> compresses space toward the ground (right) " +
+    "and expands it at the drop (left), so the body moves at constant velocity\u2014the metric <em>is</em> the field.";
+  container.appendChild(explainEl);
 
   // Formula panel (bottom, horizontal)
   formulaElement = document.createElement("div");
@@ -558,9 +606,9 @@ function updateVisualization() {
   const botScreenX = LINE_LEFT + botFrac * LINE_LENGTH;
 
   // Physical values for the accelerating body
-  const position = H * topFrac;        // x = ½gt² = H·f²
-  const velocity = g * t;              // v = gt
-  const constVelocity = H / T;         // v_const = H/T (bottom body)
+  const position = H * topFrac; // x = ½gt² = H·f²
+  const velocity = g * t; // v = gt
+  const constVelocity = H / T; // v_const = H/T (bottom body)
 
   // Update body positions
   bodyA.position.x = topScreenX;
@@ -582,8 +630,12 @@ function updateVisualization() {
   handleLine.geometry.dispose();
   const hGeom = new LineGeometry();
   hGeom.setPositions([
-    handleX, TOP_Y + TICK_HEIGHT * 2, 0,
-    handleX, BOT_Y - TICK_HEIGHT * 2, 0,
+    handleX,
+    TOP_Y + TICK_HEIGHT * 2,
+    0,
+    handleX,
+    BOT_Y - TICK_HEIGHT * 2,
+    0,
   ]);
   handleLine.geometry = hGeom;
   handleRing.position.x = handleX;
@@ -591,7 +643,7 @@ function updateVisualization() {
   // Which uniform tick has the accelerating body passed?
   // Uniform tick k at fraction k/N. Body at fraction f². Passed when f² >= k/N.
   const uniformCell = Math.min(Math.floor(topFrac * N), N - 1);
-  const uniformSpacing = H / N;
+  const _uniformSpacing = H / N; // retained for future panel display
 
   // Which gravity tick has the constant-velocity body passed?
   // Gravity tick k at screen fraction √(k/N). Body at screen fraction f.
@@ -600,12 +652,13 @@ function updateVisualization() {
 
   // Current gravity gap (physical distance between gravity ticks)
   // Tick k at physical position H·√(k/N), tick k+1 at H·√((k+1)/N)
-  const gravityGap = gravityCell < N
-    ? H * (Math.sqrt((gravityCell + 1) / N) - Math.sqrt(gravityCell / N))
-    : 0;
+  const _gravityGap = // retained for future panel display
+    gravityCell < N
+      ? H * (Math.sqrt((gravityCell + 1) / N) - Math.sqrt(gravityCell / N))
+      : 0;
 
   // Separation between bodies (screen units)
-  const separation = Math.abs(topScreenX - botScreenX);
+  const _separation = Math.abs(topScreenX - botScreenX); // retained for link display
   const separationPhysical = Math.abs(position - H * f);
 
   // Update rigid link line between bodies
@@ -616,6 +669,7 @@ function updateVisualization() {
 
   // Link spread (RT-pure: sin^2 of angle from vertical)
   const link = linkSpread2D(topScreenX, TOP_Y, botScreenX, BOT_Y);
+  // RT compliance: asin+PI for ≈degree annotation only; spread is the primary display
   const linkAngleDeg = Math.asin(Math.sqrt(link.spread)) * (180 / Math.PI);
 
   // Update formula panel
@@ -676,7 +730,7 @@ function updateVisualization() {
  * Set up mouse/touch interaction for handle dragging.
  * Handle X maps directly to time fraction (linear).
  */
-function setupInteraction(container) {
+function setupInteraction(_container) {
   const canvas = renderer.domElement;
 
   const getMousePos = event => {
@@ -710,9 +764,10 @@ function setupInteraction(container) {
     const dy = worldY - handleRing.position.y;
     const clickQ = dx * dx + dy * dy;
 
-    const onLine = Math.abs(worldX - handleRing.position.x) < 0.3 &&
-                   worldY > BOT_Y - TICK_HEIGHT * 2 &&
-                   worldY < TOP_Y + TICK_HEIGHT * 2;
+    const onLine =
+      Math.abs(worldX - handleRing.position.x) < 0.3 &&
+      worldY > BOT_Y - TICK_HEIGHT * 2 &&
+      worldY < TOP_Y + TICK_HEIGHT * 2;
 
     if (clickQ < 0.2 * 0.2 || onLine) {
       isDragging = true;
@@ -729,10 +784,11 @@ function setupInteraction(container) {
       const dx = worldX - handleRing.position.x;
       const dy = worldY - handleRing.position.y;
       const hoverQ = dx * dx + dy * dy;
-      const onLine = Math.abs(worldX - handleRing.position.x) < 0.3 &&
-                     worldY > BOT_Y - TICK_HEIGHT * 2 &&
-                     worldY < TOP_Y + TICK_HEIGHT * 2;
-      canvas.style.cursor = (hoverQ < 0.2 * 0.2 || onLine) ? "grab" : "default";
+      const onLine =
+        Math.abs(worldX - handleRing.position.x) < 0.3 &&
+        worldY > BOT_Y - TICK_HEIGHT * 2 &&
+        worldY < TOP_Y + TICK_HEIGHT * 2;
+      canvas.style.cursor = hoverQ < 0.2 * 0.2 || onLine ? "grab" : "default";
       return;
     }
 
