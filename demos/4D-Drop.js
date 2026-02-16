@@ -18,10 +18,18 @@
 
 import { RT, Quadray } from "../modules/rt-math.js";
 import { Polyhedra } from "../modules/rt-polyhedra.js";
-import { createJanusFlash, animateBackgroundColor } from "../modules/rt-janus.js";
+import {
+  createJanusFlash,
+  animateBackgroundColor,
+} from "../modules/rt-janus.js";
 
 // Animation phases
-const PHASES = ["pos_to_origin", "origin_to_neg", "neg_to_origin", "origin_to_pos"];
+const PHASES = [
+  "pos_to_origin",
+  "origin_to_neg",
+  "neg_to_origin",
+  "origin_to_pos",
+];
 
 // Node colors matching Quadray axis conventions
 const AXIS_COLORS = [
@@ -77,6 +85,13 @@ class Drop4DDemo {
     // Circumsphere wireframe
     this.circumsphereMesh = null;
     this.showCircumsphere = true;
+
+    // Auto-rotation: slow orbit so user sees 3D dimensionality
+    this._autoRotateId = null;
+    this._autoRotateActive = false;
+    this._autoRotateSpeed = 0.12; // radians per second
+    this._autoRotateLastTime = 0;
+    this._pointerDownHandler = null;
   }
 
   // ========================================================================
@@ -86,12 +101,16 @@ class Drop4DDemo {
   saveSceneState() {
     // Save quadray mode button state
     const activeQuadrayMode =
-      document.querySelector('[data-quadray-mode].active')?.getAttribute("data-quadray-mode") || "uniform";
+      document
+        .querySelector("[data-quadray-mode].active")
+        ?.getAttribute("data-quadray-mode") || "uniform";
 
     this.savedSceneState = {
       showCube: document.getElementById("showCube")?.checked,
-      showDualTetrahedron: document.getElementById("showDualTetrahedron")?.checked,
-      showCartesianBasis: document.getElementById("showCartesianBasis")?.checked,
+      showDualTetrahedron: document.getElementById("showDualTetrahedron")
+        ?.checked,
+      showCartesianBasis:
+        document.getElementById("showCartesianBasis")?.checked,
       showQuadray: document.getElementById("showQuadray")?.checked,
       showCartesianGrid: document.getElementById("showCartesianGrid")?.checked,
       planeIvmWX: document.getElementById("planeIvmWX")?.checked,
@@ -143,7 +162,9 @@ class Drop4DDemo {
 
     // Restore quadray grid mode
     if (state.quadrayMode) {
-      const btn = document.querySelector(`[data-quadray-mode="${state.quadrayMode}"]`);
+      const btn = document.querySelector(
+        `[data-quadray-mode="${state.quadrayMode}"]`
+      );
       if (btn) btn.click();
     }
 
@@ -189,7 +210,9 @@ class Drop4DDemo {
     }
 
     // Switch to gravity-spherical (Polar) mode
-    const polarBtn = document.querySelector('[data-quadray-mode="gravity-spherical"]');
+    const polarBtn = document.querySelector(
+      '[data-quadray-mode="gravity-spherical"]'
+    );
     if (polarBtn) polarBtn.click();
 
     console.log("🎬 4D Drop: Configured scene (Polar 144, all planes)");
@@ -238,6 +261,70 @@ class Drop4DDemo {
   }
 
   // ========================================================================
+  // AUTO-ROTATION — slow camera orbit for 3D dimensionality
+  // ========================================================================
+
+  /**
+   * Start the auto-rotation loop. Rotates camera around the Z axis
+   * (scene up vector) at a slow rate. Runs continuously while the
+   * demo is enabled, independent of the drop animation.
+   */
+  startAutoRotate() {
+    if (this._autoRotateId) return;
+    this._autoRotateActive = true;
+    this._autoRotateLastTime = performance.now();
+
+    // Stop auto-rotate if user drags to orbit manually (canvas only, not panel UI)
+    this._pointerDownHandler = e => {
+      if (e.target.tagName === "CANVAS") {
+        this.stopAutoRotate();
+      }
+    };
+    window.addEventListener("pointerdown", this._pointerDownHandler);
+
+    const rotate = () => {
+      if (!this._autoRotateActive) return;
+
+      const now = performance.now();
+      const dt = (now - this._autoRotateLastTime) / 1000;
+      this._autoRotateLastTime = now;
+
+      // Rotate camera position around Z axis (up vector)
+      // RT compliance: sin/cos justified — THREE.js camera interface boundary
+      const target = this.controls.target;
+      const offset = this.camera.position.clone().sub(target);
+      const cos = Math.cos(this._autoRotateSpeed * dt);
+      const sin = Math.sin(this._autoRotateSpeed * dt);
+      const x = offset.x * cos - offset.y * sin;
+      const y = offset.x * sin + offset.y * cos;
+      offset.x = x;
+      offset.y = y;
+
+      this.camera.position.copy(target).add(offset);
+      this.camera.lookAt(target);
+
+      this._autoRotateId = requestAnimationFrame(rotate);
+    };
+
+    this._autoRotateId = requestAnimationFrame(rotate);
+  }
+
+  /**
+   * Stop auto-rotation. Only resumes on a fresh Drop command.
+   */
+  stopAutoRotate() {
+    this._autoRotateActive = false;
+    if (this._autoRotateId) {
+      cancelAnimationFrame(this._autoRotateId);
+      this._autoRotateId = null;
+    }
+    if (this._pointerDownHandler) {
+      window.removeEventListener("pointerdown", this._pointerDownHandler);
+      this._pointerDownHandler = null;
+    }
+  }
+
+  // ========================================================================
   // DEMO OBJECTS
   // ========================================================================
 
@@ -257,7 +344,10 @@ class Drop4DDemo {
     });
 
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3)
+    );
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
     return geometry;
@@ -315,8 +405,13 @@ class Drop4DDemo {
     this.createCircumsphere();
 
     this.scene.add(this.demoGroup);
-    const shapeName = this.bodyShape === "icosahedron" ? "3F Geodesic Icosahedra" : "Tetrahedra";
-    console.log(`🔵 4D Drop: Created 4 ${shapeName} at extent=${this.extent.toFixed(3)}`);
+    const shapeName =
+      this.bodyShape === "icosahedron"
+        ? "3F Geodesic Icosahedra"
+        : "Tetrahedra";
+    console.log(
+      `🔵 4D Drop: Created 4 ${shapeName} at extent=${this.extent.toFixed(3)}`
+    );
   }
 
   /**
@@ -336,7 +431,10 @@ class Drop4DDemo {
     }
 
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3)
+    );
 
     const material = new THREE.LineBasicMaterial({
       color: 0x00cccc,
@@ -360,8 +458,10 @@ class Drop4DDemo {
       });
       // Dispose circumsphere
       if (this.circumsphereMesh) {
-        if (this.circumsphereMesh.geometry) this.circumsphereMesh.geometry.dispose();
-        if (this.circumsphereMesh.material) this.circumsphereMesh.material.dispose();
+        if (this.circumsphereMesh.geometry)
+          this.circumsphereMesh.geometry.dispose();
+        if (this.circumsphereMesh.material)
+          this.circumsphereMesh.material.dispose();
         this.circumsphereMesh = null;
       }
       this.scene.remove(this.demoGroup);
@@ -404,7 +504,8 @@ class Drop4DDemo {
       }
     }
 
-    const shapeName = shape === "icosahedron" ? "3F Geodesic Icosahedra" : "Tetrahedra";
+    const shapeName =
+      shape === "icosahedron" ? "3F Geodesic Icosahedra" : "Tetrahedra";
     console.log(`🔵 4D Drop: Switched to ${shapeName}`);
   }
 
@@ -600,9 +701,10 @@ class Drop4DDemo {
       if (key === "normalized") return;
       const opt = document.createElement("option");
       opt.value = key;
-      const gLabel = body.surfaceG >= 1e6
-        ? body.surfaceG.toExponential(2)
-        : body.surfaceG.toFixed(3);
+      const gLabel =
+        body.surfaceG >= 1e6
+          ? body.surfaceG.toExponential(2)
+          : body.surfaceG.toFixed(3);
       opt.textContent = `${body.name} (g = ${gLabel} m/s\u00B2)`;
       if (key === this.selectedBody) opt.selected = true;
       bodySelector.appendChild(opt);
@@ -634,12 +736,14 @@ class Drop4DDemo {
     });
 
     // Circumsphere toggle
-    document.getElementById("d4d-circumsphere-toggle").addEventListener("change", (e) => {
-      this.showCircumsphere = e.target.checked;
-      if (this.circumsphereMesh) {
-        this.circumsphereMesh.visible = this.showCircumsphere;
-      }
-    });
+    document
+      .getElementById("d4d-circumsphere-toggle")
+      .addEventListener("change", e => {
+        this.showCircumsphere = e.target.checked;
+        if (this.circumsphereMesh) {
+          this.circumsphereMesh.visible = this.showCircumsphere;
+        }
+      });
 
     // Drop/Stop toggle
     document.getElementById("d4d-drop-btn").addEventListener("click", () => {
@@ -696,7 +800,9 @@ class Drop4DDemo {
       panel.style.top = Math.max(0, Math.min(newY, maxY)) + "px";
     };
 
-    const onMouseUp = () => { isDragging = false; };
+    const onMouseUp = () => {
+      isDragging = false;
+    };
 
     header.addEventListener("mousedown", onMouseDown);
     document.addEventListener("mousemove", onMouseMove);
@@ -746,7 +852,9 @@ class Drop4DDemo {
     const fraction = cell / 144; // -1.0 to +1.0
     for (let i = 0; i < this.nodeMeshes.length; i++) {
       const basisDir = Quadray.basisVectors[i].clone();
-      this.nodeMeshes[i].position.copy(basisDir.multiplyScalar(this.extent * fraction));
+      this.nodeMeshes[i].position.copy(
+        basisDir.multiplyScalar(this.extent * fraction)
+      );
     }
 
     // Background inversion based on sign crossing
@@ -785,13 +893,21 @@ class Drop4DDemo {
   startAnimation() {
     this.isAnimating = true;
 
+    // Restart auto-rotation on each fresh Drop
+    if (!this._autoRotateActive) {
+      this.startAutoRotate();
+    }
+
     const now = performance.now();
     if (this._pausedCycleElapsed !== null) {
       // Resume from pause — rewind animationStartTime so cycle picks up where it left off
       this.animationStartTime = now - this._pausedCycleElapsed * 1000;
       // Set _lastPhaseIndex to current phase so transition detector doesn't misfire
       const T = this._cachedT;
-      this._lastPhaseIndex = Math.min(Math.floor(this._pausedCycleElapsed / T), 3);
+      this._lastPhaseIndex = Math.min(
+        Math.floor(this._pausedCycleElapsed / T),
+        3
+      );
       this._pausedCycleElapsed = null;
     } else {
       // Fresh start from +extent
@@ -896,7 +1012,7 @@ class Drop4DDemo {
     const globalElapsed = (now - this.animationStartTime) / 1000;
     const cycleElapsed = globalElapsed % cycleTime;
     const phaseIndex = Math.min(Math.floor(cycleElapsed / T), 3);
-    const f = (cycleElapsed / T) - phaseIndex; // [0, ~0.997)
+    const f = cycleElapsed / T - phaseIndex; // [0, ~0.997)
     const phase = PHASES[phaseIndex];
 
     // Detect phase transitions for Janus flash + background inversion
@@ -943,15 +1059,24 @@ class Drop4DDemo {
     // Sync slider with animation — map phase+fraction to cell value
     let sliderCell;
     switch (phase) {
-      case "pos_to_origin": sliderCell = Math.round((1 - f) * 144); break;
-      case "origin_to_neg": sliderCell = Math.round(-f * 144); break;
-      case "neg_to_origin": sliderCell = Math.round(-(1 - f) * 144); break;
-      case "origin_to_pos": sliderCell = Math.round(f * 144); break;
+      case "pos_to_origin":
+        sliderCell = Math.round((1 - f) * 144);
+        break;
+      case "origin_to_neg":
+        sliderCell = Math.round(-f * 144);
+        break;
+      case "neg_to_origin":
+        sliderCell = Math.round(-(1 - f) * 144);
+        break;
+      case "origin_to_pos":
+        sliderCell = Math.round(f * 144);
+        break;
     }
     const slider = document.getElementById("d4d-cell-slider");
     const sliderLabel = document.getElementById("d4d-slider-val");
     if (slider) slider.value = sliderCell;
-    if (sliderLabel) sliderLabel.textContent = `${sliderCell >= 0 ? "+" : ""}${sliderCell}`;
+    if (sliderLabel)
+      sliderLabel.textContent = `${sliderCell >= 0 ? "+" : ""}${sliderCell}`;
 
     const phaseElapsed = cycleElapsed - phaseIndex * T;
     this.updatePanel(phase, phaseElapsed, f);
@@ -970,7 +1095,10 @@ class Drop4DDemo {
     const g = this._cachedG;
     const T = this._cachedT;
 
-    gEl.textContent = g >= 1e6 ? `${g.toExponential(2)} m/s\u00B2` : `${g.toFixed(3)} m/s\u00B2`;
+    gEl.textContent =
+      g >= 1e6
+        ? `${g.toExponential(2)} m/s\u00B2`
+        : `${g.toFixed(3)} m/s\u00B2`;
     ttEl.textContent = `${T.toFixed(3)} s`;
 
     if (!phase) {
@@ -1004,7 +1132,8 @@ class Drop4DDemo {
       if (el && this.nodeMeshes[axisIndices[j]]) {
         const pos = this.nodeMeshes[axisIndices[j]].position;
         const dist = pos.length();
-        const sign = pos.dot(Quadray.basisVectors[axisIndices[j]]) >= 0 ? "+" : "\u2013";
+        const sign =
+          pos.dot(Quadray.basisVectors[axisIndices[j]]) >= 0 ? "+" : "\u2013";
         el.textContent = `${sign}${dist.toFixed(2)}`;
       }
     }
@@ -1022,6 +1151,7 @@ class Drop4DDemo {
     this.configureSceneForDemo();
     this.createDemoObjects();
     this.createInfoPanel();
+    this.startAutoRotate();
 
     console.log("4D\u00B1 Gravity + Inversion Demo enabled");
   }
@@ -1030,6 +1160,7 @@ class Drop4DDemo {
     if (!this.enabled) return;
     this.enabled = false;
 
+    this.stopAutoRotate();
     this.resetToStart();
     this.removeDemoObjects();
     this.removeInfoPanel();

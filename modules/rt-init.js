@@ -14,8 +14,14 @@ import { colorTheoryModal } from "./color-theory-modal.js";
 import { initScene as createRenderingAPI } from "./rt-rendering.js";
 import { initInfoModal } from "./rt-info-modal.js";
 import * as RTJanus from "./rt-janus.js";
-import { getRotorDemo, destroyRotorDemo } from "./rt-rotor-demo.js";
-import { get4DDropDemo, destroy4DDropDemo } from "../demos/4D-Drop.js";
+import {
+  getRotorDemo,
+  destroyRotorDemo as _destroyRotorDemo,
+} from "./rt-rotor-demo.js";
+import {
+  get4DDropDemo,
+  destroy4DDropDemo as _destroy4DDropDemo,
+} from "../demos/4D-Drop.js";
 import {
   getPolyhedronVertices as getVertices,
   getPolyhedronEdgeMidpoints as getEdgeMidpoints,
@@ -721,18 +727,16 @@ function startARTexplorer(
       }
     });
 
-  document
-    .getElementById("open-gravity-demo")
-    .addEventListener("click", e => {
-      e.preventDefault();
-      openDemoModal("gravity-modal");
-      if (!demosInitialized.gravity) {
-        setTimeout(() => {
-          initGravityDemo();
-          demosInitialized.gravity = true;
-        }, 50);
-      }
-    });
+  document.getElementById("open-gravity-demo").addEventListener("click", e => {
+    e.preventDefault();
+    openDemoModal("gravity-modal");
+    if (!demosInitialized.gravity) {
+      setTimeout(() => {
+        initGravityDemo();
+        demosInitialized.gravity = true;
+      }, 50);
+    }
+  });
 
   // Color Theory Modal - Set rendering API reference
   colorTheoryModal.setRenderingAPI(renderingAPI);

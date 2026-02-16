@@ -43,31 +43,86 @@
 
 ---
 
-## Phase 2: Quadrance-Based Shell Spacing
+## Phase 2: Distance vs. Time — Two Grid Interpretations
 
-**Goal:** Eliminate per-shell `√` from the spacing formula by working in quadrance space.
+The gravity grid admits two physically distinct interpretations that produce **opposite** shell compression patterns. The choice between them is the choice between encoding acceleration in the **metric** (the space) or in the **trajectory** (the body). This is the "shape vs. dynamics" question applied to grid construction.
 
-Current formula (distance-based):
+### Metric Spacing (Current): The Grid Is the Physics
+
 ```
-cumDist[k] = E × (1 - √(1 - k/N))
+r_k = E × (1 - √(1 - k/N))        k = 0..N, origin to edge
 ```
-One `√` per shell at the GPU boundary.
 
-Quadrance-native approach: store `Q_k = r_k²` directly, defer `√` to rendering:
+**Physical model:** The grid represents the gravitational **field itself** — dense where the field is strong (near origin), sparse where it is weak (at the periphery). Cells are **not** equal in physical distance, nor equal in time — they are unequal in both. Wide cells at the edge, narrow cells at the center.
+
+**Grid compression:** Dense near origin, sparse at edge.
+
+**Animation:** Constant spatial velocity `r = extent × (1 - f)`. The body lingers in wide outer cells (appearing slow) and crosses narrow inner cells rapidly (appearing fast) → visual acceleration toward origin.
+
+**Where the physics lives:** In the space. The grid IS the gravitational metric. The body has no dynamics — it moves at constant coordinate velocity through a warped space. This is the metric interpretation described in the Janus paper (Section 8).
+
+**√ cost:** N `Math.sqrt()` calls, cached once in `cumDist[]`. Never repeated.
+
+**Shell gaps** (increase from origin to edge — field density decreases outward):
+- Near origin: `Δr ≈ E/(2N)` — narrow, body crosses quickly
+- Near edge: `Δr ≈ E/√N` — wide, body lingers
+
+### Time Spacing (Galileo): The Grid Marks Equal Clock Ticks
+
 ```
-Q_k = E² × k/N
+r_j = E × j(2N - j) / N²            j = 0..N, origin to edge
 ```
-This is **uniform in quadrance** — the shell spacing becomes a simple linear function when measured in quadrance rather than distance. The `√` moves to the final rendering step where it's already needed for vertex positions.
 
-### Why This Matters
+**Physical model:** Each cell represents one tick of the clock (equal Δt). Under uniform gravity, the body covers more distance per tick as it accelerates. First tick (near edge): body barely moves → narrow cell. Last tick (near origin): body is fast → wide cell.
 
-- Maintains RT algebraic exactness deeper into the pipeline
-- Shell spacing formula becomes trivially rational: `Q_k = E² × k/N`
-- Consistent with the RT design principle: work in quadrance, expand to distance only at GPU boundary
+**Grid compression:** Sparse near origin, dense at edge.
 
-### Implementation
+**Animation:** Constant cell-crossing rate (one cell per Δt). The body covers wider cells near origin → appears to accelerate.
 
-Modify `computeGravityCumulativeDistances()` in `rt-math.js` to optionally return quadrances. Consumers (`createGravityCartesianPlane`, `createQuadrayPolarPlane`) take `√` at vertex emission time.
+**Where the physics lives:** In the trajectory. The grid records where the body has been at equal time intervals. The cells are a discrete decomposition of the fall, not a continuous metric.
+
+**√ cost:** ZERO — purely polynomial (add, multiply, divide). Fully RT-compliant.
+
+**Shell gaps** follow Galileo's odd-number sequence:
+```
+gap_j = E × (2(N - j) + 1) / N²
+```
+From edge inward: 1, 3, 5, 7, ... (sum = N²). This is Galileo's law of odd numbers — the distances covered in successive equal time intervals under uniform acceleration.
+
+### Comparison
+
+| Property | Metric Spacing (current) | Time Spacing (Galileo) |
+|---|---|---|
+| Formula | `E(1 - √(1 - k/N))` | `E × j(2N-j) / N²` |
+| Cells represent | Field strength (unequal d, unequal t) | Equal clock ticks (unequal d, equal t) |
+| Dense shells at | Origin (strong field) | Edge (body slow) |
+| Sparse shells at | Edge (weak field) | Origin (body fast) |
+| Animation model | Constant spatial velocity | Constant cell-crossing rate |
+| Physics encoded in | Grid metric (shape) | Body trajectory (dynamics) |
+| √ per shell | 1 (cached) | 0 |
+| RT compliance | √ inherent in formula | Fully algebraic |
+| Galileo sequence | Not directly visible | Gaps ∝ 1, 3, 5, 7... |
+
+### The Duality
+
+The two approaches produce the **same observable** — a body that appears to accelerate toward the origin — through opposite mechanisms:
+
+- **Speed spacing + linear animation** = acceleration from metric compression
+- **Time spacing + cell-rate animation** = acceleration from widening cells
+
+They are mathematically dual. A third option — uniform grid + quadratic animation `r = E(1 - (k/N)²)` — produces the same visual through pure dynamics, with no metric encoding at all. The three approaches are equivalent for the observer but differ in where the physics lives: in the space, in the discrete cell structure, or in the continuous motion.
+
+### Decision
+
+The current speed-spacing approach aligns with the Janus paper's principle: **shape over dynamics**. The grid IS the gravitational field — a geometric object, not a trajectory record. The body moves without force, without momentum, without dynamics. Acceleration is not something that happens to the body; it is a property of the space.
+
+The √ cost (N calls, cached once) is computationally negligible and mathematically irreducible — the formula `E(1 - √(1 - k/N))` cannot be algebraically simplified to eliminate the root. This is not an RT compliance failure; it is the honest √ boundary where the metric crosses from algebraic description to spatial realization.
+
+The Galileo time-spacing remains a candidate for a future **alternative grid mode** ("time cells") that would offer a complementary visualization and a fully √-free pipeline.
+
+### Previous Phase 2 Proposal (Retired)
+
+The earlier proposal `Q_k = E² × k/N` ("uniform in quadrance") assumed this was the quadrance-native form of the current spacing. It is not — `E√(k/N)` produces a third distribution (compressed at edge, expanded at origin) that matches neither the metric nor the Galileo interpretation. This misidentification conflated "working in quadrance space" with "changing to a quadrance-uniform distribution." The proposal is retired in favor of the two formally distinct approaches documented above.
 
 ---
 
@@ -348,8 +403,8 @@ All gravity modules should follow the RT deferred-√ pattern: work in quadrance
 | `rt-gravity-demo.js` | Fall time `T = √(2H/g)` | TODO — adopt `computePhysics()` caching pattern |
 | `rt-gravity-demo.js` | Link angle: `Math.asin(Math.sqrt(s)) × 180/π` | TODO — display spread directly, use `RT.spreadToDegrees()` for annotation only |
 | `rt-gravity-demo.js` | Gravity gap: two `Math.sqrt()` calls | TODO — defer to quadrance |
-| `rt-math.js` | `computeGravityCumulativeDistances()`: one `√` per shell | Phase 2 — quadrance-native `Q_k = E²·k/N` eliminates all `√` |
-| `rt-grids.js` | Consumers of cumDist take `√` at vertex emission | Phase 2 — move `√` to final vertex creation |
+| `rt-math.js` | `computeGravityCumulativeDistances()`: one `√` per shell | **Accepted** — √ inherent in speed-spacing metric formula, cached once (see Phase 2 analysis) |
+| `rt-grids.js` | Consumers of cumDist use cached radii directly | **Clean** — no additional √, Weierstrass arcs are RT-pure |
 
 ### Principle
 
@@ -364,7 +419,7 @@ From the README: *"Compute all relationships in quadrance space. Only take √ a
 - [x] **Phase 7c: Circumsphere boundary** — 7F geodesic icosahedron wireframe at extent radius
 - [ ] **Phase 6: N-gon parameter for `createQuadrayPolarPlane()`** — start with N=3 (triangle) and N=6 (hexagon) to validate the geodesic construction
 - [ ] **Radial line generation** via N-gon vertex connections between concentric shells
-- [ ] **Phase 2: Quadrance-based shell spacing** — algebraic exactness improvement
+- [x] **Phase 2: Distance vs. Time analysis** — speed spacing (current, metric) vs. Galileo time spacing (√-free) formalized; previous `Q_k = E²·k/N` proposal retired
 - [ ] **Body selector UI** for the 3D gravity grids (port from Gravity Numberline demo)
 - [ ] **Phase 4: Gravity-warped polyhedra** — vertex remapping prototype
 - [ ] **Phase 5b: Pin joints and hinges** in `rt-ik-solvers.js`
