@@ -358,10 +358,14 @@ export const simpleSliderBindings = [
       // Read active grid mode from Quadray section
       const activeBtn = document.querySelector("[data-quadray-mode].active");
       const gridMode = activeBtn ? activeBtn.dataset.quadrayMode : "uniform";
+      const nGon = parseInt(
+        document.getElementById("nGonSlider")?.value || "64"
+      );
       renderingAPI.rebuildQuadrayGrids(
         parseInt(value),
         visibilityState,
-        gridMode
+        gridMode,
+        nGon
       );
     },
     updateGeometry: false, // Handled by rebuildQuadrayGrids
@@ -382,13 +386,68 @@ export const simpleSliderBindings = [
       // Read active grid mode from Cartesian section
       const activeBtn = document.querySelector("[data-cartesian-mode].active");
       const gridMode = activeBtn ? activeBtn.dataset.cartesianMode : "uniform";
+      const nGon = parseInt(
+        document.getElementById("nGonSlider")?.value || "64"
+      );
       renderingAPI.rebuildCartesianGrids(
         parseInt(value),
         visibilityState,
-        gridMode
+        gridMode,
+        nGon
       );
     },
     updateGeometry: false, // Handled by rebuildCartesianGrids
+  },
+
+  {
+    id: "nGonSlider",
+    type: "slider",
+    valueId: "nGonValue",
+    onInput: (value, renderingAPI) => {
+      const nGon = parseInt(value);
+      // Rebuild Quadray grids with new nGon
+      const quadrayTess = parseInt(
+        document.getElementById("quadrayTessSlider")?.value || "12"
+      );
+      const ivmVisibility = {
+        ivmWX: document.getElementById("planeIvmWX")?.checked ?? true,
+        ivmWY: document.getElementById("planeIvmWY")?.checked ?? true,
+        ivmWZ: document.getElementById("planeIvmWZ")?.checked ?? true,
+        ivmXY: document.getElementById("planeIvmXY")?.checked ?? true,
+        ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
+        ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
+      };
+      const quadrayBtn = document.querySelector("[data-quadray-mode].active");
+      const quadrayMode = quadrayBtn
+        ? quadrayBtn.dataset.quadrayMode
+        : "uniform";
+      renderingAPI.rebuildQuadrayGrids(
+        quadrayTess,
+        ivmVisibility,
+        quadrayMode,
+        nGon
+      );
+      // Rebuild Cartesian grids with new nGon
+      const cartTess = parseInt(
+        document.getElementById("cartesianTessSlider")?.value || "10"
+      );
+      const cartVisibility = {
+        gridXY: document.getElementById("planeXY")?.checked ?? false,
+        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
+        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
+        cartesianBasis:
+          document.getElementById("showCartesianBasis")?.checked ?? false,
+      };
+      const cartBtn = document.querySelector("[data-cartesian-mode].active");
+      const cartMode = cartBtn ? cartBtn.dataset.cartesianMode : "uniform";
+      renderingAPI.rebuildCartesianGrids(
+        cartTess,
+        cartVisibility,
+        cartMode,
+        nGon
+      );
+    },
+    updateGeometry: false,
   },
 
   // Geodesic frequency sliders

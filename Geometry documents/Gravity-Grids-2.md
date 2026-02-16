@@ -20,7 +20,7 @@
 | 6a | N-gon generator: `RT.nGonVertices()` Wildberger reflection method | **Done** |
 | 6a+ | Primitives refactor: unified `polygon()` via `RT.nGonVertices()` | **Done** |
 | 6b | Grid integration: `nGon` parameter in polar planes | **Done** |
-| 6c | UI slider (3–128) in Grid controls panel | Planned |
+| 6c | UI slider (3–128) in Grid controls panel | **Done** |
 | 7 | 4D± Gravity + Inversion demo: Quadray Janus drop | **Done** (core) |
 | 7b | Cell slider: manual scrubbing +144 to −144 | **Done** |
 | 7c | Circumsphere boundary visualization (7F wireframe) | **Done** |
@@ -263,13 +263,14 @@ Replaced 9 hand-coded polygon generators + classical trig fallback in `rt-primit
 
 Both `createGravityCartesianPlane()` and `createQuadrayPolarPlane()` in `rt-grids.js` now accept `nGon` parameter (default 64 for backward compatibility) and use `RT.nGonVertices()` instead of the hardcoded SPQ=16 Weierstrass quadrant loop.
 
-#### 6c: UI slider [Planned]
+#### 6c: UI slider + radial lines [DONE]
 
-Add slider to Grid controls panel (matches Primitives polygon sides slider):
-- Range: 3–128
-- Default: 64 (backward compatible)
-- Step: 1 for 3–12, then jumps: 16, 24, 32, 48, 64, 96, 128
-- Label: "N-gon" with current value display
+Added "Circle N-gon (Polar mode)" slider to Central Angle section in `index.html`:
+- Range: 3–128, step 1, default 64 (backward compatible)
+- `nGon` parameter threaded through full chain: `index.html` → `rt-ui-binding-defs.js` / `rt-init.js` → `rt-rendering.js` → `rt-grids.js` → `buildQuadrayPlanes()` / `buildCartesianPlanes()` → `createQuadrayPolarPlane()` / `createGravityCartesianPlane()`
+- Changing the slider rebuilds both Quadray and Cartesian grids
+- Radial lines: N-gon vertex-aligned radials from origin to outermost shell (replaces hardcoded ±X/±Z crosshair on Cartesian, adds radials to Quadray which had none)
+- `4D-Drop.js` saves/restores nGon slider state
 
 ### Verification
 
@@ -464,8 +465,8 @@ From the README: *"Compute all relationships in quadrance space. Only take √ a
 - [x] **Phase 7: `demos/4D-Drop.js`** — core demo implemented (`55e730c`–`8dcc616`)
 - [x] **Phase 7b: Cell slider** — manual scrubbing +144 to −144, steps of 12
 - [x] **Phase 7c: Circumsphere boundary** — 7F geodesic icosahedron wireframe at extent radius
-- [ ] **Phase 6: N-gon parameter for `createQuadrayPolarPlane()`** — start with N=3 (triangle) and N=6 (hexagon) to validate the geodesic construction
-- [ ] **Radial line generation** via N-gon vertex connections between concentric shells
+- [x] **Phase 6c: N-gon slider + radial lines** — `nGon` parameter threaded through full chain, slider in Central Angle section (3–128), radial lines from N-gon vertices
+- [x] **Radial line generation** via N-gon vertex-aligned radials on both Cartesian and Quadray polar planes
 - [x] **Phase 2: Distance vs. Time analysis** — speed spacing (current, metric) vs. Galileo time spacing (√-free) formalized; previous `Q_k = E²·k/N` proposal retired
 - [ ] **Body selector UI** for the 3D gravity grids (port from Gravity Numberline demo)
 - [ ] **Phase 4: Gravity-warped polyhedra** — vertex remapping prototype
