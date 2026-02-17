@@ -26,6 +26,7 @@ import { Nodes } from "./rt-nodes.js";
 import { RTMatrix } from "./rt-matrix-planar.js";
 import { RTRadialMatrix } from "./rt-matrix-radial.js";
 import { Helices } from "./rt-helices.js";
+import { Thomson } from "./rt-thomson.js";
 import { MetaLog } from "./rt-metalog.js";
 import { PenroseTiles, PenroseTiling } from "./rt-penrose.js";
 
@@ -197,6 +198,9 @@ const colorPalette = {
   penroseThick: 0xffd700, // Gold - Thick rhombus (72°/108°)
   penroseThin: 0x4169e1, // Royal Blue - Thin rhombus (36°/144°)
   penroseTiling: 0xffd700, // Gold - Default tiling color
+  // Thomson Polyhedra (N-gon great-circle shells)
+  thomsonTetrahedron: 0xff6600, // Burnt orange - distinct from base tet yellow
+  thomsonOctahedron: 0x6600ff, // Deep violet - distinct from base octa green
 };
 
 /**
@@ -238,6 +242,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let tetrahelix2Group; // Tetrahelix 2: Linear (tetrahedral seed)
   let tetrahelix3Group; // Tetrahelix 3: Linear (octahedral seed)
   let penroseTilingGroup; // Penrose Tiling: Aperiodic tiling with golden ratio
+  let thomsonTetrahedronGroup, thomsonOctahedronGroup; // Thomson Polyhedra (N-gon great-circle shells)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   // ========================================================================
@@ -512,6 +517,12 @@ export function initScene(THREE, OrbitControls, RT) {
     primeGeoTetF4Group = new THREE.Group();
     primeGeoTetF4Group.userData.type = "primeGeoTetF4";
 
+    thomsonTetrahedronGroup = new THREE.Group();
+    thomsonTetrahedronGroup.userData.type = "thomsonTetrahedron";
+
+    thomsonOctahedronGroup = new THREE.Group();
+    thomsonOctahedronGroup.userData.type = "thomsonOctahedron";
+
     scene.add(pointGroup);
     scene.add(lineGroup);
     scene.add(polygonGroup);
@@ -557,6 +568,9 @@ export function initScene(THREE, OrbitControls, RT) {
     scene.add(primeCompoundIcosaGroup);
     scene.add(primeGeoTetF2Group);
     scene.add(primeGeoTetF4Group);
+    // Thomson Polyhedra
+    scene.add(thomsonTetrahedronGroup);
+    scene.add(thomsonOctahedronGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -2751,6 +2765,46 @@ export function initScene(THREE, OrbitControls, RT) {
       primeGeoTetF4Group.visible = false;
     }
 
+    // Thomson Tetrahedron (N-gon great-circle shell on tet frame)
+    if (el.showThomsonTetrahedron?.checked) {
+      disposeGroup(thomsonTetrahedronGroup);
+      const nGon = parseInt(el.thomsonTetraNGon?.value || "5");
+      const thomsonTet = Thomson.tetrahedron(scale, { nGon });
+      renderPolyhedron(
+        thomsonTetrahedronGroup,
+        thomsonTet,
+        colorPalette.thomsonTetrahedron,
+        opacity
+      );
+      thomsonTetrahedronGroup.userData = {
+        type: "thomsonTetrahedron",
+        parameters: { scale, nGon },
+      };
+      thomsonTetrahedronGroup.visible = true;
+    } else {
+      thomsonTetrahedronGroup.visible = false;
+    }
+
+    // Thomson Octahedron (N-gon great-circle shell on octa frame)
+    if (el.showThomsonOctahedron?.checked) {
+      disposeGroup(thomsonOctahedronGroup);
+      const nGon = parseInt(el.thomsonOctaNGon?.value || "5");
+      const thomsonOcta = Thomson.octahedron(scale, { nGon });
+      renderPolyhedron(
+        thomsonOctahedronGroup,
+        thomsonOcta,
+        colorPalette.thomsonOctahedron,
+        opacity
+      );
+      thomsonOctahedronGroup.userData = {
+        type: "thomsonOctahedron",
+        parameters: { scale, nGon },
+      };
+      thomsonOctahedronGroup.visible = true;
+    } else {
+      thomsonOctahedronGroup.visible = false;
+    }
+
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
     if (el.showRhombicDodecMatrix.checked) {
       const matrixSize = parseInt(
@@ -3711,6 +3765,36 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
     }
 
+    // Thomson Tetrahedron
+    if (el.showThomsonTetrahedron?.checked) {
+      const nGon = parseInt(el.thomsonTetraNGon?.value || "5");
+      const thomsonTet = Thomson.tetrahedron(1, { nGon });
+      const eulerOK = RT.verifyEuler(
+        thomsonTet.vertices.length,
+        thomsonTet.edges.length,
+        thomsonTet.faces.length
+      );
+      html += `<div style="margin-top: 10px;"><strong>Thomson Tetrahedron:</strong></div>`;
+      html += `<div>V: ${thomsonTet.vertices.length}, E: ${thomsonTet.edges.length}, F: ${thomsonTet.faces.length}</div>`;
+      html += `<div>N-gon: ${nGon} (shell generation TBD)</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+    }
+
+    // Thomson Octahedron
+    if (el.showThomsonOctahedron?.checked) {
+      const nGon = parseInt(el.thomsonOctaNGon?.value || "5");
+      const thomsonOcta = Thomson.octahedron(1, { nGon });
+      const eulerOK = RT.verifyEuler(
+        thomsonOcta.vertices.length,
+        thomsonOcta.edges.length,
+        thomsonOcta.faces.length
+      );
+      html += `<div style="margin-top: 10px;"><strong>Thomson Octahedron:</strong></div>`;
+      html += `<div>V: ${thomsonOcta.vertices.length}, E: ${thomsonOcta.edges.length}, F: ${thomsonOcta.faces.length}</div>`;
+      html += `<div>N-gon: ${nGon} (shell generation TBD)</div>`;
+      html += `<div>Euler: ${eulerOK ? "✓" : "✗"} (V - E + F = 2)</div>`;
+    }
+
     stats.innerHTML = html || "Select a polyhedron to see stats";
     MetaLog.unsuppress();
   }
@@ -4164,6 +4248,8 @@ export function initScene(THREE, OrbitControls, RT) {
       tetrahelix2Group,
       tetrahelix3Group,
       penroseTilingGroup,
+      thomsonTetrahedronGroup,
+      thomsonOctahedronGroup,
     };
   }
 
@@ -4732,6 +4818,16 @@ export function initScene(THREE, OrbitControls, RT) {
           wxyz: geometry.wxyz_normalized,
           primeProjection: geometry.metadata?.primeProjection,
         };
+        break;
+
+      case "thomsonTetrahedron":
+        geometry = Thomson.tetrahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
+        break;
+
+      case "thomsonOctahedron":
+        geometry = Thomson.octahedron(scale);
+        renderPolyhedron(group, geometry, color, opacity);
         break;
 
       // Matrix forms - return null, use createPolyhedronByTypeAsync instead
