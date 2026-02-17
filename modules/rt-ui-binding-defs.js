@@ -38,6 +38,10 @@ export const simpleCheckboxBindings = [
   { id: "octaMatrixColinearEdges", type: "checkbox" },
   { id: "rhombicDodecMatrixFaceCoplanar", type: "checkbox" },
 
+  // Thomson Polyhedra plane toggles
+  { id: "thomsonTetraFacePlanes", type: "checkbox" },
+  { id: "thomsonTetraEdgePlanes", type: "checkbox" },
+
   // Radial matrix options
   { id: "radialCubeSpaceFill", type: "checkbox" },
   { id: "radialTetIVMMode", type: "checkbox" },
