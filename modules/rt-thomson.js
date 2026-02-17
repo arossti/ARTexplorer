@@ -84,14 +84,32 @@ function buildPlaneBasis(normal) {
  * @param {{ x,y,z }} normal - Plane normal
  * @param {number} radius - Circle radius (circumsphere)
  * @param {number} nGon - Polygon resolution (3-12)
+ * @param {number} rotationDeg - Rotation of N-gon about its normal (degrees, default 0)
  * @returns {number[]} Flat [x1,y1,z1, x2,y2,z2, ...] array
  */
-function makeCircle(normal, radius, nGon) {
+function makeCircle(normal, radius, nGon, rotationDeg = 0) {
   const { localX, localZ } = buildPlaneBasis(normal);
   const lxx = localX.x, lxy = localX.y, lxz = localX.z;
   const lzx = localZ.x, lzy = localZ.y, lzz = localZ.z;
 
   const circleVerts = RT.nGonVertices(nGon, radius).vertices;
+
+  // Apply 2D rotation to vertices before 3D transform.
+  // Uses RT.reflectInLine twice (two reflections = rotation by 2×angle).
+  // The slope m = tan(θ/2) gives rotation by θ via double reflection.
+  if (rotationDeg !== 0) {
+    const halfRad = ((rotationDeg / 2) * Math.PI) / 180;
+    const m = Math.tan(halfRad);
+    for (let i = 0; i < circleVerts.length; i++) {
+      const v = circleVerts[i];
+      // First reflect through line with slope m, then through x-axis (slope 0)
+      // reflectInLine(x, y, m) then reflectInLine(rx, ry, 0) = (rx, -ry)
+      // Net effect: rotation by 2 × atan(m) = rotationDeg
+      const r1 = RT.reflectInLine(v.x, v.y, m);
+      circleVerts[i] = { x: r1.x, y: -r1.y };
+    }
+  }
+
   const positions = [];
 
   for (let i = 0; i < nGon; i++) {
@@ -118,15 +136,17 @@ function makeCircle(normal, radius, nGon) {
  *
  * Duplicate positions (where two circles share a vertex) are merged
  * using quadrance-based comparison to maintain RT consistency.
+ * Returns both the deduplicated node list and the coincident count.
  *
  * @param {Array<{ positions: number[] }>} circles - Generated circle data
  * @param {number} nGon - Polygon resolution
- * @returns {Array<{x,y,z}>} Deduplicated vertex nodes
+ * @returns {{ nodes: Array<{x,y,z}>, coincidentCount: number }}
  */
 function collectCircleVertices(circles, nGon) {
   const nodes = [];
   // Dedup threshold: quadrance < 1e-8 (well within Float32 precision)
   const dedupeQSq = 1e-8;
+  let coincidentCount = 0;
 
   for (const circle of circles) {
     const pos = circle.positions;
@@ -141,12 +161,14 @@ function collectCircleVertices(circles, nGon) {
         const dx = n.x - vx, dy = n.y - vy, dz = n.z - vz;
         return dx * dx + dy * dy + dz * dz < dedupeQSq;
       });
-      if (!isDupe) {
+      if (isDupe) {
+        coincidentCount++;
+      } else {
         nodes.push({ x: vx, y: vy, z: vz });
       }
     }
   }
-  return nodes;
+  return { nodes, coincidentCount };
 }
 
 // ── Public API ───────────────────────────────────────────────────────
@@ -158,12 +180,14 @@ export const Thomson = {
    * @param {number} halfSize - Half-edge of bounding cube (default 1)
    * @param {Object} options
    * @param {number} options.nGon - Polygon resolution per circle (3-12, default 5)
+   * @param {number} options.rotation - Rotation of each circle about its normal (degrees, default 0)
    * @param {boolean} options.facePlanes - Show 4 face-perpendicular planes (default true)
    * @param {boolean} options.edgePlanes - Show 6 edge mirror planes (default false)
-   * @returns {{ circles, nodes, nGon, planeCount }}
+   * @returns {{ circles, nodes, nGon, planeCount, coincidentCount }}
    */
   tetrahedron(halfSize = 1, options = {}) {
     const nGon = options.nGon || 5;
+    const rotation = options.rotation || 0;
     const facePlanes = options.facePlanes ?? true;
     const edgePlanes = options.edgePlanes ?? false;
     const radius = halfSize * Math.sqrt(3); // circumsphere
@@ -173,14 +197,14 @@ export const Thomson = {
     if (edgePlanes) activePlanes.push(...TET_EDGE_PLANES);
 
     const circles = activePlanes.map(p => ({
-      positions: makeCircle(p.normal, radius, nGon),
+      positions: makeCircle(p.normal, radius, nGon, rotation),
       color: p.color,
       label: p.label,
     }));
 
-    const nodes = collectCircleVertices(circles, nGon);
+    const { nodes, coincidentCount } = collectCircleVertices(circles, nGon);
 
-    return { circles, nodes, nGon, planeCount: activePlanes.length };
+    return { circles, nodes, nGon, planeCount: activePlanes.length, coincidentCount };
   },
 
   /**
@@ -190,20 +214,22 @@ export const Thomson = {
    * @param {number} halfSize - Half-edge of bounding cube (default 1)
    * @param {Object} options
    * @param {number} options.nGon - Polygon resolution per circle (3-12, default 5)
-   * @returns {{ circles, nodes, nGon, planeCount }}
+   * @param {number} options.rotation - Rotation of each circle about its normal (degrees, default 0)
+   * @returns {{ circles, nodes, nGon, planeCount, coincidentCount }}
    */
   octahedron(halfSize = 1, options = {}) {
     const nGon = options.nGon || 5;
+    const rotation = options.rotation || 0;
     const radius = halfSize; // circumsphere
 
     const circles = OCT_COORD_PLANES.map(p => ({
-      positions: makeCircle(p.normal, radius, nGon),
+      positions: makeCircle(p.normal, radius, nGon, rotation),
       color: p.color,
       label: p.label,
     }));
 
-    const nodes = collectCircleVertices(circles, nGon);
+    const { nodes, coincidentCount } = collectCircleVertices(circles, nGon);
 
-    return { circles, nodes, nGon, planeCount: OCT_COORD_PLANES.length };
+    return { circles, nodes, nGon, planeCount: OCT_COORD_PLANES.length, coincidentCount };
   },
 };

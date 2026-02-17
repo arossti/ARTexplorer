@@ -2857,13 +2857,14 @@ export function initScene(THREE, OrbitControls, RT) {
     // Thomson Tetrahedron (N-gon great-circle shell on tet frame)
     if (el.showThomsonTetrahedron?.checked) {
       const nGon = parseInt(el.thomsonTetraNGon?.value || "5");
+      const rotation = parseFloat(el.thomsonTetraRotation?.value || "0");
       const facePlanes = el.thomsonTetraFacePlanes?.checked ?? true;
       const edgePlanes = el.thomsonTetraEdgePlanes?.checked ?? false;
       thomsonTetrahedronGroup.userData = {
         type: "thomsonTetrahedron",
-        parameters: { scale, nGon, facePlanes, edgePlanes },
+        parameters: { scale, nGon, rotation, facePlanes, edgePlanes },
       };
-      const thomsonTet = Thomson.tetrahedron(scale, { nGon, facePlanes, edgePlanes });
+      const thomsonTet = Thomson.tetrahedron(scale, { nGon, rotation, facePlanes, edgePlanes });
       renderThomsonCircles(
         thomsonTetrahedronGroup,
         thomsonTet,
@@ -2878,11 +2879,12 @@ export function initScene(THREE, OrbitControls, RT) {
     // Thomson Octahedron (N-gon great-circle shell on octa frame)
     if (el.showThomsonOctahedron?.checked) {
       const nGon = parseInt(el.thomsonOctaNGon?.value || "5");
+      const rotation = parseFloat(el.thomsonOctaRotation?.value || "0");
       thomsonOctahedronGroup.userData = {
         type: "thomsonOctahedron",
-        parameters: { scale, nGon },
+        parameters: { scale, nGon, rotation },
       };
-      const thomsonOcta = Thomson.octahedron(scale, { nGon });
+      const thomsonOcta = Thomson.octahedron(scale, { nGon, rotation });
       renderThomsonCircles(
         thomsonOctahedronGroup,
         thomsonOcta,
@@ -3857,21 +3859,25 @@ export function initScene(THREE, OrbitControls, RT) {
     // Thomson Tetrahedron
     if (el.showThomsonTetrahedron?.checked) {
       const nGon = parseInt(el.thomsonTetraNGon?.value || "5");
+      const rotation = parseFloat(el.thomsonTetraRotation?.value || "0");
       const facePlanes = el.thomsonTetraFacePlanes?.checked ?? true;
       const edgePlanes = el.thomsonTetraEdgePlanes?.checked ?? false;
-      const thomsonTet = Thomson.tetrahedron(1, { nGon, facePlanes, edgePlanes });
+      const thomsonTet = Thomson.tetrahedron(1, { nGon, rotation, facePlanes, edgePlanes });
+      const totalVerts = thomsonTet.planeCount * nGon;
       html += `<div style="margin-top: 10px;"><strong>Thomson Tetrahedron:</strong></div>`;
-      html += `<div>Planes: ${thomsonTet.planeCount}, Circles: ${thomsonTet.circles.length}, Nodes: ${thomsonTet.nodes.length}</div>`;
-      html += `<div>N-gon: ${nGon}</div>`;
+      html += `<div>Planes: ${thomsonTet.planeCount}, Nodes: ${thomsonTet.nodes.length}, Coincident: ${thomsonTet.coincidentCount}/${totalVerts}</div>`;
+      html += `<div>N-gon: ${nGon}, Rotation: ${rotation}°</div>`;
     }
 
     // Thomson Octahedron
     if (el.showThomsonOctahedron?.checked) {
       const nGon = parseInt(el.thomsonOctaNGon?.value || "5");
-      const thomsonOcta = Thomson.octahedron(1, { nGon });
+      const rotation = parseFloat(el.thomsonOctaRotation?.value || "0");
+      const thomsonOcta = Thomson.octahedron(1, { nGon, rotation });
+      const totalVerts = thomsonOcta.planeCount * nGon;
       html += `<div style="margin-top: 10px;"><strong>Thomson Octahedron:</strong></div>`;
-      html += `<div>Planes: ${thomsonOcta.planeCount}, Circles: ${thomsonOcta.circles.length}, Nodes: ${thomsonOcta.nodes.length}</div>`;
-      html += `<div>N-gon: ${nGon}</div>`;
+      html += `<div>Planes: ${thomsonOcta.planeCount}, Nodes: ${thomsonOcta.nodes.length}, Coincident: ${thomsonOcta.coincidentCount}/${totalVerts}</div>`;
+      html += `<div>N-gon: ${nGon}, Rotation: ${rotation}°</div>`;
     }
 
     stats.innerHTML = html || "Select a polyhedron to see stats";
@@ -4902,6 +4908,7 @@ export function initScene(THREE, OrbitControls, RT) {
       case "thomsonTetrahedron":
         geometry = Thomson.tetrahedron(scale, {
           nGon: options.nGon || 5,
+          rotation: options.rotation || 0,
           facePlanes: options.facePlanes ?? true,
           edgePlanes: options.edgePlanes ?? false,
         });
@@ -4911,6 +4918,7 @@ export function initScene(THREE, OrbitControls, RT) {
       case "thomsonOctahedron":
         geometry = Thomson.octahedron(scale, {
           nGon: options.nGon || 5,
+          rotation: options.rotation || 0,
         });
         renderThomsonCircles(group, geometry, color, opacity);
         break;
