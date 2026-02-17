@@ -116,6 +116,18 @@ export const RTFileHandler = {
     const cartesianTess = parseInt(
       document.getElementById("cartesianTessSlider")?.value || 10
     );
+    // Grid mode (uniform vs polar) and polar-specific controls
+    const quadrayMode =
+      document.querySelector("[data-quadray-mode].active")?.dataset
+        .quadrayMode || "uniform";
+    const cartesianMode =
+      document.querySelector("[data-cartesian-mode].active")?.dataset
+        .cartesianMode || "uniform";
+    const nGon = parseInt(
+      document.getElementById("nGonSlider")?.value || "64"
+    );
+    const showRadialLines =
+      document.getElementById("showRadialLines")?.checked ?? true;
 
     // Get polyhedra checkbox states (forms visible at origin)
     const polyhedraCheckboxes = {
@@ -499,11 +511,15 @@ export const RTFileHandler = {
           quadray: {
             visible: quadrayVisible,
             tessellation: quadrayTess,
+            mode: quadrayMode,
           },
           cartesian: {
             visible: cartesianVisible,
             tessellation: cartesianTess,
+            mode: cartesianMode,
           },
+          nGon: nGon,
+          showRadialLines: showRadialLines,
         },
         // Polyhedra checkbox states (forms at origin)
         polyhedraCheckboxes: polyhedraCheckboxes,
@@ -634,6 +650,17 @@ export const RTFileHandler = {
           const slider = document.getElementById("quadrayTessSlider");
           if (checkbox) checkbox.checked = grids.quadray.visible;
           if (slider) slider.value = grids.quadray.tessellation;
+          // Restore grid mode (uniform/polar) button state
+          if (grids.quadray.mode) {
+            document
+              .querySelectorAll("[data-quadray-mode]")
+              .forEach(btn => {
+                btn.classList.toggle(
+                  "active",
+                  btn.dataset.quadrayMode === grids.quadray.mode
+                );
+              });
+          }
         }
 
         if (grids.cartesian) {
@@ -641,6 +668,29 @@ export const RTFileHandler = {
           const slider = document.getElementById("cartesianTessSlider");
           if (checkbox) checkbox.checked = grids.cartesian.visible;
           if (slider) slider.value = grids.cartesian.tessellation;
+          // Restore grid mode (uniform/polar) button state
+          if (grids.cartesian.mode) {
+            document
+              .querySelectorAll("[data-cartesian-mode]")
+              .forEach(btn => {
+                btn.classList.toggle(
+                  "active",
+                  btn.dataset.cartesianMode === grids.cartesian.mode
+                );
+              });
+          }
+        }
+
+        // Restore N-gon slider and Radial Lines toggle (polar grid controls)
+        if (grids.nGon !== undefined) {
+          const slider = document.getElementById("nGonSlider");
+          const display = document.getElementById("nGonValue");
+          if (slider) slider.value = grids.nGon;
+          if (display) display.textContent = grids.nGon;
+        }
+        if (grids.showRadialLines !== undefined) {
+          const checkbox = document.getElementById("showRadialLines");
+          if (checkbox) checkbox.checked = grids.showRadialLines;
         }
 
         // Trigger grid rebuild
