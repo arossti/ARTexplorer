@@ -141,35 +141,49 @@ function makeCircle(normal, radius, nGon, rotationDeg = 0) {
  *
  * @param {Array<{ positions: number[] }>} circles - Generated circle data
  * @param {number} nGon - Polygon resolution
- * @returns {{ nodes: Array<{x,y,z}>, coincidentCount: number }}
+ * @returns {{ nodes: Array<{x,y,z}>, edges: Array<[number,number]>, coincidentCount: number }}
  */
 function collectCircleVertices(circles, nGon) {
   const nodes = [];
+  const edges = [];
   // Dedup threshold: quadrance < 1e-8 (well within Float32 precision)
   const dedupeQSq = 1e-8;
   let coincidentCount = 0;
 
+  // Find or insert a node, returning its index in the nodes array
+  function getNodeIndex(vx, vy, vz) {
+    for (let i = 0; i < nodes.length; i++) {
+      const dx = nodes[i].x - vx, dy = nodes[i].y - vy, dz = nodes[i].z - vz;
+      if (dx * dx + dy * dy + dz * dz < dedupeQSq) return i;
+    }
+    nodes.push({ x: vx, y: vy, z: vz });
+    return nodes.length - 1;
+  }
+
   for (const circle of circles) {
     const pos = circle.positions;
-    // Each segment pair is [x1,y1,z1, x2,y2,z2] — 6 floats.
-    // The first vertex of each pair gives the N unique polygon vertices.
+    // Map each circle vertex to its deduplicated node index
+    const circleNodeIndices = [];
     for (let k = 0; k < nGon; k++) {
       const idx = k * 6;
       const vx = pos[idx], vy = pos[idx + 1], vz = pos[idx + 2];
-
-      // Deduplicate: merge vertices at same position (shared by multiple circles)
-      const isDupe = nodes.some(n => {
-        const dx = n.x - vx, dy = n.y - vy, dz = n.z - vz;
-        return dx * dx + dy * dy + dz * dz < dedupeQSq;
-      });
-      if (isDupe) {
-        coincidentCount++;
-      } else {
-        nodes.push({ x: vx, y: vy, z: vz });
+      const prevCount = nodes.length;
+      const nodeIdx = getNodeIndex(vx, vy, vz);
+      if (nodeIdx < prevCount) coincidentCount++; // existing node = coincident
+      circleNodeIndices.push(nodeIdx);
+    }
+    // Collect edges: each circle's N-gon has N edges (consecutive vertex pairs)
+    for (let k = 0; k < nGon; k++) {
+      const a = circleNodeIndices[k];
+      const b = circleNodeIndices[(k + 1) % nGon];
+      // Deduplicate edges (normalize order: smaller index first)
+      const ea = Math.min(a, b), eb = Math.max(a, b);
+      if (!edges.some(e => e[0] === ea && e[1] === eb)) {
+        edges.push([ea, eb]);
       }
     }
   }
-  return { nodes, coincidentCount };
+  return { nodes, edges, coincidentCount };
 }
 
 // ── Public API ───────────────────────────────────────────────────────
@@ -184,7 +198,7 @@ export const Thomson = {
    * @param {number} options.rotation - Rotation of each circle about its normal (degrees, default 0)
    * @param {boolean} options.facePlanes - Show 4 face-perpendicular planes (default true)
    * @param {boolean} options.edgePlanes - Show 6 edge mirror planes (default false)
-   * @returns {{ circles, nodes, nGon, planeCount, coincidentCount }}
+   * @returns {{ circles, nodes, edges, nGon, planeCount, coincidentCount }}
    */
   tetrahedron(halfSize = 1, options = {}) {
     const nGon = options.nGon || 5;
@@ -203,9 +217,9 @@ export const Thomson = {
       label: p.label,
     }));
 
-    const { nodes, coincidentCount } = collectCircleVertices(circles, nGon);
+    const { nodes, edges, coincidentCount } = collectCircleVertices(circles, nGon);
 
-    return { circles, nodes, nGon, planeCount: activePlanes.length, coincidentCount };
+    return { circles, nodes, edges, nGon, planeCount: activePlanes.length, coincidentCount };
   },
 
   /**
@@ -216,7 +230,7 @@ export const Thomson = {
    * @param {Object} options
    * @param {number} options.nGon - Polygon resolution per circle (3-12, default 5)
    * @param {number} options.rotation - Rotation of each circle about its normal (degrees, default 0)
-   * @returns {{ circles, nodes, nGon, planeCount, coincidentCount }}
+   * @returns {{ circles, nodes, edges, nGon, planeCount, coincidentCount }}
    */
   octahedron(halfSize = 1, options = {}) {
     const nGon = options.nGon || 5;
@@ -229,8 +243,8 @@ export const Thomson = {
       label: p.label,
     }));
 
-    const { nodes, coincidentCount } = collectCircleVertices(circles, nGon);
+    const { nodes, edges, coincidentCount } = collectCircleVertices(circles, nGon);
 
-    return { circles, nodes, nGon, planeCount: OCT_COORD_PLANES.length, coincidentCount };
+    return { circles, nodes, edges, nGon, planeCount: OCT_COORD_PLANES.length, coincidentCount };
   },
 };
