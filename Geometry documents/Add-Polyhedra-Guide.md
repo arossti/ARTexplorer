@@ -1136,5 +1136,48 @@ const PROJECTION_PRESETS = {
 
 ---
 
+## View Manager & State Persistence (Feb 2026)
+
+ARTExplorer has **two separate save/restore systems**. Both draw from the same hardcoded lists in `rt-filehandler.js`, so adding a polyhedron's checkboxes and sliders there covers both systems automatically.
+
+### Two Systems
+
+| System | Module | File Format | What It Saves |
+|--------|--------|-------------|---------------|
+| **Full State Save** | `RTFileHandler` (`rt-filehandler.js`) | `.json` | Complete scene: all checkboxes, sliders, instances, camera, grids, colors |
+| **View Registry** | `RTViewManager` (`rt-viewmanager.js`) | `.artview` | Lightweight camera + cutplane snapshots with scene **deltas** |
+
+### How Views Work
+
+Views use **delta compression** via the `RTDelta` module:
+
+1. **First view** = Full snapshot of all checkbox/slider state
+2. **Subsequent views** = Only the *changes* (delta) from accumulated previous state
+3. **On restore** = Replays all deltas up to the target view to reconstruct full state
+
+`RTDelta.captureSnapshot()` reads the same `polyhedraCheckboxes` and `sliderValues` that `RTFileHandler.exportState()` uses. This means:
+
+> **If your polyhedron's checkboxes and sliders are in `rt-filehandler.js`, they are automatically captured by the View Manager too.**
+
+### Checklist for State Persistence
+
+When adding a new polyhedron, ensure these entries exist in `rt-filehandler.js`:
+
+| What | Where in `rt-filehandler.js` | Example |
+|------|------------------------------|---------|
+| **Checkbox save** | `polyhedraCheckboxes` object (~line 121) | `showMyForm: document.getElementById("showMyForm")?.checked \|\| false` |
+| **Slider save** | `sliderValues` object (~line 213) | `myFormSlider: parseInt(document.getElementById("myFormSlider")?.value \|\| "5")` |
+| **Slider restore** | Restore section (~line 650) | Set `slider.value` and `display.textContent` |
+| **Controls visibility** | Restore section (~line 1078) | Show/hide controls panel if checkbox was checked |
+
+### Common Mistake
+
+Forgetting the **slider values** — checkboxes are easy to remember, but slider/parameter state is often missed. Without it:
+- Full state save/restore will lose slider positions
+- View deltas won't capture slider changes between views
+- User reopens a saved file and all sliders reset to defaults
+
+---
+
 _Last updated: February 2026_
 _Contributors: Andy & Claude_

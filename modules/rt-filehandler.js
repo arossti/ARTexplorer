@@ -438,6 +438,13 @@ export const RTFileHandler = {
       penroseTileType:
         document.querySelector('input[name="penroseTileType"]:checked')
           ?.value || "thick",
+      // Thomson Polyhedra N-gon sliders
+      thomsonTetraNGon: parseInt(
+        document.getElementById("thomsonTetraNGon")?.value || "5"
+      ),
+      thomsonOctaNGon: parseInt(
+        document.getElementById("thomsonOctaNGon")?.value || "5"
+      ),
     };
 
     // Get geodesic projection radio states
@@ -959,6 +966,20 @@ export const RTFileHandler = {
             `input[name="penroseTileType"][value="${sliders.penroseTileType}"]`
           );
           if (radio) radio.checked = true;
+        }
+
+        // Thomson Polyhedra N-gon sliders
+        if (sliders.thomsonTetraNGon !== undefined) {
+          const slider = document.getElementById("thomsonTetraNGon");
+          const display = document.getElementById("thomsonTetraNGonValue");
+          if (slider) slider.value = sliders.thomsonTetraNGon;
+          if (display) display.textContent = sliders.thomsonTetraNGon;
+        }
+        if (sliders.thomsonOctaNGon !== undefined) {
+          const slider = document.getElementById("thomsonOctaNGon");
+          const display = document.getElementById("thomsonOctaNGonValue");
+          if (slider) slider.value = sliders.thomsonOctaNGon;
+          if (display) display.textContent = sliders.thomsonOctaNGon;
         }
       }
 
