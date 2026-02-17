@@ -1994,6 +1994,20 @@
               </label>
             </div>
 
+          </div>
+        </div>
+        <!-- END SECTION 3B: POLYHEDRA -->
+
+        <!-- ========================================
+             SECTION 3B2: EXPERIMENTAL POLYHEDRA
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span class="section-toggle collapsed" data-target="experimental-polyhedra-section"></span>
+            Experimental Polyhedra
+          </h3>
+          <div id="experimental-polyhedra-section" class="section-content collapsed">
+
             <!-- ========== QUADRAY DEMONSTRATORS ========== -->
             <div class="matrix-divider">
               <label class="matrix-divider-label">Quadray Demonstrators</label>
@@ -2272,9 +2286,74 @@
               </div>
             </div>
 
+            <!-- ========== THOMSON POLYHEDRA ========== -->
+            <div class="matrix-divider">
+              <label class="matrix-divider-label">Thomson Polyhedra</label>
+            </div>
+            <p class="info-text" style="font-size: 10px; margin: 5px 0 10px 0; color: #888">
+              N-gon great-circle shells on platonic frames.<br />
+              Vertex count = f(N, base polyhedron).
+            </p>
+
+            <!-- Thomson Tetrahedron -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showThomsonTetrahedron" />
+                Thomson Tetrahedron
+              </label>
+              <div
+                id="thomson-tetra-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="label-subsection">N-gon</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonTetraNGon"
+                      min="3"
+                      max="12"
+                      step="1"
+                      value="5"
+                    />
+                    <span class="slider-value" id="thomsonTetraNGonValue">5</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thomson Octahedron -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showThomsonOctahedron" />
+                Thomson Octahedron
+              </label>
+              <div
+                id="thomson-octa-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="label-subsection">N-gon</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonOctaNGon"
+                      min="3"
+                      max="12"
+                      step="1"
+                      value="5"
+                    />
+                    <span class="slider-value" id="thomsonOctaNGonValue">5</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
-        <!-- END SECTION 3B: POLYHEDRA -->
+        <!-- END SECTION 3B2: EXPERIMENTAL POLYHEDRA -->
 
         <!-- ========================================
              SECTION 3C: PLANAR MATRICES
