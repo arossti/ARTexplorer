@@ -315,6 +315,18 @@ export const checkboxWithControlsBindings = [
     controlsId: "prime-geo-tet-f4-controls",
   },
 
+  // Thomson Polyhedra (stubbed — rt-thomson.js will wire these)
+  {
+    id: "showThomsonTetrahedron",
+    type: "checkbox-controls",
+    controlsId: "thomson-tetra-controls",
+  },
+  {
+    id: "showThomsonOctahedron",
+    type: "checkbox-controls",
+    controlsId: "thomson-octa-controls",
+  },
+
   // Projection with controls panel
   {
     id: "enableProjection",
@@ -328,6 +340,17 @@ export const checkboxWithControlsBindings = [
 // ============================================================================
 
 export const simpleSliderBindings = [
+  // Thomson Polyhedra N-gon sliders (stubbed — rt-thomson.js will wire these)
+  {
+    id: "thomsonTetraNGon",
+    type: "slider",
+    valueId: "thomsonTetraNGonValue",
+  },
+  {
+    id: "thomsonOctaNGon",
+    type: "slider",
+    valueId: "thomsonOctaNGonValue",
+  },
   {
     id: "opacitySlider",
     type: "slider",
