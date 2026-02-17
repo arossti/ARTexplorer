@@ -506,8 +506,8 @@ For a tetrahedron with edge quadrance Q:
 
 The icosahedron and dodecahedron calculations use two key constants:
 
-- α = (5 - √5)/8 ≈ 0.345 (base spread at pentagon vertices)
-- β = (5 + √5)/8 ≈ 0.905 (star spread / apex angle)
+- α = (5 - √5)/8 ≈ 0.345 (star spread = sin²(π/5), used for polygon generation)
+- β = (5 + √5)/8 ≈ 0.905 (apex spread of corner triangle, per Exercise 14.3)
 
 These satisfy the elegant relationships:
 
@@ -550,6 +550,10 @@ The `Symbolic` class maintains exact `(a + b√5)/c` form with operations:
 - `scale(n)`, `divide(n)` - Scalar operations
 - `toDecimal()` - GPU boundary expansion (called once, at end)
 
+**Generalized Symbolic Algebra (`RT.SymbolicCoord`)**
+
+`SymbolicCoord` generalizes the PurePhi.Symbolic pattern from D=5 to arbitrary radicand D, enabling exact `(a + b√D)/c` arithmetic for polygon vertex generation. For N = 3, 4, 6, 8, 12, all vertex coordinates are computed in Q(√D) with zero intermediate float expansion — the single `toDecimal()` call is deferred to the GPU boundary. See `Geometry documents/Pure-Polygon.md` for the full derivation and whitepaper-ready theory.
+
 #### Spread Polynomials (Chapter 14)
 
 For regular n-gon diagonal quadrances, Wildberger defines Sₖ(s) polynomials:
@@ -570,7 +574,7 @@ Edge quadrance formula: **Q_edge = 4 · s · Q_circumradius**
 | -------------- | ------------- | ---------------------------- | -------------------- |
 | Triangle (3)   | 3/4           | `RT.StarSpreads.triangle()`  | Yes (exact rational) |
 | Square (4)     | 1/2           | `RT.StarSpreads.square()`    | Yes (exact rational) |
-| Pentagon (5)   | (5+√5)/8 = β  | `RT.StarSpreads.pentagon()`  | Yes (cached √5)      |
+| Pentagon (5)   | (5-√5)/8 = α  | `RT.StarSpreads.pentagon()`  | Yes (cached √5)      |
 | Hexagon (6)    | 1/4           | `RT.StarSpreads.hexagon()`   | Yes (exact rational) |
 | Octagon (8)    | (2-√2)/4      | `RT.StarSpreads.octagon()`   | Yes (cached √2)      |
 | Decagon (10)   | (3-√5)/8 = α  | `RT.StarSpreads.decagon()`   | Yes (cached √5)      |
@@ -601,16 +605,19 @@ This pattern is consistently applied in:
 - `RT.spherePlaneCircleRadius()` - Computes circleRadiusQ, single √ at end
 - `RT.PurePhi.Symbolic.toDecimal()` - Expands √5 once
 - `RT.PureRadicals.QUADRAY_GRID_INTERVAL` - √6/4 computed once, cached
-- All polygon generators - Cached radical values from `RT.PureRadicals`
+- `RT.SymbolicCoord.toDecimal()` - Expands √D once (for N=3,4,6,8,12 polygons)
+- All polygon generators - Symbolic Q(√D) for N=3,4,6,8,12; float fallback for others
 
 #### Gauss-Wantzel Constructibility
 
 ARTexplorer respects the Gauss-Wantzel theorem for polygon constructibility:
 
-**RT-Pure (algebraic radicals only):** n = 3, 4, 5, 6, 8, 10, 12
-**Classical fallback (transcendental):** n = 7, 9, 11, 13, ...
+**Symbolic (exact Q(√D) arithmetic):** n = 3, 4, 6, 8, 12 — zero intermediate float
+**Algebraic (1 √, float recurrence):** n = 5, 10 — nested radical, cached star spread
+**Cubic (1 √, cached cubic roots):** n = 7, 9 — irreducible cubics, no √-expression
+**Transcendental fallback:** n = 11, 13, ... — sin²(π/N) for star spread
 
-The heptagon (n=7) requires solving an irreducible cubic - no √-expression exists. ARTexplorer correctly falls back to `Math.sin/cos` for these cases while logging a warning.
+All paths use the unified Wildberger reflection construction (`RT.nGonVertices` / `RT.nGonVerticesSymbolic`). The symbolic path for the five most common polygons is provably exact until the GPU boundary. See `Geometry documents/Pure-Polygon.md`.
 
 ### 6.3 Tetrahedral Geometry
 

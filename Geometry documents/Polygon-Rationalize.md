@@ -118,7 +118,7 @@ A regular n-gon is constructible with compass and straightedge iff n is:
 |---|---------------|---------|------|
 | 3 | 3/4 | Rational | RT-Pure |
 | 4 | 1/2 | Rational | RT-Pure |
-| 5 | (5+√5)/8 | β | φ-Rational |
+| 5 | (5-√5)/8 | α = sin²(π/5) | φ-Rational |
 | 6 | 1/4 | Rational | RT-Pure |
 | 8 | (2-√2)/4 | | Algebraic |
 | 10 | (3-√5)/8 | α | φ-Rational |

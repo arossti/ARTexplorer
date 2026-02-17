@@ -1087,7 +1087,18 @@ function startARTexplorer(
         cartesianBasis:
           document.getElementById("showCartesianBasis")?.checked ?? false,
       };
-      renderingAPI.rebuildCartesianGrids(cartesianTess, cartVisibility, mode);
+      const nGon = parseInt(
+        document.getElementById("nGonSlider")?.value || "64"
+      );
+      const showRadials =
+        document.getElementById("showRadialLines")?.checked ?? true;
+      renderingAPI.rebuildCartesianGrids(
+        cartesianTess,
+        cartVisibility,
+        mode,
+        nGon,
+        showRadials
+      );
     });
   });
 
@@ -1112,7 +1123,18 @@ function startARTexplorer(
         ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
         ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
       };
-      renderingAPI.rebuildQuadrayGrids(quadrayTess, ivmVisibility, mode);
+      const nGon = parseInt(
+        document.getElementById("nGonSlider")?.value || "64"
+      );
+      const showRadials =
+        document.getElementById("showRadialLines")?.checked ?? true;
+      renderingAPI.rebuildQuadrayGrids(
+        quadrayTess,
+        ivmVisibility,
+        mode,
+        nGon,
+        showRadials
+      );
     });
   });
 
