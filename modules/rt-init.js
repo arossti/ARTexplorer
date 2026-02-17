@@ -175,6 +175,7 @@ function startARTexplorer(
     quadrayOctahedronGroup,
     quadrayTruncatedTetGroup,
     quadrayStellaOctangulaGroup;
+  let thomsonTetrahedronGroup, thomsonOctahedronGroup;
   let cartesianGrid, ivmPlanes;
 
   // ========================================================================
@@ -2637,6 +2638,8 @@ function startARTexplorer(
       quadrayOctahedronGroup,
       quadrayTruncatedTetGroup,
       quadrayStellaOctangulaGroup,
+      thomsonTetrahedronGroup,
+      thomsonOctahedronGroup,
       penroseTilingGroup,
     ];
 
@@ -2907,6 +2910,8 @@ function startARTexplorer(
       quadrayOctahedronGroup,
       quadrayTruncatedTetGroup,
       quadrayStellaOctangulaGroup,
+      thomsonTetrahedronGroup,
+      thomsonOctahedronGroup,
       penroseTilingGroup,
     ];
 
@@ -4340,6 +4345,8 @@ function startARTexplorer(
     quadrayOctahedronGroup,
     quadrayTruncatedTetGroup,
     quadrayStellaOctangulaGroup,
+    thomsonTetrahedronGroup,
+    thomsonOctahedronGroup,
     penroseTilingGroup,
   } = formGroups);
 

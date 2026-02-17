@@ -172,6 +172,11 @@ export const RTFileHandler = {
         document.getElementById("showQuadrayOctahedron")?.checked || false,
       showQuadrayTruncatedTet:
         document.getElementById("showQuadrayTruncatedTet")?.checked || false,
+      // Thomson Polyhedra
+      showThomsonTetrahedron:
+        document.getElementById("showThomsonTetrahedron")?.checked || false,
+      showThomsonOctahedron:
+        document.getElementById("showThomsonOctahedron")?.checked || false,
       // Planar matrices
       showCubeMatrix:
         document.getElementById("showCubeMatrix")?.checked || false,
@@ -1081,6 +1086,20 @@ export const RTFileHandler = {
         );
         if (quadrayTruncTetControls && checkboxes.showQuadrayTruncatedTet) {
           quadrayTruncTetControls.style.display = "block";
+        }
+
+        // Show/hide Thomson controls based on checkbox state
+        const thomsonTetraControls = document.getElementById(
+          "thomson-tetra-controls"
+        );
+        if (thomsonTetraControls && checkboxes.showThomsonTetrahedron) {
+          thomsonTetraControls.style.display = "block";
+        }
+        const thomsonOctaControls = document.getElementById(
+          "thomson-octa-controls"
+        );
+        if (thomsonOctaControls && checkboxes.showThomsonOctahedron) {
+          thomsonOctaControls.style.display = "block";
         }
 
         // Show/hide planar matrix controls based on checkbox state
