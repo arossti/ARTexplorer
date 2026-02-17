@@ -35,6 +35,9 @@ import { Line2 } from "three/addons/lines/Line2.js";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 
+// ConvexGeometry for Thomson polyhedra face rendering (3D convex hull triangulation)
+import { ConvexGeometry } from "three/addons/geometries/ConvexGeometry.js";
+
 // Re-export PerformanceClock so rt-init.js can import it from here
 export { PerformanceClock };
 
@@ -1155,6 +1158,40 @@ export function initScene(THREE, OrbitControls, RT) {
 
       PerformanceClock.endNodeGeneration();
       PerformanceClock.timings.lastNodeTriangles = Math.round(trianglesPerNode);
+    }
+
+    // Render convex hull faces (all Thomson nodes lie on circumsphere → hull = polyhedron)
+    const showFaces = group.userData.showFaces ?? false;
+    if (showFaces && thomsonData.nodes.length >= 4) {
+      const hullPoints = thomsonData.nodes.map(
+        n => new THREE.Vector3(n.x, n.y, n.z)
+      );
+      const hullGeometry = new ConvexGeometry(hullPoints);
+      const hullMaterial = new THREE.MeshStandardMaterial({
+        color: nodeColor,
+        transparent: true,
+        opacity: 0.3 * dissolveOpacity,
+        side: THREE.FrontSide,
+        flatShading: true,
+        depthWrite: false,
+      });
+      const hullMesh = new THREE.Mesh(hullGeometry, hullMaterial);
+      hullMesh.renderOrder = 1;
+      group.add(hullMesh);
+
+      // Optionally render hull edges (distinct from great-circle edges)
+      const showHullEdges = group.userData.showHullEdges ?? false;
+      if (showHullEdges) {
+        const edgesGeometry = new THREE.EdgesGeometry(hullGeometry, 1);
+        const edgesMaterial = new THREE.LineBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.5 * dissolveOpacity,
+        });
+        const edgeLines = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+        edgeLines.renderOrder = 2;
+        group.add(edgeLines);
+      }
     }
   }
 
@@ -2860,9 +2897,13 @@ export function initScene(THREE, OrbitControls, RT) {
       const rotation = parseFloat(el.thomsonTetraRotation?.value || "0");
       const facePlanes = el.thomsonTetraFacePlanes?.checked ?? true;
       const edgePlanes = el.thomsonTetraEdgePlanes?.checked ?? false;
+      const showFaces = el.thomsonTetraShowFaces?.checked ?? false;
+      const showHullEdges = el.thomsonTetraShowHullEdges?.checked ?? false;
       thomsonTetrahedronGroup.userData = {
         type: "thomsonTetrahedron",
-        parameters: { scale, nGon, rotation, facePlanes, edgePlanes },
+        parameters: { scale, nGon, rotation, facePlanes, edgePlanes, showFaces, showHullEdges },
+        showFaces,
+        showHullEdges,
       };
       const thomsonTet = Thomson.tetrahedron(scale, { nGon, rotation, facePlanes, edgePlanes });
       renderThomsonCircles(
@@ -2880,9 +2921,13 @@ export function initScene(THREE, OrbitControls, RT) {
     if (el.showThomsonOctahedron?.checked) {
       const nGon = parseInt(el.thomsonOctaNGon?.value || "5");
       const rotation = parseFloat(el.thomsonOctaRotation?.value || "0");
+      const showFaces = el.thomsonOctaShowFaces?.checked ?? false;
+      const showHullEdges = el.thomsonOctaShowHullEdges?.checked ?? false;
       thomsonOctahedronGroup.userData = {
         type: "thomsonOctahedron",
-        parameters: { scale, nGon, rotation },
+        parameters: { scale, nGon, rotation, showFaces, showHullEdges },
+        showFaces,
+        showHullEdges,
       };
       const thomsonOcta = Thomson.octahedron(scale, { nGon, rotation });
       renderThomsonCircles(
@@ -4906,6 +4951,8 @@ export function initScene(THREE, OrbitControls, RT) {
         break;
 
       case "thomsonTetrahedron":
+        group.userData.showFaces = options.showFaces ?? false;
+        group.userData.showHullEdges = options.showHullEdges ?? false;
         geometry = Thomson.tetrahedron(scale, {
           nGon: options.nGon || 5,
           rotation: options.rotation || 0,
@@ -4916,6 +4963,8 @@ export function initScene(THREE, OrbitControls, RT) {
         break;
 
       case "thomsonOctahedron":
+        group.userData.showFaces = options.showFaces ?? false;
+        group.userData.showHullEdges = options.showHullEdges ?? false;
         geometry = Thomson.octahedron(scale, {
           nGon: options.nGon || 5,
           rotation: options.rotation || 0,
