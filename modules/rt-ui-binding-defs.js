@@ -358,10 +358,17 @@ export const simpleSliderBindings = [
       // Read active grid mode from Quadray section
       const activeBtn = document.querySelector("[data-quadray-mode].active");
       const gridMode = activeBtn ? activeBtn.dataset.quadrayMode : "uniform";
+      const nGon = parseInt(
+        document.getElementById("nGonSlider")?.value || "64"
+      );
+      const showRadials =
+        document.getElementById("showRadialLines")?.checked ?? true;
       renderingAPI.rebuildQuadrayGrids(
         parseInt(value),
         visibilityState,
-        gridMode
+        gridMode,
+        nGon,
+        showRadials
       );
     },
     updateGeometry: false, // Handled by rebuildQuadrayGrids
@@ -382,13 +389,75 @@ export const simpleSliderBindings = [
       // Read active grid mode from Cartesian section
       const activeBtn = document.querySelector("[data-cartesian-mode].active");
       const gridMode = activeBtn ? activeBtn.dataset.cartesianMode : "uniform";
+      const nGon = parseInt(
+        document.getElementById("nGonSlider")?.value || "64"
+      );
+      const showRadials =
+        document.getElementById("showRadialLines")?.checked ?? true;
       renderingAPI.rebuildCartesianGrids(
         parseInt(value),
         visibilityState,
-        gridMode
+        gridMode,
+        nGon,
+        showRadials
       );
     },
     updateGeometry: false, // Handled by rebuildCartesianGrids
+  },
+
+  {
+    id: "nGonSlider",
+    type: "slider",
+    valueId: "nGonValue",
+    onInput: (value, renderingAPI) => {
+      const nGon = parseInt(value);
+      // Rebuild Quadray grids with new nGon
+      const quadrayTess = parseInt(
+        document.getElementById("quadrayTessSlider")?.value || "12"
+      );
+      const ivmVisibility = {
+        ivmWX: document.getElementById("planeIvmWX")?.checked ?? true,
+        ivmWY: document.getElementById("planeIvmWY")?.checked ?? true,
+        ivmWZ: document.getElementById("planeIvmWZ")?.checked ?? true,
+        ivmXY: document.getElementById("planeIvmXY")?.checked ?? true,
+        ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
+        ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
+      };
+      const quadrayBtn = document.querySelector("[data-quadray-mode].active");
+      const quadrayMode = quadrayBtn
+        ? quadrayBtn.dataset.quadrayMode
+        : "uniform";
+      const showRadials =
+        document.getElementById("showRadialLines")?.checked ?? true;
+      renderingAPI.rebuildQuadrayGrids(
+        quadrayTess,
+        ivmVisibility,
+        quadrayMode,
+        nGon,
+        showRadials
+      );
+      // Rebuild Cartesian grids with new nGon
+      const cartTess = parseInt(
+        document.getElementById("cartesianTessSlider")?.value || "10"
+      );
+      const cartVisibility = {
+        gridXY: document.getElementById("planeXY")?.checked ?? false,
+        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
+        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
+        cartesianBasis:
+          document.getElementById("showCartesianBasis")?.checked ?? false,
+      };
+      const cartBtn = document.querySelector("[data-cartesian-mode].active");
+      const cartMode = cartBtn ? cartBtn.dataset.cartesianMode : "uniform";
+      renderingAPI.rebuildCartesianGrids(
+        cartTess,
+        cartVisibility,
+        cartMode,
+        nGon,
+        showRadials
+      );
+    },
+    updateGeometry: false,
   },
 
   // Geodesic frequency sliders
@@ -822,6 +891,59 @@ export const basisVisibilityBindings = [
     type: "checkbox",
     onChange: (checked, renderingAPI) => {
       renderingAPI.setQuadrayBasisVisible(checked);
+    },
+    updateGeometry: false,
+  },
+  {
+    id: "showRadialLines",
+    type: "checkbox",
+    onChange: (checked, renderingAPI) => {
+      // Rebuild Quadray grids with showRadials state
+      const quadrayTess = parseInt(
+        document.getElementById("quadrayTessSlider")?.value || "12"
+      );
+      const ivmVisibility = {
+        ivmWX: document.getElementById("planeIvmWX")?.checked ?? true,
+        ivmWY: document.getElementById("planeIvmWY")?.checked ?? true,
+        ivmWZ: document.getElementById("planeIvmWZ")?.checked ?? true,
+        ivmXY: document.getElementById("planeIvmXY")?.checked ?? true,
+        ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
+        ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
+      };
+      const quadrayBtn = document.querySelector("[data-quadray-mode].active");
+      const quadrayMode = quadrayBtn
+        ? quadrayBtn.dataset.quadrayMode
+        : "uniform";
+      const nGon = parseInt(
+        document.getElementById("nGonSlider")?.value || "64"
+      );
+      renderingAPI.rebuildQuadrayGrids(
+        quadrayTess,
+        ivmVisibility,
+        quadrayMode,
+        nGon,
+        checked
+      );
+      // Rebuild Cartesian grids with showRadials state
+      const cartTess = parseInt(
+        document.getElementById("cartesianTessSlider")?.value || "10"
+      );
+      const cartVisibility = {
+        gridXY: document.getElementById("planeXY")?.checked ?? false,
+        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
+        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
+        cartesianBasis:
+          document.getElementById("showCartesianBasis")?.checked ?? false,
+      };
+      const cartBtn = document.querySelector("[data-cartesian-mode].active");
+      const cartMode = cartBtn ? cartBtn.dataset.cartesianMode : "uniform";
+      renderingAPI.rebuildCartesianGrids(
+        cartTess,
+        cartVisibility,
+        cartMode,
+        nGon,
+        checked
+      );
     },
     updateGeometry: false,
   },

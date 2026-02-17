@@ -50,17 +50,35 @@ const COLOR_FACE_Z = 0x00ff00; // Green  (QZ axis)
  * @param {string} gridMode - 'uniform', 'gravity-chordal', or 'gravity-spherical'
  * @returns {{ gridXY: THREE.Object3D, gridXZ: THREE.Object3D, gridYZ: THREE.Object3D }}
  */
-function buildCartesianPlanes(divisions, gridMode) {
+function buildCartesianPlanes(divisions, gridMode, nGon = 64, showRadials = true) {
   const gridSize = divisions;
   let gridXY, gridXZ, gridYZ;
 
   if (gridMode === "gravity-chordal" || gridMode === "gravity-spherical") {
     // Cartesian gravity is strictly polar: concentric circles at gravity-spaced
     // radii. Gravity converges to a point (origin), not an axis.
-    gridXY = Grids.createGravityCartesianPlane(divisions, COLOR_XY, "gravity-spherical");
+    gridXY = Grids.createGravityCartesianPlane(
+      divisions,
+      COLOR_XY,
+      "gravity-spherical",
+      nGon,
+      showRadials
+    );
     gridXY.rotation.x = Math.PI / 2;
-    gridXZ = Grids.createGravityCartesianPlane(divisions, COLOR_XZ, "gravity-spherical");
-    gridYZ = Grids.createGravityCartesianPlane(divisions, COLOR_YZ, "gravity-spherical");
+    gridXZ = Grids.createGravityCartesianPlane(
+      divisions,
+      COLOR_XZ,
+      "gravity-spherical",
+      nGon,
+      showRadials
+    );
+    gridYZ = Grids.createGravityCartesianPlane(
+      divisions,
+      COLOR_YZ,
+      "gravity-spherical",
+      nGon,
+      showRadials
+    );
     gridYZ.rotation.z = Math.PI / 2;
   } else {
     // Uniform mode: standard THREE.GridHelper
@@ -87,21 +105,47 @@ function buildCartesianPlanes(divisions, gridMode) {
  * @param {string} gridMode - 'uniform' or 'gravity-spherical'
  * @returns {Object} Keyed plane objects (6 Central Angle planes for uniform, 4 face planes for polar)
  */
-function buildQuadrayPlanes(tessellations, gridMode) {
+function buildQuadrayPlanes(tessellations, gridMode, nGon = 64, showRadials = true) {
   if (gridMode === "gravity-spherical") {
     // Polar mode: 4 planes ⊥ to Quadray basis vectors (tetrahedral face planes)
     // Concentric Weierstrass circles — same algorithm as Cartesian polar
     const axisConfigs = [
-      { key: "faceW", axisName: "qw", color: COLOR_FACE_W, name: "QuadrayPolar_W" },
-      { key: "faceX", axisName: "qx", color: COLOR_FACE_X, name: "QuadrayPolar_X" },
-      { key: "faceY", axisName: "qy", color: COLOR_FACE_Y, name: "QuadrayPolar_Y" },
-      { key: "faceZ", axisName: "qz", color: COLOR_FACE_Z, name: "QuadrayPolar_Z" },
+      {
+        key: "faceW",
+        axisName: "qw",
+        color: COLOR_FACE_W,
+        name: "QuadrayPolar_W",
+      },
+      {
+        key: "faceX",
+        axisName: "qx",
+        color: COLOR_FACE_X,
+        name: "QuadrayPolar_X",
+      },
+      {
+        key: "faceY",
+        axisName: "qy",
+        color: COLOR_FACE_Y,
+        name: "QuadrayPolar_Y",
+      },
+      {
+        key: "faceZ",
+        axisName: "qz",
+        color: COLOR_FACE_Z,
+        name: "QuadrayPolar_Z",
+      },
     ];
 
     const result = {};
     for (const cfg of axisConfigs) {
       const normal = Quadray.getAxisVector(cfg.axisName);
-      const plane = Grids.createQuadrayPolarPlane(normal, tessellations, cfg.color);
+      const plane = Grids.createQuadrayPolarPlane(
+        normal,
+        tessellations,
+        cfg.color,
+        nGon,
+        showRadials
+      );
       plane.name = cfg.name;
       result[cfg.key] = plane;
     }
@@ -152,7 +196,9 @@ export const Grids = {
       { dir: new THREE.Vector3(0, 0, 1), color: 0x0000ff },
     ];
     for (const { dir, color } of axes) {
-      basis.add(Grids.createCartesianTetraArrow(dir, shaftLength, headSize, color));
+      basis.add(
+        Grids.createCartesianTetraArrow(dir, shaftLength, headSize, color)
+      );
     }
     return basis;
   },
@@ -160,16 +206,23 @@ export const Grids = {
   /**
    * Create a single gravity-warped Cartesian plane as LineSegments.
    * Chordal: rectangular grid with gravity-spaced lines (kept for Quadray refinement).
-   * Polar (gravity-spherical): concentric circles at gravity-spaced radii + 4 radial
+   * Polar (gravity-spherical): concentric N-gon circles at gravity-spaced radii + 4 radial
    * lines. Gravity converges to a point — polar is the only correct XYZ representation.
-   * Circles via Weierstrass rational parameterization (RT-pure, no trig).
+   * Circles via RT.nGonVertices() — Wildberger reflection method (1√, no trig).
    *
    * @param {number} divisions - Total number of grid divisions
    * @param {number} color - Line color (hex)
    * @param {string} gridMode - 'gravity-chordal' or 'gravity-spherical'
+   * @param {number} nGon - Polygon resolution per circle (default 64, range 3–128)
    * @returns {THREE.LineSegments} The grid plane (in XZ plane, like GridHelper)
    */
-  createGravityCartesianPlane: (divisions, color, gridMode = "gravity-chordal") => {
+  createGravityCartesianPlane: (
+    divisions,
+    color,
+    gridMode = "gravity-chordal",
+    nGon = 64,
+    showRadials = true
+  ) => {
     const halfExtent = Math.floor(divisions / 2);
     const vertices = [];
 
@@ -185,39 +238,28 @@ export const Grids = {
       );
       const extent = cumDist[numCircles];
 
-      // Circles via Weierstrass rational parameterization (RT-pure, no trig).
-      const SPQ = 16; // segments per quadrant → 64 per full circle
-
+      // Circles via RT.nGonVertices() — Wildberger reflection method.
+      // nGon parameter controls polygon resolution (default 64 for backward compat).
       for (let k = 1; k <= numCircles; k++) {
         const r = cumDist[k];
-        // 4 quadrants, each parameterized u = 0..1
-        for (let q = 0; q < 4; q++) {
-          let px = q === 0 ? r : q === 2 ? -r : 0;
-          let pz = q === 1 ? r : q === 3 ? -r : 0;
-
-          for (let s = 1; s <= SPQ; s++) {
-            const u = s / SPQ;
-            const u2 = u * u;
-            const d = 1 + u2;
-            const c = r * (1 - u2) / d;  // rational in u
-            const sn = r * 2 * u / d;    // rational in u
-            let nx, nz;
-            if (q === 0)      { nx = c;   nz = sn;  }
-            else if (q === 1) { nx = -sn; nz = c;   }
-            else if (q === 2) { nx = -c;  nz = -sn; }
-            else              { nx = sn;  nz = -c;  }
-
-            vertices.push(px, 0, pz, nx, 0, nz);
-            px = nx; pz = nz;
-          }
+        const circleVerts = RT.nGonVertices(nGon, r).vertices;
+        for (let i = 0; i < nGon; i++) {
+          const curr = circleVerts[i];
+          const next = circleVerts[(i + 1) % nGon];
+          // XZ plane (Y = 0): 2D x → 3D x, 2D y → 3D z
+          vertices.push(curr.x, 0, curr.y, next.x, 0, next.y);
         }
       }
 
-      // Radial lines along ±X and ±Z from origin to outer extent
-      vertices.push(0, 0, 0, extent, 0, 0);
-      vertices.push(0, 0, 0, -extent, 0, 0);
-      vertices.push(0, 0, 0, 0, 0, extent);
-      vertices.push(0, 0, 0, 0, 0, -extent);
+      // Radial lines from origin to each N-gon vertex on outermost shell.
+      // Naturally aligns with polygon geometry — replaces hardcoded ±X/±Z crosshair.
+      if (showRadials) {
+        const outerVerts = RT.nGonVertices(nGon, extent).vertices;
+        for (let i = 0; i < nGon; i++) {
+          const v = outerVerts[i];
+          vertices.push(0, 0, 0, v.x, 0, v.y); // XZ plane (Y = 0)
+        }
+      }
     } else {
       // Rectangular gravity grid: straight lines at gravity-spaced positions.
       // GridHelper convention: XZ plane, Y=0. halfDiv lines each side of center.
@@ -263,27 +305,33 @@ export const Grids = {
    * perpendicular to a Quadray basis vector. Each plane is a tetrahedral
    * face plane — ⊥QW, ⊥QX, ⊥QY, or ⊥QZ.
    *
-   * Uses Weierstrass rational parameterization — same math as
+   * Uses RT.nGonVertices() (Wildberger reflection) — same math as
    * createGravityCartesianPlane() but generates 3D vertices directly
    * via in-plane orthonormal basis (no axis rotation needed).
    *
    * @param {THREE.Vector3} normal - Unit normal to the plane (a Quadray basis vector)
    * @param {number} divisions - Number of concentric circles (from tessellation slider)
    * @param {number} color - Line color (hex)
+   * @param {number} nGon - Polygon resolution per circle (default 64)
    * @returns {THREE.LineSegments} Polar grid geometry centered at origin
    */
-  createQuadrayPolarPlane: (normal, divisions, color) => {
+  createQuadrayPolarPlane: (normal, divisions, color, nGon = 64, showRadials = true) => {
     // Construct orthonormal basis in the plane ⊥ normal
     const n = normal.clone().normalize();
-    const ref = Math.abs(n.y) < 0.9
-      ? new THREE.Vector3(0, 1, 0)
-      : new THREE.Vector3(1, 0, 0);
+    const ref =
+      Math.abs(n.y) < 0.9
+        ? new THREE.Vector3(0, 1, 0)
+        : new THREE.Vector3(1, 0, 0);
     const localX = new THREE.Vector3().crossVectors(ref, n).normalize();
     const localZ = new THREE.Vector3().crossVectors(n, localX).normalize();
 
     // Precompute basis components for inline vertex math
-    const lxx = localX.x, lxy = localX.y, lxz = localX.z;
-    const lzx = localZ.x, lzy = localZ.y, lzz = localZ.z;
+    const lxx = localX.x,
+      lxy = localX.y,
+      lxz = localX.z;
+    const lzx = localZ.x,
+      lzy = localZ.y,
+      lzz = localZ.z;
 
     const halfExtent = Math.floor(divisions / 2);
     const numCircles = divisions;
@@ -292,46 +340,40 @@ export const Grids = {
       halfExtent
     );
     const vertices = [];
-    const SPQ = 16; // segments per quadrant → 64 per full circle
 
+    // Circles via RT.nGonVertices() — Wildberger reflection method.
+    // nGon parameter controls polygon resolution (default 64 for backward compat).
     for (let k = 1; k <= numCircles; k++) {
       const r = cumDist[k];
+      const circleVerts = RT.nGonVertices(nGon, r).vertices;
 
-      for (let q = 0; q < 4; q++) {
-        // Starting point on the quadrant boundary (in local 2D coords)
-        let p2d, pz2d;
-        if (q === 0) { p2d = r; pz2d = 0; }
-        else if (q === 1) { p2d = 0; pz2d = r; }
-        else if (q === 2) { p2d = -r; pz2d = 0; }
-        else { p2d = 0; pz2d = -r; }
+      for (let i = 0; i < nGon; i++) {
+        const curr = circleVerts[i];
+        const next = circleVerts[(i + 1) % nGon];
 
-        // Convert to 3D: point = localX * p2d + localZ * pz2d
-        let px = lxx * p2d + lzx * pz2d;
-        let py = lxy * p2d + lzy * pz2d;
-        let pz = lxz * p2d + lzz * pz2d;
+        // 2D → 3D via local basis: localX * x2d + localZ * y2d
+        const cx = lxx * curr.x + lzx * curr.y;
+        const cy = lxy * curr.x + lzy * curr.y;
+        const cz = lxz * curr.x + lzz * curr.y;
+        const nx = lxx * next.x + lzx * next.y;
+        const ny = lxy * next.x + lzy * next.y;
+        const nz = lxz * next.x + lzz * next.y;
 
-        for (let s = 1; s <= SPQ; s++) {
-          const u = s / SPQ;
-          const u2 = u * u;
-          const d = 1 + u2;
-          const c = r * (1 - u2) / d;  // Weierstrass rational cosine
-          const sn = r * 2 * u / d;    // Weierstrass rational sine
+        vertices.push(cx, cy, cz, nx, ny, nz);
+      }
+    }
 
-          // Quadrant-specific 2D mapping (same pattern as Cartesian)
-          let nx2d, nz2d;
-          if (q === 0) { nx2d = c; nz2d = sn; }
-          else if (q === 1) { nx2d = -sn; nz2d = c; }
-          else if (q === 2) { nx2d = -c; nz2d = -sn; }
-          else { nx2d = sn; nz2d = -c; }
-
-          // Convert to 3D
-          const nx = lxx * nx2d + lzx * nz2d;
-          const ny = lxy * nx2d + lzy * nz2d;
-          const nz = lxz * nx2d + lzz * nz2d;
-
-          vertices.push(px, py, pz, nx, ny, nz);
-          px = nx; py = ny; pz = nz;
-        }
+    // Radial lines from origin to each N-gon vertex on outermost shell.
+    // Naturally aligns with polygon geometry — no arbitrary axis alignment.
+    if (showRadials) {
+      const outerR = cumDist[numCircles];
+      const outerVerts = RT.nGonVertices(nGon, outerR).vertices;
+      for (let i = 0; i < nGon; i++) {
+        const v = outerVerts[i];
+        const vx = lxx * v.x + lzx * v.y;
+        const vy = lxy * v.x + lzy * v.y;
+        const vz = lxz * v.x + lzz * v.y;
+        vertices.push(0, 0, 0, vx, vy, vz);
       }
     }
 
@@ -359,9 +401,20 @@ export const Grids = {
    * @param {string} gridMode - Grid mode: 'uniform' or 'gravity-chordal'
    * @returns {Object} { cartesianGrid, cartesianBasis, gridXY, gridXZ, gridYZ }
    */
-  createCartesianGrid: (scene, divisions = 10, gridMode = "uniform") => {
+  createCartesianGrid: (
+    scene,
+    divisions = 10,
+    gridMode = "uniform",
+    nGon = 64,
+    showRadials = true
+  ) => {
     const cartesianGrid = new THREE.Group();
-    const { gridXY, gridXZ, gridYZ } = buildCartesianPlanes(divisions, gridMode);
+    const { gridXY, gridXZ, gridYZ } = buildCartesianPlanes(
+      divisions,
+      gridMode,
+      nGon,
+      showRadials
+    );
 
     // Z-UP CONVENTION: XY is horizontal ground, XZ/YZ are vertical walls
     gridXY.visible = false;
@@ -660,9 +713,15 @@ export const Grids = {
    * @param {number} tessellations - Number of triangle copies in each direction
    * @returns {Object} { ivmPlanes, ivmWX, ivmWY, ivmWZ, ivmXY, ivmXZ, ivmYZ }
    */
-  createIVMPlanes: (scene, tessellations = 12, gridMode = "uniform") => {
+  createIVMPlanes: (
+    scene,
+    tessellations = 12,
+    gridMode = "uniform",
+    nGon = 64,
+    showRadials = true
+  ) => {
     const ivmPlanes = new THREE.Group();
-    const planes = buildQuadrayPlanes(tessellations, gridMode);
+    const planes = buildQuadrayPlanes(tessellations, gridMode, nGon, showRadials);
 
     for (const key of Object.keys(planes)) {
       planes[key].visible = true;
@@ -693,14 +752,16 @@ export const Grids = {
     existingIvmPlanes,
     tessellations,
     visibilityState = {},
-    gridMode = "uniform"
+    gridMode = "uniform",
+    nGon = 64,
+    showRadials = true
   ) => {
     if (existingIvmPlanes) {
       scene.remove(existingIvmPlanes);
     }
 
     const ivmPlanes = new THREE.Group();
-    const planes = buildQuadrayPlanes(tessellations, gridMode);
+    const planes = buildQuadrayPlanes(tessellations, gridMode, nGon, showRadials);
 
     for (const key of Object.keys(planes)) {
       planes[key].visible = visibilityState[key] ?? true;
@@ -732,7 +793,9 @@ export const Grids = {
     existingCartesianBasis,
     divisions,
     visibilityState = {},
-    gridMode = "uniform"
+    gridMode = "uniform",
+    nGon = 64,
+    showRadials = true
   ) => {
     if (existingCartesianGrid) {
       scene.remove(existingCartesianGrid);
@@ -742,7 +805,12 @@ export const Grids = {
     }
 
     const cartesianGrid = new THREE.Group();
-    const { gridXY, gridXZ, gridYZ } = buildCartesianPlanes(divisions, gridMode);
+    const { gridXY, gridXZ, gridYZ } = buildCartesianPlanes(
+      divisions,
+      gridMode,
+      nGon,
+      showRadials
+    );
 
     gridXY.visible = visibilityState.gridXY ?? false;
     gridXZ.visible = visibilityState.gridXZ ?? false;
@@ -1136,14 +1204,14 @@ export const Grids = {
     // RT-PURE: Exact algebraic hexagon vertices (no trig needed)
     // Regular hexagon at circumradius R: vertices at 60° intervals.
     // cos/sin of 0°,60°,120°,180°,240°,300° are all rational in √3.
-    const h = R * Math.sqrt(3) / 2; // √ deferred to GPU boundary
+    const h = (R * Math.sqrt(3)) / 2; // √ deferred to GPU boundary
     const hexagonVerts = [
-      new THREE.Vector3(R, 0, 0),         // 0°:   (1, 0)
-      new THREE.Vector3(R / 2, h, 0),     // 60°:  (1/2, √3/2)
-      new THREE.Vector3(-R / 2, h, 0),    // 120°: (-1/2, √3/2)
-      new THREE.Vector3(-R, 0, 0),        // 180°: (-1, 0)
-      new THREE.Vector3(-R / 2, -h, 0),   // 240°: (-1/2, -√3/2)
-      new THREE.Vector3(R / 2, -h, 0),    // 300°: (1/2, -√3/2)
+      new THREE.Vector3(R, 0, 0), // 0°:   (1, 0)
+      new THREE.Vector3(R / 2, h, 0), // 60°:  (1/2, √3/2)
+      new THREE.Vector3(-R / 2, h, 0), // 120°: (-1/2, √3/2)
+      new THREE.Vector3(-R, 0, 0), // 180°: (-1, 0)
+      new THREE.Vector3(-R / 2, -h, 0), // 240°: (-1/2, -√3/2)
+      new THREE.Vector3(R / 2, -h, 0), // 300°: (1/2, -√3/2)
     ];
 
     const center = new THREE.Vector3(0, 0, 0);

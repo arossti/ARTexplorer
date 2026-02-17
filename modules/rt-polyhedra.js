@@ -32,17 +32,6 @@ export const Polyhedra = {
   line: Primitives.line,
   polygon: Primitives.polygon,
 
-  // Private polygon generators (exposed for testing)
-  _polygonClassical: Primitives._polygonClassical,
-  _polygonTriangle: Primitives._polygonTriangle,
-  _polygonSquare: Primitives._polygonSquare,
-  _polygonPentagon: Primitives._polygonPentagon,
-  _polygonHexagon: Primitives._polygonHexagon,
-  _polygonOctagon: Primitives._polygonOctagon,
-  _polygonNonagon: Primitives._polygonNonagon,
-  _polygonDecagon: Primitives._polygonDecagon,
-  _polygonDodecagon: Primitives._polygonDodecagon,
-
   // ═══════════════════════════════════════════════════════════════════════════
   // 3D POLYHEDRA
   // ═══════════════════════════════════════════════════════════════════════════

@@ -165,6 +165,52 @@ export const RT = {
   },
 
   /**
+   * Reflect point (x, y) across a line through the origin with slope m.
+   * Purely rational: add, mul, div only (no √).
+   *
+   * Formula (Wildberger "Divine Proportions" §14.5):
+   *   x' = ((1 − m²)x + 2my) / (1 + m²)
+   *   y' = (2mx − (1 − m²)y) / (1 + m²)
+   *
+   * Key identity: reflectInLine(R, 0, m) === R · circleParam(m).
+   * Reflecting (R, 0) across a line with slope m is exactly the Weierstrass
+   * parameterization evaluated at t = m. This connects Wildberger's reflection
+   * construction to the rational circle.
+   *
+   * @param {number} x - Point x-coordinate
+   * @param {number} y - Point y-coordinate
+   * @param {number} m - Slope of line through origin
+   * @returns {Object} {x, y} - Reflected point
+   *
+   * @example
+   * RT.reflectInLine(1, 0, 1); // {x: 0, y: 1} — reflect (1,0) across y=x
+   */
+  reflectInLine: (x, y, m) => {
+    const m2 = m * m;
+    const d = 1 + m2;
+    return {
+      x: ((1 - m2) * x + 2 * m * y) / d,
+      y: (2 * m * x - (1 - m2) * y) / d,
+    };
+  },
+
+  /**
+   * Compute slope from star spread: m = tan(π/N) = √(s / (1 − s)).
+   * This is the ONE √ in Wildberger's reflection-based N-gon construction.
+   *
+   * Given star spread s = sin²(π/N), returns the slope of the first star line.
+   * All subsequent slopes are computed via rational tangent addition.
+   *
+   * @param {number} s - Star spread (sin²(π/N))
+   * @returns {number} Slope m = tan(π/N)
+   *
+   * @example
+   * RT.slopeFromSpread(3/4);  // √3 ≈ 1.732 (triangle: tan(60°))
+   * RT.slopeFromSpread(1/2);  // 1.0 (square: tan(45°))
+   */
+  slopeFromSpread: s => Math.sqrt(s / (1 - s)),
+
+  /**
    * Convert spread to angle parameter 't' using rational circle parameterization
    * Solves: 4t² / (1 + t²)² = spread for t
    *
@@ -514,6 +560,11 @@ export const RT = {
      *   β/α = φ² (golden ratio squared!)
      *
      * All values computed once and cached for IEEE 754 precision consistency.
+     *
+     * NOTE: These cos/sin values are ACTIVELY USED by rt-penrose.js for
+     * Penrose tiling rotations (36°/72° steps). They are NOT deprecated.
+     * However, polygon vertex generation no longer uses these directly —
+     * it goes through RT.nGonVertices() → StarSpreads.pentagon() instead.
      *
      * @namespace pentagon
      * @memberof RT.PurePhi
@@ -1378,6 +1429,13 @@ export const RT = {
    *   - Edge quadrance: Q_edge = 4sQ (Theorem 98)
    *   - Diagonal quadrance: Q(A₀,A₂ₖ) = 4·Sₖ(s)·Q (Exercise 14.2)
    *
+   * CANONICAL USAGE (Feb 2026):
+   * StarSpreads.forN(n) is the entry point for RT.nGonVertices(), which is
+   * the SOLE polygon vertex generator for all N ≥ 3. The individual named
+   * spreads (triangle, square, pentagon, ...) feed into forN(). Do NOT
+   * create separate per-polygon generators — nGonVertices() handles all N
+   * via a single Wildberger reflection construction with exactly 1 √.
+   *
    * Uses existing RT.PurePhi and RT.PureRadicals for cached radicals.
    *
    * @namespace StarSpreads
@@ -1398,11 +1456,14 @@ export const RT = {
     square: () => 1 / 2,
 
     /**
-     * Pentagon (n=5): s = (5+√5)/8 = β
+     * Pentagon (n=5): s = (5-√5)/8 = α = sin²(π/5)
      * Theorem 96 (p.161) and Exercise 14.3 (p.166)
-     * @returns {number} ≈ 0.904508497187474
+     * NOTE: This is α (half-central-angle spread), not β (apex spread).
+     * β = (5+√5)/8 = sin²(2π/5) is the spread of the full central angle;
+     * nGonVertices needs sin²(π/N) for the Weierstrass half-angle param.
+     * @returns {number} ≈ 0.345491502812526
      */
-    pentagon: () => (5 + RT.PurePhi.sqrt5()) / 8,
+    pentagon: () => (5 - RT.PurePhi.sqrt5()) / 8,
 
     /**
      * Hexagon (n=6): s = 1/4
@@ -1432,14 +1493,18 @@ export const RT = {
 
     /**
      * Get star spread for any supported n
-     * Returns null for n values without algebraically exact spreads
+     * Returns null for n values without exact cached spreads
+     *
+     * Includes Gauss-Wantzel constructible (3,4,5,6,8,10,12) AND
+     * cubic-cached (7,9) from RT.PureCubics.
      *
      * @param {number} n - Number of sides
-     * @returns {number|null} Star spread or null if not algebraically exact
+     * @returns {number|null} Star spread or null if not cached
      *
      * @example
-     * RT.StarSpreads.forN(5);  // ≈ 0.9045 (pentagon)
-     * RT.StarSpreads.forN(7);  // null (heptagon requires cubic solution)
+     * RT.StarSpreads.forN(5);  // ≈ 0.9045 (pentagon, algebraic)
+     * RT.StarSpreads.forN(7);  // ≈ 0.1883 (heptagon, cubic-cached)
+     * RT.StarSpreads.forN(11); // null (no cached solution)
      */
     forN: n => {
       const spreads = {
@@ -1447,7 +1512,9 @@ export const RT = {
         4: RT.StarSpreads.square,
         5: RT.StarSpreads.pentagon,
         6: RT.StarSpreads.hexagon,
+        7: () => RT.PureCubics.heptagon.starSpread(), // cubic-cached
         8: RT.StarSpreads.octagon,
+        9: () => RT.PureCubics.nonagon.starSpread(), // cubic-cached
         10: RT.StarSpreads.decagon,
         12: RT.StarSpreads.dodecagon,
       };
@@ -1461,6 +1528,15 @@ export const RT = {
    * While Gauss-Wantzel constructible polygons use only √ radicals,
    * some polygons (7, 9, 14, 18, 21...) require solving cubic equations.
    * We solve these cubics ONCE and cache the results.
+   *
+   * POLYGON GENERATION NOTE (Feb 2026):
+   * Individual cos/sin values (cos1, sin1, cos2, sin2, ...) are NO LONGER
+   * used for polygon vertex generation. All N-gon generation now goes through
+   * RT.nGonVertices(N, R) which only needs .starSpread() from each entry.
+   * The individual trig values are retained for potential future use (e.g.,
+   * direct rotation, Penrose-like constructions) but are NOT called by any
+   * current code. Do NOT create per-polygon vertex generators from these —
+   * use RT.nGonVertices() instead.
    *
    * Philosophy (same as PurePhi/PureRadicals):
    * - Solve cubic algebraically or numerically ONCE
@@ -1690,6 +1766,309 @@ export const RT = {
         return () => cached;
       })(),
     },
+  },
+
+  /**
+   * Unified N-gon Vertex Generator — Wildberger Reflection Method
+   *
+   * Generates N vertices of a regular N-gon inscribed in a circle of radius R.
+   * Uses successive reflections through star lines (Chapter 14, §14.5).
+   *
+   * Algorithm:
+   * 1. Star spread s = sin²(π/N) — algebraic for N≤12, cubic for 7,9, else transcendental
+   * 2. m₁ = √(s/(1−s)) = tan(π/N) — THE one √ in the entire construction
+   * 3. Tangent addition recurrence: m_{k+1} = (mₖ + m₁) / (1 − mₖ·m₁) — rational
+   * 4. Vertex k: Weierstrass at t = mₖ — rational in mₖ
+   * 5. Lower-half vertices by symmetry: y → −y
+   *
+   * √ count: Exactly 1 (for m₁), regardless of N.
+   * Compare: Gauss-Wantzel O(N) √, classical trig O(N) transcendentals.
+   *
+   * The key identity: reflecting (R, 0) across a line with slope mₖ gives
+   * the same result as R · circleParam(mₖ). The reflection construction IS
+   * the Weierstrass parameterization evaluated at successive tangent slopes.
+   *
+   * @param {number} N - Number of sides (≥ 3)
+   * @param {number} R - Circumradius (√quadrance, the GPU-boundary √)
+   * @returns {Object} { vertices: [{x,y},...], starSpread, method }
+   *   - vertices: N points in counterclockwise order, starting at (R, 0)
+   *   - method: 'algebraic' | 'cubic' | 'transcendental'
+   *
+   * @example
+   * const tri = RT.nGonVertices(3, 1.0);
+   * // tri.vertices[0] = {x: 1, y: 0}
+   * // tri.vertices[1] = {x: -0.5, y: 0.866...}
+   * // tri.method = 'algebraic'
+   *
+   * @see RT.StarSpreads — exact spreads for N=3,4,5,6,7,8,9,10,12
+   * @see RT.slopeFromSpread — the ONE √
+   * @see RT.reflectInLine — the rational reflection primitive
+   * @see Wildberger "Divine Proportions" Chapter 14, §14.5, pp. 163-165
+   */
+  nGonVertices: (N, R) => {
+    if (N < 3) throw new Error(`nGonVertices: N must be ≥ 3, got ${N}`);
+
+    // Star spread: sin²(π/N)
+    let starSpread = RT.StarSpreads.forN(N);
+    let method;
+    if (starSpread !== null) {
+      method = N === 7 || N === 9 ? "cubic" : "algebraic";
+    } else {
+      // Transcendental fallback for N without cached exact spreads
+      const sinPiN = Math.sin(Math.PI / N);
+      starSpread = sinPiN * sinPiN;
+      method = "transcendental";
+    }
+
+    const vertices = new Array(N);
+    vertices[0] = { x: R, y: 0 };
+
+    // Special case: N even → antipodal vertex is exact
+    if (N % 2 === 0) {
+      vertices[N / 2] = { x: -R, y: 0 };
+    }
+
+    // The ONE √: m₁ = tan(π/N) = √(s/(1-s))
+    const m1 = RT.slopeFromSpread(starSpread);
+
+    // Generate upper-half vertices via tangent addition recurrence
+    let mk = m1; // current slope = tan(k·π/N), starts at k=1
+    const half = Math.floor((N - 1) / 2);
+
+    for (let k = 1; k <= half; k++) {
+      // Vertex k from Weierstrass at t = mk (= reflectInLine(R, 0, mk))
+      const mk2 = mk * mk;
+      const d = 1 + mk2;
+      const vx = (R * (1 - mk2)) / d;
+      const vy = (R * 2 * mk) / d;
+      vertices[k] = { x: vx, y: vy };
+      vertices[N - k] = { x: vx, y: -vy }; // symmetry
+
+      // Tangent addition for next slope: m_{k+1} = (mk + m1) / (1 - mk·m1)
+      if (k < half) {
+        mk = (mk + m1) / (1 - mk * m1);
+      }
+    }
+
+    return { vertices, starSpread, method };
+  },
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * SYMBOLIC N-GON VERTICES
+   * ═══════════════════════════════════════════════════════════════════════════
+   * Exact algebraic vertex generation in Q(√D) — zero float expansion
+   * until the GPU boundary. Generalizes PurePhi.Symbolic (D=5) to any D.
+   *
+   * Supported: N = 3, 4, 6, 8, 12 (Gauss-Wantzel constructible with
+   * rational D). Pentagon/Decagon have nested radicals; Heptagon/Nonagon
+   * are cubic — both fall back to nGonVertices (float path, 1 √).
+   *
+   * See Geometry documents/Pure-Polygon.md for derivation.
+   * ═══════════════════════════════════════════════════════════════════════════ */
+
+  /**
+   * SymbolicCoord — Exact algebraic coordinate: (a + b√D) / c
+   *
+   * All arithmetic stays in Q(√D) with zero float expansion.
+   * Call .toDecimal() only at the GPU boundary (THREE.Vector3).
+   *
+   * Generalizes PurePhi.Symbolic (hardcoded D=5) to arbitrary D.
+   *
+   * @class SymbolicCoord
+   * @param {number} a - Rational part (integer)
+   * @param {number} b - Radical coefficient (integer)
+   * @param {number} D - Radicand (the number under √)
+   * @param {number} c - Denominator (positive integer, default 1)
+   *
+   * @example
+   * const s = new RT.SymbolicCoord(0, 1, 3, 1);  // √3
+   * s.toDecimal();  // 1.7320508...
+   */
+  SymbolicCoord: class {
+    constructor(a, b, D, c = 1) {
+      this.a = a;
+      this.b = b;
+      this.D = D;
+      this.c = c;
+    }
+
+    /** GCD of two integers (Euclidean algorithm) */
+    static gcd(x, y) {
+      x = Math.abs(x);
+      y = Math.abs(y);
+      while (y) {
+        [x, y] = [y, x % y];
+      }
+      return x;
+    }
+
+    /** Reduce (a + b√D)/c by GCD, keep c positive */
+    simplify() {
+      if (this.a === 0 && this.b === 0)
+        return new RT.SymbolicCoord(0, 0, this.D, 1);
+      let g = RT.SymbolicCoord.gcd(Math.abs(this.a), Math.abs(this.b));
+      g = RT.SymbolicCoord.gcd(g, Math.abs(this.c));
+      if (g <= 1) {
+        // Just fix sign of c
+        if (this.c < 0)
+          return new RT.SymbolicCoord(-this.a, -this.b, this.D, -this.c);
+        return this;
+      }
+      const sign = this.c < 0 ? -1 : 1;
+      return new RT.SymbolicCoord(
+        (sign * this.a) / g,
+        (sign * this.b) / g,
+        this.D,
+        (sign * this.c) / g
+      );
+    }
+
+    /** (a + b√D)/c as IEEE 754 — THE expansion point */
+    toDecimal() {
+      return (this.a + this.b * Math.sqrt(this.D)) / this.c;
+    }
+
+    /** Add: same D required */
+    add(other) {
+      return new RT.SymbolicCoord(
+        this.a * other.c + other.a * this.c,
+        this.b * other.c + other.b * this.c,
+        this.D,
+        this.c * other.c
+      ).simplify();
+    }
+
+    /** Subtract: same D required */
+    sub(other) {
+      return new RT.SymbolicCoord(
+        this.a * other.c - other.a * this.c,
+        this.b * other.c - other.b * this.c,
+        this.D,
+        this.c * other.c
+      ).simplify();
+    }
+
+    /** Multiply: (a₁+b₁√D)(a₂+b₂√D) = (a₁a₂+D·b₁b₂) + (a₁b₂+b₁a₂)√D */
+    mul(other) {
+      return new RT.SymbolicCoord(
+        this.a * other.a + this.D * this.b * other.b,
+        this.a * other.b + this.b * other.a,
+        this.D,
+        this.c * other.c
+      ).simplify();
+    }
+
+    /**
+     * Divide: (a₁+b₁√D)/c₁ ÷ (a₂+b₂√D)/c₂
+     * Rationalize: multiply by conjugate (a₂-b₂√D)/(a₂²-D·b₂²)
+     */
+    div(other) {
+      const { a: a1, b: b1, c: c1, D } = this;
+      const { a: a2, b: b2, c: c2 } = other;
+      // Numerator: (a₁+b₁√D)(a₂-b₂√D) = (a₁a₂-D·b₁b₂) + (b₁a₂-a₁b₂)√D
+      const na = a1 * a2 - D * b1 * b2;
+      const nb = b1 * a2 - a1 * b2;
+      // Denominator: c₁(a₂²-D·b₂²) / c₂
+      const norm = a2 * a2 - D * b2 * b2;
+      return new RT.SymbolicCoord(na * c2, nb * c2, D, c1 * norm).simplify();
+    }
+
+    /** Scale by integer */
+    scale(k) {
+      return new RT.SymbolicCoord(
+        this.a * k,
+        this.b * k,
+        this.D,
+        this.c
+      ).simplify();
+    }
+
+    /** Negate */
+    neg() {
+      return new RT.SymbolicCoord(-this.a, -this.b, this.D, this.c);
+    }
+
+    /** Debug string */
+    toString() {
+      const sign = this.b >= 0 ? "+" : "";
+      return `(${this.a} ${sign} ${this.b}√${this.D}) / ${this.c}`;
+    }
+  },
+
+  /**
+   * Cached symbolic slope decompositions for each supported N-gon.
+   * Returns m₁ as a SymbolicCoord in Q(√D), or null if not symbolizable.
+   *
+   * Key denesting identities:
+   *   Octagon:   √(3-2√2) = √2 - 1
+   *   Dodecagon: √(7-4√3) = 2 - √3
+   *
+   * @param {number} N - Polygon sides
+   * @returns {Object|null} { D, m1: SymbolicCoord } or null
+   */
+  slopeSymbolic: N => {
+    const table = {
+      3: { D: 3, m1: new RT.SymbolicCoord(0, 1, 3) }, // √3
+      4: { D: 1, m1: new RT.SymbolicCoord(1, 0, 1) }, // 1 (rational)
+      6: { D: 3, m1: new RT.SymbolicCoord(0, 1, 3, 3) }, // √3/3
+      8: { D: 2, m1: new RT.SymbolicCoord(-1, 1, 2) }, // √2 - 1
+      12: { D: 3, m1: new RT.SymbolicCoord(2, -1, 3) }, // 2 - √3
+    };
+    return table[N] || null;
+  },
+
+  /**
+   * Generate N-gon vertices in exact symbolic form: (a + b√D) / c
+   *
+   * Zero float expansion — every coordinate is a SymbolicCoord.
+   * Call .toDecimal() on each coordinate at the GPU boundary.
+   *
+   * Supported: N = 3, 4, 6, 8, 12. Returns null for other N
+   * (use nGonVertices float path instead).
+   *
+   * @param {number} N - Number of polygon sides
+   * @returns {Object|null} { vertices: [{x,y}], D, method: 'symbolic' }
+   */
+  nGonVerticesSymbolic: N => {
+    const slope = RT.slopeSymbolic(N);
+    if (!slope) return null;
+
+    const { D, m1 } = slope;
+    const S = RT.SymbolicCoord; // alias
+    const ONE = new S(1, 0, D);
+    const ZERO = new S(0, 0, D);
+
+    const vertices = new Array(N);
+
+    // v₀ = (1, 0) — scaled by R at GPU boundary
+    vertices[0] = { x: ONE, y: ZERO };
+
+    // Antipodal vertex for even N
+    if (N % 2 === 0) {
+      vertices[N / 2] = { x: ONE.neg(), y: ZERO };
+    }
+
+    // Tangent addition recurrence in Q(√D)
+    let mk = m1;
+    const half = Math.floor((N - 1) / 2);
+
+    for (let k = 1; k <= half; k++) {
+      // Weierstrass at t = mk: x = (1-t²)/(1+t²), y = 2t/(1+t²)
+      const mk2 = mk.mul(mk); // mₖ²
+      const denom = ONE.add(mk2); // 1 + mₖ²
+      const vx = ONE.sub(mk2).div(denom); // (1-mₖ²)/(1+mₖ²)
+      const vy = mk.scale(2).div(denom); // 2mₖ/(1+mₖ²)
+
+      vertices[k] = { x: vx, y: vy };
+      vertices[N - k] = { x: vx, y: vy.neg() }; // symmetry
+
+      // Tangent addition: m_{k+1} = (mₖ + m₁) / (1 - mₖ·m₁)
+      if (k < half) {
+        mk = mk.add(m1).div(ONE.sub(mk.mul(m1)));
+      }
+    }
+
+    return { vertices, D, method: "symbolic" };
   },
 
   /**
@@ -2810,7 +3189,7 @@ export const RT = {
      * @param {number} H - Total drop height
      * @returns {number} Position at shell k
      */
-    uniformGPosition: (k, N, H) => H * (k * k) / (N * N),
+    uniformGPosition: (k, N, H) => (H * (k * k)) / (N * N),
 
     /**
      * Time to reach position x under uniform g from rest.
@@ -2903,7 +3282,9 @@ export const RT = {
       const R2 = R * R;
 
       // e1 = P1 / R (unit vector — division only, no √)
-      const e1x = p1x / R, e1y = p1y / R, e1z = p1z / R;
+      const e1x = p1x / R,
+        e1y = p1y / R,
+        e1z = p1z / R;
 
       // dot = P1·P2 (fully rational)
       const dot = p1x * p2x + p1y * p2y + p1z * p2z;
@@ -2930,7 +3311,9 @@ export const RT = {
 
       // √ #1: normalize e2 (GPU boundary)
       const e2len = Math.sqrt(e2Q);
-      const e2x = e2rx / e2len, e2y = e2ry / e2len, e2z = e2rz / e2len;
+      const e2x = e2rx / e2len,
+        e2y = e2ry / e2len,
+        e2z = e2rz / e2len;
 
       // √ #2: u_max = tan(θ/2) = √((1−d)/(1+d)), d = cos(θ) = dot/R²
       const d = dot / R2;
@@ -2942,8 +3325,8 @@ export const RT = {
         const u = (s / segments) * u_max;
         const u2 = u * u;
         const denom = 1 + u2;
-        const xc = R * (1 - u2) / denom; // rational in u
-        const yc = R * (2 * u) / denom;  // rational in u
+        const xc = (R * (1 - u2)) / denom; // rational in u
+        const yc = (R * (2 * u)) / denom; // rational in u
         pts[s * 3] = xc * e1x + yc * e2x;
         pts[s * 3 + 1] = xc * e1y + yc * e2y;
         pts[s * 3 + 2] = xc * e1z + yc * e2z;

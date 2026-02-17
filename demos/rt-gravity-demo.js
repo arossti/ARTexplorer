@@ -15,8 +15,8 @@
  * First integration test of RT.Gravity namespace (rt-math.js).
  *
  * RT COMPLIANCE REVIEW (TODO):
- * - getTotalTime() uses Math.sqrt(2H/g) — could cache as time-quadrance
- *   Q_T = 2H/g with single deferred √ (see 4D-Drop.js computePhysics pattern)
+ * - [DONE] computePhysics() caches time-quadrance Q_T = 2H/g (pure algebra)
+ *   with single deferred √ for T (matches 4D-Drop.js pattern)
  * - computeGravityTickPositions() uses Math.sqrt(k/N) per tick — pending Phase 2
  *   quadrance-based shell spacing (see Gravity-Grids-2.md)
  * - Line 609: Math.asin(Math.sqrt(link.spread)) * (180/Math.PI) converts spread
@@ -51,6 +51,12 @@ let isDragging = false;
 let currentTimeFraction = 0; // 0 to 1 (normalized time)
 let selectedBody = "earth";
 let N = 144; // Number of grid divisions (matches Quadray tessellation max)
+
+// Cached physics — recomputed only on body change, not per frame
+let _cachedG = 0;
+let _cachedH = 0;
+let _cachedTQ = 0; // time-quadrance Q_T = 2H/g (pure algebra, no √)
+let _cachedT = 0; // T = √Q_T (single deferred √)
 
 // Animation state
 let isAnimating = false;
@@ -92,10 +98,15 @@ function getH() {
 }
 
 /**
- * Get total fall time: T = sqrt(2H/g)
+ * Recompute cached physics values. Called once on body change.
+ * RT approach: store time-quadrance Q_T = 2H/g (pure algebra),
+ * defer single √ to this boundary. Matches 4D-Drop.js pattern.
  */
-function getTotalTime() {
-  return Math.sqrt((2 * getH()) / getG());
+function computePhysics() {
+  _cachedG = getG();
+  _cachedH = getH();
+  _cachedTQ = (2 * _cachedH) / _cachedG; // time-quadrance (no √)
+  _cachedT = Math.sqrt(_cachedTQ); // single deferred √
 }
 
 /**
@@ -171,6 +182,9 @@ export function initGravityDemo() {
   // Shift camera up so numberlines sit above the bottom panel
   camera.position.x = 0;
   camera.position.y = -0.8;
+
+  // Cache physics for initial body
+  computePhysics();
 
   // Build visual elements
   createNumberlines();
@@ -440,6 +454,7 @@ function createFormulaDisplay(container) {
   bodySelector.addEventListener("change", () => {
     selectedBody = bodySelector.value;
     if (isAnimating) stopAnimation();
+    computePhysics();
     createTicks();
     currentTimeFraction = 0;
     updateVisualization();
@@ -552,9 +567,8 @@ function stopAnimation() {
 function stepAnimation() {
   if (!isAnimating || animationStartTime === null) return;
 
-  const T = getTotalTime();
   const elapsed = (performance.now() - animationStartTime) / 1000;
-  const timeFraction = elapsed / T;
+  const timeFraction = elapsed / _cachedT;
 
   if (timeFraction >= 1.0) {
     currentTimeFraction = 1.0;
@@ -590,9 +604,9 @@ function stepAnimation() {
  *   Both reach LINE_RIGHT when f = 1.
  */
 function updateVisualization() {
-  const g = getG();
-  const H = getH();
-  const T = getTotalTime();
+  const g = _cachedG;
+  const H = _cachedH;
+  const T = _cachedT;
   const f = currentTimeFraction;
   const t = f * T;
 
