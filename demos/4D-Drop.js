@@ -121,6 +121,7 @@ class Drop4DDemo {
       planeIvmYZ: document.getElementById("planeIvmYZ")?.checked,
       quadrayTessSlider: document.getElementById("quadrayTessSlider")?.value,
       nGonSlider: document.getElementById("nGonSlider")?.value,
+      showRadialLines: document.getElementById("showRadialLines")?.checked,
       quadrayMode: activeQuadrayMode,
     };
     console.log("📦 4D Drop: Saved scene state");
@@ -168,6 +169,9 @@ class Drop4DDemo {
       nGonSlider.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
+    // Restore radial lines toggle
+    restore("showRadialLines", state.showRadialLines);
+
     // Restore quadray grid mode
     if (state.quadrayMode) {
       const btn = document.querySelector(
@@ -201,6 +205,9 @@ class Drop4DDemo {
 
     // Show Quadray basis vectors
     setCheckbox("showQuadray", true);
+
+    // Hide radial lines for cleaner polar grid visuals
+    setCheckbox("showRadialLines", false);
 
     // Enable all 6 IVM face plane checkboxes
     setCheckbox("planeIvmWX", true);

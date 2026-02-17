@@ -1090,11 +1090,14 @@ function startARTexplorer(
       const nGon = parseInt(
         document.getElementById("nGonSlider")?.value || "64"
       );
+      const showRadials =
+        document.getElementById("showRadialLines")?.checked ?? true;
       renderingAPI.rebuildCartesianGrids(
         cartesianTess,
         cartVisibility,
         mode,
-        nGon
+        nGon,
+        showRadials
       );
     });
   });
@@ -1123,7 +1126,15 @@ function startARTexplorer(
       const nGon = parseInt(
         document.getElementById("nGonSlider")?.value || "64"
       );
-      renderingAPI.rebuildQuadrayGrids(quadrayTess, ivmVisibility, mode, nGon);
+      const showRadials =
+        document.getElementById("showRadialLines")?.checked ?? true;
+      renderingAPI.rebuildQuadrayGrids(
+        quadrayTess,
+        ivmVisibility,
+        mode,
+        nGon,
+        showRadials
+      );
     });
   });
 
