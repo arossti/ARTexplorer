@@ -97,6 +97,7 @@ function makeCircle(normal, radius, nGon, rotationDeg = 0) {
   // Apply 2D rotation to vertices before 3D transform.
   // Uses RT.reflectInLine twice (two reflections = rotation by 2×angle).
   // The slope m = tan(θ/2) gives rotation by θ via double reflection.
+  // Math.PI/Math.tan justified: degree-to-slope UX boundary; rotation itself is RT-pure.
   if (rotationDeg !== 0) {
     const halfRad = ((rotationDeg / 2) * Math.PI) / 180;
     const m = Math.tan(halfRad);
@@ -190,7 +191,7 @@ export const Thomson = {
     const rotation = options.rotation || 0;
     const facePlanes = options.facePlanes ?? true;
     const edgePlanes = options.edgePlanes ?? false;
-    const radius = halfSize * Math.sqrt(3); // circumsphere
+    const radius = halfSize * RT.PureRadicals.sqrt3(); // circumsphere
 
     const activePlanes = [];
     if (facePlanes) activePlanes.push(...TET_FACE_PLANES);
