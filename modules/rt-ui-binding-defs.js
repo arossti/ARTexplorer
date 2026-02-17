@@ -344,16 +344,28 @@ export const checkboxWithControlsBindings = [
 // ============================================================================
 
 export const simpleSliderBindings = [
-  // Thomson Polyhedra N-gon sliders (stubbed — rt-thomson.js will wire these)
+  // Thomson Polyhedra sliders
   {
     id: "thomsonTetraNGon",
     type: "slider",
     valueId: "thomsonTetraNGonValue",
   },
   {
+    id: "thomsonTetraRotation",
+    type: "slider",
+    valueId: "thomsonTetraRotationValue",
+    formatValue: v => `${v}°`,
+  },
+  {
     id: "thomsonOctaNGon",
     type: "slider",
     valueId: "thomsonOctaNGonValue",
+  },
+  {
+    id: "thomsonOctaRotation",
+    type: "slider",
+    valueId: "thomsonOctaRotationValue",
+    formatValue: v => `${v}°`,
   },
   {
     id: "opacitySlider",
