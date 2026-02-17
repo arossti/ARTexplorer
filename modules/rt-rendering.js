@@ -4174,7 +4174,8 @@ export function initScene(THREE, OrbitControls, RT) {
     tessellations,
     visibilityState = {},
     gridMode = "uniform",
-    nGon = 64
+    nGon = 64,
+    showRadials = true
   ) {
     const result = Grids.rebuildQuadrayGrids(
       scene,
@@ -4182,7 +4183,8 @@ export function initScene(THREE, OrbitControls, RT) {
       tessellations,
       visibilityState,
       gridMode,
-      nGon
+      nGon,
+      showRadials
     );
 
     // Store references for later use (dynamic keys: IVM or face planes)
@@ -4199,7 +4201,8 @@ export function initScene(THREE, OrbitControls, RT) {
     divisions,
     visibilityState = {},
     gridMode = "uniform",
-    nGon = 64
+    nGon = 64,
+    showRadials = true
   ) {
     const result = Grids.rebuildCartesianGrids(
       scene,
@@ -4208,7 +4211,8 @@ export function initScene(THREE, OrbitControls, RT) {
       divisions,
       visibilityState,
       gridMode,
-      nGon
+      nGon,
+      showRadials
     );
 
     // Store references for later use
