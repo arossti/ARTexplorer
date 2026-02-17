@@ -36,12 +36,13 @@ function normalize(v) {
 
 // ── Plane definitions ───────────────────────────────────────────────
 
-// Quadray face-plane colors match rt-grids.js convention (lines 40-44)
+// 3021 Rule: QW→D(-1,-1,1), QX→A(1,1,1), QY→C(-1,1,-1), QZ→B(1,-1,-1)
+// Matches Quadray.getAxisVector() used by rt-grids.js polar planes
 const TET_FACE_PLANES = [
-  { normal: { x: 1, y: 1, z: 1 }, color: 0xffff00, label: "Face W" },
-  { normal: { x: 1, y: -1, z: -1 }, color: 0xff0000, label: "Face X" },
+  { normal: { x: -1, y: -1, z: 1 }, color: 0xffff00, label: "Face W" },
+  { normal: { x: 1, y: 1, z: 1 }, color: 0xff0000, label: "Face X" },
   { normal: { x: -1, y: 1, z: -1 }, color: 0x00ffff, label: "Face Y" },
-  { normal: { x: -1, y: -1, z: 1 }, color: 0x00ff00, label: "Face Z" },
+  { normal: { x: 1, y: -1, z: -1 }, color: 0x00ff00, label: "Face Z" },
 ];
 
 const TET_EDGE_PLANES = [
