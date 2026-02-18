@@ -179,7 +179,7 @@ export const RTViewManager = {
       );
     }
 
-    // Export All button (.artview file)
+    // Export All button (JSON file)
     const exportAllBtn = document.getElementById("exportAllViewsBtn");
     if (exportAllBtn) {
       exportAllBtn.addEventListener("click", () => this.exportAllViews());
@@ -2194,7 +2194,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
   // ========================================================================
 
   /**
-   * Export all views to .artview file
+   * Export all views to JSON file
    */
   exportAllViews() {
     if (this.state.views.length === 0) {
@@ -2216,7 +2216,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `artexplorer-views-${Date.now()}.artview`;
+    a.download = `artexplorer-views-${Date.now()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -2231,7 +2231,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
   importViews() {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".artview,.json";
+    input.accept = ".json";
 
     input.addEventListener("change", e => {
       const file = e.target.files[0];
