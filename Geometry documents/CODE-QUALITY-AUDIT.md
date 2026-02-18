@@ -624,7 +624,7 @@ function render() {
 | `Math.acos(dot)` for angle between vectors | `RT.spread(v1, v2)` = `1 - dot²/(Q₁·Q₂)` | Direct spread; no inverse trig |
 | `Math.sqrt(dx²+dy²)` for distance | `RT.quadrance(p1, p2)` = `dx²+dy²` | Defer √ to final THREE.Vector3 boundary |
 | Rotation by θ radians | `RT.reflectInLine(x, y, slope)` twice | Double reflection = rotation by 2×atan(slope) |
-| `(1+Math.sqrt(5))/2` for φ then `φ*φ` | `PurePhi.phi_sq()` = φ+1 (identity) | Symbolic `(a+b√5)/c` algebra |
+| `(1+Math.sqrt(5))/2` for φ then `φ*φ` | `PurePhi.value()`, `.squared()` = φ+1, `.inverse()` = φ-1 | Symbolic `(a+b√5)/c` algebra |
 | `Math.sqrt(2)`, `Math.sqrt(3)` | `PureRadicals.sqrt2()`, `.sqrt3()`, `.sqrt6()` | Cached; single allocation |
 | `Math.cos(2π/7)` for heptagon | `PureCubics.heptagon()` | Cached cubic roots |
 | Decimal coordinates for regular polygons | `SymbolicCoord` — exact `(a+b√D)/c` | Covers N=3,4,5,6,8,10,12 |
