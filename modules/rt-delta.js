@@ -144,8 +144,22 @@ export const RTDelta = {
     "thomsonTetraEdgePlanes",
     "thomsonTetraShowFaces",
     "thomsonTetraShowHullEdges",
+    "thomsonTetJitterbugBounce",
     "thomsonOctaShowFaces",
     "thomsonOctaShowHullEdges",
+    "thomsonOctaJitterbugBounce",
+    "showThomsonCube",
+    "thomsonCubeCoordPlanes",
+    "thomsonCubeDiagPlanes",
+    "thomsonCubeShowFaces",
+    "thomsonCubeShowHullEdges",
+    "thomsonCubeJitterbugBounce",
+    "showThomsonIcosahedron",
+    "thomsonIcosaCoordPlanes",
+    "thomsonIcosaEdgeMirrorPlanes",
+    "thomsonIcosaShowFaces",
+    "thomsonIcosaShowHullEdges",
+    "thomsonIcosaJitterbugBounce",
   ],
 
   /**
@@ -163,6 +177,14 @@ export const RTDelta = {
     planeIvmXZ: true,
     planeIvmYZ: true,
     showRadialLines: true,
+    thomsonCubeCoordPlanes: true,
+    thomsonCubeDiagPlanes: true,
+    thomsonTetJitterbugBounce: true,
+    thomsonOctaJitterbugBounce: true,
+    thomsonCubeJitterbugBounce: true,
+    thomsonIcosaJitterbugBounce: true,
+    thomsonIcosaCoordPlanes: true,
+    thomsonIcosaEdgeMirrorPlanes: true,
   },
 
   /** @private */
@@ -208,6 +230,10 @@ export const RTDelta = {
     thomsonTetraRotation: "thomsonTetraRotation",
     thomsonOctaNGon: "thomsonOctaNGon",
     thomsonOctaRotation: "thomsonOctaRotation",
+    thomsonCubeNGon: "thomsonCubeNGon",
+    thomsonCubeRotation: "thomsonCubeRotation",
+    thomsonIcosaNGon: "thomsonIcosaNGon",
+    thomsonIcosaRotation: "thomsonIcosaRotation",
     // Coordinate System grids
     cartesianTessSlider: "cartesianTessSlider",
     quadrayTessSlider: "quadrayTessSlider",
@@ -238,6 +264,8 @@ export const RTDelta = {
     // Thomson Polyhedra
     showThomsonTetrahedron: "thomson-tetra-controls",
     showThomsonOctahedron: "thomson-octa-controls",
+    showThomsonCube: "thomson-cube-controls",
+    showThomsonIcosahedron: "thomson-icosa-controls",
   },
 
   /** @private */

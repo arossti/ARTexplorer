@@ -178,7 +178,7 @@ export const RT = {
    * // Extract spread from coordinates (no inverse trig!)
    * const spread = 1 - point.x * point.x;  // = 1 (perpendicular to x-axis)
    *
-   * @see docs/development/Geometry documents/Kieran-Math.md - "Rational Circle Parameterization"
+   * @see docs/development/Geometry Documents/Kieran-Math.md - "Rational Circle Parameterization"
    */
   circleParam: t => {
     const tSquared = t * t;
@@ -1888,7 +1888,7 @@ export const RT = {
    * rational D). Pentagon/Decagon have nested radicals; Heptagon/Nonagon
    * are cubic — both fall back to nGonVertices (float path, 1 √).
    *
-   * See Geometry documents/Pure-Polygon.md for derivation.
+   * See Geometry Documents/Pure-Polygon.md for derivation.
    * ═══════════════════════════════════════════════════════════════════════════ */
 
   /**
@@ -2118,7 +2118,7 @@ export const RT = {
    * - Just as Penrose tilings emerge from 5D hypercubic projections,
    *   prime n-gons can emerge from 3D polyhedral projections
    *
-   * Reference: Geometry documents/Prime-Projection-Conjecture.tex
+   * Reference: Geometry Documents/Prime-Projection-Conjecture.tex
    *
    * @namespace ProjectionPolygons
    */
@@ -2352,7 +2352,7 @@ export const RT = {
    * Basis Vector Spread: s = sin²(109.47°) = 8/9 (exact rational!)
    * This is the natural angle of tetrahedral geometry.
    *
-   * Reference: Geometry documents/Prime-Projection-Conjecture.tex Section 8.4
+   * Reference: Geometry Documents/Prime-Projection-Conjecture.tex Section 8.4
    *
    * @namespace QuadrayPolyhedra
    */

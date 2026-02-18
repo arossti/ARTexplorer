@@ -37,7 +37,7 @@
  *
  * @requires THREE.js
  * @requires rt-math.js (RT.PurePhi.pentagon, RT.PurePhi.penrose)
- * @see Geometry documents/Penrose-Spheres.md for implementation plan
+ * @see Geometry Documents/Penrose-Spheres.md for implementation plan
  */
 
 import { RT } from "./rt-math.js";

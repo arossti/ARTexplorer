@@ -28,13 +28,14 @@ Working document for the Thomson Polyhedra feature in ARTExplorer.
 
 ### What's Built
 
-**rt-thomson.js** (251 lines) — Great-circle generation module:
+**rt-thomson.js** — Great-circle generation module:
 - `buildPlaneBasis(normal)` — orthonormal basis from plane normal
 - `makeCircle(normal, radius, nGon, rotationDeg)` — N-gon via `RT.nGonVertices()`, 2D rotation via `RT.reflectInLine()` double-reflection, 2D→3D transform
 - `collectCircleVertices(circles, nGon)` — nodes at each circle's N-gon vertices with quadrance-based dedup; returns `{ nodes, edges, coincidentCount }`
+- `getIcosaEdgePlanes()` — lazy-cached derivation of 12 edge-mirror plane normals from icosahedron vertex/edge data using `RT.PurePhi.value()`
 - **Edge pair tracking**: Each circle's N-gon edges mapped to deduplicated node indices as `[nodeIndex_a, nodeIndex_b]` pairs (needed for IK constraints)
-- Plane definitions: `TET_FACE_PLANES` (4, 3021-corrected), `TET_EDGE_PLANES` (6), `OCT_COORD_PLANES` (3)
-- Public API: `Thomson.tetrahedron()`, `Thomson.octahedron()` returning `{circles, nodes, edges, nGon, planeCount, coincidentCount}`
+- Plane definitions: `TET_FACE_PLANES` (4, 3021-corrected), `TET_EDGE_PLANES` (6), `OCT_COORD_PLANES` (3), + 12 icosa edge-mirror planes (computed)
+- Public API: `Thomson.tetrahedron()`, `Thomson.octahedron()`, `Thomson.cube()`, `Thomson.icosahedron()` returning `{circles, nodes, edges, nGon, planeCount, coincidentCount}`
 
 **rt-rendering.js** — `renderThomsonCircles()` renderer:
 - Per-plane colored LineSegments for great circles
@@ -56,11 +57,14 @@ Working document for the Thomson Polyhedra feature in ARTExplorer.
 **color-theory-modal.js** — Thomson Polyhedra section:
 - `thomson-tetra`: Nodes & Faces color (default `0xFF5500` orange)
 - `thomson-octa`: Nodes & Faces color (default `0xAA44FF` violet)
-- Mapped to `colorPalette.thomsonTetrahedron` / `colorPalette.thomsonOctahedron` in rendering
+- `thomson-cube`: Nodes & Faces color (default `0x00CCFF` cyan-blue)
+- `thomson-icosa`: Nodes & Faces color (default `0x44FF88` spring green)
+- Mapped to `colorPalette.thomsonTetrahedron` / `.thomsonOctahedron` / `.thomsonCube` / `.thomsonIcosahedron` in rendering
 
 **rt-delta.js** — View/animation state integration:
-- Thomson checkboxes captured/restored: `showThomsonTetrahedron`, `showThomsonOctahedron`, `thomsonTetraFacePlanes`, `thomsonTetraEdgePlanes`, `thomsonTetraShowFaces`, `thomsonTetraShowHullEdges`, `thomsonOctaShowFaces`, `thomsonOctaShowHullEdges`
-- Thomson sliders captured/restored: `thomsonTetraNGon`, `thomsonTetraRotation`, `thomsonOctaNGon`, `thomsonOctaRotation`
+- Thomson checkboxes captured/restored: all show/hide, plane toggles, face/hull toggles, jitterbug bounce for all 4 Thomson types
+- Thomson sliders captured/restored: `thomsonTetraNGon`, `thomsonTetraRotation`, `thomsonOctaNGon`, `thomsonOctaRotation`, `thomsonCubeNGon`, `thomsonCubeRotation`, `thomsonIcosaNGon`, `thomsonIcosaRotation`
+- Sub-control panel visibility mapped for all 4 types
 - Coordinate system controls (grid planes, tessellation sliders, toggle buttons) also added
 
 **rt-animate.js** — Grid dissolve transitions:
@@ -176,10 +180,11 @@ For the **cube implementation**: reuse `OCT_COORD_PLANES` + `TET_EDGE_PLANES` di
 9. ~~Grid dissolve transitions~~ (commit `b07dad8`)
 
 ### Implementation Queue
-10. **Thomson.cube()** — Compose from existing plane arrays (OCT_COORD + TET_EDGE), see Phase 2 below
-11. **Icosahedron plane computation** — Derive 15 normals from rt-polyhedra.js vertex data
-12. **Thomson.icosahedron()** — 15 planes, 5-fold symmetry, φ-based normals
-13. **Jitterbug animation** — Elastic edges via rt-ik-solvers.js + animated rotation
+10. ~~**Thomson.cube()** — Compose from existing plane arrays (OCT_COORD + TET_EDGE)~~ ✓ (Thomson-Polyhedra2 branch)
+11. ~~**Icosahedron plane computation** — Derive 12 edge-mirror normals via `getIcosaEdgePlanes()`~~ ✓
+12. ~~**Thomson.icosahedron()** — 15 planes, 5-fold symmetry, φ-based normals~~ ✓
+13. ~~**Jitterbug animation** — Play/Pause button + Bounce mode in Thomson Oct controls~~ ✓
+14. ~~**Generalized Jitterbug** — Data-driven controller for all 4 Thomson forms with HiFi styling~~ ✓
 
 ### Verification Targets
 - Thomson Oct at N=4 → 6 coincident nodes at octahedron vertices ✓
@@ -187,12 +192,15 @@ For the **cube implementation**: reuse `OCT_COORD_PLANES` + `TET_EDGE_PLANES` di
 - Thomson Oct at N=4 + Show Faces → 8 triangular faces = octahedron ✓
 - Thomson Oct at N=4, rotation 0→45° + faces → Jitterbug cuboctahedron→octahedron ✓
 - Irregular case (N=5, any rotation) → fully closed triangulated hull, no holes ✓
-- Thomson Cube at N=4 on 9 planes → cube vertices recoverable (pending)
-- Thomson Icosa at N=5 on 15 planes → 12 icosahedron vertices recoverable (pending)
+- Thomson Cube at N=4 on 9 planes → cube vertices recoverable (pending browser test)
+- Thomson Icosa at N=5 on 15 planes → 12 icosahedron vertices recoverable (pending browser test)
+- Jitterbug Play/Pause → smooth 0°-90° oscillation with real-time slider update (pending browser test)
+- Jitterbug on all 4 forms: Tet, Oct, Cube, Icosa — each with HiFi Play button + Bounce (pending browser test)
+- `getIcosaEdgePlanes().length === 12` (pending browser console verification)
 
 ---
 
-## Phase 2: Cube (Hexahedron)
+## Phase 2: Cube (Hexahedron) — IMPLEMENTED
 
 ### Key Insight: Plane Reuse
 
@@ -249,7 +257,7 @@ cube(halfSize = 1, options = {}) {
 
 ---
 
-## Phase 3: Icosahedron
+## Phase 3: Icosahedron — IMPLEMENTED
 
 ### Symmetry Analysis
 
@@ -285,9 +293,47 @@ Each mirror plane has **5-fold** rotational symmetry (pentagonal), so:
 ### Circumsphere
 From the normalization in rt-polyhedra.js: circumsphere radius = halfSize (vertices are normalized to the sphere).
 
-### Implementation Notes
-- Will need `ICOSA_PLANES` constant with 15 entries
-- Normals for the 12 non-coordinate planes must be computed from vertex data
-- Colors: coordinate planes could use RGB, additional planes could use a 5-fold color scheme
-- Checkboxes: "Coordinate Planes (3)" + "Edge Mirror Planes (12)" or by golden-rectangle group
-- Add to color-theory-modal.js with new `thomson-icosa` color entry
+### Implementation Notes (as-built)
+- `getIcosaEdgePlanes()` — lazy-cached function computes 12 edge-mirror plane normals at first call
+- Algorithm: for each of 30 edges, compute `normalize(cross(midpoint, edgeDir))`, deduplicate antipodal pairs, filter coordinate planes → exactly 12
+- Uses `RT.PurePhi.value()` for φ — icosahedron vertices at (0, ±1, ±φ) and cyclic permutations
+- Edge-mirror plane color: `0xcc66ff` (lavender), coordinate planes reuse RGB from `OCT_COORD_PLANES`
+- Checkboxes: "Coord Planes (3)" + "Edge Mirror Planes (12)"
+- Color modal entry: `thomson-icosa` → `colorPalette.thomsonIcosahedron` (default `0x44FF88` spring green)
+- Full 8-file integration: rt-thomson.js, rt-rendering.js, index.html, rt-ui-binding-defs.js, rt-init.js, rt-delta.js, rt-filehandler.js, color-theory-modal.js
+
+---
+
+## Phase 4: Jitterbug Animation — GENERALIZED
+
+### Design
+The Jitterbug transformation (N=4 squares rotating on symmetry planes) is a universal property of all Thomson forms, not just the Octahedron. A data-driven controller (`JITTERBUG_FORMS` config table in `rt-init.js`) drives all 4 forms through a single `requestAnimationFrame` loop.
+
+### UI (inside each form's controls)
+Each Thomson form (Tet, Oct, Cube, Icosa) has a Jitterbug section with:
+- **Play/Pause button** (`thomson{Form}JitterbugToggle`) — HiFi `.toggle-btn.variant-standard` styling with `.active` state
+- **Bounce checkbox** (`thomson{Form}JitterbugBounce`, default checked)
+  - Bounce: oscillate 0° → 90° → 0° (2 full fold cycles)
+  - Unchecked: continuous 0° → 360° loop
+
+### On Play — Auto-Setup
+- Forces **N-gon to 4** (the Jitterbug requires squares)
+- Enables **Show Faces** + **Hull Edges** checkboxes
+- Auto-enables the form's main checkbox if not checked
+
+### Animation Logic (rt-init.js)
+- Single `requestAnimationFrame` loop drives all active forms simultaneously
+- 0.5°/frame (~30°/sec at 60fps), bounce range 0°→90°
+- Updates each form's rotation slider + spread display in real time
+- Calls `renderingAPI.updateGeometry()` once per frame for all active forms
+- Loop auto-stops when no forms are active
+- Animation state (play/pause) intentionally NOT persisted — resets to paused on load
+- Bounce checkboxes ARE persisted through rt-delta.js checkbox system
+
+### ID Convention
+| Form | Button ID | Bounce ID |
+|------|-----------|-----------|
+| Tet | `thomsonTetJitterbugToggle` | `thomsonTetJitterbugBounce` |
+| Oct | `thomsonOctaJitterbugToggle` | `thomsonOctaJitterbugBounce` |
+| Cube | `thomsonCubeJitterbugToggle` | `thomsonCubeJitterbugBounce` |
+| Icosa | `thomsonIcosaJitterbugToggle` | `thomsonIcosaJitterbugBounce` |

@@ -6,7 +6,7 @@
  * XYZ (Cartesian) and WXYZ (Tetrahedral) axis selection.
  *
  * Extracted from rt-prime-cuts.js using Shadow & Swap pattern.
- * See: Geometry documents/Project-Projection.md
+ * See: Geometry Documents/Project-Projection.md
  *
  * @module rt-projections
  * @author Andy & Claude (2026)

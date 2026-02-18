@@ -11,7 +11,7 @@
  * Math.PI used only for THREE.GridHelper/Object3D rotation (Z-up convention).
  * Justified: THREE.js interface requirement, not geometry calculation.
  * All geometry (Weierstrass arcs, hexagon vertices, etc.) is RT-pure.
- * See: Geometry documents/CODE-QUALITY-AUDIT.md for RT-purity guidelines.
+ * See: Geometry Documents/CODE-QUALITY-AUDIT.md for RT-purity guidelines.
  *
  * @requires THREE.js
  * @requires rt-math.js
@@ -1188,7 +1188,7 @@ export const Grids = {
       // 1. Geodesic frequency as parent multiplier for face tiling (polygons as children)
       // 2. True Penrose P3 deflation rules for kites/darts → pentagon subdivision
       // 3. Research how pentagons properly nest in Penrose patterns
-      // See: Geometry documents/Penrose-Spheres.md for context
+      // See: Geometry Documents/Penrose-Spheres.md for context
     }
 
     MetaLog.log(

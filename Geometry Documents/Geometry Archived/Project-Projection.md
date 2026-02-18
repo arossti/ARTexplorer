@@ -715,7 +715,7 @@ The spreads in `PROJECTION_PRESETS` may not exactly match the verified spreads f
 
 - `results/prime_projections_*.json` files
 - `results/prime_compound_search_*.json` files
-- `Geometry documents/Polygon-Rationalize.md` discoveries
+- `Geometry Documents/Polygon-Rationalize.md` discoveries
 
 ### Diagnostic Approach
 
@@ -832,7 +832,7 @@ Prime polygon projections were discovered via brute-force search in Python. Key 
 - **Hendecagon (11)**: TruncTet + Tet compound at s=(0, 0.2, 0.5)
 - **Tridecagon (13)**: TruncTet + Icosa compound at s=(0, 0.6, 0.8)
 
-See `Geometry documents/Prime-Projection-Conjecture.tex` for mathematical background.
+See `Geometry Documents/Prime-Projection-Conjecture.tex` for mathematical background.
 
 ---
 
@@ -841,5 +841,5 @@ See `Geometry documents/Prime-Projection-Conjecture.tex` for mathematical backgr
 - **Source of generic code**: `modules/rt-prime-cuts.js`
 - **UI pattern template**: `modules/rt-papercut.js` (axis selection)
 - **Quadray coordinates**: `modules/rt-math.js` (Quadray.basisVectors)
-- **Prime projection research**: `Geometry documents/Polygon-Rationalize.md`
-- **Prime projection conjecture**: `Geometry documents/Prime-Projection-Conjecture.tex`
+- **Prime projection research**: `Geometry Documents/Polygon-Rationalize.md`
+- **Prime projection conjecture**: `Geometry Documents/Prime-Projection-Conjecture.tex`

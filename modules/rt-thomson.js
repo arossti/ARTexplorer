@@ -60,6 +60,109 @@ const OCT_COORD_PLANES = [
   { normal: { x: 0, y: 0, z: 1 }, color: 0x0000ff, label: "XY" },
 ];
 
+// ── Icosahedron edge-mirror planes (lazy-cached) ────────────────────
+
+let _icosaEdgePlanes = null;
+
+/**
+ * Derive the 12 edge-mirror planes of the icosahedron.
+ * The icosahedral symmetry group (Ih) has 15 mirror planes total:
+ *   3 coordinate planes (reused from OCT_COORD_PLANES)
+ * + 12 edge-mirror planes (phi-based normals, computed here).
+ *
+ * Algorithm: for each of 30 edges, the mirror plane contains the origin
+ * with normal = normalize(cross(midpoint, edgeDir)). Deduplicate antipodal
+ * pairs (n and -n define the same plane), then filter out coordinate planes.
+ *
+ * Uses RT.PurePhi.value() for exact φ at the algebraic boundary.
+ *
+ * @returns {Array<{ normal: {x,y,z}, color: number, label: string }>}
+ */
+function getIcosaEdgePlanes() {
+  if (_icosaEdgePlanes) return _icosaEdgePlanes;
+
+  const phi = RT.PurePhi.value(); // φ ≈ 1.618
+
+  // 12 icosahedron vertices: three orthogonal golden rectangles
+  // Matches rt-polyhedra.js vertex topology (unnormalized is fine for normals)
+  const verts = [
+    { x: 0, y: 1, z: phi },   // 0
+    { x: 0, y: 1, z: -phi },  // 1
+    { x: 0, y: -1, z: phi },  // 2
+    { x: 0, y: -1, z: -phi }, // 3
+    { x: 1, y: phi, z: 0 },   // 4
+    { x: 1, y: -phi, z: 0 },  // 5
+    { x: -1, y: phi, z: 0 },  // 6
+    { x: -1, y: -phi, z: 0 }, // 7
+    { x: phi, y: 0, z: 1 },   // 8
+    { x: phi, y: 0, z: -1 },  // 9
+    { x: -phi, y: 0, z: 1 },  // 10
+    { x: -phi, y: 0, z: -1 }, // 11
+  ];
+
+  // 30 edges (same topology as rt-polyhedra.js icosahedron)
+  const edges = [
+    [0,2],[0,4],[0,6],[0,8],[0,10],
+    [1,3],[1,4],[1,6],[1,9],[1,11],
+    [2,5],[2,7],[2,8],[2,10],
+    [3,5],[3,7],[3,9],[3,11],
+    [4,6],[4,8],[4,9],
+    [5,7],[5,8],[5,9],
+    [6,10],[6,11],
+    [7,10],[7,11],
+    [8,9],[10,11],
+  ];
+
+  // For each edge, compute mirror plane normal
+  const allNormals = [];
+  for (const [i, j] of edges) {
+    const vi = verts[i], vj = verts[j];
+    const mid = {
+      x: (vi.x + vj.x) / 2,
+      y: (vi.y + vj.y) / 2,
+      z: (vi.z + vj.z) / 2,
+    };
+    const dir = {
+      x: vj.x - vi.x,
+      y: vj.y - vi.y,
+      z: vj.z - vi.z,
+    };
+    const n = normalize(cross(mid, dir));
+    if (n.x === 0 && n.y === 0 && n.z === 0) continue;
+    allNormals.push(n);
+  }
+
+  // Deduplicate: antipodal normals define the same plane
+  const unique = [];
+  for (const n of allNormals) {
+    let isDupe = false;
+    for (const u of unique) {
+      const dot = n.x * u.x + n.y * u.y + n.z * u.z;
+      if (Math.abs(Math.abs(dot) - 1) < 1e-8) { isDupe = true; break; }
+    }
+    if (!isDupe) unique.push(n);
+  }
+
+  // Filter out coordinate planes (exactly 2 components ≈ 0)
+  const isCoordPlane = (n) => {
+    const eps = 1e-8;
+    const zeros = (Math.abs(n.x) < eps ? 1 : 0) +
+                  (Math.abs(n.y) < eps ? 1 : 0) +
+                  (Math.abs(n.z) < eps ? 1 : 0);
+    return zeros >= 2;
+  };
+
+  const edgePlanes = unique.filter(n => !isCoordPlane(n));
+
+  _icosaEdgePlanes = edgePlanes.map((n, i) => ({
+    normal: n,
+    color: 0xcc66ff, // Lavender — distinct from coord-plane RGB
+    label: `Icosa Edge ${i + 1}`,
+  }));
+
+  return _icosaEdgePlanes;
+}
+
 // ── Core generation ─────────────────────────────────────────────────
 
 /**
@@ -250,6 +353,95 @@ export const Thomson = {
    * @param {number} options.rotation - Rotation of each circle about its normal (degrees, default 0)
    * @returns {{ circles, nodes, edges, nGon, planeCount, coincidentCount }}
    */
+  /**
+   * Thomson Cube — great circles on cubic symmetry planes.
+   * 9 planes total: 3 coordinate (4-fold) + 6 diagonal (2-fold).
+   * Reuses OCT_COORD_PLANES and TET_EDGE_PLANES — no new plane definitions.
+   *
+   * @param {number} halfSize - Half-edge of bounding cube (default 1)
+   * @param {Object} options
+   * @param {number} options.nGon - Polygon resolution per circle (3-12, default 5)
+   * @param {number} options.rotation - Rotation of each circle about its normal (degrees, default 0)
+   * @param {boolean} options.coordPlanes - Show 3 coordinate planes (default true)
+   * @param {boolean} options.diagPlanes - Show 6 diagonal planes (default true)
+   * @returns {{ circles, nodes, edges, nGon, planeCount, coincidentCount }}
+   */
+  cube(halfSize = 1, options = {}) {
+    const nGon = options.nGon || 5;
+    const rotation = options.rotation || 0;
+    const coordPlanes = options.coordPlanes ?? true;
+    const diagPlanes = options.diagPlanes ?? true;
+    const radius = halfSize * RT.PureRadicals.sqrt3(); // circumsphere = s√3
+
+    const activePlanes = [];
+    if (coordPlanes) activePlanes.push(...OCT_COORD_PLANES);
+    if (diagPlanes) activePlanes.push(...TET_EDGE_PLANES);
+
+    const circles = activePlanes.map(p => ({
+      positions: makeCircle(p.normal, radius, nGon, rotation),
+      color: p.color,
+      label: p.label,
+    }));
+
+    const { nodes, edges, coincidentCount } = collectCircleVertices(
+      circles,
+      nGon
+    );
+
+    return {
+      circles,
+      nodes,
+      edges,
+      nGon,
+      planeCount: activePlanes.length,
+      coincidentCount,
+    };
+  },
+
+  /**
+   * Thomson Icosahedron — great circles on icosahedral symmetry planes.
+   * 15 planes total: 3 coordinate (reuse OCT_COORD_PLANES) + 12 edge-mirror (phi-based).
+   *
+   * @param {number} halfSize - Circumsphere radius (default 1)
+   * @param {Object} options
+   * @param {number} options.nGon - Polygon resolution per circle (3-12, default 5)
+   * @param {number} options.rotation - Rotation of each circle about its normal (degrees, default 0)
+   * @param {boolean} options.coordPlanes - Show 3 coordinate planes (default true)
+   * @param {boolean} options.edgeMirrorPlanes - Show 12 edge-mirror planes (default true)
+   * @returns {{ circles, nodes, edges, nGon, planeCount, coincidentCount }}
+   */
+  icosahedron(halfSize = 1, options = {}) {
+    const nGon = options.nGon || 5;
+    const rotation = options.rotation || 0;
+    const coordPlanes = options.coordPlanes ?? true;
+    const edgeMirrorPlanes = options.edgeMirrorPlanes ?? true;
+    const radius = halfSize; // circumsphere
+
+    const activePlanes = [];
+    if (coordPlanes) activePlanes.push(...OCT_COORD_PLANES);
+    if (edgeMirrorPlanes) activePlanes.push(...getIcosaEdgePlanes());
+
+    const circles = activePlanes.map(p => ({
+      positions: makeCircle(p.normal, radius, nGon, rotation),
+      color: p.color,
+      label: p.label,
+    }));
+
+    const { nodes, edges, coincidentCount } = collectCircleVertices(
+      circles,
+      nGon
+    );
+
+    return {
+      circles,
+      nodes,
+      edges,
+      nGon,
+      planeCount: activePlanes.length,
+      coincidentCount,
+    };
+  },
+
   octahedron(halfSize = 1, options = {}) {
     const nGon = options.nGon || 5;
     const rotation = options.rotation || 0;

@@ -14,7 +14,7 @@
  *
  * References:
  * - Fuller's Synergetics: Section 400-480 (IVM)
- * - docs/development/Geometry documents/matrix-slider.md
+ * - docs/development/Geometry Documents/matrix-slider.md
  */
 
 /**
@@ -58,7 +58,7 @@
  * Grade: A (full RT-pure compliance for matrix operations)
  *
  * For detailed RT-Pure audit, see:
- * docs/development/Geometry documents/matrix-slider.md (Section 4.5)
+ * docs/development/Geometry Documents/matrix-slider.md (Section 4.5)
  */
 
 import { RT } from "./rt-math.js";

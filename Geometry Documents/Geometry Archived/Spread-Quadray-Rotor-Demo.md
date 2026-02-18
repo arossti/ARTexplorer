@@ -647,9 +647,9 @@ intuitive angle-based thinking.
 
 ## 10. References
 
-1. `Geometry documents/4D-Gimbal-Lock-Avoidance.md` - Theoretical foundations
-2. `Geometry documents/Quadray-Rotors.tex` - Formal mathematical treatment
-3. `Geometry documents/4D-COORDINATES.md` - Tom Ace rotation formulas (lines 1306-1468)
+1. `Geometry Documents/4D-Gimbal-Lock-Avoidance.md` - Theoretical foundations
+2. `Geometry Documents/Quadray-Rotors.tex` - Formal mathematical treatment
+3. `Geometry Documents/4D-COORDINATES.md` - Tom Ace rotation formulas (lines 1306-1468)
 4. `modules/rt-init.js` - Existing gumball handle implementation
 5. `modules/rt-primitives.js` - RT-pure polygon generators
 6. `modules/rt-math.js` - Spread, cross, Weierstrass parametrization
@@ -1437,9 +1437,9 @@ This requires developing:
 
 ## 14. References (Updated)
 
-1. `Geometry documents/4D-Gimbal-Lock-Avoidance.md` - Theoretical foundations
-2. `Geometry documents/Quadray-Rotors.tex` - Formal mathematical treatment
-3. `Geometry documents/4D-COORDINATES.md` - Tom Ace rotation formulas
+1. `Geometry Documents/4D-Gimbal-Lock-Avoidance.md` - Theoretical foundations
+2. `Geometry Documents/Quadray-Rotors.tex` - Formal mathematical treatment
+3. `Geometry Documents/4D-COORDINATES.md` - Tom Ace rotation formulas
 4. `modules/rt-quadray-rotor.js` - Current implementation ✅
 5. `modules/rt-rotor-demo.js` - Demo controller ✅
 6. `modules/rt-init.js` - Integration with main app ✅

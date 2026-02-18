@@ -22,7 +22,7 @@ The project uses four types of documents, each serving a distinct role in the hu
 | **Feature docs** (`Geometry Documents/*.md`) | Per-feature living design docs (plan + execution trace) | Archive to `Geometry Archived/` when feature stabilizes |
 | **Logs.md** | Human/agent communication pasteboard | Never committed; ephemeral per-session |
 
-**Logs.md** (`Geometry documents/Logs.md`):
+**Logs.md** (`Geometry Documents/Logs.md`):
 - Used for cut/pasting console output, errors, and debug info
 - Does NOT update automatically — content is manually pasted by the user
 - Never needs to be committed (local working file only)

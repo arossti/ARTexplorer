@@ -43,8 +43,20 @@ export const simpleCheckboxBindings = [
   { id: "thomsonTetraEdgePlanes", type: "checkbox" },
   { id: "thomsonTetraShowFaces", type: "checkbox" },
   { id: "thomsonTetraShowHullEdges", type: "checkbox" },
+  { id: "thomsonTetJitterbugBounce", type: "checkbox" },
   { id: "thomsonOctaShowFaces", type: "checkbox" },
   { id: "thomsonOctaShowHullEdges", type: "checkbox" },
+  { id: "thomsonOctaJitterbugBounce", type: "checkbox" },
+  { id: "thomsonCubeCoordPlanes", type: "checkbox" },
+  { id: "thomsonCubeDiagPlanes", type: "checkbox" },
+  { id: "thomsonCubeShowFaces", type: "checkbox" },
+  { id: "thomsonCubeShowHullEdges", type: "checkbox" },
+  { id: "thomsonCubeJitterbugBounce", type: "checkbox" },
+  { id: "thomsonIcosaCoordPlanes", type: "checkbox" },
+  { id: "thomsonIcosaEdgeMirrorPlanes", type: "checkbox" },
+  { id: "thomsonIcosaShowFaces", type: "checkbox" },
+  { id: "thomsonIcosaShowHullEdges", type: "checkbox" },
+  { id: "thomsonIcosaJitterbugBounce", type: "checkbox" },
 
   // Radial matrix options
   { id: "radialCubeSpaceFill", type: "checkbox" },
@@ -334,6 +346,16 @@ export const checkboxWithControlsBindings = [
     type: "checkbox-controls",
     controlsId: "thomson-octa-controls",
   },
+  {
+    id: "showThomsonCube",
+    type: "checkbox-controls",
+    controlsId: "thomson-cube-controls",
+  },
+  {
+    id: "showThomsonIcosahedron",
+    type: "checkbox-controls",
+    controlsId: "thomson-icosa-controls",
+  },
 
   // Projection with controls panel
   {
@@ -347,6 +369,30 @@ export const checkboxWithControlsBindings = [
 // SIMPLE SLIDERS - Value display only
 // ============================================================================
 
+// Polyhedral rotation snap points — angles where N-gon vertices coincide
+// on symmetry planes, producing regular/semi-regular vertex configurations.
+// Divisors of 360°: n-gon fold symmetries (3,4,5,6,8,10,12).
+// Threshold ±2° gives a light detent feel on integer-step sliders.
+const ROTATION_SNAP_POINTS = [
+  0, 20, 30, 36, 45, 60, 72, 90, 108, 120, 135, 144, 150, 180,
+  210, 216, 225, 240, 252, 270, 288, 300, 315, 324, 330, 340, 360,
+];
+
+const thomsonRotationSlider = (id, valueId) => ({
+  id,
+  type: "slider",
+  valueId,
+  snapPoints: ROTATION_SNAP_POINTS,
+  snapThreshold: 2,
+  // Spread = sin²(θ) — the RT measure of angular separation.
+  // 4 spread intervals per 360°: 0→1→0→1→0 (UX boundary computation).
+  formatValue: v => {
+    const rad = (v * Math.PI) / 180;
+    const spread = Math.sin(rad) ** 2;
+    return `${v}° s=${spread.toFixed(3)}`;
+  },
+});
+
 export const simpleSliderBindings = [
   // Thomson Polyhedra sliders
   {
@@ -354,34 +400,25 @@ export const simpleSliderBindings = [
     type: "slider",
     valueId: "thomsonTetraNGonValue",
   },
-  {
-    id: "thomsonTetraRotation",
-    type: "slider",
-    valueId: "thomsonTetraRotationValue",
-    // Spread = sin²(θ) — the RT measure of angular separation.
-    // 4 spread intervals per 360°: 0→1→0→1→0 (UX boundary computation).
-    formatValue: v => {
-      const rad = (v * Math.PI) / 180;
-      const spread = Math.sin(rad) ** 2;
-      return `${v}° s=${spread.toFixed(3)}`;
-    },
-  },
+  thomsonRotationSlider("thomsonTetraRotation", "thomsonTetraRotationValue"),
   {
     id: "thomsonOctaNGon",
     type: "slider",
     valueId: "thomsonOctaNGonValue",
   },
+  thomsonRotationSlider("thomsonOctaRotation", "thomsonOctaRotationValue"),
   {
-    id: "thomsonOctaRotation",
+    id: "thomsonCubeNGon",
     type: "slider",
-    valueId: "thomsonOctaRotationValue",
-    // Spread = sin²(θ) — 4 spread intervals per 360°: 0→1→0→1→0.
-    formatValue: v => {
-      const rad = (v * Math.PI) / 180;
-      const spread = Math.sin(rad) ** 2;
-      return `${v}° s=${spread.toFixed(3)}`;
-    },
+    valueId: "thomsonCubeNGonValue",
   },
+  thomsonRotationSlider("thomsonCubeRotation", "thomsonCubeRotationValue"),
+  {
+    id: "thomsonIcosaNGon",
+    type: "slider",
+    valueId: "thomsonIcosaNGonValue",
+  },
+  thomsonRotationSlider("thomsonIcosaRotation", "thomsonIcosaRotationValue"),
   {
     id: "opacitySlider",
     type: "slider",
