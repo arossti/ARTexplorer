@@ -971,15 +971,14 @@ export const RTPrimeCuts = {
       .crossVectors(right, viewDir)
       .normalize();
 
+    const nGonVerts = RT.nGonVertices(n, radius).vertices;
     const vertices = [];
     for (let i = 0; i <= n; i++) {
-      const angle = (2 * Math.PI * i) / n;
-      const x = radius * Math.cos(angle);
-      const y = radius * Math.sin(angle);
+      const v = nGonVerts[i % n];
       vertices.push(
         new THREE.Vector3()
-          .addScaledVector(right, x)
-          .addScaledVector(planeUp, y)
+          .addScaledVector(right, v.x)
+          .addScaledVector(planeUp, v.y)
       );
     }
     return vertices;
@@ -1113,14 +1112,13 @@ export const RTPrimeCuts = {
     planeRight,
     planeUp
   ) {
+    const nGonVerts = RT.nGonVertices(n, radius).vertices;
     const vertices = [];
     for (let i = 0; i <= n; i++) {
-      const angle = (2 * Math.PI * i) / n;
-      const x = radius * Math.cos(angle);
-      const y = radius * Math.sin(angle);
+      const v = nGonVerts[i % n];
       const vertex = new THREE.Vector3()
-        .addScaledVector(planeRight, x)
-        .addScaledVector(planeUp, y);
+        .addScaledVector(planeRight, v.x)
+        .addScaledVector(planeUp, v.y);
       vertices.push(vertex);
     }
     return vertices;
