@@ -533,6 +533,10 @@ export const PenroseTiling = {
    * @param {Array} verts - [V0, V1, V2, V3] where V0-V2 is short diagonal
    * @returns {number} Rotation as n in n×36°
    */
+  // TODO: RT-purify — replace atan2 + PI rotation logic with spread-based
+  // discrete rotation detection. The 10 discrete orientations (n×36°) map to
+  // 10 known spread values; use RT.spread(dx, dy) + lookup table instead of
+  // atan2 → continuous angle → round to nearest 36°.
   _rotationFromVerts: verts => {
     // Short diagonal direction (V0 to V2)
     const dx = verts[0].x - verts[2].x;
@@ -600,7 +604,9 @@ export const PenroseTiling = {
       { x: -longHalf, y: 0 },
     ];
 
-    // Apply rotation: n × 36° = n × π/5 radians
+    // TODO: RT-purify — replace trig rotation with RT.nGonVertices(10, 1)
+    // lookup. The 10 decagon vertices give exact cos/sin for each n×36°
+    // orientation. Pre-cache as rotation matrix pairs at module init.
     const angle = (tile.rotationN36 * Math.PI) / 5;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);

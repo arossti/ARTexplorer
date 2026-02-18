@@ -13,6 +13,7 @@
  */
 
 import * as THREE from "three";
+import { RT } from "./rt-math.js";
 import { RTProjections } from "./rt-projections.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -970,15 +971,14 @@ export const RTPrimeCuts = {
       .crossVectors(right, viewDir)
       .normalize();
 
+    const nGonVerts = RT.nGonVertices(n, radius).vertices;
     const vertices = [];
     for (let i = 0; i <= n; i++) {
-      const angle = (2 * Math.PI * i) / n;
-      const x = radius * Math.cos(angle);
-      const y = radius * Math.sin(angle);
+      const v = nGonVerts[i % n];
       vertices.push(
         new THREE.Vector3()
-          .addScaledVector(right, x)
-          .addScaledVector(planeUp, y)
+          .addScaledVector(right, v.x)
+          .addScaledVector(planeUp, v.y)
       );
     }
     return vertices;
@@ -1112,14 +1112,13 @@ export const RTPrimeCuts = {
     planeRight,
     planeUp
   ) {
+    const nGonVerts = RT.nGonVertices(n, radius).vertices;
     const vertices = [];
     for (let i = 0; i <= n; i++) {
-      const angle = (2 * Math.PI * i) / n;
-      const x = radius * Math.cos(angle);
-      const y = radius * Math.sin(angle);
+      const v = nGonVerts[i % n];
       const vertex = new THREE.Vector3()
-        .addScaledVector(planeRight, x)
-        .addScaledVector(planeUp, y);
+        .addScaledVector(planeRight, v.x)
+        .addScaledVector(planeUp, v.y);
       vertices.push(vertex);
     }
     return vertices;
@@ -1337,7 +1336,7 @@ export const RTPrimeCuts = {
 
       default: {
         // Generic n-gon info
-        const s = Math.pow(Math.sin(Math.PI / n), 2);
+        const s = RT.centralSpread(n);
         formulaText =
           `YELLOW: Actual projection (irregular)\n` +
           `CYAN: Ideal regular ${n}-gon\n` +
@@ -1411,7 +1410,7 @@ export const RTPrimeCuts = {
     });
 
     // Icosahedron vertices (normalized, for TruncTet+Icosa compound)
-    const phi = (1 + Math.sqrt(5)) / 2;
+    const phi = RT.PurePhi.value();
     const icosaVertices = [
       [0, 1, phi],
       [0, 1, -phi],

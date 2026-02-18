@@ -50,7 +50,12 @@ const COLOR_FACE_Z = 0x00ff00; // Green  (QZ axis)
  * @param {string} gridMode - 'uniform', 'gravity-chordal', or 'gravity-spherical'
  * @returns {{ gridXY: THREE.Object3D, gridXZ: THREE.Object3D, gridYZ: THREE.Object3D }}
  */
-function buildCartesianPlanes(divisions, gridMode, nGon = 64, showRadials = true) {
+function buildCartesianPlanes(
+  divisions,
+  gridMode,
+  nGon = 64,
+  showRadials = true
+) {
   const gridSize = divisions;
   let gridXY, gridXZ, gridYZ;
 
@@ -105,7 +110,12 @@ function buildCartesianPlanes(divisions, gridMode, nGon = 64, showRadials = true
  * @param {string} gridMode - 'uniform' or 'gravity-spherical'
  * @returns {Object} Keyed plane objects (6 Central Angle planes for uniform, 4 face planes for polar)
  */
-function buildQuadrayPlanes(tessellations, gridMode, nGon = 64, showRadials = true) {
+function buildQuadrayPlanes(
+  tessellations,
+  gridMode,
+  nGon = 64,
+  showRadials = true
+) {
   if (gridMode === "gravity-spherical") {
     // Polar mode: 4 planes ⊥ to Quadray basis vectors (tetrahedral face planes)
     // Concentric Weierstrass circles — same algorithm as Cartesian polar
@@ -315,7 +325,13 @@ export const Grids = {
    * @param {number} nGon - Polygon resolution per circle (default 64)
    * @returns {THREE.LineSegments} Polar grid geometry centered at origin
    */
-  createQuadrayPolarPlane: (normal, divisions, color, nGon = 64, showRadials = true) => {
+  createQuadrayPolarPlane: (
+    normal,
+    divisions,
+    color,
+    nGon = 64,
+    showRadials = true
+  ) => {
     // Construct orthonormal basis in the plane ⊥ normal
     const n = normal.clone().normalize();
     const ref =
@@ -721,7 +737,12 @@ export const Grids = {
     showRadials = true
   ) => {
     const ivmPlanes = new THREE.Group();
-    const planes = buildQuadrayPlanes(tessellations, gridMode, nGon, showRadials);
+    const planes = buildQuadrayPlanes(
+      tessellations,
+      gridMode,
+      nGon,
+      showRadials
+    );
 
     for (const key of Object.keys(planes)) {
       planes[key].visible = true;
@@ -761,7 +782,12 @@ export const Grids = {
     }
 
     const ivmPlanes = new THREE.Group();
-    const planes = buildQuadrayPlanes(tessellations, gridMode, nGon, showRadials);
+    const planes = buildQuadrayPlanes(
+      tessellations,
+      gridMode,
+      nGon,
+      showRadials
+    );
 
     for (const key of Object.keys(planes)) {
       planes[key].visible = visibilityState[key] ?? true;

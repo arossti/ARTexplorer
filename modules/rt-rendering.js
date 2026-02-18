@@ -1152,7 +1152,9 @@ export function initScene(THREE, OrbitControls, RT) {
         node.userData.isVertexNode = true;
         node.userData.nodeType = "sphere";
         node.userData.nodeRadius = nodeRadius;
-        node.userData.nodeGeometry = getUseRTNodeGeometry() ? "rt" : "classical";
+        node.userData.nodeGeometry = getUseRTNodeGeometry()
+          ? "rt"
+          : "classical";
         group.add(node);
       });
 
@@ -1654,20 +1656,15 @@ export function initScene(THREE, OrbitControls, RT) {
           },
         ];
 
-        // Helper to draw pentagon at given radius
+        // Helper to draw pentagon at given radius (RT-pure via nGonVertices)
         const drawPentagon = (radius, color) => {
+          const verts = RT.nGonVertices(5, radius).vertices;
           const positions = [];
           for (let i = 0; i < 5; i++) {
-            const angle1 = Math.PI / 2 + i * ((2 * Math.PI) / 5);
-            const angle2 = Math.PI / 2 + ((i + 1) % 5) * ((2 * Math.PI) / 5);
-            positions.push(
-              radius * Math.cos(angle1),
-              radius * Math.sin(angle1),
-              0,
-              radius * Math.cos(angle2),
-              radius * Math.sin(angle2),
-              0
-            );
+            const v1 = verts[i];
+            const v2 = verts[(i + 1) % 5];
+            // Rotate 90° CCW: (x,y) → (-y, x) to put first vertex at top
+            positions.push(-v1.y, v1.x, 0, -v2.y, v2.x, 0);
           }
           const geometry = new THREE.BufferGeometry();
           geometry.setAttribute(
@@ -2901,11 +2898,24 @@ export function initScene(THREE, OrbitControls, RT) {
       const showHullEdges = el.thomsonTetraShowHullEdges?.checked ?? false;
       thomsonTetrahedronGroup.userData = {
         type: "thomsonTetrahedron",
-        parameters: { scale, nGon, rotation, facePlanes, edgePlanes, showFaces, showHullEdges },
+        parameters: {
+          scale,
+          nGon,
+          rotation,
+          facePlanes,
+          edgePlanes,
+          showFaces,
+          showHullEdges,
+        },
         showFaces,
         showHullEdges,
       };
-      const thomsonTet = Thomson.tetrahedron(scale, { nGon, rotation, facePlanes, edgePlanes });
+      const thomsonTet = Thomson.tetrahedron(scale, {
+        nGon,
+        rotation,
+        facePlanes,
+        edgePlanes,
+      });
       renderThomsonCircles(
         thomsonTetrahedronGroup,
         thomsonTet,
@@ -3431,8 +3441,7 @@ export function initScene(THREE, OrbitControls, RT) {
         el.polygonSidesInput?.value || el.polygonSides?.value || "3"
       );
       const polyR = Math.sqrt(polyQ);
-      // Math.sin justified: arbitrary n-gon spread calculation (see CODE-QUALITY-AUDIT.md)
-      const spread = Math.pow(Math.sin(Math.PI / polySides), 2);
+      const spread = RT.centralSpread(polySides);
       const polyEdgeQ = 4 * polyQ * spread; // RT-pure formula
       const polyEdgeL = Math.sqrt(polyEdgeQ);
       const showFace = el.polygonShowFace?.checked;
@@ -3453,8 +3462,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const prismShowFaces = el.prismShowFaces?.checked !== false;
       const prismR = Math.sqrt(prismBaseQ);
       const prismH = Math.sqrt(prismHeightQ);
-      // Math.sin justified: arbitrary n-gon spread calculation
-      const prismSpread = Math.pow(Math.sin(Math.PI / prismSides), 2);
+      const prismSpread = RT.centralSpread(prismSides);
       const prismEdgeQ = 4 * prismBaseQ * prismSpread;
       const V = 2 * prismSides;
       const E = 3 * prismSides;
@@ -3907,7 +3915,12 @@ export function initScene(THREE, OrbitControls, RT) {
       const rotation = parseFloat(el.thomsonTetraRotation?.value || "0");
       const facePlanes = el.thomsonTetraFacePlanes?.checked ?? true;
       const edgePlanes = el.thomsonTetraEdgePlanes?.checked ?? false;
-      const thomsonTet = Thomson.tetrahedron(1, { nGon, rotation, facePlanes, edgePlanes });
+      const thomsonTet = Thomson.tetrahedron(1, {
+        nGon,
+        rotation,
+        facePlanes,
+        edgePlanes,
+      });
       const totalVerts = thomsonTet.planeCount * nGon;
       html += `<div style="margin-top: 10px;"><strong>Thomson Tetrahedron:</strong></div>`;
       html += `<div>Planes: ${thomsonTet.planeCount}, Nodes: ${thomsonTet.nodes.length}, Coincident: ${thomsonTet.coincidentCount}/${totalVerts}</div>`;

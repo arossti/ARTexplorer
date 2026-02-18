@@ -13,10 +13,11 @@ This document provides guidance to Claude Code AI agents when performing periodi
 3. [Section 1: Automated Checks](#section-1-automated-checks)
 4. [Section 2: Manual Review Checklist](#section-2-manual-review-checklist)
 5. [Section 3: Refactoring Guidelines](#section-3-refactoring-guidelines)
-6. [Section 4: RT-Specific Rules](#section-4-rt-specific-rules)
-7. [Quality Gates & Success Metrics](#quality-gates--success-metrics)
-8. [Audit Workflow](#audit-workflow)
-9. [Reporting Template](#reporting-template)
+6. [Section 4: RT-Specific Rules](#section-4-rt-specific-rules) *(includes Canonical Reference & RT-Alternative Lookup Table)*
+7. [Section 5: Verification Path & Feedback Loop Audit](#section-5-verification-path--feedback-loop-audit)
+8. [Quality Gates & Success Metrics](#quality-gates--success-metrics)
+9. [Audit Workflow](#audit-workflow)
+10. [Reporting Template](#reporting-template)
 
 ---
 
@@ -38,7 +39,9 @@ Maintain high code quality, architectural consistency, and RT-purity across the 
 2. **Simplicity Over Complexity:** Avoid over-engineering, premature abstraction
 3. **Performance Awareness:** Maintain 60fps at default settings
 4. **Code Clarity:** Self-documenting code preferred over excessive comments
-5. **Module Boundaries:** Clear separation of concerns (Init/Html/Rendering architecture)
+5. **Module Boundaries:** Clear separation of concerns (math → geometry → rendering → UI → views)
+6. **Closed Feedback Loops:** Every geometry module must have a verifiable output path (console, visual, or state round-trip)
+7. **Error Compounding Awareness:** Track where rational-to-float boundaries are; document downstream precision impact
 
 ---
 
@@ -52,18 +55,29 @@ modules/
 ├── rt-rendering.js       # THREE.js scene management (Factory pattern)
 ├── rt-math.js            # RT library (quadrance, spread, Phi, Sexagesimal)
 ├── rt-polyhedra.js       # All polyhedra generators (RT-pure)
+├── rt-thomson.js         # Thomson great-circle shells (RT-pure geometry)
 ├── rt-matrix-planar.js   # IVM spatial arrays (planar N×N)
 ├── rt-matrix-radial.js   # IVM spatial arrays (radial)
 ├── rt-papercut.js        # Print mode, dynamic cutplane
+├── rt-prime-cuts.js      # Prime polygon projection presets
+├── rt-projections.js     # 2D polygon projections, Graham scan
 ├── rt-controls.js        # ART Gumball controls
 ├── rt-state-manager.js   # Forms/Instances state
+├── rt-delta.js           # View snapshot diff/apply
+├── rt-animate.js         # View transition animation (dissolve, lerp)
+├── rt-viewmanager.js     # View sequence management
 ├── rt-filehandler.js     # State import/export
 ├── rt-grids.js           # Grid rendering
 ├── rt-nodes.js           # Node management
 ├── rt-primitives.js      # Primitive geometry
-├── rt-viewmanager.js     # View management
+├── rt-helices.js         # Tetrahelix geometry
+├── rt-penrose.js         # Penrose tiling
+├── rt-ik-solvers.js      # Inverse kinematics constraint solvers
+├── rt-ui-binding-defs.js # UI slider/checkbox binding definitions
 ├── rt-context.js         # Context menu handling
 ├── rt-info-modal.js      # Info modal UI
+├── rt-metalog.js         # MetaLog diagnostic overlay
+├── color-theory-modal.js # Color calibration tool
 └── rt-janus.js           # Janus mode handling
 ```
 
@@ -275,6 +289,7 @@ const Q = dx * dx + dy * dy + dz * dz;
 - [ ] Does `rt-math.js` import THREE.js? (Should only return raw coordinates)
 - [ ] Does `rt-polyhedra.js` reference DOM elements? (Should be pure functions)
 - [ ] Does `rt-rendering.js` contain calculation logic? (Should delegate to rt-math)
+- [ ] Do new polyhedra follow the 7-step ecosystem checklist? (See `Geometry Documents/Add-Polyhedra-Guide.md`)
 
 #### Import/Export Clarity
 
@@ -315,7 +330,9 @@ console.log(
 
 ### 2.3 RT-Purity Verification
 
-**Critical Check:** Search for classical trigonometry violations.
+**Critical Check:** Search for classical trigonometry violations. See Section 4 for the full RT-Alternative Lookup Table.
+
+**The core question for every math call:** Does `rt-math.js` already provide an RT-pure alternative? If yes, using the classical version is a violation.
 
 #### Forbidden Patterns (Exceptions must be justified)
 
@@ -328,20 +345,36 @@ grep -rn "Math.sin\|Math.cos\|Math.tan" modules/
 
 # Search for arcsin/arccos/arctan
 grep -rn "Math.asin\|Math.acos\|Math.atan" modules/
+
+# Search for premature sqrt (should defer to THREE.Vector3 boundary)
+grep -rn "Math.sqrt" modules/
 ```
 
-**Allowed Exceptions:**
+**For each occurrence found, the auditor must answer:**
+1. Is there an RT-pure alternative in `rt-math.js`? (Check the lookup table in Section 4)
+2. If yes → violation; replace with RT alternative
+3. If no → is it at a justified boundary? (THREE.js API, UX degree conversion, demo comparison)
+4. If justified → add `// Math.X justified:` comment explaining why
 
-1. **Comments/Documentation:** Explaining conversion from classical to RT
-2. **Demo comparisons:** Showing RT vs classical equivalence
-3. **THREE.js interface only:** Grid rotation matrices (see Math.PI deferral TODO)
+**The sole justified boundary: THREE.js rendering handoff.**
+
+Our 4D Quadray system squashes to XYZ only at the THREE.js API — camera, controls, `Vector3` creation, rotation matrices. THREE.js knows nothing about RT; this is the necessary compromise until a purpose-built 4D rendering pipeline replaces it (planned: Rust + Swift/Metal native macOS app). **All geometry upstream of this boundary must remain RT-pure.** Classical trig leakage becomes migration debt.
+
+Specific cases at this boundary (each requires a `// Math.X justified:` comment):
+
+1. **THREE.js rotation/grid:** `rotation.x = Math.PI/2` — THREE.js requires radians internally
+2. **Deferred `Math.sqrt()`:** At the final `Vector3` creation point (from quadrance space)
+3. **UX degree↔radian conversion:** Slider boundary only; the rotation itself must use `RT.reflectInLine()`
+4. **Demo modules:** Explicitly comparing RT vs classical results (educational)
+5. **Comments/Documentation:** Explaining conversion from classical to RT
 
 **Example Justification Comment:**
 
 ```javascript
-// Math.PI usage justified: THREE.js GridHelper requires rotation matrix
-// TODO: Replace with RT-pure custom grid (see CODE-QUALITY-AUDIT.md Section 4.2)
-gridXY.rotation.x = Math.PI / 2;
+// Math.PI/Math.tan justified: degree-to-slope UX boundary; rotation itself is RT-pure
+const halfRad = (rotationDeg / 2 * Math.PI) / 180;
+const m = Math.tan(halfRad);
+// From here, double reflection via RT.reflectInLine(x, y, m) — pure RT
 ```
 
 #### Verify Deferred √ Expansion Pattern
@@ -576,6 +609,31 @@ function render() {
 
 ## Section 4: RT-Specific Rules
 
+### Canonical Reference: `modules/rt-math.js`
+
+**`rt-math.js` is the single source of truth for all mathematical operations.** Before introducing any classical trig function (`Math.PI`, `Math.sin`, `Math.cos`, `Math.tan`, `Math.atan2`, or radicals), the auditor MUST verify that no RT-pure alternative exists in `rt-math.js`.
+
+**Why this matters:** AI agents naturally default to classical coordinate geometry and trigonometry. This app is explicitly a Rational Trigonometry and Quadray/Synergetics explorer — classical shortcuts undermine its core purpose and pollute the codebase. Furthermore, the long-term plan is to migrate from JavaScript/THREE.js to a **Rust + Swift/Metal native macOS application** with a purpose-built 4D rendering pipeline. RT-pure code will port cleanly; classical trig leakage becomes migration debt.
+
+**RT-Alternative Lookup Table:**
+
+| Classical Pattern | RT-Pure Alternative in `rt-math.js` | Notes |
+|---|---|---|
+| `Math.sin(θ)` / `Math.cos(θ)` for polygon vertices | `RT.nGonVertices(n, radius)` | Wildberger reflection construction; exact for N=3–12 |
+| `Math.atan2(y, x)` for angles | `RT.slopeFromSpread()` or spread-based comparison | Slope is rational when inputs are rational |
+| `Math.acos(dot)` for angle between vectors | `RT.spread(v1, v2)` = `1 - dot²/(Q₁·Q₂)` | Direct spread; no inverse trig |
+| `Math.sqrt(dx²+dy²)` for distance | `RT.quadrance(p1, p2)` = `dx²+dy²` | Defer √ to final THREE.Vector3 boundary |
+| Rotation by θ radians | `RT.reflectInLine(x, y, slope)` twice | Double reflection = rotation by 2×atan(slope) |
+| `(1+Math.sqrt(5))/2` for φ then `φ*φ` | `PurePhi.value()`, `.squared()` = φ+1, `.inverse()` = φ-1 | Symbolic `(a+b√5)/c` algebra |
+| `Math.sqrt(2)`, `Math.sqrt(3)` | `PureRadicals.sqrt2()`, `.sqrt3()`, `.sqrt6()` | Cached; single allocation |
+| `Math.cos(2π/7)` for heptagon | `PureCubics.heptagon()` | Cached cubic roots |
+| Decimal coordinates for regular polygons | `SymbolicCoord` — exact `(a+b√D)/c` | Covers N=3,4,5,6,8,10,12 |
+| `RT.circleParam(t)` | Weierstrass rational parametrization | `x=(1-t²)/(1+t²)`, `y=2t/(1+t²)` |
+
+**Source materials for reference:**
+- N.J. Wildberger, *Divine Proportions* — `Geometry Documents/Wildberger References/`
+- R.B. Fuller, *Synergetics* — `Geometry Documents/Wildberger References/`
+
 ### 4.1 Quadrance/Spread Enforcement
 
 **Rule:** All distance/angle calculations MUST use quadrance/spread.
@@ -686,6 +744,49 @@ grep -rn "phi \* phi\|phi \/ phi" modules/rt-polyhedra.js
 
 ---
 
+## Section 5: Verification Path & Feedback Loop Audit
+
+*Informed by Wei et al. 2026 "Agentic Reasoning for LLMs" — Sections 3.2 (Tool Use), 4.1 (Feedback Mechanisms), and 6.1 (Math Exploration & Vibe Coding Agents).*
+
+### 5.1 Closed Feedback Loop Check
+
+Every geometry module should have a verifiable output path. For each module:
+
+- [ ] **Console diagnostic**: Does the module produce meaningful console output (vertex counts, coincident counts, error bounds)?
+- [ ] **Visual verification**: Can the output be seen and inspected in the 3D viewport?
+- [ ] **State round-trip**: Does the geometry survive save → reload → re-render without loss?
+- [ ] **View system integration**: Are all user-facing controls captured by `rt-delta.js` for view state?
+
+**Verification Matrix:**
+
+| Module | Console | Visual | State Round-trip | View System |
+|---|---|---|---|---|
+| `rt-polyhedra.js` | vertex/face counts | renderPolyhedron() | state-manager | checkboxes in delta |
+| `rt-thomson.js` | coincidentCount | renderThomsonCircles() | state-manager | sliders + checkboxes in delta |
+| `rt-grids.js` | — | grid groups | — | grid checkboxes in delta |
+| `rt-projections.js` | hull vertex count | 2D overlay | — | — |
+| `rt-matrix-planar.js` | — | matrix render | state-manager | checkbox in delta |
+
+### 5.2 Rational-to-Float Boundary Tracing
+
+Track where algebraic precision is lost and assess downstream impact:
+
+- [ ] **Identify all Math.sqrt() calls** and verify they are at the final THREE.Vector3 boundary
+- [ ] **Identify all Math.PI/sin/cos/tan calls** and verify they are at UX boundaries (degrees → radians) with justification comments
+- [ ] **Float32 sensitivity**: For convex hull and projection operations, verify that vertices with near-zero cross products (< 0.1) are handled robustly
+- [ ] **Scale independence**: Verify that hull counts and geometric properties are stable across different `tetEdge` scale values
+
+### 5.3 Geometry Decomposition Audit
+
+For complex geometry features, verify the construction-verification-integration pattern:
+
+- [ ] **Construction**: Pure math module produces correct vertices/edges/faces (RT-pure)
+- [ ] **Verification**: Output validated against known targets (e.g., N=4 oct → 6 nodes at octahedron vertices)
+- [ ] **Integration**: Rendering, state persistence, and view system all handle the new geometry
+- [ ] **Edge cases**: Minimum inputs (< 4 nodes for hull), maximum inputs (15 planes x 12-gon), degenerate configurations
+
+---
+
 ## Quality Gates & Success Metrics
 
 ### Mandatory Requirements (Must Pass)
@@ -766,10 +867,14 @@ For each file in [Audit Scope](#audit-scope--files):
 grep -rn "Math.PI\|Math.sin\|Math.cos\|Math.tan\|Math.asin\|Math.acos\|Math.atan" \
   modules/ demos/ > audit-rt-purity.txt
 
-# Review each occurrence:
-# - Justified? (comment explains necessity)
-# - Eliminable? (can use RT-pure alternative)
-# - Document in report
+# Also scan for premature sqrt
+grep -rn "Math.sqrt" modules/ >> audit-rt-purity.txt
+
+# Review each occurrence against the RT-Alternative Lookup Table (Section 4):
+# 1. Check if rt-math.js provides an RT-pure alternative
+# 2. If yes → violation; flag for replacement
+# 3. If no → verify it's at a justified boundary with comment
+# 4. Record verdict in report
 ```
 
 ### Step 5: Generate Audit Report
@@ -1016,6 +1121,8 @@ sed -i.bak '/console.log/d' modules/*.js
 
 - **v1.0** (2026-01-10) - Initial creation, based on ARTexplorer TODO 8.1.5
 - **v1.1** (2026-01-29) - Updated file paths from `src/geometry/modules/` to `modules/` and `demos/`; added asteroids game module to audit scope; updated all command examples
+- **v1.2** (2026-02-18) - Expanded audit scope with 12 missing modules (thomson, delta, animate, projections, prime-cuts, helices, penrose, ik-solvers, ui-binding-defs, metalog, color-theory-modal); added Section 5 (Verification Path & Feedback Loop Audit) informed by Wei et al. 2026 survey; added guiding principles for closed feedback loops and error compounding awareness
+- **v1.3** (2026-02-18) - Strengthened RT-purity enforcement: added canonical reference preamble to Section 4 with RT-Alternative Lookup Table; added `rt-math.js` as single source of truth for all math operations; strengthened Section 2.3 audit flow (auditor must check lookup table for every classical trig occurrence); added `Math.sqrt` to scan targets; added Add-Polyhedra-Guide.md reference to architecture audit; added source material references (Divine Proportions, Synergetics)
 
 ---
 
@@ -1024,3 +1131,5 @@ sed -i.bak '/console.log/d' modules/*.js
 - [ARTexplorer.md](ARTexplorer.md) - Main project documentation
 - [ARTexplorer.md Section 8](ARTexplorer.md#8-todo-master-list) - TODO Master List
 - [TODO 8.1.5](ARTexplorer.md#815-periodic-code-quality-audit-qcqa) - Code Quality Audit TODO
+- [Add-Polyhedra-Guide.md](Add-Polyhedra-Guide.md) - 7-step ecosystem checklist for new polyhedra
+- `modules/rt-math.js` - Canonical RT math reference (the "bible")
