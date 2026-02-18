@@ -43,8 +43,20 @@ export const simpleCheckboxBindings = [
   { id: "thomsonTetraEdgePlanes", type: "checkbox" },
   { id: "thomsonTetraShowFaces", type: "checkbox" },
   { id: "thomsonTetraShowHullEdges", type: "checkbox" },
+  { id: "thomsonTetJitterbugBounce", type: "checkbox" },
   { id: "thomsonOctaShowFaces", type: "checkbox" },
   { id: "thomsonOctaShowHullEdges", type: "checkbox" },
+  { id: "thomsonOctaJitterbugBounce", type: "checkbox" },
+  { id: "thomsonCubeCoordPlanes", type: "checkbox" },
+  { id: "thomsonCubeDiagPlanes", type: "checkbox" },
+  { id: "thomsonCubeShowFaces", type: "checkbox" },
+  { id: "thomsonCubeShowHullEdges", type: "checkbox" },
+  { id: "thomsonCubeJitterbugBounce", type: "checkbox" },
+  { id: "thomsonIcosaCoordPlanes", type: "checkbox" },
+  { id: "thomsonIcosaEdgeMirrorPlanes", type: "checkbox" },
+  { id: "thomsonIcosaShowFaces", type: "checkbox" },
+  { id: "thomsonIcosaShowHullEdges", type: "checkbox" },
+  { id: "thomsonIcosaJitterbugBounce", type: "checkbox" },
 
   // Radial matrix options
   { id: "radialCubeSpaceFill", type: "checkbox" },
@@ -334,6 +346,16 @@ export const checkboxWithControlsBindings = [
     type: "checkbox-controls",
     controlsId: "thomson-octa-controls",
   },
+  {
+    id: "showThomsonCube",
+    type: "checkbox-controls",
+    controlsId: "thomson-cube-controls",
+  },
+  {
+    id: "showThomsonIcosahedron",
+    type: "checkbox-controls",
+    controlsId: "thomson-icosa-controls",
+  },
 
   // Projection with controls panel
   {
@@ -376,6 +398,36 @@ export const simpleSliderBindings = [
     type: "slider",
     valueId: "thomsonOctaRotationValue",
     // Spread = sin²(θ) — 4 spread intervals per 360°: 0→1→0→1→0.
+    formatValue: v => {
+      const rad = (v * Math.PI) / 180;
+      const spread = Math.sin(rad) ** 2;
+      return `${v}° s=${spread.toFixed(3)}`;
+    },
+  },
+  {
+    id: "thomsonCubeNGon",
+    type: "slider",
+    valueId: "thomsonCubeNGonValue",
+  },
+  {
+    id: "thomsonCubeRotation",
+    type: "slider",
+    valueId: "thomsonCubeRotationValue",
+    formatValue: v => {
+      const rad = (v * Math.PI) / 180;
+      const spread = Math.sin(rad) ** 2;
+      return `${v}° s=${spread.toFixed(3)}`;
+    },
+  },
+  {
+    id: "thomsonIcosaNGon",
+    type: "slider",
+    valueId: "thomsonIcosaNGonValue",
+  },
+  {
+    id: "thomsonIcosaRotation",
+    type: "slider",
+    valueId: "thomsonIcosaRotationValue",
     formatValue: v => {
       const rad = (v * Math.PI) / 180;
       const spread = Math.sin(rad) ** 2;

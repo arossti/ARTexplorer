@@ -455,6 +455,12 @@ export const RTFileHandler = {
       thomsonOctaNGon: parseInt(
         document.getElementById("thomsonOctaNGon")?.value || "5"
       ),
+      thomsonCubeNGon: parseInt(
+        document.getElementById("thomsonCubeNGon")?.value || "5"
+      ),
+      thomsonIcosaNGon: parseInt(
+        document.getElementById("thomsonIcosaNGon")?.value || "5"
+      ),
     };
 
     // Get geodesic projection radio states
@@ -1038,6 +1044,18 @@ export const RTFileHandler = {
           if (slider) slider.value = sliders.thomsonOctaNGon;
           if (display) display.textContent = sliders.thomsonOctaNGon;
         }
+        if (sliders.thomsonCubeNGon !== undefined) {
+          const slider = document.getElementById("thomsonCubeNGon");
+          const display = document.getElementById("thomsonCubeNGonValue");
+          if (slider) slider.value = sliders.thomsonCubeNGon;
+          if (display) display.textContent = sliders.thomsonCubeNGon;
+        }
+        if (sliders.thomsonIcosaNGon !== undefined) {
+          const slider = document.getElementById("thomsonIcosaNGon");
+          const display = document.getElementById("thomsonIcosaNGonValue");
+          if (slider) slider.value = sliders.thomsonIcosaNGon;
+          if (display) display.textContent = sliders.thomsonIcosaNGon;
+        }
       }
 
       // Restore geodesic projection radio states
@@ -1178,6 +1196,18 @@ export const RTFileHandler = {
         );
         if (thomsonOctaControls && checkboxes.showThomsonOctahedron) {
           thomsonOctaControls.style.display = "block";
+        }
+        const thomsonCubeControls = document.getElementById(
+          "thomson-cube-controls"
+        );
+        if (thomsonCubeControls && checkboxes.showThomsonCube) {
+          thomsonCubeControls.style.display = "block";
+        }
+        const thomsonIcosaControls = document.getElementById(
+          "thomson-icosa-controls"
+        );
+        if (thomsonIcosaControls && checkboxes.showThomsonIcosahedron) {
+          thomsonIcosaControls.style.display = "block";
         }
 
         // Show/hide planar matrix controls based on checkbox state

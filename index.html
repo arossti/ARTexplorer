@@ -2347,6 +2347,24 @@
                     <input type="checkbox" id="thomsonTetraShowHullEdges" />
                     Hull Edges
                   </label>
+                  <div style="margin-top: 6px; border-top: 1px solid #444; padding-top: 4px">
+                    <label class="label-subsection">Jitterbug</label>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
+                      <button
+                        id="thomsonTetJitterbugToggle"
+                        class="toggle-btn variant-standard"
+                        style="width: auto; flex: none"
+                      >Play</button>
+                      <label class="checkbox-label" style="font-size: 11px; margin: 0">
+                        <input
+                          type="checkbox"
+                          id="thomsonTetJitterbugBounce"
+                          checked
+                        />
+                        Bounce
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2395,6 +2413,202 @@
                     <input type="checkbox" id="thomsonOctaShowHullEdges" />
                     Hull Edges
                   </label>
+                  <div style="margin-top: 6px; border-top: 1px solid #444; padding-top: 4px">
+                    <label class="label-subsection">Jitterbug</label>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
+                      <button
+                        id="thomsonOctaJitterbugToggle"
+                        class="toggle-btn variant-standard"
+                        style="width: auto; flex: none"
+                      >Play</button>
+                      <label class="checkbox-label" style="font-size: 11px; margin: 0">
+                        <input
+                          type="checkbox"
+                          id="thomsonOctaJitterbugBounce"
+                          checked
+                        />
+                        Bounce
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thomson Cube -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showThomsonCube" />
+                Thomson Cube
+              </label>
+              <div
+                id="thomson-cube-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="label-subsection">N-gon</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonCubeNGon"
+                      min="3"
+                      max="12"
+                      step="1"
+                      value="5"
+                    />
+                    <span class="slider-value" id="thomsonCubeNGonValue"
+                      >5</span
+                    >
+                  </div>
+                  <label class="label-subsection">Rotation</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonCubeRotation"
+                      min="0"
+                      max="360"
+                      step="1"
+                      value="0"
+                    />
+                    <span class="slider-value" id="thomsonCubeRotationValue"
+                      >0° s=0</span
+                    >
+                  </div>
+                  <label
+                    class="checkbox-label"
+                    style="font-size: 11px; margin-top: 4px"
+                  >
+                    <input
+                      type="checkbox"
+                      id="thomsonCubeCoordPlanes"
+                      checked
+                    />
+                    Coord Planes (3)
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input
+                      type="checkbox"
+                      id="thomsonCubeDiagPlanes"
+                      checked
+                    />
+                    Diagonal Planes (6)
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonCubeShowFaces" />
+                    Show Faces
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonCubeShowHullEdges" />
+                    Hull Edges
+                  </label>
+                  <div style="margin-top: 6px; border-top: 1px solid #444; padding-top: 4px">
+                    <label class="label-subsection">Jitterbug</label>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
+                      <button
+                        id="thomsonCubeJitterbugToggle"
+                        class="toggle-btn variant-standard"
+                        style="width: auto; flex: none"
+                      >Play</button>
+                      <label class="checkbox-label" style="font-size: 11px; margin: 0">
+                        <input
+                          type="checkbox"
+                          id="thomsonCubeJitterbugBounce"
+                          checked
+                        />
+                        Bounce
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thomson Icosahedron -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showThomsonIcosahedron" />
+                Thomson Icosahedron
+              </label>
+              <div
+                id="thomson-icosa-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="label-subsection">N-gon</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonIcosaNGon"
+                      min="3"
+                      max="12"
+                      step="1"
+                      value="5"
+                    />
+                    <span class="slider-value" id="thomsonIcosaNGonValue"
+                      >5</span
+                    >
+                  </div>
+                  <label class="label-subsection">Rotation</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonIcosaRotation"
+                      min="0"
+                      max="360"
+                      step="1"
+                      value="0"
+                    />
+                    <span class="slider-value" id="thomsonIcosaRotationValue"
+                      >0° s=0</span
+                    >
+                  </div>
+                  <label
+                    class="checkbox-label"
+                    style="font-size: 11px; margin-top: 4px"
+                  >
+                    <input
+                      type="checkbox"
+                      id="thomsonIcosaCoordPlanes"
+                      checked
+                    />
+                    Coord Planes (3)
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input
+                      type="checkbox"
+                      id="thomsonIcosaEdgeMirrorPlanes"
+                      checked
+                    />
+                    Edge Mirror Planes (12)
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonIcosaShowFaces" />
+                    Show Faces
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonIcosaShowHullEdges" />
+                    Hull Edges
+                  </label>
+                  <div style="margin-top: 6px; border-top: 1px solid #444; padding-top: 4px">
+                    <label class="label-subsection">Jitterbug</label>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
+                      <button
+                        id="thomsonIcosaJitterbugToggle"
+                        class="toggle-btn variant-standard"
+                        style="width: auto; flex: none"
+                      >Play</button>
+                      <label class="checkbox-label" style="font-size: 11px; margin: 0">
+                        <input
+                          type="checkbox"
+                          id="thomsonIcosaJitterbugBounce"
+                          checked
+                        />
+                        Bounce
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
