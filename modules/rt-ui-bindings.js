@@ -206,9 +206,22 @@ export class RTUIBindings {
     const valueDisplay = binding.valueId
       ? document.getElementById(binding.valueId)
       : null;
+    const snapPoints = binding.snapPoints || null;
+    const snapThreshold = binding.snapThreshold || 2;
 
     element.addEventListener("input", e => {
-      const value = parseFloat(e.target.value);
+      let value = parseFloat(e.target.value);
+
+      // Light snap: if within threshold of a snap point, lock to it
+      if (snapPoints) {
+        for (let i = 0; i < snapPoints.length; i++) {
+          if (Math.abs(value - snapPoints[i]) <= snapThreshold) {
+            value = snapPoints[i];
+            e.target.value = value;
+            break;
+          }
+        }
+      }
 
       // Update value display
       if (valueDisplay) {
