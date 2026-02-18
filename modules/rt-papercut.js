@@ -812,11 +812,16 @@ export const RTPapercut = {
               const sphereCenter = pos.clone();
               object.localToWorld(sphereCenter);
               const circle = RTPapercut._spherePlaneIntersection(
-                sphereCenter, sphereRadius, plane, 36
+                sphereCenter,
+                sphereRadius,
+                plane,
+                36
               );
               if (circle) {
                 RTPapercut._addCircleToIntersectionGroup(
-                  circle, intersectionGroup, intersectionMaterial
+                  circle,
+                  intersectionGroup,
+                  intersectionMaterial
                 );
               }
             });

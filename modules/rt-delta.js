@@ -41,60 +41,111 @@ export const RTDelta = {
    */
   _checkboxIds: [
     // Primitives
-    "showPoint", "showLine", "showPolygon", "showPrism", "showCone",
+    "showPoint",
+    "showLine",
+    "showPolygon",
+    "showPrism",
+    "showCone",
     // Helices
-    "showTetrahelix1", "showTetrahelix2", "showTetrahelix3",
+    "showTetrahelix1",
+    "showTetrahelix2",
+    "showTetrahelix3",
     // Tetrahelix 3 strand + chirality toggles
-    "tetrahelix3StrandA", "tetrahelix3StrandB", "tetrahelix3StrandC",
-    "tetrahelix3StrandD", "tetrahelix3StrandE", "tetrahelix3StrandF",
-    "tetrahelix3StrandG", "tetrahelix3StrandH",
-    "tetrahelix3ChiralA", "tetrahelix3ChiralB", "tetrahelix3ChiralC",
-    "tetrahelix3ChiralD", "tetrahelix3ChiralE", "tetrahelix3ChiralF",
-    "tetrahelix3ChiralG", "tetrahelix3ChiralH",
+    "tetrahelix3StrandA",
+    "tetrahelix3StrandB",
+    "tetrahelix3StrandC",
+    "tetrahelix3StrandD",
+    "tetrahelix3StrandE",
+    "tetrahelix3StrandF",
+    "tetrahelix3StrandG",
+    "tetrahelix3StrandH",
+    "tetrahelix3ChiralA",
+    "tetrahelix3ChiralB",
+    "tetrahelix3ChiralC",
+    "tetrahelix3ChiralD",
+    "tetrahelix3ChiralE",
+    "tetrahelix3ChiralF",
+    "tetrahelix3ChiralG",
+    "tetrahelix3ChiralH",
     // Regular polyhedra
-    "showCube", "showTetrahedron", "showDualTetrahedron",
-    "showOctahedron", "showIcosahedron", "showDodecahedron",
-    "showDualIcosahedron", "showCuboctahedron", "showRhombicDodecahedron",
+    "showCube",
+    "showTetrahedron",
+    "showDualTetrahedron",
+    "showOctahedron",
+    "showIcosahedron",
+    "showDodecahedron",
+    "showDualIcosahedron",
+    "showCuboctahedron",
+    "showRhombicDodecahedron",
     // Geodesic polyhedra
-    "showGeodesicTetrahedron", "showGeodesicDualTetrahedron",
-    "showGeodesicOctahedron", "showGeodesicIcosahedron",
+    "showGeodesicTetrahedron",
+    "showGeodesicDualTetrahedron",
+    "showGeodesicOctahedron",
+    "showGeodesicIcosahedron",
     "showGeodesicDualIcosahedron",
     // Quadray polyhedra
-    "showQuadrayTetrahedron", "showQuadrayTetraDeformed",
-    "showQuadrayCuboctahedron", "showQuadrayOctahedron",
+    "showQuadrayTetrahedron",
+    "showQuadrayTetraDeformed",
+    "showQuadrayCuboctahedron",
+    "showQuadrayOctahedron",
     "showQuadrayTruncatedTet",
     // Planar matrices
-    "showCubeMatrix", "showTetMatrix", "showOctaMatrix",
-    "showCuboctahedronMatrix", "showRhombicDodecMatrix",
+    "showCubeMatrix",
+    "showTetMatrix",
+    "showOctaMatrix",
+    "showCuboctahedronMatrix",
+    "showRhombicDodecMatrix",
     // Matrix rotation toggles (45° grid alignment)
-    "cubeMatrixRotate45", "tetMatrixRotate45", "octaMatrixRotate45",
-    "cuboctaMatrixRotate45", "rhombicDodecMatrixRotate45",
+    "cubeMatrixRotate45",
+    "tetMatrixRotate45",
+    "octaMatrixRotate45",
+    "cuboctaMatrixRotate45",
+    "rhombicDodecMatrixRotate45",
     // Radial matrices
-    "showRadialCubeMatrix", "showRadialRhombicDodecMatrix",
-    "showRadialTetrahedronMatrix", "showRadialOctahedronMatrix",
+    "showRadialCubeMatrix",
+    "showRadialRhombicDodecMatrix",
+    "showRadialTetrahedronMatrix",
+    "showRadialOctahedronMatrix",
     "showRadialCuboctahedronMatrix",
     // Radial matrix mode toggles (Space Filling / IVM)
-    "radialCubeSpaceFill", "radialTetIVMMode", "radialOctIVMScale",
+    "radialCubeSpaceFill",
+    "radialTetIVMMode",
+    "radialOctIVMScale",
     // Basis vectors
-    "showCartesianBasis", "showQuadray",
+    "showCartesianBasis",
+    "showQuadray",
     // Grid Planes — Cartesian
-    "planeXY", "planeXZ", "planeYZ",
+    "planeXY",
+    "planeXZ",
+    "planeYZ",
     // Grid Planes — Quadray (IVM placeholder)
-    "planeQuadrayWX", "planeQuadrayWY", "planeQuadrayWZ",
-    "planeQuadrayXY", "planeQuadrayXZ", "planeQuadrayYZ",
+    "planeQuadrayWX",
+    "planeQuadrayWY",
+    "planeQuadrayWZ",
+    "planeQuadrayXY",
+    "planeQuadrayXZ",
+    "planeQuadrayYZ",
     // Grid Planes — Central Angle (IVM)
-    "planeIvmWX", "planeIvmWY", "planeIvmWZ",
-    "planeIvmXY", "planeIvmXZ", "planeIvmYZ",
+    "planeIvmWX",
+    "planeIvmWY",
+    "planeIvmWZ",
+    "planeIvmXY",
+    "planeIvmXZ",
+    "planeIvmYZ",
     // Polar grid
     "showRadialLines",
     // Penrose Tiling
     "showPenroseTiling",
     // Thomson Polyhedra
-    "showThomsonTetrahedron", "showThomsonOctahedron",
+    "showThomsonTetrahedron",
+    "showThomsonOctahedron",
     // Thomson sub-toggles (plane selection, face/hull rendering)
-    "thomsonTetraFacePlanes", "thomsonTetraEdgePlanes",
-    "thomsonTetraShowFaces", "thomsonTetraShowHullEdges",
-    "thomsonOctaShowFaces", "thomsonOctaShowHullEdges",
+    "thomsonTetraFacePlanes",
+    "thomsonTetraEdgePlanes",
+    "thomsonTetraShowFaces",
+    "thomsonTetraShowHullEdges",
+    "thomsonOctaShowFaces",
+    "thomsonOctaShowHullEdges",
   ],
 
   /**
@@ -236,7 +287,7 @@ export const RTDelta = {
   _toggleButtonDefaults: {
     "cartesian-mode": "uniform",
     "quadray-mode": "uniform",
-    "ucs": "z-up",
+    ucs: "z-up",
   },
 
   /** @private */
@@ -268,7 +319,12 @@ export const RTDelta = {
     const delta = {};
 
     // Diff each category (flat key-value maps)
-    for (const category of ["polyhedraCheckboxes", "sliderValues", "geodesicProjections", "toggleButtons"]) {
+    for (const category of [
+      "polyhedraCheckboxes",
+      "sliderValues",
+      "geodesicProjections",
+      "toggleButtons",
+    ]) {
       const prevCat = prev[category] || {};
       const curCat = current[category] || {};
       const catDelta = {};
@@ -301,7 +357,12 @@ export const RTDelta = {
     const accumulated = structuredClone(baseSnapshot);
 
     for (const delta of deltas) {
-      for (const category of ["polyhedraCheckboxes", "sliderValues", "geodesicProjections", "toggleButtons"]) {
+      for (const category of [
+        "polyhedraCheckboxes",
+        "sliderValues",
+        "geodesicProjections",
+        "toggleButtons",
+      ]) {
         if (delta[category]) {
           if (!accumulated[category]) accumulated[category] = {};
           Object.assign(accumulated[category], delta[category]);
@@ -316,14 +377,17 @@ export const RTDelta = {
     if (accumulated.polyhedraCheckboxes) {
       for (const id of this._checkboxIds) {
         if (accumulated.polyhedraCheckboxes[id] === undefined) {
-          accumulated.polyhedraCheckboxes[id] = this._checkboxDefaults[id] ?? false;
+          accumulated.polyhedraCheckboxes[id] =
+            this._checkboxDefaults[id] ?? false;
         }
       }
     }
 
     // Default missing toggle buttons to their HTML defaults
     if (accumulated.toggleButtons) {
-      for (const [group, defaultValue] of Object.entries(this._toggleButtonDefaults)) {
+      for (const [group, defaultValue] of Object.entries(
+        this._toggleButtonDefaults
+      )) {
         if (accumulated.toggleButtons[group] === undefined) {
           accumulated.toggleButtons[group] = defaultValue;
         }
@@ -375,11 +439,15 @@ export const RTDelta = {
       }
 
       // Show/hide sub-control panels for checkbox-with-controls forms
-      for (const [checkboxId, controlsId] of Object.entries(this._subControlMap)) {
+      for (const [checkboxId, controlsId] of Object.entries(
+        this._subControlMap
+      )) {
         if (delta.polyhedraCheckboxes[checkboxId] !== undefined) {
           const panel = document.getElementById(controlsId);
           if (panel) {
-            panel.style.display = delta.polyhedraCheckboxes[checkboxId] ? "block" : "none";
+            panel.style.display = delta.polyhedraCheckboxes[checkboxId]
+              ? "block"
+              : "none";
           }
         }
       }
@@ -424,13 +492,17 @@ export const RTDelta = {
     const displayId = domId.replace("Slider", "Display");
     if (displayId !== domId) {
       const display = document.getElementById(displayId);
-      if (display) display.textContent = Number.isInteger(value) ? value : value.toFixed(2);
+      if (display)
+        display.textContent = Number.isInteger(value)
+          ? value
+          : value.toFixed(2);
     }
 
     // Also try the *Value pattern (e.g., "geodesicIcosaFrequencyValue")
     const valueId = domId + "Value";
     const valueEl = document.getElementById(valueId);
-    if (valueEl) valueEl.textContent = Number.isInteger(value) ? value : value.toFixed(2);
+    if (valueEl)
+      valueEl.textContent = Number.isInteger(value) ? value : value.toFixed(2);
   },
 
   // ── 4. Stepped interpolation tick builder ─────────────────────────
@@ -463,7 +535,8 @@ export const RTDelta = {
         const fromValue = fromSnapshot.sliderValues?.[key];
         if (fromValue === undefined || fromValue === toValue) continue;
 
-        const isInteger = Number.isInteger(fromValue) && Number.isInteger(toValue);
+        const isInteger =
+          Number.isInteger(fromValue) && Number.isInteger(toValue);
         steps.push({
           type: isInteger ? "stepped" : "smooth",
           key,
@@ -496,7 +569,12 @@ export const RTDelta = {
       }
     }
 
-    if (steps.length === 0 && projSnaps.length === 0 && toggleSnaps.length === 0) return null;
+    if (
+      steps.length === 0 &&
+      projSnaps.length === 0 &&
+      toggleSnaps.length === 0
+    )
+      return null;
 
     let needsRebuild = false;
 
@@ -547,7 +625,9 @@ export const RTDelta = {
       // Snap toggle buttons at midpoint (grid mode, UCS)
       for (const snap of toggleSnaps) {
         if (!snap.applied && t >= 0.5) {
-          const target = document.querySelector(`[data-${snap.group}="${snap.to}"]`);
+          const target = document.querySelector(
+            `[data-${snap.group}="${snap.to}"]`
+          );
           if (target && !target.classList.contains("active")) {
             target.click();
           }
@@ -578,7 +658,9 @@ export const RTDelta = {
         }
         for (const snap of toggleSnaps) {
           if (!snap.applied) {
-            const target = document.querySelector(`[data-${snap.group}="${snap.to}"]`);
+            const target = document.querySelector(
+              `[data-${snap.group}="${snap.to}"]`
+            );
             if (target && !target.classList.contains("active")) {
               target.click();
             }

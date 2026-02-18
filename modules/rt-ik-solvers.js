@@ -48,6 +48,11 @@ export function linkSpread2D(ax, ay, bx, by) {
  * @param {number} by - Node B y
  * @returns {number} Angle from vertical in radians (0 = vertical, +/- pi/2 = horizontal)
  */
+// TODO: RT-purify — replace atan2 with spread-based direction.
+// IK solvers can work in quadrance/spread space directly: the rigid
+// constraint (solveRigid2D) only needs direction vector (dx, dy) and
+// target quadrance, not an explicit angle. Refactor callers to pass
+// direction + quadrance instead of angle.
 export function linkAngle2D(ax, ay, bx, by) {
   const dx = bx - ax;
   const dy = by - ay;

@@ -478,7 +478,10 @@ export const RTViewManager = {
     const first = views[0];
     if (!first.sceneState) return null;
 
-    const deltas = views.slice(1).map(v => v.sceneState).filter(Boolean);
+    const deltas = views
+      .slice(1)
+      .map(v => v.sceneState)
+      .filter(Boolean);
     return RTDelta.accumulateSnapshot(first.sceneState, deltas);
   },
 
@@ -498,7 +501,10 @@ export const RTViewManager = {
 
     if (viewIndex === 0) return structuredClone(first.sceneState);
 
-    const deltas = views.slice(1, viewIndex + 1).map(v => v.sceneState).filter(Boolean);
+    const deltas = views
+      .slice(1, viewIndex + 1)
+      .map(v => v.sceneState)
+      .filter(Boolean);
     return RTDelta.accumulateSnapshot(first.sceneState, deltas);
   },
 
@@ -1563,8 +1569,7 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
     view.render = renderState;
     view.instanceRefs = instanceRefs;
     view.sceneState = sceneState;
-    view.axisCode =
-      this._detectQuadrayAxis() || this._detectCameraAxis();
+    view.axisCode = this._detectQuadrayAxis() || this._detectCameraAxis();
 
     // Mark SVG as stale (needs re-export)
     view.svg.exported = false;
@@ -2183,7 +2188,8 @@ ${rasterContent}${gridsContent}${facesContent}${edgesContent}${vectorContent}${n
     const btn = document.getElementById("resaveViewBtn");
     if (!btn) return;
 
-    const hasActive = this.state.activeViewId &&
+    const hasActive =
+      this.state.activeViewId &&
       this.state.views.some(v => v.id === this.state.activeViewId);
 
     btn.style.display = hasActive ? "" : "none";
