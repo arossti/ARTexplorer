@@ -8,7 +8,8 @@
 
 - **Live Site**: https://arossti.github.io/ARTexplorer/
 - **Architecture**: Client-side JavaScript/WebGL (THREE.js)
-- **Documentation**: See `README.md` for overview, `Geometry documents/` for detailed docs
+- **Documentation**: `README.md` (Sections 5.2–5.3: file tree, module overview), `Geometry Documents/` for feature docs
+- **Adding new polyhedra?** Follow `Geometry Documents/Add-Polyhedra-Guide.md` — 7-step ecosystem checklist covering geometry → rendering → UI → bindings → init → filehandler → testing
 
 ### Project Documentation System
 
@@ -33,7 +34,7 @@ The project uses four types of documents, each serving a distinct role in the hu
 - When a cross-cutting lesson emerges, promote it to MEMORY.md
 - Archive to `Geometry Documents/Geometry Archived/` when the feature is stable
 
-**CODE-QUALITY-AUDIT.md** — Periodic quality gate checklist (see `Geometry Documents/CODE-QUALITY-AUDIT.md`)
+**CODE-QUALITY-AUDIT.md** — Periodic quality gate and RT-purity enforcement (see `Geometry Documents/CODE-QUALITY-AUDIT.md`)
 
 ## Git Workflow
 
@@ -136,6 +137,33 @@ rt-delta.js → rt-animate.js → rt-viewmanager.js (view system)
 | **N-gon vertices** | `RT.nGonVertices(n, radius)` — algebraic polygon vertices | Used by Thomson circles; exact for n=3,4,5,6,8,10,12 |
 | **Double reflection** | Two reflections = rotation by 2x angle | `RT.reflectInLine()` used for RT-pure rotation in Thomson |
 
+### RT-Purity: The Cardinal Rule
+
+**This application is an RT and Quadray/Synergetics explorer.** Agents naturally default to classical trig (Pi, Sin, Cos, Tan, Theta, radicals) — this undermines the project's core purpose.
+
+**`modules/rt-math.js` is our bible.** Before using any classical trig function, check what RT provides:
+
+| Instead of... | Use RT equivalent | Source |
+|---|---|---|
+| `Math.sin(θ)` / `Math.cos(θ)` | `RT.nGonVertices(n, r)` — algebraic polygon vertices via Wildberger reflection | `rt-math.js` — `nGonVertices()` |
+| `Math.atan2(y, x)` | `RT.slopeFromSpread()` or spread-based orientation | `rt-math.js` — slope/spread |
+| `angle = arccos(dot)` | `spread = 1 - dot²/(Q₁·Q₂)` | `rt-math.js` — `RT.spread()` |
+| `distance = √(dx²+dy²)` | `quadrance = dx²+dy²` — defer √ to THREE.Vector3 boundary | `rt-math.js` — `RT.quadrance()` |
+| `rotation by θ` | Two reflections via `RT.reflectInLine(x, y, slope)` | `rt-math.js` — double reflection |
+| `φ = (1+√5)/2` then `φ²` | `PurePhi.phi_sq()` = φ+1 (algebraic identity) | `rt-math.js` — `PurePhi` |
+| `√2`, `√3`, `√6` | `PureRadicals.sqrt2()`, `.sqrt3()`, `.sqrt6()` (cached) | `rt-math.js` — `PureRadicals` |
+| `cos(2π/7)` etc. | `PureCubics.heptagon()`, `.nonagon()` (cached cubic roots) | `rt-math.js` — `PureCubics` |
+| Decimal polygon coords | `SymbolicCoord` — exact `(a+b√D)/c` for N=3,4,5,6,8,10,12 | `rt-math.js` — `SymbolicCoord` |
+
+**When in doubt, consult source material:**
+- N.J. Wildberger, *Divine Proportions* — available at `Geometry Documents/Wildberger References/`
+- R.B. Fuller, *Synergetics* — available at `Geometry Documents/Wildberger References/`
+
+**The only justified exceptions** for classical trig are:
+1. **THREE.js API boundary** (e.g., `rotation.x = Math.PI/2` for grid alignment) — add `// Math.PI justified:` comment
+2. **UX degree↔radian conversion** at the slider boundary — the rotation itself should use double-reflection
+3. **Demo modules** explicitly comparing RT vs classical results
+
 ## Development Guidelines
 
 ### Workflow: Inspect → Reason → Act → Verify
@@ -168,8 +196,21 @@ The user acts as the primary validator. When changes are rejected or need revisi
 
 Each step should be verified independently before proceeding:
 
-1. **Vertex generation** — Rational exactness (check console for "Max error")
-2. **Face winding** — Counter-clockwise (outward normals) for backface culling
-3. **Coordinate modes** — Test in both Cartesian and Quadray
-4. **State persistence** — Test state saves/loads correctly
-5. **View system** — If adding new controls, wire them into `rt-delta.js` for view capture/restore
+1. **RT-purity check** — Does the math use `rt-math.js` primitives? (See RT-Purity table above)
+2. **Vertex generation** — Rational exactness (check console for "Max error")
+3. **Face winding** — Counter-clockwise (outward normals) for backface culling
+4. **Coordinate modes** — Test in both Cartesian and Quadray
+5. **State persistence** — Test state saves/loads correctly
+6. **View system** — If adding new controls, wire them into `rt-delta.js` for view capture/restore
+
+### When Adding New Polyhedra
+
+New polyhedra touch **every layer** of the application. Follow `Geometry Documents/Add-Polyhedra-Guide.md` which covers:
+
+1. Geometry generator in `rt-polyhedra.js` (RT-pure vertices/edges/faces)
+2. Rendering setup in `rt-rendering.js` (10 sub-steps: group, materials, meshes, edges, nodes, labels)
+3. UI controls in `index.html` + `rt-ui-binding-defs.js` (declarative binding system)
+4. Event handlers in `rt-init.js`
+5. State persistence in `rt-state-manager.js` + `rt-filehandler.js`
+6. View system integration in `rt-delta.js`
+7. Testing (visual, state round-trip, view capture/restore)
