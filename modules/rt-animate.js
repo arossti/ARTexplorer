@@ -462,6 +462,9 @@ export const RTAnimate = {
     showRadialOctahedronMatrix: "radialOctMatrixGroup",
     showRadialCuboctahedronMatrix: "radialVEMatrixGroup",
     showPenroseTiling: "penroseTilingGroup",
+    // Thomson Polyhedra
+    showThomsonTetrahedron: "thomsonTetrahedronGroup",
+    showThomsonOctahedron: "thomsonOctahedronGroup",
   },
 
   /**

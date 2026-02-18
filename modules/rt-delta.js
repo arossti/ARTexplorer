@@ -74,6 +74,12 @@ export const RTDelta = {
       "showCartesianBasis", "showQuadray",
       // Penrose Tiling
       "showPenroseTiling",
+      // Thomson Polyhedra
+      "showThomsonTetrahedron", "showThomsonOctahedron",
+      // Thomson sub-toggles (plane selection, face/hull rendering)
+      "thomsonTetraFacePlanes", "thomsonTetraEdgePlanes",
+      "thomsonTetraShowFaces", "thomsonTetraShowHullEdges",
+      "thomsonOctaShowFaces", "thomsonOctaShowHullEdges",
     ];
     const result = {};
     for (const id of ids) {
@@ -111,6 +117,11 @@ export const RTDelta = {
     geodesicOctaFrequency: "geodesicOctaFrequency",
     geodesicIcosaFrequency: "geodesicIcosaFrequency",
     geodesicDualIcosaFrequency: "geodesicDualIcosaFrequency",
+    // Thomson Polyhedra
+    thomsonTetraNGon: "thomsonTetraNGon",
+    thomsonTetraRotation: "thomsonTetraRotation",
+    thomsonOctaNGon: "thomsonOctaNGon",
+    thomsonOctaRotation: "thomsonOctaRotation",
   },
 
   /**
@@ -134,6 +145,9 @@ export const RTDelta = {
     showRadialCuboctahedronMatrix: "radial-cuboctahedron-matrix-controls",
     // Tetrahelix 3
     showTetrahelix3: "tetrahelix3-controls",
+    // Thomson Polyhedra
+    showThomsonTetrahedron: "thomson-tetra-controls",
+    showThomsonOctahedron: "thomson-octa-controls",
   },
 
   /** @private */
