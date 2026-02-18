@@ -219,20 +219,47 @@ For the **cube implementation**: reuse `OCT_COORD_PLANES` + `TET_EDGE_PLANES` di
 
 ---
 
+## Face Rendering via 3D Convex Hull
+
+### Key Insight
+All Thomson nodes lie on the circumsphere → every node is on the convex hull → the 3D convex hull triangulation = the polyhedron we want, for ANY rotation angle.
+
+### Implementation (commit pending)
+- **ConvexGeometry** from `three/addons/geometries/ConvexGeometry.js` — takes Vector3[], returns triangulated BufferGeometry with correct CCW winding and outward normals
+- **renderThomsonCircles()** extended with optional hull face mesh (semi-transparent, flatShading, renderOrder=1 behind lines/nodes)
+- **Hull edges** via `THREE.EdgesGeometry` — white wireframe of triangulated hull
+- **Edge pairs** returned from `collectCircleVertices()` — each circle's N-gon edges mapped to deduplicated node indices, needed for IK constraints
+- **UI**: "Show Faces" + "Hull Edges" checkboxes per Thomson type
+
+### Jitterbug Connection
+The rotation slider already implements the Jitterbug motion. Thomson Oct at N=4:
+- **0°**: 12 distinct nodes = cuboctahedron configuration
+- **45°**: Nodes coincide pairwise → 6 nodes = octahedron (doubled edges)
+- With faces enabled, this visualizes the cuboctahedron→octahedron collapse in real time
+
+Future: use `solveRigid3D()` from rt-ik-solvers.js to maintain edge lengths during animated rotation, creating true elastic-edge Jitterbug transformations.
+
+---
+
 ## Action Items
 
-### Quick Fixes
-1. **Line 193**: Replace `Math.sqrt(3)` with `RT.PureRadicals.sqrt3()`
-2. **Lines 101–102**: Add justification comment for Math.PI/Math.tan at degree boundary
+### Completed
+1. ~~Line 193: Replace Math.sqrt(3) with RT.PureRadicals.sqrt3()~~ (commit `e33cdfe`)
+2. ~~Lines 101–102: Add justification comment~~ (commit `e33cdfe`)
+3. ~~Face rendering via ConvexGeometry~~ (pending commit)
+4. ~~Edge pair tracking in collectCircleVertices()~~ (pending commit)
 
 ### Implementation Queue
-3. **Thomson.cube()** — Compose from existing plane arrays (OCT_COORD + TET_EDGE)
-4. **Icosahedron plane computation** — Derive 15 normals from rt-polyhedra.js vertex data
-5. **Thomson.icosahedron()** — 15 planes, 5-fold symmetry, φ-based normals
-6. **Edge drawing** — Convex hull or nearest-neighbor mode (experimental)
+5. **Thomson.cube()** — Compose from existing plane arrays (OCT_COORD + TET_EDGE)
+6. **Icosahedron plane computation** — Derive 15 normals from rt-polyhedra.js vertex data
+7. **Thomson.icosahedron()** — 15 planes, 5-fold symmetry, φ-based normals
+8. **Jitterbug animation** — Elastic edges via rt-ik-solvers.js + animated rotation
 
 ### Verification Targets
 - Thomson Oct at N=4 → 6 coincident nodes at octahedron vertices ✓ (already works)
 - Thomson Tet at N=3 with rotation → discoverable coincident orientation ✓ (already works)
+- Thomson Oct at N=4 + Show Faces → 8 triangular faces = octahedron
+- Thomson Oct at N=4, rotation 0→45° + faces → Jitterbug cuboctahedron→octahedron
+- Irregular case (N=5, any rotation) → fully closed triangulated hull, no holes
 - Thomson Cube at N=4 on 9 planes → cube vertices recoverable
 - Thomson Icosa at N=5 on 15 planes → 12 icosahedron vertices recoverable
