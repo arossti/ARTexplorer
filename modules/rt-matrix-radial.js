@@ -14,7 +14,7 @@
  *
  * References:
  * - Fuller's Synergetics: Section 400-480 (IVM), 950-954 (Closest Packing)
- * - Geometry documents/Matrix-Radial.md (workplan)
+ * - Geometry Documents/Matrix-Radial.md (workplan)
  */
 
 import { RT } from "./rt-math.js";

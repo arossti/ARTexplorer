@@ -169,8 +169,8 @@ python scripts/prime_search_streamlined.py \
 
 ## Files to Reference (Do Not Recreate)
 
-- `Geometry documents/Prime-Projection-Conjecture.tex` - Target results to reproduce
-- `Geometry documents/Polygon-Rationalize.md` - RT polygon theory
+- `Geometry Documents/Prime-Projection-Conjecture.tex` - Target results to reproduce
+- `Geometry Documents/Polygon-Rationalize.md` - RT polygon theory
 - `modules/rt-math.js` - Source of truth for RT functions
 - `modules/rt-polyhedra.js` - Source of truth for geometry
 

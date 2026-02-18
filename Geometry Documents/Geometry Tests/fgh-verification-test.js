@@ -10,10 +10,10 @@
  *                      (G and H swapped to account for tetrahedral chirality)
  *
  * Run in browser console after loading ARTexplorer:
- *   import('./Geometry documents/Geometry Tests/fgh-verification-test.js').then(m => m.runAllTests())
+ *   import('./Geometry Documents/Geometry Tests/fgh-verification-test.js').then(m => m.runAllTests())
  *
  * Or with Node.js:
- *   node --input-type=module -e "import('./Geometry documents/Geometry Tests/fgh-verification-test.js').then(m => m.runAllTests())"
+ *   node --input-type=module -e "import('./Geometry Documents/Geometry Tests/fgh-verification-test.js').then(m => m.runAllTests())"
  */
 
 // === QUADRAY BASIS AXES IN CARTESIAN ===

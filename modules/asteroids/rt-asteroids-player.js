@@ -23,7 +23,7 @@
  * Four equiangular basis vectors from tetrahedron center to vertices.
  *
  * @documentation
- * - Design doc: /Geometry documents/A.r.t.steroids.md
+ * - Design doc: /Geometry Documents/A.r.t.steroids.md
  * - Motion dynamics: A.r.t.steroids.md Version 3.2 Updates
  * - ASDF motion test: /demos/asdf-motion-test.html (THIS WEEK)
  *

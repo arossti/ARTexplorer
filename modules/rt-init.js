@@ -237,7 +237,7 @@ function startARTexplorer(
   //
   // FUTURE CLEANUP: Once declarative system is fully proven, wrap covered
   // handlers in `if (!USE_DECLARATIVE_UI)` or remove them entirely.
-  // See: Geometry documents/JAN30-MODULARIZATION-ANALYSIS.md for handler inventory
+  // See: Geometry Documents/JAN30-MODULARIZATION-ANALYSIS.md for handler inventory
   //
   // HANDLERS NOT IN DECLARATIVE (must always run):
   // - Plane toggles (.plane-toggle-switch[data-plane])

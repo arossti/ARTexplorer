@@ -1178,7 +1178,7 @@ git push origin main
 - `src/geometry/rt-init.js:260-307` - Grid extent calculation
 - `src/geometry/modules/rt-rendering.js` - Rendering utilities
 - `src/geometry/modules/rt-state-manager.js` - State management patterns
-- `docs/development/Geometry documents/ARTexplorer.md` - Main documentation
+- `docs/development/Geometry Documents/ARTexplorer.md` - Main documentation
 
 ### 15.3 Architectural References
 
@@ -1198,7 +1198,7 @@ git push origin main
 - [ ] `src/geometry/index.html` (enable Papercut UI controls)
 - [ ] `src/geometry/rt-init.js` (import and initialize Papercut module)
 - [ ] `src/geometry/art.css` (add print mode styles)
-- [ ] `docs/development/Geometry documents/ARTexplorer.md` (add Papercut section)
+- [ ] `docs/development/Geometry Documents/ARTexplorer.md` (add Papercut section)
 
 ### Files to Reference (no changes)
 

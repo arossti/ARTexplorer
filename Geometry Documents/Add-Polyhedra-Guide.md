@@ -1131,8 +1131,8 @@ const PROJECTION_PRESETS = {
 
 ### Related Documentation
 
-- `Geometry documents/Project-Projection.md` - Full implementation workplan for projection system
-- `Geometry documents/Polygon-Rationalize.md` - Prime polygon research and spread configurations
+- `Geometry Documents/Project-Projection.md` - Full implementation workplan for projection system
+- `Geometry Documents/Polygon-Rationalize.md` - Prime polygon research and spread configurations
 
 ---
 

@@ -25,7 +25,7 @@
  * They perceive tetrahedral displacement as unpredictable "lateral shifts" in XYZ space.
  *
  * @documentation
- * - Design doc: /Geometry documents/A.r.t.steroids.md
+ * - Design doc: /Geometry Documents/A.r.t.steroids.md
  * - Targeting telegraph: A.r.t.steroids.md Lines 415-459
  * - Enemy behavior: A.r.t.steroids.md Section 5
  * - Targeting test: /demos/targeting-test.html (NEXT WEEK)

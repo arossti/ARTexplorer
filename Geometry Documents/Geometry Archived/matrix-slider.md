@@ -1737,7 +1737,7 @@ const sin_val = Math.sqrt(1 - point.x); // Derived from identity
 **Files Modified:**
 
 - [rt-matrix.js](../../../src/geometry/modules/rt-matrix.js) - Added philosophy header and validation helper
-- [matrix-slider.md](../../../docs/development/Geometry documents/matrix-slider.md) - Added complete RT-pure audit
+- [matrix-slider.md](../../../docs/development/Geometry Documents/matrix-slider.md) - Added complete RT-pure audit
 
 **Documentation Enhancements:**
 

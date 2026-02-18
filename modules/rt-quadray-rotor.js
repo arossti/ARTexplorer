@@ -16,7 +16,7 @@
  *
  * Tom Ace's F,G,H rotation coefficients have been VERIFIED to produce
  * identical rotations to quaternions for all four Quadray basis axes.
- * See: Geometry documents/Geometry Tests/fgh-verification-test.js
+ * See: Geometry Documents/Geometry Tests/fgh-verification-test.js
  *
  * What's RT-Pure:
  * - Entry point via spread (s = sin²θ) instead of angle
@@ -36,10 +36,10 @@
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * @requires rt-math.js - RT namespace for spread/cross calculations
- * @see Geometry documents/Quadray-Rotors.tex - Mathematical foundations
- * @see Geometry documents/4D-Gimbal-Lock-Avoidance.md - Theory
- * @see Geometry documents/Spread-Quadray-Rotor-Demo.md - Implementation workplan
- * @see Geometry documents/Geometry Tests/fgh-verification-test.js - Verification tests
+ * @see Geometry Documents/Quadray-Rotors.tex - Mathematical foundations
+ * @see Geometry Documents/4D-Gimbal-Lock-Avoidance.md - Theory
+ * @see Geometry Documents/Spread-Quadray-Rotor-Demo.md - Implementation workplan
+ * @see Geometry Documents/Geometry Tests/fgh-verification-test.js - Verification tests
  */
 
 import { RT, Quadray } from "./rt-math.js";

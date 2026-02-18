@@ -360,7 +360,7 @@ refreshColorValues() {
 
 ### 7.1 Update Geometry README
 
-**File**: `docs/development/Geometry documents/README.md`
+**File**: `docs/development/Geometry Documents/README.md`
 
 Add section under "Developer Tools":
 

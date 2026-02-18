@@ -16,7 +16,7 @@
  * Example: ART-eyJpZCI6MTIzNDU2fQ==-R0lGODlhAQABAAAAACw=
  *
  * @documentation
- * - Design doc: /Geometry documents/A.r.t.steroids.md
+ * - Design doc: /Geometry Documents/A.r.t.steroids.md
  * - License system: A.r.t.steroids.md Appendix C.2 (SERVER-SIDE)
  * - Anti-cheat: A.r.t.steroids.md Appendix C.6
  *

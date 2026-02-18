@@ -16,7 +16,7 @@
  * - Targeting Hairline Count: Active enemy targeting indicators
  *
  * @documentation
- * - Design doc: /Geometry documents/A.r.t.steroids.md
+ * - Design doc: /Geometry Documents/A.r.t.steroids.md
  * - HUD system: A.r.t.steroids.md Section 8
  * - Geodesic mapping: A.r.t.steroids.md Appendix A.4
  *

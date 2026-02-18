@@ -26,7 +26,7 @@
  * - The Infinite - Ethereal golden harmony
  *
  * @documentation
- * - Design doc: /Geometry documents/A.r.t.steroids.md
+ * - Design doc: /Geometry Documents/A.r.t.steroids.md
  * - Audio requirements: A.r.t.steroids.md Appendix B.2
  *
  * @related

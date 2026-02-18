@@ -33,7 +33,7 @@ CSS classes (`axis-qw`, `label-axis-qw`, etc.) already use consistent naming - n
 | `modules/rt-coordinates.js` | ~20 | JS getElementById, field refs |
 | `modules/rt-controls.js` | ~4 | JS getElementById |
 | `art.css` | ~3 | CSS selectors (rotation fields) |
-| `Geometry documents/Coordinates.md` | ~3 | Documentation |
+| `Geometry Documents/Coordinates.md` | ~3 | Documentation |
 
 ## Execution Order
 
@@ -42,7 +42,7 @@ CSS classes (`axis-qw`, `label-axis-qw`, etc.) already use consistent naming - n
 3. `modules/rt-coordinates.js` - Update module references
 4. `modules/rt-controls.js` - Update any references
 5. `art.css` - Update CSS selectors if needed
-6. `Geometry documents/Coordinates.md` - Update documentation
+6. `Geometry Documents/Coordinates.md` - Update documentation
 7. **TEST** - Verify coordinate display still works
 
 ## Risk Assessment
