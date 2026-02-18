@@ -159,10 +159,15 @@ rt-delta.js → rt-animate.js → rt-viewmanager.js (view system)
 - N.J. Wildberger, *Divine Proportions* — available at `Geometry Documents/Wildberger References/`
 - R.B. Fuller, *Synergetics* — available at `Geometry Documents/Wildberger References/`
 
-**The only justified exceptions** for classical trig are:
-1. **THREE.js API boundary** (e.g., `rotation.x = Math.PI/2` for grid alignment) — add `// Math.PI justified:` comment
-2. **UX degree↔radian conversion** at the slider boundary — the rotation itself should use double-reflection
-3. **Demo modules** explicitly comparing RT vs classical results
+**The sole justified boundary** is the **THREE.js rendering handoff** — camera, controls, `Vector3` creation, rotation matrices. Our 4D Quadray system squashes down to XYZ coordinate geometry only here, because THREE.js knows nothing about RT. Until we build a purpose-built 4D rendering pipeline (planned: Rust + Swift/Metal native macOS app), this is the necessary compromise. **All geometry upstream of this boundary must remain RT-pure.**
+
+Specific cases at this boundary (each requires a `// Math.X justified:` comment):
+- `Math.PI` / `Math.sin` / `Math.cos` in THREE.js rotation matrices and grid alignment
+- `Math.sqrt()` at the final `Vector3` creation (deferred from quadrance space)
+- UX degree↔radian conversion at slider boundaries (the rotation *itself* uses `RT.reflectInLine()`)
+- **Demo modules** explicitly comparing RT vs classical results (educational only)
+
+**Why this discipline matters beyond correctness:** RT-pure code ports cleanly to any future rendering backend. Classical trig leakage becomes migration debt.
 
 ## Development Guidelines
 

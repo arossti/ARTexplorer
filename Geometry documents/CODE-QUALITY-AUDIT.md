@@ -356,12 +356,17 @@ grep -rn "Math.sqrt" modules/
 3. If no → is it at a justified boundary? (THREE.js API, UX degree conversion, demo comparison)
 4. If justified → add `// Math.X justified:` comment explaining why
 
-**Allowed Exceptions (must have justification comment):**
+**The sole justified boundary: THREE.js rendering handoff.**
 
-1. **THREE.js API boundary:** `rotation.x = Math.PI/2` — THREE.js requires radians internally
-2. **UX degree↔radian conversion:** Slider boundary only; the rotation itself should use `RT.reflectInLine()`
-3. **Demo modules:** Explicitly comparing RT vs classical results (educational)
-4. **Comments/Documentation:** Explaining conversion from classical to RT
+Our 4D Quadray system squashes to XYZ only at the THREE.js API — camera, controls, `Vector3` creation, rotation matrices. THREE.js knows nothing about RT; this is the necessary compromise until a purpose-built 4D rendering pipeline replaces it (planned: Rust + Swift/Metal native macOS app). **All geometry upstream of this boundary must remain RT-pure.** Classical trig leakage becomes migration debt.
+
+Specific cases at this boundary (each requires a `// Math.X justified:` comment):
+
+1. **THREE.js rotation/grid:** `rotation.x = Math.PI/2` — THREE.js requires radians internally
+2. **Deferred `Math.sqrt()`:** At the final `Vector3` creation point (from quadrance space)
+3. **UX degree↔radian conversion:** Slider boundary only; the rotation itself must use `RT.reflectInLine()`
+4. **Demo modules:** Explicitly comparing RT vs classical results (educational)
+5. **Comments/Documentation:** Explaining conversion from classical to RT
 
 **Example Justification Comment:**
 
@@ -608,7 +613,7 @@ function render() {
 
 **`rt-math.js` is the single source of truth for all mathematical operations.** Before introducing any classical trig function (`Math.PI`, `Math.sin`, `Math.cos`, `Math.tan`, `Math.atan2`, or radicals), the auditor MUST verify that no RT-pure alternative exists in `rt-math.js`.
 
-**Why this matters:** AI agents naturally default to classical coordinate geometry and trigonometry. This app is explicitly a Rational Trigonometry and Quadray/Synergetics explorer — classical shortcuts undermine its core purpose and pollute the codebase.
+**Why this matters:** AI agents naturally default to classical coordinate geometry and trigonometry. This app is explicitly a Rational Trigonometry and Quadray/Synergetics explorer — classical shortcuts undermine its core purpose and pollute the codebase. Furthermore, the long-term plan is to migrate from JavaScript/THREE.js to a **Rust + Swift/Metal native macOS application** with a purpose-built 4D rendering pipeline. RT-pure code will port cleanly; classical trig leakage becomes migration debt.
 
 **RT-Alternative Lookup Table:**
 
