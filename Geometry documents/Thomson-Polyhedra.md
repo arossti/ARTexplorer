@@ -6,28 +6,67 @@ Working document for the Thomson Polyhedra feature in ARTExplorer.
 
 ## Completed Work
 
-### Commits (branch: `Thomson-Polyhedra`)
-1. `8f873ad` — Feat: Thomson Polyhedra — rt-thomson.js module + full UI wiring
-2. `d5b1de9` — Fix: Thomson slider state persistence + docs
-3. `cbd4993` — Feat: Thomson great-circle shells — vertex nodes + plane toggles
-4. `d1a7616` — Docs: Move 10 completed docs to Geometry Archived subfolder
+### Commits
+
+**Branch `Thomson-Polyhedra` (merged as PR #102):**
+1. `1a6a86f` — Feat: UI scaffolding — Experimental Polyhedra section + Thomson stubs
+2. `8f873ad` — Feat: Thomson Polyhedra — rt-thomson.js module + full UI wiring
+3. `d5b1de9` — Fix: Thomson slider state persistence + docs
+4. `cbd4993` — Feat: Thomson great-circle shells — vertex nodes + plane toggles
 5. `aa82029` — Fix: Apply 3021 Rule to Thomson face plane color/label mapping
 6. `248a9d5` — Feat: Great circle rotation sliders + coincident node counter
+7. `e33cdfe` — Improve: RT-purity audit fixes + Thomson-Polyhedra.md working doc
+8. `cd1e8ba` — Feat: Convex hull face rendering + edge pairs for Thomson polyhedra
+9. `d0792a2` — Feat: Thomson Tet rotation slider 0–360° with spread display
+10. `810c424` — Feat: Thomson Oct slider 360° + vibrant colors + color theory modal
+11. `c29c679` — Fix: Add Thomson polyhedra to view system state capture/restore
+
+**Branch `Thomson-Polyhedra2` (PRs #103, #104):**
+12. `05894d3` — Feat: Add Coordinate System controls to view/animation state system
+13. `b07dad8` — Fix: Grid plane sync + dissolve transitions for view animations
+14. `e0a537e` — Clean: Replace .artview extension with .json for view exports
 
 ### What's Built
 
-**rt-thomson.js** — Great-circle generation module:
+**rt-thomson.js** (251 lines) — Great-circle generation module:
 - `buildPlaneBasis(normal)` — orthonormal basis from plane normal
 - `makeCircle(normal, radius, nGon, rotationDeg)` — N-gon via `RT.nGonVertices()`, 2D rotation via `RT.reflectInLine()` double-reflection, 2D→3D transform
-- `collectCircleVertices(circles, nGon)` — nodes at each circle's N-gon vertices with quadrance-based dedup
+- `collectCircleVertices(circles, nGon)` — nodes at each circle's N-gon vertices with quadrance-based dedup; returns `{ nodes, edges, coincidentCount }`
+- **Edge pair tracking**: Each circle's N-gon edges mapped to deduplicated node indices as `[nodeIndex_a, nodeIndex_b]` pairs (needed for IK constraints)
 - Plane definitions: `TET_FACE_PLANES` (4, 3021-corrected), `TET_EDGE_PLANES` (6), `OCT_COORD_PLANES` (3)
-- Public API: `Thomson.tetrahedron()`, `Thomson.octahedron()` returning `{circles, nodes, nGon, planeCount, coincidentCount}`
+- Public API: `Thomson.tetrahedron()`, `Thomson.octahedron()` returning `{circles, nodes, edges, nGon, planeCount, coincidentCount}`
 
-**rt-rendering.js** — `renderThomsonCircles()` renderer with per-plane colored LineSegments + vertex nodes.
+**rt-rendering.js** — `renderThomsonCircles()` renderer:
+- Per-plane colored LineSegments for great circles
+- Vertex nodes with configurable size/geometry (RT or classical)
+- **Convex hull face mesh** via `ConvexGeometry` (THREE.js addon) — semi-transparent, flatShading, FrontSide culling with CCW winding, renderOrder=1 behind lines/nodes
+- **Hull edges** via `THREE.EdgesGeometry` — white wireframe of triangulated hull
+- Dissolve opacity support throughout (circles, nodes, faces, edges)
 
-**index.html** — N-gon sliders (3-12), rotation sliders (0-120° tet, 0-90° oct), face/edge plane checkboxes.
+**index.html** — UI controls per Thomson type:
+- N-gon slider: 3–12
+- Rotation slider: 0–360° (full circle, symmetry fold determines snap points)
+- Tet: Face Planes (4) checkbox (default on), Edge Planes (6) checkbox
+- Both: Show Faces checkbox, Hull Edges checkbox
 
-**rt-ui-binding-defs.js** — Slider and checkbox bindings with degree formatting.
+**rt-ui-binding-defs.js** — Slider and checkbox bindings:
+- Rotation value formatted as `{deg}° s={spread}` where spread = sin²(θ) — the RT measure
+- 4 spread intervals per 360°: 0→1→0→1→0
+
+**color-theory-modal.js** — Thomson Polyhedra section:
+- `thomson-tetra`: Nodes & Faces color (default `0xFF5500` orange)
+- `thomson-octa`: Nodes & Faces color (default `0xAA44FF` violet)
+- Mapped to `colorPalette.thomsonTetrahedron` / `colorPalette.thomsonOctahedron` in rendering
+
+**rt-delta.js** — View/animation state integration:
+- Thomson checkboxes captured/restored: `showThomsonTetrahedron`, `showThomsonOctahedron`, `thomsonTetraFacePlanes`, `thomsonTetraEdgePlanes`, `thomsonTetraShowFaces`, `thomsonTetraShowHullEdges`, `thomsonOctaShowFaces`, `thomsonOctaShowHullEdges`
+- Thomson sliders captured/restored: `thomsonTetraNGon`, `thomsonTetraRotation`, `thomsonOctaNGon`, `thomsonOctaRotation`
+- Coordinate system controls (grid planes, tessellation sliders, toggle buttons) also added
+
+**rt-animate.js** — Grid dissolve transitions:
+- `_setupGridDissolve()` detects grid group visibility transitions between views
+- Direct material traversal for opacity lerp (grids bypass `renderPolyhedron()` path)
+- Smooth fade-in/fade-out during animated view transitions
 
 ### Node Strategy Evolution
 - v1: Theoretical plane-pair intersection points → too many floating nodes
@@ -39,6 +78,26 @@ Working document for the Thomson Polyhedra feature in ARTExplorer.
 - QW→D(-1,-1,1) Yellow, QX→A(1,1,1) Red, QY→C(-1,1,-1) Cyan, QZ→B(1,-1,-1) Green
 
 Now matches Quadray polar grid colors when both are visible.
+
+### Rotation Slider: 360° with Spread Display
+Originally: Tet 0–120° (3-fold), Oct 0–90° (4-fold). Extended to full 360° for both, since:
+- Exploring rotations beyond the symmetry fold reveals frustrated configurations
+- The spread display `s = sin²(θ)` shows the RT angular measure alongside degrees
+- 4 spread intervals per full rotation: 0→1→0→1→0
+
+### Convex Hull Face Rendering (commit `cd1e8ba`)
+All Thomson nodes lie on the circumsphere → every node is on the convex hull → the 3D convex hull triangulation = the polyhedron we want, for ANY rotation angle.
+
+- **ConvexGeometry** from `three/addons/geometries/ConvexGeometry.js` — takes Vector3[], returns triangulated BufferGeometry with correct CCW winding and outward normals
+- **renderThomsonCircles()** extended with optional hull face mesh (opacity 0.3, flatShading, depthWrite false)
+- **Hull edges** via `THREE.EdgesGeometry(hullGeometry, 1)` — threshold angle 1° for edge detection
+- **Minimum 4 nodes** required for hull (gracefully skipped below that)
+
+### Jitterbug Connection
+The rotation slider implements the Jitterbug motion. Thomson Oct at N=4:
+- **0°**: 12 distinct nodes = cuboctahedron configuration
+- **45°**: Nodes coincide pairwise → 6 nodes = octahedron (doubled edges)
+- With faces enabled, this visualizes the cuboctahedron→octahedron collapse in real time
 
 ---
 
@@ -55,6 +114,81 @@ This is fundamentally a **number theory** constraint. The symmetry fold of each 
 | **Icosahedron** | 15 mirror | 5-fold | 5, 10 | 0–72° (360/5) |
 
 **Odd N on even-fold planes and vice versa → irregular polyhedra.** These are Thomson's *frustrated* configurations, analogous to incommensurate lattice ratios.
+
+---
+
+## RT-Purity Audit: rt-thomson.js
+
+### Classical Trig Usage (3 occurrences — after audit fixes)
+
+| Line | Code | Verdict |
+|---|---|---|
+| 32 | `Math.sqrt()` in `normalize()` | **Justified** — unavoidable for unit vectors in orthonormal basis construction |
+| 102 | `Math.PI` in rotation deg→rad | **Boundary** — degree-to-slope UX boundary; justified in code comment |
+| 103 | `Math.tan()` in rotation slope | **Boundary** — part of deg→slope conversion; justified in code comment |
+
+~~Line 193: `Math.sqrt(3)` for tet circumsphere~~ → **Fixed** (commit `e33cdfe`): now uses `RT.PureRadicals.sqrt3()`
+
+### Rotation: Math.PI + Math.tan (lines 102–103)
+
+```javascript
+// Math.PI/Math.tan justified: degree-to-slope UX boundary; rotation itself is RT-pure.
+const halfRad = ((rotationDeg / 2) * Math.PI) / 180;
+const m = Math.tan(halfRad);
+```
+
+This converts degrees → radians → slope for the double-reflection rotation. The actual rotation (`RT.reflectInLine`) is RT-pure. The `Math.PI/Math.tan` usage is the **degree-to-rational boundary** — analogous to how THREE.js grid rotation uses `Math.PI`.
+
+### Plane Optimization
+
+**No duplicate planes** — all plane sets are minimal:
+- `TET_FACE_PLANES`: 4 unique normals (antipodal pairs define the same plane — (1,1,1) and (-1,-1,-1) are the same plane. But we only list one per plane, so no duplication.)
+- `TET_EDGE_PLANES`: 6 unique normals (each edge midpoint direction is unique)
+- `OCT_COORD_PLANES`: 3 unique normals (coordinate axes)
+
+Verified: no two normals in any set are parallel (no n₁ = ±k·n₂), so all planes are distinct.
+
+For the **cube implementation**: reuse `OCT_COORD_PLANES` + `TET_EDGE_PLANES` directly — do NOT create a duplicate `CUBE_COORD_PLANES` array.
+
+### Code Quality Summary
+
+- **251 lines** — well within function/file size guidelines
+- **No console.log** statements
+- **No commented-out code**
+- **No duplicate logic** — `makeCircle()` is shared by both Thomson types
+- **Clear module boundaries** — pure math, no THREE.js dependency, returns plain objects
+- **Function ordering**: helpers (cross, normalize) → core (buildPlaneBasis, makeCircle, collectCircleVertices) → public API (Thomson.tetrahedron, Thomson.octahedron) ✓
+- **O(n²) dedup** in `collectCircleVertices` — acceptable for max ~180 vertices (15 planes × 12-gon)
+
+---
+
+## Action Items
+
+### Completed
+1. ~~Line 193: Replace Math.sqrt(3) with RT.PureRadicals.sqrt3()~~ (commit `e33cdfe`)
+2. ~~Lines 101–102: Add justification comment~~ (commit `e33cdfe`)
+3. ~~Face rendering via ConvexGeometry~~ (commit `cd1e8ba`)
+4. ~~Edge pair tracking in collectCircleVertices()~~ (commit `cd1e8ba`)
+5. ~~Rotation sliders extended to 360° with spread display~~ (commits `d0792a2`, `810c424`)
+6. ~~Thomson colors in color-theory-modal.js~~ (commit `810c424`)
+7. ~~View system state capture/restore~~ (commit `c29c679`)
+8. ~~Coordinate system controls in view/animation state~~ (commit `05894d3`)
+9. ~~Grid dissolve transitions~~ (commit `b07dad8`)
+
+### Implementation Queue
+10. **Thomson.cube()** — Compose from existing plane arrays (OCT_COORD + TET_EDGE), see Phase 2 below
+11. **Icosahedron plane computation** — Derive 15 normals from rt-polyhedra.js vertex data
+12. **Thomson.icosahedron()** — 15 planes, 5-fold symmetry, φ-based normals
+13. **Jitterbug animation** — Elastic edges via rt-ik-solvers.js + animated rotation
+
+### Verification Targets
+- Thomson Oct at N=4 → 6 coincident nodes at octahedron vertices ✓
+- Thomson Tet at N=3 with rotation → discoverable coincident orientation ✓
+- Thomson Oct at N=4 + Show Faces → 8 triangular faces = octahedron ✓
+- Thomson Oct at N=4, rotation 0→45° + faces → Jitterbug cuboctahedron→octahedron ✓
+- Irregular case (N=5, any rotation) → fully closed triangulated hull, no holes ✓
+- Thomson Cube at N=4 on 9 planes → cube vertices recoverable (pending)
+- Thomson Icosa at N=5 on 15 planes → 12 icosahedron vertices recoverable (pending)
 
 ---
 
@@ -98,15 +232,15 @@ cube(halfSize = 1, options = {}) {
     label: p.label,
   }));
 
-  const { nodes, coincidentCount } = collectCircleVertices(circles, nGon);
-  return { circles, nodes, nGon, planeCount: activePlanes.length, coincidentCount };
+  const { nodes, edges, coincidentCount } = collectCircleVertices(circles, nGon);
+  return { circles, nodes, edges, nGon, planeCount: activePlanes.length, coincidentCount };
 }
 ```
 
 ### UI Controls
 - N-gon slider: 3–12
-- Rotation slider: 0–90° (4-fold dominant symmetry)
-- Checkboxes: Coordinate Planes (3), Diagonal Planes (6)
+- Rotation slider: 0–360° with spread display
+- Checkboxes: Coordinate Planes (3), Diagonal Planes (6), Show Faces, Hull Edges
 
 ### Verification
 - N=4 on 3 coord planes → 6 nodes at octahedron vertices (coord planes = oct symmetry)
@@ -144,7 +278,7 @@ The normals can be derived from edge midpoints. For each antipodal edge pair, th
 
 ### Symmetry Fold
 Each mirror plane has **5-fold** rotational symmetry (pentagonal), so:
-- Rotation slider range: 0–72° (360/5)
+- Rotation slider range: 0–72° (360/5), but slider will be 0–360° with spread display
 - Best N-gons: multiples of 5 (N=5, 10)
 - N=5 on 15 planes → the Thomson solution itself (12 icosahedron vertices)
 
@@ -156,110 +290,4 @@ From the normalization in rt-polyhedra.js: circumsphere radius = halfSize (verti
 - Normals for the 12 non-coordinate planes must be computed from vertex data
 - Colors: coordinate planes could use RGB, additional planes could use a 5-fold color scheme
 - Checkboxes: "Coordinate Planes (3)" + "Edge Mirror Planes (12)" or by golden-rectangle group
-
----
-
-## RT-Purity Audit: rt-thomson.js
-
-### Classical Trig Usage (4 occurrences)
-
-| Line | Code | Verdict |
-|---|---|---|
-| 32 | `Math.sqrt()` in `normalize()` | **Justified** — unavoidable for unit vectors in orthonormal basis construction |
-| 101 | `Math.PI` in rotation deg→rad | **Boundary** — degree-to-rational conversion, see below |
-| 102 | `Math.tan()` in rotation slope | **Boundary** — part of deg→slope conversion, see below |
-| 193 | `Math.sqrt(3)` for tet circumsphere | **Fix**: use `RT.PureRadicals.sqrt3()` |
-
-### Rotation: Math.PI + Math.tan (lines 101–102)
-
-Current code:
-```javascript
-const halfRad = ((rotationDeg / 2) * Math.PI) / 180;
-const m = Math.tan(halfRad);
-```
-
-This converts degrees → radians → slope for the double-reflection rotation. The actual rotation (`RT.reflectInLine`) is RT-pure. The `Math.PI/Math.tan` usage is the **degree-to-rational boundary** — analogous to how THREE.js grid rotation uses `Math.PI`.
-
-**Why not RT.slopeFromSpread?** The slider parameter is degrees (user-friendly), and converting degrees → spread → half-angle spread → slope requires solving a half-angle identity that itself involves √. The current approach is the most direct path from degrees to the slope parameter that `reflectInLine` needs.
-
-**Recommendation**: Add a justification comment and keep the current approach. The Math.PI/Math.tan are at the UX boundary (degree input → rational computation), not in the geometry engine.
-
-### Math.sqrt(3) Fix (line 193)
-
-```javascript
-// Current:
-const radius = halfSize * Math.sqrt(3);
-
-// Should be:
-const radius = halfSize * RT.PureRadicals.sqrt3();
-```
-
-This uses the cached √3 value from rt-math.js, maintaining consistency with the rest of the codebase.
-
-### Plane Optimization
-
-**No duplicate planes** — all plane sets are minimal:
-- `TET_FACE_PLANES`: 4 unique normals (antipodal pairs define the same plane — (1,1,1) and (-1,-1,-1) are the same plane. But we only list one per plane, so no duplication.)
-- `TET_EDGE_PLANES`: 6 unique normals (each edge midpoint direction is unique)
-- `OCT_COORD_PLANES`: 3 unique normals (coordinate axes)
-
-Verified: no two normals in any set are parallel (no n₁ = ±k·n₂), so all planes are distinct.
-
-For the **cube implementation**: reuse `OCT_COORD_PLANES` + `TET_EDGE_PLANES` directly — do NOT create a duplicate `CUBE_COORD_PLANES` array.
-
-### Code Quality Summary
-
-- **236 lines** — well within function/file size guidelines
-- **No console.log** statements
-- **No commented-out code**
-- **No duplicate logic** — `makeCircle()` is shared by both Thomson types
-- **Clear module boundaries** — pure math, no THREE.js dependency, returns plain objects
-- **Function ordering**: helpers (cross, normalize) → core (buildPlaneBasis, makeCircle, collectCircleVertices) → public API (Thomson.tetrahedron, Thomson.octahedron) ✓
-- **O(n²) dedup** in `collectCircleVertices` — acceptable for max ~180 vertices (15 planes × 12-gon)
-
----
-
-## Face Rendering via 3D Convex Hull
-
-### Key Insight
-All Thomson nodes lie on the circumsphere → every node is on the convex hull → the 3D convex hull triangulation = the polyhedron we want, for ANY rotation angle.
-
-### Implementation (commit pending)
-- **ConvexGeometry** from `three/addons/geometries/ConvexGeometry.js` — takes Vector3[], returns triangulated BufferGeometry with correct CCW winding and outward normals
-- **renderThomsonCircles()** extended with optional hull face mesh (semi-transparent, flatShading, renderOrder=1 behind lines/nodes)
-- **Hull edges** via `THREE.EdgesGeometry` — white wireframe of triangulated hull
-- **Edge pairs** returned from `collectCircleVertices()` — each circle's N-gon edges mapped to deduplicated node indices, needed for IK constraints
-- **UI**: "Show Faces" + "Hull Edges" checkboxes per Thomson type
-
-### Jitterbug Connection
-The rotation slider already implements the Jitterbug motion. Thomson Oct at N=4:
-- **0°**: 12 distinct nodes = cuboctahedron configuration
-- **45°**: Nodes coincide pairwise → 6 nodes = octahedron (doubled edges)
-- With faces enabled, this visualizes the cuboctahedron→octahedron collapse in real time
-
-Future: use `solveRigid3D()` from rt-ik-solvers.js to maintain edge lengths during animated rotation, creating true elastic-edge Jitterbug transformations.
-
----
-
-## Action Items
-
-### Completed
-1. ~~Line 193: Replace Math.sqrt(3) with RT.PureRadicals.sqrt3()~~ (commit `e33cdfe`)
-2. ~~Lines 101–102: Add justification comment~~ (commit `e33cdfe`)
-3. ~~Face rendering via ConvexGeometry~~ (pending commit)
-4. ~~Edge pair tracking in collectCircleVertices()~~ (pending commit)
-
-### Implementation Queue
-5. **Thomson.cube()** — Compose from existing plane arrays (OCT_COORD + TET_EDGE)
-6. **Icosahedron plane computation** — Derive 15 normals from rt-polyhedra.js vertex data
-7. **Thomson.icosahedron()** — 15 planes, 5-fold symmetry, φ-based normals
-8. **Jitterbug animation** — Elastic edges via rt-ik-solvers.js + animated rotation
-
-### Verification Targets
-- Thomson Oct at N=4 → 6 coincident nodes at octahedron vertices ✓ (already works)
-- Thomson Tet at N=3 with rotation → discoverable coincident orientation ✓ (already works)
-- Thomson Oct at N=4 + Show Faces → 8 triangular faces = octahedron
-- Thomson Oct at N=4, rotation 0→45° + faces → Jitterbug cuboctahedron→octahedron
-- Irregular case (N=5, any rotation) → fully closed triangulated hull, no holes
-- Thomson Cube at N=4 on 9 planes → cube vertices recoverable
-- Thomson Icosa at N=5 on 15 planes → 12 icosahedron vertices recoverable
+- Add to color-theory-modal.js with new `thomson-icosa` color entry
