@@ -358,7 +358,13 @@ export const simpleSliderBindings = [
     id: "thomsonTetraRotation",
     type: "slider",
     valueId: "thomsonTetraRotationValue",
-    formatValue: v => `${v}°`,
+    // Spread = sin²(θ) — the RT measure of angular separation.
+    // 4 spread intervals per 360°: 0→1→0→1→0 (UX boundary computation).
+    formatValue: v => {
+      const rad = (v * Math.PI) / 180;
+      const spread = Math.sin(rad) ** 2;
+      return `${v}° s=${spread.toFixed(3)}`;
+    },
   },
   {
     id: "thomsonOctaNGon",
