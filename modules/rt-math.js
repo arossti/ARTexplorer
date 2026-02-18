@@ -69,6 +69,31 @@ export const RT = {
   },
 
   /**
+   * Central spread of a regular N-gon: the spread between adjacent vertices
+   * as seen from the center. Equivalent to sin²(π/N) but derived RT-pure
+   * from nGonVertices — no Math.PI or Math.sin required.
+   *
+   * @param {number} n - Number of sides (≥ 3)
+   * @returns {number} Central spread (range 0 to 1)
+   *
+   * @example
+   * RT.centralSpread(3)  // → 0.75  (equilateral triangle)
+   * RT.centralSpread(4)  // → 0.5   (square, sin²(45°) = 0.5)
+   * RT.centralSpread(6)  // → 0.25  (hexagon)
+   */
+  centralSpread: (n) => {
+    if (n < 3) return 0;
+    const verts = RT.nGonVertices(n, 1).vertices;
+    const v0 = verts[0],
+      v1 = verts[1];
+    // spread between two adjacent vertex vectors from the origin
+    const dot = v0.x * v1.x + v0.y * v1.y;
+    const Q0 = v0.x * v0.x + v0.y * v0.y;
+    const Q1 = v1.x * v1.x + v1.y * v1.y;
+    return 1 - (dot * dot) / (Q0 * Q1);
+  },
+
+  /**
    * Sphere-Plane Intersection Circle Radius (RT-Pure)
    * Calculate intersection circle radius using quadrance-based Pythagorean theorem
    * Defers sqrt expansion until final step

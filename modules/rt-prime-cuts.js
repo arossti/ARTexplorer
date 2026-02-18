@@ -1338,7 +1338,7 @@ export const RTPrimeCuts = {
 
       default: {
         // Generic n-gon info
-        const s = Math.pow(Math.sin(Math.PI / n), 2);
+        const s = RT.centralSpread(n);
         formulaText =
           `YELLOW: Actual projection (irregular)\n` +
           `CYAN: Ideal regular ${n}-gon\n` +

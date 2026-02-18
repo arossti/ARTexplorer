@@ -3446,8 +3446,7 @@ export function initScene(THREE, OrbitControls, RT) {
         el.polygonSidesInput?.value || el.polygonSides?.value || "3"
       );
       const polyR = Math.sqrt(polyQ);
-      // Math.sin justified: arbitrary n-gon spread calculation (see CODE-QUALITY-AUDIT.md)
-      const spread = Math.pow(Math.sin(Math.PI / polySides), 2);
+      const spread = RT.centralSpread(polySides);
       const polyEdgeQ = 4 * polyQ * spread; // RT-pure formula
       const polyEdgeL = Math.sqrt(polyEdgeQ);
       const showFace = el.polygonShowFace?.checked;
@@ -3468,8 +3467,7 @@ export function initScene(THREE, OrbitControls, RT) {
       const prismShowFaces = el.prismShowFaces?.checked !== false;
       const prismR = Math.sqrt(prismBaseQ);
       const prismH = Math.sqrt(prismHeightQ);
-      // Math.sin justified: arbitrary n-gon spread calculation
-      const prismSpread = Math.pow(Math.sin(Math.PI / prismSides), 2);
+      const prismSpread = RT.centralSpread(prismSides);
       const prismEdgeQ = 4 * prismBaseQ * prismSpread;
       const V = 2 * prismSides;
       const E = 3 * prismSides;

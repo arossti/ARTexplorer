@@ -109,12 +109,9 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
 
     case "polygon": {
       // RT-PURE: Polygon edge quadrance from circumradius quadrance
-      // Q_edge = 4·Q_R·spread(π/n) where spread = sin²(θ)
-      // Math.sin justified: arbitrary n-gon spread requires classical trig
-      // scale = circumradius quadrance (Q_R), sides from options parameter
+      // Q_edge = 4·Q_R·centralSpread(n) — derived from nGonVertices, no classical trig
       const sides = options.sides || 3;
-      const centralAngle = Math.PI / sides;
-      const spread = Math.pow(Math.sin(centralAngle), 2);
+      const spread = RT.centralSpread(sides);
       let Q_edge = 4 * scale * spread; // RT-pure quadrance result
 
       // TILING SUBDIVISION: Different tilings have different scaling
@@ -153,8 +150,7 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
       // The "shortest" edges determine packing - use base edge quadrance
       // scale = base circumradius quadrance (Q_R), sides from options
       const prismSides = options.sides || 6;
-      const prismAngle = Math.PI / prismSides;
-      const prismSpread = Math.pow(Math.sin(prismAngle), 2);
+      const prismSpread = RT.centralSpread(prismSides);
       return 4 * scale * prismSpread; // Base edge quadrance
     }
 
@@ -163,8 +159,7 @@ function getPolyhedronEdgeQuadrance(type, scale, options = {}) {
       // Base edges are the "closest" vertices - use base edge quadrance
       // scale = base circumradius quadrance (Q_R), sides from options
       const coneSides = options.sides || 6;
-      const coneAngle = Math.PI / coneSides;
-      const coneSpread = Math.pow(Math.sin(coneAngle), 2);
+      const coneSpread = RT.centralSpread(coneSides);
       return 4 * scale * coneSpread; // Base edge quadrance
     }
 
