@@ -202,8 +202,8 @@ const colorPalette = {
   penroseThin: 0x4169e1, // Royal Blue - Thin rhombus (36°/144°)
   penroseTiling: 0xffd700, // Gold - Default tiling color
   // Thomson Polyhedra (N-gon great-circle shells)
-  thomsonTetrahedron: 0xff6600, // Burnt orange - distinct from base tet yellow
-  thomsonOctahedron: 0x6600ff, // Deep violet - distinct from base octa green
+  thomsonTetrahedron: 0xff5500, // Vivid orange - distinct from base tet yellow
+  thomsonOctahedron: 0xaa44ff, // Vivid violet - distinct from base octa green
 };
 
 /**

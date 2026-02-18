@@ -135,6 +135,23 @@ export class ColorTheoryModal {
         ],
       },
       {
+        section: "Thomson Polyhedra (Great-Circle Shells)",
+        groups: [
+          {
+            name: "Thomson Tetrahedron",
+            pairs: [
+              { id: "thomson-tetra", label: "Nodes & Faces", color: "0xFF5500" },
+            ],
+          },
+          {
+            name: "Thomson Octahedron",
+            pairs: [
+              { id: "thomson-octa", label: "Nodes & Faces", color: "0xAA44FF" },
+            ],
+          },
+        ],
+      },
+      {
         section: "Environment",
         groups: [
           {
@@ -171,6 +188,9 @@ export class ColorTheoryModal {
       "radial-tetra": "radialTetrahedron",
       "radial-octa": "radialOctahedron",
       "radial-cubocta": "radialCuboctahedron",
+      // Thomson Polyhedra
+      "thomson-tetra": "thomsonTetrahedron",
+      "thomson-octa": "thomsonOctahedron",
     };
   }
 

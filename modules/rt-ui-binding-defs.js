@@ -375,7 +375,12 @@ export const simpleSliderBindings = [
     id: "thomsonOctaRotation",
     type: "slider",
     valueId: "thomsonOctaRotationValue",
-    formatValue: v => `${v}°`,
+    // Spread = sin²(θ) — 4 spread intervals per 360°: 0→1→0→1→0.
+    formatValue: v => {
+      const rad = (v * Math.PI) / 180;
+      const spread = Math.sin(rad) ** 2;
+      return `${v}° s=${spread.toFixed(3)}`;
+    },
   },
   {
     id: "opacitySlider",
