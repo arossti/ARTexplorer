@@ -42,11 +42,10 @@ const RT_CONSTANTS = {
   FACE_CENTROID_Q_RATIO: 1 / 3, // Q_centroid_to_vertex / Q_edge for equilateral △
 
   // Golden ratio constants (for icosahedral applications)
-  // φ = (1 + √5) / 2 ≈ 1.618033988749895
-  // Use identities: φ² = φ + 1, 1/φ = φ - 1, φ³ = 2φ + 1
-  PHI: (1 + Math.sqrt(5)) / 2,
-  PHI_SQUARED: (1 + Math.sqrt(5)) / 2 + 1, // φ² = φ + 1 (identity, not multiplication)
-  INV_PHI: (1 + Math.sqrt(5)) / 2 - 1, // 1/φ = φ - 1 (identity, not division)
+  // Use RT.PurePhi cached values — algebraic identities, not raw Math.sqrt(5)
+  PHI: RT.PurePhi.value(), // (1 + √5) / 2 ≈ 1.618
+  PHI_SQUARED: RT.PurePhi.squared(), // φ² = φ + 1 (identity)
+  INV_PHI: RT.PurePhi.inverse(), // 1/φ = φ - 1 (identity)
 
   // Derived: Edge quadrance for standard tetrahedron with halfSize s
   // Dual tetrahedron: Q = 8s² (vertices at ±s)

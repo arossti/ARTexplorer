@@ -13,6 +13,7 @@
  */
 
 import * as THREE from "three";
+import { RT } from "./rt-math.js";
 import { RTProjections } from "./rt-projections.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1411,7 +1412,7 @@ export const RTPrimeCuts = {
     });
 
     // Icosahedron vertices (normalized, for TruncTet+Icosa compound)
-    const phi = (1 + Math.sqrt(5)) / 2;
+    const phi = RT.PurePhi.value();
     const icosaVertices = [
       [0, 1, phi],
       [0, 1, -phi],

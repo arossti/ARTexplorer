@@ -150,7 +150,7 @@ rt-delta.js → rt-animate.js → rt-viewmanager.js (view system)
 | `angle = arccos(dot)` | `spread = 1 - dot²/(Q₁·Q₂)` | `rt-math.js` — `RT.spread()` |
 | `distance = √(dx²+dy²)` | `quadrance = dx²+dy²` — defer √ to THREE.Vector3 boundary | `rt-math.js` — `RT.quadrance()` |
 | `rotation by θ` | Two reflections via `RT.reflectInLine(x, y, slope)` | `rt-math.js` — double reflection |
-| `φ = (1+√5)/2` then `φ²` | `PurePhi.phi_sq()` = φ+1 (algebraic identity) | `rt-math.js` — `PurePhi` |
+| `φ = (1+√5)/2` then `φ²` | `PurePhi.value()`, `.squared()` = φ+1, `.inverse()` = φ-1 | `rt-math.js` — `PurePhi` |
 | `√2`, `√3`, `√6` | `PureRadicals.sqrt2()`, `.sqrt3()`, `.sqrt6()` (cached) | `rt-math.js` — `PureRadicals` |
 | `cos(2π/7)` etc. | `PureCubics.heptagon()`, `.nonagon()` (cached cubic roots) | `rt-math.js` — `PureCubics` |
 | Decimal polygon coords | `SymbolicCoord` — exact `(a+b√D)/c` for N=3,4,5,6,8,10,12 | `rt-math.js` — `SymbolicCoord` |
