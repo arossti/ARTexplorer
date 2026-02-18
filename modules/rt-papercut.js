@@ -1132,7 +1132,7 @@ export const RTPapercut = {
   // ═══════════════════════════════════════════════════════════════════════════
   // PRIME PROJECTION - Shadow exports (Phase 1)
   // Delegates to rt-prime-cuts.js module for backwards compatibility
-  // See: Geometry documents/Prime-Cut-Extract.md
+  // See: Geometry Documents/Prime-Cut-Extract.md
   // ═══════════════════════════════════════════════════════════════════════════
 
   // Shadow state properties (delegate to RTPrimeCuts)

@@ -244,7 +244,7 @@ computes vertices in exact Q(√D) arithmetic with zero intermediate float expan
 Weierstrass slopes are expressed as `SymbolicCoord` values — e.g., octagon m₁ = √2−1 via
 the denesting identity √(3−2√2) = √2−1. GCD reduction keeps all coefficients ≤ 2.
 `Primitives.polygon()` uses this symbolic path first, with `nGonVertices()` as float
-fallback for other N. See `Geometry documents/Pure-Polygon.md` for derivation.
+fallback for other N. See `Geometry Documents/Pure-Polygon.md` for derivation.
 
 ### Implementation
 

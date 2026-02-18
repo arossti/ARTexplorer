@@ -109,7 +109,7 @@ function cacheElements() {
 /**
  * Camera view presets configuration
  * Spreads use RT notation: s = sin²(θ) for ZYX Euler rotation
- * Reference: Geometry documents/Prime-Projection-Conjecture.tex
+ * Reference: Geometry Documents/Prime-Projection-Conjecture.tex
  */
 export const CAMERA_PRESETS = {
   // ═══════════════════════════════════════════════════════════════════════

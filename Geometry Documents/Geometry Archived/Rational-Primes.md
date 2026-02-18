@@ -510,6 +510,6 @@ Cartesian axes all produce 6-gon hulls (as expected — the cube has 4-fold symm
 - Wildberger, N.J. *Divine Proportions: Rational Trigonometry to Universal Geometry* (2005)
 - Barbour, J. *The Discovery of Dynamics* — on Greek geometric foundations
 - Gauss, C.F. *Disquisitiones Arithmeticae* (1801) — constructibility of regular polygons
-- `Geometry documents/Polygon-Rationalize.md` — detailed workplan and search history
-- `Geometry documents/Prime-Projection-Conjecture.tex` — 4D± projection whitepaper
+- `Geometry Documents/Polygon-Rationalize.md` — detailed workplan and search history
+- `Geometry Documents/Prime-Projection-Conjecture.tex` — 4D± projection whitepaper
 - `modules/rt-math.js` — RT library with PurePhi, PureRadicals, PureCubics, QuadrayRotation

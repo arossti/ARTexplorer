@@ -363,7 +363,7 @@ export const QuadrayPolyhedra = {
    * At viewing spreads (0.11, 0, 0.5), exactly 7 vertices form the convex hull
    * boundary - producing a heptagonal silhouette from rational parameters.
    *
-   * Reference: Geometry documents/Prime-Projection-Conjecture.tex
+   * Reference: Geometry Documents/Prime-Projection-Conjecture.tex
    *
    * @param {number} scale - Uniform scale factor
    * @param {Object} options - Configuration options

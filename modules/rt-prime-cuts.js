@@ -6,7 +6,7 @@
  * of 3D polyhedra/compounds at rational-spread viewing angles.
  *
  * Extracted from rt-papercut.js using Shadow & Swap pattern.
- * See: Geometry documents/Prime-Cut-Extract.md
+ * See: Geometry Documents/Prime-Cut-Extract.md
  *
  * @module rt-prime-cuts
  * @author Andy & Claude (2026)
