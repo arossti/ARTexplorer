@@ -38,6 +38,14 @@ export const simpleCheckboxBindings = [
   { id: "octaMatrixColinearEdges", type: "checkbox" },
   { id: "rhombicDodecMatrixFaceCoplanar", type: "checkbox" },
 
+  // Thomson Polyhedra plane toggles
+  { id: "thomsonTetraFacePlanes", type: "checkbox" },
+  { id: "thomsonTetraEdgePlanes", type: "checkbox" },
+  { id: "thomsonTetraShowFaces", type: "checkbox" },
+  { id: "thomsonTetraShowHullEdges", type: "checkbox" },
+  { id: "thomsonOctaShowFaces", type: "checkbox" },
+  { id: "thomsonOctaShowHullEdges", type: "checkbox" },
+
   // Radial matrix options
   { id: "radialCubeSpaceFill", type: "checkbox" },
   { id: "radialTetIVMMode", type: "checkbox" },
@@ -315,6 +323,18 @@ export const checkboxWithControlsBindings = [
     controlsId: "prime-geo-tet-f4-controls",
   },
 
+  // Thomson Polyhedra (stubbed — rt-thomson.js will wire these)
+  {
+    id: "showThomsonTetrahedron",
+    type: "checkbox-controls",
+    controlsId: "thomson-tetra-controls",
+  },
+  {
+    id: "showThomsonOctahedron",
+    type: "checkbox-controls",
+    controlsId: "thomson-octa-controls",
+  },
+
   // Projection with controls panel
   {
     id: "enableProjection",
@@ -328,6 +348,40 @@ export const checkboxWithControlsBindings = [
 // ============================================================================
 
 export const simpleSliderBindings = [
+  // Thomson Polyhedra sliders
+  {
+    id: "thomsonTetraNGon",
+    type: "slider",
+    valueId: "thomsonTetraNGonValue",
+  },
+  {
+    id: "thomsonTetraRotation",
+    type: "slider",
+    valueId: "thomsonTetraRotationValue",
+    // Spread = sin²(θ) — the RT measure of angular separation.
+    // 4 spread intervals per 360°: 0→1→0→1→0 (UX boundary computation).
+    formatValue: v => {
+      const rad = (v * Math.PI) / 180;
+      const spread = Math.sin(rad) ** 2;
+      return `${v}° s=${spread.toFixed(3)}`;
+    },
+  },
+  {
+    id: "thomsonOctaNGon",
+    type: "slider",
+    valueId: "thomsonOctaNGonValue",
+  },
+  {
+    id: "thomsonOctaRotation",
+    type: "slider",
+    valueId: "thomsonOctaRotationValue",
+    // Spread = sin²(θ) — 4 spread intervals per 360°: 0→1→0→1→0.
+    formatValue: v => {
+      const rad = (v * Math.PI) / 180;
+      const spread = Math.sin(rad) ** 2;
+      return `${v}° s=${spread.toFixed(3)}`;
+    },
+  },
   {
     id: "opacitySlider",
     type: "slider",

@@ -332,59 +332,94 @@ The interface consists of several control panels:
 
 ```
 /
-├── index.html              ← Main entry point
-├── art.css                 ← All application styles
-├── CLAUDE.md               ← Claude Code AI instructions
-├── modules/                ← Core JavaScript modules
-│   ├── rt-init.js              ← Application initialization, UI wiring
-│   ├── rt-rendering.js         ← WebGL rendering engine, camera, scene
-│   ├── rt-math.js              ← Quadray coords & RT functions
-│   ├── rt-polyhedra.js         ← 3D polyhedra generation (RT-pure)
-│   ├── rt-primitives.js        ← 2D primitives (point, line, polygon)
-│   ├── rt-penrose.js           ← Penrose tiling generation (φ-rational)
-│   ├── rt-grids.js             ← Cartesian/Quadray grid generation
-│   ├── rt-nodes.js             ← Vertex node geometry & caching
-│   ├── rt-matrix-planar.js     ← IVM spatial arrays (planar N×N)
-│   ├── rt-matrix-radial.js     ← IVM spatial arrays (radial)
-│   ├── rt-helices.js           ← Tetrahelix generation
-│   ├── rt-controls.js          ← Gumball interaction
-│   ├── rt-coordinates.js       ← Coordinate input/display handling
-│   ├── rt-papercut.js          ← Cutplane/slicing, print mode
-│   ├── rt-projections.js       ← Generalized projection visualization
-│   ├── rt-prime-cuts.js        ← Prime n-gon projection presets
-│   ├── rt-quadray-polyhedra.js ← Quadray-native polyhedra & compounds
-│   ├── rt-snap-geometry.js     ← Snap geometry utilities
-│   ├── rt-state-manager.js     ← State persistence
-│   ├── rt-filehandler.js       ← Import/export (JSON, glTF)
-│   ├── rt-viewmanager.js       ← View management
-│   ├── rt-context.js           ← Context menu handling
-│   ├── rt-info-modal.js        ← Info modal UI
-│   ├── rt-janus.js             ← Janus mode handling
-│   ├── rt-quadray-rotor.js     ← Spread-Quadray Rotor implementation
-│   ├── rt-rotor-demo.js        ← Rotor demonstration modal
-│   ├── rt-ui-bindings.js       ← UI event binding system
-│   ├── rt-ui-binding-defs.js   ← UI binding definitions
-│   ├── performance-clock.js    ← Performance monitoring
-│   └── color-theory-modal.js   ← Color palettes
-├── modules/asteroids/      ← Asteroids game module
-│   ├── rt-asteroids-core.js    ← Game core logic
-│   ├── rt-asteroids-player.js  ← Player controls
-│   ├── rt-asteroids-enemies.js ← Enemy AI
-│   ├── rt-asteroids-weapons.js ← Weapon systems
-│   ├── rt-asteroids-hud.js     ← HUD display
-│   ├── rt-asteroids-audio.js   ← Audio management
-│   ├── rt-asteroids-blackhole.js ← Black hole effects
-│   └── rt-asteroids-license.js ← License info
-├── demos/                  ← Educational demonstrations
-│   ├── rt-quadrance-demo.js    ← Plimpton 322 Babylonian math
-│   ├── rt-cross-demo.js        ← Spread/Cross with Sexagesimal
-│   ├── rt-weierstrass-demo.js  ← Rational circle parametrization
-│   └── rt-demo-utils.js        ← Shared demo utilities
-├── Geometry documents/     ← Technical documentation
-│   ├── Penrose-Spheres.md      ← Spherical Penrose tiling research
-│   ├── CODE-QUALITY-AUDIT.md   ← Code quality audit guidelines
-│   └── ...                     ← Additional geometry docs
-└── .github/workflows/      ← GitHub Actions deployment
+├── index.html                    ← Main entry point
+├── art.css                       ← All application styles
+├── CLAUDE.md                     ← Claude Code AI instructions
+├── eslint.config.js              ← ESLint configuration
+├── .prettierrc.json              ← Prettier configuration
+├── package.json                  ← Dev dependencies (ESLint, Prettier)
+│
+├── modules/                      ← Core JavaScript modules (35 files)
+│   ├── rt-init.js                    ← Application initialization, UI wiring
+│   ├── rt-rendering.js               ← WebGL rendering engine, camera, scene
+│   ├── rt-math.js                    ← Quadray coords & RT functions
+│   ├── rt-polyhedra.js               ← 3D polyhedra generation (RT-pure)
+│   ├── rt-thomson.js                 ← Thomson Problem polyhedra (experimental)
+│   ├── rt-primitives.js              ← 2D primitives (point, line, polygon)
+│   ├── rt-penrose.js                 ← Penrose tiling generation (φ-rational)
+│   ├── rt-grids.js                   ← Cartesian/Quadray grid generation
+│   ├── rt-nodes.js                   ← Vertex node geometry & caching
+│   ├── rt-matrix-planar.js           ← IVM spatial arrays (planar N×N)
+│   ├── rt-matrix-radial.js           ← IVM spatial arrays (radial)
+│   ├── rt-helices.js                 ← Tetrahelix generation
+│   ├── rt-controls.js                ← Gumball interaction
+│   ├── rt-coordinates.js             ← Coordinate input/display handling
+│   ├── rt-papercut.js                ← Cutplane/slicing, print mode
+│   ├── rt-projections.js             ← Generalized projection visualization
+│   ├── rt-prime-cuts.js              ← Prime n-gon projection presets
+│   ├── rt-quadray-polyhedra.js       ← Quadray-native polyhedra & compounds
+│   ├── rt-quadray-rotor.js           ← Spread-Quadray Rotor implementation
+│   ├── rt-rotor-demo.js              ← Rotor demonstration modal
+│   ├── rt-snap-geometry.js           ← Snap geometry utilities
+│   ├── rt-animate.js                 ← Animation system & keyframe engine
+│   ├── rt-delta.js                   ← RTDelta view snapshot/diff system
+│   ├── rt-ik-solvers.js              ← Inverse kinematics solvers
+│   ├── rt-metalog.js                 ← Metalog distribution utilities
+│   ├── rt-state-manager.js           ← State persistence, undo/redo
+│   ├── rt-filehandler.js             ← Import/export (JSON, glTF, .artview)
+│   ├── rt-viewmanager.js             ← View management & camera presets
+│   ├── rt-context.js                 ← Context menu handling
+│   ├── rt-info-modal.js              ← Info modal UI
+│   ├── rt-janus.js                   ← Janus mode handling
+│   ├── rt-ui-bindings.js             ← UI event binding system
+│   ├── rt-ui-binding-defs.js         ← UI binding definitions (declarative)
+│   ├── performance-clock.js          ← Performance monitoring
+│   └── color-theory-modal.js         ← Color palettes
+│
+├── modules/asteroids/            ← Asteroids game module
+│   ├── rt-asteroids-core.js          ← Game core logic
+│   ├── rt-asteroids-player.js        ← Player controls
+│   ├── rt-asteroids-enemies.js       ← Enemy AI
+│   ├── rt-asteroids-weapons.js       ← Weapon systems
+│   ├── rt-asteroids-hud.js           ← HUD display
+│   ├── rt-asteroids-audio.js         ← Audio management
+│   ├── rt-asteroids-blackhole.js     ← Black hole effects
+│   └── rt-asteroids-license.js       ← License info
+│
+├── demos/                        ← Educational demonstrations
+│   ├── 4D-Drop.js                    ← 4D coordinate drop demo
+│   ├── rt-gravity-demo.js            ← Gravity/spherical grid demo
+│   ├── rt-quadrance-demo.js          ← Plimpton 322 Babylonian math
+│   ├── rt-cross-demo.js              ← Spread/Cross with Sexagesimal
+│   ├── rt-weierstrass-demo.js        ← Rational circle parametrization
+│   └── rt-demo-utils.js              ← Shared demo utilities
+│
+├── scripts/                      ← Python research & code generation
+│   ├── prime_projection_search.py    ← Prime polygon brute-force search
+│   ├── prime_search_streamlined.py   ← Optimized prime polygon search
+│   ├── rt_math.py                    ← Python port of RT math library
+│   ├── rt_polyhedra.py               ← Python port of polyhedra generators
+│   ├── requirements.txt              ← Python dependencies
+│   └── PlayerPiano-generator.js      ← Animation sequence generator
+│
+├── Geometry Documents/           ← Technical documentation
+│   ├── Add-Polyhedra-Guide.md        ← Step-by-step polyhedra wiring guide
+│   ├── Logs.md                       ← Human/agent communication pasteboard
+│   ├── Whitepaper LaTEX/             ← LaTeX whitepapers
+│   │   ├── Janus-Inversion-v9.tex        ← Janus Inversion paper (current)
+│   │   ├── Janus10.tex                   ← Janus 10 draft
+│   │   ├── Prime-Projection-Conjecture.tex
+│   │   ├── Quadray-Rotors.tex
+│   │   └── AI-Accelerant-Geometry.tex
+│   ├── Whitepaper Images/             ← Figures for whitepapers
+│   ├── Wildberger References/         ← Reference PDFs (Wildberger, Fuller)
+│   ├── Geometry Tests/                ← Winding verification test pages
+│   ├── Geometry Archived/             ← Archived planning documents
+│   └── ...                            ← Additional geometry docs
+│
+└── .github/workflows/            ← GitHub Actions
+    ├── deploy.yml                     ← GitHub Pages deployment
+    └── claude-review.yml              ← Claude AI PR review bot
 ```
 
 ### 5.3 Module Overview
@@ -399,6 +434,7 @@ The interface consists of several control panels:
 **Geometry & Mathematics:**
 
 - `rt-polyhedra.js`: 3D polyhedra definitions using RT-pure methods (Platonic, Archimedean, Geodesic)
+- `rt-thomson.js`: Thomson Problem polyhedra — N-gon great-circle shells on Platonic frames (experimental)
 - `rt-primitives.js`: 2D primitives (point, line, polygon) with RT-pure and classical engines
 - `rt-penrose.js`: Penrose tiling generation (thick/thin rhombi, kite/dart) using φ-rational coordinates
 - `rt-math.js`: Core RT library (quadrance, spread, golden ratio, circle parametrization)
@@ -410,6 +446,7 @@ The interface consists of several control panels:
 - `rt-projections.js`: Generalized projection visualization for any polyhedron
 - `rt-prime-cuts.js`: Prime n-gon projection presets (5, 7, 11, 13-gon from polyhedra projections)
 - `rt-snap-geometry.js`: Snap geometry utilities for vertex/edge/face snapping
+- `rt-ik-solvers.js`: Inverse kinematics solvers
 
 **Scene Infrastructure:**
 
@@ -429,10 +466,31 @@ The interface consists of several control panels:
 - `rt-ui-binding-defs.js`: UI binding definitions and configurations
 - `color-theory-modal.js`: Color palette management
 
+**Animation & State:**
+
+- `rt-animate.js`: Animation system and keyframe engine
+- `rt-delta.js`: RTDelta view snapshot/diff compression system
+- `rt-filehandler.js`: State import/export to JSON, glTF geometry export, .artview files
+- `rt-metalog.js`: Metalog distribution utilities
+
 **Utilities:**
 
-- `rt-filehandler.js`: State import/export to JSON, glTF geometry export
 - `performance-clock.js`: Performance monitoring (FPS, triangle counts, timing)
+
+**Demos (demos/):**
+
+- `4D-Drop.js`: Interactive 4D coordinate drop demonstration
+- `rt-gravity-demo.js`: Gravity/spherical grid demonstration
+- `rt-quadrance-demo.js`: Plimpton 322 Babylonian math demo
+- `rt-cross-demo.js`: Spread/Cross with Sexagesimal notation
+- `rt-weierstrass-demo.js`: Rational circle parametrization demo
+- `rt-demo-utils.js`: Shared demo utilities
+
+**Python Research (scripts/):**
+
+- `prime_search_streamlined.py`: Optimized prime polygon projection search
+- `rt_math.py` / `rt_polyhedra.py`: Python ports of RT math and polyhedra libraries
+- `PlayerPiano-generator.js`: Animation sequence code generator
 
 **Asteroids Game (Easter Egg):**
 

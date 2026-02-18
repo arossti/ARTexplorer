@@ -116,6 +116,18 @@ export const RTFileHandler = {
     const cartesianTess = parseInt(
       document.getElementById("cartesianTessSlider")?.value || 10
     );
+    // Grid mode (uniform vs polar) and polar-specific controls
+    const quadrayMode =
+      document.querySelector("[data-quadray-mode].active")?.dataset
+        .quadrayMode || "uniform";
+    const cartesianMode =
+      document.querySelector("[data-cartesian-mode].active")?.dataset
+        .cartesianMode || "uniform";
+    const nGon = parseInt(
+      document.getElementById("nGonSlider")?.value || "64"
+    );
+    const showRadialLines =
+      document.getElementById("showRadialLines")?.checked ?? true;
 
     // Get polyhedra checkbox states (forms visible at origin)
     const polyhedraCheckboxes = {
@@ -172,6 +184,11 @@ export const RTFileHandler = {
         document.getElementById("showQuadrayOctahedron")?.checked || false,
       showQuadrayTruncatedTet:
         document.getElementById("showQuadrayTruncatedTet")?.checked || false,
+      // Thomson Polyhedra
+      showThomsonTetrahedron:
+        document.getElementById("showThomsonTetrahedron")?.checked || false,
+      showThomsonOctahedron:
+        document.getElementById("showThomsonOctahedron")?.checked || false,
       // Planar matrices
       showCubeMatrix:
         document.getElementById("showCubeMatrix")?.checked || false,
@@ -433,6 +450,13 @@ export const RTFileHandler = {
       penroseTileType:
         document.querySelector('input[name="penroseTileType"]:checked')
           ?.value || "thick",
+      // Thomson Polyhedra N-gon sliders
+      thomsonTetraNGon: parseInt(
+        document.getElementById("thomsonTetraNGon")?.value || "5"
+      ),
+      thomsonOctaNGon: parseInt(
+        document.getElementById("thomsonOctaNGon")?.value || "5"
+      ),
     };
 
     // Get geodesic projection radio states
@@ -487,11 +511,15 @@ export const RTFileHandler = {
           quadray: {
             visible: quadrayVisible,
             tessellation: quadrayTess,
+            mode: quadrayMode,
           },
           cartesian: {
             visible: cartesianVisible,
             tessellation: cartesianTess,
+            mode: cartesianMode,
           },
+          nGon: nGon,
+          showRadialLines: showRadialLines,
         },
         // Polyhedra checkbox states (forms at origin)
         polyhedraCheckboxes: polyhedraCheckboxes,
@@ -622,6 +650,17 @@ export const RTFileHandler = {
           const slider = document.getElementById("quadrayTessSlider");
           if (checkbox) checkbox.checked = grids.quadray.visible;
           if (slider) slider.value = grids.quadray.tessellation;
+          // Restore grid mode (uniform/polar) button state
+          if (grids.quadray.mode) {
+            document
+              .querySelectorAll("[data-quadray-mode]")
+              .forEach(btn => {
+                btn.classList.toggle(
+                  "active",
+                  btn.dataset.quadrayMode === grids.quadray.mode
+                );
+              });
+          }
         }
 
         if (grids.cartesian) {
@@ -629,6 +668,29 @@ export const RTFileHandler = {
           const slider = document.getElementById("cartesianTessSlider");
           if (checkbox) checkbox.checked = grids.cartesian.visible;
           if (slider) slider.value = grids.cartesian.tessellation;
+          // Restore grid mode (uniform/polar) button state
+          if (grids.cartesian.mode) {
+            document
+              .querySelectorAll("[data-cartesian-mode]")
+              .forEach(btn => {
+                btn.classList.toggle(
+                  "active",
+                  btn.dataset.cartesianMode === grids.cartesian.mode
+                );
+              });
+          }
+        }
+
+        // Restore N-gon slider and Radial Lines toggle (polar grid controls)
+        if (grids.nGon !== undefined) {
+          const slider = document.getElementById("nGonSlider");
+          const display = document.getElementById("nGonValue");
+          if (slider) slider.value = grids.nGon;
+          if (display) display.textContent = grids.nGon;
+        }
+        if (grids.showRadialLines !== undefined) {
+          const checkbox = document.getElementById("showRadialLines");
+          if (checkbox) checkbox.checked = grids.showRadialLines;
         }
 
         // Trigger grid rebuild
@@ -955,6 +1017,20 @@ export const RTFileHandler = {
           );
           if (radio) radio.checked = true;
         }
+
+        // Thomson Polyhedra N-gon sliders
+        if (sliders.thomsonTetraNGon !== undefined) {
+          const slider = document.getElementById("thomsonTetraNGon");
+          const display = document.getElementById("thomsonTetraNGonValue");
+          if (slider) slider.value = sliders.thomsonTetraNGon;
+          if (display) display.textContent = sliders.thomsonTetraNGon;
+        }
+        if (sliders.thomsonOctaNGon !== undefined) {
+          const slider = document.getElementById("thomsonOctaNGon");
+          const display = document.getElementById("thomsonOctaNGonValue");
+          if (slider) slider.value = sliders.thomsonOctaNGon;
+          if (display) display.textContent = sliders.thomsonOctaNGon;
+        }
       }
 
       // Restore geodesic projection radio states
@@ -1081,6 +1157,20 @@ export const RTFileHandler = {
         );
         if (quadrayTruncTetControls && checkboxes.showQuadrayTruncatedTet) {
           quadrayTruncTetControls.style.display = "block";
+        }
+
+        // Show/hide Thomson controls based on checkbox state
+        const thomsonTetraControls = document.getElementById(
+          "thomson-tetra-controls"
+        );
+        if (thomsonTetraControls && checkboxes.showThomsonTetrahedron) {
+          thomsonTetraControls.style.display = "block";
+        }
+        const thomsonOctaControls = document.getElementById(
+          "thomson-octa-controls"
+        );
+        if (thomsonOctaControls && checkboxes.showThomsonOctahedron) {
+          thomsonOctaControls.style.display = "block";
         }
 
         // Show/hide planar matrix controls based on checkbox state
