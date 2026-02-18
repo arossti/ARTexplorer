@@ -764,16 +764,15 @@ export const RTProjections = {
       });
 
       const n = hull2D.length; // Number of hull vertices
+      const nGonVerts = RT.nGonVertices(n, maxRadius).vertices;
       const idealVertices = [];
       for (let i = 0; i <= n; i++) {
-        const angle = (2 * Math.PI * i) / n;
-        const x = maxRadius * Math.cos(angle);
-        const y = maxRadius * Math.sin(angle);
+        const v = nGonVerts[i % n];
         idealVertices.push(
           planeCenter
             .clone()
-            .addScaledVector(planeRight, x)
-            .addScaledVector(planeUp, y)
+            .addScaledVector(planeRight, v.x)
+            .addScaledVector(planeUp, v.y)
         );
       }
 
