@@ -10,13 +10,30 @@
 - **Architecture**: Client-side JavaScript/WebGL (THREE.js)
 - **Documentation**: See `README.md` for overview, `Geometry documents/` for detailed docs
 
-### Logs.md (Human/Agent Communication)
+### Project Documentation System
 
-`Geometry documents/Logs.md` is a **pasteboard for human/agent communication**:
+The project uses four types of documents, each serving a distinct role in the human-agent workflow:
+
+| Document | Role | Lifecycle |
+|---|---|---|
+| **CLAUDE.md** (this file) | Static project instructions — read every session | Keep constant-sized; archive stale entries to feature docs |
+| **MEMORY.md** (agent-private) | Persistent cross-session lessons learned | Actively prune and promote; record failures with provenance |
+| **Feature docs** (`Geometry Documents/*.md`) | Per-feature living design docs (plan + execution trace) | Archive to `Geometry Archived/` when feature stabilizes |
+| **Logs.md** | Human/agent communication pasteboard | Never committed; ephemeral per-session |
+
+**Logs.md** (`Geometry documents/Logs.md`):
 - Used for cut/pasting console output, errors, and debug info
-- Does NOT update automatically - content is manually pasted by the user
+- Does NOT update automatically — content is manually pasted by the user
 - Never needs to be committed (local working file only)
 - Read this file when user references "see logs" or similar
+
+**Feature docs** (e.g., `Thomson-Polyhedra.md`, `Polygon-Rationalize.md`):
+- Record both the design plan AND the actual execution trace (commits, deviations, resolutions)
+- Include verification targets with concrete pass/fail criteria
+- When a cross-cutting lesson emerges, promote it to MEMORY.md
+- Archive to `Geometry Documents/Geometry Archived/` when the feature is stable
+
+**CODE-QUALITY-AUDIT.md** — Periodic quality gate checklist (see `Geometry Documents/CODE-QUALITY-AUDIT.md`)
 
 ## Git Workflow
 
@@ -139,6 +156,13 @@ For **structural changes** (new modules, coordinate systems, geometry pipelines)
 2. **Maintain rational exactness** — Avoid premature decimal conversion (see RT Concept Glossary)
 3. **Test in browser** — Verify geometry changes visually
 4. **User tests before commits** — Do not assume changes need immediate commit
+
+### Feedback Loop
+
+The user acts as the primary validator. When changes are rejected or need revision:
+- **Diagnostic feedback** (user explains what went wrong) → incorporate into next attempt
+- **Binary feedback** (pass/fail from browser testing) → fix and re-present
+- **Cross-session lessons** (patterns that recur across features) → record in MEMORY.md with context of when/where discovered
 
 ### When Modifying Geometry
 
