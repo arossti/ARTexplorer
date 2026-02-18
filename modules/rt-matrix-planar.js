@@ -76,7 +76,14 @@ import { Polyhedra } from "./rt-polyhedra.js";
  * @param {Object} THREE - THREE.js library
  * @returns {THREE.Group} Group with 2 children: face mesh + edge lines
  */
-function buildMergedMatrix(baseGeom, cellPositions, opacity, color, side, THREE) {
+function buildMergedMatrix(
+  baseGeom,
+  cellPositions,
+  opacity,
+  color,
+  side,
+  THREE
+) {
   const { vertices, edges, faces } = baseGeom;
   const totalCells = cellPositions.length;
   const vertsPerCell = vertices.length;
@@ -85,7 +92,11 @@ function buildMergedMatrix(baseGeom, cellPositions, opacity, color, side, THREE)
   const faceIndexTemplate = [];
   faces.forEach(faceIndices => {
     for (let k = 1; k < faceIndices.length - 1; k++) {
-      faceIndexTemplate.push(faceIndices[0], faceIndices[k], faceIndices[k + 1]);
+      faceIndexTemplate.push(
+        faceIndices[0],
+        faceIndices[k],
+        faceIndices[k + 1]
+      );
     }
   });
 
@@ -146,7 +157,10 @@ function buildMergedMatrix(baseGeom, cellPositions, opacity, color, side, THREE)
 
   // ONE face geometry for entire matrix
   const faceGeometry = new THREE.BufferGeometry();
-  faceGeometry.setAttribute("position", new THREE.BufferAttribute(allPositions, 3));
+  faceGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(allPositions, 3)
+  );
   faceGeometry.setIndex(allIndices);
   faceGeometry.computeVertexNormals();
 
@@ -165,7 +179,10 @@ function buildMergedMatrix(baseGeom, cellPositions, opacity, color, side, THREE)
 
   // ONE edge geometry for entire matrix
   const edgeGeometry = new THREE.BufferGeometry();
-  edgeGeometry.setAttribute("position", new THREE.BufferAttribute(allEdgePositions, 3));
+  edgeGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(allEdgePositions, 3)
+  );
 
   const edgeMaterial = new THREE.LineBasicMaterial({
     color: color,
@@ -218,7 +235,12 @@ export const RTMatrix = {
     }
 
     const matrixGroup = buildMergedMatrix(
-      cubeGeom, cellPositions, opacity, color, THREE.FrontSide, THREE
+      cubeGeom,
+      cellPositions,
+      opacity,
+      color,
+      THREE.FrontSide,
+      THREE
     );
 
     if (rotate45) {
@@ -281,7 +303,12 @@ export const RTMatrix = {
     }
 
     const matrixGroup = buildMergedMatrix(
-      cuboctaGeom, cellPositions, opacity, color, THREE.FrontSide, THREE
+      cuboctaGeom,
+      cellPositions,
+      opacity,
+      color,
+      THREE.FrontSide,
+      THREE
     );
 
     if (rotate45) {
@@ -359,7 +386,12 @@ export const RTMatrix = {
     }
 
     const matrixGroup = buildMergedMatrix(
-      rhombicDodecGeom, cellPositions, opacity, color, THREE.DoubleSide, THREE
+      rhombicDodecGeom,
+      cellPositions,
+      opacity,
+      color,
+      THREE.DoubleSide,
+      THREE
     );
 
     if (rotate45) {
@@ -424,7 +456,12 @@ export const RTMatrix = {
     }
 
     const matrixGroup = buildMergedMatrix(
-      tetGeom, cellPositions, opacity, color, THREE.FrontSide, THREE
+      tetGeom,
+      cellPositions,
+      opacity,
+      color,
+      THREE.FrontSide,
+      THREE
     );
 
     if (rotate45) {
@@ -491,7 +528,12 @@ export const RTMatrix = {
     }
 
     const matrixGroup = buildMergedMatrix(
-      octaGeom, cellPositions, opacity, color, THREE.DoubleSide, THREE
+      octaGeom,
+      cellPositions,
+      opacity,
+      color,
+      THREE.DoubleSide,
+      THREE
     );
 
     if (rotate45) {

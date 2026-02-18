@@ -71,8 +71,7 @@ const OCT_COORD_PLANES = [
  */
 function buildPlaneBasis(normal) {
   const n = normalize(normal);
-  const ref =
-    Math.abs(n.y) < 0.9 ? { x: 0, y: 1, z: 0 } : { x: 1, y: 0, z: 0 };
+  const ref = Math.abs(n.y) < 0.9 ? { x: 0, y: 1, z: 0 } : { x: 1, y: 0, z: 0 };
   const localX = normalize(cross(ref, n));
   const localZ = normalize(cross(n, localX));
   return { localX, localZ };
@@ -89,8 +88,12 @@ function buildPlaneBasis(normal) {
  */
 function makeCircle(normal, radius, nGon, rotationDeg = 0) {
   const { localX, localZ } = buildPlaneBasis(normal);
-  const lxx = localX.x, lxy = localX.y, lxz = localX.z;
-  const lzx = localZ.x, lzy = localZ.y, lzz = localZ.z;
+  const lxx = localX.x,
+    lxy = localX.y,
+    lxz = localX.z;
+  const lzx = localZ.x,
+    lzy = localZ.y,
+    lzz = localZ.z;
 
   const circleVerts = RT.nGonVertices(nGon, radius).vertices;
 
@@ -124,7 +127,7 @@ function makeCircle(normal, radius, nGon, rotationDeg = 0) {
       lxz * curr.x + lzz * curr.y,
       lxx * next.x + lzx * next.y,
       lxy * next.x + lzy * next.y,
-      lxz * next.x + lzz * next.y,
+      lxz * next.x + lzz * next.y
     );
   }
   return positions;
@@ -153,7 +156,9 @@ function collectCircleVertices(circles, nGon) {
   // Find or insert a node, returning its index in the nodes array
   function getNodeIndex(vx, vy, vz) {
     for (let i = 0; i < nodes.length; i++) {
-      const dx = nodes[i].x - vx, dy = nodes[i].y - vy, dz = nodes[i].z - vz;
+      const dx = nodes[i].x - vx,
+        dy = nodes[i].y - vy,
+        dz = nodes[i].z - vz;
       if (dx * dx + dy * dy + dz * dz < dedupeQSq) return i;
     }
     nodes.push({ x: vx, y: vy, z: vz });
@@ -166,7 +171,9 @@ function collectCircleVertices(circles, nGon) {
     const circleNodeIndices = [];
     for (let k = 0; k < nGon; k++) {
       const idx = k * 6;
-      const vx = pos[idx], vy = pos[idx + 1], vz = pos[idx + 2];
+      const vx = pos[idx],
+        vy = pos[idx + 1],
+        vz = pos[idx + 2];
       const prevCount = nodes.length;
       const nodeIdx = getNodeIndex(vx, vy, vz);
       if (nodeIdx < prevCount) coincidentCount++; // existing node = coincident
@@ -177,7 +184,8 @@ function collectCircleVertices(circles, nGon) {
       const a = circleNodeIndices[k];
       const b = circleNodeIndices[(k + 1) % nGon];
       // Deduplicate edges (normalize order: smaller index first)
-      const ea = Math.min(a, b), eb = Math.max(a, b);
+      const ea = Math.min(a, b),
+        eb = Math.max(a, b);
       if (!edges.some(e => e[0] === ea && e[1] === eb)) {
         edges.push([ea, eb]);
       }
@@ -217,9 +225,19 @@ export const Thomson = {
       label: p.label,
     }));
 
-    const { nodes, edges, coincidentCount } = collectCircleVertices(circles, nGon);
+    const { nodes, edges, coincidentCount } = collectCircleVertices(
+      circles,
+      nGon
+    );
 
-    return { circles, nodes, edges, nGon, planeCount: activePlanes.length, coincidentCount };
+    return {
+      circles,
+      nodes,
+      edges,
+      nGon,
+      planeCount: activePlanes.length,
+      coincidentCount,
+    };
   },
 
   /**
@@ -243,8 +261,18 @@ export const Thomson = {
       label: p.label,
     }));
 
-    const { nodes, edges, coincidentCount } = collectCircleVertices(circles, nGon);
+    const { nodes, edges, coincidentCount } = collectCircleVertices(
+      circles,
+      nGon
+    );
 
-    return { circles, nodes, edges, nGon, planeCount: OCT_COORD_PLANES.length, coincidentCount };
+    return {
+      circles,
+      nodes,
+      edges,
+      nGon,
+      planeCount: OCT_COORD_PLANES.length,
+      coincidentCount,
+    };
   },
 };

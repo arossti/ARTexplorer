@@ -44,7 +44,8 @@ export class RTUIBindings {
    */
   init(deps) {
     this.updateGeometry = deps.updateGeometry;
-    this.requestGeometryUpdate = deps.requestGeometryUpdate || deps.updateGeometry;
+    this.requestGeometryUpdate =
+      deps.requestGeometryUpdate || deps.updateGeometry;
     this.renderingAPI = deps.renderingAPI;
     this.RT = deps.RT;
     this.Quadray = deps.Quadray;
