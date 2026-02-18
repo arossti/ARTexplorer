@@ -20,7 +20,7 @@
  * Consistent with original Asteroids game philosophy.
  *
  * @documentation
- * - Design doc: /Geometry documents/A.r.t.steroids.md
+ * - Design doc: /Geometry Documents/A.r.t.steroids.md
  * - Implementation strategy: A.r.t.steroids.md Appendix D
  * - Game mechanics: A.r.t.steroids.md Section 4
  *

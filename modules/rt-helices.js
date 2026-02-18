@@ -10,7 +10,7 @@
  * - tetrahelix2: Linear with multi-strand (tetrahedral seed)
  * - tetrahelix3: Linear with multi-strand (octahedral seed)
  *
- * See: Geometry documents/Tetrahelix.md for specification
+ * See: Geometry Documents/Tetrahelix.md for specification
  *
  * @requires THREE.js
  * @requires rt-math.js

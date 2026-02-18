@@ -893,7 +893,7 @@ python scripts/prime_search_streamlined.py --primes 7 --precision 3 -v
 2. **Prime Projection Search Scripts**
    - `scripts/prime_projection_search.py` (v1) — Discovered Symmetry Barrier, equiangularity scoring
    - `scripts/prime_search_streamlined.py` (v2, active) — Unified search with JS-ported vertex defs
-   - Documented in `Geometry documents/Prime-Projection-Conjecture.tex`
+   - Documented in `Geometry Documents/Prime-Projection-Conjecture.tex`
 
 3. **UI Method Info Display** - Shows construction type for each n-gon
 
@@ -901,7 +901,7 @@ python scripts/prime_search_streamlined.py --primes 7 --precision 3 -v
    - Generalized projection visualization for ANY polyhedron
    - Extracted generic functions from `rt-prime-cuts.js` using Shadow & Swap pattern
    - Provides `applyPreset()`, `showProjection()`, `hideProjection()` API
-   - See: `Geometry documents/Project-Projection.md` for implementation details
+   - See: `Geometry Documents/Project-Projection.md` for implementation details
 
 5. **RTPrimeCuts Simplification + Floating Modal** (2026-02-07/08)
    - `showPrimePolygon(n)` delegates to `RTProjections.applyPreset()`
@@ -1693,7 +1693,7 @@ After 48+ hours debugging the prime projection pipeline, we discovered discrepan
 | `scripts/prime_search_streamlined.py` | Unified search script |
 | `prime_projections_verified.json` | All verified projections |
 
-See `Geometry documents/Project-Streamline.md` for full documentation.
+See `Geometry Documents/Project-Streamline.md` for full documentation.
 
 ---
 
@@ -1702,4 +1702,4 @@ See `Geometry documents/Project-Streamline.md` for full documentation.
 - Wildberger, N.J. "Divine Proportions" Chapter 14 (Spread Polynomials)
 - Gauss-Wantzel Theorem on constructible polygons
 - `modules/rt-math.js` - RT.StarSpreads, RT.PurePhi, RT.PureCubics, RT.QuadrayRotation
-- `Geometry documents/Prime-Projection-Conjecture.tex` - 4D± Prime Projection Whitepaper
+- `Geometry Documents/Prime-Projection-Conjecture.tex` - 4D± Prime Projection Whitepaper

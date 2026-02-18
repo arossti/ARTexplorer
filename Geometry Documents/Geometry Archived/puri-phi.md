@@ -845,8 +845,8 @@ For each migrated polyhedron:
 
 ### Related Documentation
 
-- `docs/development/Geometry documents/README.md` - Main project documentation
-- `docs/development/Geometry documents/Kieran-Math.md` - Mathematical foundations
+- `docs/development/Geometry Documents/README.md` - Main project documentation
+- `docs/development/Geometry Documents/Kieran-Math.md` - Mathematical foundations
 - `src/geometry/modules/rt-math.js` - RT library implementation
 - `src/geometry/modules/rt-polyhedra.js` - Polyhedra generators
 

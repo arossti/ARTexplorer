@@ -153,6 +153,18 @@ export class ColorTheoryModal {
               { id: "thomson-octa", label: "Nodes & Faces", color: "0xAA44FF" },
             ],
           },
+          {
+            name: "Thomson Cube",
+            pairs: [
+              { id: "thomson-cube", label: "Nodes & Faces", color: "0x00CCFF" },
+            ],
+          },
+          {
+            name: "Thomson Icosahedron",
+            pairs: [
+              { id: "thomson-icosa", label: "Nodes & Faces", color: "0x44FF88" },
+            ],
+          },
         ],
       },
       {
@@ -195,6 +207,8 @@ export class ColorTheoryModal {
       // Thomson Polyhedra
       "thomson-tetra": "thomsonTetrahedron",
       "thomson-octa": "thomsonOctahedron",
+      "thomson-cube": "thomsonCube",
+      "thomson-icosa": "thomsonIcosahedron",
     };
   }
 

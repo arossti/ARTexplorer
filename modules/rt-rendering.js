@@ -109,7 +109,7 @@ function cacheElements() {
 /**
  * Camera view presets configuration
  * Spreads use RT notation: s = sin²(θ) for ZYX Euler rotation
- * Reference: Geometry documents/Prime-Projection-Conjecture.tex
+ * Reference: Geometry Documents/Prime-Projection-Conjecture.tex
  */
 export const CAMERA_PRESETS = {
   // ═══════════════════════════════════════════════════════════════════════
@@ -204,6 +204,8 @@ const colorPalette = {
   // Thomson Polyhedra (N-gon great-circle shells)
   thomsonTetrahedron: 0xff5500, // Vivid orange - distinct from base tet yellow
   thomsonOctahedron: 0xaa44ff, // Vivid violet - distinct from base octa green
+  thomsonCube: 0x00ccff, // Cyan-blue - distinct from orange tet and violet oct
+  thomsonIcosahedron: 0x44ff88, // Spring green - distinct from other Thomson forms
 };
 
 /**
@@ -245,7 +247,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let tetrahelix2Group; // Tetrahelix 2: Linear (tetrahedral seed)
   let tetrahelix3Group; // Tetrahelix 3: Linear (octahedral seed)
   let penroseTilingGroup; // Penrose Tiling: Aperiodic tiling with golden ratio
-  let thomsonTetrahedronGroup, thomsonOctahedronGroup; // Thomson Polyhedra (N-gon great-circle shells)
+  let thomsonTetrahedronGroup, thomsonOctahedronGroup, thomsonCubeGroup, thomsonIcosahedronGroup; // Thomson Polyhedra (N-gon great-circle shells)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
 
   // ========================================================================
@@ -526,6 +528,12 @@ export function initScene(THREE, OrbitControls, RT) {
     thomsonOctahedronGroup = new THREE.Group();
     thomsonOctahedronGroup.userData.type = "thomsonOctahedron";
 
+    thomsonCubeGroup = new THREE.Group();
+    thomsonCubeGroup.userData.type = "thomsonCube";
+
+    thomsonIcosahedronGroup = new THREE.Group();
+    thomsonIcosahedronGroup.userData.type = "thomsonIcosahedron";
+
     scene.add(pointGroup);
     scene.add(lineGroup);
     scene.add(polygonGroup);
@@ -574,6 +582,8 @@ export function initScene(THREE, OrbitControls, RT) {
     // Thomson Polyhedra
     scene.add(thomsonTetrahedronGroup);
     scene.add(thomsonOctahedronGroup);
+    scene.add(thomsonCubeGroup);
+    scene.add(thomsonIcosahedronGroup);
 
     // Initialize PerformanceClock with all scene groups
     PerformanceClock.init([
@@ -2951,6 +2961,84 @@ export function initScene(THREE, OrbitControls, RT) {
       thomsonOctahedronGroup.visible = false;
     }
 
+    // Thomson Cube (N-gon great-circle shell on cubic frame)
+    if (el.showThomsonCube?.checked) {
+      const nGon = parseInt(el.thomsonCubeNGon?.value || "5");
+      const rotation = parseFloat(el.thomsonCubeRotation?.value || "0");
+      const coordPlanes = el.thomsonCubeCoordPlanes?.checked ?? true;
+      const diagPlanes = el.thomsonCubeDiagPlanes?.checked ?? true;
+      const showFaces = el.thomsonCubeShowFaces?.checked ?? false;
+      const showHullEdges = el.thomsonCubeShowHullEdges?.checked ?? false;
+      thomsonCubeGroup.userData = {
+        type: "thomsonCube",
+        parameters: {
+          scale,
+          nGon,
+          rotation,
+          coordPlanes,
+          diagPlanes,
+          showFaces,
+          showHullEdges,
+        },
+        showFaces,
+        showHullEdges,
+      };
+      const thomsonCubeData = Thomson.cube(scale, {
+        nGon,
+        rotation,
+        coordPlanes,
+        diagPlanes,
+      });
+      renderThomsonCircles(
+        thomsonCubeGroup,
+        thomsonCubeData,
+        colorPalette.thomsonCube,
+        opacity
+      );
+      thomsonCubeGroup.visible = true;
+    } else {
+      thomsonCubeGroup.visible = false;
+    }
+
+    // Thomson Icosahedron (N-gon great-circle shell on icosahedral frame)
+    if (el.showThomsonIcosahedron?.checked) {
+      const nGon = parseInt(el.thomsonIcosaNGon?.value || "5");
+      const rotation = parseFloat(el.thomsonIcosaRotation?.value || "0");
+      const coordPlanes = el.thomsonIcosaCoordPlanes?.checked ?? true;
+      const edgeMirrorPlanes = el.thomsonIcosaEdgeMirrorPlanes?.checked ?? true;
+      const showFaces = el.thomsonIcosaShowFaces?.checked ?? false;
+      const showHullEdges = el.thomsonIcosaShowHullEdges?.checked ?? false;
+      thomsonIcosahedronGroup.userData = {
+        type: "thomsonIcosahedron",
+        parameters: {
+          scale,
+          nGon,
+          rotation,
+          coordPlanes,
+          edgeMirrorPlanes,
+          showFaces,
+          showHullEdges,
+        },
+        showFaces,
+        showHullEdges,
+      };
+      const thomsonIcosaData = Thomson.icosahedron(scale, {
+        nGon,
+        rotation,
+        coordPlanes,
+        edgeMirrorPlanes,
+      });
+      renderThomsonCircles(
+        thomsonIcosahedronGroup,
+        thomsonIcosaData,
+        colorPalette.thomsonIcosahedron,
+        opacity
+      );
+      thomsonIcosahedronGroup.visible = true;
+    } else {
+      thomsonIcosahedronGroup.visible = false;
+    }
+
     // Rhombic Dodecahedron Matrix (Space-Filling Array)
     if (el.showRhombicDodecMatrix.checked) {
       const matrixSize = parseInt(
@@ -3938,6 +4026,42 @@ export function initScene(THREE, OrbitControls, RT) {
       html += `<div>N-gon: ${nGon}, Rotation: ${rotation}°</div>`;
     }
 
+    // Thomson Cube
+    if (el.showThomsonCube?.checked) {
+      const nGon = parseInt(el.thomsonCubeNGon?.value || "5");
+      const rotation = parseFloat(el.thomsonCubeRotation?.value || "0");
+      const coordPlanes = el.thomsonCubeCoordPlanes?.checked ?? true;
+      const diagPlanes = el.thomsonCubeDiagPlanes?.checked ?? true;
+      const thomsonCubeData = Thomson.cube(1, {
+        nGon,
+        rotation,
+        coordPlanes,
+        diagPlanes,
+      });
+      const totalVerts = thomsonCubeData.planeCount * nGon;
+      html += `<div style="margin-top: 10px;"><strong>Thomson Cube:</strong></div>`;
+      html += `<div>Planes: ${thomsonCubeData.planeCount}, Nodes: ${thomsonCubeData.nodes.length}, Coincident: ${thomsonCubeData.coincidentCount}/${totalVerts}</div>`;
+      html += `<div>N-gon: ${nGon}, Rotation: ${rotation}°</div>`;
+    }
+
+    // Thomson Icosahedron
+    if (el.showThomsonIcosahedron?.checked) {
+      const nGon = parseInt(el.thomsonIcosaNGon?.value || "5");
+      const rotation = parseFloat(el.thomsonIcosaRotation?.value || "0");
+      const coordPlanes = el.thomsonIcosaCoordPlanes?.checked ?? true;
+      const edgeMirrorPlanes = el.thomsonIcosaEdgeMirrorPlanes?.checked ?? true;
+      const thomsonIcosaData = Thomson.icosahedron(1, {
+        nGon,
+        rotation,
+        coordPlanes,
+        edgeMirrorPlanes,
+      });
+      const totalVerts = thomsonIcosaData.planeCount * nGon;
+      html += `<div style="margin-top: 10px;"><strong>Thomson Icosahedron:</strong></div>`;
+      html += `<div>Planes: ${thomsonIcosaData.planeCount}, Nodes: ${thomsonIcosaData.nodes.length}, Coincident: ${thomsonIcosaData.coincidentCount}/${totalVerts}</div>`;
+      html += `<div>N-gon: ${nGon}, Rotation: ${rotation}°</div>`;
+    }
+
     stats.innerHTML = html || "Select a polyhedron to see stats";
     MetaLog.unsuppress();
   }
@@ -4393,6 +4517,8 @@ export function initScene(THREE, OrbitControls, RT) {
       penroseTilingGroup,
       thomsonTetrahedronGroup,
       thomsonOctahedronGroup,
+      thomsonCubeGroup,
+      thomsonIcosahedronGroup,
     };
   }
 
@@ -4981,6 +5107,30 @@ export function initScene(THREE, OrbitControls, RT) {
         geometry = Thomson.octahedron(scale, {
           nGon: options.nGon || 5,
           rotation: options.rotation || 0,
+        });
+        renderThomsonCircles(group, geometry, color, opacity);
+        break;
+
+      case "thomsonCube":
+        group.userData.showFaces = options.showFaces ?? false;
+        group.userData.showHullEdges = options.showHullEdges ?? false;
+        geometry = Thomson.cube(scale, {
+          nGon: options.nGon || 5,
+          rotation: options.rotation || 0,
+          coordPlanes: options.coordPlanes ?? true,
+          diagPlanes: options.diagPlanes ?? true,
+        });
+        renderThomsonCircles(group, geometry, color, opacity);
+        break;
+
+      case "thomsonIcosahedron":
+        group.userData.showFaces = options.showFaces ?? false;
+        group.userData.showHullEdges = options.showHullEdges ?? false;
+        geometry = Thomson.icosahedron(scale, {
+          nGon: options.nGon || 5,
+          rotation: options.rotation || 0,
+          coordPlanes: options.coordPlanes ?? true,
+          edgeMirrorPlanes: options.edgeMirrorPlanes ?? true,
         });
         renderThomsonCircles(group, geometry, color, opacity);
         break;

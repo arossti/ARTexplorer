@@ -175,7 +175,7 @@ function startARTexplorer(
     quadrayOctahedronGroup,
     quadrayTruncatedTetGroup,
     quadrayStellaOctangulaGroup;
-  let thomsonTetrahedronGroup, thomsonOctahedronGroup;
+  let thomsonTetrahedronGroup, thomsonOctahedronGroup, thomsonCubeGroup, thomsonIcosahedronGroup;
   let cartesianGrid, ivmPlanes;
 
   // ========================================================================
@@ -237,7 +237,7 @@ function startARTexplorer(
   //
   // FUTURE CLEANUP: Once declarative system is fully proven, wrap covered
   // handlers in `if (!USE_DECLARATIVE_UI)` or remove them entirely.
-  // See: Geometry documents/JAN30-MODULARIZATION-ANALYSIS.md for handler inventory
+  // See: Geometry Documents/JAN30-MODULARIZATION-ANALYSIS.md for handler inventory
   //
   // HANDLERS NOT IN DECLARATIVE (must always run):
   // - Plane toggles (.plane-toggle-switch[data-plane])
@@ -2640,6 +2640,8 @@ function startARTexplorer(
       quadrayStellaOctangulaGroup,
       thomsonTetrahedronGroup,
       thomsonOctahedronGroup,
+      thomsonCubeGroup,
+      thomsonIcosahedronGroup,
       penroseTilingGroup,
     ];
 
@@ -2912,6 +2914,8 @@ function startARTexplorer(
       quadrayStellaOctangulaGroup,
       thomsonTetrahedronGroup,
       thomsonOctahedronGroup,
+      thomsonCubeGroup,
+      thomsonIcosahedronGroup,
       penroseTilingGroup,
     ];
 
@@ -4347,6 +4351,8 @@ function startARTexplorer(
     quadrayStellaOctangulaGroup,
     thomsonTetrahedronGroup,
     thomsonOctahedronGroup,
+    thomsonCubeGroup,
+    thomsonIcosahedronGroup,
     penroseTilingGroup,
   } = formGroups);
 
@@ -4453,6 +4459,124 @@ function startARTexplorer(
 
   // Start animation loop
   renderingAPI.animate();
+
+  // ========================================================================
+  // JITTERBUG ANIMATION — Generalized for all Thomson forms
+  // Auto-drives rotation slider 0°→90° (bounce) or 0°→360° (continuous)
+  // Forces N-gon=4, enables Show Faces + Hull Edges on Play
+  // ========================================================================
+  {
+    const JITTERBUG_SPEED = 0.5; // degrees per frame (~30°/sec at 60fps)
+    const JITTERBUG_BOUNCE_MAX = 90; // 2 full fold cycles (0°→90°→0°)
+
+    const JITTERBUG_FORMS = [
+      { showId: "showThomsonTetrahedron", nGonId: "thomsonTetraNGon",  rotId: "thomsonTetraRotation", dispId: "thomsonTetraRotationValue",  btnId: "thomsonTetJitterbugToggle",   bounceId: "thomsonTetJitterbugBounce",   facesId: "thomsonTetraShowFaces",  hullId: "thomsonTetraShowHullEdges" },
+      { showId: "showThomsonOctahedron",  nGonId: "thomsonOctaNGon",   rotId: "thomsonOctaRotation",  dispId: "thomsonOctaRotationValue",   btnId: "thomsonOctaJitterbugToggle",  bounceId: "thomsonOctaJitterbugBounce",  facesId: "thomsonOctaShowFaces",   hullId: "thomsonOctaShowHullEdges" },
+      { showId: "showThomsonCube",        nGonId: "thomsonCubeNGon",   rotId: "thomsonCubeRotation",  dispId: "thomsonCubeRotationValue",   btnId: "thomsonCubeJitterbugToggle",  bounceId: "thomsonCubeJitterbugBounce",  facesId: "thomsonCubeShowFaces",   hullId: "thomsonCubeShowHullEdges" },
+      { showId: "showThomsonIcosahedron", nGonId: "thomsonIcosaNGon",  rotId: "thomsonIcosaRotation", dispId: "thomsonIcosaRotationValue",  btnId: "thomsonIcosaJitterbugToggle", bounceId: "thomsonIcosaJitterbugBounce", facesId: "thomsonIcosaShowFaces",  hullId: "thomsonIcosaShowHullEdges" },
+    ];
+
+    // Per-form animation state
+    const states = JITTERBUG_FORMS.map(() => ({
+      active: false, angle: 0, direction: 1,
+    }));
+
+    function updateJitterbugRotation(rotSlider, rotDisplay, angle) {
+      if (rotSlider) rotSlider.value = Math.round(angle);
+      if (rotDisplay) {
+        // Math.PI/Math.sin justified: UX display of spread value at slider boundary
+        const rad = (angle * Math.PI) / 180;
+        const spread = Math.sin(rad) ** 2;
+        rotDisplay.textContent = `${Math.round(angle)}° s=${spread.toFixed(3)}`;
+      }
+    }
+
+    let jitterbugLoopRunning = false;
+
+    function jitterbugFrame() {
+      let anyActive = false;
+      for (let i = 0; i < JITTERBUG_FORMS.length; i++) {
+        const s = states[i];
+        if (!s.active) continue;
+        anyActive = true;
+        const cfg = JITTERBUG_FORMS[i];
+        const bounce = document.getElementById(cfg.bounceId)?.checked ?? true;
+
+        if (bounce) {
+          // Bounce mode: oscillate 0° → 90° → 0°
+          s.angle += JITTERBUG_SPEED * s.direction;
+          if (s.angle >= JITTERBUG_BOUNCE_MAX) {
+            s.angle = JITTERBUG_BOUNCE_MAX;
+            s.direction = -1;
+          } else if (s.angle <= 0) {
+            s.angle = 0;
+            s.direction = 1;
+          }
+        } else {
+          // Continuous mode: full 360° loop
+          s.angle = (s.angle + JITTERBUG_SPEED) % 360;
+        }
+
+        updateJitterbugRotation(
+          document.getElementById(cfg.rotId),
+          document.getElementById(cfg.dispId),
+          s.angle
+        );
+      }
+
+      if (anyActive) {
+        renderingAPI.updateGeometry();
+        requestAnimationFrame(jitterbugFrame);
+      } else {
+        jitterbugLoopRunning = false;
+      }
+    }
+
+    // Wire up Play/Pause buttons for all forms
+    JITTERBUG_FORMS.forEach((cfg, i) => {
+      const btn = document.getElementById(cfg.btnId);
+      if (!btn) return;
+
+      btn.addEventListener("click", () => {
+        const s = states[i];
+        s.active = !s.active;
+        btn.textContent = s.active ? "Pause" : "Play";
+        btn.classList.toggle("active", s.active);
+
+        if (s.active) {
+          // Auto-enable the form if not checked
+          const showCb = document.getElementById(cfg.showId);
+          if (showCb && !showCb.checked) {
+            showCb.checked = true;
+            showCb.dispatchEvent(new Event("change"));
+          }
+          // Force N-gon to 4
+          const nGonSlider = document.getElementById(cfg.nGonId);
+          if (nGonSlider) {
+            nGonSlider.value = "4";
+            const nGonDisplay = document.getElementById(cfg.nGonId + "Value");
+            if (nGonDisplay) nGonDisplay.textContent = "4";
+          }
+          // Enable Show Faces + Hull Edges
+          [cfg.facesId, cfg.hullId].forEach(id => {
+            const cb = document.getElementById(id);
+            if (cb && !cb.checked) {
+              cb.checked = true;
+              cb.dispatchEvent(new Event("change"));
+            }
+          });
+          // Sync angle from current slider position
+          s.angle = parseFloat(document.getElementById(cfg.rotId)?.value || "0");
+          s.direction = 1;
+          // Start animation loop if not already running
+          if (!jitterbugLoopRunning) {
+            jitterbugLoopRunning = true;
+            requestAnimationFrame(jitterbugFrame);
+          }
+        }
+      });
+    });
+  }
 
   // ========================================================================
   // RT-PAPERCUT MODULE INITIALIZATION

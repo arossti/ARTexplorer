@@ -2898,7 +2898,7 @@ document.addEventListener("keydown", event => {
 
 - `src/geometry/ARTexplorer.html` - Selection system, StateManager integration, keyboard shortcuts
 - `src/geometry/modules/rt-state-manager.js` - New module (500+ lines)
-- `docs/development/Geometry documents/Module-Extraction-Analysis.md` - New analysis document
+- `docs/development/Geometry Documents/Module-Extraction-Analysis.md` - New analysis document
 
 **Working Features:**
 

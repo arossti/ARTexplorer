@@ -4,7 +4,7 @@
 // Manages coordinate display in footer panel with Absolute/Relative/Group Centre modes
 // Uses StateManager as source of truth - display is a window into persisted state
 //
-// See: Geometry documents/Coordinates.md for full specification
+// See: Geometry Documents/Coordinates.md for full specification
 // ========================================================================
 
 /**

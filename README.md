@@ -610,7 +610,7 @@ The `Symbolic` class maintains exact `(a + b√5)/c` form with operations:
 
 **Generalized Symbolic Algebra (`RT.SymbolicCoord`)**
 
-`SymbolicCoord` generalizes the PurePhi.Symbolic pattern from D=5 to arbitrary radicand D, enabling exact `(a + b√D)/c` arithmetic for polygon vertex generation. For N = 3, 4, 6, 8, 12, all vertex coordinates are computed in Q(√D) with zero intermediate float expansion — the single `toDecimal()` call is deferred to the GPU boundary. See `Geometry documents/Pure-Polygon.md` for the full derivation and whitepaper-ready theory.
+`SymbolicCoord` generalizes the PurePhi.Symbolic pattern from D=5 to arbitrary radicand D, enabling exact `(a + b√D)/c` arithmetic for polygon vertex generation. For N = 3, 4, 6, 8, 12, all vertex coordinates are computed in Q(√D) with zero intermediate float expansion — the single `toDecimal()` call is deferred to the GPU boundary. See `Geometry Documents/Pure-Polygon.md` for the full derivation and whitepaper-ready theory.
 
 #### Spread Polynomials (Chapter 14)
 
@@ -675,7 +675,7 @@ ARTexplorer respects the Gauss-Wantzel theorem for polygon constructibility:
 **Cubic (1 √, cached cubic roots):** n = 7, 9 — irreducible cubics, no √-expression
 **Transcendental fallback:** n = 11, 13, ... — sin²(π/N) for star spread
 
-All paths use the unified Wildberger reflection construction (`RT.nGonVertices` / `RT.nGonVerticesSymbolic`). The symbolic path for the five most common polygons is provably exact until the GPU boundary. See `Geometry documents/Pure-Polygon.md`.
+All paths use the unified Wildberger reflection construction (`RT.nGonVertices` / `RT.nGonVerticesSymbolic`). The symbolic path for the five most common polygons is provably exact until the GPU boundary. See `Geometry Documents/Pure-Polygon.md`.
 
 ### 6.3 Tetrahedral Geometry
 
@@ -734,7 +734,7 @@ We welcome contributions! Areas of interest:
 
 - `README.md` (this file) - Project overview and getting started
 - `DEV-PRIVATE.md` - Internal development documentation
-- `Geometry documents/` - Detailed technical documentation:
+- `Geometry Documents/` - Detailed technical documentation:
   - `Basis-Vector-Symbols.md` - Coordinate system details
   - `puri-phi.md` - PurePhi symbolic algebra implementation
   - `Quadray-Grid.md` - Grid system specifications

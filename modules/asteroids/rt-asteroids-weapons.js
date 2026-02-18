@@ -18,7 +18,7 @@
  * No square roots until visual explosion effects.
  *
  * @documentation
- * - Design doc: /Geometry documents/A.r.t.steroids.md
+ * - Design doc: /Geometry Documents/A.r.t.steroids.md
  * - Weapon systems: A.r.t.steroids.md Section 7
  * - Collision detection: A.r.t.steroids.md Appendix A.2
  *

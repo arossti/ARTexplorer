@@ -18,7 +18,7 @@
  * - Stellaria Octangula: Only ship that survives black hole transition (Tier 5+)
  *
  * @documentation
- * - Design doc: /Geometry documents/A.r.t.steroids.md
+ * - Design doc: /Geometry Documents/A.r.t.steroids.md
  * - Black hole mechanics: A.r.t.steroids.md Section 9
  * - Stellaria Octangula: A.r.t.steroids.md Version 3.1 Updates
  *
