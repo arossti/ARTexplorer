@@ -14,9 +14,10 @@ This document provides guidance to Claude Code AI agents when performing periodi
 4. [Section 2: Manual Review Checklist](#section-2-manual-review-checklist)
 5. [Section 3: Refactoring Guidelines](#section-3-refactoring-guidelines)
 6. [Section 4: RT-Specific Rules](#section-4-rt-specific-rules)
-7. [Quality Gates & Success Metrics](#quality-gates--success-metrics)
-8. [Audit Workflow](#audit-workflow)
-9. [Reporting Template](#reporting-template)
+7. [Section 5: Verification Path & Feedback Loop Audit](#section-5-verification-path--feedback-loop-audit)
+8. [Quality Gates & Success Metrics](#quality-gates--success-metrics)
+9. [Audit Workflow](#audit-workflow)
+10. [Reporting Template](#reporting-template)
 
 ---
 
@@ -38,7 +39,9 @@ Maintain high code quality, architectural consistency, and RT-purity across the 
 2. **Simplicity Over Complexity:** Avoid over-engineering, premature abstraction
 3. **Performance Awareness:** Maintain 60fps at default settings
 4. **Code Clarity:** Self-documenting code preferred over excessive comments
-5. **Module Boundaries:** Clear separation of concerns (Init/Html/Rendering architecture)
+5. **Module Boundaries:** Clear separation of concerns (math → geometry → rendering → UI → views)
+6. **Closed Feedback Loops:** Every geometry module must have a verifiable output path (console, visual, or state round-trip)
+7. **Error Compounding Awareness:** Track where rational-to-float boundaries are; document downstream precision impact
 
 ---
 
@@ -52,18 +55,29 @@ modules/
 ├── rt-rendering.js       # THREE.js scene management (Factory pattern)
 ├── rt-math.js            # RT library (quadrance, spread, Phi, Sexagesimal)
 ├── rt-polyhedra.js       # All polyhedra generators (RT-pure)
+├── rt-thomson.js         # Thomson great-circle shells (RT-pure geometry)
 ├── rt-matrix-planar.js   # IVM spatial arrays (planar N×N)
 ├── rt-matrix-radial.js   # IVM spatial arrays (radial)
 ├── rt-papercut.js        # Print mode, dynamic cutplane
+├── rt-prime-cuts.js      # Prime polygon projection presets
+├── rt-projections.js     # 2D polygon projections, Graham scan
 ├── rt-controls.js        # ART Gumball controls
 ├── rt-state-manager.js   # Forms/Instances state
+├── rt-delta.js           # View snapshot diff/apply
+├── rt-animate.js         # View transition animation (dissolve, lerp)
+├── rt-viewmanager.js     # View sequence management
 ├── rt-filehandler.js     # State import/export
 ├── rt-grids.js           # Grid rendering
 ├── rt-nodes.js           # Node management
 ├── rt-primitives.js      # Primitive geometry
-├── rt-viewmanager.js     # View management
+├── rt-helices.js         # Tetrahelix geometry
+├── rt-penrose.js         # Penrose tiling
+├── rt-ik-solvers.js      # Inverse kinematics constraint solvers
+├── rt-ui-binding-defs.js # UI slider/checkbox binding definitions
 ├── rt-context.js         # Context menu handling
 ├── rt-info-modal.js      # Info modal UI
+├── rt-metalog.js         # MetaLog diagnostic overlay
+├── color-theory-modal.js # Color calibration tool
 └── rt-janus.js           # Janus mode handling
 ```
 
@@ -686,6 +700,49 @@ grep -rn "phi \* phi\|phi \/ phi" modules/rt-polyhedra.js
 
 ---
 
+## Section 5: Verification Path & Feedback Loop Audit
+
+*Informed by Wei et al. 2026 "Agentic Reasoning for LLMs" — Sections 3.2 (Tool Use), 4.1 (Feedback Mechanisms), and 6.1 (Math Exploration & Vibe Coding Agents).*
+
+### 5.1 Closed Feedback Loop Check
+
+Every geometry module should have a verifiable output path. For each module:
+
+- [ ] **Console diagnostic**: Does the module produce meaningful console output (vertex counts, coincident counts, error bounds)?
+- [ ] **Visual verification**: Can the output be seen and inspected in the 3D viewport?
+- [ ] **State round-trip**: Does the geometry survive save → reload → re-render without loss?
+- [ ] **View system integration**: Are all user-facing controls captured by `rt-delta.js` for view state?
+
+**Verification Matrix:**
+
+| Module | Console | Visual | State Round-trip | View System |
+|---|---|---|---|---|
+| `rt-polyhedra.js` | vertex/face counts | renderPolyhedron() | state-manager | checkboxes in delta |
+| `rt-thomson.js` | coincidentCount | renderThomsonCircles() | state-manager | sliders + checkboxes in delta |
+| `rt-grids.js` | — | grid groups | — | grid checkboxes in delta |
+| `rt-projections.js` | hull vertex count | 2D overlay | — | — |
+| `rt-matrix-planar.js` | — | matrix render | state-manager | checkbox in delta |
+
+### 5.2 Rational-to-Float Boundary Tracing
+
+Track where algebraic precision is lost and assess downstream impact:
+
+- [ ] **Identify all Math.sqrt() calls** and verify they are at the final THREE.Vector3 boundary
+- [ ] **Identify all Math.PI/sin/cos/tan calls** and verify they are at UX boundaries (degrees → radians) with justification comments
+- [ ] **Float32 sensitivity**: For convex hull and projection operations, verify that vertices with near-zero cross products (< 0.1) are handled robustly
+- [ ] **Scale independence**: Verify that hull counts and geometric properties are stable across different `tetEdge` scale values
+
+### 5.3 Geometry Decomposition Audit
+
+For complex geometry features, verify the construction-verification-integration pattern:
+
+- [ ] **Construction**: Pure math module produces correct vertices/edges/faces (RT-pure)
+- [ ] **Verification**: Output validated against known targets (e.g., N=4 oct → 6 nodes at octahedron vertices)
+- [ ] **Integration**: Rendering, state persistence, and view system all handle the new geometry
+- [ ] **Edge cases**: Minimum inputs (< 4 nodes for hull), maximum inputs (15 planes x 12-gon), degenerate configurations
+
+---
+
 ## Quality Gates & Success Metrics
 
 ### Mandatory Requirements (Must Pass)
@@ -1016,6 +1073,7 @@ sed -i.bak '/console.log/d' modules/*.js
 
 - **v1.0** (2026-01-10) - Initial creation, based on ARTexplorer TODO 8.1.5
 - **v1.1** (2026-01-29) - Updated file paths from `src/geometry/modules/` to `modules/` and `demos/`; added asteroids game module to audit scope; updated all command examples
+- **v1.2** (2026-02-18) - Expanded audit scope with 12 missing modules (thomson, delta, animate, projections, prime-cuts, helices, penrose, ik-solvers, ui-binding-defs, metalog, color-theory-modal); added Section 5 (Verification Path & Feedback Loop Audit) informed by Wei et al. 2026 survey; added guiding principles for closed feedback loops and error compounding awareness
 
 ---
 
