@@ -254,6 +254,7 @@ export const RTAnimate = {
     // Build the scene delta tick callback (stepped slider interpolation)
     let deltaTick = null;
     let formDissolveTick = null;
+    let gridDissolveTick = null;
     if (view.sceneState) {
       // Get the "from" snapshot — current scene state before animation
       const fromSnapshot = RTDelta.captureSnapshot();
@@ -265,17 +266,21 @@ export const RTAnimate = {
         ? vm.getSnapshotAtView(viewIndex)
         : view.sceneState;
       formDissolveTick = this._setupFormDissolve(fromSnapshot, targetSnapshot);
+
+      // Build grid dissolve tick (fade grids & basis vectors via material traversal)
+      gridDissolveTick = this._setupGridDissolve(fromSnapshot, targetSnapshot);
     }
 
-    // Merge cutplane + instance dissolve + form dissolve + delta into a single onTick
+    // Merge cutplane + instance dissolve + form dissolve + grid dissolve + delta
     // cutplane and dissolves use smoothstepped t (continuous interpolation)
     // deltaTick receives both t and rawT (uses rawT for even-spaced discrete steps)
     const onTick =
-      cutplaneTick || dissolveTick || formDissolveTick || deltaTick
+      cutplaneTick || dissolveTick || formDissolveTick || gridDissolveTick || deltaTick
         ? (t, rawT) => {
             if (cutplaneTick) cutplaneTick(t);
             if (dissolveTick) dissolveTick(t);
             if (formDissolveTick) formDissolveTick(t);
+            if (gridDissolveTick) gridDissolveTick(t);
             if (deltaTick) deltaTick(t, rawT);
           }
         : null;
@@ -580,6 +585,130 @@ export const RTAnimate = {
         }
         if (window.renderingAPI?.updateGeometry) {
           window.renderingAPI.updateGeometry();
+        }
+      }
+    };
+  },
+
+  // ── Grid dissolve (opacity fade for grids & basis vectors) ─────
+
+  /**
+   * Map grid group keys (from getGridGroups()) to the checkbox IDs that
+   * control their visibility. When ALL checkboxes for a group transition
+   * from off→on or on→off, the group fades in/out.
+   * @private
+   */
+  _GRID_CHECKBOX_GROUPS: {
+    ivmPlanes: ["planeIvmWX", "planeIvmWY", "planeIvmWZ", "planeIvmXY", "planeIvmXZ", "planeIvmYZ"],
+    cartesianGrid: ["planeXY", "planeXZ", "planeYZ"],
+    cartesianBasis: ["showCartesianBasis"],
+    quadrayBasis: ["showQuadray"],
+  },
+
+  /**
+   * Prepare a per-tick dissolve function that fades grid groups in/out.
+   * Works by directly traversing children and setting material opacity,
+   * since grids don't go through renderPolyhedron()/updateGeometry().
+   *
+   * @param {Object} fromSnapshot - Current scene snapshot
+   * @param {Object} targetSnapshot - Target scene full accumulated snapshot
+   * @returns {function|null} Tick function: (t: 0→1) => void, or null if no grid changes
+   * @private
+   */
+  _setupGridDissolve(fromSnapshot, targetSnapshot) {
+    if (!fromSnapshot?.polyhedraCheckboxes || !targetSnapshot?.polyhedraCheckboxes) {
+      return null;
+    }
+
+    const gridGroups = window.renderingAPI?.getGridGroups();
+    if (!gridGroups) return null;
+
+    const fadeTargets = [];
+
+    for (const [groupKey, checkboxIds] of Object.entries(this._GRID_CHECKBOX_GROUPS)) {
+      const group = gridGroups[groupKey];
+      if (!group) continue;
+
+      // Check if group-level visibility transitions
+      const anyCurrentOn = checkboxIds.some(id => fromSnapshot.polyhedraCheckboxes[id]);
+      const anyTargetOn = checkboxIds.some(id => targetSnapshot.polyhedraCheckboxes[id]);
+      if (anyTargetOn === anyCurrentOn) continue;
+
+      // Collect all materials in the group (works even when group.visible=false)
+      const materials = [];
+      group.traverse(child => {
+        if (child.material) {
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach(mat => {
+            materials.push({
+              mat,
+              origOpacity: mat.opacity,
+              origTransparent: mat.transparent,
+            });
+          });
+        }
+      });
+
+      if (materials.length === 0) continue;
+
+      if (anyTargetOn && !anyCurrentOn) {
+        // FADE IN: zero materials first (before making visible), then enable
+        for (const { mat } of materials) {
+          mat._dissolveOriginalOpacity = mat.opacity;
+          mat._dissolveOriginalTransparent = mat.transparent;
+          mat.transparent = true;
+          mat.opacity = 0;
+          mat.needsUpdate = true;
+        }
+        // Set checkboxes + dispatch change → makes planes visible (at opacity 0)
+        for (const id of checkboxIds) {
+          const el = document.getElementById(id);
+          if (el && targetSnapshot.polyhedraCheckboxes[id]) {
+            el.checked = true;
+            el.dispatchEvent(new Event("change"));
+          }
+        }
+        fadeTargets.push({ group, materials, direction: "in", checkboxIds });
+      } else {
+        // FADE OUT: mark materials for dissolve
+        for (const { mat } of materials) {
+          mat._dissolveOriginalOpacity = mat.opacity;
+          mat._dissolveOriginalTransparent = mat.transparent;
+          mat.transparent = true;
+          mat.needsUpdate = true;
+        }
+        fadeTargets.push({ group, materials, direction: "out", checkboxIds });
+      }
+    }
+
+    if (fadeTargets.length === 0) return null;
+
+    return (t) => {
+      for (const target of fadeTargets) {
+        for (const { mat, origOpacity } of target.materials) {
+          mat.opacity = target.direction === "in"
+            ? origOpacity * t
+            : origOpacity * (1 - t);
+          mat.needsUpdate = true;
+        }
+
+        if (t >= 1) {
+          if (target.direction === "out") {
+            for (const id of target.checkboxIds) {
+              const el = document.getElementById(id);
+              if (el) {
+                el.checked = false;
+                el.dispatchEvent(new Event("change"));
+              }
+            }
+          }
+          for (const { mat, origOpacity, origTransparent } of target.materials) {
+            mat.opacity = origOpacity;
+            mat.transparent = origTransparent;
+            delete mat._dissolveOriginalOpacity;
+            delete mat._dissolveOriginalTransparent;
+            mat.needsUpdate = true;
+          }
         }
       }
     };

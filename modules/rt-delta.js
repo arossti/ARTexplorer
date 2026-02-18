@@ -366,7 +366,12 @@ export const RTDelta = {
     if (delta.polyhedraCheckboxes) {
       for (const [id, checked] of Object.entries(delta.polyhedraCheckboxes)) {
         const el = document.getElementById(id);
-        if (el) el.checked = checked;
+        if (el) {
+          el.checked = checked;
+          // Dispatch 'change' so grid plane handlers in rt-init.js fire
+          // (they set individual plane visibility via window.ivmWX.visible etc.)
+          el.dispatchEvent(new Event("change"));
+        }
       }
 
       // Show/hide sub-control panels for checkbox-with-controls forms
