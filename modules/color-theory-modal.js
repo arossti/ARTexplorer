@@ -140,7 +140,11 @@ export class ColorTheoryModal {
           {
             name: "Thomson Tetrahedron",
             pairs: [
-              { id: "thomson-tetra", label: "Nodes & Faces", color: "0xFF5500" },
+              {
+                id: "thomson-tetra",
+                label: "Nodes & Faces",
+                color: "0xFF5500",
+              },
             ],
           },
           {

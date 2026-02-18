@@ -1152,7 +1152,9 @@ export function initScene(THREE, OrbitControls, RT) {
         node.userData.isVertexNode = true;
         node.userData.nodeType = "sphere";
         node.userData.nodeRadius = nodeRadius;
-        node.userData.nodeGeometry = getUseRTNodeGeometry() ? "rt" : "classical";
+        node.userData.nodeGeometry = getUseRTNodeGeometry()
+          ? "rt"
+          : "classical";
         group.add(node);
       });
 
@@ -2901,11 +2903,24 @@ export function initScene(THREE, OrbitControls, RT) {
       const showHullEdges = el.thomsonTetraShowHullEdges?.checked ?? false;
       thomsonTetrahedronGroup.userData = {
         type: "thomsonTetrahedron",
-        parameters: { scale, nGon, rotation, facePlanes, edgePlanes, showFaces, showHullEdges },
+        parameters: {
+          scale,
+          nGon,
+          rotation,
+          facePlanes,
+          edgePlanes,
+          showFaces,
+          showHullEdges,
+        },
         showFaces,
         showHullEdges,
       };
-      const thomsonTet = Thomson.tetrahedron(scale, { nGon, rotation, facePlanes, edgePlanes });
+      const thomsonTet = Thomson.tetrahedron(scale, {
+        nGon,
+        rotation,
+        facePlanes,
+        edgePlanes,
+      });
       renderThomsonCircles(
         thomsonTetrahedronGroup,
         thomsonTet,
@@ -3907,7 +3922,12 @@ export function initScene(THREE, OrbitControls, RT) {
       const rotation = parseFloat(el.thomsonTetraRotation?.value || "0");
       const facePlanes = el.thomsonTetraFacePlanes?.checked ?? true;
       const edgePlanes = el.thomsonTetraEdgePlanes?.checked ?? false;
-      const thomsonTet = Thomson.tetrahedron(1, { nGon, rotation, facePlanes, edgePlanes });
+      const thomsonTet = Thomson.tetrahedron(1, {
+        nGon,
+        rotation,
+        facePlanes,
+        edgePlanes,
+      });
       const totalVerts = thomsonTet.planeCount * nGon;
       html += `<div style="margin-top: 10px;"><strong>Thomson Tetrahedron:</strong></div>`;
       html += `<div>Planes: ${thomsonTet.planeCount}, Nodes: ${thomsonTet.nodes.length}, Coincident: ${thomsonTet.coincidentCount}/${totalVerts}</div>`;

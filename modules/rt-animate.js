@@ -109,9 +109,10 @@ export const RTAnimate = {
     // When camera is near the Z axis, lookAt(origin) with up=(0,0,1) is degenerate
     // because look direction becomes parallel to up vector. Use Y-up instead.
     const zAxis = new THREE.Vector3(0, 0, 1);
-    const endUp = Math.abs(endDir.dot(zAxis)) > 0.95
-      ? new THREE.Vector3(0, endDir.z > 0 ? 1 : -1, 0)
-      : new THREE.Vector3(0, 0, 1);
+    const endUp =
+      Math.abs(endDir.dot(zAxis)) > 0.95
+        ? new THREE.Vector3(0, endDir.z > 0 ? 1 : -1, 0)
+        : new THREE.Vector3(0, 0, 1);
 
     // Pre-compute slerp parameters for direction interpolation
     // Angle-based slerp handles all angular separations correctly (unlike lerp+normalize
@@ -262,9 +263,8 @@ export const RTAnimate = {
 
       // Build form dissolve tick (fade base forms in/out based on checkbox changes)
       const viewIndex = vm.state.views.indexOf(view);
-      const targetSnapshot = viewIndex >= 0
-        ? vm.getSnapshotAtView(viewIndex)
-        : view.sceneState;
+      const targetSnapshot =
+        viewIndex >= 0 ? vm.getSnapshotAtView(viewIndex) : view.sceneState;
       formDissolveTick = this._setupFormDissolve(fromSnapshot, targetSnapshot);
 
       // Build grid dissolve tick (fade grids & basis vectors via material traversal)
@@ -275,7 +275,11 @@ export const RTAnimate = {
     // cutplane and dissolves use smoothstepped t (continuous interpolation)
     // deltaTick receives both t and rawT (uses rawT for even-spaced discrete steps)
     const onTick =
-      cutplaneTick || dissolveTick || formDissolveTick || gridDissolveTick || deltaTick
+      cutplaneTick ||
+      dissolveTick ||
+      formDissolveTick ||
+      gridDissolveTick ||
+      deltaTick
         ? (t, rawT) => {
             if (cutplaneTick) cutplaneTick(t);
             if (dissolveTick) dissolveTick(t);
@@ -409,7 +413,11 @@ export const RTAnimate = {
           if (target.direction === "out") {
             target.group.visible = false;
           }
-          for (const { mat, origOpacity, origTransparent } of target.materials) {
+          for (const {
+            mat,
+            origOpacity,
+            origTransparent,
+          } of target.materials) {
             mat.opacity = origOpacity;
             mat.transparent = origTransparent;
             delete mat._dissolveOriginalOpacity;
@@ -508,7 +516,10 @@ export const RTAnimate = {
    * @private
    */
   _setupFormDissolve(fromSnapshot, targetSnapshot) {
-    if (!fromSnapshot?.polyhedraCheckboxes || !targetSnapshot?.polyhedraCheckboxes) {
+    if (
+      !fromSnapshot?.polyhedraCheckboxes ||
+      !targetSnapshot?.polyhedraCheckboxes
+    ) {
       return null;
     }
 
@@ -520,8 +531,11 @@ export const RTAnimate = {
 
     const fadeTargets = [];
 
-    for (const [checkboxId, targetChecked] of Object.entries(targetSnapshot.polyhedraCheckboxes)) {
-      const currentChecked = fromSnapshot.polyhedraCheckboxes[checkboxId] ?? false;
+    for (const [checkboxId, targetChecked] of Object.entries(
+      targetSnapshot.polyhedraCheckboxes
+    )) {
+      const currentChecked =
+        fromSnapshot.polyhedraCheckboxes[checkboxId] ?? false;
       if (currentChecked === targetChecked) continue;
 
       const groupKey = this._CHECKBOX_TO_GROUP[checkboxId];
@@ -557,7 +571,7 @@ export const RTAnimate = {
       window.renderingAPI.updateGeometry();
     }
 
-    return (t) => {
+    return t => {
       let needsRebuild = false;
 
       for (const target of fadeTargets) {
@@ -599,7 +613,14 @@ export const RTAnimate = {
    * @private
    */
   _GRID_CHECKBOX_GROUPS: {
-    ivmPlanes: ["planeIvmWX", "planeIvmWY", "planeIvmWZ", "planeIvmXY", "planeIvmXZ", "planeIvmYZ"],
+    ivmPlanes: [
+      "planeIvmWX",
+      "planeIvmWY",
+      "planeIvmWZ",
+      "planeIvmXY",
+      "planeIvmXZ",
+      "planeIvmYZ",
+    ],
     cartesianGrid: ["planeXY", "planeXZ", "planeYZ"],
     cartesianBasis: ["showCartesianBasis"],
     quadrayBasis: ["showQuadray"],
@@ -616,7 +637,10 @@ export const RTAnimate = {
    * @private
    */
   _setupGridDissolve(fromSnapshot, targetSnapshot) {
-    if (!fromSnapshot?.polyhedraCheckboxes || !targetSnapshot?.polyhedraCheckboxes) {
+    if (
+      !fromSnapshot?.polyhedraCheckboxes ||
+      !targetSnapshot?.polyhedraCheckboxes
+    ) {
       return null;
     }
 
@@ -625,20 +649,28 @@ export const RTAnimate = {
 
     const fadeTargets = [];
 
-    for (const [groupKey, checkboxIds] of Object.entries(this._GRID_CHECKBOX_GROUPS)) {
+    for (const [groupKey, checkboxIds] of Object.entries(
+      this._GRID_CHECKBOX_GROUPS
+    )) {
       const group = gridGroups[groupKey];
       if (!group) continue;
 
       // Check if group-level visibility transitions
-      const anyCurrentOn = checkboxIds.some(id => fromSnapshot.polyhedraCheckboxes[id]);
-      const anyTargetOn = checkboxIds.some(id => targetSnapshot.polyhedraCheckboxes[id]);
+      const anyCurrentOn = checkboxIds.some(
+        id => fromSnapshot.polyhedraCheckboxes[id]
+      );
+      const anyTargetOn = checkboxIds.some(
+        id => targetSnapshot.polyhedraCheckboxes[id]
+      );
       if (anyTargetOn === anyCurrentOn) continue;
 
       // Collect all materials in the group (works even when group.visible=false)
       const materials = [];
       group.traverse(child => {
         if (child.material) {
-          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          const mats = Array.isArray(child.material)
+            ? child.material
+            : [child.material];
           mats.forEach(mat => {
             materials.push({
               mat,
@@ -683,12 +715,11 @@ export const RTAnimate = {
 
     if (fadeTargets.length === 0) return null;
 
-    return (t) => {
+    return t => {
       for (const target of fadeTargets) {
         for (const { mat, origOpacity } of target.materials) {
-          mat.opacity = target.direction === "in"
-            ? origOpacity * t
-            : origOpacity * (1 - t);
+          mat.opacity =
+            target.direction === "in" ? origOpacity * t : origOpacity * (1 - t);
           mat.needsUpdate = true;
         }
 
@@ -702,7 +733,11 @@ export const RTAnimate = {
               }
             }
           }
-          for (const { mat, origOpacity, origTransparent } of target.materials) {
+          for (const {
+            mat,
+            origOpacity,
+            origTransparent,
+          } of target.materials) {
             mat.opacity = origOpacity;
             mat.transparent = origTransparent;
             delete mat._dissolveOriginalOpacity;

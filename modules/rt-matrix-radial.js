@@ -32,7 +32,14 @@ import { Polyhedra } from "./rt-polyhedra.js";
  * @param {Object} THREE - THREE.js library
  * @returns {THREE.Group} Group with 2 children: face mesh + edge lines
  */
-function buildMergedMatrix(baseGeom, cellPositions, opacity, color, side, THREE) {
+function buildMergedMatrix(
+  baseGeom,
+  cellPositions,
+  opacity,
+  color,
+  side,
+  THREE
+) {
   const { vertices, edges, faces } = baseGeom;
   const totalCells = cellPositions.length;
   const vertsPerCell = vertices.length;
@@ -41,7 +48,11 @@ function buildMergedMatrix(baseGeom, cellPositions, opacity, color, side, THREE)
   const faceIndexTemplate = [];
   faces.forEach(faceIndices => {
     for (let k = 1; k < faceIndices.length - 1; k++) {
-      faceIndexTemplate.push(faceIndices[0], faceIndices[k], faceIndices[k + 1]);
+      faceIndexTemplate.push(
+        faceIndices[0],
+        faceIndices[k],
+        faceIndices[k + 1]
+      );
     }
   });
 
@@ -83,22 +94,35 @@ function buildMergedMatrix(baseGeom, cellPositions, opacity, color, side, THREE)
   const group = new THREE.Group();
 
   const faceGeometry = new THREE.BufferGeometry();
-  faceGeometry.setAttribute("position", new THREE.BufferAttribute(allPositions, 3));
+  faceGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(allPositions, 3)
+  );
   faceGeometry.setIndex(allIndices);
   faceGeometry.computeVertexNormals();
 
   const faceMaterial = new THREE.MeshStandardMaterial({
-    color, transparent: true, opacity, side,
-    depthWrite: opacity >= 0.99, flatShading: true,
+    color,
+    transparent: true,
+    opacity,
+    side,
+    depthWrite: opacity >= 0.99,
+    flatShading: true,
   });
   const faceMesh = new THREE.Mesh(faceGeometry, faceMaterial);
   faceMesh.renderOrder = 1;
   group.add(faceMesh);
 
   const edgeGeometry = new THREE.BufferGeometry();
-  edgeGeometry.setAttribute("position", new THREE.BufferAttribute(allEdgePositions, 3));
+  edgeGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(allEdgePositions, 3)
+  );
   const edgeMaterial = new THREE.LineBasicMaterial({
-    color, linewidth: 1, depthTest: true, depthWrite: true,
+    color,
+    linewidth: 1,
+    depthTest: true,
+    depthWrite: true,
   });
   const edgeLines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
   edgeLines.renderOrder = 2;
@@ -430,11 +454,20 @@ export const RTRadialMatrix = {
     THREE
   ) => {
     const spacing = halfSize * 2;
-    const positions = RTRadialMatrix.getCubePositions(frequency, spacing, spaceFilling);
+    const positions = RTRadialMatrix.getCubePositions(
+      frequency,
+      spacing,
+      spaceFilling
+    );
     const cubeGeom = Polyhedra.cube(halfSize);
 
     const matrixGroup = buildMergedMatrix(
-      cubeGeom, positions, opacity, color, THREE.FrontSide, THREE
+      cubeGeom,
+      positions,
+      opacity,
+      color,
+      THREE.FrontSide,
+      THREE
     );
 
     const expectedCount = spaceFilling
@@ -472,11 +505,22 @@ export const RTRadialMatrix = {
     THREE
   ) => {
     const spacing = halfSize * 2;
-    const positions = RTRadialMatrix.getRhombicDodecPositions(frequency, spacing, spaceFilling);
-    const rhombicDodecGeom = Polyhedra.rhombicDodecahedron(halfSize * Math.sqrt(2));
+    const positions = RTRadialMatrix.getRhombicDodecPositions(
+      frequency,
+      spacing,
+      spaceFilling
+    );
+    const rhombicDodecGeom = Polyhedra.rhombicDodecahedron(
+      halfSize * Math.sqrt(2)
+    );
 
     const matrixGroup = buildMergedMatrix(
-      rhombicDodecGeom, positions, opacity, color, THREE.DoubleSide, THREE
+      rhombicDodecGeom,
+      positions,
+      opacity,
+      color,
+      THREE.DoubleSide,
+      THREE
     );
 
     const expectedCount = spaceFilling
@@ -865,7 +909,11 @@ export const RTRadialMatrix = {
     ivmMode = false
   ) => {
     const spacing = ivmMode ? halfSize * 4 : halfSize * 2;
-    const positions = RTRadialMatrix.getTetrahedronPositions(frequency, spacing, ivmMode);
+    const positions = RTRadialMatrix.getTetrahedronPositions(
+      frequency,
+      spacing,
+      ivmMode
+    );
 
     // Split by orientation — up and down use different base geometries
     const upPositions = positions.filter(p => p.orientation === "up");
@@ -875,13 +923,27 @@ export const RTRadialMatrix = {
 
     if (upPositions.length > 0) {
       const upGeom = Polyhedra.tetrahedron(halfSize);
-      const upGroup = buildMergedMatrix(upGeom, upPositions, opacity, color, THREE.DoubleSide, THREE);
+      const upGroup = buildMergedMatrix(
+        upGeom,
+        upPositions,
+        opacity,
+        color,
+        THREE.DoubleSide,
+        THREE
+      );
       matrixGroup.add(upGroup);
     }
 
     if (downPositions.length > 0) {
       const downGeom = Polyhedra.dualTetrahedron(halfSize);
-      const downGroup = buildMergedMatrix(downGeom, downPositions, opacity, color, THREE.DoubleSide, THREE);
+      const downGroup = buildMergedMatrix(
+        downGeom,
+        downPositions,
+        opacity,
+        color,
+        THREE.DoubleSide,
+        THREE
+      );
       matrixGroup.add(downGroup);
     }
 
@@ -944,7 +1006,11 @@ export const RTRadialMatrix = {
     if (ivmScaleOnly) {
       positions = RTRadialMatrix.getIVMOctahedronPositions(frequency, spacing);
     } else {
-      positions = RTRadialMatrix.getOctahedronPositions(frequency, spacing, ivmScale);
+      positions = RTRadialMatrix.getOctahedronPositions(
+        frequency,
+        spacing,
+        ivmScale
+      );
     }
 
     const octGeom = Polyhedra.octahedron(octSize);
@@ -968,14 +1034,24 @@ export const RTRadialMatrix = {
         });
 
         const faceGeometry = new THREE.BufferGeometry();
-        faceGeometry.setAttribute("position", new THREE.Float32BufferAttribute(positionsArray, 3));
+        faceGeometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(positionsArray, 3)
+        );
         faceGeometry.setIndex(indices);
         faceGeometry.computeVertexNormals();
 
-        const faceMesh = new THREE.Mesh(faceGeometry, new THREE.MeshStandardMaterial({
-          color, transparent: true, opacity, side: THREE.DoubleSide,
-          depthWrite: opacity >= 0.99, flatShading: true,
-        }));
+        const faceMesh = new THREE.Mesh(
+          faceGeometry,
+          new THREE.MeshStandardMaterial({
+            color,
+            transparent: true,
+            opacity,
+            side: THREE.DoubleSide,
+            depthWrite: opacity >= 0.99,
+            flatShading: true,
+          })
+        );
         faceMesh.renderOrder = 1;
         octGroup.add(faceMesh);
 
@@ -985,10 +1061,19 @@ export const RTRadialMatrix = {
           edgePositions.push(vertices[vj].x, vertices[vj].y, vertices[vj].z);
         });
         const edgeGeometry = new THREE.BufferGeometry();
-        edgeGeometry.setAttribute("position", new THREE.Float32BufferAttribute(edgePositions, 3));
-        const edgeLines = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({
-          color, linewidth: 1, depthTest: true, depthWrite: true,
-        }));
+        edgeGeometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(edgePositions, 3)
+        );
+        const edgeLines = new THREE.LineSegments(
+          edgeGeometry,
+          new THREE.LineBasicMaterial({
+            color,
+            linewidth: 1,
+            depthTest: true,
+            depthWrite: true,
+          })
+        );
         edgeLines.renderOrder = 2;
         octGroup.add(edgeLines);
 
@@ -999,7 +1084,12 @@ export const RTRadialMatrix = {
     } else {
       // Standard/IVM mode — merged geometry
       matrixGroup = buildMergedMatrix(
-        octGeom, positions, opacity, color, THREE.DoubleSide, THREE
+        octGeom,
+        positions,
+        opacity,
+        color,
+        THREE.DoubleSide,
+        THREE
       );
     }
 
@@ -1014,7 +1104,9 @@ export const RTRadialMatrix = {
     MetaLog.construction([
       `Octahedron size: ${octSize} (${useScaledSize ? "2×" : "1×"} halfSize), Spacing: ${spacing}`,
       ...(ivmScaleOnly
-        ? [`Pattern: ${frequency % 2 === 1 ? "Odd (oct at origin)" : "Even (vertex at origin)"}`]
+        ? [
+            `Pattern: ${frequency % 2 === 1 ? "Odd (oct at origin)" : "Even (vertex at origin)"}`,
+          ]
         : []),
       `Positions: ${positions.length}`,
     ]);
@@ -1052,11 +1144,19 @@ export const RTRadialMatrix = {
   ) => {
     const scaledHalfSize = halfSize * Math.sqrt(2);
     const spacing = halfSize * 2;
-    const positions = RTRadialMatrix.getCuboctahedronPositions(frequency, spacing);
+    const positions = RTRadialMatrix.getCuboctahedronPositions(
+      frequency,
+      spacing
+    );
     const veGeom = Polyhedra.cuboctahedron(scaledHalfSize);
 
     const matrixGroup = buildMergedMatrix(
-      veGeom, positions, opacity, color, THREE.DoubleSide, THREE
+      veGeom,
+      positions,
+      opacity,
+      color,
+      THREE.DoubleSide,
+      THREE
     );
 
     const expectedCount = RTRadialMatrix.shellCounts.cuboctahedron(frequency);

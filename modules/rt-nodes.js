@@ -393,7 +393,10 @@ function getClosePackedRadius(type, scale, options = {}) {
 
   // Handle forms without edges (e.g., Point)
   if (Q_edge === null || Q_edge === 0) {
-    MetaLog.warn(MetaLog.SUMMARY, `⚠️ Close-pack not available for ${type} (no edges)`);
+    MetaLog.warn(
+      MetaLog.SUMMARY,
+      `⚠️ Close-pack not available for ${type} (no edges)`
+    );
     return null; // Signal packed sizing not available
   }
 
@@ -406,11 +409,26 @@ function getClosePackedRadius(type, scale, options = {}) {
   const radius = Math.sqrt(Q_vertex);
 
   // DIAGNOSTIC: RT validation logging (matches rt-polyhedra.js pattern)
-  MetaLog.log(MetaLog.DETAILED, `🔵 Close-pack RT for ${type} (halfSize=${scale.toFixed(4)}):`);
-  MetaLog.log(MetaLog.DETAILED, `  Edge quadrance Q_edge: ${Q_edge.toFixed(6)}`);
-  MetaLog.log(MetaLog.DETAILED, `  Vertex quadrance Q_vertex = Q_edge/4: ${Q_vertex.toFixed(6)}`);
-  MetaLog.log(MetaLog.DETAILED, `  Vertex radius r = √Q_vertex: ${radius.toFixed(6)}`);
-  MetaLog.log(MetaLog.DETAILED, `  ✓ RT-PURE: Stayed in quadrance space until final sqrt`);
+  MetaLog.log(
+    MetaLog.DETAILED,
+    `🔵 Close-pack RT for ${type} (halfSize=${scale.toFixed(4)}):`
+  );
+  MetaLog.log(
+    MetaLog.DETAILED,
+    `  Edge quadrance Q_edge: ${Q_edge.toFixed(6)}`
+  );
+  MetaLog.log(
+    MetaLog.DETAILED,
+    `  Vertex quadrance Q_vertex = Q_edge/4: ${Q_vertex.toFixed(6)}`
+  );
+  MetaLog.log(
+    MetaLog.DETAILED,
+    `  Vertex radius r = √Q_vertex: ${radius.toFixed(6)}`
+  );
+  MetaLog.log(
+    MetaLog.DETAILED,
+    `  ✓ RT-PURE: Stayed in quadrance space until final sqrt`
+  );
 
   return radius;
 }
@@ -503,13 +521,13 @@ const NODE_SIZE_STEPS = {
  * Logarithmic-ish spacing for better low-end resolution
  */
 const NODE_SIZE_RADII = {
-  "1": 0.01,
-  "2": 0.02,
-  "3": 0.03,
-  "4": 0.04,
-  "5": 0.06,
-  "6": 0.08,
-  "7": 0.12,
+  1: 0.01,
+  2: 0.02,
+  3: 0.03,
+  4: 0.04,
+  5: 0.06,
+  6: 0.08,
+  7: 0.12,
   // Legacy string keys (backward compatibility with saved states)
   sm: 0.02,
   md: 0.04,
@@ -758,8 +776,7 @@ function addMatrixNodes(
       const offset_z = 0;
 
       // For tetrahedra, handle alternating orientations
-      const isUp =
-        polyhedronType === "tetrahedron" ? (i + j) % 2 === 0 : true;
+      const isUp = polyhedronType === "tetrahedron" ? (i + j) % 2 === 0 : true;
 
       vertices.forEach(v => {
         let x = v.x + offset_x;
@@ -849,7 +866,9 @@ function addMatrixNodes(
   // Create instanced nodes at unique positions
   if (vertexPositions.size > 0) {
     const instancedNodes = new THREE.InstancedMesh(
-      nodeGeometry, nodeMaterial, vertexPositions.size
+      nodeGeometry,
+      nodeMaterial,
+      vertexPositions.size
     );
     instancedNodes.renderOrder = 3;
 
@@ -866,7 +885,9 @@ function addMatrixNodes(
     instancedNodes.userData.isVertexNode = true;
     instancedNodes.userData.nodeType = "sphere";
     instancedNodes.userData.nodeRadius = nodeRadius;
-    instancedNodes.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
+    instancedNodes.userData.nodeGeometry = useRTNodeGeometry
+      ? "rt"
+      : "classical";
     instancedNodes.userData.vertexPositions = storedPositions;
 
     matrixGroup.add(instancedNodes);
@@ -1016,7 +1037,9 @@ function addRadialMatrixNodes(
   // Create instanced nodes at unique positions
   if (vertexPositions.size > 0) {
     const instancedNodes = new THREE.InstancedMesh(
-      nodeGeometry, nodeMaterial, vertexPositions.size
+      nodeGeometry,
+      nodeMaterial,
+      vertexPositions.size
     );
     instancedNodes.renderOrder = 3;
 
@@ -1033,7 +1056,9 @@ function addRadialMatrixNodes(
     instancedNodes.userData.isVertexNode = true;
     instancedNodes.userData.nodeType = "sphere";
     instancedNodes.userData.nodeRadius = nodeRadius;
-    instancedNodes.userData.nodeGeometry = useRTNodeGeometry ? "rt" : "classical";
+    instancedNodes.userData.nodeGeometry = useRTNodeGeometry
+      ? "rt"
+      : "classical";
     instancedNodes.userData.vertexPositions = storedPositions;
 
     matrixGroup.add(instancedNodes);

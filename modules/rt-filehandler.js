@@ -123,9 +123,7 @@ export const RTFileHandler = {
     const cartesianMode =
       document.querySelector("[data-cartesian-mode].active")?.dataset
         .cartesianMode || "uniform";
-    const nGon = parseInt(
-      document.getElementById("nGonSlider")?.value || "64"
-    );
+    const nGon = parseInt(document.getElementById("nGonSlider")?.value || "64");
     const showRadialLines =
       document.getElementById("showRadialLines")?.checked ?? true;
 
@@ -652,14 +650,12 @@ export const RTFileHandler = {
           if (slider) slider.value = grids.quadray.tessellation;
           // Restore grid mode (uniform/polar) button state
           if (grids.quadray.mode) {
-            document
-              .querySelectorAll("[data-quadray-mode]")
-              .forEach(btn => {
-                btn.classList.toggle(
-                  "active",
-                  btn.dataset.quadrayMode === grids.quadray.mode
-                );
-              });
+            document.querySelectorAll("[data-quadray-mode]").forEach(btn => {
+              btn.classList.toggle(
+                "active",
+                btn.dataset.quadrayMode === grids.quadray.mode
+              );
+            });
           }
         }
 
@@ -670,14 +666,12 @@ export const RTFileHandler = {
           if (slider) slider.value = grids.cartesian.tessellation;
           // Restore grid mode (uniform/polar) button state
           if (grids.cartesian.mode) {
-            document
-              .querySelectorAll("[data-cartesian-mode]")
-              .forEach(btn => {
-                btn.classList.toggle(
-                  "active",
-                  btn.dataset.cartesianMode === grids.cartesian.mode
-                );
-              });
+            document.querySelectorAll("[data-cartesian-mode]").forEach(btn => {
+              btn.classList.toggle(
+                "active",
+                btn.dataset.cartesianMode === grids.cartesian.mode
+              );
+            });
           }
         }
 
@@ -940,8 +934,11 @@ export const RTFileHandler = {
         }
         // Planar matrix 45° rotation toggles
         const rotate45Ids = [
-          "cubeMatrixRotate45", "tetMatrixRotate45", "octaMatrixRotate45",
-          "cuboctaMatrixRotate45", "rhombicDodecMatrixRotate45",
+          "cubeMatrixRotate45",
+          "tetMatrixRotate45",
+          "octaMatrixRotate45",
+          "cuboctaMatrixRotate45",
+          "rhombicDodecMatrixRotate45",
         ];
         for (const id of rotate45Ids) {
           if (sliders[id] !== undefined) {
@@ -951,7 +948,9 @@ export const RTFileHandler = {
         }
         // Radial matrix mode toggles (Space Filling / IVM)
         const radialModeIds = [
-          "radialCubeSpaceFill", "radialTetIVMMode", "radialOctIVMScale",
+          "radialCubeSpaceFill",
+          "radialTetIVMMode",
+          "radialOctIVMScale",
         ];
         for (const id of radialModeIds) {
           if (sliders[id] !== undefined) {
@@ -961,8 +960,16 @@ export const RTFileHandler = {
         }
         // Radial matrix frequency sliders (set value + update Fn display text)
         const radialFreqSliders = [
-          ["radialCubeFreqSlider", "radialCubeFreqDisplay", v => `F${2 * v - 1}`],
-          ["radialRhombicDodecFreqSlider", "radialRhombicDodecFreqDisplay", v => `F${2 * v - 1}`],
+          [
+            "radialCubeFreqSlider",
+            "radialCubeFreqDisplay",
+            v => `F${2 * v - 1}`,
+          ],
+          [
+            "radialRhombicDodecFreqSlider",
+            "radialRhombicDodecFreqDisplay",
+            v => `F${2 * v - 1}`,
+          ],
           ["radialTetFreqSlider", "radialTetFreqDisplay", v => `F${v}`],
           ["radialOctFreqSlider", "radialOctFreqDisplay", v => `F${v}`],
           ["radialVEFreqSlider", "radialVEFreqDisplay", v => `F${v}`],
@@ -1181,10 +1188,16 @@ export const RTFileHandler = {
           ["showCuboctahedronMatrix", "cubocta-matrix-controls"],
           ["showRhombicDodecMatrix", "rhombic-dodec-matrix-controls"],
           ["showRadialCubeMatrix", "radial-cube-matrix-controls"],
-          ["showRadialRhombicDodecMatrix", "radial-rhombic-dodec-matrix-controls"],
+          [
+            "showRadialRhombicDodecMatrix",
+            "radial-rhombic-dodec-matrix-controls",
+          ],
           ["showRadialTetrahedronMatrix", "radial-tetrahedron-matrix-controls"],
           ["showRadialOctahedronMatrix", "radial-octahedron-matrix-controls"],
-          ["showRadialCuboctahedronMatrix", "radial-cuboctahedron-matrix-controls"],
+          [
+            "showRadialCuboctahedronMatrix",
+            "radial-cuboctahedron-matrix-controls",
+          ],
         ];
         for (const [checkboxId, controlsId] of matrixControlMappings) {
           if (checkboxes[checkboxId]) {
