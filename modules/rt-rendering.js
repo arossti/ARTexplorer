@@ -5335,6 +5335,14 @@ export function initScene(THREE, OrbitControls, RT) {
     getControls: () => controls,
     getAllFormGroups, // For selection system
 
+    // Grid groups (for dissolve system in rt-animate.js)
+    getGridGroups: () => ({
+      cartesianGrid: cartesianGrid || null,
+      ivmPlanes: ivmPlanes || null,
+      cartesianBasis: cartesianBasis || null,
+      quadrayBasis: quadrayBasis || null,
+    }),
+
     // Grid rebuild methods (for tessellation slider controls)
     rebuildQuadrayGrids,
     rebuildCartesianGrids,

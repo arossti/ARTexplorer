@@ -29,60 +29,95 @@ export const RTDelta = {
       polyhedraCheckboxes: this._captureCheckboxes(),
       sliderValues: this._captureSliders(),
       geodesicProjections: this._captureProjections(),
+      toggleButtons: this._captureToggleButtons(),
     };
+  },
+
+  /**
+   * All known checkbox IDs for scene state capture.
+   * Shared between _captureCheckboxes() and accumulateSnapshot() so that
+   * old snapshots (from before new controls existed) get proper defaults.
+   * @private
+   */
+  _checkboxIds: [
+    // Primitives
+    "showPoint", "showLine", "showPolygon", "showPrism", "showCone",
+    // Helices
+    "showTetrahelix1", "showTetrahelix2", "showTetrahelix3",
+    // Tetrahelix 3 strand + chirality toggles
+    "tetrahelix3StrandA", "tetrahelix3StrandB", "tetrahelix3StrandC",
+    "tetrahelix3StrandD", "tetrahelix3StrandE", "tetrahelix3StrandF",
+    "tetrahelix3StrandG", "tetrahelix3StrandH",
+    "tetrahelix3ChiralA", "tetrahelix3ChiralB", "tetrahelix3ChiralC",
+    "tetrahelix3ChiralD", "tetrahelix3ChiralE", "tetrahelix3ChiralF",
+    "tetrahelix3ChiralG", "tetrahelix3ChiralH",
+    // Regular polyhedra
+    "showCube", "showTetrahedron", "showDualTetrahedron",
+    "showOctahedron", "showIcosahedron", "showDodecahedron",
+    "showDualIcosahedron", "showCuboctahedron", "showRhombicDodecahedron",
+    // Geodesic polyhedra
+    "showGeodesicTetrahedron", "showGeodesicDualTetrahedron",
+    "showGeodesicOctahedron", "showGeodesicIcosahedron",
+    "showGeodesicDualIcosahedron",
+    // Quadray polyhedra
+    "showQuadrayTetrahedron", "showQuadrayTetraDeformed",
+    "showQuadrayCuboctahedron", "showQuadrayOctahedron",
+    "showQuadrayTruncatedTet",
+    // Planar matrices
+    "showCubeMatrix", "showTetMatrix", "showOctaMatrix",
+    "showCuboctahedronMatrix", "showRhombicDodecMatrix",
+    // Matrix rotation toggles (45° grid alignment)
+    "cubeMatrixRotate45", "tetMatrixRotate45", "octaMatrixRotate45",
+    "cuboctaMatrixRotate45", "rhombicDodecMatrixRotate45",
+    // Radial matrices
+    "showRadialCubeMatrix", "showRadialRhombicDodecMatrix",
+    "showRadialTetrahedronMatrix", "showRadialOctahedronMatrix",
+    "showRadialCuboctahedronMatrix",
+    // Radial matrix mode toggles (Space Filling / IVM)
+    "radialCubeSpaceFill", "radialTetIVMMode", "radialOctIVMScale",
+    // Basis vectors
+    "showCartesianBasis", "showQuadray",
+    // Grid Planes — Cartesian
+    "planeXY", "planeXZ", "planeYZ",
+    // Grid Planes — Quadray (IVM placeholder)
+    "planeQuadrayWX", "planeQuadrayWY", "planeQuadrayWZ",
+    "planeQuadrayXY", "planeQuadrayXZ", "planeQuadrayYZ",
+    // Grid Planes — Central Angle (IVM)
+    "planeIvmWX", "planeIvmWY", "planeIvmWZ",
+    "planeIvmXY", "planeIvmXZ", "planeIvmYZ",
+    // Polar grid
+    "showRadialLines",
+    // Penrose Tiling
+    "showPenroseTiling",
+    // Thomson Polyhedra
+    "showThomsonTetrahedron", "showThomsonOctahedron",
+    // Thomson sub-toggles (plane selection, face/hull rendering)
+    "thomsonTetraFacePlanes", "thomsonTetraEdgePlanes",
+    "thomsonTetraShowFaces", "thomsonTetraShowHullEdges",
+    "thomsonOctaShowFaces", "thomsonOctaShowHullEdges",
+  ],
+
+  /**
+   * Default values for checkboxes that are `checked` in HTML.
+   * Used by accumulateSnapshot() — old snapshots missing these keys
+   * get the HTML default instead of blanket `false`.
+   * @private
+   */
+  _checkboxDefaults: {
+    showQuadray: true,
+    planeIvmWX: true,
+    planeIvmWY: true,
+    planeIvmWZ: true,
+    planeIvmXY: true,
+    planeIvmXZ: true,
+    planeIvmYZ: true,
+    showRadialLines: true,
   },
 
   /** @private */
   _captureCheckboxes() {
-    const ids = [
-      // Primitives
-      "showPoint", "showLine", "showPolygon", "showPrism", "showCone",
-      // Helices
-      "showTetrahelix1", "showTetrahelix2", "showTetrahelix3",
-      // Tetrahelix 3 strand + chirality toggles
-      "tetrahelix3StrandA", "tetrahelix3StrandB", "tetrahelix3StrandC",
-      "tetrahelix3StrandD", "tetrahelix3StrandE", "tetrahelix3StrandF",
-      "tetrahelix3StrandG", "tetrahelix3StrandH",
-      "tetrahelix3ChiralA", "tetrahelix3ChiralB", "tetrahelix3ChiralC",
-      "tetrahelix3ChiralD", "tetrahelix3ChiralE", "tetrahelix3ChiralF",
-      "tetrahelix3ChiralG", "tetrahelix3ChiralH",
-      // Regular polyhedra
-      "showCube", "showTetrahedron", "showDualTetrahedron",
-      "showOctahedron", "showIcosahedron", "showDodecahedron",
-      "showDualIcosahedron", "showCuboctahedron", "showRhombicDodecahedron",
-      // Geodesic polyhedra
-      "showGeodesicTetrahedron", "showGeodesicDualTetrahedron",
-      "showGeodesicOctahedron", "showGeodesicIcosahedron",
-      "showGeodesicDualIcosahedron",
-      // Quadray polyhedra
-      "showQuadrayTetrahedron", "showQuadrayTetraDeformed",
-      "showQuadrayCuboctahedron", "showQuadrayOctahedron",
-      "showQuadrayTruncatedTet",
-      // Planar matrices
-      "showCubeMatrix", "showTetMatrix", "showOctaMatrix",
-      "showCuboctahedronMatrix", "showRhombicDodecMatrix",
-      // Matrix rotation toggles (45° grid alignment)
-      "cubeMatrixRotate45", "tetMatrixRotate45", "octaMatrixRotate45",
-      "cuboctaMatrixRotate45", "rhombicDodecMatrixRotate45",
-      // Radial matrices
-      "showRadialCubeMatrix", "showRadialRhombicDodecMatrix",
-      "showRadialTetrahedronMatrix", "showRadialOctahedronMatrix",
-      "showRadialCuboctahedronMatrix",
-      // Radial matrix mode toggles (Space Filling / IVM)
-      "radialCubeSpaceFill", "radialTetIVMMode", "radialOctIVMScale",
-      // Basis vectors
-      "showCartesianBasis", "showQuadray",
-      // Penrose Tiling
-      "showPenroseTiling",
-      // Thomson Polyhedra
-      "showThomsonTetrahedron", "showThomsonOctahedron",
-      // Thomson sub-toggles (plane selection, face/hull rendering)
-      "thomsonTetraFacePlanes", "thomsonTetraEdgePlanes",
-      "thomsonTetraShowFaces", "thomsonTetraShowHullEdges",
-      "thomsonOctaShowFaces", "thomsonOctaShowHullEdges",
-    ];
     const result = {};
-    for (const id of ids) {
+    for (const id of this._checkboxIds) {
       const el = document.getElementById(id);
       if (el) result[id] = el.checked;
     }
@@ -122,6 +157,10 @@ export const RTDelta = {
     thomsonTetraRotation: "thomsonTetraRotation",
     thomsonOctaNGon: "thomsonOctaNGon",
     thomsonOctaRotation: "thomsonOctaRotation",
+    // Coordinate System grids
+    cartesianTessSlider: "cartesianTessSlider",
+    quadrayTessSlider: "quadrayTessSlider",
+    nGonSlider: "nGonSlider",
   },
 
   /**
@@ -182,6 +221,34 @@ export const RTDelta = {
     return result;
   },
 
+  /**
+   * Toggle button groups identified by their data-* attribute name.
+   * Each group has mutually exclusive buttons with an `active` CSS class.
+   * @private
+   */
+  _toggleButtonGroups: ["cartesian-mode", "quadray-mode", "ucs"],
+
+  /**
+   * Default active value for each toggle button group (matches HTML).
+   * Used by accumulateSnapshot() to fill in old snapshots.
+   * @private
+   */
+  _toggleButtonDefaults: {
+    "cartesian-mode": "uniform",
+    "quadray-mode": "uniform",
+    "ucs": "z-up",
+  },
+
+  /** @private */
+  _captureToggleButtons() {
+    const result = {};
+    for (const group of this._toggleButtonGroups) {
+      const active = document.querySelector(`[data-${group}].active`);
+      if (active) result[group] = active.getAttribute(`data-${group}`);
+    }
+    return result;
+  },
+
   // ── 2. Delta computation ─────────────────────────────────────────
 
   /**
@@ -201,7 +268,7 @@ export const RTDelta = {
     const delta = {};
 
     // Diff each category (flat key-value maps)
-    for (const category of ["polyhedraCheckboxes", "sliderValues", "geodesicProjections"]) {
+    for (const category of ["polyhedraCheckboxes", "sliderValues", "geodesicProjections", "toggleButtons"]) {
       const prevCat = prev[category] || {};
       const curCat = current[category] || {};
       const catDelta = {};
@@ -234,10 +301,31 @@ export const RTDelta = {
     const accumulated = structuredClone(baseSnapshot);
 
     for (const delta of deltas) {
-      for (const category of ["polyhedraCheckboxes", "sliderValues", "geodesicProjections"]) {
+      for (const category of ["polyhedraCheckboxes", "sliderValues", "geodesicProjections", "toggleButtons"]) {
         if (delta[category]) {
           if (!accumulated[category]) accumulated[category] = {};
           Object.assign(accumulated[category], delta[category]);
+        }
+      }
+    }
+
+    // Default missing checkboxes — ensures old snapshots (captured before new
+    // controls were added) properly set controls they don't know about.
+    // Uses _checkboxDefaults for controls that are `checked` in HTML (e.g. IVM
+    // planes, radial lines); all others default to false (off).
+    if (accumulated.polyhedraCheckboxes) {
+      for (const id of this._checkboxIds) {
+        if (accumulated.polyhedraCheckboxes[id] === undefined) {
+          accumulated.polyhedraCheckboxes[id] = this._checkboxDefaults[id] ?? false;
+        }
+      }
+    }
+
+    // Default missing toggle buttons to their HTML defaults
+    if (accumulated.toggleButtons) {
+      for (const [group, defaultValue] of Object.entries(this._toggleButtonDefaults)) {
+        if (accumulated.toggleButtons[group] === undefined) {
+          accumulated.toggleButtons[group] = defaultValue;
         }
       }
     }
@@ -278,7 +366,12 @@ export const RTDelta = {
     if (delta.polyhedraCheckboxes) {
       for (const [id, checked] of Object.entries(delta.polyhedraCheckboxes)) {
         const el = document.getElementById(id);
-        if (el) el.checked = checked;
+        if (el) {
+          el.checked = checked;
+          // Dispatch 'change' so grid plane handlers in rt-init.js fire
+          // (they set individual plane visibility via window.ivmWX.visible etc.)
+          el.dispatchEvent(new Event("change"));
+        }
       }
 
       // Show/hide sub-control panels for checkbox-with-controls forms
@@ -292,7 +385,17 @@ export const RTDelta = {
       }
     }
 
-    // 4. Trigger geometry rebuild (single call, like importState)
+    // 4. Set toggle buttons (after checkboxes — grid mode handlers read checkbox state)
+    if (delta.toggleButtons) {
+      for (const [group, value] of Object.entries(delta.toggleButtons)) {
+        const target = document.querySelector(`[data-${group}="${value}"]`);
+        if (target && !target.classList.contains("active")) {
+          target.click(); // Triggers existing handler (UCS rotation, grid rebuild, etc.)
+        }
+      }
+    }
+
+    // 5. Trigger geometry rebuild (single call, like importState)
     if (window.renderingAPI?.updateGeometry) {
       window.renderingAPI.updateGeometry();
     }
@@ -340,6 +443,7 @@ export const RTDelta = {
    * - Integer sliders: stepped evenly across t ∈ [0,1], fire handler only when value changes
    * - Float sliders: smooth per-frame interpolation
    * - Geodesic projections: snap at t=0.5
+   * - Toggle buttons (grid mode, UCS): snap at t=0.5
    * - Checkboxes: NOT handled here (use dissolve system for form fades)
    *
    * @param {Object} fromSnapshot - Full snapshot at animation start
@@ -381,7 +485,18 @@ export const RTDelta = {
       }
     }
 
-    if (steps.length === 0 && projSnaps.length === 0) return null;
+    // Build snap plan for toggle buttons (grid modes, UCS)
+    const toggleSnaps = [];
+    if (delta.toggleButtons) {
+      for (const [group, toValue] of Object.entries(delta.toggleButtons)) {
+        const fromValue = fromSnapshot.toggleButtons?.[group];
+        if (fromValue !== toValue) {
+          toggleSnaps.push({ group, to: toValue, applied: false });
+        }
+      }
+    }
+
+    if (steps.length === 0 && projSnaps.length === 0 && toggleSnaps.length === 0) return null;
 
     let needsRebuild = false;
 
@@ -429,6 +544,17 @@ export const RTDelta = {
         }
       }
 
+      // Snap toggle buttons at midpoint (grid mode, UCS)
+      for (const snap of toggleSnaps) {
+        if (!snap.applied && t >= 0.5) {
+          const target = document.querySelector(`[data-${snap.group}="${snap.to}"]`);
+          if (target && !target.classList.contains("active")) {
+            target.click();
+          }
+          snap.applied = true;
+        }
+      }
+
       // Geometry rebuild: _setSlider() dispatches 'input' events which trigger
       // updateGeometry() via the UI binding system. Only call explicitly for
       // projection snaps (which don't dispatch events).
@@ -448,6 +574,14 @@ export const RTDelta = {
             );
             if (radio) radio.checked = true;
             projSnapped = true;
+          }
+        }
+        for (const snap of toggleSnaps) {
+          if (!snap.applied) {
+            const target = document.querySelector(`[data-${snap.group}="${snap.to}"]`);
+            if (target && !target.classList.contains("active")) {
+              target.click();
+            }
           }
         }
         // Only explicit rebuild for remaining projection snaps
