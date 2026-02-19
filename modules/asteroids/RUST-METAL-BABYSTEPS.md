@@ -11,6 +11,35 @@
 
 ---
 
+## Agent Handoff: RT-Purity in the Native Codebase
+
+**READ THIS FIRST if you are an agent working on the Rust/WGSL code.**
+
+This application is a **demonstration and explorer for Rational Trigonometry** (N.J. Wildberger) and **Synergetics** (R. Buckminster Fuller). It is *not* a conventional 3D graphics app. The entire point is that geometry is computed using **quadrance** (Q = d², replacing distance), **spread** (s = sin²θ, replacing angle), and **Quadray ABCD coordinates** (tetrahedral basis, replacing Cartesian XYZ) — with classical trig functions (`sin`, `cos`, `tan`, `π`, `atan2`) appearing **only** at explicitly marked rendering boundaries.
+
+**The Rust `rt_math/` and `rt_polyhedra/` modules are the RT-pure engine.** They already implement:
+- `quadrance()`, `spread()` — the RT replacements for distance and angle
+- `reflect_in_line()` — RT-pure rotation via double reflection (no sin/cos)
+- `slope_from_spread()` — the ONE √ per polygon, via Wildberger's method
+- `n_gon_vertices()` — algebraic polygon vertices using successive reflections, not `cos(2πk/N)`
+- `PurePhi` — golden ratio algebra using φ²=φ+1 identity, not `(1+√5)/2` recomputed
+- `PureRadicals` — cached √2, √3, √6 (computed once, reused)
+- `PureCubics` — cached cubic roots for heptagon/nonagon (star spreads, not trig)
+- All 6 Platonic solids generated in **Quadray ABCD coordinates** natively
+
+**Do NOT**:
+- Introduce `f64::sin()`, `f64::cos()`, `f64::atan2()`, or `std::f64::consts::PI` in geometry code
+- Use Euler angles or rotation matrices where `reflect_in_line()` double-reflection works
+- Convert to Cartesian XYZ "for convenience" — stay in Quadray ABCD until the GPU boundary
+- Reach for `nalgebra`, `cgmath`, or conventional linear algebra crates for geometry operations — these embed classical assumptions. Use `glam` only for camera matrices (the rendering boundary).
+- Add "helper" functions that duplicate what `rt_math` already provides
+
+**The sole justified boundary** is the **wgpu/WGSL rendering handoff**: camera projection matrices (via `glam`), `f64→f32` conversion at GPU upload (`Quadray::to_f32_array()`), and the WGSL shader's BASIS matrix that converts ABCD→XYZ for vertex positioning. Every boundary crossing requires a comment explaining why.
+
+**When in doubt**: read `rt_math/mod.rs` and `rt_math/polygon.rs`. If they don't provide what you need, extend them RT-pure rather than reaching for `std::f64::consts::PI`.
+
+---
+
 ## Table of Contents
 
 1. [Why Rust + Metal](#1-why-rust--metal)
