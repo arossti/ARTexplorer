@@ -1,9 +1,13 @@
 # Rust + Metal Baby Steps
 
-**Setting up a Rust game development environment on macOS — from zero**
+**Porting ARTexplorer from JS/THREE.js to a native macOS app — from zero**
 
+> This is not just a game port. The entire ARTexplorer platform — RT math, polyhedra,
+> rendering, visualization, and the educational explorer — moves to Rust + Metal.
+> A.r.t.steroids (the game) is a bonus that comes along for the ride.
+>
 > For a JavaScript developer who has never touched Rust, Swift, or Metal.
-> Written February 2026 during the A.r.t.steroids fork from JS/THREE.js to native macOS.
+> Written February 2026.
 
 ---
 
@@ -25,16 +29,31 @@
 
 ## 1. Why Rust + Metal
 
-Our `artsteroids.html` prototype proved the gameplay: ASDF Quadray rubber-band dodge, spacebar-hold face-normal firing, dual-tet cockpit. But THREE.js + WebGL has hard limits:
+ARTexplorer has matured as a JS/THREE.js web app — Thomson polyhedra, prime projections, Quadray visualization, state management, view system. But we've always known the THREE.js boundary is a compromise. Every `Math.sin()` and `Math.PI` at the rendering handoff undermines RT purity. The `artsteroids.html` game prototype was the catalyst, but the motivation is broader: **the entire platform deserves a native rendering pipeline.**
+
+### What moves to Rust
+
+| Layer | Current (JS) | Native (Rust) |
+|-------|-------------|---------------|
+| **RT math** | `rt-math.js` — Quadray, quadrance, spread, reflections | `rt_math.rs` — identical API, type-safe Quadray struct |
+| **Polyhedra** | `rt-polyhedra.js` — tet, cube, octa, icosa, dodeca, geodesics | `rt_polyhedra.rs` — same generators, compile-time vertex validation |
+| **Thomson shells** | `rt-thomson.js` — great-circle shells, nGon vertices | `rt_thomson.rs` — exact same algorithm, f64 precision |
+| **Rendering** | `rt-rendering.js` → THREE.js (WebGL) | wgpu → Metal (native GPU) |
+| **State/views** | `rt-state-manager.js`, `rt-delta.js`, `rt-viewmanager.js` | Rust equivalents with serde serialization |
+| **Game** | `artsteroids.html` prototype + skeleton modules | Native game loop — the bonus |
+
+### Why this is worth it
 
 | Problem | JS/THREE.js | Rust/Metal |
 |---------|-------------|------------|
 | **RT purity** | Math.PI/sin/cos leak at THREE.js boundary | RT-pure all the way to the GPU — write shaders in WGSL with quadrance/spread |
-| **Performance** | JS garbage collection causes frame drops | Zero-cost abstractions, no GC, predictable frame times |
-| **IP protection** | JavaScript = readable source | Compiled binary — no source inspection, no obfuscation needed |
-| **Distribution** | Browser-only, no offline | Mac App Store — users buy and own it |
-| **Anti-cheat** | Impossible in browser JS | Server validation + compiled binary = robust |
+| **Performance** | JS garbage collection causes frame drops; Float32 precision | Zero-cost abstractions, no GC, f64 until GPU boundary |
 | **Line rendering** | WebGL lineWidth > 1 not supported | Metal has proper wide lines, custom geometry shaders |
+| **Distribution** | Browser-only, GitHub Pages | Native macOS app — Mac App Store, offline use |
+| **IP protection** | JavaScript = readable source | Compiled binary — no source inspection needed |
+| **Future platform** | Locked into browser sandbox | Metal compute shaders, multi-window, system integration |
+
+The web version (`index.html` on GitHub Pages) continues as the free educational tool. The native app becomes the premium platform — same RT math, superior rendering, plus the game.
 
 ---
 
@@ -43,18 +62,26 @@ Our `artsteroids.html` prototype proved the gameplay: ASDF Quadray rubber-band d
 ### Recommended: **wgpu** (Rust-native GPU abstraction over Metal)
 
 ```
-┌─────────────────────────────────────────┐
-│          A.r.t.steroids (Rust)          │
-│                                         │
-│  rt_math.rs    (Quadray, RT — pure)     │
-│  rt_polyhedra.rs (geometry — pure)      │
-│  game_logic.rs  (ship, weapons, AI)     │
-│       │                                 │
-│       ▼                                 │
-│  wgpu (Rust) ──── Metal backend ───► GPU│
-│  winit (Rust) ─── macOS window ───► OS  │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│              ARTexplorer Native (Rust)            │
+│                                                  │
+│  rt_math.rs       (Quadray, quadrance, spread)   │
+│  rt_polyhedra.rs  (tet, cube, octa, icosa, …)    │
+│  rt_thomson.rs    (great-circle shells)           │
+│  rt_rendering.rs  (scene, camera, materials)      │
+│  rt_state.rs      (state management, undo/redo)   │
+│  rt_views.rs      (view sequences, delta/animate) │
+│       │                                          │
+│       ├── explorer mode (educational visualizer) │
+│       └── game mode (A.r.t.steroids)             │
+│               │                                  │
+│               ▼                                  │
+│  wgpu (Rust) ──── Metal backend ───────────► GPU │
+│  winit (Rust) ─── macOS window + input ────► OS  │
+└──────────────────────────────────────────────────┘
 ```
+
+The core RT math and polyhedra modules serve **both** the educational explorer and the game. This is the same architecture we have in JS — `rt-math.js` and `rt-polyhedra.js` are shared by `index.html` (explorer) and `artsteroids.html` (game). In Rust, they become shared library crates.
 
 **wgpu** is a Rust-native graphics API that:
 - Automatically uses **Metal on macOS** (no configuration needed)
@@ -75,19 +102,19 @@ Our `artsteroids.html` prototype proved the gameplay: ASDF Quadray rubber-band d
 
 ### Future option: Swift/Metal for native UI
 
-When we want native macOS menus, preferences panels, or App Store integration, we can add a thin Swift layer around the Rust core using **swift-bridge** (Rust-Swift FFI generator). The architecture would become:
+When we want native macOS menus, preferences panels, polyhedron browser, or App Store integration, we can add a thin Swift layer around the Rust core using **swift-bridge** (Rust-Swift FFI generator). The architecture would become:
 
 ```
-SwiftUI (menus, preferences, App Store)
+SwiftUI (menus, inspector, polyhedron browser, preferences)
     │
     ▼ swift-bridge FFI
-Rust game core (rt_math, game_logic, wgpu rendering)
+Rust core (rt_math, rt_polyhedra, rt_rendering, explorer + game)
     │
     ▼ Metal backend
 GPU
 ```
 
-This is Phase 2. Phase 1 is pure Rust + wgpu.
+This is Phase 2. Phase 1 is pure Rust + wgpu — get the RT math and rendering working first.
 
 ---
 
@@ -573,11 +600,16 @@ Each step is independently verifiable. Do not skip ahead.
 - [ ] Orbit camera (mouse drag)
 - **Verify**: Side-by-side with artsteroids.html — functionally identical
 
-### Step 10: Beyond the Prototype
-- [ ] Asteroid generation (Cartesian cubes — the enemy!)
-- [ ] Collision detection (quadrance-based — no sqrt needed)
-- [ ] Sound effects (rodio crate)
-- [ ] App icon + Mac App Store packaging
+### Step 10: Beyond the Prototype — Full Platform
+- [ ] **Explorer mode**: Port `rt-rendering.js` scene management → `rt_rendering.rs`
+- [ ] **Explorer mode**: Polyhedron browser (tet, cube, octa, icosa, dodeca, geodesics)
+- [ ] **Explorer mode**: Thomson great-circle shells (`rt_thomson.rs`)
+- [ ] **Explorer mode**: State management, undo/redo, view sequences
+- [ ] **Game mode**: Asteroid generation (Cartesian cubes — the enemy!)
+- [ ] **Game mode**: Collision detection (quadrance-based — no sqrt needed)
+- [ ] **Game mode**: Sound effects (rodio crate)
+- [ ] **Platform**: Swift/Metal UI wrapper (menus, preferences, polyhedron browser)
+- [ ] **Platform**: App icon + Mac App Store packaging
 
 ---
 
@@ -692,17 +724,42 @@ let data = load_file()?;  // Returns early with Err if it fails
 
 ## Current Status
 
+### Phase 1: Foundation (Steps 1–6)
+
 | Milestone | Status |
 |-----------|--------|
 | artsteroids.html prototype (JS/THREE.js) | Done — controls validated |
 | Private repo created (ARTexplorer-private) | Done |
 | Rust toolchain installed | Pending |
 | First black window (wgpu + Metal) | Pending |
+| RT math port (`rt_math.rs`, `rt_polyhedra.rs`) | Pending |
 | Dual tetrahedron rendering | Pending |
+
+### Phase 2: Game Mode (Steps 7–9)
+
+| Milestone | Status |
+|-----------|--------|
+| Face-normal firing + HUD | Pending |
 | Feature parity with JS prototype | Pending |
 | Asteroid generation + collision | Pending |
-| Mac App Store build | Pending |
+
+### Phase 3: Explorer Mode
+
+| Milestone | Status |
+|-----------|--------|
+| Polyhedron browser (all 5 Platonics + geodesics) | Pending |
+| Thomson great-circle shells | Pending |
+| State management, undo/redo, view sequences | Pending |
+| Grid systems (Cartesian + IVM) | Pending |
+
+### Phase 4: Native Platform
+
+| Milestone | Status |
+|-----------|--------|
+| Swift/Metal UI wrapper (menus, preferences) | Pending |
+| Mac App Store packaging | Pending |
+| Web version continues as free educational tool | Ongoing |
 
 ---
 
-*"In Rust, the borrow checker is your co-pilot. In Quadray space, it's your navigator."*
+*"In Rust, the borrow checker is your co-pilot. In Quadray space, it's your navigator. ARTexplorer was born in the browser — it grows up native."*
