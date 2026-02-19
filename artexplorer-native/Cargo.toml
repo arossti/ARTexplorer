@@ -10,3 +10,4 @@ pollster = "0.4"                  # Block on async (wgpu init is async)
 env_logger = "0.11"               # CRITICAL: wgpu errors are silent without this
 log = "0.4"                       # Logging framework
 anyhow = "1"                      # Ergonomic error handling
+bytemuck = { version = "1", features = ["derive"] }  # Safe casting for vertex data

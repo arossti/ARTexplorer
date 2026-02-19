@@ -555,12 +555,13 @@ Each step is independently verifiable. Do not skip ahead.
 - **Verified**: Window opens, title shows "ARTexplorer — Rust/Metal", GPU adapter detected
 - **Notes**: wgpu 28 API changes vs. original doc: `request_adapter()` returns `Result` not `Option`; `RenderPassColorAttachment` requires `depth_slice: None`
 
-### Step 3: Colored Triangle (Day 2-3)
-- [ ] Write a WGSL vertex + fragment shader
-- [ ] Create a render pipeline
-- [ ] Define vertex buffer with 3 vertices (cyan triangle)
-- [ ] Draw it
-- **Verify**: Cyan triangle on black background
+### Step 3: Colored Triangle (Day 2-3) — DONE 2026-02-19
+- [x] Write a WGSL vertex + fragment shader (`src/shader.wgsl`)
+- [x] Create a render pipeline with vertex buffer layout
+- [x] Define vertex buffer with 3 vertices (cyan triangle with color interpolation)
+- [x] Draw it
+- **Verified**: Cyan triangle on black background, resizes with window
+- **Notes**: Additional wgpu 28 API changes: `push_constant_ranges` → `immediate_size`, `multiview` → `multiview_mask`. Added `bytemuck` crate for vertex data casting.
 
 ### Step 4: Dual Tetrahedron (Day 3-5)
 - [ ] Port `Polyhedra.tetrahedron()` to Rust (vertices, edges, faces)
