@@ -1,0 +1,12 @@
+[package]
+name = "artexplorer-native"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wgpu = "28"                       # GPU rendering (Metal on macOS)
+winit = "0.30"                    # Window creation + input handling
+pollster = "0.4"                  # Block on async (wgpu init is async)
+env_logger = "0.11"               # CRITICAL: wgpu errors are silent without this
+log = "0.4"                       # Logging framework
+anyhow = "1"                      # Ergonomic error handling
