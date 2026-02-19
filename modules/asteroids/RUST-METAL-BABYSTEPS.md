@@ -227,12 +227,12 @@ version = "0.1.0"
 edition = "2024"                  # Latest Rust edition (like ES2024)
 
 [dependencies]
-wgpu = "28.0"                     # GPU rendering (Metal on macOS)
+wgpu = "28"                       # GPU rendering (Metal on macOS)
 winit = "0.30"                    # Window creation + input handling
-pollster = "0.3"                  # Block on async (wgpu init is async)
-env_logger = "0.10"               # CRITICAL: wgpu errors are silent without this
+pollster = "0.4"                  # Block on async (wgpu init is async)
+env_logger = "0.11"               # CRITICAL: wgpu errors are silent without this
 log = "0.4"                       # Logging framework
-anyhow = "1.0"                    # Ergonomic error handling
+anyhow = "1"                      # Ergonomic error handling
 ```
 
 ### Key cargo commands (your new npm equivalents)
@@ -341,13 +341,13 @@ impl GpuState {
         let surface = instance.create_surface(window.clone())?;
 
         // Find a GPU adapter compatible with our surface
+        // wgpu 28: request_adapter returns Result, not Option
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 compatible_surface: Some(&surface),
                 ..Default::default()
             })
-            .await
-            .ok_or_else(|| anyhow::anyhow!("No suitable GPU adapter found"))?;
+            .await?;
 
         log::info!("GPU adapter: {:?}", adapter.get_info().name);
 
@@ -387,6 +387,7 @@ impl GpuState {
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &view,
                 resolve_target: None,
+                depth_slice: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
                         r: 0.0, g: 0.0, b: 0.0, a: 1.0,
@@ -539,19 +540,20 @@ impl Quadray {
 
 Each step is independently verifiable. Do not skip ahead.
 
-### Step 1: Install + Hello World (Day 1)
-- [ ] Install Xcode Command Line Tools
-- [ ] Install Rust via rustup
+### Step 1: Install + Hello World (Day 1) — DONE 2026-02-19
+- [x] Install Xcode Command Line Tools
+- [x] Install Rust via rustup — **Rust 1.93.1** (aarch64-apple-darwin)
 - [ ] Install VS Code extensions (rust-analyzer, CodeLLDB)
-- [ ] `cargo new artexplorer-native && cd artexplorer-native && cargo run`
-- [ ] See "Hello, world!" in terminal
-- **Verify**: `rustc --version` prints 1.85+
+- [x] `cargo new artexplorer-native && cd artexplorer-native && cargo run`
+- [x] See "Hello, world!" in terminal
+- **Verified**: `rustc --version` → 1.93.1
 
-### Step 2: Black Window (Day 1-2)
-- [ ] Add wgpu, winit, pollster, env_logger to Cargo.toml
-- [ ] Copy the "First Window" code from Section 7
-- [ ] `cargo run` — see a black 1280x720 window
-- **Verify**: Window opens, title shows "ARTexplorer", no console errors
+### Step 2: Black Window (Day 1-2) — DONE 2026-02-19
+- [x] Add wgpu 28, winit 0.30, pollster 0.4, env_logger 0.11 to Cargo.toml
+- [x] Write main.rs with wgpu + winit ApplicationHandler pattern
+- [x] `cargo run` — 1280x720 black window on **Apple M2 Max** via Metal
+- **Verified**: Window opens, title shows "ARTexplorer — Rust/Metal", GPU adapter detected
+- **Notes**: wgpu 28 API changes vs. original doc: `request_adapter()` returns `Result` not `Option`; `RenderPassColorAttachment` requires `depth_slice: None`
 
 ### Step 3: Colored Triangle (Day 2-3)
 - [ ] Write a WGSL vertex + fragment shader
@@ -730,8 +732,8 @@ let data = load_file()?;  // Returns early with Err if it fails
 |-----------|--------|
 | artsteroids.html prototype (JS/THREE.js) | Done — controls validated |
 | Private repo created (ARTexplorer-private) | Done |
-| Rust toolchain installed | Pending |
-| First black window (wgpu + Metal) | Pending |
+| Rust toolchain installed | Done — Rust 1.93.1 (2026-02-19) |
+| First black window (wgpu + Metal) | Done — Apple M2 Max, wgpu 28 (2026-02-19) |
 | RT math port (`rt_math.rs`, `rt_polyhedra.rs`) | Pending |
 | Dual tetrahedron rendering | Pending |
 
