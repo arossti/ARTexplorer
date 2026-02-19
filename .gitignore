@@ -58,3 +58,6 @@ scripts/PlayerPiano*.js
 # Whitepaper images and reference materials (large binaries)
 Geometry Documents/Whitepaper Images/
 Geometry Documents/Wildberger References/
+
+# A.r.t.steroids game (local development only — commercial/proprietary, not for public repo)
+modules/asteroids/
