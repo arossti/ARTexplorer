@@ -536,6 +536,94 @@ impl Quadray {
 
 ---
 
+## 8.1 The ABCD Convention — Killing the 3021 Scramble
+
+### The Problem: WXYZ Creates Confusion
+
+In the JS app, Quadray basis vectors are named **QW, QX, QY, QZ** — borrowing X, Y, Z from Cartesian notation. This creates two layers of confusion:
+
+1. **Name collision**: An agent or user seeing "QX" naturally associates it with "Cartesian X" — but they're different axes pointing in different directions.
+2. **The 3021 scramble**: The user-facing names (QW, QX, QY, QZ) don't match the internal array indices. QW→index 3, QX→index 0, QY→index 2, QZ→index 1. This `AXIS_INDEX` mapping has been a recurring source of axis-swap bugs in projections and cutplanes.
+
+### The Fix: ABCD = 0123
+
+For the native app, we eliminate both problems by adopting **ABCD** as the Quadray basis vector names. The letters are:
+- **Completely disjoint from Cartesian XYZ** — no name collision possible
+- **Naturally indexed**: A=0, B=1, C=2, D=3 — no scramble table needed
+- **Self-documenting**: a 4-tuple `[a, b, c, d]` is immediately recognizable as Quadray
+
+### The ABCD Convention Table
+
+| Name | Index | Cartesian Direction | Color | Former Name | Vertex Pattern |
+|------|-------|---------------------|-------|-------------|----------------|
+| **A** | 0 | (-1, -1, +1) | **Yellow** | QW | [1, 0, 0, 0] |
+| **B** | 1 | (+1, +1, +1) | **Red** | QX | [0, 1, 0, 0] |
+| **C** | 2 | (-1, +1, -1) | **Blue** | QY | [0, 0, 1, 0] |
+| **D** | 3 | (+1, -1, -1) | **Green** | QZ | [0, 0, 0, 1] |
+
+### Why A = Yellow (Not Red)
+
+Deliberate disambiguation. In the standard CG convention, **Cartesian X = Red**. If Quadray A were also Red, every agent and user would unconsciously equate A↔X. Making **A = Yellow** breaks this false association immediately. The color sequence Yellow→Red→Blue→Green never aligns with the Cartesian RGB pattern.
+
+### Basis Vectors in WGSL
+
+```wgsl
+// ABCD basis vectors for Quadray → Cartesian conversion
+const BASIS: mat4x3<f32> = mat4x3<f32>(
+    vec3<f32>(-1.0, -1.0, 1.0),    // A (Yellow) — former QW
+    vec3<f32>( 1.0,  1.0, 1.0),    // B (Red)    — former QX
+    vec3<f32>(-1.0,  1.0,-1.0),    // C (Blue)   — former QY
+    vec3<f32>( 1.0, -1.0,-1.0),    // D (Green)  — former QZ
+);
+```
+
+A Quadray 4-tuple `[a, b, c, d]` converts to Cartesian via: `xyz = a*A_basis + b*B_basis + c*C_basis + d*D_basis`
+
+### Polyhedra in ABCD Coordinates
+
+| Polyhedron | Vertex Pattern | Example Vertex |
+|------------|----------------|----------------|
+| **Tetrahedron** | {1,0,0,0} permutations | A-vertex: [1,0,0,0] |
+| **Dual Tetrahedron** | {0,1,1,1} permutations | A-absent: [0,1,1,1] |
+| **Octahedron** | {1,1,0,0} permutations | AB-edge: [1,1,0,0] |
+| **Truncated Tet** | {2,1,0,0} permutations | Near-A: [2,1,0,0] |
+| **Cuboctahedron (VE)** | {2,1,1,0} permutations | A-dominant: [2,1,1,0] |
+
+### Faces in ABCD
+
+Each tetrahedron face is opposite one vertex and inherits its color:
+
+| Face | Opposite Vertex | Color | Contains Vertices |
+|------|----------------|-------|-------------------|
+| **Face A** | Vertex A | **Yellow** | B, C, D |
+| **Face B** | Vertex B | **Red** | A, C, D |
+| **Face C** | Vertex C | **Blue** | A, B, D |
+| **Face D** | Vertex D | **Green** | A, B, C |
+
+### Migration Cheat Sheet (JS → Native)
+
+| JS (Legacy) | Native (ABCD) | Notes |
+|-------------|---------------|-------|
+| QW | A | Yellow, index 0 (was index 3!) |
+| QX | B | Red, index 1 (was index 0!) |
+| QY | C | Blue, index 2 (unchanged) |
+| QZ | D | Green, index 3 (was index 1!) |
+| `AXIS_INDEX[name]` | Direct index | **3021 rule eliminated** |
+| `basisVectors[3]` for QW | `basis[0]` for A | Natural indexing |
+| `[w, x, y, z]` tuple | `[a, b, c, d]` tuple | Same values, new names |
+| `Quadray.AXIS_INDEX` | Not needed | Name = index |
+
+### Rule for Agents
+
+**When working in the native Rust/WGSL codebase:**
+- Use **A, B, C, D** for Quadray basis directions (never W, X, Y, Z)
+- Use **X, Y, Z** only for Cartesian coordinates
+- A 4-component tuple `[a, b, c, d]` is always Quadray; a 3-component `[x, y, z]` is always Cartesian
+- Index directly: `basis[0]` = A, `basis[1]` = B, `basis[2]` = C, `basis[3]` = D
+- Colors: A=Yellow, B=Red, C=Blue, D=Green
+
+---
+
 ## 9. Baby Steps Roadmap
 
 Each step is independently verifiable. Do not skip ahead.
@@ -563,13 +651,17 @@ Each step is independently verifiable. Do not skip ahead.
 - **Verified**: Cyan triangle on black background, resizes with window
 - **Notes**: Additional wgpu 28 API changes: `push_constant_ranges` → `immediate_size`, `multiview` → `multiview_mask`. Added `bytemuck` crate for vertex data casting.
 
-### Step 4: Dual Tetrahedron (Day 3-5)
-- [ ] Port `Polyhedra.tetrahedron()` to Rust (vertices, edges, faces)
-- [ ] Negate vertices for dual
-- [ ] Create vertex + index buffers
-- [ ] Add a camera uniform (perspective projection + view matrix)
-- [ ] Render wireframe edges
-- **Verify**: Rotating dual tetrahedron visible — compare with artsteroids.html
+### Step 4: Quadray-Native Stella Octangula (Day 3-5) — DONE 2026-02-19
+- [x] **REVISED**: Instead of porting Cartesian tetrahedron, render Quadray-native ABCD coordinates directly on GPU
+- [x] Added `glam` crate for camera matrix math (Mat4, Vec3)
+- [x] Quadray vertex format: `vec4<f32>` ABCD coordinates passed directly to GPU — NO Cartesian conversion in Rust!
+- [x] WGSL vertex shader performs zero-sum normalization + basis matrix conversion (ABCD → XYZ) on GPU
+- [x] Camera uniform buffer (perspective projection + view matrix via glam)
+- [x] Index buffer with LineList topology for wireframe edge rendering
+- [x] Stella Octangula: base tet `[1,0,0,0]` vertices + dual tet `[0,1,1,1]` vertices, ABCD colors (Yellow/Red/Blue/Green)
+- [x] **ABCD convention adopted** — see Section 8.1. A=Yellow, B=Red, C=Blue, D=Green. No more 3021 scramble.
+- **Verified**: Wireframe stella octangula renders on Apple M2 Max via Metal
+- **Notes**: Key architectural step — WGSL shader's `mat4x3` BASIS matrix `[A=(-1,-1,+1), B=(+1,+1,+1), C=(-1,+1,-1), D=(+1,-1,-1)]` converts ABCD→XYZ on GPU. Window title: "ARTexplorer — Quadray/Metal".
 
 ### Step 5: Keyboard Input (Day 5-6)
 - [ ] Handle `winit::event::KeyEvent` for A, S, D, F, Space, G
@@ -577,12 +669,19 @@ Each step is independently verifiable. Do not skip ahead.
 - [ ] Ship moves along Quadray axes
 - **Verify**: Ship displaces and returns — same feel as the JS prototype
 
-### Step 6: RT Math Port (Day 6-8)
-- [ ] Create `src/rt_math.rs` — Quadray, quadrance, spread
-- [ ] Create `src/rt_polyhedra.rs` — tetrahedron, dual
-- [ ] Write tests: `cargo test`
-- [ ] Verify numerical parity with JS: same vertices, same normals
-- **Verify**: `cargo test` passes, output matches JS console.log values
+### Step 6: RT Math Port (Day 6-8) — DONE 2026-02-19
+- [x] Created `src/rt_math/` module (6 files): `mod.rs`, `quadray.rs`, `phi.rs`, `radicals.rs`, `cubics.rs`, `polygon.rs`
+- [x] Created `src/rt_polyhedra/` module (2 files): `mod.rs`, `platonic.rs`
+- [x] **Quadray struct** — ABCD basis, `to_cartesian()`, `from_cartesian()` (closed-form 4×4 inverse), operator overloads
+- [x] **RT primitives** — quadrance, spread, circle_param, reflect_in_line, slope_from_spread, verify_euler
+- [x] **Symbolic algebra** — PurePhi (golden ratio), PureRadicals (√2, √3, √6), PhiSymbolic `(a+b√5)/c`
+- [x] **Polygon generation** — Wildberger reflection method, 1 √ for any N. Exact star spreads for N=3..12
+- [x] **All 6 Platonic solids** — tet, dual tet, cube, octa, icosa, dodeca (Quadray-native vertices)
+- [x] **Integration** — `main.rs` generates stella octangula from `rt_polyhedra` instead of hardcoded arrays
+- [x] **macOS .app bundle** — `bundle.sh` builds release + creates `ARTexplorer.app` with stella octangula icon
+- [x] 89 tests passing: `cargo test` — numerical parity with JS for all polyhedra
+- **Verified**: Rendered stella octangula identical to hardcoded version. App launches from Dock.
+- **Notes**: Fixed 4 bugs during testing: `from_cartesian` needed closed-form inverse (non-orthogonal basis), heptagon cubic sign correction (8x³+4x²-4x-1=0), octahedron edge Q=8 (not 4), central_spread test values corrected.
 
 ### Step 7: Face-Normal Firing (Day 8-10)
 - [ ] Compute face normals (original tet for Quadray alignment)
@@ -735,8 +834,10 @@ let data = load_file()?;  // Returns early with Err if it fails
 | Private repo created (ARTexplorer-private) | Done |
 | Rust toolchain installed | Done — Rust 1.93.1 (2026-02-19) |
 | First black window (wgpu + Metal) | Done — Apple M2 Max, wgpu 28 (2026-02-19) |
-| RT math port (`rt_math.rs`, `rt_polyhedra.rs`) | Pending |
-| Dual tetrahedron rendering | Pending |
+| Colored triangle (WGSL shader + render pipeline) | Done — cyan triangle, wgpu 28 (2026-02-19) |
+| **Quadray-native GPU rendering** | **Done — ABCD→XYZ in WGSL shader (2026-02-19)** |
+| **RT math port** (`rt_math/`, `rt_polyhedra/`, 89 tests) | **Done — 8 files, all Platonics, Wildberger polygons (2026-02-19)** |
+| **macOS .app bundle** (bundle.sh + icon) | **Done — ARTexplorer.app launches from Dock (2026-02-19)** |
 
 ### Phase 2: Game Mode (Steps 7–9)
 
