@@ -1,5 +1,9 @@
+mod app_state;
+mod camera;
+mod geometry;
 mod rt_math;
 mod rt_polyhedra;
+mod ui;
 
 use std::sync::Arc;
 use wgpu::util::DeviceExt;
@@ -10,116 +14,15 @@ use winit::{
     window::Window,
 };
 
-// --- Vertex data (ABCD Convention) ---
-// Quadray-native: each vertex carries ABCD coordinates (integers on CPU!)
-// The WGSL shader converts ABCD → XYZ on the GPU via basis matrix multiplication.
-// A=Yellow, B=Red, C=Blue, D=Green — ABCD=0123, no scramble.
-#[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-struct Vertex {
-    quadray: [f32; 4], // ABCD coordinates (Quadray)
-    color: [f32; 3],   // RGB
-}
+use app_state::AppState;
+use camera::OrbitCamera;
+use geometry::Vertex;
 
-impl Vertex {
-    fn layout() -> wgpu::VertexBufferLayout<'static> {
-        wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                // quadray: vec4<f32> at offset 0
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x4,
-                },
-                // color: vec3<f32> at offset 16
-                wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 4]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-            ],
-        }
-    }
-}
-
-// --- ABCD color palette ---
-// Each axis gets a consistent color across all polyhedra.
-const ABCD_COLORS: [[f32; 3]; 4] = [
-    [1.0, 1.0, 0.0], // A = Yellow
-    [1.0, 0.0, 0.0], // B = Red
-    [0.0, 0.4, 1.0], // C = Blue
-    [0.0, 0.8, 0.2], // D = Green
-];
-
-/// Build stella octangula from rt_polyhedra generators.
-///
-/// Replaces the hardcoded VERTICES/INDICES with generated geometry.
-/// Base tetrahedron + dual tetrahedron, ABCD colors, LineList edges.
-fn build_stella_octangula() -> (Vec<Vertex>, Vec<u16>) {
-    let tet = rt_polyhedra::tetrahedron();
-    let dual = rt_polyhedra::dual_tetrahedron();
-
-    let mut vertices = Vec::new();
-    let mut indices = Vec::new();
-
-    // Base tet: vertex i colored by axis i
-    for (i, q) in tet.vertices.iter().enumerate() {
-        vertices.push(Vertex {
-            quadray: q.to_f32_array(),
-            color: ABCD_COLORS[i],
-        });
-    }
-
-    // Dual tet: vertex i colored by absent axis i
-    let base_offset = tet.vertices.len() as u16;
-    for (i, q) in dual.vertices.iter().enumerate() {
-        vertices.push(Vertex {
-            quadray: q.to_f32_array(),
-            color: ABCD_COLORS[i],
-        });
-    }
-
-    // Base tet edges
-    for [a, b] in &tet.edges {
-        indices.push(*a as u16);
-        indices.push(*b as u16);
-    }
-
-    // Dual tet edges (offset by base vertex count)
-    for [a, b] in &dual.edges {
-        indices.push(*a as u16 + base_offset);
-        indices.push(*b as u16 + base_offset);
-    }
-
-    (vertices, indices)
-}
-
-// --- Camera uniform ---
+// --- Camera uniform (GPU layout) ---
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct CameraUniform {
     view_proj: [[f32; 4]; 4],
-}
-
-impl CameraUniform {
-    fn new(aspect: f32) -> Self {
-        let view = glam::Mat4::look_at_rh(
-            glam::Vec3::new(3.0, 3.0, 3.0), // eye: looking from (3,3,3)
-            glam::Vec3::ZERO,                 // target: origin
-            glam::Vec3::Y,                    // up: Y-up
-        );
-        let proj = glam::Mat4::perspective_rh(
-            std::f32::consts::FRAC_PI_4, // 45° FOV
-            aspect,
-            0.1,   // near
-            100.0,  // far
-        );
-        Self {
-            view_proj: (proj * view).to_cols_array_2d(),
-        }
-    }
 }
 
 // --- GPU State ---
@@ -135,6 +38,12 @@ struct GpuState {
     num_indices: u32,
     uniform_buffer: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
+    // egui integration
+    egui_state: egui_winit::State,
+    egui_renderer: egui_wgpu::Renderer,
+    // Application state
+    app_state: AppState,
+    camera: OrbitCamera,
 }
 
 impl GpuState {
@@ -168,8 +77,12 @@ impl GpuState {
         surface.configure(&device, &config);
 
         // --- Camera uniform buffer ---
+        let camera = OrbitCamera::default();
         let aspect = size.width as f32 / size.height as f32;
-        let camera_uniform = CameraUniform::new(aspect);
+        let view_proj = camera.view_proj(aspect);
+        let camera_uniform = CameraUniform {
+            view_proj: view_proj.to_cols_array_2d(),
+        };
 
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Camera Uniform Buffer"),
@@ -210,7 +123,7 @@ impl GpuState {
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Pipeline Layout"),
             bind_group_layouts: &[&bind_group_layout],
-            immediate_size: 0,
+            push_constant_ranges: &[],
         });
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -247,14 +160,15 @@ impl GpuState {
                 mask: !0,
                 alpha_to_coverage_enabled: false,
             },
-            multiview_mask: None,
+            multiview: None,
             cache: None,
         });
 
-        // --- Generate geometry from RT polyhedra ---
-        let (vertices, indices) = build_stella_octangula();
+        // --- Generate initial geometry from AppState defaults ---
+        let app_state = AppState::default();
+        let (vertices, indices) = geometry::build_visible_geometry(&app_state);
         log::info!(
-            "Stella octangula: {} vertices, {} edges ({} indices)",
+            "Initial geometry: {} vertices, {} edges ({} indices)",
             vertices.len(),
             indices.len() / 2,
             indices.len()
@@ -276,10 +190,34 @@ impl GpuState {
 
         let num_indices = indices.len() as u32;
 
+        // --- egui setup ---
+        let egui_ctx = egui::Context::default();
+        ui::configure_theme(&egui_ctx);
+        let viewport_id = egui_ctx.viewport_id();
+        let egui_state = egui_winit::State::new(
+            egui_ctx,
+            viewport_id,
+            &*window,
+            Some(window.scale_factor() as f32),
+            Some(winit::window::Theme::Dark),
+            None,
+        );
+        let egui_renderer = egui_wgpu::Renderer::new(
+            &device,
+            config.format,
+            egui_wgpu::RendererOptions {
+                msaa_samples: 1,
+                depth_stencil_format: None,
+                ..Default::default()
+            },
+        );
+
         Ok(Self {
             surface, device, queue, config, window,
             render_pipeline, vertex_buffer, index_buffer, num_indices,
             uniform_buffer, bind_group,
+            egui_state, egui_renderer,
+            app_state, camera,
         })
     }
 
@@ -288,51 +226,138 @@ impl GpuState {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
-
-            // Update camera aspect ratio
-            let aspect = new_size.width as f32 / new_size.height as f32;
-            let camera_uniform = CameraUniform::new(aspect);
-            self.queue.write_buffer(
-                &self.uniform_buffer,
-                0,
-                bytemuck::cast_slice(&[camera_uniform]),
-            );
         }
     }
 
+    fn rebuild_geometry(&mut self) {
+        let (vertices, indices) = geometry::build_visible_geometry(&self.app_state);
+
+        self.app_state.vertex_count = vertices.len();
+        self.app_state.edge_count = indices.len() / 2;
+
+        self.vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Quadray ABCD Vertex Buffer"),
+            contents: bytemuck::cast_slice(&vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        self.index_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Edge Index Buffer"),
+            contents: bytemuck::cast_slice(&indices),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+        self.num_indices = indices.len() as u32;
+        self.app_state.geometry_dirty = false;
+    }
+
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        // Rebuild geometry if UI changed polyhedra/scale
+        if self.app_state.geometry_dirty {
+            self.rebuild_geometry();
+        }
+
+        // FPS tracking
+        self.app_state.tick_fps();
+
+        // --- Update camera uniform every frame ---
+        let aspect = self.config.width as f32 / self.config.height as f32;
+        let view_proj = self.camera.view_proj(aspect);
+        let camera_uniform = CameraUniform {
+            view_proj: view_proj.to_cols_array_2d(),
+        };
+        self.queue.write_buffer(
+            &self.uniform_buffer,
+            0,
+            bytemuck::cast_slice(&[camera_uniform]),
+        );
+
         let output = self.surface.get_current_texture()?;
         let view = output.texture.create_view(&Default::default());
 
+        // --- egui frame ---
+        let raw_input = self.egui_state.take_egui_input(&self.window);
+        let full_output = self.egui_state.egui_ctx().run(raw_input, |ctx| {
+            ui::draw_ui(ctx, &mut self.app_state);
+        });
+        self.egui_state
+            .handle_platform_output(&self.window, full_output.platform_output);
+
+        let paint_jobs = self.egui_state.egui_ctx().tessellate(
+            full_output.shapes,
+            full_output.pixels_per_point,
+        );
+        let screen_descriptor = egui_wgpu::ScreenDescriptor {
+            size_in_pixels: [self.config.width, self.config.height],
+            pixels_per_point: full_output.pixels_per_point,
+        };
+
+        // --- Update egui textures (font atlas) ---
+        for (id, image_delta) in &full_output.textures_delta.set {
+            self.egui_renderer
+                .update_texture(&self.device, &self.queue, *id, image_delta);
+        }
+
+        // --- Command encoder ---
         let mut encoder = self.device.create_command_encoder(
             &wgpu::CommandEncoderDescriptor { label: Some("Render Encoder") },
         );
 
+        // --- Upload egui buffers ---
+        let extra_commands = self.egui_renderer.update_buffers(
+            &self.device,
+            &self.queue,
+            &mut encoder,
+            &paint_jobs,
+            &screen_descriptor,
+        );
+
+        // --- Render pass: 3D wireframe first, then egui on top ---
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Quadray Wireframe Pass"),
+                label: Some("Main Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
                     resolve_target: None,
-                    depth_slice: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
                             r: 0.0, g: 0.0, b: 0.0, a: 1.0,
                         }),
                         store: wgpu::StoreOp::Store,
                     },
+                    depth_slice: None,
                 })],
                 ..Default::default()
             });
 
-            render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            // 1) Draw Quadray wireframe
+            if self.num_indices > 0 {
+                render_pass.set_pipeline(&self.render_pipeline);
+                render_pass.set_bind_group(0, &self.bind_group, &[]);
+                render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+                render_pass.set_index_buffer(
+                    self.index_buffer.slice(..),
+                    wgpu::IndexFormat::Uint16,
+                );
+                render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            }
+
+            // 2) Draw egui on top (same render pass)
+            self.egui_renderer.render(
+                &mut render_pass.forget_lifetime(),
+                &paint_jobs,
+                &screen_descriptor,
+            );
         }
 
-        self.queue.submit(std::iter::once(encoder.finish()));
+        // --- Submit all command buffers ---
+        let mut commands: Vec<wgpu::CommandBuffer> = extra_commands;
+        commands.push(encoder.finish());
+        self.queue.submit(commands);
+
+        // --- Free textures AFTER submit ---
+        for id in &full_output.textures_delta.free {
+            self.egui_renderer.free_texture(id);
+        }
+
         output.present();
         Ok(())
     }
@@ -347,7 +372,7 @@ impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         if self.state.is_none() {
             let attrs = Window::default_attributes()
-                .with_title("ARTexplorer — Quadray/Metal")
+                .with_title("ARTexplorer — Quadray/Metal + egui")
                 .with_inner_size(winit::dpi::LogicalSize::new(1280, 720));
             let window = Arc::new(event_loop.create_window(attrs).unwrap());
             self.state = Some(pollster::block_on(GpuState::new(window)).unwrap());
@@ -361,6 +386,10 @@ impl ApplicationHandler for App {
         event: WindowEvent,
     ) {
         let Some(state) = &mut self.state else { return };
+
+        // Pass event to egui first
+        let egui_response = state.egui_state.on_window_event(&state.window, &event);
+
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(size) => state.resize(size),
@@ -373,7 +402,30 @@ impl ApplicationHandler for App {
                 }
                 state.window.request_redraw();
             }
-            _ => {}
+            _ => {
+                if !egui_response.consumed {
+                    match &event {
+                        WindowEvent::MouseInput { state: btn_state, button, .. } => {
+                            if *button == winit::event::MouseButton::Left {
+                                state.camera.on_mouse_button(
+                                    *btn_state == winit::event::ElementState::Pressed,
+                                );
+                            }
+                        }
+                        WindowEvent::CursorMoved { position, .. } => {
+                            state.camera.on_cursor_moved(position.x, position.y);
+                        }
+                        WindowEvent::MouseWheel { delta, .. } => {
+                            let scroll = match delta {
+                                winit::event::MouseScrollDelta::LineDelta(_, y) => *y,
+                                winit::event::MouseScrollDelta::PixelDelta(pos) => pos.y as f32 * 0.1,
+                            };
+                            state.camera.on_scroll(scroll);
+                        }
+                        _ => {}
+                    }
+                }
+            }
         }
     }
 }
