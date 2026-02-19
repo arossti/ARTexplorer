@@ -200,8 +200,8 @@ rustup update       # Updates the compiler and tools
 
 ```bash
 # Create a new project (like `npm init`)
-cargo new artsteroids-native
-cd artsteroids-native
+cargo new artexplorer-native
+cd artexplorer-native
 
 # Run it (like `node index.js`)
 cargo run
@@ -211,7 +211,7 @@ cargo run
 ### Project structure
 
 ```
-artsteroids-native/
+artexplorer-native/
 ├── Cargo.toml      ← package.json equivalent (dependencies, metadata)
 ├── Cargo.lock      ← package-lock.json equivalent (exact versions)
 └── src/
@@ -222,7 +222,7 @@ artsteroids-native/
 
 ```toml
 [package]
-name = "artsteroids-native"
+name = "artexplorer-native"
 version = "0.1.0"
 edition = "2024"                  # Latest Rust edition (like ES2024)
 
@@ -381,7 +381,7 @@ impl GpuState {
             &wgpu::CommandEncoderDescriptor { label: Some("Render Encoder") },
         );
 
-        // Clear to pure black — A.r.t.steroids arcade background
+        // Clear to pure black — ARTexplorer background
         let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Clear Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -413,7 +413,7 @@ impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         if self.state.is_none() {
             let attrs = Window::default_attributes()
-                .with_title("A.R.T.STEROIDS — Rust/Metal")
+                .with_title("ARTexplorer — Rust/Metal")
                 .with_inner_size(winit::dpi::LogicalSize::new(1280, 720));
             let window = Arc::new(event_loop.create_window(attrs).unwrap());
             self.state = Some(pollster::block_on(GpuState::new(window)).unwrap());
@@ -454,7 +454,7 @@ fn main() -> anyhow::Result<()> {
 }
 ```
 
-**Run it**: `cargo run` — you should see a 1280x720 black window titled "A.R.T.STEROIDS — Rust/Metal". That's Metal rendering your first frame.
+**Run it**: `cargo run` — you should see a 1280x720 black window titled "ARTexplorer — Rust/Metal". That's Metal rendering your first frame.
 
 ---
 
@@ -543,7 +543,7 @@ Each step is independently verifiable. Do not skip ahead.
 - [ ] Install Xcode Command Line Tools
 - [ ] Install Rust via rustup
 - [ ] Install VS Code extensions (rust-analyzer, CodeLLDB)
-- [ ] `cargo new artsteroids-native && cd artsteroids-native && cargo run`
+- [ ] `cargo new artexplorer-native && cd artexplorer-native && cargo run`
 - [ ] See "Hello, world!" in terminal
 - **Verify**: `rustc --version` prints 1.85+
 
@@ -551,7 +551,7 @@ Each step is independently verifiable. Do not skip ahead.
 - [ ] Add wgpu, winit, pollster, env_logger to Cargo.toml
 - [ ] Copy the "First Window" code from Section 7
 - [ ] `cargo run` — see a black 1280x720 window
-- **Verify**: Window opens, title shows "A.R.T.STEROIDS", no console errors
+- **Verify**: Window opens, title shows "ARTexplorer", no console errors
 
 ### Step 3: Colored Triangle (Day 2-3)
 - [ ] Write a WGSL vertex + fragment shader
@@ -762,4 +762,4 @@ let data = load_file()?;  // Returns early with Err if it fails
 
 ---
 
-*"In Rust, the borrow checker is your co-pilot. In Quadray space, it's your navigator. ARTexplorer was born in the browser — it grows up native."*
+*"In Rust, the borrow checker is your co-pilot. In Quadray space, it's your navigator. ARTexplorer was born in the browser — the whole platform grows up native."*
