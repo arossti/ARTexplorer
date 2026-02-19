@@ -10,7 +10,7 @@ pub fn configure_theme(ctx: &egui::Context) {
 
 /// Draw the egui side panel with polyhedra controls, scale sliders, and info.
 pub fn draw_ui(ctx: &egui::Context, state: &mut AppState) {
-    egui::SidePanel::left("control_panel")
+    egui::SidePanel::right("control_panel")
         .default_width(220.0)
         .show(ctx, |ui| {
             ui.heading("ARTexplorer");

@@ -9,8 +9,9 @@
 > **RT-Purity applies here too.** All geometry uses `rt_math/` and `rt_polyhedra/` —
 > never classical trig. See RUST-METAL-BABYSTEPS.md § "Agent Handoff" before writing code.
 >
-> Written February 2026. Current state: wireframe stella octangula rendering via
-> wgpu/Metal with RT math engine (89 tests).
+> Written February 2026. **Current state: P0 COMPLETE** — egui right-side panel with
+> all 6 Platonic solids, orbit camera, scale sliders, FPS counter. wgpu 27 + egui 0.33
+> + egui-wgpu 0.33 + egui-winit 0.33. RT math engine: 89 tests passing.
 
 ---
 
@@ -48,37 +49,47 @@ The native UI uses **egui** (immediate-mode GUI) rendered alongside the 3D viewp
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  egui side panel (left)    │  wgpu 3D viewport  │
-│                            │                     │
-│  [Coordinate Systems]      │  ┌───────────────┐ │
-│  [Polyhedra]               │  │  Metal render  │ │
-│  [Scale]                   │  │  (stella etc.) │ │
-│  [View Manager]            │  └───────────────┘ │
-│  ...                       │                     │
-├────────────────────────────┴─────────────────────┤
-│  egui bottom panel (coordinates bar)             │
+│  wgpu 3D viewport    │  egui side panel (right) │
+│                      │                           │
+│  ┌────────────────┐  │  [Polyhedra] ✓            │
+│  │  Metal render   │  │  [Scale] ✓               │
+│  │  (all 6 solids) │  │  [Info / FPS] ✓          │
+│  └────────────────┘  │  [Coordinate Systems]     │
+│                      │  [View Manager]           │
+│                      │  ...                      │
+├──────────────────────┴───────────────────────────┤
+│  egui bottom panel (coordinates bar) — P1        │
 └──────────────────────────────────────────────────┘
 ```
 
-### Dependencies to add
+> **✓ = implemented in P0** (2026-02-19)
+
+### Dependencies (INSTALLED)
 
 ```toml
-egui = "0.31"                # Immediate-mode GUI
-egui-wgpu = "0.31"           # wgpu integration
-egui-winit = "0.31"          # winit event integration
-serde = { version = "1", features = ["derive"] }  # State serialization
-serde_json = "1"             # JSON import/export
+wgpu = "27"                  # GPU rendering — pinned for egui-wgpu 0.33 compat (was 28)
+egui = "0.33"                # Immediate-mode GUI ✓
+egui-wgpu = "0.33"           # wgpu integration ✓
+egui-winit = "0.33"          # winit event integration ✓
+glam = "0.29"                # Camera matrices (Mat4, Vec3) ✓
+# Future:
+serde = { version = "1", features = ["derive"] }  # State serialization (P2)
+serde_json = "1"             # JSON import/export (P2)
 ```
+
+> **Note**: egui-wgpu 0.33 requires wgpu ^27 (not 28). The wgpu downgrade was done in Step 7 of BABYSTEPS.
 
 ### Key design decisions
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | GUI framework | egui (not iced, not SwiftUI) | Renders directly on our wgpu surface; no separate window system |
-| Panel layout | Left sidebar + bottom bar | Mirrors the JS app's HTML layout |
+| Panel layout | **Right sidebar** + bottom bar | Mirrors the JS app's HTML layout (right-side panel) |
 | State model | Single `AppState` struct | egui is immediate-mode: UI reads/writes state each frame |
 | Collapsible sections | `egui::CollapsingHeader` | Matches the JS accordion panels |
-| Color scheme | Dark theme (black background) | Matches ARTexplorer identity |
+| Color scheme | Dark theme (panel_fill rgb(20,20,25)) | Matches ARTexplorer identity |
+| Event routing | egui first, then camera | `egui_winit::State::on_window_event()` → if consumed, skip camera |
+| Rendering | Two-layer single render pass | 3D wireframe first, egui overlay via `forget_lifetime()` |
 
 ---
 
@@ -365,7 +376,7 @@ enum SphereProjection { Off, InSphere, MidSphere, OutSphere }
 - Face meshes (triangle fill with opacity — P1)
 - ABCD vertex coloring (already working)
 
-**Note**: Geometry generators for tet, dual_tet, cube, octa, icosa, dodeca are already ported in `rt_polyhedra/platonic.rs`. The rendering pipeline needs to generalize `build_stella_octangula()` into a generic `build_polyhedron()`.
+**Note**: Geometry generators for tet, dual_tet, cube, octa, icosa, dodeca are already ported in `rt_polyhedra/platonic.rs`. The rendering pipeline uses `geometry::build_visible_geometry()` which iterates all 6 solids based on `AppState` toggles — **done in P0**. Remaining work: node spheres (P1), face meshes with opacity (P1), geodesic subdivision (P2), truncation (P2).
 
 ---
 
@@ -801,41 +812,63 @@ response.context_menu(|ui| {
 
 ## 23. Implementation Phases
 
-### Phase P0: Core Viewport (Next)
+### Phase P0: Core Viewport — DONE (2026-02-19)
 
 **Goal**: egui side panel + 3D viewport coexisting. Basic polyhedra toggles.
 
-**New files**:
-- `src/ui/mod.rs` — egui setup, panel layout
-- `src/ui/sidebar.rs` — collapsible section rendering
-- `src/ui/state.rs` — `AppState` struct (single source of truth)
+**Actual module structure** (flat files, not nested `ui/` directory):
+- `src/app_state.rs` — `AppState` struct (polyhedra toggles, scale, FPS, geometry stats, dirty flag)
+- `src/ui.rs` — `configure_theme()` + `draw_ui()` (right-side panel, collapsible sections)
+- `src/geometry.rs` — `Vertex` struct, `ABCD_COLORS`, `build_visible_geometry()` for all 6 solids
+- `src/camera.rs` — `OrbitCamera` (yaw/pitch/distance, drag orbit, scroll zoom, `view_proj()` via glam)
 
 **Deliverables**:
-- [ ] Add egui + egui-wgpu + egui-winit dependencies
-- [ ] Side panel with "Polyhedra" section
-- [ ] Checkboxes for tet, dual tet, cube (toggling visibility)
-- [ ] Scale sliders (cube edge, tet edge)
-- [ ] FPS counter in bottom bar
-- [ ] Mouse orbit camera (already partially working)
+- [x] Add egui 0.33 + egui-wgpu 0.33 + egui-winit 0.33 dependencies (wgpu downgraded 28→27)
+- [x] Right-side panel with collapsible "Polyhedra" section
+- [x] Checkboxes for all 6 Platonic solids (tet, dual tet, cube, octa, icosa, dodeca)
+- [x] Scale sliders (tet edge 0.1–5.0, cube edge 0.1–3.6)
+- [x] FPS counter + V/E stats in "Info" collapsible section
+- [x] Mouse orbit camera (left-drag rotate, scroll zoom, egui event routing)
+- [x] Dark theme (panel_fill rgb(20,20,25), window_fill rgb(25,25,30))
+- [x] Dynamic geometry rebuild (dirty flag → recreate vertex/index buffers)
+- [x] .app bundle rebuilt and verified from Dock
 
-### Phase P1: Core Features
+### Phase P1: Core Features (Next)
 
-**Goal**: All Platonic polyhedra visible, grid systems, camera views.
+**Goal**: Basis arrows, grids, camera presets, node/face rendering, coordinates bar.
 
-**New files**:
-- `src/ui/coordinates.rs` — bottom bar coordinates panel
-- `src/ui/views.rs` — view presets and camera projection
-- `src/rt_grids.rs` — grid plane generation (port from JS)
+**Starting point**: P0 gives us the egui panel, orbit camera, all 6 Platonic wireframes, scale sliders. P1 adds visual richness and the coordinate display.
 
-**Deliverables**:
-- [ ] All 6 Platonic solids toggleable with ABCD coloring
-- [ ] Cartesian + Quadray basis arrows
-- [ ] Grid planes (XY, XZ, YZ)
-- [ ] Camera presets (X, Y, Z-Down, Z-Up, Axo, A, B, C, D views)
-- [ ] Perspective/Orthographic toggle
-- [ ] Node size + face/node opacity sliders
-- [ ] XYZ + ABCD coordinate display in bottom bar
-- [ ] Geometry info panel (V/E/F counts)
+**New/modified files**:
+- `src/geometry.rs` — extend with basis arrow geometry, grid line generation, node sphere generation
+- `src/camera.rs` — add `set_view_preset()` for named camera positions (X, Y, Z, Axo, A, B, C, D)
+- `src/ui.rs` — add new collapsible sections for Coordinate Systems, Nodes & Faces, View Manager
+- `src/app_state.rs` — add fields for basis visibility, grid planes, node/face settings, projection mode
+- `src/shader.wgsl` — may need alpha blending support for face opacity (new fragment shader variant)
+
+**Deliverables** (in suggested implementation order):
+- [ ] **Basis arrows**: Cartesian XYZ (RGB) + Quadray ABCD (Yellow/Red/Blue/Green) — line segments from origin, toggleable via checkboxes
+- [ ] **Cuboctahedron + Rhombic Dodecahedron** — add to polyhedra list (generators exist in `rt_polyhedra`, need UI toggles)
+- [ ] **Camera presets**: buttons for X, Y, Z-Down, Z-Up, Axo, A, B, C, D views — each sets `OrbitCamera` yaw/pitch to known values
+- [ ] **Perspective/Orthographic toggle** — switch between `glam::Mat4::perspective_rh()` and `glam::Mat4::orthographic_rh()`
+- [ ] **Node rendering**: vertex spheres using icosahedron subdivision, size slider (0–8), node opacity slider (0.0–1.0)
+  - Requires: new render pipeline with triangle topology + depth buffer
+  - Per-vertex sphere instances at each polyhedron vertex
+- [ ] **Face rendering**: translucent triangle fill for polyhedra faces, opacity slider (0.0–1.0)
+  - Requires: alpha blending in render pipeline, face winding (CCW for outward normals)
+  - New `build_face_geometry()` alongside existing `build_visible_geometry()` (edges)
+- [ ] **Grid planes** (XY, XZ, YZ): port from `rt-grids.js` — line segments uploaded as separate vertex buffer
+  - Checkboxes for each plane, tessellation slider (10–100, step 10)
+- [ ] **Coordinates bottom bar**: `egui::TopBottomPanel::bottom()` showing XYZ + ABCD position (read-only in P1)
+  - Display cursor-world intersection or camera target position
+- [ ] **Geometry info enhancement**: per-polyhedron V/E/F breakdown, total scene stats
+- [ ] **Middle-click pan**: extend OrbitCamera with pan (translate target point)
+
+**Implementation notes**:
+- Node + face rendering require a **depth buffer** (currently not used — wireframe-only doesn't need it). Add a depth texture to the render pipeline.
+- Face opacity requires **alpha blending**: sort transparent faces back-to-front, or use order-independent transparency. Start simple with `BlendState::ALPHA_BLENDING` and accept minor artifacts.
+- Basis arrows are just additional line segments appended to the existing wireframe vertex/index buffers — no new pipeline needed.
+- Camera presets: ABCD views point the camera at the origin from the direction of each Quadray basis vector (A=Yellow, B=Red, C=Blue, D=Green).
 
 ### Phase P2: Feature Parity Core
 
@@ -900,14 +933,28 @@ response.context_menu(|ui| {
 
 ## Summary: Control Count by Tier
 
-| Tier | Controls | Modules to Port |
-|------|----------|-----------------|
-| **P0** | ~15 | egui setup, viewport integration |
-| **P1** | ~40 | rt_grids, camera, coordinates panel |
-| **P2** | ~80 | rt_thomson, rt_geodesic, view manager, state |
-| **P3** | ~150 | rt_matrices, rt_helices, rt_papercut, rt_projections, rt_penrose |
-| **P4** | ~30 | math demos, platform polish |
-| **Total** | **~315** | |
+| Tier | Controls | Status | Modules |
+|------|----------|--------|---------|
+| **P0** | ~15 | **DONE** ✓ | egui panel, orbit camera, polyhedra toggles, scale, FPS |
+| **P1** | ~40 | **Next** | basis arrows, grids, camera presets, nodes/faces, coord bar |
+| **P2** | ~80 | Pending | rt_thomson, rt_geodesic, view manager, state, undo/redo |
+| **P3** | ~150 | Pending | rt_matrices, rt_helices, rt_papercut, rt_projections, rt_penrose |
+| **P4** | ~30 | Pending | math demos, platform polish |
+| **Total** | **~315** | | |
+
+### Current Module Structure (after P0)
+
+```
+src/
+  main.rs           GpuState, event loop, render — delegates to modules
+  app_state.rs      AppState struct (polyhedra, scale, FPS, geometry stats)
+  ui.rs             draw_ui() — right-side panel, dark theme, collapsible sections
+  geometry.rs       Vertex, ABCD_COLORS, build_visible_geometry()
+  camera.rs         OrbitCamera — yaw/pitch/distance, drag/scroll, view_proj()
+  shader.wgsl       ABCD BASIS matrix, Quadray→XYZ on GPU
+  rt_math/          6 files — quadray, phi, radicals, cubics, polygon, mod
+  rt_polyhedra/     2 files — platonic, mod (all 6 Platonic solids)
+```
 
 ---
 

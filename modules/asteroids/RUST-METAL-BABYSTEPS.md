@@ -50,7 +50,7 @@ This application is a **demonstration and explorer for Rational Trigonometry** (
 6. [The Graphics Stack: wgpu](#6-the-graphics-stack-wgpu)
 7. [First Window: wgpu + winit](#7-first-window-wgpu--winit)
 8. [Porting RT Math from JS to Rust](#8-porting-rt-math-from-js-to-rust)
-9. [Baby Steps Roadmap](#9-baby-steps-roadmap)
+9. [Baby Steps Roadmap](#9-baby-steps-roadmap) — Steps 1-7 DONE, Steps 8-10 deferred (game mode)
 10. [Key Rust Concepts for JS Developers](#10-key-rust-concepts-for-js-developers)
 11. [Resources](#11-resources)
 
@@ -692,11 +692,11 @@ Each step is independently verifiable. Do not skip ahead.
 - **Verified**: Wireframe stella octangula renders on Apple M2 Max via Metal
 - **Notes**: Key architectural step — WGSL shader's `mat4x3` BASIS matrix `[A=(-1,-1,+1), B=(+1,+1,+1), C=(-1,+1,-1), D=(+1,-1,-1)]` converts ABCD→XYZ on GPU. Window title: "ARTexplorer — Quadray/Metal".
 
-### Step 5: Keyboard Input (Day 5-6)
+### Step 5: Keyboard Input (Day 5-6) — DEFERRED (game mode)
 - [ ] Handle `winit::event::KeyEvent` for A, S, D, F, Space, G
 - [ ] Implement ASDF rubber-band displacement (port from artsteroids.html)
 - [ ] Ship moves along Quadray axes
-- **Verify**: Ship displaces and returns — same feel as the JS prototype
+- **Deferred**: Game mode input — user chose Explorer UI (Path A) first
 
 ### Step 6: RT Math Port (Day 6-8) — DONE 2026-02-19
 - [x] Created `src/rt_math/` module (6 files): `mod.rs`, `quadray.rs`, `phi.rs`, `radicals.rs`, `cubics.rs`, `polygon.rs`
@@ -712,26 +712,46 @@ Each step is independently verifiable. Do not skip ahead.
 - **Verified**: Rendered stella octangula identical to hardcoded version. App launches from Dock.
 - **Notes**: Fixed 4 bugs during testing: `from_cartesian` needed closed-form inverse (non-orthogonal basis), heptagon cubic sign correction (8x³+4x²-4x-1=0), octahedron edge Q=8 (not 4), central_spread test values corrected.
 
-### Step 7: Face-Normal Firing (Day 8-10)
+### Step 7: Explorer UI — egui Side Panel (Day 8-10) — DONE 2026-02-19
+- [x] Downgraded wgpu 28 → 27 for egui-wgpu 0.33 compatibility (2 API changes: `push_constant_ranges`, `multiview`)
+- [x] Added egui 0.33 + egui-wgpu 0.33 + egui-winit 0.33 dependencies
+- [x] **egui integration**: Two-layer rendering (3D wireframe + egui overlay) in single render pass via `render_pass.forget_lifetime()`
+- [x] **Event routing**: egui gets events first; if not consumed, fall through to orbit camera
+- [x] **New modules**:
+  - `src/app_state.rs` — single `AppState` struct driving UI + geometry (polyhedra toggles, scale, FPS, stats)
+  - `src/ui.rs` — egui right-side panel with collapsible Polyhedra/Scale/Info sections, dark theme
+  - `src/geometry.rs` — `Vertex` struct, ABCD_COLORS, `build_visible_geometry()` for all 6 Platonic solids
+  - `src/camera.rs` — `OrbitCamera` (left-drag orbit, scroll zoom, spherical coordinates via glam)
+- [x] **All 6 Platonic solids** toggleable via checkboxes (tet, dual tet, cube, octa, icosa, dodeca)
+- [x] **Scale sliders** — tet edge (0.1–5.0) and cube edge (0.1–3.6)
+- [x] **FPS counter** and V/E stats in Info section
+- [x] **Mouse orbit camera** — left-drag to rotate, scroll to zoom. Events blocked when clicking egui panel.
+- [x] Dark theme (panel_fill rgb(20,20,25)), right-side panel matching JS app layout
+- [x] Rebuilt .app bundle via `bundle.sh --run` — all controls visible from Dock launch
+- **Verified**: Side panel + 3D viewport coexist. Toggle polyhedra → shapes appear/disappear. Sliders → resize. Orbit → rotate. Panel clicks don't orbit. 89 tests still pass.
+- **Notes**: This is P0 from ART-RUST-UI.md. wgpu 27 API: `request_adapter()` returns Result (not Option as some docs suggest), `depth_slice: None` is required. egui theme param is `winit::window::Theme::Dark` not `egui::Theme::Dark`.
+
+### Step 8: Face-Normal Firing (Day 10-12) — DEFERRED (game mode)
 - [ ] Compute face normals (original tet for Quadray alignment)
 - [ ] Spacebar-hold + ASDF firing
 - [ ] Colored line rendering (wide lines in Metal — no WebGL limitation!)
 - **Verify**: Colored darts fire from correct faces — compare with artsteroids.html
 
-### Step 8: HUD Text Rendering (Day 10-12)
+### Step 9: HUD Text Rendering (Day 12-14) — DEFERRED (game mode)
 - [ ] Add a text rendering crate (e.g., `wgpu_text` or `glyphon`)
 - [ ] Render WAVE, SCORE, FUEL, WXYZ coordinates
 - [ ] Retro monospace font, cyan on black
 - **Verify**: HUD matches the artsteroids.html layout
+- **Deferred**: Game mode HUD — egui handles text for explorer mode
 
-### Step 9: Feature Parity with Prototype (Day 12-15)
+### Step 10: Feature Parity with Prototype (Day 14-17) — DEFERRED (game mode)
 - [ ] Quadray basis vector arrows
 - [ ] Grid toggle (G key)
 - [ ] Crosshair triangles at face centroids
-- [ ] Orbit camera (mouse drag)
+- [ ] Orbit camera (mouse drag) — **DONE in Step 7** (orbit camera shipped with egui)
 - **Verify**: Side-by-side with artsteroids.html — functionally identical
 
-### Step 10: Beyond the Prototype — Full Platform
+### Step 11: Beyond the Prototype — Full Platform
 - [ ] **Explorer mode**: Port `rt-rendering.js` scene management → `rt_rendering.rs`
 - [ ] **Explorer mode**: Polyhedron browser (tet, cube, octa, icosa, dodeca, geodesics)
 - [ ] **Explorer mode**: Thomson great-circle shells (`rt_thomson.rs`)
@@ -855,7 +875,7 @@ let data = load_file()?;  // Returns early with Err if it fails
 
 ## Current Status
 
-### Phase 1: Foundation (Steps 1–6)
+### Phase 1: Foundation (Steps 1–7)
 
 | Milestone | Status |
 |-----------|--------|
@@ -867,23 +887,31 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **Quadray-native GPU rendering** | **Done — ABCD→XYZ in WGSL shader (2026-02-19)** |
 | **RT math port** (`rt_math/`, `rt_polyhedra/`, 89 tests) | **Done — 8 files, all Platonics, Wildberger polygons (2026-02-19)** |
 | **macOS .app bundle** (bundle.sh + icon) | **Done — ARTexplorer.app launches from Dock (2026-02-19)** |
+| **P0 Explorer UI** (egui side panel, orbit camera, all 6 Platonics) | **Done — egui 0.33 + wgpu 27, right-side panel (2026-02-19)** |
 
-### Phase 2: Game Mode (Steps 7–9)
+### Phase 2: Game Mode (Steps 8–10) — DEFERRED
 
 | Milestone | Status |
 |-----------|--------|
-| Face-normal firing + HUD | Pending |
-| Feature parity with JS prototype | Pending |
+| Keyboard input (ASDF rubber-band) | Deferred — game mode |
+| Face-normal firing + HUD | Deferred — game mode |
+| Feature parity with JS prototype | Deferred — game mode |
 | Asteroid generation + collision | Pending |
 
-### Phase 3: Explorer Mode
+### Phase 3: Explorer Mode — IN PROGRESS
 
 | Milestone | Status |
 |-----------|--------|
-| Polyhedron browser (all 5 Platonics + geodesics) | Pending |
-| Thomson great-circle shells | Pending |
-| State management, undo/redo, view sequences | Pending |
-| Grid systems (Cartesian + IVM) | Pending |
+| **P0: egui side panel + basic polyhedra** | **Done — Step 7 (2026-02-19)** |
+| **P0: Mouse orbit camera** | **Done — Step 7 (2026-02-19)** |
+| **P0: All 6 Platonic solids toggleable** | **Done — Step 7 (2026-02-19)** |
+| P1: Basis arrows (Cartesian + Quadray) | Next |
+| P1: Grid planes + camera presets | Pending |
+| P1: Node/face rendering (spheres, opacity) | Pending |
+| P1: Coordinate display bar | Pending |
+| P2: Thomson great-circle shells | Pending |
+| P2: Geodesic subdivision + truncation | Pending |
+| P2: View manager + state persistence | Pending |
 
 ### Phase 4: Native Platform
 
