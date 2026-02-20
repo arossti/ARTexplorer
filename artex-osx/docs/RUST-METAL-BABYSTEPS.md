@@ -732,6 +732,26 @@ Each step is independently verifiable. Do not skip ahead.
 - **Verified**: Side panel + 3D viewport coexist. Toggle polyhedra → shapes appear/disappear. Sliders → resize. Orbit → rotate. Panel clicks don't orbit. 89 tests still pass.
 - **Notes**: This is P0 from ART-RUST-UI.md. wgpu 27 API: `request_adapter()` returns Result (not Option as some docs suggest), `depth_slice: None` is required. egui theme param is `winit::window::Theme::Dark` not `egui::Theme::Dark`.
 
+### P1: Basis Arrows (Quadray ABCD + Cartesian XYZ) — DONE 2026-02-20
+- [x] **New module `src/basis_arrows.rs`** — arrow construction, orientation, ABCD conversion
+  - `build_quadray_basis(tet_edge, offset)` → 4 arrows toward dual tet vertex directions
+  - `build_cartesian_basis(cube_edge, offset)` → 3 arrows along +X/+Y/+Z
+  - Arrowheads: wireframe mini dual tetrahedra from `rt_polyhedra::dual_tetrahedron()`
+  - Orientation via `glam::Quat::from_rotation_arc()` (rendering boundary, justified)
+- [x] **Quadray ABCD arrows**: origin → [0,1,1,1], [1,0,1,1], [1,1,0,1], [1,1,1,0] directions
+  - These are dual tet vertices — align with central angle grid planes
+  - Colors: A=Yellow, B=Red, C=Blue, D=Green (ABCD convention)
+  - Sizing: `(tetEdge + 1) × √6/4` (JS formula from `rt-grids.js`)
+- [x] **Cartesian XYZ arrows**: +X (Red), +Y (Green), +Z (Blue)
+  - Same arrowhead geometry (dual tet), different orientation per axis
+  - Sizing: `cubeEdge` (matches JS convention)
+- [x] **UI**: "Basis Arrows" collapsible section with Quadray ABCD / Cartesian XYZ checkboxes
+- [x] **Independent sizing**: Basis arrows NOT multiplied by polyhedra scale factor `s` — they compute their own absolute ABCD coordinates via `Quadray::from_cartesian()`
+- [x] **Dynamic regeneration**: Arrows rebuild when scale sliders change (via `geometry_dirty` flag)
+- [x] 10 new unit tests (99 total): vertex/index counts, direction verification, offset, scale, abs()
+- **Verified**: 99 tests pass. Arrows visible alongside stella octangula. Toggles work. Scale changes resize arrows.
+- **No changes to**: `shader.wgsl`, `camera.rs`, `Cargo.toml`, `rt_math/`, `rt_polyhedra/`
+
 ### Step 8: Face-Normal Firing (Day 10-12) — DEFERRED (game mode)
 - [ ] Compute face normals (original tet for Quadray alignment)
 - [ ] Spacebar-hold + ASDF firing
@@ -886,7 +906,7 @@ let data = load_file()?;  // Returns early with Err if it fails
 | First black window (wgpu + Metal) | Done — Apple M2 Max, wgpu 28 (2026-02-19) |
 | Colored triangle (WGSL shader + render pipeline) | Done — cyan triangle, wgpu 28 (2026-02-19) |
 | **Quadray-native GPU rendering** | **Done — ABCD→XYZ in WGSL shader (2026-02-19)** |
-| **RT math port** (`rt_math/`, `rt_polyhedra/`, 89 tests) | **Done — 8 files, all Platonics, Wildberger polygons (2026-02-19)** |
+| **RT math port** (`rt_math/`, `rt_polyhedra/`, 89 tests → 99 with basis arrows) | **Done — 8 files, all Platonics, Wildberger polygons (2026-02-19)** |
 | **macOS .app bundle** (bundle.sh + icon) | **Done — ARTexplorer.app launches from Dock (2026-02-19)** |
 | **P0 Explorer UI** (egui side panel, orbit camera, all 6 Platonics) | **Done — egui 0.33 + wgpu 27, right-side panel (2026-02-19)** |
 
@@ -906,8 +926,8 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P0: egui side panel + basic polyhedra** | **Done — Step 7 (2026-02-19)** |
 | **P0: Mouse orbit camera** | **Done — Step 7 (2026-02-19)** |
 | **P0: All 6 Platonic solids toggleable** | **Done — Step 7 (2026-02-19)** |
-| P1: Basis arrows (Cartesian + Quadray) | Next |
-| P1: Grid planes + camera presets (conventional yaw/pitch — see RATIONALE §10 for ABCD-native path) | Pending |
+| **P1: Basis arrows (Quadray ABCD + Cartesian XYZ)** | **Done (2026-02-20)** |
+| P1: Grid planes + camera presets (conventional yaw/pitch — see RATIONALE §10 for ABCD-native path) | Next |
 | P1: Node/face rendering (spheres, opacity) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |
