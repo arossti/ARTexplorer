@@ -594,7 +594,8 @@ These are research extensions after the core wireframe renderer is working:
 
 2. **Camera presets as 4-vector lookups** — on-axis view buttons select
    a stored `(p_x, p_y, p_depth)` triplet. Orbit camera computes them
-   per frame from yaw/pitch.
+   per frame from a **Quadray Rotor** orientation (replacing yaw/pitch to
+   eliminate polar singularities — see [ARTEX-HAIRYBALL.md](ARTEX-HAIRYBALL.md)).
 
 3. **Cutplane in ABCD space** — `abcd . p_cut > threshold` replaces
    `THREE.Plane(normal_xyz, distance)`. Snap intervals are integer

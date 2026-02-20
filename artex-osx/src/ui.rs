@@ -1,4 +1,5 @@
 use crate::app_state::{AppState, ScaleDriver};
+use crate::camera::{OrbitCamera, PRESETS_XYZ, PRESETS_ABCD};
 
 /// Apply dark theme styling to egui context.
 pub fn configure_theme(ctx: &egui::Context) {
@@ -8,8 +9,8 @@ pub fn configure_theme(ctx: &egui::Context) {
     ctx.set_visuals(visuals);
 }
 
-/// Draw the egui side panel with polyhedra controls, scale sliders, and info.
-pub fn draw_ui(ctx: &egui::Context, state: &mut AppState) {
+/// Draw the egui side panel with polyhedra controls, scale sliders, camera presets, and info.
+pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCamera) {
     egui::SidePanel::right("control_panel")
         .default_width(220.0)
         .show(ctx, |ui| {
@@ -59,6 +60,38 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState) {
                     if changed {
                         state.geometry_dirty = true;
                     }
+                });
+
+            // --- Camera presets ---
+            // Both XYZ and ABCD views are first-class — no hierarchy, no branching.
+            // P3 migration: Replace yaw/pitch with ABCD 4-vector triplets (§10).
+            egui::CollapsingHeader::new("Camera")
+                .default_open(true)
+                .show(ui, |ui| {
+                    // XYZ axis views
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("XYZ").small().weak());
+                        for preset in PRESETS_XYZ {
+                            let color = egui::Color32::from_rgb(
+                                preset.color[0], preset.color[1], preset.color[2],
+                            );
+                            if ui.button(egui::RichText::new(preset.name).color(color)).clicked() {
+                                camera.apply_preset(preset);
+                            }
+                        }
+                    });
+                    // ABCD Quadray axis views
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("ABCD").small().weak());
+                        for preset in PRESETS_ABCD {
+                            let color = egui::Color32::from_rgb(
+                                preset.color[0], preset.color[1], preset.color[2],
+                            );
+                            if ui.button(egui::RichText::new(preset.name).color(color)).clicked() {
+                                camera.apply_preset(preset);
+                            }
+                        }
+                    });
                 });
 
             // --- Scale sliders (Rationality Reciprocity) ---

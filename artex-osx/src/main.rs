@@ -276,8 +276,10 @@ impl GpuState {
 
         // --- egui frame ---
         let raw_input = self.egui_state.take_egui_input(&self.window);
+        let camera = &mut self.camera;
+        let app_state = &mut self.app_state;
         let full_output = self.egui_state.egui_ctx().run(raw_input, |ctx| {
-            ui::draw_ui(ctx, &mut self.app_state);
+            ui::draw_ui(ctx, app_state, camera);
         });
         self.egui_state
             .handle_platform_output(&self.window, full_output.platform_output);

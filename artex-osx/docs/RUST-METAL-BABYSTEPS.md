@@ -752,6 +752,20 @@ Each step is independently verifiable. Do not skip ahead.
 - **Verified**: 99 tests pass. Arrows visible alongside stella octangula. Toggles work. Scale changes resize arrows.
 - **No changes to**: `shader.wgsl`, `camera.rs`, `Cargo.toml`, `rt_math/`, `rt_polyhedra/`
 
+### P1: Camera Presets (7 Views) — DONE 2026-02-20
+- [x] **7 camera presets**: 3 XYZ views (Right, Front, Top) + 4 ABCD Quadray views (A, B, C, D)
+- [x] **CameraPreset struct** in `camera.rs` — stored yaw/pitch/distance with UI color
+  - XYZ views: Right (+X, Red), Front (+Z, Blue), Top (+Y, Green) — matching basis arrow colors
+  - ABCD views: A (Yellow), B (Red), C (Blue), D (Green) — ABCD convention colors
+  - Each preset annotated with §10 ABCD 4-vector triplet for future P3 migration
+- [x] **Polar up-vector fix**: `view_proj()` switches up-vector from Y to ±Z near poles (|pitch| > 1.4 rad), enabling true Top/Bottom views without gimbal-lock NaN. See `ARTEX-HAIRYBALL.md` for the deeper research.
+- [x] **egui Camera section**: Two rows of colored buttons — XYZ group and ABCD group, both first-class (no hierarchy)
+- [x] **UI wiring**: `draw_ui()` takes `&mut OrbitCamera` directly; split borrow in main.rs closure
+- [x] 5 new unit tests (104 total): default is B-axis, preset application, top view NaN-free, counts, pitch symmetry
+- [x] **Default camera IS B-axis view**: yaw=π/4, pitch=asin(1/√3) ≈ 0.6155 — looking from (+1,+1,+1)/√3
+- **Verified**: 104 tests pass. Preset buttons switch views instantly. Top view renders correctly. No NaN.
+- **Modified**: `camera.rs` (presets + up-vector), `ui.rs` (Camera section), `main.rs` (split borrow)
+
 ### Step 8: Face-Normal Firing (Day 10-12) — DEFERRED (game mode)
 - [ ] Compute face normals (original tet for Quadray alignment)
 - [ ] Spacebar-hold + ASDF firing
@@ -906,7 +920,7 @@ let data = load_file()?;  // Returns early with Err if it fails
 | First black window (wgpu + Metal) | Done — Apple M2 Max, wgpu 28 (2026-02-19) |
 | Colored triangle (WGSL shader + render pipeline) | Done — cyan triangle, wgpu 28 (2026-02-19) |
 | **Quadray-native GPU rendering** | **Done — ABCD→XYZ in WGSL shader (2026-02-19)** |
-| **RT math port** (`rt_math/`, `rt_polyhedra/`, 89 tests → 99 with basis arrows) | **Done — 8 files, all Platonics, Wildberger polygons (2026-02-19)** |
+| **RT math port** (`rt_math/`, `rt_polyhedra/`, 89 → 99 → 104 tests) | **Done — 8 files, all Platonics, Wildberger polygons (2026-02-19)** |
 | **macOS .app bundle** (bundle.sh + icon) | **Done — ARTexplorer.app launches from Dock (2026-02-19)** |
 | **P0 Explorer UI** (egui side panel, orbit camera, all 6 Platonics) | **Done — egui 0.33 + wgpu 27, right-side panel (2026-02-19)** |
 
@@ -927,15 +941,33 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P0: Mouse orbit camera** | **Done — Step 7 (2026-02-19)** |
 | **P0: All 6 Platonic solids toggleable** | **Done — Step 7 (2026-02-19)** |
 | **P1: Basis arrows (Quadray ABCD + Cartesian XYZ)** | **Done (2026-02-20)** |
-| P1: Grid planes + camera presets (conventional yaw/pitch — see RATIONALE §10 for ABCD-native path) | Next |
+| **P1: Camera presets (7 views: Right/Front/Top + A/B/C/D)** | **Done (2026-02-20)** |
+| P1: Grid planes | Next |
 | P1: Node/face rendering (spheres, opacity) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |
 | P2: Geodesic subdivision + truncation | Pending |
 | P2: View manager + state persistence | Pending |
+| P3: Rotor-based orbit camera — eliminate polar singularity ([ARTEX-HAIRYBALL.md](ARTEX-HAIRYBALL.md)) | Research |
 | P3: ABCD-to-clip pipeline — eliminate XYZ from shader (RATIONALE §4, §8, §10) | Research |
 | P3: Cutplane + projection as ABCD dot products (RATIONALE §10) | Research |
 | P3: Wireframe painter's algorithm — depth-sorted 2D, no GPU 3D pipeline (RATIONALE §8) | Research |
+
+#### P1 → P3 Camera Migration Note
+
+P1 camera presets use **conventional yaw/pitch/distance** stored as `(f32, f32, f32)` — the simplest implementation that works with the existing `OrbitCamera`. This is deliberately pragmatic: we need working camera presets before researching ABCD-native projection.
+
+**P1 design decisions** (informing future P3 migration):
+
+1. **ABCD labeling**: Quadray views are labeled **A, B, C, D** (not QW, QX, QY, QZ). The ABCD convention from §8.1 applies to camera UI, not just geometry.
+
+2. **Both XYZ and Quadray first-class**: The 7 presets live in a flat list — no "primary/secondary" hierarchy, no `if (basis == "tetrahedral")` branching. Top/Front/Right and A/B/C/D are peers.
+
+3. **§10 annotations as comments**: Each preset's stored angles include comments showing the equivalent ABCD 4-vector triplet `(p_x, p_y, p_depth)` from RATIONALE §10. When P3 replaces yaw/pitch with direct 4-vector lookups, the values are already documented inline.
+
+4. **P3 migration path**: Replace `OrbitCamera`'s spherical-to-Cartesian conversion with §8's `ABCD_to_clip = view_proj * [BASIS * Normalize]` matrix, computed once per frame. Presets become stored 4-vector triplets instead of yaw/pitch pairs. The orbit camera interpolates in ABCD coefficient space. The shader reduces to `out.clip_position = abcd_to_clip * in.quadray`.
+
+5. **Singularity-free camera via Quadray Rotors**: The deeper solution to the polar up-vector workaround is to replace yaw/pitch with a `QuadrayRotor` orientation (R in R^4 x Z_2). This eliminates the Hairy Ball singularity topologically rather than patching it. Full analysis, deployment plan, and verification targets in [ARTEX-HAIRYBALL.md](ARTEX-HAIRYBALL.md).
 
 ### Phase 4: Native Platform
 
