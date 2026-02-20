@@ -2,7 +2,8 @@
 
 **The case for ABCD as the canonical coordinate system — not an encoding of XYZ.**
 
-> Written February 2026. This document records the foundational insight
+- February 20 2026. 
+This document records the foundational insight
 > behind the ARTexplorer native app: that Quadray ABCD coordinates are not
 > a curiosity to be translated into Cartesian, but a superior basis for
 > polyhedral geometry that the rendering pipeline should preserve end-to-end.
@@ -40,7 +41,7 @@ transcendental functions.
 
 ---
 
-## 2. The Tom Ace Conversion: A Projection, Not a Foundation
+## 2. The Tom Ace Conversion: A secondary function, a Projection, Not a Foundation
 
 The standard Quadray-to-Cartesian conversion (Tom Ace) maps:
 
@@ -299,7 +300,125 @@ angle, is the natural measure of this relationship.
 
 ---
 
-## 8. The Larger Vision
+## 8. ABCD Projection to Screen: The Keylight Plane
+
+### The question
+
+Can we project ABCD coordinates to screen pixels without ever computing XYZ —
+not even inside a matrix?
+
+### The keylight plane
+
+Imagine a plane behind the geometry, facing the viewer. It emits parallel rays
+that pass through the geometry and strike the screen. This is **orthographic
+projection** — no perspective distortion, no vanishing points. Every parallel
+ray maps one point in 3D space to one pixel on screen.
+
+To define this projection, we need three things:
+1. **Screen horizontal axis**: a direction in space ("which way is right?")
+2. **Screen vertical axis**: a direction in space ("which way is up?")
+3. **Viewing direction**: perpendicular to the screen ("which way are the rays?")
+
+In Cartesian, projecting a vertex onto the screen is three dot products:
+
+```
+screen_x = vertex . u_horizontal
+screen_y = vertex . u_vertical
+depth    = vertex . u_viewing      (for occlusion sorting)
+```
+
+### Direct ABCD projection
+
+The ABCD-to-Cartesian conversion is linear: `xyz = Basis * Normalize * abcd`.
+Substituting into the dot products:
+
+```
+screen_x = (Basis * N * abcd) . u_h  =  abcd . (N^T * Basis^T * u_h)
+screen_y = (Basis * N * abcd) . u_v  =  abcd . (N^T * Basis^T * u_v)
+depth    = (Basis * N * abcd) . u_d  =  abcd . (N^T * Basis^T * u_d)
+```
+
+The terms `N^T * Basis^T * u_h` etc. are **4-vectors in ABCD space**. They
+depend only on the camera orientation, not on the vertices. Precompute them
+once per frame. Call them **p_x**, **p_y**, **p_depth**.
+
+Then for every vertex (a, b, c, d):
+
+```
+screen_x = a*p_x.a + b*p_x.b + c*p_x.c + d*p_x.d
+screen_y = a*p_y.a + b*p_y.b + c*p_y.c + d*p_y.d
+depth    = a*p_d.a + b*p_d.b + c*p_d.c + d*p_d.d
+```
+
+**Three dot products. Four multiplies and three adds each. No XYZ anywhere.**
+
+The vertex goes directly from ABCD integers to a 2D screen position. The
+Tom Ace basis, the normalization, the camera orientation — all folded into
+three 4-vectors computed once when the camera moves.
+
+### Perspective variant
+
+For perspective projection (closer = larger), add a division:
+
+```
+screen_x = (abcd . p_x) / (abcd . p_d)
+screen_y = (abcd . p_y) / (abcd . p_d)
+```
+
+Still no XYZ. The division is the same perspective division the GPU does
+in clip space — we're just doing it ourselves, directly in ABCD space.
+
+### Wireframe rendering without the 3D pipeline
+
+For wireframe geometry (our current rendering mode), we don't need the GPU's
+3D rasterizer at all. The full algorithm:
+
+1. **Project vertices**: Compute (screen_x, screen_y, depth) for each vertex
+   via ABCD dot products.
+
+2. **Sort edges by depth**: Average the depth of each edge's two endpoints.
+   Sort back-to-front (painter's algorithm).
+
+3. **Draw 2D lines**: Render edges as 2D line segments on screen, back-to-front.
+   Nearer edges overdraw farther ones — correct occlusion for free.
+
+4. **Draw vertices**: Optionally render vertex nodes as 2D circles, also
+   depth-sorted.
+
+This works on ANY 2D rendering backend — Metal, Canvas 2D, SVG, PostScript,
+a pen plotter. The geometry never enters a 3D coordinate system.
+
+### Depth ordering without a Z-buffer
+
+The painter's algorithm (sort, then draw back-to-front) is exact for
+non-intersecting edges — which is always the case for wireframe polyhedra.
+No per-pixel depth testing needed. No depth buffer. No Z-fighting.
+
+For convex polyhedra, we can go further: determine which faces are
+**front-facing** (face normal dot viewing direction < 0) and draw only
+those edges. The face normal is computed from ABCD vertex cross products —
+still no XYZ. This gives hidden-line removal without a depth buffer.
+
+### What this means
+
+The 3D GPU pipeline (vertex shader → rasterizer → fragment shader → depth
+test) exists because general-purpose 3D rendering needs per-pixel depth
+testing for arbitrary triangle meshes. But polyhedral wireframes don't need
+any of that. They are a **graph** — vertices and edges — projected to 2D
+and drawn in depth order.
+
+The entire rendering reduces to:
+```
+ABCD integers  →  three dot products per vertex  →  2D screen coordinates
+                                                  →  depth-sorted 2D lines
+```
+
+No vertex shader. No fragment shader. No rasterizer. No depth buffer.
+No XYZ. Just ABCD, dot products, and lines.
+
+---
+
+## 9. The Larger Vision
 
 Traditional 3D geometry software defines everything in Cartesian XYZ.
 Tetrahedral coordinates are an afterthought, a curiosity, a "conversion."
@@ -314,9 +433,10 @@ The natural language of this geometry is not Angle and Distance, but
 **Quadray Coordinates, Quadrance, and Spread** — the core of Rational
 Trigonometry. Every measurement stays algebraic. Every relationship stays exact.
 The only decimal tribute is paid at the screen boundary, where the 2D pixel
-grid demands its Cartesian projection.
+grid demands its Cartesian projection — and even that reduces to dot products
+in ABCD space.
 
 ---
 
 *"The geometry is tetrahedral. The screen is Cartesian. The bridge between them
-is one matrix multiply. Everything else is convention."*
+is three dot products. Everything else is convention."*
