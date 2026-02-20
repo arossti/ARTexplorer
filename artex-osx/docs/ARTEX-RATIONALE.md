@@ -440,3 +440,168 @@ in ABCD space.
 
 *"The geometry is tetrahedral. The screen is Cartesian. The bridge between them
 is three dot products. Everything else is convention."*
+
+---
+
+## 10. Cameras and Projection Planes: On-Axis Views in ABCD Space
+
+### What the JS app does today
+
+The JavaScript ARTexplorer has a mature on-axis camera view system with seven
+standard views and two basis systems:
+
+| View | Camera axis | Cutplane normal | Projection normal |
+|---|---|---|---|
+| **Top / Bottom** | Z | (0, 0, 1) | (0, 0, 1) |
+| **Front / Back** | Y | (0, 1, 0) | (0, 1, 0) |
+| **Left / Right** | X | (1, 0, 0) | (1, 0, 0) |
+| **QW (D axis)** | (-1,-1,1)/√3 | (-1,-1,1)/√3 | (-1,-1,1)/√3 |
+| **QX (A axis)** | (1,1,1)/√3 | (1,1,1)/√3 | (1,1,1)/√3 |
+| **QY (C axis)** | (-1,1,-1)/√3 | (-1,1,-1)/√3 | (-1,1,-1)/√3 |
+| **QZ (B axis)** | (1,-1,-1)/√3 | (1,-1,-1)/√3 | (1,-1,-1)/√3 |
+
+Each view button sets a camera position, a cutplane normal, and a projection
+plane normal — all from the same direction vector. Three systems, one axis
+selection, unified user experience.
+
+But internally, the JS app routes every operation through XYZ:
+
+```
+ABCD → Tom Ace → XYZ → THREE.js camera → clip space → pixels
+                  ↑ cutplane: THREE.Plane(normal_xyz, distance)
+                  ↑ projection: planeNormal/planeRight/planeUp (XYZ vectors)
+```
+
+The XYZ and WXYZ basis systems require separate code paths (`if (basis ===
+"tetrahedral") ...`), separate normal construction, and separate snap interval
+logic. This works, but it treats XYZ as fundamental and WXYZ as a translation.
+
+### How §8 unifies this
+
+Section 8 showed that any camera orientation reduces to three precomputed
+4-vectors in ABCD space: **p_x**, **p_y**, **p_depth**. The same principle
+applies to cutplanes and projection planes.
+
+**Camera view** = which direction we look from:
+
+```
+For each vertex (a, b, c, d):
+  screen_x = a*p_x.a + b*p_x.b + c*p_x.c + d*p_x.d
+  screen_y = a*p_y.a + b*p_y.b + c*p_y.c + d*p_y.d
+  depth    = a*p_d.a + b*p_d.b + c*p_d.c + d*p_d.d
+```
+
+**Cutplane** = which side of a plane to keep:
+
+```
+vertex_distance = a*p_cut.a + b*p_cut.b + c*p_cut.c + d*p_cut.d
+visible = (vertex_distance > threshold)
+```
+
+**Projection plane** = flatten 3D geometry to 2D shadow:
+
+```
+proj_x = a*p_px.a + b*p_px.b + c*p_px.c + d*p_px.d
+proj_y = a*p_py.a + b*p_py.b + c*p_py.c + d*p_py.d
+```
+
+All three operations are the same shape: **a dot product of ABCD with a
+precomputed 4-vector**. The only difference is what we do with the result
+(display it, threshold it, or flatten to it).
+
+### The seven views as stored 4-vector triplets
+
+Each standard view becomes a precomputed constant — a triplet of 4-vectors
+`(p_x, p_y, p_depth)` derived once from `N^T * Basis^T * u_camera`:
+
+```
+VIEW_TOP   = { p_x: [...], p_y: [...], p_depth: [...] }
+VIEW_FRONT = { p_x: [...], p_y: [...], p_depth: [...] }
+VIEW_QW    = { p_x: [...], p_y: [...], p_depth: [...] }
+VIEW_QX    = { p_x: [...], p_y: [...], p_depth: [...] }
+...
+```
+
+The orbit camera (free rotation) computes these three 4-vectors each frame
+from the current yaw/pitch. The on-axis presets are just special cases where
+the vectors are known constants.
+
+### XYZ and WXYZ are the same thing
+
+This is the key insight. In the JS app, switching from XYZ to WXYZ axes
+requires branching into different code paths with different normal vectors
+and different snap intervals. In the ABCD-native pipeline, **both are just
+different 4-vectors**:
+
+| View | p_depth (ABCD coefficients) | Origin |
+|---|---|---|
+| Top (Z) | Derived from `N^T * Basis^T * (0,0,1)` | Cartesian axis |
+| Front (Y) | Derived from `N^T * Basis^T * (0,1,0)` | Cartesian axis |
+| QW (D) | Derived from `N^T * Basis^T * (-1,-1,1)/√3` | Quadray axis |
+| QX (A) | Derived from `N^T * Basis^T * (1,1,1)/√3` | Quadray axis |
+
+The shader code is identical for all views. The CPU precomputation differs,
+but the per-vertex math is always `abcd . p = scalar`. No `if (basis ===
+"tetrahedral")`. No separate code paths. No conceptual privilege for either
+basis.
+
+In fact, the WXYZ views are **more natural** in this system than XYZ views.
+The Quadray axes are cube diagonals — integer directions `(±1,±1,±1)` in
+Cartesian, which means their ABCD projection vectors have simpler
+coefficients. The XYZ axes are the ones that require the Tom Ace basis
+to express in ABCD space. The historical "primary" and "secondary" roles
+are reversed.
+
+### Cutplane snap intervals in ABCD space
+
+The JS app snaps the cutplane slider to grid intervals:
+- **XYZ snap**: step = 1.0 (Cartesian grid spacing)
+- **WXYZ snap**: step = √6/4 ≈ 0.612 (Quadray grid spacing, from `PureRadicals`)
+
+In ABCD space, the Quadray snap is the natural one — it counts integer
+multiples of the grid interval along a basis vector. The Cartesian snap
+is the derived quantity. The √6/4 is not a special constant to be looked
+up; it is the **unit step** of the native coordinate system.
+
+### Projection and convex hull in ABCD space
+
+The JS app's projection pipeline (in `rt-projections.js`) works as:
+
+1. Extract world vertices from polyhedron group (XYZ)
+2. Choose projection plane normal (XYZ vector)
+3. Project vertices onto plane (XYZ dot products)
+4. Compute 2D convex hull (Graham scan on projected XY)
+5. Render hull polygon + rays
+
+In the ABCD pipeline, steps 1–3 collapse:
+
+1. Read ABCD vertex coordinates (integers or algebraic)
+2. Compute `(proj_x, proj_y) = (abcd . p_px, abcd . p_py)` for each vertex
+3. Compute 2D convex hull (Graham scan — unchanged)
+4. Render hull polygon + rays
+
+The hull computation is basis-agnostic — it operates on 2D points regardless
+of how they were produced. The projection step becomes two dot products per
+vertex instead of a matrix multiply plus XYZ normal construction.
+
+### Implementation path (post-core)
+
+These are research extensions after the core wireframe renderer is working:
+
+1. **Precompute the seven standard view 4-vector triplets** from
+   `N^T * Basis^T * u_camera` — store as constants, verify against
+   current JS rendering output.
+
+2. **Camera presets as 4-vector lookups** — on-axis view buttons select
+   a stored `(p_x, p_y, p_depth)` triplet. Orbit camera computes them
+   per frame from yaw/pitch.
+
+3. **Cutplane in ABCD space** — `abcd . p_cut > threshold` replaces
+   `THREE.Plane(normal_xyz, distance)`. Snap intervals are integer
+   multiples of the native grid step.
+
+4. **Projection in ABCD space** — convex hull on `(abcd . p_px, abcd . p_py)`
+   directly, no XYZ intermediate.
+
+5. **Wireframe painter's algorithm** (§8) — depth-sorted 2D lines with
+   ABCD-space back-face culling. No GPU 3D pipeline required.

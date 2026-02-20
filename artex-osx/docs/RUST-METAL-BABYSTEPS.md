@@ -906,12 +906,15 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P0: Mouse orbit camera** | **Done — Step 7 (2026-02-19)** |
 | **P0: All 6 Platonic solids toggleable** | **Done — Step 7 (2026-02-19)** |
 | P1: Basis arrows (Cartesian + Quadray) | Next |
-| P1: Grid planes + camera presets | Pending |
+| P1: Grid planes + camera presets (conventional yaw/pitch — see RATIONALE §10 for ABCD-native path) | Pending |
 | P1: Node/face rendering (spheres, opacity) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |
 | P2: Geodesic subdivision + truncation | Pending |
 | P2: View manager + state persistence | Pending |
+| P3: ABCD-to-clip pipeline — eliminate XYZ from shader (RATIONALE §4, §8, §10) | Research |
+| P3: Cutplane + projection as ABCD dot products (RATIONALE §10) | Research |
+| P3: Wireframe painter's algorithm — depth-sorted 2D, no GPU 3D pipeline (RATIONALE §8) | Research |
 
 ### Phase 4: Native Platform
 
