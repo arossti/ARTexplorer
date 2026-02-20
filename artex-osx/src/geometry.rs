@@ -1,4 +1,5 @@
 use crate::app_state::AppState;
+use crate::basis_arrows;
 use crate::rt_polyhedra;
 
 // --- Vertex data (ABCD Convention) ---
@@ -92,6 +93,22 @@ pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>) {
             indices.push(*a as u16 + base_offset);
             indices.push(*b as u16 + base_offset);
         }
+    }
+
+    // --- Basis arrows (own sizing, NOT scaled by s) ---
+    if state.show_quadray_basis {
+        let offset = vertices.len() as u16;
+        let (arrow_verts, arrow_idxs) =
+            basis_arrows::build_quadray_basis(state.tet_edge, offset);
+        vertices.extend(arrow_verts);
+        indices.extend(arrow_idxs);
+    }
+    if state.show_cartesian_basis {
+        let offset = vertices.len() as u16;
+        let (arrow_verts, arrow_idxs) =
+            basis_arrows::build_cartesian_basis(state.cube_edge, offset);
+        vertices.extend(arrow_verts);
+        indices.extend(arrow_idxs);
     }
 
     (vertices, indices)

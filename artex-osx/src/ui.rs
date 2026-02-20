@@ -45,6 +45,22 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState) {
                     }
                 });
 
+            // --- Basis arrow toggles ---
+            egui::CollapsingHeader::new("Basis Arrows")
+                .default_open(true)
+                .show(ui, |ui| {
+                    let mut changed = false;
+                    changed |= ui
+                        .checkbox(&mut state.show_quadray_basis, "Quadray ABCD")
+                        .changed();
+                    changed |= ui
+                        .checkbox(&mut state.show_cartesian_basis, "Cartesian XYZ")
+                        .changed();
+                    if changed {
+                        state.geometry_dirty = true;
+                    }
+                });
+
             // --- Scale sliders (Rationality Reciprocity) ---
             // ONE metric, TWO presentations. tet_edge = cube_edge * √2.
             // Whichever slider the user adjusts is the "driver" — it gets snapped

@@ -1,4 +1,5 @@
 mod app_state;
+mod basis_arrows;
 mod camera;
 mod geometry;
 mod rt_math;

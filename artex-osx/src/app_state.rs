@@ -20,6 +20,10 @@ pub struct AppState {
     pub show_icosahedron: bool,
     pub show_dodecahedron: bool,
 
+    // Basis arrow visibility
+    pub show_quadray_basis: bool,
+    pub show_cartesian_basis: bool,
+
     // Scale — ONE metric, TWO presentations (Rationality Reciprocity)
     // tet_edge = cube_edge * √2.  Whichever slider the user adjusts gets
     // snapped to rational (0.1) intervals; the other shows the irrational conjugate.
@@ -50,6 +54,8 @@ impl Default for AppState {
             show_octahedron: false,
             show_icosahedron: false,
             show_dodecahedron: false,
+            show_quadray_basis: true,
+            show_cartesian_basis: false,
             tet_edge: 2.0,
             cube_edge: 2.0 / std::f32::consts::SQRT_2, // √2 ≈ 1.4142
             scale_driver: ScaleDriver::TetEdge,
