@@ -46,23 +46,30 @@ const ABCD_COLORS: [[f32; 3]; 4] = [
 
 /// Build combined vertex/index buffers for all visible polyhedra.
 ///
-/// Each polyhedron's vertices are scaled by the appropriate edge parameter,
-/// colored by ABCD axis (vertex index mod 4), and combined into a single
-/// draw call using LineList topology.
+/// ONE Quadray scale factor `s` is applied uniformly to all ABCD coordinates.
+/// All polyhedra scale together — the nesting is algebraic identity, not
+/// numerical coincidence. The cube IS the tet + dual tet at every scale.
+///
+/// In Cartesian projection: cube_edge = 2s, tet_edge = 2√2·s.
+/// The √2 ratio is a Cartesian artifact, not a Quadray property.
+/// See ARTEX-RATIONALE.md §5.
 pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>) {
     let mut vertices = Vec::new();
     let mut indices = Vec::new();
 
-    let polys: Vec<(bool, f32, rt_polyhedra::PolyhedronData)> = vec![
-        (state.show_tetrahedron, state.tet_edge, rt_polyhedra::tetrahedron()),
-        (state.show_dual_tetrahedron, state.tet_edge, rt_polyhedra::dual_tetrahedron()),
-        (state.show_octahedron, state.tet_edge, rt_polyhedra::octahedron()),
-        (state.show_cube, state.cube_edge, rt_polyhedra::cube()),
-        (state.show_icosahedron, state.tet_edge, rt_polyhedra::icosahedron()),
-        (state.show_dodecahedron, state.tet_edge, rt_polyhedra::dodecahedron()),
+    // ONE scale factor — cube_edge = 2s, so s = cube_edge / 2
+    let s = state.cube_edge / 2.0;
+
+    let polys: Vec<(bool, rt_polyhedra::PolyhedronData)> = vec![
+        (state.show_tetrahedron, rt_polyhedra::tetrahedron()),
+        (state.show_dual_tetrahedron, rt_polyhedra::dual_tetrahedron()),
+        (state.show_cube, rt_polyhedra::cube()),
+        (state.show_octahedron, rt_polyhedra::octahedron()),
+        (state.show_icosahedron, rt_polyhedra::icosahedron()),
+        (state.show_dodecahedron, rt_polyhedra::dodecahedron()),
     ];
 
-    for (visible, scale, poly) in &polys {
+    for (visible, poly) in &polys {
         if !visible {
             continue;
         }
@@ -72,10 +79,10 @@ pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>) {
             let abcd = q.to_f32_array();
             vertices.push(Vertex {
                 quadray: [
-                    abcd[0] * scale,
-                    abcd[1] * scale,
-                    abcd[2] * scale,
-                    abcd[3] * scale,
+                    abcd[0] * s,
+                    abcd[1] * s,
+                    abcd[2] * s,
+                    abcd[3] * s,
                 ],
                 color: ABCD_COLORS[i % 4],
             });

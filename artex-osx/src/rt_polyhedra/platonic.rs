@@ -110,45 +110,54 @@ pub fn octahedron() -> PolyhedronData {
     }
 }
 
-/// Cube — 8 vertices at all ±s combinations.
+/// Cube — the stella octangula: union of tetrahedron + dual tetrahedron.
 ///
-/// Defined in Cartesian (±s, ±s, ±s) then converted to Quadray,
-/// since the cube doesn't have a natural Quadray-integer representation.
-/// Edge quadrance Q = 4s² where s = half-edge.
+/// **Pure Quadray definition.** The cube does not need Cartesian coordinates.
+/// Its 8 vertices ARE the 4 tet basis vectors + 4 dual complement vectors:
+///   Tet:  [1,0,0,0] [0,1,0,0] [0,0,1,0] [0,0,0,1]   — all integers
+///   Dual: [0,1,1,1] [1,0,1,1] [1,1,0,1] [1,1,1,0]   — all integers
+///
+/// Each tet vertex connects to exactly 3 dual vertices (the cube edges).
+/// No from_cartesian(). No √2. No irrationals. This is a world first.
+///
+/// Edge quadrance Q = 4 (between any tet vertex and its 3 adjacent duals).
 pub fn cube() -> PolyhedronData {
-    let s = 1.0;
-    // Cartesian vertices, converted to Quadray
-    let cart_verts: [[f64; 3]; 8] = [
-        [-s, -s, -s], // 0
-        [s, -s, -s],  // 1
-        [s, s, -s],   // 2
-        [-s, s, -s],  // 3
-        [-s, -s, s],  // 4
-        [s, -s, s],   // 5
-        [s, s, s],    // 6
-        [-s, s, s],   // 7
+    // Vertices 0-3: tetrahedron basis (ABCD one-hot)
+    // Vertices 4-7: dual tetrahedron (ABCD one-absent complements)
+    let vertices = vec![
+        // Tet
+        Quadray::A,                         // 0: A  → (-1,-1, 1)
+        Quadray::B,                         // 1: B  → ( 1, 1, 1)
+        Quadray::C,                         // 2: C  → (-1, 1,-1)
+        Quadray::D,                         // 3: D  → ( 1,-1,-1)
+        // Dual Tet
+        Quadray::new(0.0, 1.0, 1.0, 1.0),  // 4: A-absent → ( 1, 1,-1)
+        Quadray::new(1.0, 0.0, 1.0, 1.0),  // 5: B-absent → (-1,-1,-1)
+        Quadray::new(1.0, 1.0, 0.0, 1.0),  // 6: C-absent → ( 1,-1, 1)
+        Quadray::new(1.0, 1.0, 1.0, 0.0),  // 7: D-absent → (-1, 1, 1)
     ];
-    let vertices: Vec<Quadray> = cart_verts
-        .iter()
-        .map(|xyz| Quadray::from_cartesian(*xyz))
-        .collect();
 
+    // 12 cube edges: each tet vertex connects to 3 adjacent dual vertices
+    // (vertices that differ in exactly one Cartesian coordinate)
     let edges = vec![
-        // Bottom face
-        [0, 1], [1, 2], [2, 3], [3, 0],
-        // Top face
-        [4, 5], [5, 6], [6, 7], [7, 4],
-        // Vertical edges
-        [0, 4], [1, 5], [2, 6], [3, 7],
+        // A connects to B-absent, C-absent, D-absent
+        [0, 5], [0, 6], [0, 7],
+        // B connects to A-absent, C-absent, D-absent
+        [1, 4], [1, 6], [1, 7],
+        // C connects to A-absent, B-absent, D-absent
+        [2, 4], [2, 5], [2, 7],
+        // D connects to A-absent, B-absent, C-absent
+        [3, 4], [3, 5], [3, 6],
     ];
 
+    // 6 faces (CCW winding for outward normals)
     let faces = vec![
-        vec![0, 3, 2, 1], // Bottom
-        vec![4, 5, 6, 7], // Top
-        vec![0, 1, 5, 4], // Back
-        vec![2, 3, 7, 6], // Front
-        vec![0, 4, 7, 3], // Left
-        vec![1, 2, 6, 5], // Right
+        vec![0, 6, 1, 7], // z=+1: A, C-abs, B, D-abs
+        vec![5, 2, 4, 3], // z=-1: B-abs, C, A-abs, D
+        vec![5, 3, 6, 0], // y=-1: B-abs, D, C-abs, A
+        vec![4, 2, 7, 1], // y=+1: A-abs, C, D-abs, B
+        vec![5, 0, 7, 2], // x=-1: B-abs, A, D-abs, C
+        vec![3, 4, 1, 6], // x=+1: D, A-abs, B, C-abs
     ];
 
     PolyhedronData {
@@ -158,7 +167,7 @@ pub fn cube() -> PolyhedronData {
         edges,
         faces,
         face_spread: Some(1.0), // Perpendicular faces
-        edge_quadrance: 4.0 * s * s,
+        edge_quadrance: 4.0,
     }
 }
 
@@ -435,6 +444,27 @@ mod tests {
     #[test]
     fn cube_uniform_edges() {
         assert!(cube().validate_edges(1e-10));
+    }
+
+    #[test]
+    fn cube_is_stella_octangula() {
+        // The cube's first 4 vertices must be exactly the tetrahedron basis
+        let cube = cube();
+        let tet = tetrahedron();
+        let dual = dual_tetrahedron();
+        for i in 0..4 {
+            let cv = cube.vertices[i].to_cartesian();
+            let tv = tet.vertices[i].to_cartesian();
+            assert!(approx_eq(cv[0], tv[0]) && approx_eq(cv[1], tv[1]) && approx_eq(cv[2], tv[2]),
+                "Cube vertex {} != Tet vertex {}", i, i);
+        }
+        // And the next 4 must be the dual tetrahedron
+        for i in 0..4 {
+            let cv = cube.vertices[i + 4].to_cartesian();
+            let dv = dual.vertices[i].to_cartesian();
+            assert!(approx_eq(cv[0], dv[0]) && approx_eq(cv[1], dv[1]) && approx_eq(cv[2], dv[2]),
+                "Cube vertex {} != Dual vertex {}", i + 4, i);
+        }
     }
 
     // --- Icosahedron ---
