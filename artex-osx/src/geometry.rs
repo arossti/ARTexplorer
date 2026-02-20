@@ -54,7 +54,7 @@ const ABCD_COLORS: [[f32; 3]; 4] = [
 /// In Cartesian projection: cube_edge = 2s, tet_edge = 2√2·s.
 /// The √2 ratio is a Cartesian artifact, not a Quadray property.
 /// See ARTEX-RATIONALE.md §5.
-pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>) {
+pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>, f32) {
     let mut vertices = Vec::new();
     let mut indices = Vec::new();
 
@@ -111,5 +111,23 @@ pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>) {
         indices.extend(arrow_idxs);
     }
 
-    (vertices, indices)
+    // Compute bounding radius: max Cartesian distance from origin across all vertices.
+    // Math.X justified: sqrt is at the rendering boundary (Cartesian projection).
+    let inv_sqrt2: f32 = std::f32::consts::FRAC_1_SQRT_2;
+    let mut max_dist_sq: f32 = 0.0;
+    for v in &vertices {
+        let [a, b, c, d] = v.quadray;
+        let avg = (a + b + c + d) * 0.25;
+        let (na, nb, nc, nd) = (a - avg, b - avg, c - avg, d - avg);
+        let x = inv_sqrt2 * (-na + nb - nc + nd);
+        let y = inv_sqrt2 * (-na + nb + nc - nd);
+        let z = inv_sqrt2 * (na + nb - nc - nd);
+        let dist_sq = x * x + y * y + z * z;
+        if dist_sq > max_dist_sq {
+            max_dist_sq = dist_sq;
+        }
+    }
+    let bounding_radius = max_dist_sq.sqrt();
+
+    (vertices, indices, bounding_radius)
 }

@@ -167,7 +167,7 @@ impl GpuState {
 
         // --- Generate initial geometry from AppState defaults ---
         let app_state = AppState::default();
-        let (vertices, indices) = geometry::build_visible_geometry(&app_state);
+        let (vertices, indices, _bounding_radius) = geometry::build_visible_geometry(&app_state);
         log::info!(
             "Initial geometry: {} vertices, {} edges ({} indices)",
             vertices.len(),
@@ -231,10 +231,11 @@ impl GpuState {
     }
 
     fn rebuild_geometry(&mut self) {
-        let (vertices, indices) = geometry::build_visible_geometry(&self.app_state);
+        let (vertices, indices, bounding_radius) = geometry::build_visible_geometry(&self.app_state);
 
         self.app_state.vertex_count = vertices.len();
         self.app_state.edge_count = indices.len() / 2;
+        self.app_state.bounding_radius = bounding_radius;
 
         self.vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Quadray ABCD Vertex Buffer"),
@@ -259,9 +260,25 @@ impl GpuState {
         // FPS tracking
         self.app_state.tick_fps();
 
-        // --- Update camera uniform every frame ---
-        let aspect = self.config.width as f32 / self.config.height as f32;
-        let view_proj = self.camera.view_proj(aspect);
+        // --- egui frame (runs first to get actual panel width) ---
+        let raw_input = self.egui_state.take_egui_input(&self.window);
+        let camera = &mut self.camera;
+        let app_state = &mut self.app_state;
+        let full_output = self.egui_state.egui_ctx().run(raw_input, |ctx| {
+            ui::draw_ui(ctx, app_state, camera);
+        });
+        self.egui_state
+            .handle_platform_output(&self.window, full_output.platform_output);
+
+        // --- Compute 3D viewport (canvas area excluding sidebar) ---
+        let scale_factor = self.window.scale_factor() as f32;
+        let panel_px = self.app_state.panel_width * scale_factor;
+        let viewport_w = (self.config.width as f32 - panel_px).max(100.0);
+        let viewport_h = self.config.height as f32;
+        let viewport_aspect = viewport_w / viewport_h;
+
+        // --- Update camera uniform with correct viewport aspect ---
+        let view_proj = self.camera.view_proj(viewport_aspect);
         let camera_uniform = CameraUniform {
             view_proj: view_proj.to_cols_array_2d(),
         };
@@ -273,16 +290,6 @@ impl GpuState {
 
         let output = self.surface.get_current_texture()?;
         let view = output.texture.create_view(&Default::default());
-
-        // --- egui frame ---
-        let raw_input = self.egui_state.take_egui_input(&self.window);
-        let camera = &mut self.camera;
-        let app_state = &mut self.app_state;
-        let full_output = self.egui_state.egui_ctx().run(raw_input, |ctx| {
-            ui::draw_ui(ctx, app_state, camera);
-        });
-        self.egui_state
-            .handle_platform_output(&self.window, full_output.platform_output);
 
         let paint_jobs = self.egui_state.egui_ctx().tessellate(
             full_output.shapes,
@@ -331,7 +338,10 @@ impl GpuState {
                 ..Default::default()
             });
 
-            // 1) Draw Quadray wireframe
+            // 1) Set 3D viewport to canvas area (left of sidebar)
+            render_pass.set_viewport(0.0, 0.0, viewport_w, viewport_h, 0.0, 1.0);
+
+            // 2) Draw Quadray wireframe in canvas viewport
             if self.num_indices > 0 {
                 render_pass.set_pipeline(&self.render_pipeline);
                 render_pass.set_bind_group(0, &self.bind_group, &[]);
@@ -343,7 +353,14 @@ impl GpuState {
                 render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
             }
 
-            // 2) Draw egui on top (same render pass)
+            // 3) Reset viewport to full window for egui overlay
+            render_pass.set_viewport(
+                0.0, 0.0,
+                self.config.width as f32, self.config.height as f32,
+                0.0, 1.0,
+            );
+
+            // 4) Draw egui on top (same render pass)
             self.egui_renderer.render(
                 &mut render_pass.forget_lifetime(),
                 &paint_jobs,

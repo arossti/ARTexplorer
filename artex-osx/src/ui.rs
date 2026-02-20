@@ -1,5 +1,5 @@
 use crate::app_state::{AppState, ScaleDriver};
-use crate::camera::{OrbitCamera, PRESETS_XYZ, PRESETS_ABCD};
+use crate::camera::{OrbitCamera, ProjectionMode, PRESETS_XYZ, PRESETS_ABCD};
 
 /// Apply dark theme styling to egui context.
 pub fn configure_theme(ctx: &egui::Context) {
@@ -10,8 +10,9 @@ pub fn configure_theme(ctx: &egui::Context) {
 }
 
 /// Draw the egui side panel with polyhedra controls, scale sliders, camera presets, and info.
+/// Updates `state.panel_width` with the actual sidebar width (logical points) each frame.
 pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCamera) {
-    egui::SidePanel::right("control_panel")
+    let panel_response = egui::SidePanel::right("control_panel")
         .default_width(220.0)
         .show(ctx, |ui| {
             ui.heading("ARTexplorer");
@@ -62,12 +63,50 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     }
                 });
 
-            // --- Camera presets ---
-            // Both XYZ and ABCD views are first-class — no hierarchy, no branching.
+            // --- Camera ---
+            // Projection, presets, and centre — all first-class, no hierarchy.
             // P3 migration: Replace yaw/pitch with ABCD 4-vector triplets (§10).
             egui::CollapsingHeader::new("Camera")
                 .default_open(true)
                 .show(ui, |ui| {
+                    // Projection mode toggle + Centre
+                    ui.horizontal(|ui| {
+                        let persp_text = if camera.projection == ProjectionMode::Perspective {
+                            egui::RichText::new("Perspective").strong()
+                        } else {
+                            egui::RichText::new("Perspective")
+                        };
+                        if ui.selectable_label(
+                            camera.projection == ProjectionMode::Perspective,
+                            persp_text,
+                        ).clicked() {
+                            camera.projection = ProjectionMode::Perspective;
+                        }
+
+                        let ortho_text = if camera.projection == ProjectionMode::Orthographic {
+                            egui::RichText::new("Ortho").strong()
+                        } else {
+                            egui::RichText::new("Ortho")
+                        };
+                        if ui.selectable_label(
+                            camera.projection == ProjectionMode::Orthographic,
+                            ortho_text,
+                        ).clicked() {
+                            camera.projection = ProjectionMode::Orthographic;
+                        }
+
+                        ui.separator();
+                        if ui.button("Centre").clicked() {
+                            // Compute effective viewport aspect (screen minus this sidebar)
+                            let screen = ui.ctx().input(|i| i.viewport().inner_rect
+                                .unwrap_or(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 720.0))));
+                            let panel_w = ui.min_rect().width();
+                            let viewport_w = (screen.width() - panel_w).max(100.0);
+                            let viewport_aspect = viewport_w / screen.height();
+                            camera.centre(state.bounding_radius, viewport_aspect);
+                        }
+                    });
+
                     // XYZ axis views
                     ui.horizontal(|ui| {
                         ui.label(egui::RichText::new("XYZ").small().weak());
@@ -154,4 +193,7 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     ui.label(egui::RichText::new("Drag to orbit | Scroll to zoom").small().weak());
                 });
         });
+
+    // Store actual panel width (logical points) for viewport calculation in render()
+    state.panel_width = panel_response.response.rect.width();
 }

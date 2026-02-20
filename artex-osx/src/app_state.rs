@@ -38,6 +38,10 @@ pub struct AppState {
     // Geometry stats (updated on rebuild)
     pub vertex_count: usize,
     pub edge_count: usize,
+    pub bounding_radius: f32, // max Cartesian distance from origin across all visible vertices
+
+    // UI layout (updated each frame by egui)
+    pub panel_width: f32, // sidebar panel width in logical points
 
     // FPS tracking
     pub fps: f64,
@@ -62,6 +66,8 @@ impl Default for AppState {
             geometry_dirty: true, // Build on first frame
             vertex_count: 0,
             edge_count: 0,
+            bounding_radius: 0.0,
+            panel_width: 220.0, // initial estimate, updated each frame by egui
             fps: 0.0,
             frame_count: 0,
             fps_timer: std::time::Instant::now(),

@@ -1,3 +1,10 @@
+/// Projection mode for the orbit camera.
+#[derive(Clone, Copy, PartialEq)]
+pub enum ProjectionMode {
+    Perspective,
+    Orthographic,
+}
+
 /// Orbit camera — spherical coordinates around the origin.
 ///
 /// Left-click drag rotates (yaw/pitch), scroll wheel zooms.
@@ -6,6 +13,7 @@ pub struct OrbitCamera {
     pub yaw: f32,       // radians, horizontal rotation
     pub pitch: f32,     // radians, vertical rotation (clamped)
     pub distance: f32,  // distance from origin
+    pub projection: ProjectionMode,
     dragging: bool,
     last_cursor: Option<(f64, f64)>,
 }
@@ -18,6 +26,7 @@ impl Default for OrbitCamera {
             yaw: std::f32::consts::FRAC_PI_4,
             pitch: QUADRAY_ELEVATION,
             distance: DEFAULT_DISTANCE,
+            projection: ProjectionMode::Perspective,
             dragging: false,
             last_cursor: None,
         }
@@ -48,7 +57,7 @@ impl OrbitCamera {
 
     pub fn on_scroll(&mut self, delta: f32) {
         self.distance -= delta * 0.5;
-        self.distance = self.distance.clamp(1.0, 30.0);
+        self.distance = self.distance.clamp(1.0, 50.0);
     }
 
     /// Apply a camera preset (yaw, pitch, distance).
@@ -60,8 +69,41 @@ impl OrbitCamera {
         self.distance = preset.distance;
     }
 
+    /// Centre the camera to fit the visible geometry in the viewport.
+    ///
+    /// `viewport_aspect` is the effective aspect ratio of the 3D viewport area
+    /// (excluding UI panels). The method fits the bounding sphere within BOTH
+    /// the vertical and horizontal extents, using whichever is tighter.
+    /// Math.X justified: tan/atan are rendering-boundary math.
+    pub fn centre(&mut self, bounding_radius: f32, viewport_aspect: f32) {
+        if bounding_radius <= 0.0 {
+            return;
+        }
+        let margin = 1.3; // 30% padding around the geometry
+        let r = bounding_radius * margin;
+        match self.projection {
+            ProjectionMode::Perspective => {
+                // Vertical: distance = r / tan(fov_v / 2)
+                let half_fov_v = std::f32::consts::FRAC_PI_4 * 0.5; // fov=45°, half=22.5°
+                let dist_v = r / half_fov_v.tan();
+                // Horizontal: half_fov_h = atan(tan(fov_v/2) * aspect)
+                // distance = r / tan(half_fov_h) = r / (tan(half_fov_v) * aspect)
+                let dist_h = r / (half_fov_v.tan() * viewport_aspect);
+                // Use the tighter constraint (larger distance)
+                self.distance = dist_v.max(dist_h).clamp(1.0, 50.0);
+            }
+            ProjectionMode::Orthographic => {
+                // Vertical: distance * ORTHO_SCALE >= r
+                let dist_v = r / ORTHO_SCALE;
+                // Horizontal: distance * ORTHO_SCALE * aspect >= r
+                let dist_h = r / (ORTHO_SCALE * viewport_aspect);
+                self.distance = dist_v.max(dist_h).clamp(1.0, 50.0);
+            }
+        }
+    }
+
     /// Compute the view-projection matrix for this camera.
-    /// Math.X justified: sin/cos/look_at/perspective are rendering-boundary math.
+    /// Math.X justified: sin/cos/look_at/perspective/orthographic are rendering-boundary math.
     pub fn view_proj(&self, aspect: f32) -> glam::Mat4 {
         let eye = glam::Vec3::new(
             self.distance * self.pitch.cos() * self.yaw.cos(),
@@ -76,15 +118,31 @@ impl OrbitCamera {
             glam::Vec3::Y
         };
         let view = glam::Mat4::look_at_rh(eye, glam::Vec3::ZERO, up);
-        let proj = glam::Mat4::perspective_rh(
-            std::f32::consts::FRAC_PI_4,
-            aspect,
-            0.1,
-            100.0,
-        );
+        let proj = match self.projection {
+            ProjectionMode::Perspective => {
+                glam::Mat4::perspective_rh(
+                    std::f32::consts::FRAC_PI_4, // 45° FOV
+                    aspect,
+                    0.1,
+                    100.0,
+                )
+            }
+            ProjectionMode::Orthographic => {
+                // Ortho half-size scales with distance so scroll-zoom works naturally.
+                // At default distance 5.196, half_h ≈ 2.16 — similar visual coverage.
+                let half_h = self.distance * ORTHO_SCALE;
+                let half_w = half_h * aspect;
+                glam::Mat4::orthographic_rh(-half_w, half_w, -half_h, half_h, 0.1, 100.0)
+            }
+        };
         proj * view
     }
 }
+
+/// Scale factor mapping camera distance to orthographic half-size.
+/// Chosen so switching perspective↔ortho at default distance preserves
+/// roughly the same apparent object size: tan(fov/2) = tan(22.5°) ≈ 0.4142.
+const ORTHO_SCALE: f32 = 0.4142;
 
 // --- Camera presets ---
 // P1: Conventional yaw/pitch/distance. See BABYSTEPS "P1 → P3 Camera Migration Note"
@@ -221,6 +279,38 @@ mod tests {
     fn presets_have_correct_count() {
         assert_eq!(PRESETS_XYZ.len(), 3);
         assert_eq!(PRESETS_ABCD.len(), 4);
+    }
+
+    #[test]
+    fn ortho_produces_valid_matrix() {
+        let mut cam = OrbitCamera::default();
+        cam.projection = ProjectionMode::Orthographic;
+        let vp = cam.view_proj(1.0);
+        for col in 0..4 {
+            for row in 0..4 {
+                assert!(!vp.col(col)[row].is_nan(), "NaN in ortho view_proj at [{},{}]", row, col);
+            }
+        }
+    }
+
+    #[test]
+    fn centre_adjusts_distance() {
+        let mut cam = OrbitCamera::default();
+        let original = cam.distance;
+        cam.centre(5.0, 1.5);
+        assert!((cam.distance - original).abs() > 0.01, "centre should change distance");
+        assert!(cam.distance > 5.0, "distance should be larger than bounding radius");
+    }
+
+    #[test]
+    fn centre_narrow_viewport_uses_horizontal() {
+        // With aspect < 1 (tall narrow window), horizontal fitting should dominate
+        let mut cam = OrbitCamera::default();
+        cam.centre(3.0, 1.5); // wide viewport
+        let dist_wide = cam.distance;
+        cam.centre(3.0, 0.5); // narrow viewport
+        let dist_narrow = cam.distance;
+        assert!(dist_narrow > dist_wide, "narrow viewport should need more distance");
     }
 
     #[test]
