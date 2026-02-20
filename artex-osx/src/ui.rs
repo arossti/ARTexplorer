@@ -1,4 +1,4 @@
-use crate::app_state::AppState;
+use crate::app_state::{AppState, ScaleDriver};
 
 /// Apply dark theme styling to egui context.
 pub fn configure_theme(ctx: &egui::Context) {
@@ -45,20 +45,52 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState) {
                     }
                 });
 
-            // --- Scale sliders ---
+            // --- Scale sliders (Rationality Reciprocity) ---
+            // ONE metric, TWO presentations. tet_edge = cube_edge * √2.
+            // Whichever slider the user adjusts is the "driver" — it gets snapped
+            // to 0.1 intervals (rational). The other shows the irrational conjugate.
             egui::CollapsingHeader::new("Scale")
                 .default_open(true)
                 .show(ui, |ui| {
-                    let mut changed = false;
-                    changed |= ui
-                        .add(egui::Slider::new(&mut state.tet_edge, 0.1..=5.0).text("Tet edge"))
-                        .changed();
-                    changed |= ui
-                        .add(egui::Slider::new(&mut state.cube_edge, 0.1..=3.6).text("Cube edge"))
-                        .changed();
-                    if changed {
+                    let sqrt2 = std::f32::consts::SQRT_2;
+
+                    // Tet edge slider
+                    let tet_response = ui.add(
+                        egui::Slider::new(&mut state.tet_edge, -5.0..=5.0)
+                            .text("Tet edge")
+                            .custom_formatter(|v, _| format!("{:.4}", v))
+                    );
+                    if tet_response.changed() {
+                        state.scale_driver = ScaleDriver::TetEdge;
+                        // Snap to 0.1 intervals
+                        state.tet_edge = (state.tet_edge * 10.0).round() / 10.0;
+                        // Compute irrational conjugate
+                        state.cube_edge = state.tet_edge / sqrt2;
                         state.geometry_dirty = true;
                     }
+
+                    // Cube edge slider
+                    let cube_response = ui.add(
+                        egui::Slider::new(&mut state.cube_edge, -3.6..=3.6)
+                            .text("Cube edge")
+                            .custom_formatter(|v, _| format!("{:.4}", v))
+                    );
+                    if cube_response.changed() {
+                        state.scale_driver = ScaleDriver::CubeEdge;
+                        // Snap to 0.1 intervals
+                        state.cube_edge = (state.cube_edge * 10.0).round() / 10.0;
+                        // Compute irrational conjugate
+                        state.tet_edge = state.cube_edge * sqrt2;
+                        state.geometry_dirty = true;
+                    }
+
+                    // Show which system is currently rational
+                    let label = match state.scale_driver {
+                        ScaleDriver::TetEdge => "Tet rational → Cube irrational",
+                        ScaleDriver::CubeEdge => "Cube rational → Tet irrational",
+                    };
+                    ui.label(egui::RichText::new(label).small().weak());
+                    ui.label(egui::RichText::new("Ratio: tet = cube × √2").small().weak());
                 });
 
             // --- Info ---

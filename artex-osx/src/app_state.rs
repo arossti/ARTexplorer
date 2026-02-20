@@ -1,3 +1,12 @@
+/// Which scale slider is currently the "driver" (gets rational snapping).
+/// The Rationality Reciprocity: tet_edge = cube_edge * √2.
+/// You cannot have both rational simultaneously.
+#[derive(Clone, Copy, PartialEq)]
+pub enum ScaleDriver {
+    TetEdge,  // tet edge is rational, cube edge is irrational
+    CubeEdge, // cube edge is rational, tet edge is irrational
+}
+
 /// Application state — drives UI and geometry generation.
 ///
 /// All polyhedra toggles default to the stella octangula (tet + dual tet visible).
@@ -11,9 +20,13 @@ pub struct AppState {
     pub show_icosahedron: bool,
     pub show_dodecahedron: bool,
 
-    // Scale controls (Quadray edge lengths)
+    // Scale — ONE metric, TWO presentations (Rationality Reciprocity)
+    // tet_edge = cube_edge * √2.  Whichever slider the user adjusts gets
+    // snapped to rational (0.1) intervals; the other shows the irrational conjugate.
+    // See Janus10.tex §2.6 and rt-init.js scale slider logic.
     pub tet_edge: f32,
     pub cube_edge: f32,
+    pub scale_driver: ScaleDriver, // which slider is primary (gets rational snapping)
 
     // Geometry rebuild flag
     pub geometry_dirty: bool,
@@ -38,7 +51,8 @@ impl Default for AppState {
             show_icosahedron: false,
             show_dodecahedron: false,
             tet_edge: 2.0,
-            cube_edge: 1.4,
+            cube_edge: 2.0 / std::f32::consts::SQRT_2, // √2 ≈ 1.4142
+            scale_driver: ScaleDriver::TetEdge,
             geometry_dirty: true, // Build on first frame
             vertex_count: 0,
             edge_count: 0,
