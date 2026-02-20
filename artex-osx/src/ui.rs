@@ -63,6 +63,90 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     }
                 });
 
+            // --- Cartesian Grid ---
+            egui::CollapsingHeader::new("Cartesian Grid")
+                .default_open(false)
+                .show(ui, |ui| {
+                    let mut changed = false;
+                    changed |= ui
+                        .checkbox(&mut state.show_cartesian_grids, "Enable")
+                        .changed();
+                    ui.horizontal(|ui| {
+                        changed |= ui.checkbox(
+                            &mut state.show_grid_xy,
+                            egui::RichText::new("XY").color(egui::Color32::YELLOW),
+                        ).changed();
+                        changed |= ui.checkbox(
+                            &mut state.show_grid_xz,
+                            egui::RichText::new("XZ").color(egui::Color32::from_rgb(255, 0, 255)),
+                        ).changed();
+                        changed |= ui.checkbox(
+                            &mut state.show_grid_yz,
+                            egui::RichText::new("YZ").color(egui::Color32::from_rgb(0, 255, 255)),
+                        ).changed();
+                    });
+                    let div_response = ui.add(
+                        egui::Slider::new(&mut state.cartesian_divisions, 10..=100)
+                            .step_by(10.0)
+                            .text("Divisions")
+                    );
+                    if div_response.changed() {
+                        changed = true;
+                    }
+                    if changed {
+                        state.geometry_dirty = true;
+                    }
+                });
+
+            // --- IVM Central Angle Grid ---
+            egui::CollapsingHeader::new("IVM Grid")
+                .default_open(false)
+                .show(ui, |ui| {
+                    let mut changed = false;
+                    changed |= ui
+                        .checkbox(&mut state.show_ivm_grids, "Enable")
+                        .changed();
+                    ui.horizontal(|ui| {
+                        changed |= ui.checkbox(
+                            &mut state.show_grid_ab,
+                            egui::RichText::new("AB").color(egui::Color32::from_rgb(255, 170, 0)),
+                        ).changed();
+                        changed |= ui.checkbox(
+                            &mut state.show_grid_ac,
+                            egui::RichText::new("AC").color(egui::Color32::from_rgb(255, 0, 255)),
+                        ).changed();
+                        changed |= ui.checkbox(
+                            &mut state.show_grid_ad,
+                            egui::RichText::new("AD").color(egui::Color32::from_rgb(170, 255, 0)),
+                        ).changed();
+                    });
+                    ui.horizontal(|ui| {
+                        changed |= ui.checkbox(
+                            &mut state.show_grid_bc,
+                            egui::RichText::new("BC").color(egui::Color32::from_rgb(0, 255, 255)),
+                        ).changed();
+                        changed |= ui.checkbox(
+                            &mut state.show_grid_bd,
+                            egui::RichText::new("BD").color(egui::Color32::from_rgb(170, 170, 255)),
+                        ).changed();
+                        changed |= ui.checkbox(
+                            &mut state.show_grid_cd,
+                            egui::RichText::new("CD").color(egui::Color32::from_rgb(255, 128, 128)),
+                        ).changed();
+                    });
+                    let tess_response = ui.add(
+                        egui::Slider::new(&mut state.ivm_tessellations, 12..=144)
+                            .step_by(12.0)
+                            .text("Tessellations")
+                    );
+                    if tess_response.changed() {
+                        changed = true;
+                    }
+                    if changed {
+                        state.geometry_dirty = true;
+                    }
+                });
+
             // --- Camera ---
             // Projection, presets, and centre — all first-class, no hierarchy.
             // P3 migration: Replace yaw/pitch with ABCD 4-vector triplets (§10).

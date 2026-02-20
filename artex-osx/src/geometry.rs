@@ -1,5 +1,6 @@
 use crate::app_state::AppState;
 use crate::basis_arrows;
+use crate::grids;
 use crate::rt_polyhedra;
 
 // --- Vertex data (ABCD Convention) ---
@@ -109,6 +110,20 @@ pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>, f32) 
             basis_arrows::build_cartesian_basis(state.cube_edge, offset);
         vertices.extend(arrow_verts);
         indices.extend(arrow_idxs);
+    }
+
+    // --- Grid planes ---
+    {
+        let offset = vertices.len() as u16;
+        let (grid_verts, grid_idxs) = grids::build_cartesian_grids(state, offset);
+        vertices.extend(grid_verts);
+        indices.extend(grid_idxs);
+    }
+    {
+        let offset = vertices.len() as u16;
+        let (grid_verts, grid_idxs) = grids::build_ivm_grids(state, offset);
+        vertices.extend(grid_verts);
+        indices.extend(grid_idxs);
     }
 
     // Compute bounding radius: max Cartesian distance from origin across all vertices.

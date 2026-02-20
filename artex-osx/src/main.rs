@@ -2,6 +2,7 @@ mod app_state;
 mod basis_arrows;
 mod camera;
 mod geometry;
+mod grids;
 mod rt_math;
 mod rt_polyhedra;
 mod ui;

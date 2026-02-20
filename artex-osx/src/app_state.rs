@@ -24,6 +24,23 @@ pub struct AppState {
     pub show_quadray_basis: bool,
     pub show_cartesian_basis: bool,
 
+    // Cartesian grid planes (XY, XZ, YZ)
+    pub show_cartesian_grids: bool, // master toggle
+    pub show_grid_xy: bool,
+    pub show_grid_xz: bool,
+    pub show_grid_yz: bool,
+    pub cartesian_divisions: u32, // 10–100, step 10
+
+    // IVM Central Angle grid planes (6 basis-vector pairs)
+    pub show_ivm_grids: bool, // master toggle
+    pub show_grid_ab: bool,
+    pub show_grid_ac: bool,
+    pub show_grid_ad: bool,
+    pub show_grid_bc: bool,
+    pub show_grid_bd: bool,
+    pub show_grid_cd: bool,
+    pub ivm_tessellations: u32, // 12–144, step 12
+
     // Scale — ONE metric, TWO presentations (Rationality Reciprocity)
     // tet_edge = cube_edge * √2.  Whichever slider the user adjusts gets
     // snapped to rational (0.1) intervals; the other shows the irrational conjugate.
@@ -60,6 +77,19 @@ impl Default for AppState {
             show_dodecahedron: false,
             show_quadray_basis: true,
             show_cartesian_basis: false,
+            show_cartesian_grids: false,
+            show_grid_xy: true,
+            show_grid_xz: true,
+            show_grid_yz: true,
+            cartesian_divisions: 10,
+            show_ivm_grids: false,
+            show_grid_ab: true,
+            show_grid_ac: true,
+            show_grid_ad: true,
+            show_grid_bc: true,
+            show_grid_bd: true,
+            show_grid_cd: true,
+            ivm_tessellations: 12,
             tet_edge: 2.0,
             cube_edge: 2.0 / std::f32::consts::SQRT_2, // √2 ≈ 1.4142
             scale_driver: ScaleDriver::TetEdge,
