@@ -924,7 +924,7 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **macOS .app bundle** (bundle.sh + icon) | **Done — ARTexplorer.app launches from Dock (2026-02-19)** |
 | **P0 Explorer UI** (egui side panel, orbit camera, all 6 Platonics) | **Done — egui 0.33 + wgpu 27, right-side panel (2026-02-19)** |
 
-### Phase 2: Game Mode (Steps 8–10) — DEFERRED
+### Phase 2: Game Mode (Steps 8–10) — DEFERRED UNTIL CORE APP and FOUNDATIONS are COMPLETED
 
 | Milestone | Status |
 |-----------|--------|
