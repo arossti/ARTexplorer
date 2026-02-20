@@ -246,7 +246,60 @@ At a given Quadray scale `s`:
 
 ---
 
-## 7. Summary: The Revolution
+## 7. What We Have Built (February 2026)
+
+### Accomplished
+
+- **Pure Quadray cube generator**: `cube()` in `platonic.rs` defines 8 vertices
+  as `Quadray::A/B/C/D` + 4 dual complements. No `from_cartesian()`. No irrationals.
+  No Cartesian anywhere in the definition. The cube IS the stella octangula.
+
+- **Unified Quadray scale**: ONE factor `s` multiplies all ABCD coordinates for
+  all polyhedra. The tet, dual tet, and cube share the same `s`, so their vertex
+  identity is preserved at every scale — algebraically, not numerically.
+
+- **90 verified tests**: Including `cube_is_stella_octangula` which proves the
+  cube's first 4 vertices ARE the tetrahedron and the next 4 ARE the dual.
+  Euler, uniform edges, cross-polyhedron checks — all pass.
+
+- **Integer polyhedra hierarchy**: Tet, Dual Tet, Cube, Octahedron — all defined
+  with ABCD coordinates in {0, 1}. No square roots. No irrationals. This is,
+  to our knowledge, a world first for a rendered 3D geometry application.
+
+### Next: Eliminate XYZ from the Shader
+
+The shader (`shader.wgsl`) still converts ABCD → XYZ via the Tom Ace basis
+matrix as an explicit intermediate step. Section 4 describes how to fold this
+into a single ABCD-to-clip matrix computed per frame on the CPU. When that
+is done, the pipeline becomes:
+
+```
+Integer ABCD  →  one matrix multiply  →  clip space  →  pixels
+```
+
+XYZ will not appear in the shader, not as a variable, not as a concept.
+
+### Open Question: Octahedron Nesting
+
+The octahedron has two natural Quadray forms:
+
+| Form | Quadray | Cartesian | Relationship |
+|---|---|---|---|
+| **Vector sum** `[1,1,0,0]` | Integer | (0, 0, 2) | Circumscribes the cube |
+| **Edge midpoint** `[½,½,0,0]` | Rational | (0, 0, 1) | Inscribed in cube (at face centers) |
+
+The vector sum form preserves integer purity. The midpoint form nests inside
+the cube as in the JS app. Both are valid. The choice depends on whether we
+privilege integer coordinates or classical nesting. To be discussed.
+
+Note: In both forms, the octahedron shares the tetrahedron's face spread of
+8/9 — a rational value. This is not a coincidence; it reflects the fact that
+the octahedron's faces are parallel to the tetrahedron's faces. Spread, not
+angle, is the natural measure of this relationship.
+
+---
+
+## 8. The Larger Vision
 
 Traditional 3D geometry software defines everything in Cartesian XYZ.
 Tetrahedral coordinates are an afterthought, a curiosity, a "conversion."
@@ -257,17 +310,11 @@ edge ratios — are exact integer arithmetic. The irrationals that appear in
 classical geometry (sqrt(2) for tet/cube edge ratio, sqrt(3) for circumradius)
 are artifacts of projecting to XYZ, not properties of the geometry.
 
-The native app renders ABCD directly to the screen. The Tom Ace basis is folded
-into the camera matrix. XYZ is not computed, not stored, not named. The pipeline
-is:
-
-```
-Integer ABCD  →  GPU shader  →  clip space  →  pixels
-```
-
-This is, to our knowledge, a world first: a 3D rendering pipeline where the
-canonical coordinate system is tetrahedral, and Cartesian coordinates never
-appear as an explicit intermediate representation.
+The natural language of this geometry is not Angle and Distance, but
+**Quadray Coordinates, Quadrance, and Spread** — the core of Rational
+Trigonometry. Every measurement stays algebraic. Every relationship stays exact.
+The only decimal tribute is paid at the screen boundary, where the 2D pixel
+grid demands its Cartesian projection.
 
 ---
 
