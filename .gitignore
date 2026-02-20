@@ -63,5 +63,5 @@ Geometry Documents/Wildberger References/
 modules/asteroids/
 artsteroids.html
 
-# Rust native app (private repo only)
-artexplorer-native/
+# Rust build artifacts (large binaries, not for git)
+artex-osx/target/
