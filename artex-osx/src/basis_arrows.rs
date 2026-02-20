@@ -59,8 +59,8 @@ fn build_arrow(
     direction_xyz: [f64; 3],
     target_length: f64,
     color: [f32; 3],
-    index_offset: u16,
-) -> (Vec<Vertex>, Vec<u16>) {
+    index_offset: u32,
+) -> (Vec<Vertex>, Vec<u32>) {
     let dir = glam::DVec3::from_array(direction_xyz);
     let sqrt3 = radicals::sqrt3();
 
@@ -152,8 +152,8 @@ fn build_arrow(
 
     // Arrowhead edges (offset by 2 for shaft vertices)
     for [a, b] in &tet_edges {
-        indices.push(*a as u16 + index_offset + 2);
-        indices.push(*b as u16 + index_offset + 2);
+        indices.push(*a as u32 + index_offset + 2);
+        indices.push(*b as u32 + index_offset + 2);
     }
 
     (vertices, indices)
@@ -168,7 +168,7 @@ fn build_arrow(
 ///   D (Green):  [1,1,1,0] → Cartesian (-1,+1,+1)/√3
 ///
 /// Sizing: targetLength = (tetEdge + 1) × quadray_grid_interval
-pub fn build_quadray_basis(tet_edge: f32, index_offset: u16) -> (Vec<Vertex>, Vec<u16>) {
+pub fn build_quadray_basis(tet_edge: f32, index_offset: u32) -> (Vec<Vertex>, Vec<u32>) {
     let grid_interval = radicals::quadray_grid_interval();
     let target_length = (tet_edge.abs() as f64 + 1.0) * grid_interval;
 
@@ -188,7 +188,7 @@ pub fn build_quadray_basis(tet_edge: f32, index_offset: u16) -> (Vec<Vertex>, Ve
         let len = (xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]).sqrt();
         let direction = [xyz[0] / len, xyz[1] / len, xyz[2] / len];
 
-        let offset = index_offset + all_vertices.len() as u16;
+        let offset = index_offset + all_vertices.len() as u32;
         let (verts, idxs) = build_arrow(direction, target_length, ABCD_COLORS[i], offset);
         all_vertices.extend(verts);
         all_indices.extend(idxs);
@@ -201,7 +201,7 @@ pub fn build_quadray_basis(tet_edge: f32, index_offset: u16) -> (Vec<Vertex>, Ve
 ///
 /// Arrows along +X (Red), +Y (Green), +Z (Blue).
 /// Sizing: targetLength = cubeEdge (matches JS app convention).
-pub fn build_cartesian_basis(cube_edge: f32, index_offset: u16) -> (Vec<Vertex>, Vec<u16>) {
+pub fn build_cartesian_basis(cube_edge: f32, index_offset: u32) -> (Vec<Vertex>, Vec<u32>) {
     let target_length = cube_edge.abs() as f64;
 
     let directions: [[f64; 3]; 3] = [
@@ -214,7 +214,7 @@ pub fn build_cartesian_basis(cube_edge: f32, index_offset: u16) -> (Vec<Vertex>,
     let mut all_indices = Vec::new();
 
     for (i, direction) in directions.iter().enumerate() {
-        let offset = index_offset + all_vertices.len() as u16;
+        let offset = index_offset + all_vertices.len() as u32;
         let (verts, idxs) = build_arrow(*direction, target_length, XYZ_COLORS[i], offset);
         all_vertices.extend(verts);
         all_indices.extend(idxs);

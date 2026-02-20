@@ -55,7 +55,7 @@ const ABCD_COLORS: [[f32; 3]; 4] = [
 /// In Cartesian projection: cube_edge = 2s, tet_edge = 2√2·s.
 /// The √2 ratio is a Cartesian artifact, not a Quadray property.
 /// See ARTEX-RATIONALE.md §5.
-pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>, f32) {
+pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u32>, f32) {
     let mut vertices = Vec::new();
     let mut indices = Vec::new();
 
@@ -75,7 +75,7 @@ pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>, f32) 
         if !visible {
             continue;
         }
-        let base_offset = vertices.len() as u16;
+        let base_offset = vertices.len() as u32;
 
         for (i, q) in poly.vertices.iter().enumerate() {
             let abcd = q.to_f32_array();
@@ -91,21 +91,21 @@ pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>, f32) 
         }
 
         for [a, b] in &poly.edges {
-            indices.push(*a as u16 + base_offset);
-            indices.push(*b as u16 + base_offset);
+            indices.push(*a as u32 + base_offset);
+            indices.push(*b as u32 + base_offset);
         }
     }
 
     // --- Basis arrows (own sizing, NOT scaled by s) ---
     if state.show_quadray_basis {
-        let offset = vertices.len() as u16;
+        let offset = vertices.len() as u32;
         let (arrow_verts, arrow_idxs) =
             basis_arrows::build_quadray_basis(state.tet_edge, offset);
         vertices.extend(arrow_verts);
         indices.extend(arrow_idxs);
     }
     if state.show_cartesian_basis {
-        let offset = vertices.len() as u16;
+        let offset = vertices.len() as u32;
         let (arrow_verts, arrow_idxs) =
             basis_arrows::build_cartesian_basis(state.cube_edge, offset);
         vertices.extend(arrow_verts);
@@ -114,13 +114,13 @@ pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u16>, f32) 
 
     // --- Grid planes ---
     {
-        let offset = vertices.len() as u16;
+        let offset = vertices.len() as u32;
         let (grid_verts, grid_idxs) = grids::build_cartesian_grids(state, offset);
         vertices.extend(grid_verts);
         indices.extend(grid_idxs);
     }
     {
-        let offset = vertices.len() as u16;
+        let offset = vertices.len() as u32;
         let (grid_verts, grid_idxs) = grids::build_ivm_grids(state, offset);
         vertices.extend(grid_verts);
         indices.extend(grid_idxs);

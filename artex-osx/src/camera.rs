@@ -124,7 +124,7 @@ impl OrbitCamera {
                     std::f32::consts::FRAC_PI_4, // 45° FOV
                     aspect,
                     0.1,
-                    100.0,
+                    500.0,
                 )
             }
             ProjectionMode::Orthographic => {
@@ -132,7 +132,7 @@ impl OrbitCamera {
                 // At default distance 5.196, half_h ≈ 2.16 — similar visual coverage.
                 let half_h = self.distance * ORTHO_SCALE;
                 let half_w = half_h * aspect;
-                glam::Mat4::orthographic_rh(-half_w, half_w, -half_h, half_h, 0.1, 100.0)
+                glam::Mat4::orthographic_rh(-half_w, half_w, -half_h, half_h, 0.1, 500.0)
             }
         };
         proj * view

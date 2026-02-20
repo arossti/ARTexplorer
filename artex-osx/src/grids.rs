@@ -48,8 +48,8 @@ fn build_cartesian_plane(
     half_extent: f64,
     divisions: u32,
     color: [f32; 3],
-    index_offset: u16,
-) -> (Vec<Vertex>, Vec<u16>) {
+    index_offset: u32,
+) -> (Vec<Vertex>, Vec<u32>) {
     let n = divisions as usize;
     let step = 2.0 * half_extent / n as f64;
 
@@ -59,7 +59,7 @@ fn build_cartesian_plane(
     let mut indices = Vec::with_capacity(line_count * 2);
 
     let mut push_line = |p0: [f64; 3], p1: [f64; 3]| {
-        let idx = index_offset + vertices.len() as u16;
+        let idx = index_offset + vertices.len() as u32;
         vertices.push(Vertex {
             quadray: Quadray::from_cartesian(p0).to_f32_array(),
             color,
@@ -122,8 +122,8 @@ fn build_ivm_plane(
     tessellations: u32,
     step_length: f64,
     color: [f32; 3],
-    index_offset: u16,
-) -> (Vec<Vertex>, Vec<u16>) {
+    index_offset: u32,
+) -> (Vec<Vertex>, Vec<u32>) {
     let t = tessellations as usize;
 
     // Pre-compute cumulative distances
@@ -139,7 +139,7 @@ fn build_ivm_plane(
     let [b2x, b2y, b2z] = basis2;
 
     let mut push_line = |p0: [f64; 3], p1: [f64; 3]| {
-        let idx = index_offset + vertices.len() as u16;
+        let idx = index_offset + vertices.len() as u32;
         vertices.push(Vertex {
             quadray: Quadray::from_cartesian(p0).to_f32_array(),
             color,
@@ -199,15 +199,18 @@ fn quadray_direction(q: &Quadray) -> [f64; 3] {
 /// Returns (vertices, indices) for the combined visible planes.
 pub fn build_cartesian_grids(
     state: &AppState,
-    index_offset: u16,
-) -> (Vec<Vertex>, Vec<u16>) {
+    index_offset: u32,
+) -> (Vec<Vertex>, Vec<u32>) {
     if !state.show_cartesian_grids {
         return (Vec::new(), Vec::new());
     }
 
-    // Grid extent: 1.5× cube_edge provides visual padding around geometry
-    let half_extent = (state.cube_edge.abs() as f64) * 1.5;
+    // Fixed cell spacing — grid is a spatial reference frame, independent of geometry scale.
+    // Uses quadray grid interval (√6/4) for visual consistency with the IVM grid.
+    // Divisions slider EXPANDS the grid (more cells = larger extent), not subdivides it.
+    let cell_spacing = radicals::quadray_grid_interval();
     let divisions = state.cartesian_divisions;
+    let half_extent = divisions as f64 * cell_spacing / 2.0;
 
     let mut all_verts = Vec::new();
     let mut all_idxs = Vec::new();
@@ -222,7 +225,7 @@ pub fn build_cartesian_grids(
         if !visible {
             continue;
         }
-        let offset = index_offset + all_verts.len() as u16;
+        let offset = index_offset + all_verts.len() as u32;
         let (verts, idxs) = build_cartesian_plane(*plane_id, half_extent, divisions, *color, offset);
         all_verts.extend(verts);
         all_idxs.extend(idxs);
@@ -240,15 +243,16 @@ pub fn build_cartesian_grids(
 /// Returns (vertices, indices) for the combined visible planes.
 pub fn build_ivm_grids(
     state: &AppState,
-    index_offset: u16,
-) -> (Vec<Vertex>, Vec<u16>) {
+    index_offset: u32,
+) -> (Vec<Vertex>, Vec<u32>) {
     if !state.show_ivm_grids {
         return (Vec::new(), Vec::new());
     }
 
-    // Step length: scale quadray grid interval by geometry factor s
-    let s = (state.cube_edge / 2.0).abs() as f64;
-    let step_length = s * radicals::quadray_grid_interval();
+    // Fixed step length — grid is a spatial reference frame, independent of geometry scale.
+    // Quadray grid interval (√6/4 ≈ 0.612) is the natural IVM lattice spacing.
+    // Tessellations slider EXPANDS the grid (more steps = larger extent).
+    let step_length = radicals::quadray_grid_interval();
     let tessellations = state.ivm_tessellations;
 
     // Normalized Quadray basis directions
@@ -274,7 +278,7 @@ pub fn build_ivm_grids(
         if !visible {
             continue;
         }
-        let offset = index_offset + all_verts.len() as u16;
+        let offset = index_offset + all_verts.len() as u32;
         let (verts, idxs) = build_ivm_plane(*b1, *b2, tessellations, step_length, *color, offset);
         all_verts.extend(verts);
         all_idxs.extend(idxs);
