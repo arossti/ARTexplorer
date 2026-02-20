@@ -36,7 +36,7 @@ impl OrbitCamera {
             if let Some((lx, ly)) = self.last_cursor {
                 let dx = (x - lx) as f32;
                 let dy = (y - ly) as f32;
-                self.yaw -= dx * 0.005;
+                self.yaw += dx * 0.005;
                 self.pitch += dy * 0.005;
                 // Clamp pitch to avoid gimbal lock
                 self.pitch = self.pitch.clamp(-1.5, 1.5);

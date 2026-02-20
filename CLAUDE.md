@@ -171,7 +171,7 @@ Specific cases at this boundary (each requires a `// Math.X justified:` comment)
 
 ### RT-Purity in the Rust/Native Codebase
 
-The native macOS app (`artexplorer-native/`) has its own RT-pure engine: `rt_math/` (quadrance, spread, Quadray ABCD, Wildberger polygons, PurePhi, PureRadicals, PureCubics) and `rt_polyhedra/` (all 6 Platonics in Quadray coordinates). **The same RT-purity rules apply — no `f64::sin()`, `f64::cos()`, `std::f64::consts::PI` in geometry code.** The rendering boundary is wgpu/WGSL (not THREE.js). `glam` is used only for camera matrices. See `modules/asteroids/RUST-METAL-BABYSTEPS.md` § "Agent Handoff" for the complete Rust-specific rules.
+The native macOS app (`artex-osx/`) has its own RT-pure engine: `rt_math/` (quadrance, spread, Quadray ABCD, Wildberger polygons, PurePhi, PureRadicals, PureCubics) and `rt_polyhedra/` (all 6 Platonics in Quadray coordinates). **The same RT-purity rules apply — no `f64::sin()`, `f64::cos()`, `std::f64::consts::PI` in geometry code.** The rendering boundary is wgpu/WGSL (not THREE.js). `glam` is used only for camera matrices. See `artex-osx/docs/RUST-METAL-BABYSTEPS.md` § "Agent Handoff" for the complete Rust-specific rules.
 
 ## Development Guidelines
 
