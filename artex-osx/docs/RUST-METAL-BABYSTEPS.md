@@ -532,36 +532,37 @@ pub fn spread(q1: f64, q2: f64, q3: f64) -> f64 {
 ### Quadray coordinates in Rust
 
 ```rust
-/// Quadray coordinate in WXYZ tetrahedral space.
+/// Quadray coordinate in ABCD tetrahedral space.
+/// Fields are a, b, c, d — NOT w, x, y, z (see §8.1 for why).
 /// Invariant: all components >= 0, at least one == 0 (normalized).
 #[derive(Debug, Clone, Copy)]
 pub struct Quadray {
-    pub w: f64,
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
+    pub a: f64,    // Index 0 — Yellow (former QW)
+    pub b: f64,    // Index 1 — Red    (former QX)
+    pub c: f64,    // Index 2 — Blue   (former QY)
+    pub d: f64,    // Index 3 — Green  (former QZ)
 }
 
 impl Quadray {
-    /// The four basis vectors
-    pub const W: Self = Self { w: 1.0, x: 0.0, y: 0.0, z: 0.0 };
-    pub const X: Self = Self { w: 0.0, x: 1.0, y: 0.0, z: 0.0 };
-    pub const Y: Self = Self { w: 0.0, x: 0.0, y: 1.0, z: 0.0 };
-    pub const Z: Self = Self { w: 0.0, x: 0.0, y: 0.0, z: 1.0 };
+    /// The four basis vectors — ABCD = 0123, no scramble
+    pub const A: Self = Self { a: 1.0, b: 0.0, c: 0.0, d: 0.0 };
+    pub const B: Self = Self { a: 0.0, b: 1.0, c: 0.0, d: 0.0 };
+    pub const C: Self = Self { a: 0.0, b: 0.0, c: 1.0, d: 0.0 };
+    pub const D: Self = Self { a: 0.0, b: 0.0, c: 0.0, d: 1.0 };
 
     /// Convert to Cartesian XYZ (the GPU boundary)
     pub fn to_cartesian(&self) -> [f64; 3] {
         let scale = 1.0 / (2.0_f64).sqrt();  // Only sqrt at the boundary!
         [
-            scale * (self.w - self.x - self.y + self.z),
-            scale * (self.w - self.x + self.y - self.z),
-            scale * (self.w + self.x - self.y - self.z),
+            scale * (-self.a + self.b - self.c + self.d),  // X
+            scale * (-self.a + self.b + self.c - self.d),  // Y
+            scale * ( self.a + self.b - self.c - self.d),  // Z
         ]
     }
 }
 ```
 
-**Note the beauty**: Rust's type system lets us define `Quadray` as a distinct type. You literally cannot pass a Cartesian coordinate where a Quadray is expected — the compiler catches it. In JS, both were just arrays.
+**Note the beauty**: Rust's type system lets us define `Quadray` as a distinct type. You literally cannot pass a Cartesian coordinate where a Quadray is expected — the compiler catches it. In JS, both were just arrays. The ABCD field names (§8.1) eliminate the WXYZ/XYZ name collision that caused the 3021 scramble bug in the JS codebase.
 
 ---
 
@@ -723,7 +724,7 @@ Each step is independently verifiable. Do not skip ahead.
   - `src/geometry.rs` — `Vertex` struct, ABCD_COLORS, `build_visible_geometry()` for all 6 Platonic solids
   - `src/camera.rs` — `OrbitCamera` (left-drag orbit, scroll zoom, spherical coordinates via glam)
 - [x] **All 6 Platonic solids** toggleable via checkboxes (tet, dual tet, cube, octa, icosa, dodeca)
-- [x] **Scale sliders** — tet edge (0.1–5.0) and cube edge (0.1–3.6)
+- [x] **Scale sliders** — tet edge (0.1–5.0) and cube edge (0.1–3.6), linked via **Rationality Reciprocity**: `tet_edge = cube_edge × √2`. A `ScaleDriver` enum tracks which slider the user moved last; the other updates as the irrational conjugate. Internally, ONE Quadray scale factor `s = cube_edge / 2` is applied uniformly to all ABCD coordinates (see RATIONALE §2, §5)
 - [x] **FPS counter** and V/E stats in Info section
 - [x] **Mouse orbit camera** — left-drag to rotate, scroll to zoom. Events blocked when clicking egui panel.
 - [x] Dark theme (panel_fill rgb(20,20,25)), right-side panel matching JS app layout
