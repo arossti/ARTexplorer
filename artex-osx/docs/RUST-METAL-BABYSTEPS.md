@@ -732,14 +732,16 @@ Each step is independently verifiable. Do not skip ahead.
 - **Verified**: Side panel + 3D viewport coexist. Toggle polyhedra → shapes appear/disappear. Sliders → resize. Orbit → rotate. Panel clicks don't orbit. 89 tests still pass.
 - **Notes**: This is P0 from ART-RUST-UI.md. wgpu 27 API: `request_adapter()` returns Result (not Option as some docs suggest), `depth_slice: None` is required. egui theme param is `winit::window::Theme::Dark` not `egui::Theme::Dark`.
 
-### P1: Basis Arrows (Quadray ABCD + Cartesian XYZ) — DONE 2026-02-20
+### P1: Basis Arrows (Quadray ABCD + Cartesian XYZ) — DONE 2026-02-20 (corrected 2026-02-21)
 - [x] **New module `src/basis_arrows.rs`** — arrow construction, orientation, ABCD conversion
-  - `build_quadray_basis(tet_edge, offset)` → 4 arrows toward dual tet vertex directions
+  - `build_quadray_basis(tet_edge, janus_sign, offset)` → 4 arrows toward regular tet vertex directions
   - `build_cartesian_basis(cube_edge, offset)` → 3 arrows along +X/+Y/+Z
   - Arrowheads: wireframe mini dual tetrahedra from `rt_polyhedra::dual_tetrahedron()`
   - Orientation via `glam::Quat::from_rotation_arc()` (rendering boundary, justified)
-- [x] **Quadray ABCD arrows**: origin → [0,1,1,1], [1,0,1,1], [1,1,0,1], [1,1,1,0] directions
-  - These are dual tet vertices — align with central angle grid planes
+- [x] **Quadray ABCD arrows**: origin → [1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1] directions
+  - Regular tet basis — arrows align with IVM grid plane basis vectors (AB, AC, etc.)
+  - Janus sign flip negates Cartesian direction → naturally produces dual tet in negative arena
+  - **Correction (2026-02-21)**: Originally used dual tet [0,1,1,1] etc.; switched to regular tet per Janus10.tex §3.2 — normalization erases arena information, regular tet + sign flip is the true inversion
   - Colors: A=Yellow, B=Red, C=Blue, D=Green (ABCD convention)
   - Sizing: `(tetEdge + 1) × √6/4` (JS formula from `rt-grids.js`)
 - [x] **Cartesian XYZ arrows**: +X (Red), +Y (Green), +Z (Blue)
@@ -901,6 +903,32 @@ Design implications for the native app:
   - Near: `distance * 0.02` clamped to [0.01, 100]
   - Far: `distance * 100` clamped to [500, 1,000,000]
 - Centre button respects the new range
+
+### P1: Janus Inversion — DONE 2026-02-21
+
+**Janus Inversion** (see `Janus10.tex` §3): When frequency crosses F0 into the negative arena, the tetrahedron maps to its dual via coordinate sign-flip: `[1,0,0,0] → [-1,0,0,0]`, which (via vectorial neutrality) IS `[0,1,1,1]` — the dual vertex. The sign carries the arena information.
+
+**Two visual orientation cues**:
+1. **Background color**: transitions from black (F0) to white (F-1 and beyond) — `main.rs` clear color
+2. **Basis arrows**: Janus sign flip negates Cartesian direction, so arrows built from regular tet `[1,0,0,0]` naturally point along dual tet directions `[0,1,1,1]` in negative space
+
+**Key insight — normalization is the devil** (Janus10.tex §2.6):
+- Standard Quadray normalizes `[-1,0,0,0]` → `[0,1,1,1]` (add `[1,1,1,1]`)
+- This erases which arena the form lives in — the sign IS the information
+- ARTexplorer's extension permits negative coordinates deliberately
+- The basis arrows use regular tet directions + sign flip (NOT pre-normalized dual tet) because this preserves the true inversion structure
+
+**What changed**:
+- [x] `main.rs` — clear color transitions black→white when `frequency < 0` (clamped at F-1)
+- [x] `basis_arrows.rs` — `janus_sign` parameter; regular tet basis with sign negation
+- [x] `geometry.rs` — passes `state.frequency` as janus_sign to basis arrow builder
+- [x] Basis arrow directions corrected from dual tet `[0,1,1,1]` to regular tet `[1,0,0,0]`
+- [x] 1 new test: `janus_negative_inverts_arrows` (119 total)
+
+**Centrosymmetric polyhedra**: Cube, octa, icosa, dodeca are centrosymmetric — their `P → -P` maps vertices to vertices of the SAME solid. Only the tetrahedron produces a genuinely different structure (its dual) under inversion. This is why only the tet and basis arrows visually change when crossing F0.
+
+**Next step — Grid Janus Inversion** (planned):
+The IVM grid currently uses positive integer ABCD `[i, j, 0, 0]`. In the negative arena, the grid should tessellate with negative ABCD values, forming the dual tet's grid pattern. This is NOT a 180° rotation around Z — it is true coordinate inversion, which the shader's ABCD→XYZ conversion handles naturally (negative ABCD maps to the inverted Cartesian position). The visual effect: the triangular grid wedges rotate into the complementary octants, completing the full Janus visual system.
 
 ### Step 8: Face-Normal Firing (Day 10-12) — DEFERRED (game mode)
 - [ ] Compute face normals (original tet for Quadray alignment)
@@ -1084,6 +1112,9 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P1: Quadray-native IVM grid (integer ABCD, eliminate √6/4)** | **Done (2026-02-21)** |
 | **P1: Frequency slider (Fuller F1–F12) + edge length sliders** | **Done (2026-02-21)** |
 | **P1: Extended camera zoom (proportional scroll, 10000 unit range)** | **Done (2026-02-21)** |
+| **P1: Janus Inversion (background + basis arrows + tet→dual)** | **Done (2026-02-21)** |
+| **P1: Basis arrow correction (dual→regular tet, per Janus10.tex §3.2)** | **Done (2026-02-21)** |
+| P1: Grid Janus Inversion (negative ABCD tessellation in negative arena) | Planned |
 | P1: Node/face rendering (spheres, opacity) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |
