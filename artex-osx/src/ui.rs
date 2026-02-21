@@ -17,7 +17,8 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
         .default_width(220.0)
         .show(ctx, |ui| {
             ui.heading("ARTexplorer");
-            ui.label(egui::RichText::new("Quadray/Metal + egui").small().weak());
+            ui.label(egui::RichText::new("Algebraic Rational Trigonometry Explorer").small().weak());
+            ui.label(egui::RichText::new("by Andy Ross Thomson").small().weak());
             ui.separator();
 
             // --- Polyhedra toggles ---
@@ -172,8 +173,10 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     }
                 });
 
-            // --- IVM Central Angle Grid ---
-            egui::CollapsingHeader::new("IVM Grid")
+            // --- Central Angle Grid (6 ABCD basis-pair planes) ---
+            // These are the 6 planes defined by pairs of tetrahedral basis vectors,
+            // NOT the full IVM spatial lattice. See "IVM Grid" stub below.
+            egui::CollapsingHeader::new("Central Angle Grid")
                 .default_open(false)
                 .show(ui, |ui| {
                     let mut changed = false;
@@ -227,6 +230,19 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     if changed {
                         state.geometry_dirty = true;
                     }
+                });
+
+            // --- IVM Grid (stub — space-filling lattice, future P2+) ---
+            egui::CollapsingHeader::new("IVM Grid")
+                .default_open(false)
+                .show(ui, |ui| {
+                    ui.add_enabled(false, egui::Checkbox::new(&mut false, "Enable"));
+                    ui.label(egui::RichText::new(
+                        "3D spatial lattice — rhombic dodecahedra"
+                    ).small().weak());
+                    ui.label(egui::RichText::new(
+                        "Snap-to ABCD grid points — planned"
+                    ).small().weak());
                 });
 
             // --- Camera ---

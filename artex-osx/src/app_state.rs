@@ -34,7 +34,9 @@ pub struct AppState {
     pub cartesian_divisions: u32, // 10–100, step 10
     pub cartesian_grid_opacity: f32, // 0.0–1.0
 
-    // IVM Central Angle grid planes (6 basis-vector pairs)
+    // Central Angle grid planes (6 ABCD basis-vector pairs)
+    // These are PLANAR grids on the tet face planes, not the full IVM spatial lattice.
+    // Field names kept as `ivm_*` for backwards compatibility; UI says "Central Angle Grid".
     pub show_ivm_grids: bool, // master toggle
     pub show_grid_ab: bool,
     pub show_grid_ac: bool,

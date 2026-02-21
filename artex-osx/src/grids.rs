@@ -1,8 +1,13 @@
-//! Grid plane generators — Cartesian XYZ and Quadray ABCD
+//! Grid plane generators — Cartesian XYZ and Quadray Central Angle
 //!
 //! Generates wireframe grid planes for spatial reference:
 //!   - **Cartesian**: 3 uniform rectangular grids (XY, XZ, YZ)
-//!   - **Quadray**: 6 Central Angle triangular tessellations from ABCD basis pairs
+//!   - **Central Angle**: 6 triangular tessellations from ABCD basis pairs
+//!
+//! These are PLANAR grids — wireframe lines on the 6 planes defined by pairs
+//! of tetrahedral basis vectors. They are NOT the full IVM spatial lattice.
+//! A true IVM grid (snap-to ABCD points in 3D space, rhombic dodecahedra
+//! Voronoi cells) is a separate future feature.
 //!
 //! Cartesian grids are built in XYZ and converted to Quadray via normalizer::xyz_to_quadray().
 //! Quadray grids are built directly as integer ABCD coordinates — no Cartesian
