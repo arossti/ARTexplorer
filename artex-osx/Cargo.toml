@@ -1,0 +1,17 @@
+[package]
+name = "artexplorer-native"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wgpu = "27"                       # GPU rendering (Metal on macOS) — pinned for egui-wgpu 0.33 compat
+winit = "0.30"                    # Window creation + input handling
+pollster = "0.4"                  # Block on async (wgpu init is async)
+env_logger = "0.11"               # CRITICAL: wgpu errors are silent without this
+log = "0.4"                       # Logging framework
+anyhow = "1"                      # Ergonomic error handling
+bytemuck = { version = "1", features = ["derive"] }  # Safe casting for vertex data
+glam = "0.29"                     # Camera matrices (Mat4, Vec3) — standard wgpu math lib
+egui = "0.33"                     # Immediate-mode GUI framework
+egui-wgpu = "0.33"                # egui renderer for wgpu backend
+egui-winit = "0.33"               # egui input adapter for winit events

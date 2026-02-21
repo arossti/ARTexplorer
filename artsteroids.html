@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A.r.t.steroids - Stellarian Ship Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      color: #00ffcc;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+      top: 0; left: 0;
+    }
+
+    /* --- HUD Overlay --- */
+    #hud {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .hud-panel {
+      position: absolute;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 255, 204, 0.2);
+      border-radius: 4px;
+    }
+
+    #hud-top-left {
+      top: 16px; left: 16px;
+      font-size: 16px;
+      letter-spacing: 2px;
+    }
+
+    #hud-top-right {
+      top: 16px; right: 16px;
+      text-align: right;
+      font-size: 14px;
+    }
+
+    #hud-bottom-left {
+      bottom: 16px; left: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    #hud-bottom-center {
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+    }
+
+    .key-indicator {
+      width: 40px; height: 40px;
+      border: 2px solid rgba(0, 255, 204, 0.3);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      transition: background 0.1s, border-color 0.1s, color 0.1s;
+    }
+
+    .key-indicator.active {
+      border-color: #00ffcc;
+      background: rgba(0, 255, 204, 0.25);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(0, 255, 204, 0.4);
+    }
+
+    .key-indicator.key-a { color: #ffff00; border-color: rgba(255, 255, 0, 0.3); }
+    .key-indicator.key-a.active { border-color: #ffff00; background: rgba(255, 255, 0, 0.25); }
+
+    .key-indicator.key-s { color: #00ff00; border-color: rgba(0, 255, 0, 0.3); }
+    .key-indicator.key-s.active { border-color: #00ff00; background: rgba(0, 255, 0, 0.25); }
+
+    .key-indicator.key-d { color: #0088ff; border-color: rgba(0, 136, 255, 0.3); }
+    .key-indicator.key-d.active { border-color: #0088ff; background: rgba(0, 136, 255, 0.25); }
+
+    .key-indicator.key-f { color: #ff0000; border-color: rgba(255, 0, 0, 0.3); }
+    .key-indicator.key-f.active { border-color: #ff0000; background: rgba(255, 0, 0, 0.25); }
+
+    #fuel-bar-container {
+      width: 120px; height: 10px;
+      background: rgba(0, 255, 204, 0.1);
+      border: 1px solid rgba(0, 255, 204, 0.3);
+      border-radius: 2px;
+      margin-top: 4px;
+    }
+
+    #fuel-bar {
+      height: 100%;
+      background: #00ff66;
+      border-radius: 1px;
+      transition: width 0.2s;
+    }
+
+    #hud-top-center {
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: rgba(0, 255, 204, 0.5);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .label { color: rgba(0, 255, 204, 0.5); }
+    .value { color: #00ffcc; }
+    .value-w { color: #ffff00; }
+    .value-x { color: #ff4444; }
+    .value-y { color: #0088ff; }
+    .value-z { color: #00ff00; }
+  </style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<!-- HUD Overlay -->
+<div id="hud">
+  <div id="hud-top-left" class="hud-panel">
+    <span class="label">WAVE</span> <span class="value" id="hud-wave">1</span>
+    &nbsp;&nbsp;
+    <span class="label">SCORE</span> <span class="value" id="hud-score">0</span>
+  </div>
+
+  <div id="hud-top-center" class="hud-panel">
+    A.R.T.STEROIDS v0.1<br>
+    ASDF=dodge &nbsp; HOLD SPACE+ASDF=fire &nbsp; G=grid
+  </div>
+
+  <div id="hud-top-right" class="hud-panel">
+    <span class="label">FUEL</span> <span class="value" id="hud-fuel-text">100</span>
+    <div id="fuel-bar-container"><div id="fuel-bar" style="width:100%"></div></div>
+  </div>
+
+  <div id="hud-bottom-left" class="hud-panel">
+    <span class="label">QUADRAY</span><br>
+    <span class="value-w">W</span> <span class="value" id="hud-qw">1.000</span> &nbsp;
+    <span class="value-x">X</span> <span class="value" id="hud-qx">1.000</span><br>
+    <span class="value-y">Y</span> <span class="value" id="hud-qy">1.000</span> &nbsp;
+    <span class="value-z">Z</span> <span class="value" id="hud-qz">1.000</span><br>
+    <span class="label" style="font-size:11px">CARTESIAN</span><br>
+    <span class="value" id="hud-xyz" style="font-size:11px">x:0.000 y:0.000 z:0.000</span>
+  </div>
+
+  <div id="hud-bottom-center" class="hud-panel">
+    <div class="key-indicator key-a" id="key-a">A</div>
+    <div class="key-indicator key-s" id="key-s">S</div>
+    <div class="key-indicator key-d" id="key-d">D</div>
+    <div class="key-indicator key-f" id="key-f">F</div>
+  </div>
+</div>
+
+<!-- Three.js importmap (same CDN as ARTexplorer) -->
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+</script>
+
+<script type="module">
+  import * as THREE from "three";
+  window.THREE = THREE; // rt-polyhedra.js and rt-math.js expect THREE on global scope
+  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+  import { Line2 } from "three/addons/lines/Line2.js";
+  import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+  import { LineGeometry } from "three/addons/lines/LineGeometry.js";
+  import { RT, Quadray } from "./modules/rt-math.js";
+  import { Polyhedra } from "./modules/rt-polyhedra.js";
+
+  // ---------------------------------------------------------------------------
+  // Initialize Quadray basis vectors
+  // ---------------------------------------------------------------------------
+  Quadray.init(THREE);
+
+  // ---------------------------------------------------------------------------
+  // Scene, Camera, Renderer
+  // ---------------------------------------------------------------------------
+  const container = document.getElementById("canvas-container");
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+
+  const camera = new THREE.PerspectiveCamera(
+    50, window.innerWidth / window.innerHeight, 0.1, 10000
+  );
+  camera.position.set(6, -6, 5);
+  camera.up.set(0, 0, 1); // Z-up (CAD convention)
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(renderer.domElement);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+
+  // Lighting
+  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  dirLight.position.set(5, 10, 7);
+  scene.add(dirLight);
+
+  // ---------------------------------------------------------------------------
+  // Player Ship — Stella Octangula (Dual Tetrahedra Compound)
+  // ---------------------------------------------------------------------------
+  const shipGroup = new THREE.Group();
+  const tetraData = Polyhedra.tetrahedron(1.0);
+
+  // Helper: render a tetrahedron into a group
+  function renderTet(vertices, edges, faces, faceColor, edgeColor, faceOpacity) {
+    const pos = [];
+    vertices.forEach(v => pos.push(v.x, v.y, v.z));
+    const idx = [];
+    faces.forEach(face => {
+      for (let i = 1; i < face.length - 1; i++) idx.push(face[0], face[i], face[i + 1]);
+    });
+    const fGeo = new THREE.BufferGeometry();
+    fGeo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    fGeo.setIndex(idx);
+    fGeo.computeVertexNormals();
+    shipGroup.add(new THREE.Mesh(fGeo, new THREE.MeshStandardMaterial({
+      color: faceColor, transparent: true, opacity: faceOpacity,
+      side: THREE.DoubleSide, flatShading: true
+    })));
+
+    const ePts = [];
+    edges.forEach(([i, j]) => {
+      const a = vertices[i], b = vertices[j];
+      ePts.push(a.x, a.y, a.z, b.x, b.y, b.z);
+    });
+    const eGeo = new THREE.BufferGeometry();
+    eGeo.setAttribute("position", new THREE.Float32BufferAttribute(ePts, 3));
+    shipGroup.add(new THREE.LineSegments(eGeo, new THREE.LineBasicMaterial({ color: edgeColor })));
+
+    vertices.forEach(v => {
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.04, 8, 8),
+        new THREE.MeshBasicMaterial({ color: edgeColor })
+      );
+      sphere.position.copy(v);
+      shipGroup.add(sphere);
+    });
+  }
+
+  // Dual tetrahedron (negated vertices = opposite parity)
+  // VERTICES point along Quadray basis directions; face normals point in -Q directions
+  const dualVerts = tetraData.vertices.map(v =>
+    new THREE.Vector3(-v.x, -v.y, -v.z)
+  );
+  // Reversed winding for correct outward normals on the dual
+  const dualFaces = tetraData.faces.map(f => [...f].reverse());
+  renderTet(dualVerts, tetraData.edges, dualFaces, 0x00ffcc, 0x00ffcc, 0.12);
+
+  // ---------------------------------------------------------------------------
+  // Axis Configuration (shared by arrows, crosshairs, and firing)
+  // ---------------------------------------------------------------------------
+  // Ergonomic ASDF layout: A=QW(left), S=QZ, D=QY(fwd/back), F=QX(right)
+  const axisConfig = [
+    { name: "qw", key: "a", color: 0xffff00, label: "W" },
+    { name: "qz", key: "s", color: 0x00ff00, label: "Z" },
+    { name: "qy", key: "d", color: 0x0088ff, label: "Y" },
+    { name: "qx", key: "f", color: 0xff0000, label: "X" },
+  ];
+
+  // ---------------------------------------------------------------------------
+  // Face Normals & Crosshairs (Original Tet faces — normals = Quadray axes)
+  // ---------------------------------------------------------------------------
+  // The ORIGINAL tetrahedron's face normals align perfectly with Quadray basis
+  // vectors (QW, QX, QY, QZ). The dual's normals are anti-aligned (-Q), causing
+  // degenerate 3-way ties in the dot product mapping. Using original tet faces
+  // gives unique 1:1 axis-to-face mapping with dot = 1.
+  const firingFaces = tetraData.faces.map((face, fi) => {
+    const v0 = tetraData.vertices[face[0]], v1 = tetraData.vertices[face[1]], v2 = tetraData.vertices[face[2]];
+    const centroid = new THREE.Vector3().add(v0).add(v1).add(v2).divideScalar(3);
+    const normal = new THREE.Vector3()
+      .crossVectors(
+        new THREE.Vector3().subVectors(v1, v0),
+        new THREE.Vector3().subVectors(v2, v0)
+      ).normalize();
+    // Ensure normal points outward (away from origin)
+    if (normal.dot(centroid) < 0) normal.negate();
+    return { centroid, normal, faceVerts: [v0, v1, v2], index: fi };
+  });
+
+  // Map each firing face to its closest Quadray axis (for ASDF binding)
+  // Original tet normals ARE the Quadray axes → unique match at dot = 1
+  const faceToKey = {}; // key -> firingFace
+  axisConfig.forEach(cfg => {
+    const axisDir = Quadray.getAxisVector(cfg.name).clone().normalize();
+    let bestDot = -Infinity, bestFace = null;
+    firingFaces.forEach(ff => {
+      const d = ff.normal.dot(axisDir);
+      if (d > bestDot) { bestDot = d; bestFace = ff; }
+    });
+    faceToKey[cfg.key] = bestFace;
+  });
+
+  // Create triangular crosshair at each face centroid
+  const crosshairGroup = new THREE.Group();
+  const crosshairs = {};
+  const crosshairScale = 0.25; // Size of the targeting triangle
+
+  axisConfig.forEach(cfg => {
+    const ff = faceToKey[cfg.key];
+    // Build a small equilateral triangle in the face plane, offset outward
+    const up = ff.normal.clone();
+    const right = new THREE.Vector3().crossVectors(up, new THREE.Vector3(0, 0, 1));
+    if (right.length() < 0.01) right.crossVectors(up, new THREE.Vector3(1, 0, 0));
+    right.normalize();
+    const forward = new THREE.Vector3().crossVectors(right, up).normalize();
+
+    const s = crosshairScale;
+    const offset = ff.centroid.clone().addScaledVector(up, 0.25); // Offset outward from original tet face
+    const p0 = offset.clone().addScaledVector(forward, s);
+    const p1 = offset.clone().addScaledVector(forward, -s * 0.5).addScaledVector(right, s * 0.866);
+    const p2 = offset.clone().addScaledVector(forward, -s * 0.5).addScaledVector(right, -s * 0.866);
+
+    const pts = [p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p2.x, p2.y, p2.z, p0.x, p0.y, p0.z];
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    const mat = new THREE.LineBasicMaterial({
+      color: cfg.color, transparent: true, opacity: 0.3
+    });
+    const crosshair = new THREE.LineSegments(geo, mat);
+    crosshairGroup.add(crosshair);
+    crosshairs[cfg.key] = { mesh: crosshair, mat, color: cfg.color, face: ff };
+  });
+
+  shipGroup.add(crosshairGroup);
+  scene.add(shipGroup);
+
+  // Firing mode: spacebar held = ASDF fires from faces; released = ASDF navigates
+  let firingMode = false;
+  let activeFiringKey = "a"; // last axis displayed/fired
+
+  // ---------------------------------------------------------------------------
+  // Quadray Basis Vector Arrows
+  // ---------------------------------------------------------------------------
+  const basisArrows = {};
+  const arrowLength = 3;
+  const arrowHeadLength = 0.3;
+  const arrowHeadWidth = 0.12;
+
+  axisConfig.forEach(cfg => {
+    const dir = Quadray.getAxisVector(cfg.name).clone().normalize();
+    const arrow = new THREE.ArrowHelper(
+      dir, new THREE.Vector3(0, 0, 0),
+      arrowLength, cfg.color, arrowHeadLength, arrowHeadWidth
+    );
+    // Store base opacity for glow effect
+    arrow.line.material.transparent = true;
+    arrow.line.material.opacity = 0.5;
+    arrow.cone.material.transparent = true;
+    arrow.cone.material.opacity = 0.5;
+    scene.add(arrow);
+    basisArrows[cfg.key] = { arrow, baseColor: cfg.color, dir };
+  });
+
+  // ---------------------------------------------------------------------------
+  // Quadray Grid (toggle with G)
+  // ---------------------------------------------------------------------------
+  const gridGroup = new THREE.Group();
+  gridGroup.visible = false;
+
+  // Create grid lines along pairs of basis vectors (6 planes)
+  const gridExtent = 8;
+  const gridStep = 1;
+  const gridPairs = [
+    { a: "qw", b: "qx", color: 0xff8800 },  // W+X = orange
+    { a: "qw", b: "qy", color: 0x8844ff },  // W+Y = magenta-ish
+    { a: "qw", b: "qz", color: 0x88ff00 },  // W+Z = yellow-green
+    { a: "qx", b: "qy", color: 0x0088ff },  // X+Y = cyan-ish
+    { a: "qx", b: "qz", color: 0x88ff44 },  // X+Z = green-yellow
+    { a: "qy", b: "qz", color: 0x00ffaa },  // Y+Z = teal
+  ];
+
+  gridPairs.forEach(pair => {
+    const va = Quadray.getAxisVector(pair.a).clone().normalize();
+    const vb = Quadray.getAxisVector(pair.b).clone().normalize();
+    const pts = [];
+
+    for (let i = -gridExtent; i <= gridExtent; i += gridStep) {
+      // Lines parallel to va
+      const startA = va.clone().multiplyScalar(i).add(vb.clone().multiplyScalar(-gridExtent));
+      const endA = va.clone().multiplyScalar(i).add(vb.clone().multiplyScalar(gridExtent));
+      pts.push(startA.x, startA.y, startA.z, endA.x, endA.y, endA.z);
+
+      // Lines parallel to vb
+      const startB = vb.clone().multiplyScalar(i).add(va.clone().multiplyScalar(-gridExtent));
+      const endB = vb.clone().multiplyScalar(i).add(va.clone().multiplyScalar(gridExtent));
+      pts.push(startB.x, startB.y, startB.z, endB.x, endB.y, endB.z);
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    const mat = new THREE.LineBasicMaterial({
+      color: pair.color, transparent: true, opacity: 0.35
+    });
+    gridGroup.add(new THREE.LineSegments(geo, mat));
+  });
+
+  scene.add(gridGroup);
+
+  // ---------------------------------------------------------------------------
+  // Game State
+  // ---------------------------------------------------------------------------
+  const MAX_DISPLACEMENT = 7.0;    // Max displacement per axis (visual units)
+  const DISPLACEMENT_SPEED = 6.0;  // Units/sec while holding key
+  const RETURN_DURATION = 0.75;    // Seconds to return to origin
+  const FUEL_MAX = 100;
+  const FUEL_COST_PER_SEC = 1.0;
+
+  const state = {
+    fuel: FUEL_MAX,
+    score: 0,
+    wave: 1,
+    displacement: { a: 0, s: 0, d: 0, f: 0 },
+    keyDown: { a: false, s: false, d: false, f: false },
+    returning: { a: null, s: null, d: null, f: null },  // {from, elapsed}
+    darts: [],
+  };
+
+  // ---------------------------------------------------------------------------
+  // Keyboard Input
+  // ---------------------------------------------------------------------------
+  const keyMap = { a: "a", s: "s", d: "d", f: "f" };
+
+  document.addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+
+    // Spacebar — engage firing mode
+    if (e.code === "Space" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      firingMode = true;
+      return;
+    }
+
+    // ASDF keys
+    if (keyMap[k]) {
+      if (firingMode) {
+        // Firing mode: ASDF fires from respective face
+        activeFiringKey = k;
+        fireDart(k);
+      } else if (!state.keyDown[k]) {
+        // Navigation mode: rubber-band displacement
+        state.keyDown[k] = true;
+        state.returning[k] = null;
+        document.getElementById(`key-${k}`).classList.add("active");
+      }
+    }
+
+    // G — toggle grid
+    if (k === "g") {
+      gridGroup.visible = !gridGroup.visible;
+    }
+  });
+
+  document.addEventListener("keyup", e => {
+    const k = e.key.toLowerCase();
+
+    // Spacebar — disengage firing mode
+    if (e.code === "Space" || e.key === " ") {
+      firingMode = false;
+      return;
+    }
+
+    if (keyMap[k] && state.keyDown[k]) {
+      state.keyDown[k] = false;
+      // Start return animation from current displacement
+      if (Math.abs(state.displacement[k]) > 0.001) {
+        state.returning[k] = { from: state.displacement[k], elapsed: 0 };
+      }
+      document.getElementById(`key-${k}`).classList.remove("active");
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // Laser Darts
+  // ---------------------------------------------------------------------------
+  // Dart constants
+  const DART_SPEED = 30;
+  const DART_LIFETIME = 2.5;
+  const DART_LENGTH = 1.5;
+
+  function fireDart(key) {
+    // Fire from specified face centroid along its normal
+    const ff = crosshairs[key].face;
+    const dir = ff.normal.clone();
+    const origin = shipGroup.position.clone().add(ff.centroid);
+    const cfg = axisConfig.find(c => c.key === key);
+
+    // Line2 fat-line dart — colored by firing face
+    const tip = origin.clone().addScaledVector(dir, DART_LENGTH);
+    const geo = new LineGeometry();
+    geo.setPositions([origin.x, origin.y, origin.z, tip.x, tip.y, tip.z]);
+
+    const mat = new LineMaterial({
+      color: cfg.color, // Colored by face axis
+      linewidth: 4,
+      transparent: true,
+      opacity: 0.95,
+      resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+    });
+
+    const dartMesh = new Line2(geo, mat);
+    dartMesh.computeLineDistances();
+
+    scene.add(dartMesh);
+    state.darts.push({ mesh: dartMesh, dir, speed: DART_SPEED, age: 0, lifetime: DART_LIFETIME, origin: origin.clone() });
+  }
+
+  // ---------------------------------------------------------------------------
+  // HUD Elements (cached)
+  // ---------------------------------------------------------------------------
+  const hudEl = {
+    wave: document.getElementById("hud-wave"),
+    score: document.getElementById("hud-score"),
+    fuelText: document.getElementById("hud-fuel-text"),
+    fuelBar: document.getElementById("fuel-bar"),
+    qw: document.getElementById("hud-qw"),
+    qx: document.getElementById("hud-qx"),
+    qy: document.getElementById("hud-qy"),
+    qz: document.getElementById("hud-qz"),
+    xyz: document.getElementById("hud-xyz"),
+  };
+
+  function updateHUD() {
+    hudEl.wave.textContent = state.wave;
+    hudEl.score.textContent = state.score;
+    hudEl.fuelText.textContent = Math.round(state.fuel);
+    hudEl.fuelBar.style.width = `${state.fuel}%`;
+
+    // Quadray position: origin [1,1,1,1] + displacement along each axis
+    // Key mapping: A=QW, S=QZ, D=QY, F=QX
+    const qw = 1 + state.displacement.a;
+    const qx = 1 + state.displacement.f;
+    const qy = 1 + state.displacement.d;
+    const qz = 1 + state.displacement.s;
+
+    hudEl.qw.textContent = qw.toFixed(3);
+    hudEl.qx.textContent = qx.toFixed(3);
+    hudEl.qy.textContent = qy.toFixed(3);
+    hudEl.qz.textContent = qz.toFixed(3);
+
+    // Cartesian equivalent
+    const cart = RT.QuadrayPolyhedra.toCartesian([qw, qx, qy, qz]);
+    hudEl.xyz.textContent =
+      `x:${cart[0].toFixed(3)} y:${cart[1].toFixed(3)} z:${cart[2].toFixed(3)}`;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cubic ease-out: t => 1 - (1-t)^3
+  // ---------------------------------------------------------------------------
+  function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Animation Loop
+  // ---------------------------------------------------------------------------
+  let prevTime = performance.now();
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const now = performance.now();
+    const dt = Math.min((now - prevTime) / 1000, 0.1); // cap at 100ms
+    prevTime = now;
+
+    let anyKeyHeld = false;
+
+    // --- Update displacement per axis ---
+    for (const k of ["a", "s", "d", "f"]) {
+      if (state.keyDown[k]) {
+        // Holding: increase displacement toward max
+        anyKeyHeld = true;
+        state.displacement[k] = Math.min(
+          state.displacement[k] + DISPLACEMENT_SPEED * dt,
+          MAX_DISPLACEMENT
+        );
+        state.returning[k] = null;
+      } else if (state.returning[k]) {
+        // Returning to origin with ease-out
+        const ret = state.returning[k];
+        ret.elapsed += dt;
+        const t = Math.min(ret.elapsed / RETURN_DURATION, 1);
+        state.displacement[k] = ret.from * (1 - easeOutCubic(t));
+
+        if (t >= 1) {
+          state.displacement[k] = 0;
+          state.returning[k] = null;
+        }
+      }
+    }
+
+    // Fuel cost while displacing
+    if (anyKeyHeld && state.fuel > 0) {
+      state.fuel = Math.max(0, state.fuel - FUEL_COST_PER_SEC * dt);
+    }
+
+    // --- Compute ship world position from Quadray displacement ---
+    // Each key displaces along its Quadray basis vector direction
+    const shipPos = new THREE.Vector3(0, 0, 0);
+    for (const k of ["a", "s", "d", "f"]) {
+      const cfg = axisConfig.find(c => c.key === k);
+      const dir = Quadray.getAxisVector(cfg.name);
+      shipPos.addScaledVector(dir, state.displacement[k]);
+    }
+    shipGroup.position.copy(shipPos);
+
+    // --- Update basis arrow glow ---
+    for (const k of ["a", "s", "d", "f"]) {
+      const ba = basisArrows[k];
+      const active = state.keyDown[k] || Math.abs(state.displacement[k]) > 0.01;
+      const intensity = active
+        ? 0.5 + 0.5 * (state.displacement[k] / MAX_DISPLACEMENT)
+        : 0.3;
+      ba.arrow.line.material.opacity = intensity;
+      ba.arrow.cone.material.opacity = intensity;
+      // Move arrow with ship
+      ba.arrow.position.copy(shipPos);
+    }
+
+    // --- Update crosshairs (glow in firing mode) ---
+    for (const k of ["a", "s", "d", "f"]) {
+      const ch = crosshairs[k];
+      if (firingMode) {
+        // All crosshairs bright in firing mode — ready to fire
+        ch.mat.opacity = 1.0;
+      } else {
+        ch.mat.opacity = (k === activeFiringKey) ? 0.6 : 0.15;
+      }
+    }
+
+    // --- Update darts ---
+    for (let i = state.darts.length - 1; i >= 0; i--) {
+      const dart = state.darts[i];
+      dart.age += dt;
+      if (dart.age >= dart.lifetime) {
+        scene.remove(dart.mesh);
+        dart.mesh.geometry.dispose();
+        dart.mesh.material.dispose();
+        state.darts.splice(i, 1);
+        continue;
+      }
+      // Move origin point along direction
+      dart.origin.addScaledVector(dart.dir, dart.speed * dt);
+      const tip = dart.origin.clone().addScaledVector(dart.dir, DART_LENGTH);
+      dart.mesh.geometry.setPositions([
+        dart.origin.x, dart.origin.y, dart.origin.z,
+        tip.x, tip.y, tip.z
+      ]);
+    }
+
+    // --- HUD ---
+    updateHUD();
+
+    // --- Render ---
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Window Resize
+  // ---------------------------------------------------------------------------
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    // Update resolution on any active dart Line2 materials
+    state.darts.forEach(d => d.mesh.material.resolution.set(window.innerWidth, window.innerHeight));
+  });
+
+  // ---------------------------------------------------------------------------
+  // Start
+  // ---------------------------------------------------------------------------
+  animate();
+  console.log(
+    "%cA.R.T.STEROIDS v0.1%c — Stellarian Ship Test",
+    "color: #00ffcc; font-weight: bold; font-size: 16px",
+    "color: #888"
+  );
+  console.log("Controls: A/S/D/F = WXYZ dodge | HOLD SPACE + A/S/D/F = fire from face | G = grid | scroll = zoom");
+</script>
+
+</body>
+</html>

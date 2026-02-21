@@ -1,0 +1,67 @@
+License: (CC BY-NC-ND 4.0)
+
+Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)
+
+This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
+
+You are free to:
+- Share — copy and redistribute the material in any medium or format for noncommercial purposes only.
+
+Under the following terms:
+- Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+- NonCommercial — You may not use the material for commercial purposes.
+- No Derivatives — If you remix, transform, or build upon the material, you may not distribute the modified material.
+
+No additional restrictions — You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits.
+
+License: https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+(c) OpenBuilding, Inc., 2025-2026
+
+NOTICE
+
+ARTexplorer Native (artex-osx) is a Rust/Metal macOS application for exploring
+polyhedral geometry in Quadray ABCD coordinates using Rational Trigonometry.
+It is owned by OpenBuilding, Inc., a nonprofit registered in Canada, supported
+by the Ontario Association of Architects.
+
+This software implements original research combining:
+- R. Buckminster Fuller's Synergetics (tetrahedral coordinate geometry)
+- N.J. Wildberger's Rational Trigonometry (algebraic, not transcendental)
+- Tom Ace's Quadray coordinate system
+- Kirby Urner's Python explorations connecting these traditions
+
+The RT-pure geometry engine (rt_math/, rt_polyhedra/) and the Quadray-native
+rendering pipeline represent original work by Andy Ross Thomson, M.Arch. OAA.
+
+Unauthorized modification, redistribution, or misrepresentation of this work
+is not permitted. Please refer to this LICENSE file for details, or contact
+us directly with questions.
+
+NOTE ON GAME FUNCTIONALITY
+
+Game-related modules and functionality (when implemented) may be subject to
+additional licensing restrictions beyond CC BY-NC-ND 4.0. These restrictions
+will be documented separately when game features are released.
+
+THIRD-PARTY ATTRIBUTION
+
+This application uses the following open-source libraries:
+- wgpu (Apache 2.0 / MIT) — GPU abstraction layer
+- winit (Apache 2.0 / MIT) — window management
+- egui (Apache 2.0 / MIT) — immediate-mode GUI
+- glam (Apache 2.0 / MIT) — camera matrices (rendering boundary only)
+- bytemuck (Apache 2.0 / MIT / Zlib) — safe transmutation for GPU buffers
+
+Camera orbit technique uses conventional yaw/pitch with glam quaternions.
+Future versions will replace this with Quadray Rotor orientation (RT-pure).
+
+by Andy Ross Thomson, M.Arch. OAA — OpenBuilding, Inc.
+With assistance from Claude (Anthropic).
+
+DISCLAIMER
+
+OpenBuilding, including its directors, advisors, and volunteers, makes no
+guarantees and assumes no legal responsibility for the accuracy, completeness,
+or usefulness of this tool. This software is provided for educational and
+research purposes. Use at your own risk.
