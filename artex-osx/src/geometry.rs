@@ -122,7 +122,7 @@ pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u32>, f32) 
     }
     {
         let offset = vertices.len() as u32;
-        let (grid_verts, grid_idxs) = grids::build_ivm_grids(state, offset);
+        let (grid_verts, grid_idxs) = grids::build_quadray_grids(state, offset);
         vertices.extend(grid_verts);
         indices.extend(grid_idxs);
     }

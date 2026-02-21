@@ -1,17 +1,17 @@
-//! Grid plane generators — Cartesian XYZ and IVM Central Angle
+//! Grid plane generators — Cartesian XYZ and Quadray ABCD
 //!
 //! Generates wireframe grid planes for spatial reference:
 //!   - **Cartesian**: 3 uniform rectangular grids (XY, XZ, YZ)
-//!   - **IVM**: 6 Central Angle triangular tessellations from Quadray basis pairs
+//!   - **Quadray**: 6 Central Angle triangular tessellations from ABCD basis pairs
 //!
-//! All geometry built in Cartesian, then converted to Quadray ABCD via
-//! Quadray::from_cartesian() for the existing shader pipeline.
+//! Cartesian grids are built in XYZ and converted to Quadray via from_cartesian().
+//! Quadray grids are built directly as integer ABCD coordinates — no Cartesian
+//! intermediaries, no irrationals, no from_cartesian(). The shader converts
+//! ABCD → XYZ at the rendering boundary.
 //!
 //! Color conventions (full brightness, alpha-blended via per-grid-type opacity):
 //!   Cartesian: XY=Yellow, XZ=Magenta, YZ=Cyan (additive axis mixes)
-//!   IVM: AB=Orange, AC=Magenta, AD=Lime, BC=Cyan, BD=Lavender, CD=Pink
-//!
-//! RENDERING BOUNDARY: Cartesian coordinates used for grid layout (justified).
+//!   Quadray: AB=Orange, AC=Magenta, AD=Lime, BC=Cyan, BD=Lavender, CD=Pink
 
 use crate::app_state::AppState;
 use crate::geometry::Vertex;
@@ -23,7 +23,7 @@ const XY_COLOR: [f32; 3] = [1.0, 1.0, 0.0]; // Yellow
 const XZ_COLOR: [f32; 3] = [1.0, 0.0, 1.0]; // Magenta
 const YZ_COLOR: [f32; 3] = [0.0, 1.0, 1.0]; // Cyan
 
-// --- IVM Central Angle plane colors (full brightness — alpha handles opacity) ---
+// --- Quadray Central Angle plane colors (full brightness — alpha handles opacity) ---
 const AB_COLOR: [f32; 3] = [1.0, 0.67, 0.0];  // Orange
 const AC_COLOR: [f32; 3] = [1.0, 0.0, 1.0];   // Magenta
 const AD_COLOR: [f32; 3] = [0.67, 1.0, 0.0];  // Lime
@@ -37,6 +37,7 @@ const CD_COLOR: [f32; 3] = [1.0, 0.5, 0.5];   // Pink
 /// [-half_extent, +half_extent] in both axes. The third axis is 0.
 ///
 /// Vertices are converted from Cartesian to Quadray for the shader pipeline.
+/// RENDERING BOUNDARY: Cartesian coordinates used for XYZ grid layout (justified).
 ///
 /// - `plane`: 0=XY (z=0), 1=XZ (y=0), 2=YZ (x=0)
 /// - `half_extent`: how far the grid extends from origin
@@ -78,18 +79,18 @@ fn build_cartesian_plane(
         match plane {
             0 => {
                 // XY plane (z=0): lines parallel to X and Y
-                push_line([-half_extent, t, 0.0], [half_extent, t, 0.0]); // parallel to X
-                push_line([t, -half_extent, 0.0], [t, half_extent, 0.0]); // parallel to Y
+                push_line([-half_extent, t, 0.0], [half_extent, t, 0.0]);
+                push_line([t, -half_extent, 0.0], [t, half_extent, 0.0]);
             }
             1 => {
                 // XZ plane (y=0): lines parallel to X and Z
-                push_line([-half_extent, 0.0, t], [half_extent, 0.0, t]); // parallel to X
-                push_line([t, 0.0, -half_extent], [t, 0.0, half_extent]); // parallel to Z
+                push_line([-half_extent, 0.0, t], [half_extent, 0.0, t]);
+                push_line([t, 0.0, -half_extent], [t, 0.0, half_extent]);
             }
             2 => {
                 // YZ plane (x=0): lines parallel to Y and Z
-                push_line([0.0, -half_extent, t], [0.0, half_extent, t]); // parallel to Y
-                push_line([0.0, t, -half_extent], [0.0, t, half_extent]); // parallel to Z
+                push_line([0.0, -half_extent, t], [0.0, half_extent, t]);
+                push_line([0.0, t, -half_extent], [0.0, t, half_extent]);
             }
             _ => unreachable!(),
         }
@@ -98,100 +99,79 @@ fn build_cartesian_plane(
     (vertices, indices)
 }
 
-/// Build a triangular IVM grid on one Central Angle plane.
+/// Build a triangular Quadray grid on one Central Angle plane.
 ///
-/// The plane is defined by two Quadray basis directions. The triangular
-/// tessellation fills the wedge between them, generating equilateral
-/// triangles with edge length = step_length.
+/// The plane is defined by two ABCD basis indices (0=A, 1=B, 2=C, 3=D).
+/// Grid vertices are **integer ABCD coordinates** — no Cartesian intermediary,
+/// no irrationals, no from_cartesian(). The shader handles ABCD → XYZ.
 ///
-/// Algorithm (from JS createIVMGrid):
+/// Algorithm:
 ///   For i=0..T, j=0..T-i:
-///     P(i,j)   = basis1 * cumDist[i]   + basis2 * cumDist[j]
-///     P(i+1,j) = basis1 * cumDist[i+1] + basis2 * cumDist[j]
-///     P(i,j+1) = basis1 * cumDist[i]   + basis2 * cumDist[j+1]
+///     P(i,j)   = i*basis1 + j*basis2  (integer ABCD)
+///     P(i+1,j) = (i+1)*basis1 + j*basis2
+///     P(i,j+1) = i*basis1 + (j+1)*basis2
 ///     Emit 3 edges forming a triangle.
 ///
-/// - `basis1`, `basis2`: Normalized Cartesian direction vectors
-/// - `tessellations`: number of triangle steps along each direction
-/// - `step_length`: Cartesian distance per step
+/// Example (AB plane, T=3):
+///   [0,0,0,0]—[1,0,0,0]—[0,1,0,0]  (first triangle)
+///   [1,0,0,0]—[2,0,0,0]—[1,1,0,0]  (second triangle)
+///   ...all vertices are pure integers in ABCD.
+///
+/// - `basis`: indices of the two non-zero ABCD components, e.g. [0,1] for AB
+/// - `tessellations`: number of integer steps along each basis direction
 /// - `color`: RGBA color for all grid lines (alpha = opacity)
 /// - `index_offset`: base index for the returned indices
-fn build_ivm_plane(
-    basis1: [f64; 3],
-    basis2: [f64; 3],
+fn build_quadray_plane(
+    basis: [usize; 2],
     tessellations: u32,
-    step_length: f64,
     color: [f32; 4],
     index_offset: u32,
 ) -> (Vec<Vertex>, Vec<u32>) {
     let t = tessellations as usize;
 
-    // Pre-compute cumulative distances
-    let cum_dist: Vec<f64> = (0..=t + 1).map(|k| k as f64 * step_length).collect();
-
     // Estimate capacity: each triangle = 3 edges = 6 vertices, 6 indices
-    // Total triangles ≈ T*(T+1)/2
+    // Total triangles = T*(T+1)/2
     let est_tris = t * (t + 1) / 2;
     let mut vertices = Vec::with_capacity(est_tris * 6);
     let mut indices = Vec::with_capacity(est_tris * 6);
 
-    let [b1x, b1y, b1z] = basis1;
-    let [b2x, b2y, b2z] = basis2;
+    // Build an ABCD quadray from two basis indices and integer coefficients
+    let make_quadray = |ci: f32, cj: f32| -> [f32; 4] {
+        let mut q = [0.0f32; 4];
+        q[basis[0]] = ci;
+        q[basis[1]] = cj;
+        q
+    };
 
-    let mut push_line = |p0: [f64; 3], p1: [f64; 3]| {
+    let mut push_line = |q0: [f32; 4], q1: [f32; 4]| {
         let idx = index_offset + vertices.len() as u32;
-        vertices.push(Vertex {
-            quadray: Quadray::from_cartesian(p0).to_f32_array(),
-            color,
-        });
-        vertices.push(Vertex {
-            quadray: Quadray::from_cartesian(p1).to_f32_array(),
-            color,
-        });
+        vertices.push(Vertex { quadray: q0, color });
+        vertices.push(Vertex { quadray: q1, color });
         indices.push(idx);
         indices.push(idx + 1);
     };
 
     for i in 0..t {
-        let di = cum_dist[i];
-        let di1 = cum_dist[i + 1];
+        let fi = i as f32;
+        let fi1 = (i + 1) as f32;
 
         for j in 0..t - i {
-            let dj = cum_dist[j];
-            let dj1 = cum_dist[j + 1];
+            let fj = j as f32;
+            let fj1 = (j + 1) as f32;
 
-            // Triangle vertices
-            let p_ij = [
-                b1x * di + b2x * dj,
-                b1y * di + b2y * dj,
-                b1z * di + b2z * dj,
-            ];
-            let p_i1j = [
-                b1x * di1 + b2x * dj,
-                b1y * di1 + b2y * dj,
-                b1z * di1 + b2z * dj,
-            ];
-            let p_ij1 = [
-                b1x * di + b2x * dj1,
-                b1y * di + b2y * dj1,
-                b1z * di + b2z * dj1,
-            ];
+            // Three vertices of the triangle — pure integer ABCD
+            let q_ij = make_quadray(fi, fj);
+            let q_i1j = make_quadray(fi1, fj);
+            let q_ij1 = make_quadray(fi, fj1);
 
             // 3 edges of the triangle
-            push_line(p_ij, p_i1j);
-            push_line(p_i1j, p_ij1);
-            push_line(p_ij1, p_ij);
+            push_line(q_ij, q_i1j);
+            push_line(q_i1j, q_ij1);
+            push_line(q_ij1, q_ij);
         }
     }
 
     (vertices, indices)
-}
-
-/// Normalized Cartesian direction for a Quadray basis vector.
-fn quadray_direction(q: &Quadray) -> [f64; 3] {
-    let xyz = q.to_cartesian();
-    let len = (xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]).sqrt();
-    [xyz[0] / len, xyz[1] / len, xyz[2] / len]
 }
 
 /// Build all visible Cartesian grid planes.
@@ -206,7 +186,7 @@ pub fn build_cartesian_grids(
     }
 
     // Fixed cell spacing — grid is a spatial reference frame, independent of geometry scale.
-    // Uses quadray grid interval (√6/4) for visual consistency with the IVM grid.
+    // Uses quadray grid interval (√6/4) for visual consistency with the Quadray grid.
     // Divisions slider EXPANDS the grid (more cells = larger extent), not subdivides it.
     let cell_spacing = radicals::quadray_grid_interval();
     let divisions = state.cartesian_divisions;
@@ -236,14 +216,18 @@ pub fn build_cartesian_grids(
     (all_verts, all_idxs)
 }
 
-/// Build all visible IVM Central Angle grid planes.
+/// Build all visible Quadray Central Angle grid planes.
 ///
-/// Each of the 6 planes is defined by a pair of Quadray basis vectors.
-/// The triangular tessellation uses normalized Cartesian directions and
-/// a step length scaled by the current geometry factor.
+/// Each of the 6 planes is defined by a pair of ABCD basis indices.
+/// Grid vertices are **pure integer ABCD coordinates** — no Cartesian
+/// intermediary, no irrationals, no from_cartesian(). The WGSL shader
+/// converts ABCD → XYZ at the rendering boundary.
+///
+/// Tessellations slider controls grid extent: T=12 means vertices from
+/// [0,0,0,0] to [12,0,0,0] along each basis direction.
 ///
 /// Returns (vertices, indices) for the combined visible planes.
-pub fn build_ivm_grids(
+pub fn build_quadray_grids(
     state: &AppState,
     index_offset: u32,
 ) -> (Vec<Vertex>, Vec<u32>) {
@@ -251,40 +235,30 @@ pub fn build_ivm_grids(
         return (Vec::new(), Vec::new());
     }
 
-    // Fixed step length — grid is a spatial reference frame, independent of geometry scale.
-    // Quadray grid interval (√6/4 ≈ 0.612) is the natural IVM lattice spacing.
-    // Tessellations slider EXPANDS the grid (more steps = larger extent).
-    let step_length = radicals::quadray_grid_interval();
     let tessellations = state.ivm_tessellations;
-
-    // Normalized Quadray basis directions
-    let dir_a = quadray_direction(&Quadray::A);
-    let dir_b = quadray_direction(&Quadray::B);
-    let dir_c = quadray_direction(&Quadray::C);
-    let dir_d = quadray_direction(&Quadray::D);
-
     let alpha = state.ivm_grid_opacity;
 
-    // 6 Central Angle planes: all C(4,2) pairs of basis vectors
-    let planes: [(bool, [f64; 3], [f64; 3], [f32; 3]); 6] = [
-        (state.show_grid_ab, dir_a, dir_b, AB_COLOR),
-        (state.show_grid_ac, dir_a, dir_c, AC_COLOR),
-        (state.show_grid_ad, dir_a, dir_d, AD_COLOR),
-        (state.show_grid_bc, dir_b, dir_c, BC_COLOR),
-        (state.show_grid_bd, dir_b, dir_d, BD_COLOR),
-        (state.show_grid_cd, dir_c, dir_d, CD_COLOR),
+    // 6 Central Angle planes: all C(4,2) pairs of ABCD basis vectors
+    // basis indices: 0=A, 1=B, 2=C, 3=D
+    let planes: [(bool, [usize; 2], [f32; 3]); 6] = [
+        (state.show_grid_ab, [0, 1], AB_COLOR),
+        (state.show_grid_ac, [0, 2], AC_COLOR),
+        (state.show_grid_ad, [0, 3], AD_COLOR),
+        (state.show_grid_bc, [1, 2], BC_COLOR),
+        (state.show_grid_bd, [1, 3], BD_COLOR),
+        (state.show_grid_cd, [2, 3], CD_COLOR),
     ];
 
     let mut all_verts = Vec::new();
     let mut all_idxs = Vec::new();
 
-    for (visible, b1, b2, rgb) in &planes {
+    for (visible, basis, rgb) in &planes {
         if !visible {
             continue;
         }
         let color = [rgb[0], rgb[1], rgb[2], alpha];
         let offset = index_offset + all_verts.len() as u32;
-        let (verts, idxs) = build_ivm_plane(*b1, *b2, tessellations, step_length, color, offset);
+        let (verts, idxs) = build_quadray_plane(*basis, tessellations, color, offset);
         all_verts.extend(verts);
         all_idxs.extend(idxs);
     }
@@ -295,8 +269,6 @@ pub fn build_ivm_grids(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    const EPS: f64 = 1e-10;
 
     #[test]
     fn cartesian_xy_plane_vertex_count() {
@@ -345,7 +317,7 @@ mod tests {
     }
 
     #[test]
-    fn ivm_single_plane_has_triangles() {
+    fn quadray_single_plane_has_triangles() {
         let state = AppState {
             show_ivm_grids: true,
             show_grid_ab: true,
@@ -357,7 +329,7 @@ mod tests {
             ivm_tessellations: 3,
             ..AppState::default()
         };
-        let (verts, idxs) = build_ivm_grids(&state, 0);
+        let (verts, idxs) = build_quadray_grids(&state, 0);
         // T=3: triangles = 3+2+1 = 6, each has 3 edges, each edge = 2 verts
         // 6 triangles × 3 edges × 2 verts = 36 vertices
         assert_eq!(verts.len(), 36, "expected 36 vertices, got {}", verts.len());
@@ -365,19 +337,19 @@ mod tests {
     }
 
     #[test]
-    fn ivm_master_toggle_off() {
+    fn quadray_master_toggle_off() {
         let state = AppState {
             show_ivm_grids: false,
             show_grid_ab: true,
             ..AppState::default()
         };
-        let (verts, idxs) = build_ivm_grids(&state, 0);
+        let (verts, idxs) = build_quadray_grids(&state, 0);
         assert_eq!(verts.len(), 0);
         assert_eq!(idxs.len(), 0);
     }
 
     #[test]
-    fn ivm_tessellation_12_default() {
+    fn quadray_tessellation_12_default() {
         let state = AppState {
             show_ivm_grids: true,
             show_grid_ab: true,
@@ -389,7 +361,7 @@ mod tests {
             ivm_tessellations: 12,
             ..AppState::default()
         };
-        let (verts, _) = build_ivm_grids(&state, 0);
+        let (verts, _) = build_quadray_grids(&state, 0);
         // T=12: triangles = sum(12..1) = 78, each = 6 verts → 468
         assert_eq!(verts.len(), 468, "expected 468 vertices, got {}", verts.len());
     }
@@ -440,16 +412,98 @@ mod tests {
     }
 
     #[test]
-    fn ivm_plane_vertices_on_plane() {
-        // AB plane: all vertices should lie in the plane spanned by dir_a and dir_b
-        // i.e., the cross product of (dir_a, dir_b) is the plane normal,
-        // and dot(vertex, normal) should be ≈ 0
-        let dir_a = quadray_direction(&Quadray::A);
-        let dir_b = quadray_direction(&Quadray::B);
+    fn quadray_ab_vertices_are_integer() {
+        // AB plane: all vertices should have integer A and B, zero C and D
+        let state = AppState {
+            show_ivm_grids: true,
+            show_grid_ab: true,
+            show_grid_ac: false,
+            show_grid_ad: false,
+            show_grid_bc: false,
+            show_grid_bd: false,
+            show_grid_cd: false,
+            ivm_tessellations: 4,
+            ..AppState::default()
+        };
+        let (verts, _) = build_quadray_grids(&state, 0);
+        for (i, v) in verts.iter().enumerate() {
+            // C and D must be exactly 0
+            assert_eq!(
+                v.quadray[2], 0.0,
+                "vertex {} has C={} (expected 0 for AB plane)",
+                i, v.quadray[2]
+            );
+            assert_eq!(
+                v.quadray[3], 0.0,
+                "vertex {} has D={} (expected 0 for AB plane)",
+                i, v.quadray[3]
+            );
+            // A and B must be non-negative integers
+            assert_eq!(
+                v.quadray[0], v.quadray[0].round(),
+                "vertex {} has non-integer A={}",
+                i, v.quadray[0]
+            );
+            assert_eq!(
+                v.quadray[1], v.quadray[1].round(),
+                "vertex {} has non-integer B={}",
+                i, v.quadray[1]
+            );
+        }
+    }
+
+    #[test]
+    fn quadray_cd_vertices_are_integer() {
+        // CD plane: all vertices should have zero A and B, integer C and D
+        let state = AppState {
+            show_ivm_grids: true,
+            show_grid_ab: false,
+            show_grid_ac: false,
+            show_grid_ad: false,
+            show_grid_bc: false,
+            show_grid_bd: false,
+            show_grid_cd: true,
+            ivm_tessellations: 3,
+            ..AppState::default()
+        };
+        let (verts, _) = build_quadray_grids(&state, 0);
+        for (i, v) in verts.iter().enumerate() {
+            // A and B must be exactly 0
+            assert_eq!(
+                v.quadray[0], 0.0,
+                "vertex {} has A={} (expected 0 for CD plane)",
+                i, v.quadray[0]
+            );
+            assert_eq!(
+                v.quadray[1], 0.0,
+                "vertex {} has B={} (expected 0 for CD plane)",
+                i, v.quadray[1]
+            );
+            // C and D must be non-negative integers
+            assert_eq!(
+                v.quadray[2], v.quadray[2].round(),
+                "vertex {} has non-integer C={}",
+                i, v.quadray[2]
+            );
+            assert_eq!(
+                v.quadray[3], v.quadray[3].round(),
+                "vertex {} has non-integer D={}",
+                i, v.quadray[3]
+            );
+        }
+    }
+
+    #[test]
+    fn quadray_plane_vertices_on_plane() {
+        // AB plane: all vertices should lie in the plane spanned by A and B directions
+        // Since vertices are [i,j,0,0], converting to Cartesian and checking the
+        // normal direction (cross product of A and B Cartesian directions) should be ≈0
+        let a_xyz = Quadray::A.to_cartesian();
+        let b_xyz = Quadray::B.to_cartesian();
         let normal = [
-            dir_a[1] * dir_b[2] - dir_a[2] * dir_b[1],
-            dir_a[2] * dir_b[0] - dir_a[0] * dir_b[2],
-            dir_a[0] * dir_b[1] - dir_a[1] * dir_b[0],
+            a_xyz[1] * b_xyz[2] - a_xyz[2] * b_xyz[1],
+            a_xyz[2] * b_xyz[0] - a_xyz[0] * b_xyz[2],
+            a_xyz[0] * b_xyz[1] - a_xyz[1] * b_xyz[0],
         ];
 
         let state = AppState {
@@ -463,7 +517,7 @@ mod tests {
             ivm_tessellations: 4,
             ..AppState::default()
         };
-        let (verts, _) = build_ivm_grids(&state, 0);
+        let (verts, _) = build_quadray_grids(&state, 0);
         for (i, v) in verts.iter().enumerate() {
             let q = Quadray::new(
                 v.quadray[0] as f64,
@@ -478,25 +532,6 @@ mod tests {
                 "vertex {} not on AB plane: dot(xyz, normal) = {}",
                 i,
                 dot
-            );
-        }
-    }
-
-    #[test]
-    fn quadray_directions_are_unit_vectors() {
-        let dirs = [
-            quadray_direction(&Quadray::A),
-            quadray_direction(&Quadray::B),
-            quadray_direction(&Quadray::C),
-            quadray_direction(&Quadray::D),
-        ];
-        for (i, d) in dirs.iter().enumerate() {
-            let len = (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]).sqrt();
-            assert!(
-                (len - 1.0).abs() < EPS,
-                "direction {} has length {} != 1.0",
-                i,
-                len
             );
         }
     }

@@ -1,10 +1,12 @@
-/// Which scale slider is currently the "driver" (gets rational snapping).
+/// Which scale control is currently driving.
+/// Frequency = Quadray-native (integer = on-grid).
+/// Edge lengths = Cartesian observations (generally off-grid).
 /// The Rationality Reciprocity: tet_edge = cube_edge * √2.
-/// You cannot have both rational simultaneously.
 #[derive(Clone, Copy, PartialEq)]
 pub enum ScaleDriver {
-    TetEdge,  // tet edge is rational, cube edge is irrational
-    CubeEdge, // cube edge is rational, tet edge is irrational
+    Frequency, // frequency is integer → polyhedra on grid points
+    TetEdge,   // tet edge is rational, cube edge is irrational
+    CubeEdge,  // cube edge is rational, tet edge is irrational
 }
 
 /// Application state — drives UI and geometry generation.
@@ -43,13 +45,20 @@ pub struct AppState {
     pub ivm_tessellations: u32, // 12–144, step 12
     pub ivm_grid_opacity: f32, // 0.0–1.0
 
-    // Scale — ONE metric, TWO presentations (Rationality Reciprocity)
-    // tet_edge = cube_edge * √2.  Whichever slider the user adjusts gets
-    // snapped to rational (0.1) intervals; the other shows the irrational conjugate.
-    // See Janus10.tex §2.6 and rt-init.js scale slider logic.
+    // Scale — ONE metric, THREE controls.
+    //
+    // Frequency (Fuller): F = s = cube_edge / 2 = Quadray scale factor.
+    // At integer F, polyhedra land on integer Quadray grid points.
+    // cube_edge = 2F (rational when F integer), tet_edge = 2√2·F (always
+    // irrational — the Rationality Reciprocity). See Janus10.tex §2.6.
+    //
+    // Two slider groups:
+    //   1. Frequency slider — integer snap, Quadray-native, on-grid
+    //   2. Edge length sliders — 0.1 snap, Cartesian observations, generally off-grid
+    pub frequency: f32,    // Fuller frequency F = s = cube_edge / 2
     pub tet_edge: f32,
     pub cube_edge: f32,
-    pub scale_driver: ScaleDriver, // which slider is primary (gets rational snapping)
+    pub scale_driver: ScaleDriver, // which control is currently driving
 
     // Geometry rebuild flag
     pub geometry_dirty: bool,
@@ -94,9 +103,10 @@ impl Default for AppState {
             show_grid_cd: true,
             ivm_tessellations: 12,
             ivm_grid_opacity: 0.10,
-            tet_edge: 2.0,
-            cube_edge: 2.0 / std::f32::consts::SQRT_2, // √2 ≈ 1.4142
-            scale_driver: ScaleDriver::TetEdge,
+            frequency: 1.0,                           // F1: baseline
+            tet_edge: 2.0 * std::f32::consts::SQRT_2, // F1: 2√2 ≈ 2.8284 (irrational)
+            cube_edge: 2.0,                           // F1: 2 (rational integer)
+            scale_driver: ScaleDriver::Frequency,      // Frequency is primary
             geometry_dirty: true, // Build on first frame
             vertex_count: 0,
             edge_count: 0,

@@ -233,52 +233,113 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     });
                 });
 
-            // --- Scale sliders (Rationality Reciprocity) ---
-            // ONE metric, TWO presentations. tet_edge = cube_edge * √2.
-            // Whichever slider the user adjusts is the "driver" — it gets snapped
-            // to 0.1 intervals (rational). The other shows the irrational conjugate.
-            egui::CollapsingHeader::new("Scale")
+            // --- Scale: Frequency (Quadray-native) ---
+            // Frequency F = s = Quadray scale factor. At integer F, polyhedra
+            // vertices land on integer Quadray grid points.
+            // cube_edge = 2F, tet_edge = 2√2·F (Rationality Reciprocity).
+            egui::CollapsingHeader::new("Frequency")
                 .default_open(true)
+                .show(ui, |ui| {
+                    let sqrt2 = std::f32::consts::SQRT_2;
+
+                    // Frequency slider — integer snap, Quadray-native
+                    let freq_response = ui.add(
+                        egui::Slider::new(&mut state.frequency, -5.0..=5.0)
+                            .step_by(1.0)
+                            .text("F")
+                            .custom_formatter(|v, _| {
+                                let vi = v as i32;
+                                if (v - vi as f64).abs() < 0.01 {
+                                    format!("F{}", vi.abs())
+                                } else {
+                                    format!("F{:.1}", v.abs())
+                                }
+                            })
+                    );
+                    if freq_response.changed() {
+                        state.scale_driver = ScaleDriver::Frequency;
+                        state.cube_edge = 2.0 * state.frequency;
+                        state.tet_edge = 2.0 * sqrt2 * state.frequency;
+                        state.geometry_dirty = true;
+                    }
+
+                    // Edge length readouts (derived from frequency)
+                    let f = state.frequency;
+                    let f_abs = f.abs();
+                    let f_int = f_abs.round() as i32;
+                    let is_integer = (f_abs - f_int as f32).abs() < 0.01;
+                    let janus = if f < -0.01 { "  (Janus −)" } else { "" };
+
+                    if is_integer && f_int > 0 {
+                        ui.label(egui::RichText::new(
+                            format!("Cube edge = {}    Tet edge = {}√2{}",
+                                f_int * 2, f_int * 2, janus)
+                        ).small());
+                    } else if f_abs < 0.01 {
+                        ui.label(egui::RichText::new("Origin (Janus point)").small());
+                    } else {
+                        ui.label(egui::RichText::new(
+                            format!("Cube edge = {:.4}    Tet edge = {:.4}{}",
+                                state.cube_edge, state.tet_edge, janus)
+                        ).small());
+                    }
+
+                    ui.label(egui::RichText::new(
+                        "Integer F → polyhedra on grid points"
+                    ).small().weak());
+                });
+
+            // --- Scale: Edge Lengths (Cartesian observations) ---
+            // Fine-grained edge control — generally off-grid.
+            egui::CollapsingHeader::new("Edge Lengths")
+                .default_open(false)
                 .show(ui, |ui| {
                     let sqrt2 = std::f32::consts::SQRT_2;
 
                     // Tet edge slider
                     let tet_response = ui.add(
-                        egui::Slider::new(&mut state.tet_edge, -5.0..=5.0)
+                        egui::Slider::new(&mut state.tet_edge, -14.2..=14.2)
                             .text("Tet edge")
                             .custom_formatter(|v, _| format!("{:.4}", v))
                     );
                     if tet_response.changed() {
                         state.scale_driver = ScaleDriver::TetEdge;
-                        // Snap to 0.1 intervals
                         state.tet_edge = (state.tet_edge * 10.0).round() / 10.0;
-                        // Compute irrational conjugate
                         state.cube_edge = state.tet_edge / sqrt2;
+                        state.frequency = state.cube_edge / 2.0;
                         state.geometry_dirty = true;
                     }
 
                     // Cube edge slider
                     let cube_response = ui.add(
-                        egui::Slider::new(&mut state.cube_edge, -3.6..=3.6)
+                        egui::Slider::new(&mut state.cube_edge, -10.0..=10.0)
                             .text("Cube edge")
                             .custom_formatter(|v, _| format!("{:.4}", v))
                     );
                     if cube_response.changed() {
                         state.scale_driver = ScaleDriver::CubeEdge;
-                        // Snap to 0.1 intervals
                         state.cube_edge = (state.cube_edge * 10.0).round() / 10.0;
-                        // Compute irrational conjugate
                         state.tet_edge = state.cube_edge * sqrt2;
+                        state.frequency = state.cube_edge / 2.0;
                         state.geometry_dirty = true;
                     }
 
-                    // Show which system is currently rational
-                    let label = match state.scale_driver {
-                        ScaleDriver::TetEdge => "Tet rational → Cube irrational",
-                        ScaleDriver::CubeEdge => "Cube rational → Tet irrational",
+                    // Frequency readout (derived from edge)
+                    let freq = state.frequency;
+                    let freq_abs = freq.abs();
+                    let freq_label = if (freq_abs - freq_abs.round()).abs() < 0.01 {
+                        format!("F{}", freq_abs.round() as i32)
+                    } else {
+                        format!("F{:.2}", freq_abs)
                     };
-                    ui.label(egui::RichText::new(label).small().weak());
-                    ui.label(egui::RichText::new("Ratio: tet = cube × √2").small().weak());
+                    let on_grid = if (freq_abs - freq_abs.round()).abs() < 0.01 {
+                        " (on grid)"
+                    } else {
+                        " (off grid)"
+                    };
+                    ui.label(egui::RichText::new(
+                        format!("Frequency: {}{}", freq_label, on_grid)
+                    ).small().weak());
                 });
 
             // --- Info ---
