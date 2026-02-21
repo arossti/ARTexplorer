@@ -5,8 +5,10 @@
 //!
 //! Data structure mirrors JS pattern: vertices + edges + faces.
 
+pub mod geodesic;
 pub mod platonic;
 
+pub use geodesic::{geodesic_tetrahedron, geodesic_octahedron, geodesic_icosahedron, ProjectionMode};
 pub use platonic::*;
 
 use crate::rt_math::Quadray;

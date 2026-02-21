@@ -1195,12 +1195,62 @@ let data = load_file()?;  // Returns early with Err if it fails
 | P1: Node rendering (vertex spheres, opacity) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |
-| P2: Geodesic subdivision + truncation | Pending |
+| **P2: Geodesic subdivision (Quadray-native, 3 polyhedra × 4 projections)** | **Done (2026-02-21)** |
 | P2: View manager + state persistence | Pending |
 | P3: Rotor-based orbit camera — eliminate polar singularity ([ARTEX-HAIRYBALL.md](ARTEX-HAIRYBALL.md)) | Research |
 | P3: ABCD-to-clip pipeline — eliminate XYZ from shader (RATIONALE §4, §8, §10) | Research |
 | P3: Cutplane + projection as ABCD dot products (RATIONALE §10) | Research |
 | P3: Wireframe painter's algorithm — depth-sorted 2D, no GPU 3D pipeline (RATIONALE §8) | Research |
+
+### P2: Geodesic Subdivision — DONE 2026-02-21
+
+**First P2 feature.** Quadray-native geodesic subdivision for tetrahedron, octahedron, and icosahedron with four projection modes.
+
+**Key insight (RT-purity upgrade from JS app)**: The JS app subdivides in Cartesian (THREE.Vector3) and "projects to a sphere" using `v.normalize().multiplyScalar(r)`. The native app eliminates the sphere entirely — we **terminate at a target quadrance** in Quadray ABCD space. No Cartesian intermediary.
+
+For zero-sum normalized `[a,b,c,d]` (sum=0), the quadrance from origin is:
+```
+Q = 4(a² + b² + c² + d²)
+```
+**ONE √ per vertex** at radius termination. All Q_targets are rational (tet, octa) or phi-algebraic (icosa).
+
+**Q_target values (RT-pure):**
+
+| Polyhedron | OutSphere Q | MidSphere Q | InSphere Q |
+|---|---|---|---|
+| Tetrahedron | 3 | 1 | 1/3 |
+| Octahedron | 4 | 2 | 4/3 |
+| Icosahedron | Q_circ | Q_circ·φ²/(φ+2) | Q_circ·(3φ+2)/(3(φ+2)) |
+
+Tet and octa Q_targets are **pure rationals**. Icosa uses phi identities from `phi.rs` (φ²=φ+1, φ⁴=3φ+2).
+
+**What was built**:
+- [x] `rt_polyhedra/geodesic.rs` (NEW) — full subdivision algorithm in Quadray ABCD space
+  - `ProjectionMode` enum: Off (flat), InSphere, MidSphere, OutSphere
+  - `subdivide_triangles()` — barycentric grid with edge/face vertex caching
+  - `terminate_at_radius()` — scale vertices to target Q (no sphere)
+  - `geodesic_tetrahedron()`, `geodesic_octahedron()`, `geodesic_icosahedron()`
+  - 24 tests: Q-norm, vertex counts, Euler, equal radius, face winding
+- [x] `rt_polyhedra/mod.rs` — wired geodesic module + re-exports
+- [x] `app_state.rs` — per-polyhedron geodesic state (show, freq 1–7, projection mode)
+- [x] `ui.rs` — nested sub-controls under parent polyhedron checkboxes
+  - Checkbox + frequency slider (1–7) + projection mode selectable labels
+  - Only visible when parent polyhedron is enabled
+- [x] `geometry.rs` — geodesic replaces base polyhedron when enabled (freq > 1)
+
+**Vertex count formulas** (frequency f, base has V vertices, E edges, F faces):
+- `V_geo = V + E(f-1) + F(f-1)(f-2)/2`
+- `F_geo = F × f²`
+- Icosa freq 3: V=92, F=180. Tet freq 3: V=18, F=36.
+
+**UI layout** (nested under parent polyhedron):
+```
+☑ Tetrahedron
+    ☐ Geodesic        Freq: [●===] 3
+        Off  InSphere  MidSphere  OutSphere
+```
+
+**Tests**: 160 total (136 existing + 24 geodesic). All passing.
 
 #### P1 → P3 Camera Migration Note
 

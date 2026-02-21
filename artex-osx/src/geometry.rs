@@ -2,6 +2,7 @@ use crate::app_state::AppState;
 use crate::basis_arrows;
 use crate::grids;
 use crate::rt_polyhedra;
+use crate::rt_polyhedra::geodesic::{self, ProjectionMode as GeoProjection};
 
 // --- Vertex data (ABCD Convention) ---
 // Quadray-native: each vertex carries ABCD coordinates (integers on CPU!)
@@ -47,6 +48,31 @@ const ABCD_COLORS: [[f32; 4]; 4] = [
     [0.0, 0.8, 0.2, 1.0], // D = Green
 ];
 
+/// Derive vertex color from actual ABCD coordinates.
+///
+/// Blends the four basis colors (A=Yellow, B=Red, C=Blue, D=Green)
+/// weighted by each component's proportion of the total. For the base
+/// tetrahedron [1,0,0,0] this gives pure Yellow; for geodesic midpoints
+/// like [0.5, 0.5, 0, 0] it gives Yellow+Red blend. Geometrically
+/// meaningful at any subdivision level.
+fn abcd_color(abcd: &[f32; 4], alpha: f32) -> [f32; 4] {
+    let sum = abcd[0] + abcd[1] + abcd[2] + abcd[3];
+    if sum.abs() < 1e-6 {
+        // Origin — neutral gray
+        return [0.5, 0.5, 0.5, alpha];
+    }
+    let weights = [abcd[0] / sum, abcd[1] / sum, abcd[2] / sum, abcd[3] / sum];
+    let mut r = 0.0f32;
+    let mut g = 0.0f32;
+    let mut b = 0.0f32;
+    for i in 0..4 {
+        r += weights[i] * ABCD_COLORS[i][0];
+        g += weights[i] * ABCD_COLORS[i][1];
+        b += weights[i] * ABCD_COLORS[i][2];
+    }
+    [r, g, b, alpha]
+}
+
 /// Geometry build output — vertices shared between edge and face pipelines.
 ///
 /// Edge vertices have alpha=1.0, face vertices have alpha=face_opacity.
@@ -79,12 +105,38 @@ pub fn build_visible_geometry(state: &AppState) -> GeometryOutput {
     // ONE scale factor — cube_edge = 2s, so s = cube_edge / 2
     let s = state.cube_edge / 2.0;
 
+    // Build polyhedra list — geodesic replaces base when enabled.
+    let tet_poly = if state.show_geodesic_tet && state.geodesic_tet_freq > 1 {
+        geodesic::geodesic_tetrahedron(
+            state.geodesic_tet_freq,
+            GeoProjection::from_u8(state.geodesic_tet_projection),
+        )
+    } else {
+        rt_polyhedra::tetrahedron()
+    };
+    let octa_poly = if state.show_geodesic_octa && state.geodesic_octa_freq > 1 {
+        geodesic::geodesic_octahedron(
+            state.geodesic_octa_freq,
+            GeoProjection::from_u8(state.geodesic_octa_projection),
+        )
+    } else {
+        rt_polyhedra::octahedron()
+    };
+    let icosa_poly = if state.show_geodesic_icosa && state.geodesic_icosa_freq > 1 {
+        geodesic::geodesic_icosahedron(
+            state.geodesic_icosa_freq,
+            GeoProjection::from_u8(state.geodesic_icosa_projection),
+        )
+    } else {
+        rt_polyhedra::icosahedron()
+    };
+
     let polys: Vec<(bool, rt_polyhedra::PolyhedronData)> = vec![
-        (state.show_tetrahedron, rt_polyhedra::tetrahedron()),
+        (state.show_tetrahedron, tet_poly),
         (state.show_dual_tetrahedron, rt_polyhedra::dual_tetrahedron()),
         (state.show_cube, rt_polyhedra::cube()),
-        (state.show_octahedron, rt_polyhedra::octahedron()),
-        (state.show_icosahedron, rt_polyhedra::icosahedron()),
+        (state.show_octahedron, octa_poly),
+        (state.show_icosahedron, icosa_poly),
         (state.show_dodecahedron, rt_polyhedra::dodecahedron()),
     ];
 
@@ -95,11 +147,11 @@ pub fn build_visible_geometry(state: &AppState) -> GeometryOutput {
 
         // --- Edge vertices (alpha = 1.0) ---
         let edge_base = vertices.len() as u32;
-        for (i, q) in poly.vertices.iter().enumerate() {
+        for q in poly.vertices.iter() {
             let abcd = q.to_f32_array();
             vertices.push(Vertex {
                 quadray: [abcd[0] * s, abcd[1] * s, abcd[2] * s, abcd[3] * s],
-                color: ABCD_COLORS[i % 4],
+                color: abcd_color(&abcd, 1.0),
             });
         }
         for [a, b] in &poly.edges {
@@ -112,12 +164,12 @@ pub fn build_visible_geometry(state: &AppState) -> GeometryOutput {
         // while edges stay fully opaque, sharing the same vertex buffer.
         if state.show_faces {
             let face_base = vertices.len() as u32;
-            for (i, q) in poly.vertices.iter().enumerate() {
+            for q in poly.vertices.iter() {
                 let abcd = q.to_f32_array();
-                let c = ABCD_COLORS[i % 4];
+                let c = abcd_color(&abcd, state.face_opacity);
                 vertices.push(Vertex {
                     quadray: [abcd[0] * s, abcd[1] * s, abcd[2] * s, abcd[3] * s],
-                    color: [c[0], c[1], c[2], state.face_opacity],
+                    color: c,
                 });
             }
             // Fan triangulation: face [v0, v1, v2, ..., vN] →

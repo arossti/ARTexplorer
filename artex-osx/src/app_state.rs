@@ -63,6 +63,22 @@ pub struct AppState {
     // Janus arena tracking (for crossing detection)
     pub janus_negative: bool, // true when frequency < 0 (negative arena)
 
+    // Geodesic subdivision (P2)
+    // Nested under parent polyhedron — only visible when parent is enabled.
+    // Frequency = subdivision level (1 = base, 2..7 = subdivided).
+    // Projection: 0=Off (flat), 1=InSphere, 2=MidSphere, 3=OutSphere (Fuller).
+    pub show_geodesic_tet: bool,
+    pub geodesic_tet_freq: u32,
+    pub geodesic_tet_projection: u8,
+
+    pub show_geodesic_octa: bool,
+    pub geodesic_octa_freq: u32,
+    pub geodesic_octa_projection: u8,
+
+    pub show_geodesic_icosa: bool,
+    pub geodesic_icosa_freq: u32,
+    pub geodesic_icosa_projection: u8,
+
     // Face rendering
     // P1: ABCD vertex interpolation (face vertices inherit per-vertex ABCD colors).
     // Future: per-polyhedron color palette (designer-choosable, like JS rs-color-theory-modal.js).
@@ -117,6 +133,15 @@ impl Default for AppState {
             tet_edge: 2.0 * std::f32::consts::SQRT_2, // F1: 2√2 ≈ 2.8284 (irrational)
             cube_edge: 2.0,                           // F1: 2 (rational integer)
             scale_driver: ScaleDriver::Frequency,      // Frequency is primary
+            show_geodesic_tet: false,
+            geodesic_tet_freq: 3,
+            geodesic_tet_projection: 3,  // OutSphere (Fuller geodesic)
+            show_geodesic_octa: false,
+            geodesic_octa_freq: 3,
+            geodesic_octa_projection: 3,
+            show_geodesic_icosa: false,
+            geodesic_icosa_freq: 3,
+            geodesic_icosa_projection: 3,
             show_faces: true,      // faces visible by default
             face_opacity: 0.35,    // semi-transparent (matches JS app default)
             janus_negative: false, // Start in positive arena (F1)

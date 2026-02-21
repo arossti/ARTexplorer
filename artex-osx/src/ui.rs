@@ -1,5 +1,6 @@
 use crate::app_state::{AppState, ScaleDriver};
 use crate::camera::{OrbitCamera, ProjectionMode, PRESETS_XYZ, PRESETS_ABCD};
+use crate::rt_polyhedra::geodesic::ProjectionMode as GeoProjection;
 
 /// Apply dark theme styling to egui context.
 pub fn configure_theme(ctx: &egui::Context) {
@@ -27,6 +28,16 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     changed |= ui
                         .checkbox(&mut state.show_tetrahedron, "Tetrahedron")
                         .changed();
+                    // Geodesic sub-controls (nested under Tetrahedron)
+                    if state.show_tetrahedron {
+                        changed |= geodesic_sub_controls(
+                            ui,
+                            "tet",
+                            &mut state.show_geodesic_tet,
+                            &mut state.geodesic_tet_freq,
+                            &mut state.geodesic_tet_projection,
+                        );
+                    }
                     changed |= ui
                         .checkbox(&mut state.show_dual_tetrahedron, "Dual Tetrahedron")
                         .changed();
@@ -36,9 +47,29 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     changed |= ui
                         .checkbox(&mut state.show_octahedron, "Octahedron")
                         .changed();
+                    // Geodesic sub-controls (nested under Octahedron)
+                    if state.show_octahedron {
+                        changed |= geodesic_sub_controls(
+                            ui,
+                            "octa",
+                            &mut state.show_geodesic_octa,
+                            &mut state.geodesic_octa_freq,
+                            &mut state.geodesic_octa_projection,
+                        );
+                    }
                     changed |= ui
                         .checkbox(&mut state.show_icosahedron, "Icosahedron")
                         .changed();
+                    // Geodesic sub-controls (nested under Icosahedron)
+                    if state.show_icosahedron {
+                        changed |= geodesic_sub_controls(
+                            ui,
+                            "icosa",
+                            &mut state.show_geodesic_icosa,
+                            &mut state.geodesic_icosa_freq,
+                            &mut state.geodesic_icosa_projection,
+                        );
+                    }
                     changed |= ui
                         .checkbox(&mut state.show_dodecahedron, "Dodecahedron")
                         .changed();
@@ -416,4 +447,54 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
 
     // Store actual panel width (logical points) for viewport calculation in render()
     state.panel_width = panel_response.response.rect.width();
+}
+
+/// Nested geodesic sub-controls for a single polyhedron.
+///
+/// Layout (indented under parent):
+///   ☐ Geodesic (Fuller)
+///       Freq: [====●===] 3
+///       Project: ○Off ○In ○Mid ●Out
+///
+/// Returns true if any control changed (triggers geometry rebuild).
+fn geodesic_sub_controls(
+    ui: &mut egui::Ui,
+    id_salt: &str,
+    show: &mut bool,
+    freq: &mut u32,
+    projection: &mut u8,
+) -> bool {
+    let mut changed = false;
+    ui.indent(id_salt, |ui| {
+        changed |= ui
+            .checkbox(show, egui::RichText::new("Geodesic").small())
+            .changed();
+        if *show {
+            // Frequency slider (1–7)
+            let mut freq_f32 = *freq as f32;
+            let freq_response = ui.add(
+                egui::Slider::new(&mut freq_f32, 1.0..=7.0)
+                    .step_by(1.0)
+                    .text("Freq")
+                    .custom_formatter(|v, _| format!("{}", v as u32))
+            );
+            if freq_response.changed() {
+                *freq = freq_f32 as u32;
+                changed = true;
+            }
+
+            // Projection mode radio buttons
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("Project:").small());
+                for mode_val in 0u8..=3 {
+                    let mode = GeoProjection::from_u8(mode_val);
+                    if ui.selectable_label(*projection == mode_val, mode.label()).clicked() {
+                        *projection = mode_val;
+                        changed = true;
+                    }
+                }
+            });
+        }
+    });
+    changed
 }

@@ -205,11 +205,11 @@ that's what the training data contains. When you work on this codebase:
 
 ```bash
 # Build and test
-cargo test              # 136 tests
+cargo test              # 160 tests
 cargo build --release   # optimized binary
 
 # Deploy to app bundle
-cp target/release/artexplorer-native ~/Desktop/ARTexplorer.app/Contents/MacOS/ARTexplorer
+cp target/release/artexplorer-native target/ARTexplorer.app/Contents/MacOS/ARTexplorer
 
 # Or use the bundle script
 ./bundle.sh
