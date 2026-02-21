@@ -56,8 +56,10 @@ impl OrbitCamera {
     }
 
     pub fn on_scroll(&mut self, delta: f32) {
-        self.distance -= delta * 0.5;
-        self.distance = self.distance.clamp(1.0, 50.0);
+        // Proportional zoom: scroll speed scales with distance so zooming
+        // feels uniform whether close-up at F1 or remote at F12 + 144 tessellations.
+        self.distance -= delta * self.distance * 0.05;
+        self.distance = self.distance.clamp(0.1, 10000.0);
     }
 
     /// Apply a camera preset (yaw, pitch, distance).
@@ -90,14 +92,14 @@ impl OrbitCamera {
                 // distance = r / tan(half_fov_h) = r / (tan(half_fov_v) * aspect)
                 let dist_h = r / (half_fov_v.tan() * viewport_aspect);
                 // Use the tighter constraint (larger distance)
-                self.distance = dist_v.max(dist_h).clamp(1.0, 50.0);
+                self.distance = dist_v.max(dist_h).clamp(0.1, 10000.0);
             }
             ProjectionMode::Orthographic => {
                 // Vertical: distance * ORTHO_SCALE >= r
                 let dist_v = r / ORTHO_SCALE;
                 // Horizontal: distance * ORTHO_SCALE * aspect >= r
                 let dist_h = r / (ORTHO_SCALE * viewport_aspect);
-                self.distance = dist_v.max(dist_h).clamp(1.0, 50.0);
+                self.distance = dist_v.max(dist_h).clamp(0.1, 10000.0);
             }
         }
     }
@@ -118,13 +120,17 @@ impl OrbitCamera {
             glam::Vec3::Y
         };
         let view = glam::Mat4::look_at_rh(eye, glam::Vec3::ZERO, up);
+        // Dynamic near/far planes: scale with distance to maintain z-buffer precision.
+        // At distance 5, near=0.1 far=500. At distance 5000, near=100 far=50000.
+        let near = (self.distance * 0.02).clamp(0.01, 100.0);
+        let far = (self.distance * 100.0).clamp(500.0, 1_000_000.0);
         let proj = match self.projection {
             ProjectionMode::Perspective => {
                 glam::Mat4::perspective_rh(
                     std::f32::consts::FRAC_PI_4, // 45° FOV
                     aspect,
-                    0.1,
-                    500.0,
+                    near,
+                    far,
                 )
             }
             ProjectionMode::Orthographic => {
@@ -132,7 +138,7 @@ impl OrbitCamera {
                 // At default distance 5.196, half_h ≈ 2.16 — similar visual coverage.
                 let half_h = self.distance * ORTHO_SCALE;
                 let half_w = half_h * aspect;
-                glam::Mat4::orthographic_rh(-half_w, half_w, -half_h, half_h, 0.1, 500.0)
+                glam::Mat4::orthographic_rh(-half_w, half_w, -half_h, half_h, near, far)
             }
         };
         proj * view

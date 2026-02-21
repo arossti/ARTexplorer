@@ -815,16 +815,14 @@ Each step is independently verifiable. Do not skip ahead.
 - **Verified**: 117 tests pass. Both grid types render correctly at all tessellation levels. Grids stay fixed while geometry scales. Opacity 0.10 default keeps grids visible without obscuring coincident polyhedra edges.
 - **Modified**: `grids.rs` (NEW), `app_state.rs` (17 fields), `geometry.rs` (u32 + RGBA + grid calls), `basis_arrows.rs` (u32 + RGBA), `camera.rs` (far plane), `main.rs` (mod grids, Uint32, ALPHA_BLENDING), `ui.rs` (2 grid sections + opacity sliders), `shader.wgsl` (vec4 color)
 
-### P1: Quadray-Native IVM Grid — PLANNED
+### P1: Quadray-Native IVM Grid — DONE 2026-02-21
 
-**Problem**: The current IVM grid builds geometry in Cartesian and converts back:
+**Problem** (solved): The original IVM grid built geometry in Cartesian and converted back:
 `Quadray → to_cartesian() → normalize (÷√3) → scale by √6/4 → linear combo → from_cartesian()`
 
-This introduces 5 irrationals and 2 unnecessary coordinate conversions. The `√6/4` grid interval is the "Cartesian disease" — measuring inherently integer Quadray spacing in Cartesian units.
+This introduced 5 irrationals and 2 unnecessary coordinate conversions. The `√6/4` grid interval was the "Cartesian disease."
 
-**Solution**: Build IVM grid vertices directly as integer ABCD coordinates.
-
-Grid vertices at tessellation level T for each of the 6 planes:
+**Solution** (implemented): Grid vertices are now pure integer ABCD coordinates:
 
 | Plane | Vertex (i, j) | i range | j range |
 |-------|---------------|---------|---------|
@@ -835,17 +833,13 @@ Grid vertices at tessellation level T for each of the 6 planes:
 | BD | `[0, i, 0, j]` | 0..T | 0..T−i |
 | CD | `[0, 0, i, j]` | 0..T | 0..T−i |
 
-Triangles connect `(i,j)` → `(i+1,j)` → `(i,j+1)` — same tessellation algorithm, integer coordinates.
-
-This is the same pattern as the integer polyhedra: tet `[1,0,0,0]`, cube `[1,1,0,0]` ∪ `[0,0,1,1]`, octa `[1,1,0,0]`. The grid extends the lattice: first interval at `[1,0,0,0]`, second at `[2,0,0,0]`, etc.
-
-**What changes**:
-- [ ] `build_ivm_plane()` — replace Cartesian linear combination with direct integer ABCD
-- [ ] Remove `quadray_direction()` helper (no longer needed)
-- [ ] Remove `radicals::quadray_grid_interval()` dependency from IVM grids
-- [ ] No `from_cartesian()` calls — vertices go straight to GPU as integer ABCD
-- [ ] UI: Consider renaming "IVM Grid" → "Quadray Grid" (it IS the native ABCD lattice)
-- [ ] Update tests: verify integer coordinates, coplanarity via ABCD algebra (not Cartesian dot product)
+**What changed**:
+- [x] `build_quadray_plane()` — pure integer ABCD via `basis: [usize; 2]` indices
+- [x] `build_quadray_grids()` — replaced `build_ivm_grids()`, no Cartesian intermediaries
+- [x] Removed `quadray_direction()` helper entirely
+- [x] Removed `radicals::quadray_grid_interval()` dependency from grid pipeline
+- [x] No `from_cartesian()` calls — vertices go straight to GPU as integer ABCD
+- [x] Tests: `quadray_ab_vertices_are_integer`, `quadray_cd_vertices_are_integer`
 
 **What stays the same**:
 - Cartesian XYZ grids remain Cartesian (they ARE the XYZ reference frame — `from_cartesian()` is justified there)
@@ -875,6 +869,38 @@ Design implications for the native app:
 - [ ] `to_cartesian()` still works correctly with negative ABCD (the math is symmetric) — normalization is for XYZ translation only, not a constraint on the Quadray representation
 
 **RT-Purity impact**: Eliminates all irrationals from the IVM grid pipeline. The only `sqrt()` remaining is in the WGSL shader's ABCD→XYZ basis matrix — the justified rendering boundary. Negative integer coordinates preserve the same RT-purity as positive ones — the sign carries geometric meaning (arena parity) without introducing any irrationals.
+
+### P1: Frequency Slider + Edge Lengths — DONE 2026-02-21
+
+**Frequency** (Fuller): F = s = cube_edge / 2 = Quadray scale factor. At integer F, polyhedra vertices land on integer Quadray grid points. The frequency IS the Quadray-native scale unit — edge lengths are Cartesian observations.
+
+**Two slider groups** in the Scale UI:
+
+1. **Frequency slider** (primary, default open) — integer snap F-12 to F12
+   - At integer F: shows decomposition "Cube edge = 2N → Tet edge = 2N√2"
+   - At F0: "Origin (Janus point)"
+   - Janus indicator for negative frequencies
+   - Footer: "Integer F → polyhedra on grid points"
+
+2. **Edge Length sliders** (secondary, default closed) — fine-grained Cartesian control
+   - Tet edge: ±34.0, snaps to 0.1 intervals
+   - Cube edge: ±24.0, snaps to 0.1 intervals
+   - Readout: derived frequency with "(on grid)" / "(off grid)" indicator
+   - Edge-driven scaling generally lands off-grid — this is expected
+
+**Scale pipeline**: All three controls (frequency, tet edge, cube edge) keep each other in sync via the Rationality Reciprocity: `tet_edge = cube_edge × √2`, `frequency = cube_edge / 2`. Default is F1 (s=1, cube_edge=2, tet_edge=2√2).
+
+### P1: Extended Camera Zoom — DONE 2026-02-21
+
+**Problem** (solved): Camera distance was clamped to 1.0–50.0 with additive scroll (`delta * 0.5`). At F12 with 144 grid tessellations, the grid extends ~88 Cartesian units — well beyond the camera's reach.
+
+**Solution**:
+- **Proportional scroll zoom**: `distance -= delta * distance * 0.05` — scroll speed scales with distance, feels uniform from close-up to extreme distances
+- **Distance range**: 0.1 to 10,000 (was 1.0 to 50.0)
+- **Dynamic near/far planes**: scale with distance to maintain z-buffer precision
+  - Near: `distance * 0.02` clamped to [0.01, 100]
+  - Far: `distance * 100` clamped to [500, 1,000,000]
+- Centre button respects the new range
 
 ### Step 8: Face-Normal Firing (Day 10-12) — DEFERRED (game mode)
 - [ ] Compute face normals (original tet for Quadray alignment)
@@ -1055,7 +1081,9 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P1: Ortho projection + Centre button + viewport-aware canvas** | **Done (2026-02-20)** |
 | **P1: Grid planes (Cartesian XYZ + IVM Central Angle)** | **Done (2026-02-20)** |
 | **P1: Universal alpha blending + grid opacity sliders** | **Done (2026-02-21)** |
-| P1: Quadray-native IVM grid (integer ABCD, eliminate √6/4) | Planned |
+| **P1: Quadray-native IVM grid (integer ABCD, eliminate √6/4)** | **Done (2026-02-21)** |
+| **P1: Frequency slider (Fuller F1–F12) + edge length sliders** | **Done (2026-02-21)** |
+| **P1: Extended camera zoom (proportional scroll, 10000 unit range)** | **Done (2026-02-21)** |
 | P1: Node/face rendering (spheres, opacity) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |

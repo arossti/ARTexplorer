@@ -244,7 +244,7 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
 
                     // Frequency slider — integer snap, Quadray-native
                     let freq_response = ui.add(
-                        egui::Slider::new(&mut state.frequency, -5.0..=5.0)
+                        egui::Slider::new(&mut state.frequency, -12.0..=12.0)
                             .step_by(1.0)
                             .text("F")
                             .custom_formatter(|v, _| {
@@ -298,7 +298,7 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
 
                     // Tet edge slider
                     let tet_response = ui.add(
-                        egui::Slider::new(&mut state.tet_edge, -14.2..=14.2)
+                        egui::Slider::new(&mut state.tet_edge, -34.0..=34.0)
                             .text("Tet edge")
                             .custom_formatter(|v, _| format!("{:.4}", v))
                     );
@@ -312,7 +312,7 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
 
                     // Cube edge slider
                     let cube_response = ui.add(
-                        egui::Slider::new(&mut state.cube_edge, -10.0..=10.0)
+                        egui::Slider::new(&mut state.cube_edge, -24.0..=24.0)
                             .text("Cube edge")
                             .custom_formatter(|v, _| format!("{:.4}", v))
                     );
