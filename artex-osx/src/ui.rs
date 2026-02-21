@@ -42,6 +42,20 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     changed |= ui
                         .checkbox(&mut state.show_dodecahedron, "Dodecahedron")
                         .changed();
+                    ui.separator();
+                    changed |= ui
+                        .checkbox(&mut state.show_faces, "Show Faces")
+                        .changed();
+                    if state.show_faces {
+                        let opacity_response = ui.add(
+                            egui::Slider::new(&mut state.face_opacity, 0.0..=1.0)
+                                .text("Face Opacity")
+                                .custom_formatter(|v, _| format!("{:.2}", v))
+                        );
+                        if opacity_response.changed() {
+                            changed = true;
+                        }
+                    }
                     if changed {
                         state.geometry_dirty = true;
                     }
@@ -372,7 +386,7 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                 .show(ui, |ui| {
                     ui.label(format!("FPS: {:.0}", state.fps));
                     ui.separator();
-                    ui.label(format!("Vertices: {}  Edges: {}", state.vertex_count, state.edge_count));
+                    ui.label(format!("V: {}  E: {}  F: {}", state.vertex_count, state.edge_count, state.face_count));
                     ui.separator();
                     ui.label(egui::RichText::new("ABCD → WGSL → Metal").small().weak());
                     ui.label(egui::RichText::new("Drag to orbit | Scroll to zoom").small().weak());

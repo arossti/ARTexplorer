@@ -60,12 +60,22 @@ pub struct AppState {
     pub cube_edge: f32,
     pub scale_driver: ScaleDriver, // which control is currently driving
 
+    // Janus arena tracking (for crossing detection)
+    pub janus_negative: bool, // true when frequency < 0 (negative arena)
+
+    // Face rendering
+    // P1: ABCD vertex interpolation (face vertices inherit per-vertex ABCD colors).
+    // Future: per-polyhedron color palette (designer-choosable, like JS rs-color-theory-modal.js).
+    pub show_faces: bool,
+    pub face_opacity: f32, // 0.0–1.0
+
     // Geometry rebuild flag
     pub geometry_dirty: bool,
 
     // Geometry stats (updated on rebuild)
     pub vertex_count: usize,
     pub edge_count: usize,
+    pub face_count: usize, // triangle count (after fan triangulation)
     pub bounding_radius: f32, // max Cartesian distance from origin across all visible vertices
 
     // UI layout (updated each frame by egui)
@@ -107,9 +117,13 @@ impl Default for AppState {
             tet_edge: 2.0 * std::f32::consts::SQRT_2, // F1: 2√2 ≈ 2.8284 (irrational)
             cube_edge: 2.0,                           // F1: 2 (rational integer)
             scale_driver: ScaleDriver::Frequency,      // Frequency is primary
+            show_faces: true,      // faces visible by default
+            face_opacity: 0.35,    // semi-transparent (matches JS app default)
+            janus_negative: false, // Start in positive arena (F1)
             geometry_dirty: true, // Build on first frame
             vertex_count: 0,
             edge_count: 0,
+            face_count: 0,
             bounding_radius: 0.0,
             panel_width: 220.0, // initial estimate, updated each frame by egui
             fps: 0.0,

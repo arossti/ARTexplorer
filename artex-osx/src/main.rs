@@ -27,6 +27,22 @@ struct CameraUniform {
     view_proj: [[f32; 4]; 4],
 }
 
+const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+
+fn create_depth_texture(device: &wgpu::Device, width: u32, height: u32) -> wgpu::TextureView {
+    let texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("Depth Texture"),
+        size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: DEPTH_FORMAT,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
+    });
+    texture.create_view(&Default::default())
+}
+
 // --- GPU State ---
 struct GpuState {
     surface: wgpu::Surface<'static>,
@@ -34,10 +50,15 @@ struct GpuState {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     window: Arc<Window>,
-    render_pipeline: wgpu::RenderPipeline,
+    // Two render pipelines sharing shader + depth buffer
+    edge_pipeline: wgpu::RenderPipeline,
+    face_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
+    edge_index_buffer: wgpu::Buffer,
+    face_index_buffer: wgpu::Buffer,
+    num_edge_indices: u32,
+    num_face_indices: u32,
+    depth_texture: wgpu::TextureView,
     uniform_buffer: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     // egui integration
@@ -128,8 +149,35 @@ impl GpuState {
             push_constant_ranges: &[],
         });
 
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Quadray Wireframe Pipeline"),
+        let depth_stencil_face = wgpu::DepthStencilState {
+            format: DEPTH_FORMAT,
+            depth_write_enabled: true,
+            depth_compare: wgpu::CompareFunction::Less,
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+        };
+
+        let depth_stencil_edge = wgpu::DepthStencilState {
+            format: DEPTH_FORMAT,
+            depth_write_enabled: true,
+            depth_compare: wgpu::CompareFunction::LessEqual,
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState {
+                constant: -2,       // Push edges toward camera
+                slope_scale: -1.0,  // Scale bias by surface slope
+                clamp: 0.0,
+            },
+        };
+
+        let color_target = [Some(wgpu::ColorTargetState {
+            format: config.format,
+            blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+            write_mask: wgpu::ColorWrites::ALL,
+        })];
+
+        // Face pipeline: TriangleList, backface culled, depth write
+        let face_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Face Pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
@@ -141,14 +189,45 @@ impl GpuState {
                 module: &shader,
                 entry_point: Some("fs_main"),
                 compilation_options: Default::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
-                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
+                targets: &color_target,
             }),
             primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::LineList, // Wireframe edges!
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back), // Backface culling for faces
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            },
+            depth_stencil: Some(depth_stencil_face),
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            multiview: None,
+            cache: None,
+        });
+
+        // Edge pipeline: LineList, no culling, depth bias to render on top of faces
+        let edge_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Edge Pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                compilation_options: Default::default(),
+                buffers: &[Vertex::layout()],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fs_main"),
+                compilation_options: Default::default(),
+                targets: &color_target,
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineList,
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: None, // No culling for wireframe
@@ -156,7 +235,7 @@ impl GpuState {
                 unclipped_depth: false,
                 conservative: false,
             },
-            depth_stencil: None,
+            depth_stencil: Some(depth_stencil_edge),
             multisample: wgpu::MultisampleState {
                 count: 1,
                 mask: !0,
@@ -168,29 +247,38 @@ impl GpuState {
 
         // --- Generate initial geometry from AppState defaults ---
         let app_state = AppState::default();
-        let (vertices, indices, _bounding_radius) = geometry::build_visible_geometry(&app_state);
+        let geo = geometry::build_visible_geometry(&app_state);
         log::info!(
-            "Initial geometry: {} vertices, {} edges ({} indices)",
-            vertices.len(),
-            indices.len() / 2,
-            indices.len()
+            "Initial geometry: {} vertices, {} edges, {} face triangles",
+            geo.vertices.len(),
+            geo.edge_indices.len() / 2,
+            geo.face_indices.len() / 3
         );
 
         // --- Vertex buffer (Quadray ABCD) ---
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Quadray ABCD Vertex Buffer"),
-            contents: bytemuck::cast_slice(&vertices),
+            contents: bytemuck::cast_slice(&geo.vertices),
             usage: wgpu::BufferUsages::VERTEX,
         });
 
-        // --- Index buffer (edge pairs for LineList) ---
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        // --- Index buffers (edges + faces) ---
+        let edge_index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Edge Index Buffer"),
-            contents: bytemuck::cast_slice(&indices),
+            contents: bytemuck::cast_slice(&geo.edge_indices),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+        let face_index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Face Index Buffer"),
+            contents: bytemuck::cast_slice(&geo.face_indices),
             usage: wgpu::BufferUsages::INDEX,
         });
 
-        let num_indices = indices.len() as u32;
+        let num_edge_indices = geo.edge_indices.len() as u32;
+        let num_face_indices = geo.face_indices.len() as u32;
+
+        // --- Depth buffer ---
+        let depth_texture = create_depth_texture(&device, size.width, size.height);
 
         // --- egui setup ---
         let egui_ctx = egui::Context::default();
@@ -209,15 +297,17 @@ impl GpuState {
             config.format,
             egui_wgpu::RendererOptions {
                 msaa_samples: 1,
-                depth_stencil_format: None,
+                depth_stencil_format: Some(DEPTH_FORMAT),
                 ..Default::default()
             },
         );
 
         Ok(Self {
             surface, device, queue, config, window,
-            render_pipeline, vertex_buffer, index_buffer, num_indices,
-            uniform_buffer, bind_group,
+            edge_pipeline, face_pipeline,
+            vertex_buffer, edge_index_buffer, face_index_buffer,
+            num_edge_indices, num_face_indices,
+            depth_texture, uniform_buffer, bind_group,
             egui_state, egui_renderer,
             app_state, camera,
         })
@@ -228,27 +318,35 @@ impl GpuState {
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
+            self.depth_texture = create_depth_texture(&self.device, new_size.width, new_size.height);
         }
     }
 
     fn rebuild_geometry(&mut self) {
-        let (vertices, indices, bounding_radius) = geometry::build_visible_geometry(&self.app_state);
+        let geo = geometry::build_visible_geometry(&self.app_state);
 
-        self.app_state.vertex_count = vertices.len();
-        self.app_state.edge_count = indices.len() / 2;
-        self.app_state.bounding_radius = bounding_radius;
+        self.app_state.vertex_count = geo.vertices.len();
+        self.app_state.edge_count = geo.edge_indices.len() / 2;
+        self.app_state.face_count = geo.face_indices.len() / 3;
+        self.app_state.bounding_radius = geo.bounding_radius;
 
         self.vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Quadray ABCD Vertex Buffer"),
-            contents: bytemuck::cast_slice(&vertices),
+            contents: bytemuck::cast_slice(&geo.vertices),
             usage: wgpu::BufferUsages::VERTEX,
         });
-        self.index_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        self.edge_index_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Edge Index Buffer"),
-            contents: bytemuck::cast_slice(&indices),
+            contents: bytemuck::cast_slice(&geo.edge_indices),
             usage: wgpu::BufferUsages::INDEX,
         });
-        self.num_indices = indices.len() as u32;
+        self.face_index_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Face Index Buffer"),
+            contents: bytemuck::cast_slice(&geo.face_indices),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+        self.num_edge_indices = geo.edge_indices.len() as u32;
+        self.num_face_indices = geo.face_indices.len() as u32;
         self.app_state.geometry_dirty = false;
     }
 
@@ -343,32 +441,52 @@ impl GpuState {
                     },
                     depth_slice: None,
                 })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &self.depth_texture,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: wgpu::StoreOp::Store,
+                    }),
+                    stencil_ops: None,
+                }),
                 ..Default::default()
             });
 
             // 1) Set 3D viewport to canvas area (left of sidebar)
             render_pass.set_viewport(0.0, 0.0, viewport_w, viewport_h, 0.0, 1.0);
 
-            // 2) Draw Quadray wireframe in canvas viewport
-            if self.num_indices > 0 {
-                render_pass.set_pipeline(&self.render_pipeline);
+            // 2) Draw faces FIRST (behind edges, depth-sorted)
+            if self.num_face_indices > 0 {
+                render_pass.set_pipeline(&self.face_pipeline);
                 render_pass.set_bind_group(0, &self.bind_group, &[]);
                 render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
                 render_pass.set_index_buffer(
-                    self.index_buffer.slice(..),
+                    self.face_index_buffer.slice(..),
                     wgpu::IndexFormat::Uint32,
                 );
-                render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+                render_pass.draw_indexed(0..self.num_face_indices, 0, 0..1);
             }
 
-            // 3) Reset viewport to full window for egui overlay
+            // 3) Draw edges SECOND (on top of faces via depth bias)
+            if self.num_edge_indices > 0 {
+                render_pass.set_pipeline(&self.edge_pipeline);
+                render_pass.set_bind_group(0, &self.bind_group, &[]);
+                render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+                render_pass.set_index_buffer(
+                    self.edge_index_buffer.slice(..),
+                    wgpu::IndexFormat::Uint32,
+                );
+                render_pass.draw_indexed(0..self.num_edge_indices, 0, 0..1);
+            }
+
+            // 4) Reset viewport to full window for egui overlay
             render_pass.set_viewport(
                 0.0, 0.0,
                 self.config.width as f32, self.config.height as f32,
                 0.0, 1.0,
             );
 
-            // 4) Draw egui on top (same render pass)
+            // 5) Draw egui on top (same render pass)
             self.egui_renderer.render(
                 &mut render_pass.forget_lifetime(),
                 &paint_jobs,
