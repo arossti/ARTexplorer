@@ -30,6 +30,7 @@ pub struct AppState {
     pub show_grid_xz: bool,
     pub show_grid_yz: bool,
     pub cartesian_divisions: u32, // 10–100, step 10
+    pub cartesian_grid_opacity: f32, // 0.0–1.0
 
     // IVM Central Angle grid planes (6 basis-vector pairs)
     pub show_ivm_grids: bool, // master toggle
@@ -40,6 +41,7 @@ pub struct AppState {
     pub show_grid_bd: bool,
     pub show_grid_cd: bool,
     pub ivm_tessellations: u32, // 12–144, step 12
+    pub ivm_grid_opacity: f32, // 0.0–1.0
 
     // Scale — ONE metric, TWO presentations (Rationality Reciprocity)
     // tet_edge = cube_edge * √2.  Whichever slider the user adjusts gets
@@ -82,6 +84,7 @@ impl Default for AppState {
             show_grid_xz: true,
             show_grid_yz: true,
             cartesian_divisions: 10,
+            cartesian_grid_opacity: 0.10,
             show_ivm_grids: false,
             show_grid_ab: true,
             show_grid_ac: true,
@@ -90,6 +93,7 @@ impl Default for AppState {
             show_grid_bd: true,
             show_grid_cd: true,
             ivm_tessellations: 12,
+            ivm_grid_opacity: 0.10,
             tet_edge: 2.0,
             cube_edge: 2.0 / std::f32::consts::SQRT_2, // √2 ≈ 1.4142
             scale_driver: ScaleDriver::TetEdge,

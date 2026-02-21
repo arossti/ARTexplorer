@@ -93,6 +93,14 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     if div_response.changed() {
                         changed = true;
                     }
+                    let opacity_response = ui.add(
+                        egui::Slider::new(&mut state.cartesian_grid_opacity, 0.0..=1.0)
+                            .text("Opacity")
+                            .custom_formatter(|v, _| format!("{:.2}", v))
+                    );
+                    if opacity_response.changed() {
+                        changed = true;
+                    }
                     if changed {
                         state.geometry_dirty = true;
                     }
@@ -140,6 +148,14 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                             .text("Tessellations")
                     );
                     if tess_response.changed() {
+                        changed = true;
+                    }
+                    let opacity_response = ui.add(
+                        egui::Slider::new(&mut state.ivm_grid_opacity, 0.0..=1.0)
+                            .text("Opacity")
+                            .custom_formatter(|v, _| format!("{:.2}", v))
+                    );
+                    if opacity_response.changed() {
                         changed = true;
                     }
                     if changed {

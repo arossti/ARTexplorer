@@ -766,6 +766,55 @@ Each step is independently verifiable. Do not skip ahead.
 - **Verified**: 104 tests pass. Preset buttons switch views instantly. Top view renders correctly. No NaN.
 - **Modified**: `camera.rs` (presets + up-vector), `ui.rs` (Camera section), `main.rs` (split borrow)
 
+### P1: Ortho Projection + Centre Button + Viewport-Aware Canvas — DONE 2026-02-20
+- [x] **Orthographic projection** in `camera.rs` — `ProjectionMode::Orthographic` with `ORTHO_SCALE = tan(22.5°) ≈ 0.4142`
+  - Ortho half-size scales with distance so scroll-zoom works naturally
+  - Switching perspective↔ortho at same distance preserves apparent object size
+- [x] **Centre button** — `OrbitCamera::centre(bounding_radius, viewport_aspect)` fits visible geometry
+  - Respects both vertical and horizontal viewport extents (uses tighter constraint)
+  - Perspective: `distance = r / tan(fov/2)`, Orthographic: `distance = r / ORTHO_SCALE`
+- [x] **Viewport-aware canvas** — 3D viewport excludes egui sidebar width
+  - `state.panel_width` updated each frame from egui panel response
+  - Render pass viewport and scissor rect set to `[panel_width..window_width]`
+  - Aspect ratio computed from effective viewport, not full window
+- [x] **UI**: Perspective/Ortho selectable labels + Centre button in Camera section
+- [x] 3 new unit tests (107 total): ortho valid matrix, centre adjusts distance, narrow viewport horizontal fitting
+- **Verified**: Ortho/Perspective toggle preserves visual size. Centre fits geometry. Sidebar doesn't clip 3D viewport.
+- **Modified**: `camera.rs` (ProjectionMode, centre, ORTHO_SCALE), `ui.rs` (projection toggle + Centre), `main.rs` (viewport scissor)
+
+### P1: Grid Planes (Cartesian XYZ + IVM Central Angle) — DONE 2026-02-20
+- [x] **New module `src/grids.rs`** (~380 lines) — grid geometry for both Cartesian and IVM reference frames
+- [x] **Cartesian grids**: 3 orthogonal planes (XY, XZ, YZ)
+  - Uniform rectangular grid with fixed cell spacing (`√6/4 ≈ 0.612`)
+  - Divisions slider (10–100, step 10) **expands** the grid — more divisions = larger extent, not finer subdivision
+  - Colors: XY=Yellow, XZ=Magenta, YZ=Cyan (full brightness, opacity-controlled)
+- [x] **IVM Central Angle grids**: 6 planes from Quadray basis vector pairs (AB, AC, AD, BC, BD, CD)
+  - Triangular tessellation filling the wedge between each pair of basis directions
+  - Tessellations slider (12–144, step 12) grows the grid extent
+  - Colors: AB=Orange, AC=Magenta, AD=Lime, BC=Cyan, BD=Lavender, CD=Salmon (full brightness, opacity-controlled)
+- [x] **Fixed spatial reference frame** — grids do NOT scale with geometry scale slider
+  - Grid cell spacing is always `radicals::quadray_grid_interval()` (√6/4)
+  - Only polyhedra scale with the tet_edge/cube_edge sliders
+- [x] **u16 → u32 index buffer migration** — at >60 tessellations with 6 IVM planes, vertex count exceeds 65,535
+  - Changed `IndexFormat::Uint16` → `IndexFormat::Uint32` in `main.rs`
+  - Updated all `Vec<u16>` → `Vec<u32>` across `geometry.rs`, `grids.rs`, `basis_arrows.rs`
+- [x] **Far plane 100 → 500** — expanded grids need deeper clipping distance
+- [x] **Universal alpha blending** — per-vertex RGBA opacity for grids (and future faces/nodes)
+  - `Vertex.color` expanded from `[f32; 3]` (RGB) → `[f32; 4]` (RGBA) across entire pipeline
+  - WGSL shader: `vec3<f32>` → `vec4<f32>` color passthrough, fragment outputs alpha directly
+  - Render pipeline: `BlendState::REPLACE` → `BlendState::ALPHA_BLENDING` (src alpha / one-minus-src-alpha)
+  - Grid colors at full brightness with alpha from opacity slider (default 0.10)
+  - Polyhedra and basis arrows: alpha = 1.0 (fully opaque)
+  - **Motivation**: At certain scales, polyhedra edges become invisible when colinear with grid lines. Alpha blending separates grid reference from geometry.
+  - **Reusable**: Same per-vertex alpha infrastructure ready for future face and node opacity sliders
+- [x] **UI**: Two new collapsible sections
+  - "Cartesian Grid": Enable toggle, color-coded XY/XZ/YZ checkboxes, Divisions slider, Opacity slider (0.00–1.00)
+  - "IVM Grid": Enable toggle, 6 color-coded pair checkboxes (2 rows of 3), Tessellations slider, Opacity slider (0.00–1.00)
+- [x] **17 new state fields** in `app_state.rs`: master toggles, individual plane flags, slider values, opacity values
+- [x] 10 new unit tests (117 total): vertex counts, coplanarity, master toggle, index offsets, unit directions
+- **Verified**: 117 tests pass. Both grid types render correctly at all tessellation levels. Grids stay fixed while geometry scales. Opacity 0.10 default keeps grids visible without obscuring coincident polyhedra edges.
+- **Modified**: `grids.rs` (NEW), `app_state.rs` (17 fields), `geometry.rs` (u32 + RGBA + grid calls), `basis_arrows.rs` (u32 + RGBA), `camera.rs` (far plane), `main.rs` (mod grids, Uint32, ALPHA_BLENDING), `ui.rs` (2 grid sections + opacity sliders), `shader.wgsl` (vec4 color)
+
 ### Step 8: Face-Normal Firing (Day 10-12) — DEFERRED (game mode)
 - [ ] Compute face normals (original tet for Quadray alignment)
 - [ ] Spacebar-hold + ASDF firing
@@ -920,7 +969,7 @@ let data = load_file()?;  // Returns early with Err if it fails
 | First black window (wgpu + Metal) | Done — Apple M2 Max, wgpu 28 (2026-02-19) |
 | Colored triangle (WGSL shader + render pipeline) | Done — cyan triangle, wgpu 28 (2026-02-19) |
 | **Quadray-native GPU rendering** | **Done — ABCD→XYZ in WGSL shader (2026-02-19)** |
-| **RT math port** (`rt_math/`, `rt_polyhedra/`, 89 → 99 → 104 tests) | **Done — 8 files, all Platonics, Wildberger polygons (2026-02-19)** |
+| **RT math port** (`rt_math/`, `rt_polyhedra/`, 89 → 99 → 104 → 107 → 117 tests) | **Done — 8 files, all Platonics, Wildberger polygons (2026-02-19)** |
 | **macOS .app bundle** (bundle.sh + icon) | **Done — ARTexplorer.app launches from Dock (2026-02-19)** |
 | **P0 Explorer UI** (egui side panel, orbit camera, all 6 Platonics) | **Done — egui 0.33 + wgpu 27, right-side panel (2026-02-19)** |
 
@@ -942,7 +991,9 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P0: All 6 Platonic solids toggleable** | **Done — Step 7 (2026-02-19)** |
 | **P1: Basis arrows (Quadray ABCD + Cartesian XYZ)** | **Done (2026-02-20)** |
 | **P1: Camera presets (7 views: Right/Front/Top + A/B/C/D)** | **Done (2026-02-20)** |
-| P1: Grid planes | Next |
+| **P1: Ortho projection + Centre button + viewport-aware canvas** | **Done (2026-02-20)** |
+| **P1: Grid planes (Cartesian XYZ + IVM Central Angle)** | **Done (2026-02-20)** |
+| **P1: Universal alpha blending + grid opacity sliders** | **Done (2026-02-21)** |
 | P1: Node/face rendering (spheres, opacity) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |

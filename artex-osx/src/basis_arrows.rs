@@ -19,19 +19,19 @@ use crate::rt_math::quadray::Quadray;
 use crate::rt_math::radicals;
 use crate::rt_polyhedra;
 
-/// ABCD colors matching geometry.rs palette
-const ABCD_COLORS: [[f32; 3]; 4] = [
-    [1.0, 1.0, 0.0], // A = Yellow
-    [1.0, 0.0, 0.0], // B = Red
-    [0.0, 0.4, 1.0], // C = Blue
-    [0.0, 0.8, 0.2], // D = Green
+/// ABCD colors matching geometry.rs palette (RGBA, fully opaque)
+const ABCD_COLORS: [[f32; 4]; 4] = [
+    [1.0, 1.0, 0.0, 1.0], // A = Yellow
+    [1.0, 0.0, 0.0, 1.0], // B = Red
+    [0.0, 0.4, 1.0, 1.0], // C = Blue
+    [0.0, 0.8, 0.2, 1.0], // D = Green
 ];
 
-/// Cartesian XYZ colors (standard CG convention)
-const XYZ_COLORS: [[f32; 3]; 3] = [
-    [1.0, 0.0, 0.0], // X = Red
-    [0.0, 0.8, 0.2], // Y = Green
-    [0.0, 0.4, 1.0], // Z = Blue
+/// Cartesian XYZ colors (standard CG convention, RGBA, fully opaque)
+const XYZ_COLORS: [[f32; 4]; 3] = [
+    [1.0, 0.0, 0.0, 1.0], // X = Red
+    [0.0, 0.8, 0.2, 1.0], // Y = Green
+    [0.0, 0.4, 1.0, 1.0], // Z = Blue
 ];
 
 /// Arrowhead scale (constant, matching JS app's headSize = 0.15)
@@ -53,12 +53,12 @@ fn dual_tet_cartesian() -> (Vec<[f64; 3]>, Vec<[usize; 2]>) {
 ///
 /// - `direction_xyz`: normalized Cartesian direction of the arrow
 /// - `target_length`: total arrow length (tip of arrowhead reaches here)
-/// - `color`: RGB color for all vertices in this arrow
+/// - `color`: RGBA color for all vertices in this arrow
 /// - `index_offset`: base index for the returned indices
 fn build_arrow(
     direction_xyz: [f64; 3],
     target_length: f64,
-    color: [f32; 3],
+    color: [f32; 4],
     index_offset: u32,
 ) -> (Vec<Vertex>, Vec<u32>) {
     let dir = glam::DVec3::from_array(direction_xyz);

@@ -7,7 +7,7 @@
 //! All geometry built in Cartesian, then converted to Quadray ABCD via
 //! Quadray::from_cartesian() for the existing shader pipeline.
 //!
-//! Color conventions (at 40% brightness to simulate grid opacity):
+//! Color conventions (full brightness, alpha-blended via per-grid-type opacity):
 //!   Cartesian: XY=Yellow, XZ=Magenta, YZ=Cyan (additive axis mixes)
 //!   IVM: AB=Orange, AC=Magenta, AD=Lime, BC=Cyan, BD=Lavender, CD=Pink
 //!
@@ -18,18 +18,18 @@ use crate::geometry::Vertex;
 use crate::rt_math::quadray::Quadray;
 use crate::rt_math::radicals;
 
-// --- Cartesian grid plane colors (40% brightness) ---
-const XY_COLOR: [f32; 3] = [0.4, 0.4, 0.0]; // Yellow
-const XZ_COLOR: [f32; 3] = [0.4, 0.0, 0.4]; // Magenta
-const YZ_COLOR: [f32; 3] = [0.0, 0.4, 0.4]; // Cyan
+// --- Cartesian grid plane colors (full brightness — alpha handles opacity) ---
+const XY_COLOR: [f32; 3] = [1.0, 1.0, 0.0]; // Yellow
+const XZ_COLOR: [f32; 3] = [1.0, 0.0, 1.0]; // Magenta
+const YZ_COLOR: [f32; 3] = [0.0, 1.0, 1.0]; // Cyan
 
-// --- IVM Central Angle plane colors (40% brightness) ---
-const AB_COLOR: [f32; 3] = [0.4, 0.27, 0.0];  // Orange
-const AC_COLOR: [f32; 3] = [0.4, 0.0, 0.4];   // Magenta
-const AD_COLOR: [f32; 3] = [0.27, 0.4, 0.0];  // Lime
-const BC_COLOR: [f32; 3] = [0.0, 0.4, 0.4];   // Cyan
-const BD_COLOR: [f32; 3] = [0.27, 0.27, 0.4]; // Lavender
-const CD_COLOR: [f32; 3] = [0.4, 0.2, 0.2];   // Pink
+// --- IVM Central Angle plane colors (full brightness — alpha handles opacity) ---
+const AB_COLOR: [f32; 3] = [1.0, 0.67, 0.0];  // Orange
+const AC_COLOR: [f32; 3] = [1.0, 0.0, 1.0];   // Magenta
+const AD_COLOR: [f32; 3] = [0.67, 1.0, 0.0];  // Lime
+const BC_COLOR: [f32; 3] = [0.0, 1.0, 1.0];   // Cyan
+const BD_COLOR: [f32; 3] = [0.67, 0.67, 1.0]; // Lavender
+const CD_COLOR: [f32; 3] = [1.0, 0.5, 0.5];   // Pink
 
 /// Build a uniform rectangular grid on one Cartesian plane.
 ///
@@ -41,13 +41,13 @@ const CD_COLOR: [f32; 3] = [0.4, 0.2, 0.2];   // Pink
 /// - `plane`: 0=XY (z=0), 1=XZ (y=0), 2=YZ (x=0)
 /// - `half_extent`: how far the grid extends from origin
 /// - `divisions`: number of subdivisions per axis
-/// - `color`: RGB color for all grid lines
+/// - `color`: RGBA color for all grid lines (alpha = opacity)
 /// - `index_offset`: base index for the returned indices
 fn build_cartesian_plane(
     plane: u8,
     half_extent: f64,
     divisions: u32,
-    color: [f32; 3],
+    color: [f32; 4],
     index_offset: u32,
 ) -> (Vec<Vertex>, Vec<u32>) {
     let n = divisions as usize;
@@ -114,14 +114,14 @@ fn build_cartesian_plane(
 /// - `basis1`, `basis2`: Normalized Cartesian direction vectors
 /// - `tessellations`: number of triangle steps along each direction
 /// - `step_length`: Cartesian distance per step
-/// - `color`: RGB color for all grid lines
+/// - `color`: RGBA color for all grid lines (alpha = opacity)
 /// - `index_offset`: base index for the returned indices
 fn build_ivm_plane(
     basis1: [f64; 3],
     basis2: [f64; 3],
     tessellations: u32,
     step_length: f64,
-    color: [f32; 3],
+    color: [f32; 4],
     index_offset: u32,
 ) -> (Vec<Vertex>, Vec<u32>) {
     let t = tessellations as usize;
@@ -212,6 +212,7 @@ pub fn build_cartesian_grids(
     let divisions = state.cartesian_divisions;
     let half_extent = divisions as f64 * cell_spacing / 2.0;
 
+    let alpha = state.cartesian_grid_opacity;
     let mut all_verts = Vec::new();
     let mut all_idxs = Vec::new();
 
@@ -221,12 +222,13 @@ pub fn build_cartesian_grids(
         (state.show_grid_yz, 2, YZ_COLOR),
     ];
 
-    for (visible, plane_id, color) in &planes {
+    for (visible, plane_id, rgb) in &planes {
         if !visible {
             continue;
         }
+        let color = [rgb[0], rgb[1], rgb[2], alpha];
         let offset = index_offset + all_verts.len() as u32;
-        let (verts, idxs) = build_cartesian_plane(*plane_id, half_extent, divisions, *color, offset);
+        let (verts, idxs) = build_cartesian_plane(*plane_id, half_extent, divisions, color, offset);
         all_verts.extend(verts);
         all_idxs.extend(idxs);
     }
@@ -261,6 +263,8 @@ pub fn build_ivm_grids(
     let dir_c = quadray_direction(&Quadray::C);
     let dir_d = quadray_direction(&Quadray::D);
 
+    let alpha = state.ivm_grid_opacity;
+
     // 6 Central Angle planes: all C(4,2) pairs of basis vectors
     let planes: [(bool, [f64; 3], [f64; 3], [f32; 3]); 6] = [
         (state.show_grid_ab, dir_a, dir_b, AB_COLOR),
@@ -274,12 +278,13 @@ pub fn build_ivm_grids(
     let mut all_verts = Vec::new();
     let mut all_idxs = Vec::new();
 
-    for (visible, b1, b2, color) in &planes {
+    for (visible, b1, b2, rgb) in &planes {
         if !visible {
             continue;
         }
+        let color = [rgb[0], rgb[1], rgb[2], alpha];
         let offset = index_offset + all_verts.len() as u32;
-        let (verts, idxs) = build_ivm_plane(*b1, *b2, tessellations, step_length, *color, offset);
+        let (verts, idxs) = build_ivm_plane(*b1, *b2, tessellations, step_length, color, offset);
         all_verts.extend(verts);
         all_idxs.extend(idxs);
     }

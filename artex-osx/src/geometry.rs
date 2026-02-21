@@ -11,7 +11,7 @@ use crate::rt_polyhedra;
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
     pub quadray: [f32; 4], // ABCD coordinates (Quadray)
-    pub color: [f32; 3],   // RGB
+    pub color: [f32; 4],   // RGBA (alpha for universal opacity control)
 }
 
 impl Vertex {
@@ -26,24 +26,25 @@ impl Vertex {
                     shader_location: 0,
                     format: wgpu::VertexFormat::Float32x4,
                 },
-                // color: vec3<f32> at offset 16
+                // color: vec4<f32> at offset 16 (RGBA)
                 wgpu::VertexAttribute {
                     offset: std::mem::size_of::<[f32; 4]>() as wgpu::BufferAddress,
                     shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x3,
+                    format: wgpu::VertexFormat::Float32x4,
                 },
             ],
         }
     }
 }
 
-// --- ABCD color palette ---
+// --- ABCD color palette (RGBA) ---
 // Each axis gets a consistent color across all polyhedra.
-const ABCD_COLORS: [[f32; 3]; 4] = [
-    [1.0, 1.0, 0.0], // A = Yellow
-    [1.0, 0.0, 0.0], // B = Red
-    [0.0, 0.4, 1.0], // C = Blue
-    [0.0, 0.8, 0.2], // D = Green
+// Polyhedra are fully opaque (alpha=1.0). Grids carry their own alpha.
+const ABCD_COLORS: [[f32; 4]; 4] = [
+    [1.0, 1.0, 0.0, 1.0], // A = Yellow
+    [1.0, 0.0, 0.0, 1.0], // B = Red
+    [0.0, 0.4, 1.0, 1.0], // C = Blue
+    [0.0, 0.8, 0.2, 1.0], // D = Green
 ];
 
 /// Build combined vertex/index buffers for all visible polyhedra.
