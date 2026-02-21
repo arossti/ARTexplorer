@@ -149,9 +149,15 @@ impl GpuState {
             push_constant_ranges: &[],
         });
 
+        // Faces: depth TEST but NO depth WRITE.
+        // Semi-transparent faces must not block objects behind them in the depth
+        // buffer. Without depth write, all transparent faces blend freely —
+        // inner polyhedra remain visible through outer geodesic spheres
+        // regardless of render order. Edges (rendered afterward) still write
+        // depth and render on top via bias.
         let depth_stencil_face = wgpu::DepthStencilState {
             format: DEPTH_FORMAT,
-            depth_write_enabled: true,
+            depth_write_enabled: false,
             depth_compare: wgpu::CompareFunction::Less,
             stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),
