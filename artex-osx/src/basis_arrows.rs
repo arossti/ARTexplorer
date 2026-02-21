@@ -161,15 +161,16 @@ fn build_arrow(
 
 /// Build 4 Quadray ABCD basis arrows.
 ///
-/// Arrows from origin toward dual tetrahedron vertex directions:
-///   A (Yellow): [0,1,1,1] → Cartesian (+1,+1,-1)/√3
-///   B (Red):    [1,0,1,1] → Cartesian (-1,-1,-1)/√3
-///   C (Blue):   [1,1,0,1] → Cartesian (+1,-1,+1)/√3
-///   D (Green):  [1,1,1,0] → Cartesian (-1,+1,+1)/√3
+/// Arrows from origin toward **regular tetrahedron** vertex directions,
+/// matching the IVM grid plane basis vectors:
+///   A (Yellow): [1,0,0,0] → Cartesian (+1,+1,-1)/√3
+///   B (Red):    [0,1,0,0] → Cartesian (-1,-1,-1)/√3
+///   C (Blue):   [0,0,1,0] → Cartesian (+1,-1,+1)/√3
+///   D (Green):  [0,0,0,1] → Cartesian (-1,+1,+1)/√3
 ///
-/// Janus Inversion: when `janus_sign` < 0, arrows point inward (toward origin)
-/// instead of outward — the basis tetrahedron inverts to its dual, orienting the
-/// user to the negative arena.
+/// Janus Inversion: when `janus_sign` < 0, Cartesian directions negate,
+/// which maps regular tet directions to dual tet directions — the basis
+/// tetrahedron naturally becomes its self-dual in the negative arena.
 ///
 /// Sizing: targetLength = (tetEdge + 1) × quadray_grid_interval
 pub fn build_quadray_basis(tet_edge: f32, janus_sign: f32, index_offset: u32) -> (Vec<Vertex>, Vec<u32>) {
@@ -177,21 +178,23 @@ pub fn build_quadray_basis(tet_edge: f32, janus_sign: f32, index_offset: u32) ->
     let target_length = (tet_edge.abs() as f64 + 1.0) * grid_interval;
     let sign = if janus_sign < 0.0 { -1.0 } else { 1.0 };
 
-    // Dual tet vertex directions (Cartesian, normalized)
-    let dual_verts = [
-        Quadray::new(0.0, 1.0, 1.0, 1.0), // A-absent
-        Quadray::new(1.0, 0.0, 1.0, 1.0), // B-absent
-        Quadray::new(1.0, 1.0, 0.0, 1.0), // C-absent
-        Quadray::new(1.0, 1.0, 1.0, 0.0), // D-absent
+    // Regular tet vertex directions — matches IVM grid plane basis.
+    // Janus negation maps these to dual tet directions in Cartesian:
+    //   -[1,0,0,0] in Cartesian = [0,1,1,1] in Quadray.
+    let basis_verts = [
+        Quadray::new(1.0, 0.0, 0.0, 0.0), // A
+        Quadray::new(0.0, 1.0, 0.0, 0.0), // B
+        Quadray::new(0.0, 0.0, 1.0, 0.0), // C
+        Quadray::new(0.0, 0.0, 0.0, 1.0), // D
     ];
 
     let mut all_vertices = Vec::new();
     let mut all_indices = Vec::new();
 
-    for (i, q) in dual_verts.iter().enumerate() {
+    for (i, q) in basis_verts.iter().enumerate() {
         let xyz = q.to_cartesian();
         let len = (xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]).sqrt();
-        // Janus: negate direction in negative arena → arrows point inward
+        // Janus: negate direction in negative arena → tet basis becomes dual tet
         let direction = [sign * xyz[0] / len, sign * xyz[1] / len, sign * xyz[2] / len];
 
         let offset = index_offset + all_vertices.len() as u32;
@@ -288,12 +291,14 @@ mod tests {
 
     #[test]
     fn a_arrow_direction_correct() {
-        // A-absent [0,1,1,1] → Cartesian (1, 1, -1), normalized (1,1,-1)/√3
-        let q = Quadray::new(0.0, 1.0, 1.0, 1.0);
+        // Regular tet A [1,0,0,0] → Cartesian (-1, -1, 1)
+        // Negation of dual A-absent [0,1,1,1] → (1, 1, -1)
+        // Arrow points along A grid direction; Janus negation maps it to dual.
+        let q = Quadray::new(1.0, 0.0, 0.0, 0.0);
         let xyz = q.to_cartesian();
-        assert!((xyz[0] - 1.0).abs() < EPS, "x: {} != 1.0", xyz[0]);
-        assert!((xyz[1] - 1.0).abs() < EPS, "y: {} != 1.0", xyz[1]);
-        assert!((xyz[2] - (-1.0)).abs() < EPS, "z: {} != -1.0", xyz[2]);
+        assert!((xyz[0] - (-1.0)).abs() < EPS, "x: {} != -1.0", xyz[0]);
+        assert!((xyz[1] - (-1.0)).abs() < EPS, "y: {} != -1.0", xyz[1]);
+        assert!((xyz[2] - 1.0).abs() < EPS, "z: {} != 1.0", xyz[2]);
     }
 
     #[test]
