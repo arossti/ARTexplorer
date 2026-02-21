@@ -87,6 +87,15 @@ pub struct AppState {
     pub show_faces: bool,
     pub face_opacity: f32, // 0.0–1.0
 
+    // Node rendering (geodesic vertex spheres)
+    // Geodesic icosahedron at each polyhedron vertex — no classical spheres.
+    // Size: 0=Off, 1-7=fixed radii, 8=Packed (close-packed from edge quadrance).
+    // Packed: Q_vertex = Q_edge/4, radius = sqrt(Q_vertex) — RT-pure.
+    pub show_nodes: bool,
+    pub node_size: u8,              // 0=Off, 1-7=fixed, 8=Packed
+    pub node_opacity: f32,          // 0.0–1.0
+    pub node_geodesic_freq: u32,    // 1–4 (geodesic icosahedron subdivision)
+
     // Geometry rebuild flag
     pub geometry_dirty: bool,
 
@@ -94,6 +103,7 @@ pub struct AppState {
     pub vertex_count: usize,
     pub edge_count: usize,
     pub face_count: usize, // triangle count (after fan triangulation)
+    pub node_count: usize, // number of node sphere instances
     pub bounding_radius: f32, // max Cartesian distance from origin across all visible vertices
 
     // UI layout (updated each frame by egui)
@@ -146,11 +156,16 @@ impl Default for AppState {
             geodesic_icosa_projection: 3,
             show_faces: true,      // faces visible by default
             face_opacity: 0.35,    // semi-transparent (matches JS app default)
+            show_nodes: false,     // nodes off by default
+            node_size: 4,         // "Md" (medium, 0.04 Cartesian radius)
+            node_opacity: 0.6,    // semi-transparent (matches JS app default)
+            node_geodesic_freq: 3, // 3F icosphere (92V, 180F — good detail/perf ratio)
             janus_negative: false, // Start in positive arena (F1)
             geometry_dirty: true, // Build on first frame
             vertex_count: 0,
             edge_count: 0,
             face_count: 0,
+            node_count: 0,
             bounding_radius: 0.0,
             panel_width: 220.0, // initial estimate, updated each frame by egui
             fps: 0.0,

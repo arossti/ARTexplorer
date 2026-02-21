@@ -334,6 +334,7 @@ impl GpuState {
         self.app_state.vertex_count = geo.vertices.len();
         self.app_state.edge_count = geo.edge_indices.len() / 2;
         self.app_state.face_count = geo.face_indices.len() / 3;
+        self.app_state.node_count = geo.node_count;
         self.app_state.bounding_radius = geo.bounding_radius;
 
         self.vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

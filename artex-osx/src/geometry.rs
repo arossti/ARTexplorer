@@ -2,7 +2,7 @@ use crate::app_state::AppState;
 use crate::basis_arrows;
 use crate::grids;
 use crate::rt_polyhedra;
-use crate::rt_polyhedra::geodesic::{self, ProjectionMode as GeoProjection};
+use crate::rt_polyhedra::geodesic::{self, ProjectionMode as GeoProjection, quadray_quadrance_from_origin};
 
 // --- Vertex data (ABCD Convention) ---
 // Quadray-native: each vertex carries ABCD coordinates (integers on CPU!)
@@ -73,6 +73,55 @@ fn abcd_color(abcd: &[f32; 4], alpha: f32) -> [f32; 4] {
     [r, g, b, alpha]
 }
 
+// --- Node sphere helpers ---
+
+/// Fixed Cartesian radii for node sizes 1–7 (matching JS app NODE_SIZE_RADII).
+const NODE_SIZE_RADII: [f32; 7] = [0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.12];
+
+/// Node sphere template — geodesic icosahedron at unit scale.
+///
+/// Returns (ABCD f32 vertices, triangulated face indices, Cartesian circumradius).
+/// Generated once per rebuild; reused for every polyhedron vertex.
+fn node_template(frequency: u32) -> (Vec<[f32; 4]>, Vec<[usize; 3]>, f32) {
+    let poly = geodesic::geodesic_icosahedron(frequency, GeoProjection::OutSphere);
+
+    // Compute circumradius in Cartesian (ONE √ at boundary)
+    let q_circ = quadray_quadrance_from_origin(&poly.vertices[0]);
+    // Math.X justified: sqrt at rendering boundary
+    let circ_radius = (q_circ as f32).sqrt();
+
+    let verts: Vec<[f32; 4]> = poly.vertices.iter().map(|q| q.to_f32_array()).collect();
+
+    // Convert variable-length faces to triangles (fan triangulation)
+    let mut tris = Vec::new();
+    for face in &poly.faces {
+        for i in 1..face.len() - 1 {
+            tris.push([face[0], face[i], face[i + 1]]);
+        }
+    }
+
+    (verts, tris, circ_radius)
+}
+
+/// Compute node Cartesian radius for a given size setting.
+///
+/// Sizes 1–7: fixed radii from NODE_SIZE_RADII (scale-independent).
+/// Size 8 (Packed): RT-pure close-packing from edge quadrance.
+///   Q_vertex = Q_edge / 4 → radius = √(Q_vertex)
+///   At scale s: Q_scaled = Q_edge · s², radius = √(Q_edge · s² / 4)
+///   ONE √ at rendering boundary.
+fn node_radius(node_size: u8, edge_quadrance: f64, s: f32) -> f32 {
+    if node_size >= 1 && node_size <= 7 {
+        NODE_SIZE_RADII[(node_size - 1) as usize]
+    } else {
+        // Size 8 = Packed: half-edge close-packing
+        // Q_scaled = Q_edge * s²; Q_vertex = Q_scaled / 4
+        // Math.X justified: sqrt at rendering boundary
+        let q_scaled = edge_quadrance * (s as f64) * (s as f64);
+        (q_scaled / 4.0).sqrt() as f32
+    }
+}
+
 /// Geometry build output — vertices shared between edge and face pipelines.
 ///
 /// Edge vertices have alpha=1.0, face vertices have alpha=face_opacity.
@@ -82,6 +131,7 @@ pub struct GeometryOutput {
     pub edge_indices: Vec<u32>,
     pub face_indices: Vec<u32>,
     pub bounding_radius: f32,
+    pub node_count: usize,
 }
 
 /// Build combined vertex/index buffers for all visible polyhedra.
@@ -218,6 +268,49 @@ pub fn build_visible_geometry(state: &AppState) -> GeometryOutput {
         edge_indices.extend(grid_idxs);
     }
 
+    // --- Node spheres (geodesic icosahedra at each polyhedron vertex) ---
+    // Template generated once, instanced at every visible vertex.
+    // ABCD offset linearity: xyz(V + T) = xyz(V) + xyz(T), so adding
+    // template ABCD coords to vertex ABCD coords correctly places the
+    // icosphere at the vertex's Cartesian position.
+    let mut node_instance_count: usize = 0;
+    if state.show_nodes && state.node_size > 0 {
+        let (template_verts, template_tris, template_r) =
+            node_template(state.node_geodesic_freq);
+
+        for (visible, poly) in &polys {
+            if !visible {
+                continue;
+            }
+            let radius = node_radius(state.node_size, poly.edge_quadrance, s);
+            let node_scale = radius / template_r;
+
+            for q in &poly.vertices {
+                let center = [q.a as f32 * s, q.b as f32 * s, q.c as f32 * s, q.d as f32 * s];
+                let color = abcd_color(&q.to_f32_array(), state.node_opacity);
+                let node_base = vertices.len() as u32;
+
+                for tv in &template_verts {
+                    vertices.push(Vertex {
+                        quadray: [
+                            center[0] + tv[0] * node_scale,
+                            center[1] + tv[1] * node_scale,
+                            center[2] + tv[2] * node_scale,
+                            center[3] + tv[3] * node_scale,
+                        ],
+                        color,
+                    });
+                }
+                for [a, b, c] in &template_tris {
+                    face_indices.push(*a as u32 + node_base);
+                    face_indices.push(*b as u32 + node_base);
+                    face_indices.push(*c as u32 + node_base);
+                }
+                node_instance_count += 1;
+            }
+        }
+    }
+
     // Compute bounding radius: max Cartesian distance from origin across all vertices.
     // Math.X justified: sqrt is at the rendering boundary (Cartesian projection).
     let inv_sqrt2: f32 = std::f32::consts::FRAC_1_SQRT_2;
@@ -241,6 +334,7 @@ pub fn build_visible_geometry(state: &AppState) -> GeometryOutput {
         edge_indices,
         face_indices,
         bounding_radius,
+        node_count: node_instance_count,
     }
 }
 
@@ -342,6 +436,157 @@ mod tests {
                 (v.color[3] - 0.42).abs() < 0.001,
                 "face vertex alpha should be 0.42, got {}",
                 v.color[3]
+            );
+        }
+    }
+
+    // --- Node rendering tests ---
+
+    fn state_tet_nodes(node_size: u8, node_freq: u32) -> AppState {
+        AppState {
+            show_tetrahedron: true,
+            show_dual_tetrahedron: false,
+            show_cube: false,
+            show_octahedron: false,
+            show_icosahedron: false,
+            show_dodecahedron: false,
+            show_faces: false,
+            show_nodes: true,
+            node_size,
+            node_opacity: 0.6,
+            node_geodesic_freq: node_freq,
+            show_quadray_basis: false,
+            show_cartesian_basis: false,
+            show_cartesian_grids: false,
+            show_ivm_grids: false,
+            ..AppState::default()
+        }
+    }
+
+    #[test]
+    fn nodes_disabled_when_off() {
+        let state = AppState {
+            show_tetrahedron: true,
+            show_nodes: false,
+            show_faces: false,
+            show_quadray_basis: false,
+            show_cartesian_basis: false,
+            ..AppState::default()
+        };
+        let geo = build_visible_geometry(&state);
+        assert_eq!(geo.node_count, 0, "node_count should be 0 when show_nodes=false");
+        // Only edge vertices (4 for tet)
+        assert_eq!(geo.face_indices.len(), 0, "no face indices when nodes+faces off");
+    }
+
+    #[test]
+    fn nodes_disabled_when_size_zero() {
+        let state = AppState {
+            show_tetrahedron: true,
+            show_nodes: true,
+            node_size: 0,
+            show_faces: false,
+            show_quadray_basis: false,
+            show_cartesian_basis: false,
+            ..AppState::default()
+        };
+        let geo = build_visible_geometry(&state);
+        assert_eq!(geo.node_count, 0, "node_count should be 0 when node_size=0");
+    }
+
+    #[test]
+    fn node_vertex_count_tet_3f() {
+        // Tet has 4 vertices. 3F geodesic icosahedron has 92 vertices.
+        // Expected: 4 edge verts + 4 * 92 = 4 + 368 = 372 total vertices
+        let state = state_tet_nodes(4, 3);
+        let geo = build_visible_geometry(&state);
+        assert_eq!(geo.node_count, 4, "tet should produce 4 node instances");
+        // 4 edge verts + 4 * 92 node verts = 372
+        assert_eq!(
+            geo.vertices.len(), 4 + 4 * 92,
+            "expected 4 edge + 368 node vertices, got {}",
+            geo.vertices.len()
+        );
+    }
+
+    #[test]
+    fn node_face_count_tet_3f() {
+        // 3F geodesic icosahedron has 180 triangular faces.
+        // 4 tet vertices × 180 = 720 node triangles.
+        let state = state_tet_nodes(4, 3);
+        let geo = build_visible_geometry(&state);
+        let tri_count = geo.face_indices.len() / 3;
+        assert_eq!(
+            tri_count, 4 * 180,
+            "expected 720 node triangles, got {}",
+            tri_count
+        );
+    }
+
+    #[test]
+    fn node_opacity_in_vertex_alpha() {
+        let state = state_tet_nodes(4, 1);
+        let geo = build_visible_geometry(&state);
+        // First 4 verts are edge vertices (alpha 1.0), rest are node verts
+        for v in &geo.vertices[4..] {
+            assert!(
+                (v.color[3] - 0.6).abs() < 0.001,
+                "node vertex alpha should be 0.6, got {}",
+                v.color[3]
+            );
+        }
+    }
+
+    #[test]
+    fn node_color_inherits_parent() {
+        // Tet vertex A = [1,0,0,0] → pure yellow (R=1,G=1,B=0)
+        let state = state_tet_nodes(4, 1);
+        let geo = build_visible_geometry(&state);
+        // First node sphere starts at index 4 (after 4 edge verts).
+        // 1F geodesic icosahedron has 12 vertices.
+        // First 12 node verts belong to first tet vertex [1,0,0,0].
+        let node_v = &geo.vertices[4];
+        assert!(
+            (node_v.color[0] - 1.0).abs() < 0.01 && (node_v.color[1] - 1.0).abs() < 0.01,
+            "node at tet vertex A should be yellow, got ({:.2}, {:.2}, {:.2})",
+            node_v.color[0], node_v.color[1], node_v.color[2]
+        );
+    }
+
+    #[test]
+    fn packed_radius_tet() {
+        // Tet edge_quadrance = 8 (unit Quadray). At s=1:
+        // Q_scaled = 8 * 1 * 1 = 8. Q_vertex = 8/4 = 2. radius = sqrt(2) ≈ 1.414
+        let r = node_radius(8, 8.0, 1.0);
+        assert!(
+            (r - std::f32::consts::SQRT_2).abs() < 0.001,
+            "packed tet radius should be sqrt(2) ≈ 1.414, got {}",
+            r
+        );
+    }
+
+    #[test]
+    fn packed_radius_cube() {
+        // Cube edge_quadrance = 4 (unit Quadray). At s=1:
+        // Q_scaled = 4 * 1 * 1 = 4. Q_vertex = 4/4 = 1. radius = sqrt(1) = 1.0
+        let r = node_radius(8, 4.0, 1.0);
+        assert!(
+            (r - 1.0).abs() < 0.001,
+            "packed cube radius should be 1.0, got {}",
+            r
+        );
+    }
+
+    #[test]
+    fn node_indices_valid_range() {
+        let state = state_tet_nodes(4, 2);
+        let geo = build_visible_geometry(&state);
+        let max_vertex = geo.vertices.len() as u32;
+        for (i, idx) in geo.face_indices.iter().enumerate() {
+            assert!(
+                *idx < max_vertex,
+                "node face index {} at position {} exceeds vertex count {}",
+                idx, i, max_vertex
             );
         }
     }

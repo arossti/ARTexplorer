@@ -105,9 +105,71 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
 
                     ui.separator();
 
-                    // --- Nodes (stub — vertex sphere rendering, future P2+) ---
-                    ui.add_enabled(false, egui::Checkbox::new(&mut false, "Nodes"));
-                    ui.label(egui::RichText::new("Node rendering — planned").small().weak());
+                    // --- Nodes (geodesic icosahedra at polyhedron vertices) ---
+                    changed |= ui
+                        .checkbox(&mut state.show_nodes, "Nodes")
+                        .changed();
+                    if state.show_nodes {
+                        // Size slider: 0=Off, 1–7=fixed, 8=Packed
+                        let size_label = match state.node_size {
+                            0 => "Off".to_string(),
+                            1 => "1".to_string(),
+                            2 => "Sm".to_string(),
+                            3 => "3".to_string(),
+                            4 => "Md".to_string(),
+                            5 => "5".to_string(),
+                            6 => "Lg".to_string(),
+                            7 => "7".to_string(),
+                            _ => "Packed".to_string(),
+                        };
+                        let mut size_f32 = state.node_size as f32;
+                        let size_response = ui.add(
+                            egui::Slider::new(&mut size_f32, 0.0..=8.0)
+                                .step_by(1.0)
+                                .text("Size")
+                                .custom_formatter(move |v, _| {
+                                    match v as u8 {
+                                        0 => "Off".to_string(),
+                                        1 => "1".to_string(),
+                                        2 => "Sm".to_string(),
+                                        3 => "3".to_string(),
+                                        4 => "Md".to_string(),
+                                        5 => "5".to_string(),
+                                        6 => "Lg".to_string(),
+                                        7 => "7".to_string(),
+                                        _ => "Packed".to_string(),
+                                    }
+                                })
+                        );
+                        if size_response.changed() {
+                            state.node_size = size_f32 as u8;
+                            changed = true;
+                        }
+                        let _ = size_label; // suppress unused warning
+
+                        // Opacity slider
+                        let opacity_response = ui.add(
+                            egui::Slider::new(&mut state.node_opacity, 0.0..=1.0)
+                                .text("Node Opacity")
+                                .custom_formatter(|v, _| format!("{:.2}", v))
+                        );
+                        if opacity_response.changed() {
+                            changed = true;
+                        }
+
+                        // Geodesic frequency selector (1–4)
+                        let mut freq_f32 = state.node_geodesic_freq as f32;
+                        let freq_response = ui.add(
+                            egui::Slider::new(&mut freq_f32, 1.0..=4.0)
+                                .step_by(1.0)
+                                .text("Geodesic")
+                                .custom_formatter(|v, _| format!("{}F", v as u32))
+                        );
+                        if freq_response.changed() {
+                            state.node_geodesic_freq = freq_f32 as u32;
+                            changed = true;
+                        }
+                    }
 
                     if changed {
                         state.geometry_dirty = true;
@@ -454,7 +516,7 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                 .show(ui, |ui| {
                     ui.label(format!("FPS: {:.0}", state.fps));
                     ui.separator();
-                    ui.label(format!("V: {}  E: {}  F: {}", state.vertex_count, state.edge_count, state.face_count));
+                    ui.label(format!("V: {}  E: {}  F: {}  N: {}", state.vertex_count, state.edge_count, state.face_count, state.node_count));
                     ui.separator();
                     ui.label(egui::RichText::new("ABCD → WGSL → Metal").small().weak());
                     ui.label(egui::RichText::new("Drag to orbit | Scroll to zoom").small().weak());

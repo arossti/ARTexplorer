@@ -1192,7 +1192,8 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P1: Grid Janus Inversion (negative ABCD + auto-opacity)** | **Done (2026-02-21)** |
 | **P1: Face rendering (depth buffer, TriangleList pipeline, fan triangulation)** | **Done (2026-02-21)** |
 | **P1: Arrowhead faces + "Nodes and Faces" UI stub** | **Done (2026-02-21)** |
-| P1: Node rendering (vertex spheres, opacity) | Pending |
+| **P1: Transparent face depth fix (depth_write_enabled: false)** | **Done (2026-02-21)** |
+| P1: Node rendering (geodesic vertex spheres, 1–4F, opacity, packed sizing) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |
 | **P2: Geodesic subdivision (Quadray-native, 3 polyhedra × 4 projections)** | **Done (2026-02-21)** |
@@ -1251,6 +1252,14 @@ Tet and octa Q_targets are **pure rationals**. Icosa uses phi identities from `p
 ```
 
 **Tests**: 160 total (136 existing + 24 geodesic). All passing.
+
+**Future**: Dual geodesic variants (dual tet, dual icosa) — add after node rendering.
+
+### Transparent Face Depth Fix — DONE 2026-02-21
+
+**Problem**: Face pipeline had `depth_write_enabled: true`. The first polyhedron in render order (tetrahedron) wrote to the depth buffer, blocking all inner objects — its geodesic OutSphere appeared opaque despite 0.35 alpha. The icosahedron (5th in render order) appeared transparent only because inner objects had already rendered to the framebuffer before the icosa's depth writes.
+
+**Fix**: `depth_write_enabled: false` for the face pipeline. Transparent faces now blend freely without blocking each other in the depth buffer. Edges still write depth and render on top via bias. Opacity becomes a genuine user control — inner polyhedra visible through outer geodesic spheres at any opacity.
 
 #### P1 → P3 Camera Migration Note
 
