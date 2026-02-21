@@ -927,8 +927,29 @@ Design implications for the native app:
 
 **Centrosymmetric polyhedra**: Cube, octa, icosa, dodeca are centrosymmetric — their `P → -P` maps vertices to vertices of the SAME solid. Only the tetrahedron produces a genuinely different structure (its dual) under inversion. This is why only the tet and basis arrows visually change when crossing F0.
 
-**Next step — Grid Janus Inversion** (planned):
-The IVM grid currently uses positive integer ABCD `[i, j, 0, 0]`. In the negative arena, the grid should tessellate with negative ABCD values, forming the dual tet's grid pattern. This is NOT a 180° rotation around Z — it is true coordinate inversion, which the shader's ABCD→XYZ conversion handles naturally (negative ABCD maps to the inverted Cartesian position). The visual effect: the triangular grid wedges rotate into the complementary octants, completing the full Janus visual system.
+### P1: Grid Janus Inversion — DONE 2026-02-21
+
+**Problem**: IVM grid used positive integer ABCD `[i, j, 0, 0]` regardless of arena — the grid didn't participate in Janus inversion, breaking the visual system's coherence.
+
+**Solution**: `build_quadray_plane()` takes a `sign: f32` parameter that multiplies all ABCD coordinates. In the negative arena (frequency < 0), `sign = -1.0` produces `[-i, -j, 0, 0]` — the grid tessellates along dual tet directions. The shader's ABCD→XYZ conversion naturally places these at inverted Cartesian positions.
+
+**Auto-opacity on Janus crossing**: Grid opacity auto-adjusts when crossing F0:
+- Entering negative arena (white background): both grid opacities → 0.6 (visible against white)
+- Returning to positive arena (black background): both grid opacities → 0.10 (subtle reference)
+- Crossing detected via `state.janus_negative: bool` in all three scale slider handlers
+
+**What changed**:
+- [x] `grids.rs` — `build_quadray_plane()` gains `sign` param, `build_quadray_grids()` computes sign from frequency
+- [x] `ui.rs` — Janus crossing detection + opacity auto-adjust in frequency, tet edge, and cube edge handlers
+- [x] `app_state.rs` — `janus_negative: bool` for crossing detection (added in prior commit)
+- [x] 119 tests pass (no new tests — existing grid tests use default positive frequency)
+
+**Complete Janus visual system** (all done):
+1. Background: black → white on crossing F0
+2. Basis arrows: regular tet → dual tet via sign flip
+3. IVM grid: positive ABCD → negative ABCD tessellation
+4. Grid opacity: 0.10 → 0.6 for background contrast
+5. Polyhedra: tet → dual tet (centrosymmetric solids unchanged)
 
 ### Step 8: Face-Normal Firing (Day 10-12) — DEFERRED (game mode)
 - [ ] Compute face normals (original tet for Quadray alignment)
@@ -1114,7 +1135,7 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P1: Extended camera zoom (proportional scroll, 10000 unit range)** | **Done (2026-02-21)** |
 | **P1: Janus Inversion (background + basis arrows + tet→dual)** | **Done (2026-02-21)** |
 | **P1: Basis arrow correction (dual→regular tet, per Janus10.tex §3.2)** | **Done (2026-02-21)** |
-| P1: Grid Janus Inversion (negative ABCD tessellation in negative arena) | Planned |
+| **P1: Grid Janus Inversion (negative ABCD + auto-opacity)** | **Done (2026-02-21)** |
 | P1: Node/face rendering (spheres, opacity) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |
