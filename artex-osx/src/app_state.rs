@@ -1,3 +1,13 @@
+/// Coordinate display mode — which reference frame to show transforms in.
+/// GroupCentre requires 2+ selected objects; stubbed (no instances in P1).
+#[derive(Clone, Copy, PartialEq, Default)]
+pub enum CoordMode {
+    #[default]
+    Absolute,       // World-space transforms (default)
+    Relative,       // Object-local (self = origin)
+    GroupCentre,    // Centroid of multi-selection (stub — P1: no instances)
+}
+
 /// Which scale control is currently driving.
 /// Frequency = Quadray-native (integer = on-grid).
 /// Edge lengths = Cartesian observations (generally off-grid).
@@ -107,7 +117,21 @@ pub struct AppState {
     pub bounding_radius: f32, // max Cartesian distance from origin across all visible vertices
 
     // UI layout (updated each frame by egui)
-    pub panel_width: f32, // sidebar panel width in logical points
+    pub panel_width: f32,       // sidebar panel width in logical points
+    pub coord_bar_height: f32,  // coordinate bar height in logical points (set by draw_coord_bar)
+
+    // Coordinate bar mode + normalize toggle
+    pub coord_mode: CoordMode,    // Absolute / Relative / GroupCentre
+    pub coord_normalize: bool,    // false = zero-sum ABCD (native); true = canonical (JS-style)
+
+    // Cursor tracking — populated each frame from CursorMoved + ray-sphere intersection.
+    // Physical pixel coordinates stored raw; world position computed in render loop.
+    pub cursor_screen: Option<(f32, f32)>,      // raw winit cursor (physical px)
+    pub cursor_world_xyz: Option<[f32; 3]>,     // Cartesian XYZ of hit point
+    pub cursor_abcd: Option<[f64; 4]>,          // zero-sum Quadray [a, b, c, d]
+
+    // Selection stub — always None in P1. V2: ray-mesh picking, instances.
+    pub selected_polyhedron: Option<&'static str>,
 
     // FPS tracking
     pub fps: f64,
@@ -167,7 +191,14 @@ impl Default for AppState {
             face_count: 0,
             node_count: 0,
             bounding_radius: 0.0,
-            panel_width: 220.0, // initial estimate, updated each frame by egui
+            panel_width: 220.0,     // initial estimate, updated each frame by egui
+            coord_bar_height: 0.0,  // updated each frame by draw_coord_bar
+            coord_mode: CoordMode::Absolute,
+            coord_normalize: false, // default: zero-sum ABCD (native pure Quadray)
+            cursor_screen: None,
+            cursor_world_xyz: None,
+            cursor_abcd: None,
+            selected_polyhedron: None,
             fps: 0.0,
             frame_count: 0,
             fps_timer: std::time::Instant::now(),

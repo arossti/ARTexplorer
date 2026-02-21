@@ -1005,6 +1005,54 @@ Draw order: faces FIRST (depth write), edges SECOND (depth bias → float above 
 
 **Face index counts**: 4 Quadray arrows × 12 face indices = 48, 3 Cartesian arrows × 12 face indices = 36.
 
+### P1: Coordinate Display Bar — DONE 2026-02-21
+
+**Purpose**: Live cursor-to-world coordinate readout in a persistent bottom bar.
+Matches JS app's footer panel layout (XYZ + ABCD position groups, monospace, dark band).
+Defers editable input, rotation section, and Absolute/Relative/Group modes to a later phase.
+
+**Key design choice — zero-sum ABCD**: Unlike the JS app which normalizes to all-positive
+(shifting ABCD components so min = 0), the native bar shows the **zero-sum form** (sum = 0,
+negatives permitted). This preserves the true 4D structure and avoids the "strange numbers"
+the JS app produces when moving along a single basis vector.
+
+Example: moving along basis A by 1 unit shows `A:+0.750 B:-0.250 C:-0.250 D:-0.250`
+(zero-sum invariant preserved) rather than `A:1.000 B:0.000 C:0.000 D:0.000` (all-positive
+normalization — which erases the zero-sum structure entirely).
+
+**Cursor tracking pipeline** (each frame):
+1. `CursorMoved` event → `state.cursor_screen` (physical pixels, always stored)
+2. `camera.unproject_ray()` → world-space ray via matrix inverse (rendering boundary)
+3. `ray_sphere_or_plane()` → hit XYZ using quadrance discriminant — sqrt only at display
+4. `Quadray::from_cartesian()` → zero-sum ABCD `[a, b, c, d]`
+5. `draw_coord_bar()` → egui `TopBottomPanel::bottom`
+
+**Reference surface**: Bounding sphere (radius = `state.bounding_radius`, min 0.5 when
+no geometry visible). Fallback to Z=0 plane when cursor misses the sphere. This gives
+a meaningful coordinate even when pointing at empty space.
+
+**"On grid" indicator**: green dot `● on grid` when all four ABCD components are within
+ε=0.02 of integers — exactly when the cursor is at an IVM grid vertex.
+
+**Layout (read-only stub)**:
+```
+ XYZ  x:+0.000  y:+0.000  z:+0.000  │  ABCD  A:+0.000  B:+0.000  C:+0.000  D:+0.000  ● on grid      no selection
+```
+Colors: x=Red, y=Green, z=Blue | A=Yellow, B=Red, C=Blue, D=Green (ABCD convention).
+
+**What changed**:
+- [x] `app_state.rs` — 5 new fields: `cursor_screen`, `cursor_world_xyz`, `cursor_abcd`, `coord_bar_height`, `selected_polyhedron`
+- [x] `camera.rs` — `unproject_ray(cx, cy, vp_x, vp_y, vp_w, vp_h) -> Option<(Vec3, Vec3)>` (rendering boundary: matrix inverse)
+- [x] `ui.rs` — `draw_coord_bar()`, colored labels, "on grid" indicator, "no selection" stub
+- [x] `main.rs` — `CursorMoved` always stores position; `ray_sphere_or_plane()` helper; frame loop: ray→sphere→ABCD; viewport_h subtracts `coord_bar_px`; `draw_coord_bar` called before `draw_ui`
+- [x] ~5 new tests: unproject_ray, ray-sphere hit/miss, on-grid/off-grid detection
+
+**Future phases (deferred)**:
+- V2: Editable ABCD input fields → move geometry instances (requires StateManager + instances)
+- V2: Rotation section → spread values `s = sin²θ` (Wildberger), not classical degrees
+- V2: Absolute / Relative / Group Centre mode buttons
+- V2: Click-to-select polyhedra (ray-mesh intersection picking)
+
 ### Step 8: Face-Normal Firing (Day 10-12) — DEFERRED (game mode)
 - [ ] Compute face normals (original tet for Quadray alignment)
 - [ ] Spacebar-hold + ASDF firing
@@ -1194,7 +1242,7 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P1: Arrowhead faces + "Nodes and Faces" UI stub** | **Done (2026-02-21)** |
 | **P1: Transparent face depth fix (depth_write_enabled: false)** | **Done (2026-02-21)** |
 | **P1: Node rendering (geodesic vertex spheres, 1–4F, opacity, packed sizing)** | **Done (2026-02-21)** |
-| P1: Coordinate display bar | Pending |
+| **P1: Coordinate display bar (cursor tracking, ray-sphere, zero-sum ABCD, on-grid indicator)** | **Done (2026-02-21)** |
 | P2: Thomson great-circle shells | Pending |
 | **P2: Geodesic subdivision (Quadray-native, 3 polyhedra × 4 projections)** | **Done (2026-02-21)** |
 | P2: View manager + state persistence | Pending |

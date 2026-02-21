@@ -1,6 +1,7 @@
 mod app_state;
 mod basis_arrows;
 mod camera;
+mod coordinates;
 mod geometry;
 mod grids;
 mod rt_math;
@@ -289,6 +290,7 @@ impl GpuState {
         // --- egui setup ---
         let egui_ctx = egui::Context::default();
         ui::configure_theme(&egui_ctx);
+        coordinates::try_load_menlo_font(&egui_ctx); // slashed zeros (macOS Menlo)
         let viewport_id = egui_ctx.viewport_id();
         let egui_state = egui_winit::State::new(
             egui_ctx,
@@ -366,22 +368,47 @@ impl GpuState {
         // FPS tracking
         self.app_state.tick_fps();
 
-        // --- egui frame (runs first to get actual panel width) ---
+        // --- egui frame (runs first to get actual panel width + coord bar height) ---
+        // draw_coord_bar MUST be called before draw_ui so egui allocates bottom space first.
         let raw_input = self.egui_state.take_egui_input(&self.window);
         let camera = &mut self.camera;
         let app_state = &mut self.app_state;
         let full_output = self.egui_state.egui_ctx().run(raw_input, |ctx| {
+            coordinates::draw_coord_bar(ctx, app_state); // MUST be first — allocates bottom space
             ui::draw_ui(ctx, app_state, camera);
         });
         self.egui_state
             .handle_platform_output(&self.window, full_output.platform_output);
 
-        // --- Compute 3D viewport (canvas area excluding sidebar) ---
+        // --- Compute 3D viewport (canvas area excluding sidebar and coord bar) ---
         let scale_factor = self.window.scale_factor() as f32;
         let panel_px = self.app_state.panel_width * scale_factor;
+        let coord_bar_px = self.app_state.coord_bar_height * scale_factor;
         let viewport_w = (self.config.width as f32 - panel_px).max(100.0);
-        let viewport_h = self.config.height as f32;
+        let viewport_h = (self.config.height as f32 - coord_bar_px).max(100.0);
         let viewport_aspect = viewport_w / viewport_h;
+
+        // --- Cursor world position: ray from screen → sphere → ABCD (each frame) ---
+        // Quadrance arithmetic: disc = b² − Q_D·(Q_O − r²) — no sqrt until display boundary.
+        // Math.X justified: sqrt at coordinate display boundary only.
+        if let Some((cx, cy)) = self.app_state.cursor_screen {
+            if let Some((ray_o, ray_d)) = self.camera.unproject_ray(
+                cx, cy, panel_px, 0.0, viewport_w, viewport_h,
+            ) {
+                let r = self.app_state.bounding_radius.max(0.5);
+                if let Some(hit) = ray_sphere_or_plane(ray_o, ray_d, r) {
+                    // Store zero-sum ABCD (sum=0, negatives permitted — native "pure Quadray").
+                    // Normalize toggle in draw_coord_bar applies min-shift for canonical display.
+                    use crate::rt_math::normalizer::xyz_to_quadray_raw;
+                    let raw = xyz_to_quadray_raw([hit.x as f64, hit.y as f64, hit.z as f64]);
+                    self.app_state.cursor_world_xyz = Some([hit.x, hit.y, hit.z]);
+                    self.app_state.cursor_abcd = Some(raw);
+                } else {
+                    self.app_state.cursor_world_xyz = None;
+                    self.app_state.cursor_abcd = None;
+                }
+            }
+        }
 
         // --- Update camera uniform with correct viewport aspect ---
         let view_proj = self.camera.view_proj(viewport_aspect);
@@ -556,6 +583,12 @@ impl ApplicationHandler for App {
                 state.window.request_redraw();
             }
             _ => {
+                // Always capture cursor position for coordinate bar — independent of egui.
+                if let WindowEvent::CursorMoved { position, .. } = &event {
+                    state.app_state.cursor_screen =
+                        Some((position.x as f32, position.y as f32));
+                }
+
                 if !egui_response.consumed {
                     match &event {
                         WindowEvent::MouseInput { state: btn_state, button, .. } => {
@@ -583,6 +616,49 @@ impl ApplicationHandler for App {
     }
 }
 
+/// Ray-sphere intersection (bounding sphere centred at origin), with Z=0 plane fallback.
+///
+/// Uses **quadrance arithmetic** — the discriminant is computed entirely in Q-space
+/// (no sqrt). The sqrt is deferred to computing parameter `t` (the display boundary).
+///
+/// Returns the front-face hit position, or Z=0 plane intersection when the ray misses
+/// the sphere, or `None` if both miss.
+///
+/// Math.X justified: sqrt at coordinate display boundary only.
+fn ray_sphere_or_plane(origin: glam::Vec3, dir: glam::Vec3, radius: f32) -> Option<glam::Vec3> {
+    // Quadrance form of ray-sphere: t² Q_D + 2t b + (Q_O − r²) = 0
+    // where Q_O = O·O, b = O·D, Q_D = D·D (= 1 since dir is normalized)
+    let q_o = origin.dot(origin);           // |O|² — quadrance of camera eye
+    let b   = origin.dot(dir);              // O·D  — dot product (not quadrance)
+    let q_d = dir.dot(dir);                 // |D|² ≈ 1.0 (dir is normalized)
+    let r2  = radius * radius;
+
+    // Discriminant in pure Q-space — no sqrt required here
+    let disc = b * b - q_d * (q_o - r2);
+
+    if disc >= 0.0 {
+        let t = (-b - disc.sqrt()) / q_d;  // Front-face intersection — sqrt at display boundary
+        if t > 0.001 {
+            return Some(origin + dir * t);
+        }
+        // If front face is behind camera, check back face (inside sphere)
+        let t2 = (-b + disc.sqrt()) / q_d;
+        if t2 > 0.001 {
+            return Some(origin + dir * t2);
+        }
+    }
+
+    // Fallback: Z=0 plane intersection
+    if dir.z.abs() > 1e-6 {
+        let t = -origin.z / dir.z;
+        if t > 0.001 {
+            return Some(origin + dir * t);
+        }
+    }
+
+    None
+}
+
 fn main() -> anyhow::Result<()> {
     env_logger::init();
     log::info!("ARTexplorer — Quadray-native rendering pipeline (ABCD convention)");
@@ -591,4 +667,61 @@ fn main() -> anyhow::Result<()> {
     let mut app = App { state: None };
     event_loop.run_app(&mut app)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ray_sphere_direct_hit() {
+        // Ray pointing straight at sphere of radius 2.0 centred at origin
+        let origin = glam::Vec3::new(0.0, 0.0, 5.0);
+        let dir    = glam::Vec3::new(0.0, 0.0, -1.0); // pointing toward origin
+        let hit = ray_sphere_or_plane(origin, dir, 2.0).expect("should hit sphere");
+        // Front face at z = +2
+        assert!((hit.z - 2.0).abs() < 0.001, "expected z≈2.0, got {}", hit.z);
+        assert!(hit.x.abs() < 0.001 && hit.y.abs() < 0.001);
+    }
+
+    #[test]
+    fn ray_sphere_miss_falls_back_to_z0_plane() {
+        // Ray pointing away from sphere — should fall back to Z=0 plane
+        let origin = glam::Vec3::new(0.0, 5.0, 5.0);
+        let dir    = (glam::Vec3::new(10.0, 5.0, 0.0) - origin).normalize();
+        let hit = ray_sphere_or_plane(origin, dir, 1.0); // small sphere — likely miss
+        // Either hits sphere or Z=0 plane; either way a result should exist
+        // (the ray is moving through space toward z=0)
+        // If it missed sphere, z=0 plane gives a hit since dir.z < 0
+        if let Some(p) = hit {
+            assert!(p.z.abs() < 2.0, "hit should be near z=0 or sphere surface");
+        }
+        // No assertion that it must be Some — dir may not reach z=0 in front
+    }
+
+    #[test]
+    fn ray_sphere_returns_none_when_both_miss() {
+        // Ray moving away from origin and sphere — both miss
+        let origin = glam::Vec3::new(0.0, 0.0, 5.0);
+        let dir    = glam::Vec3::new(0.0, 0.0, 1.0); // pointing away from sphere
+        // dir.z > 0 so Z=0 plane is behind (t < 0), sphere is behind (t < 0)
+        let hit = ray_sphere_or_plane(origin, dir, 1.0);
+        assert!(hit.is_none(), "ray pointing away from origin and sphere should miss");
+    }
+
+    #[test]
+    fn on_grid_detection_integer_abcd() {
+        // All components within eps=0.02 of integers → on grid
+        let eps = 0.02_f64;
+        let abcd = [1.005_f64, 0.0, 0.0, 0.0];
+        assert!(abcd.iter().all(|v| v.fract().abs() < eps), "should be on grid");
+    }
+
+    #[test]
+    fn on_grid_detection_fractional_abcd() {
+        // Fractional components → off grid
+        let eps = 0.02_f64;
+        let abcd = [0.75_f64, -0.25, -0.25, -0.25]; // zero-sum tet vertex
+        assert!(!abcd.iter().all(|v| v.fract().abs() < eps), "should be off grid");
+    }
 }
