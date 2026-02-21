@@ -1159,7 +1159,7 @@ let data = load_file()?;  // Returns early with Err if it fails
 | First black window (wgpu + Metal) | Done — Apple M2 Max, wgpu 28 (2026-02-19) |
 | Colored triangle (WGSL shader + render pipeline) | Done — cyan triangle, wgpu 28 (2026-02-19) |
 | **Quadray-native GPU rendering** | **Done — ABCD→XYZ in WGSL shader (2026-02-19)** |
-| **RT math port** (`rt_math/`, `rt_polyhedra/`, 89 → 99 → 104 → 107 → 117 tests) | **Done — 8 files, all Platonics, Wildberger polygons (2026-02-19)** |
+| **RT math port** (`rt_math/`, `rt_polyhedra/`, 89 → 99 → 104 → 107 → 117 → 160 → 169 tests) | **Done — 8 files, all Platonics, Wildberger polygons (2026-02-19)** |
 | **macOS .app bundle** (bundle.sh + icon) | **Done — ARTexplorer.app launches from Dock (2026-02-19)** |
 | **P0 Explorer UI** (egui side panel, orbit camera, all 6 Platonics) | **Done — egui 0.33 + wgpu 27, right-side panel (2026-02-19)** |
 
@@ -1193,7 +1193,7 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P1: Face rendering (depth buffer, TriangleList pipeline, fan triangulation)** | **Done (2026-02-21)** |
 | **P1: Arrowhead faces + "Nodes and Faces" UI stub** | **Done (2026-02-21)** |
 | **P1: Transparent face depth fix (depth_write_enabled: false)** | **Done (2026-02-21)** |
-| P1: Node rendering (geodesic vertex spheres, 1–4F, opacity, packed sizing) | Pending |
+| **P1: Node rendering (geodesic vertex spheres, 1–4F, opacity, packed sizing)** | **Done (2026-02-21)** |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |
 | **P2: Geodesic subdivision (Quadray-native, 3 polyhedra × 4 projections)** | **Done (2026-02-21)** |
@@ -1260,6 +1260,49 @@ Tet and octa Q_targets are **pure rationals**. Icosa uses phi identities from `p
 **Problem**: Face pipeline had `depth_write_enabled: true`. The first polyhedron in render order (tetrahedron) wrote to the depth buffer, blocking all inner objects — its geodesic OutSphere appeared opaque despite 0.35 alpha. The icosahedron (5th in render order) appeared transparent only because inner objects had already rendered to the framebuffer before the icosa's depth writes.
 
 **Fix**: `depth_write_enabled: false` for the face pipeline. Transparent faces now blend freely without blocking each other in the depth buffer. Edges still write depth and render on top via bias. Opacity becomes a genuine user control — inner polyhedra visible through outer geodesic spheres at any opacity.
+
+### P1: Node Rendering — DONE 2026-02-21
+
+**Geodesic icosahedra at every polyhedron vertex.** No classical spheres — all nodes use our existing `geodesic_icosahedron()` API from `rt_polyhedra/geodesic.rs`. This eliminates the dual rendering path the JS app needed (`THREE.SphereGeometry` vs geodesic icosahedra).
+
+**Architecture**: No new render pipeline. Node sphere triangles are appended to the existing `face_indices` buffer, rendering through the face pipeline (TriangleList, alpha blend, backface cull, depth_write: false). Per-vertex alpha carries `node_opacity`.
+
+**ABCD offset linearity**: The ABCD→XYZ conversion is linear, so `xyz(V + T) = xyz(V) + xyz(T)`. Adding template icosphere ABCD coords to vertex ABCD coords correctly places the sphere at the vertex's Cartesian position. No Cartesian intermediary needed for positioning.
+
+**Template generation**: `node_template(frequency)` generates a geodesic icosahedron (1–4F, OutSphere) once per geometry rebuild. Circumradius computed via `quadray_quadrance_from_origin()` → ONE √ at boundary. Template reused for every visible vertex.
+
+**Node sizing**:
+
+| Size | Value | Source |
+|------|-------|--------|
+| 0 (Off) | 0 | No nodes rendered |
+| 1–7 (Fixed) | 0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.12 | `NODE_SIZE_RADII` (matches JS app) |
+| 8 (Packed) | `√(Q_edge · s² / 4)` | RT-pure close-packing: Q_vertex = Q_edge/4 |
+
+Packed mode: half-edge close-packing from `PolyhedronData.edge_quadrance`. ONE √ at rendering boundary.
+
+**UI controls** (in "Nodes and Faces" section):
+```
+☑ Nodes
+    Size: [====●====] Md           (0=Off, 1–7=fixed, 8=Packed)
+    Node Opacity: [====●====] 0.60  (0.0–1.0)
+    Geodesic: [====●====] 3F       (1–4)
+```
+
+**What was built**:
+- [x] `app_state.rs` — 4 control fields (show_nodes, node_size, node_opacity, node_geodesic_freq) + node_count stat
+- [x] `geometry.rs` — `node_template()`, `node_radius()`, `NODE_SIZE_RADII`, node generation loop in `build_visible_geometry()`, `GeometryOutput.node_count`
+- [x] `ui.rs` — live controls replacing disabled stub, node count in Info panel (V/E/F/N)
+- [x] `main.rs` — wired node_count from geometry output to app state
+- [x] 9 new tests (169 total): disabled states, vertex/face counts, opacity, color inheritance, packed radii (tet Q=8→√2, cube Q=4→1.0), index validation
+
+**Performance budget** (all within 120 FPS on Apple M2 Max):
+
+| Scenario | Node Template (3F) | Node Verts | Node Tris |
+|---|---|---|---|
+| Tet (4 verts) | 92V, 180F | 368 | 720 |
+| All 6 Platonics (54 verts) | 92V, 180F | 4,968 | 9,720 |
+| 7F Geodesic Icosa (492 verts) | 92V, 180F | 45,264 | 88,560 |
 
 #### P1 → P3 Camera Migration Note
 
