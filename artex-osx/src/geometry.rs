@@ -98,10 +98,11 @@ pub fn build_visible_geometry(state: &AppState) -> (Vec<Vertex>, Vec<u32>, f32) 
     }
 
     // --- Basis arrows (own sizing, NOT scaled by s) ---
+    // Janus: arrows point inward in negative arena (frequency < 0)
     if state.show_quadray_basis {
         let offset = vertices.len() as u32;
         let (arrow_verts, arrow_idxs) =
-            basis_arrows::build_quadray_basis(state.tet_edge, offset);
+            basis_arrows::build_quadray_basis(state.tet_edge, state.frequency, offset);
         vertices.extend(arrow_verts);
         indices.extend(arrow_idxs);
     }

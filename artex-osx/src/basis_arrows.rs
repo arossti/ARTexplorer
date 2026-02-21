@@ -167,10 +167,15 @@ fn build_arrow(
 ///   C (Blue):   [1,1,0,1] → Cartesian (+1,-1,+1)/√3
 ///   D (Green):  [1,1,1,0] → Cartesian (-1,+1,+1)/√3
 ///
+/// Janus Inversion: when `janus_sign` < 0, arrows point inward (toward origin)
+/// instead of outward — the basis tetrahedron inverts to its dual, orienting the
+/// user to the negative arena.
+///
 /// Sizing: targetLength = (tetEdge + 1) × quadray_grid_interval
-pub fn build_quadray_basis(tet_edge: f32, index_offset: u32) -> (Vec<Vertex>, Vec<u32>) {
+pub fn build_quadray_basis(tet_edge: f32, janus_sign: f32, index_offset: u32) -> (Vec<Vertex>, Vec<u32>) {
     let grid_interval = radicals::quadray_grid_interval();
     let target_length = (tet_edge.abs() as f64 + 1.0) * grid_interval;
+    let sign = if janus_sign < 0.0 { -1.0 } else { 1.0 };
 
     // Dual tet vertex directions (Cartesian, normalized)
     let dual_verts = [
@@ -186,7 +191,8 @@ pub fn build_quadray_basis(tet_edge: f32, index_offset: u32) -> (Vec<Vertex>, Ve
     for (i, q) in dual_verts.iter().enumerate() {
         let xyz = q.to_cartesian();
         let len = (xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]).sqrt();
-        let direction = [xyz[0] / len, xyz[1] / len, xyz[2] / len];
+        // Janus: negate direction in negative arena → arrows point inward
+        let direction = [sign * xyz[0] / len, sign * xyz[1] / len, sign * xyz[2] / len];
 
         let offset = index_offset + all_vertices.len() as u32;
         let (verts, idxs) = build_arrow(direction, target_length, ABCD_COLORS[i], offset);
@@ -255,7 +261,7 @@ mod tests {
 
     #[test]
     fn quadray_basis_produces_4_arrows() {
-        let (verts, idxs) = build_quadray_basis(2.0, 0);
+        let (verts, idxs) = build_quadray_basis(2.0, 1.0, 0);
         // 4 arrows × 6 vertices each = 24
         assert_eq!(verts.len(), 24, "expected 24 vertices, got {}", verts.len());
         // 4 arrows × 14 indices each = 56
@@ -273,7 +279,7 @@ mod tests {
 
     #[test]
     fn index_offset_applied_correctly() {
-        let (_, idxs) = build_quadray_basis(2.0, 100);
+        let (_, idxs) = build_quadray_basis(2.0, 1.0, 100);
         // All indices should be >= 100
         for idx in &idxs {
             assert!(*idx >= 100, "index {} < offset 100", idx);
@@ -292,7 +298,7 @@ mod tests {
 
     #[test]
     fn shaft_origin_is_quadray_origin() {
-        let (verts, _) = build_quadray_basis(2.0, 0);
+        let (verts, _) = build_quadray_basis(2.0, 1.0, 0);
         // First vertex of each arrow (indices 0, 6, 12, 18) should be at origin
         for arrow in 0..4 {
             let v = &verts[arrow * 6];
@@ -308,8 +314,8 @@ mod tests {
 
     #[test]
     fn arrows_scale_with_tet_edge() {
-        let (v1, _) = build_quadray_basis(2.0, 0);
-        let (v2, _) = build_quadray_basis(4.0, 0);
+        let (v1, _) = build_quadray_basis(2.0, 1.0, 0);
+        let (v2, _) = build_quadray_basis(4.0, 1.0, 0);
         // Shaft tip (vertex 1) should differ between scales
         assert_ne!(
             v1[1].quadray, v2[1].quadray,
@@ -319,8 +325,8 @@ mod tests {
 
     #[test]
     fn negative_tet_edge_uses_abs() {
-        let (v_pos, _) = build_quadray_basis(2.0, 0);
-        let (v_neg, _) = build_quadray_basis(-2.0, 0);
+        let (v_pos, _) = build_quadray_basis(2.0, 1.0, 0);
+        let (v_neg, _) = build_quadray_basis(-2.0, 1.0, 0);
         // Same arrow geometry (abs value used for sizing)
         for i in 0..v_pos.len() {
             assert_eq!(
@@ -329,5 +335,17 @@ mod tests {
                 i
             );
         }
+    }
+
+    #[test]
+    fn janus_negative_inverts_arrows() {
+        let (v_pos, _) = build_quadray_basis(2.0, 1.0, 0);
+        let (v_neg, _) = build_quadray_basis(2.0, -1.0, 0);
+        // Shaft tips (vertex 1 of each arrow) should differ:
+        // positive arena points outward, negative arena points inward
+        assert_ne!(
+            v_pos[1].quadray, v_neg[1].quadray,
+            "Janus inversion should flip arrow direction"
+        );
     }
 }

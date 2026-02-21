@@ -322,6 +322,13 @@ impl GpuState {
         );
 
         // --- Render pass: 3D wireframe first, then egui on top ---
+        // Janus Inversion: background transitions black→white in negative frequency space.
+        // At F0 (Janus point): black. At F-1 and beyond: full white.
+        let bg = if self.app_state.frequency < 0.0 {
+            (-self.app_state.frequency).min(1.0) as f64
+        } else {
+            0.0
+        };
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Main Render Pass"),
@@ -330,7 +337,7 @@ impl GpuState {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.0, g: 0.0, b: 0.0, a: 1.0,
+                            r: bg, g: bg, b: bg, a: 1.0,
                         }),
                         store: wgpu::StoreOp::Store,
                     },
