@@ -42,9 +42,23 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     changed |= ui
                         .checkbox(&mut state.show_dodecahedron, "Dodecahedron")
                         .changed();
-                    ui.separator();
+                    if changed {
+                        state.geometry_dirty = true;
+                    }
+                });
+
+            // --- Nodes and Faces ---
+            // Matches JS app's "Nodes and Faces" panel layout.
+            // Future: per-polyhedron color palette (designer-choosable,
+            // like JS rs-color-theory-modal.js). Nodes = vertex spheres.
+            egui::CollapsingHeader::new("Nodes and Faces")
+                .default_open(true)
+                .show(ui, |ui| {
+                    let mut changed = false;
+
+                    // --- Faces ---
                     changed |= ui
-                        .checkbox(&mut state.show_faces, "Show Faces")
+                        .checkbox(&mut state.show_faces, "Faces")
                         .changed();
                     if state.show_faces {
                         let opacity_response = ui.add(
@@ -56,6 +70,13 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                             changed = true;
                         }
                     }
+
+                    ui.separator();
+
+                    // --- Nodes (stub — vertex sphere rendering, future P2+) ---
+                    ui.add_enabled(false, egui::Checkbox::new(&mut false, "Nodes"));
+                    ui.label(egui::RichText::new("Node rendering — planned").small().weak());
+
                     if changed {
                         state.geometry_dirty = true;
                     }

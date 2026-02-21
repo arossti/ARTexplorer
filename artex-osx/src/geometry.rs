@@ -134,19 +134,22 @@ pub fn build_visible_geometry(state: &AppState) -> GeometryOutput {
 
     // --- Basis arrows (own sizing, NOT scaled by s) ---
     // Janus: arrows point inward in negative arena (frequency < 0)
+    // Arrowhead faces: solid flat ABCD colors (A=Yellow, B=Red, C=Blue, D=Green).
     if state.show_quadray_basis {
         let offset = vertices.len() as u32;
-        let (arrow_verts, arrow_idxs) =
+        let (arrow_verts, arrow_edge_idxs, arrow_face_idxs) =
             basis_arrows::build_quadray_basis(state.tet_edge, state.frequency, offset);
         vertices.extend(arrow_verts);
-        edge_indices.extend(arrow_idxs);
+        edge_indices.extend(arrow_edge_idxs);
+        face_indices.extend(arrow_face_idxs);
     }
     if state.show_cartesian_basis {
         let offset = vertices.len() as u32;
-        let (arrow_verts, arrow_idxs) =
+        let (arrow_verts, arrow_edge_idxs, arrow_face_idxs) =
             basis_arrows::build_cartesian_basis(state.cube_edge, offset);
         vertices.extend(arrow_verts);
-        edge_indices.extend(arrow_idxs);
+        edge_indices.extend(arrow_edge_idxs);
+        face_indices.extend(arrow_face_idxs);
     }
 
     // --- Grid planes ---
@@ -246,12 +249,14 @@ mod tests {
             show_tetrahedron: true,
             show_dual_tetrahedron: true,
             show_faces: false,
+            show_quadray_basis: false,  // Disable arrows (arrow faces are always visible)
+            show_cartesian_basis: false,
             ..AppState::default()
         };
         let geo = build_visible_geometry(&state);
         assert_eq!(
             geo.face_indices.len(), 0,
-            "face_indices should be empty when show_faces=false"
+            "face_indices should be empty when show_faces=false (no arrows)"
         );
         // Edges should still exist
         assert!(geo.edge_indices.len() > 0, "edge_indices should not be empty");
