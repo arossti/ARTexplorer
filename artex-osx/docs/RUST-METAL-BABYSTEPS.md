@@ -951,6 +951,60 @@ Design implications for the native app:
 4. Grid opacity: 0.10 → 0.6 for background contrast
 5. Polyhedra: tet → dual tet (centrosymmetric solids unchanged)
 
+### P1: Face Rendering — DONE 2026-02-21
+
+**Problem**: All 6 Platonics rendered as wireframe only. Face data (`poly.faces`) existed in `rt_polyhedra/platonic.rs` with correct CCW winding but was unused. No depth buffer existed.
+
+**Solution**: Depth buffer (Depth32Float) + second render pipeline (TriangleList for faces alongside LineList for edges). Fan triangulation for non-triangle faces (quads → 2 triangles, pentagons → 3 triangles).
+
+**Architecture**:
+```
+Shared vertex buffer (Vertex { quadray, color })
+    ├── edge vertices (alpha = 1.0)     → edge_index_buffer  → edge_pipeline (LineList)
+    └── face vertices (alpha = opacity)  → face_index_buffer  → face_pipeline (TriangleList)
+
+Both pipelines share: shader module, bind group, depth buffer (Depth32Float)
+Draw order: faces FIRST (depth write), edges SECOND (depth bias → float above faces)
+```
+
+**Vertex duplication strategy**: Face vertices are duplicated with `alpha = face_opacity` while edge vertices keep `alpha = 1.0`. This avoids shader branching and keeps the existing shader unchanged. Total extra is ~54 vertices at most (trivial).
+
+**Face color strategy — P1**: ABCD vertex interpolation — face vertices inherit `ABCD_COLORS[i % 4]` with face_opacity alpha. Triangular faces show smooth gradients between 3 vertex colors. Future: per-polyhedron color palette (designer-choosable, like JS `rs-color-theory-modal.js`).
+
+**Triangle counts** (all 6 Platonics at F1):
+
+| Polyhedron | Faces | Type | Triangles |
+|------------|-------|------|-----------|
+| Tetrahedron | 4 | tri | 4 |
+| Dual Tet | 4 | tri | 4 |
+| Octahedron | 8 | tri | 8 |
+| Cube | 6 | quad | 12 |
+| Icosahedron | 20 | tri | 20 |
+| Dodecahedron | 12 | pent | 36 |
+| **All 6** | **54** | — | **84** |
+
+**What changed**:
+- [x] `geometry.rs` — `GeometryOutput` struct (vertices, edge_indices, face_indices, bounding_radius), face vertex duplication, fan triangulation
+- [x] `main.rs` — depth texture helper, `face_pipeline` (TriangleList, backface cull, depth write), `edge_pipeline` (depth bias -2/-1.0 to float above faces), depth_stencil_attachment, draw order (faces→edges), resize recreates depth texture, egui depth_stencil_format
+- [x] `ui.rs` — Show Faces checkbox + Face Opacity slider in Polyhedra section, V/E/F stats in Info
+- [x] `app_state.rs` — `show_faces`, `face_opacity`, `face_count` fields
+- [x] 4 new tests (123 total): face_indices_triangulated, face_indices_valid_range, faces_hidden_when_toggled_off, face_opacity_in_vertex_alpha
+- **No changes to**: `shader.wgsl` (existing color passthrough handles face alpha), `camera.rs`, `rt_math/`, `rt_polyhedra/`, `basis_arrows.rs`, `grids.rs`
+
+### P1: Arrowhead Faces + "Nodes and Faces" UI — DONE 2026-02-21
+
+**Problem**: Basis arrow arrowheads (mini dual tetrahedra) were wireframe only. Face controls lived inside "Polyhedra" section — didn't match JS app's "Nodes and Faces" panel layout.
+
+**Solution**: `build_arrow()` now returns face indices alongside edge indices. Arrowhead vertices already carry the arrow's solid flat color — face rendering inherits this naturally. UI restructured with a separate "Nodes and Faces" collapsible section, stubbing for future node (vertex sphere) rendering.
+
+**What changed**:
+- [x] `basis_arrows.rs` — `dual_tet_cartesian()` returns faces, `build_arrow()` returns 3-tuple `(vertices, edge_indices, face_indices)`, public functions updated to aggregate face indices
+- [x] `geometry.rs` — arrow face indices fed into `face_indices` buffer (always visible, not gated by `show_faces`)
+- [x] `ui.rs` — face controls moved to "Nodes and Faces" collapsible section, stubbed disabled "Nodes" checkbox with "Node rendering — planned" label
+- [x] Tests updated for 3-tuple returns, `faces_hidden_when_toggled_off` disables arrows to isolate polyhedra-only test
+
+**Face index counts**: 4 Quadray arrows × 12 face indices = 48, 3 Cartesian arrows × 12 face indices = 36.
+
 ### Step 8: Face-Normal Firing (Day 10-12) — DEFERRED (game mode)
 - [ ] Compute face normals (original tet for Quadray alignment)
 - [ ] Spacebar-hold + ASDF firing
@@ -1136,7 +1190,9 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P1: Janus Inversion (background + basis arrows + tet→dual)** | **Done (2026-02-21)** |
 | **P1: Basis arrow correction (dual→regular tet, per Janus10.tex §3.2)** | **Done (2026-02-21)** |
 | **P1: Grid Janus Inversion (negative ABCD + auto-opacity)** | **Done (2026-02-21)** |
-| P1: Node/face rendering (spheres, opacity) | Pending |
+| **P1: Face rendering (depth buffer, TriangleList pipeline, fan triangulation)** | **Done (2026-02-21)** |
+| **P1: Arrowhead faces + "Nodes and Faces" UI stub** | **Done (2026-02-21)** |
+| P1: Node rendering (vertex spheres, opacity) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |
 | P2: Geodesic subdivision + truncation | Pending |

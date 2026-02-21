@@ -173,6 +173,36 @@ Specific cases at this boundary (each requires a `// Math.X justified:` comment)
 
 The native macOS app (`artex-osx/`) has its own RT-pure engine: `rt_math/` (quadrance, spread, Quadray ABCD, Wildberger polygons, PurePhi, PureRadicals, PureCubics) and `rt_polyhedra/` (all 6 Platonics in Quadray coordinates). **The same RT-purity rules apply — no `f64::sin()`, `f64::cos()`, `std::f64::consts::PI` in geometry code.** The rendering boundary is wgpu/WGSL (not THREE.js). `glam` is used only for camera matrices. See `artex-osx/docs/RUST-METAL-BABYSTEPS.md` § "Agent Handoff" for the complete Rust-specific rules.
 
+## Native App Build Workflow (artex-osx)
+
+When working on the Rust/Metal native app (`artex-osx/`), follow this build-test-deploy cycle **automatically** after code changes — do not wait to be asked:
+
+```bash
+# 1. Test (must pass before proceeding)
+cd artex-osx && cargo test
+
+# 2. Build release binary
+cargo build --release
+
+# 3. Deploy to app bundle (user can double-click to test)
+cp target/release/artexplorer-native target/ARTexplorer.app/Contents/MacOS/ARTexplorer
+
+# 4. Commit (when user requests)
+# Use project commit format from Git Workflow section above
+```
+
+**Key paths**:
+- Source: `artex-osx/src/` (main.rs, geometry.rs, ui.rs, camera.rs, app_state.rs, basis_arrows.rs, grids.rs, shader.wgsl, rt_math/, rt_polyhedra/)
+- App bundle: `artex-osx/target/ARTexplorer.app/` (not committed — local only)
+- Documentation: `artex-osx/docs/RUST-METAL-BABYSTEPS.md` (living design doc — update after completing features)
+
+**After completing a feature**:
+1. Run `cargo test` — all tests must pass
+2. Run `cargo build --release` — zero errors
+3. Copy binary to app bundle
+4. Update `RUST-METAL-BABYSTEPS.md` Phase 3 table + add completion section
+5. Commit and push when user confirms
+
 ## Development Guidelines
 
 ### Workflow: Inspect → Reason → Act → Verify
