@@ -3,7 +3,7 @@
 //! Generates wireframe arrows from origin along basis directions.
 //! Arrowheads are mini dual tetrahedra from rt_polyhedra::dual_tetrahedron().
 //! All geometry built in Cartesian, then converted to Quadray ABCD via
-//! Quadray::from_cartesian() for the existing shader pipeline.
+//! normalizer::xyz_to_quadray() for the existing shader pipeline.
 //!
 //! Arrow directions:
 //!   Quadray ABCD: toward dual tet vertices [0,1,1,1] etc.
@@ -15,6 +15,7 @@
 //! RENDERING BOUNDARY: glam::Quat used for arrowhead orientation (justified).
 
 use crate::geometry::Vertex;
+use crate::rt_math::normalizer::{batch_quadray_to_xyz, quadray_to_xyz, xyz_to_quadray};
 use crate::rt_math::quadray::Quadray;
 use crate::rt_math::radicals;
 use crate::rt_polyhedra;
@@ -41,10 +42,8 @@ const HEAD_SIZE: f64 = 0.15;
 /// Vertices are at distance √3 from origin.
 fn dual_tet_cartesian() -> (Vec<[f64; 3]>, Vec<[usize; 2]>, Vec<Vec<usize>>) {
     let poly = rt_polyhedra::dual_tetrahedron();
-    let verts: Vec<[f64; 3]> = poly.vertices.iter().map(|q| q.to_cartesian()).collect();
-    let edges: Vec<[usize; 2]> = poly.edges;
-    let faces: Vec<Vec<usize>> = poly.faces;
-    (verts, edges, faces)
+    let verts = batch_quadray_to_xyz(&poly.vertices);
+    (verts, poly.edges, poly.faces)
 }
 
 /// Build a single arrow: shaft + dual-tet arrowhead (wireframe + filled faces).
@@ -74,7 +73,7 @@ fn build_arrow(
     if shaft_length <= 0.0 {
         let tip = dir * target_length;
         let origin_q = Quadray::ORIGIN.to_f32_array();
-        let tip_q = Quadray::from_cartesian([tip.x, tip.y, tip.z]).to_f32_array();
+        let tip_q = xyz_to_quadray([tip.x, tip.y, tip.z]).to_f32_array();
         return (
             vec![
                 Vertex { quadray: origin_q, color },
@@ -133,14 +132,14 @@ fn build_arrow(
 
     // Vertex 1: shaft tip
     vertices.push(Vertex {
-        quadray: Quadray::from_cartesian([shaft_tip.x, shaft_tip.y, shaft_tip.z]).to_f32_array(),
+        quadray: xyz_to_quadray([shaft_tip.x, shaft_tip.y, shaft_tip.z]).to_f32_array(),
         color,
     });
 
     // Vertices 2-5: arrowhead dual tet
     for v in &arrowhead_verts {
         vertices.push(Vertex {
-            quadray: Quadray::from_cartesian([v.x, v.y, v.z]).to_f32_array(),
+            quadray: xyz_to_quadray([v.x, v.y, v.z]).to_f32_array(),
             color,
         });
     }
@@ -207,7 +206,7 @@ pub fn build_quadray_basis(tet_edge: f32, janus_sign: f32, index_offset: u32) ->
     let mut all_face_indices = Vec::new();
 
     for (i, q) in basis_verts.iter().enumerate() {
-        let xyz = q.to_cartesian();
+        let xyz = quadray_to_xyz(q);
         let len = (xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]).sqrt();
         // Janus: negate direction in negative arena → tet basis becomes dual tet
         let direction = [sign * xyz[0] / len, sign * xyz[1] / len, sign * xyz[2] / len];
@@ -322,7 +321,7 @@ mod tests {
         // Negation of dual A-absent [0,1,1,1] → (1, 1, -1)
         // Arrow points along A grid direction; Janus negation maps it to dual.
         let q = Quadray::new(1.0, 0.0, 0.0, 0.0);
-        let xyz = q.to_cartesian();
+        let xyz = quadray_to_xyz(&q);
         assert!((xyz[0] - (-1.0)).abs() < EPS, "x: {} != -1.0", xyz[0]);
         assert!((xyz[1] - (-1.0)).abs() < EPS, "y: {} != -1.0", xyz[1]);
         assert!((xyz[2] - 1.0).abs() < EPS, "z: {} != 1.0", xyz[2]);

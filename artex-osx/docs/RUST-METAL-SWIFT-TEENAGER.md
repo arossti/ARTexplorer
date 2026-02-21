@@ -187,4 +187,54 @@ Not dates — prerequisites:
 
 ---
 
+## Future: Quadray Rotor — RT-Pure Rotation (eliminate glam::Quat)
+
+> **Status:** Verified in JS app. Rust port is a future project.
+>
+> **Reference:** `modules/rt-quadray-rotor.js` (JS implementation),
+> `Geometry Documents/Whitepaper LaTEX/Quadray-Rotors.tex` (mathematical foundations),
+> `Geometry Documents/Geometry Tests/fgh-verification-test.js` (verification tests)
+
+The JS app has a working **Spread-Quadray Rotor** — a rotation representation
+using Tom Ace's F,G,H coefficients that has been verified to produce identical
+results to quaternions for all four Quadray basis axes. The key properties:
+
+- **RT-pure entry point**: rotation specified via spread `s = sin²(θ)`, not angle
+- **Explicit Janus polarity**: `R ∈ ℝ⁴ × Z₂` — polarity flag replaces quaternion double-cover ambiguity
+- **F,G,H circulant matrices**: right-circulant `[F H G; G F H; H G F]` for W,Y axes,
+  left-circulant `[F G H; H F G; G H F]` for X,Z axes (chirality-corrected)
+- **`toMatrix3()` is pure polynomial algebra**: no trig — quadratic polynomials in (w,x,y,z)
+- **Hamilton product composition**: `multiply()` is pure polynomial multiplication (RT-pure)
+
+### Why this matters for the Rust app
+
+Currently `basis_arrows.rs` uses `glam::Quat::from_rotation_arc()` to orient
+arrowheads — the only `glam` dependency in the geometry pipeline. Porting the
+QuadrayRotor to Rust would:
+
+1. **Eliminate the glam rotation dependency** from geometry code
+2. **Complete the RT-pure chain**: ABCD polyhedra → ABCD arrows → ABCD shader
+3. **Dogfood our own math** end-to-end — the whole pipeline uses our RT primitives
+4. **Enable ABCD-native arrow construction** — arrowheads built directly in Quadray
+   space, no XYZ round-trip needed
+
+### Scope
+
+| Component | Location | Notes |
+|-----------|----------|-------|
+| `QuadrayRotor` struct | `rt_math/rotor.rs` (new) | Port from `rt-quadray-rotor.js` |
+| `fromSpreadAxis()` | Rotor constructor | Spread + axis → rotor components |
+| `multiply()` | Hamilton product | Pure polynomial — RT-pure |
+| `rotateVector()` | `R·v·R⁻¹` sandwich product | Replaces `glam::Quat` rotation |
+| `toMatrix3()` | Rotation matrix extraction | Pure polynomial — for camera integration |
+| Basis arrow rewrite | `basis_arrows.rs` | Build arrowheads in ABCD, no Cartesian detour |
+
+### Prerequisites
+
+- Current P1 features stable (arrows, grids, faces, camera)
+- Normalizer API complete (done — `normalizer.rs`)
+- Verify F,G,H coefficients reproduce in Rust with f64 precision
+
+---
+
 *"Baby steps in Rust. Teenage years in Swift. The geometry engine stays RT-pure through it all."*

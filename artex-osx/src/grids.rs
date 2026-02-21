@@ -4,7 +4,7 @@
 //!   - **Cartesian**: 3 uniform rectangular grids (XY, XZ, YZ)
 //!   - **Quadray**: 6 Central Angle triangular tessellations from ABCD basis pairs
 //!
-//! Cartesian grids are built in XYZ and converted to Quadray via from_cartesian().
+//! Cartesian grids are built in XYZ and converted to Quadray via normalizer::xyz_to_quadray().
 //! Quadray grids are built directly as integer ABCD coordinates — no Cartesian
 //! intermediaries, no irrationals, no from_cartesian(). The shader converts
 //! ABCD → XYZ at the rendering boundary.
@@ -15,7 +15,7 @@
 
 use crate::app_state::AppState;
 use crate::geometry::Vertex;
-use crate::rt_math::quadray::Quadray;
+use crate::rt_math::normalizer::xyz_to_quadray;
 use crate::rt_math::radicals;
 
 // --- Cartesian grid plane colors (full brightness — alpha handles opacity) ---
@@ -36,7 +36,7 @@ const CD_COLOR: [f32; 3] = [1.0, 0.5, 0.5];   // Pink
 /// Generates (divisions+1) lines in each of 2 directions, spanning
 /// [-half_extent, +half_extent] in both axes. The third axis is 0.
 ///
-/// Vertices are converted from Cartesian to Quadray for the shader pipeline.
+/// Vertices are converted from Cartesian to Quadray via normalizer::xyz_to_quadray().
 /// RENDERING BOUNDARY: Cartesian coordinates used for XYZ grid layout (justified).
 ///
 /// - `plane`: 0=XY (z=0), 1=XZ (y=0), 2=YZ (x=0)
@@ -62,11 +62,11 @@ fn build_cartesian_plane(
     let mut push_line = |p0: [f64; 3], p1: [f64; 3]| {
         let idx = index_offset + vertices.len() as u32;
         vertices.push(Vertex {
-            quadray: Quadray::from_cartesian(p0).to_f32_array(),
+            quadray: xyz_to_quadray(p0).to_f32_array(),
             color,
         });
         vertices.push(Vertex {
-            quadray: Quadray::from_cartesian(p1).to_f32_array(),
+            quadray: xyz_to_quadray(p1).to_f32_array(),
             color,
         });
         indices.push(idx);
@@ -278,6 +278,7 @@ pub fn build_quadray_grids(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rt_math::quadray::Quadray;
 
     #[test]
     fn cartesian_xy_plane_vertex_count() {
@@ -410,7 +411,7 @@ mod tests {
                 v.quadray[2] as f64,
                 v.quadray[3] as f64,
             );
-            let xyz = q.to_cartesian();
+            let xyz = crate::rt_math::normalizer::quadray_to_xyz(&q);
             assert!(
                 xyz[2].abs() < 0.01,
                 "vertex {} has z={} (expected ≈0 for XY plane)",
@@ -507,8 +508,8 @@ mod tests {
         // AB plane: all vertices should lie in the plane spanned by A and B directions
         // Since vertices are [i,j,0,0], converting to Cartesian and checking the
         // normal direction (cross product of A and B Cartesian directions) should be ≈0
-        let a_xyz = Quadray::A.to_cartesian();
-        let b_xyz = Quadray::B.to_cartesian();
+        let a_xyz = crate::rt_math::normalizer::quadray_to_xyz(&Quadray::A);
+        let b_xyz = crate::rt_math::normalizer::quadray_to_xyz(&Quadray::B);
         let normal = [
             a_xyz[1] * b_xyz[2] - a_xyz[2] * b_xyz[1],
             a_xyz[2] * b_xyz[0] - a_xyz[0] * b_xyz[2],
@@ -534,7 +535,7 @@ mod tests {
                 v.quadray[2] as f64,
                 v.quadray[3] as f64,
             );
-            let xyz = q.to_cartesian();
+            let xyz = crate::rt_math::normalizer::quadray_to_xyz(&q);
             let dot = xyz[0] * normal[0] + xyz[1] * normal[1] + xyz[2] * normal[2];
             assert!(
                 dot.abs() < 0.01,

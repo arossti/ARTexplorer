@@ -13,15 +13,6 @@
 
 use std::ops::{Add, Mul, Sub};
 
-/// ABCD basis vectors: Quadray → Cartesian conversion matrix.
-/// Each row is a basis vector [x, y, z].
-const BASIS: [[f64; 3]; 4] = [
-    [-1.0, -1.0, 1.0],  // A (Yellow)
-    [1.0, 1.0, 1.0],    // B (Red)
-    [-1.0, 1.0, -1.0],  // C (Blue)
-    [1.0, -1.0, -1.0],  // D (Green)
-];
-
 /// Quadray coordinate in ABCD tetrahedral space.
 ///
 /// All components >= 0 in canonical form, at least one == 0 (normalized).
@@ -87,41 +78,18 @@ impl Quadray {
 
     /// Convert to Cartesian [x, y, z] — THE GPU boundary.
     ///
-    /// Algorithm: zero-sum normalize, then multiply by ABCD basis matrix.
+    /// Delegates to `normalizer::quadray_to_xyz()`.
     /// Must produce identical results to shader.wgsl BASIS * normalized.
     pub fn to_cartesian(&self) -> [f64; 3] {
-        let n = self.normalize();
-        [
-            n.a * BASIS[0][0] + n.b * BASIS[1][0] + n.c * BASIS[2][0] + n.d * BASIS[3][0],
-            n.a * BASIS[0][1] + n.b * BASIS[1][1] + n.c * BASIS[2][1] + n.d * BASIS[3][1],
-            n.a * BASIS[0][2] + n.b * BASIS[1][2] + n.c * BASIS[2][2] + n.d * BASIS[3][2],
-        ]
+        super::normalizer::quadray_to_xyz(self)
     }
 
-    /// Convert from Cartesian [x, y, z] to Quadray.
+    /// Convert from Cartesian [x, y, z] to Quadray (canonical form).
     ///
-    /// Exact inverse of to_cartesian(). Solves the 4×4 linear system:
-    ///   n_a + n_b + n_c + n_d = 0       (zero-sum constraint)
-    ///   -n_a + n_b - n_c + n_d = x       (from BASIS column 0)
-    ///   -n_a + n_b + n_c - n_d = y       (from BASIS column 1)
-    ///    n_a + n_b - n_c - n_d = z       (from BASIS column 2)
-    ///
-    /// Then shifts to canonical form (min = 0).
+    /// Delegates to `normalizer::xyz_to_quadray()`.
+    /// Solves the 4×4 linear system, shifts to canonical form (min = 0).
     pub fn from_cartesian(xyz: [f64; 3]) -> Self {
-        let [x, y, z] = xyz;
-        // Closed-form solution of the 4×4 system
-        let n_a = (-x - y + z) / 4.0;
-        let n_b = (x + y + z) / 4.0;
-        let n_c = (-x + y - z) / 4.0;
-        let n_d = (x - y - z) / 4.0;
-        // Shift to canonical form: min component → 0
-        let min = n_a.min(n_b).min(n_c).min(n_d);
-        Self {
-            a: n_a - min,
-            b: n_b - min,
-            c: n_c - min,
-            d: n_d - min,
-        }
+        super::normalizer::xyz_to_quadray(xyz)
     }
 
     /// Scale all components by a factor.

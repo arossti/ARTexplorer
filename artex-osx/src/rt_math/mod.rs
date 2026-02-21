@@ -12,12 +12,14 @@
 //! All computations in f64 on CPU. Convert to f32 only at GPU boundary.
 
 pub mod cubics;
+pub mod normalizer;
 pub mod phi;
 pub mod polygon;
 pub mod quadray;
 pub mod radicals;
 
 pub use quadray::Quadray;
+pub use normalizer::{quadray_to_xyz, xyz_to_quadray};
 
 /// Edge validation result.
 #[derive(Debug)]
@@ -305,10 +307,9 @@ mod tests {
 
     #[test]
     fn validate_tet_edges() {
-        let verts: Vec<[f64; 3]> = [Quadray::A, Quadray::B, Quadray::C, Quadray::D]
-            .iter()
-            .map(|q| q.to_cartesian())
-            .collect();
+        let verts = normalizer::batch_quadray_to_xyz(
+            &[Quadray::A, Quadray::B, Quadray::C, Quadray::D]
+        );
         let edges = [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]];
         let results = validate_edges(&verts, &edges, 8.0, 1e-10);
         assert!(results.iter().all(|r| r.valid), "Not all edges Q=8");

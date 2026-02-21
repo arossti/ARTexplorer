@@ -89,14 +89,14 @@ pub fn octahedron() -> PolyhedronData {
 
     // 8 triangular faces (CCW winding for outward normals)
     let faces = vec![
-        vec![0, 1, 3], // AB-AC-BC (top face around A+B axis)
-        vec![0, 3, 4], // AB-BC-BD
-        vec![0, 4, 2], // AB-BD-AD
-        vec![0, 2, 1], // AB-AD-AC
-        vec![5, 3, 1], // CD-BC-AC (bottom face around C+D axis)
-        vec![5, 4, 3], // CD-BD-BC
-        vec![5, 2, 4], // CD-AD-BD
-        vec![5, 1, 2], // CD-AC-AD
+        vec![0, 3, 1], // AB-BC-AC (top face around A+B axis)
+        vec![0, 4, 3], // AB-BD-BC
+        vec![0, 2, 4], // AB-AD-BD
+        vec![0, 1, 2], // AB-AC-AD
+        vec![5, 1, 3], // CD-AC-BC (bottom face around C+D axis)
+        vec![5, 3, 4], // CD-BC-BD
+        vec![5, 4, 2], // CD-BD-AD
+        vec![5, 2, 1], // CD-AD-AC
     ];
 
     PolyhedronData {
@@ -171,33 +171,37 @@ pub fn cube() -> PolyhedronData {
     }
 }
 
-/// Icosahedron — 12 vertices from three orthogonal golden rectangles.
+/// Icosahedron — 12 vertices, pure Quadray ABCD.
 ///
-/// Vertex pattern: (0, ±1, ±φ) and cyclic permutations.
-/// Uses PurePhi for exact golden ratio.
+/// **Every vertex is a permutation of (0, 1, φ, φ²) / 2.**
+/// 12 of the 24 possible permutations of {0, 1, φ, φ+1}.
+/// No from_cartesian(). No Cartesian intermediaries.
+///
+/// In Cartesian projection these are the "three golden rectangles"
+/// (0, ±1, ±φ) and cyclic permutations — but that's a Cartesian
+/// observation, not how the geometry is defined.
+///
 /// Edge quadrance Q = 4 (for unit golden rectangle edge).
 pub fn icosahedron() -> PolyhedronData {
-    let p = phi::phi(); // φ ≈ 1.618
+    let p = phi::phi();           // φ
+    let p2 = phi::phi_squared();  // φ² = φ + 1
+    let h = 0.5;
 
-    // Three orthogonal golden rectangles
-    let cart_verts: Vec<[f64; 3]> = vec![
-        [0.0, 1.0, p],   // 0
-        [0.0, -1.0, p],  // 1
-        [0.0, 1.0, -p],  // 2
-        [0.0, -1.0, -p], // 3
-        [1.0, p, 0.0],   // 4
-        [-1.0, p, 0.0],  // 5
-        [1.0, -p, 0.0],  // 6
-        [-1.0, -p, 0.0], // 7
-        [p, 0.0, 1.0],   // 8
-        [-p, 0.0, 1.0],  // 9
-        [p, 0.0, -1.0],  // 10
-        [-p, 0.0, -1.0], // 11
+    // Every vertex: permutation of (0, 1, φ, φ+1) / 2
+    let vertices = vec![
+        Quadray::new(p * h,  p2 * h, 1.0 * h, 0.0),      // 0: (φ, φ+1, 1, 0)/2
+        Quadray::new(p2 * h, p * h,  0.0,     1.0 * h),   // 1: (φ+1, φ, 0, 1)/2
+        Quadray::new(0.0,    1.0 * h, p2 * h, p * h),     // 2: (0, 1, φ+1, φ)/2
+        Quadray::new(1.0 * h, 0.0,   p * h,   p2 * h),    // 3: (1, 0, φ, φ+1)/2
+        Quadray::new(0.0,    p2 * h, p * h,   1.0 * h),   // 4: (0, φ+1, φ, 1)/2
+        Quadray::new(1.0 * h, p * h, p2 * h,  0.0),       // 5: (1, φ, φ+1, 0)/2
+        Quadray::new(p * h,  1.0 * h, 0.0,    p2 * h),    // 6: (φ, 1, 0, φ+1)/2
+        Quadray::new(p2 * h, 0.0,    1.0 * h, p * h),     // 7: (φ+1, 0, 1, φ)/2
+        Quadray::new(1.0 * h, p2 * h, 0.0,    p * h),     // 8: (1, φ+1, 0, φ)/2
+        Quadray::new(p2 * h, 1.0 * h, p * h,  0.0),       // 9: (φ+1, 1, φ, 0)/2
+        Quadray::new(0.0,    p * h,   1.0 * h, p2 * h),   // 10: (0, φ, 1, φ+1)/2
+        Quadray::new(p * h,  0.0,     p2 * h,  1.0 * h),  // 11: (φ, 0, φ+1, 1)/2
     ];
-    let vertices: Vec<Quadray> = cart_verts
-        .iter()
-        .map(|xyz| Quadray::from_cartesian(*xyz))
-        .collect();
 
     let edges = vec![
         // Top cap (around vertex 0)
@@ -226,12 +230,12 @@ pub fn icosahedron() -> PolyhedronData {
         vec![4, 2, 5],
         vec![5, 11, 9],
         vec![9, 7, 1],
-        // Lower middle
-        vec![6, 8, 10],
-        vec![10, 4, 2],
-        vec![2, 5, 11],
-        vec![11, 9, 7],
-        vec![7, 1, 6],
+        // Lower middle (reversed for outward normals)
+        vec![6, 10, 8],
+        vec![10, 2, 4],
+        vec![2, 11, 5],
+        vec![11, 7, 9],
+        vec![7, 6, 1],
         // Bottom cap
         vec![3, 10, 6],
         vec![3, 2, 10],
@@ -252,44 +256,44 @@ pub fn icosahedron() -> PolyhedronData {
     }
 }
 
-/// Dodecahedron — 20 vertices, dual of icosahedron.
+/// Dodecahedron — 20 vertices, pure Quadray ABCD, dual of icosahedron.
 ///
-/// Vertex pattern: (±1, ±1, ±1), (0, ±1/φ, ±φ), and cyclic permutations.
-/// Uses PurePhi for exact golden ratio.
+/// Two vertex families, both pure Quadray:
+///   **Cube sub-vertices (8):** tet basis + dual tet basis — all integers {0, 1}.
+///   **Phi-rectangle vertices (12):** permutations of (0, φ-1, φ, √5) / 2.
+///
+/// No from_cartesian(). The cube family IS the stella octangula vertices.
+/// √5 = φ + 1/φ = 2φ - 1 (algebraic, not transcendental).
 pub fn dodecahedron() -> PolyhedronData {
-    let p = phi::phi();
-    let ip = phi::phi_inverse(); // 1/φ = φ - 1
+    let p = phi::phi();           // φ
+    let q = phi::phi_inverse();   // 1/φ = φ - 1
+    let s = p + q;                // √5 = φ + 1/φ = 2φ - 1
+    let h = 0.5;
 
-    let cart_verts: Vec<[f64; 3]> = vec![
-        // Cube vertices (8)
-        [1.0, 1.0, 1.0],    // 0
-        [1.0, 1.0, -1.0],   // 1
-        [1.0, -1.0, 1.0],   // 2
-        [1.0, -1.0, -1.0],  // 3
-        [-1.0, 1.0, 1.0],   // 4
-        [-1.0, 1.0, -1.0],  // 5
-        [-1.0, -1.0, 1.0],  // 6
-        [-1.0, -1.0, -1.0], // 7
-        // Rectangle in XY plane (4)
-        [0.0, p, ip],   // 8
-        [0.0, p, -ip],  // 9
-        [0.0, -p, ip],  // 10
-        [0.0, -p, -ip], // 11
-        // Rectangle in YZ plane (4)
-        [ip, 0.0, p],   // 12
-        [-ip, 0.0, p],  // 13
-        [ip, 0.0, -p],  // 14
-        [-ip, 0.0, -p], // 15
-        // Rectangle in XZ plane (4)
-        [p, ip, 0.0],   // 16
-        [p, -ip, 0.0],  // 17
-        [-p, ip, 0.0],  // 18
-        [-p, -ip, 0.0], // 19
+    let vertices = vec![
+        // --- Cube sub-vertices: tet + dual tet (pure integer ABCD) ---
+        Quadray::new(0.0, 1.0, 0.0, 0.0),  // 0: B            → ( 1, 1, 1)
+        Quadray::new(0.0, 1.0, 1.0, 1.0),  // 1: A-absent      → ( 1, 1,-1)
+        Quadray::new(1.0, 1.0, 0.0, 1.0),  // 2: C-absent      → ( 1,-1, 1)
+        Quadray::new(0.0, 0.0, 0.0, 1.0),  // 3: D             → ( 1,-1,-1)
+        Quadray::new(1.0, 1.0, 1.0, 0.0),  // 4: D-absent      → (-1, 1, 1)
+        Quadray::new(0.0, 0.0, 1.0, 0.0),  // 5: C             → (-1, 1,-1)
+        Quadray::new(1.0, 0.0, 0.0, 0.0),  // 6: A             → (-1,-1, 1)
+        Quadray::new(1.0, 0.0, 1.0, 1.0),  // 7: B-absent      → (-1,-1,-1)
+        // --- Phi-rectangle vertices: permutations of (0, q, p, √5) / 2 ---
+        Quadray::new(q * h, s * h, p * h, 0.0),      // 8:  (q, √5, p, 0)/2     → ( 0, φ, 1/φ)
+        Quadray::new(0.0,   p * h, s * h, q * h),     // 9:  (0, p, √5, q)/2     → ( 0, φ,-1/φ)
+        Quadray::new(s * h, q * h, 0.0,   p * h),     // 10: (√5, q, 0, p)/2     → ( 0,-φ, 1/φ)
+        Quadray::new(p * h, 0.0,   q * h, s * h),     // 11: (p, 0, q, √5)/2     → ( 0,-φ,-1/φ)
+        Quadray::new(p * h, s * h, 0.0,   q * h),     // 12: (p, √5, 0, q)/2     → (1/φ, 0, φ)
+        Quadray::new(s * h, p * h, q * h, 0.0),       // 13: (√5, p, q, 0)/2     → (-1/φ, 0, φ)
+        Quadray::new(0.0,   q * h, p * h, s * h),     // 14: (0, q, p, √5)/2     → (1/φ, 0,-φ)
+        Quadray::new(q * h, 0.0,   s * h, p * h),     // 15: (q, 0, √5, p)/2     → (-1/φ, 0,-φ)
+        Quadray::new(0.0,   s * h, q * h, p * h),     // 16: (0, √5, q, p)/2     → ( φ, 1/φ, 0)
+        Quadray::new(q * h, p * h, 0.0,   s * h),     // 17: (q, p, 0, √5)/2     → ( φ,-1/φ, 0)
+        Quadray::new(p * h, q * h, s * h, 0.0),       // 18: (p, q, √5, 0)/2     → (-φ, 1/φ, 0)
+        Quadray::new(s * h, 0.0,   p * h, q * h),     // 19: (√5, 0, p, q)/2     → (-φ,-1/φ, 0)
     ];
-    let vertices: Vec<Quadray> = cart_verts
-        .iter()
-        .map(|xyz| Quadray::from_cartesian(*xyz))
-        .collect();
 
     let edges = vec![
         // Top pentagon
@@ -336,6 +340,7 @@ pub fn dodecahedron() -> PolyhedronData {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rt_math::normalizer::quadray_to_xyz;
 
     const EPS: f64 = 1e-10;
 
@@ -370,7 +375,7 @@ mod tests {
     #[test]
     fn tet_a_vertex_matches_shader() {
         let tet = tetrahedron();
-        let xyz = tet.vertices[0].to_cartesian();
+        let xyz = quadray_to_xyz(&tet.vertices[0]);
         assert!(approx_eq(xyz[0], -1.0), "A.x = {} != -1", xyz[0]);
         assert!(approx_eq(xyz[1], -1.0), "A.y = {} != -1", xyz[1]);
         assert!(approx_eq(xyz[2], 1.0), "A.z = {} != 1", xyz[2]);
@@ -397,7 +402,7 @@ mod tests {
     #[test]
     fn dual_tet_a_absent_vertex() {
         let dual = dual_tetrahedron();
-        let xyz = dual.vertices[0].to_cartesian();
+        let xyz = quadray_to_xyz(&dual.vertices[0]);
         // A-absent [0,1,1,1] should give negation of A's Cartesian: (1, 1, -1)
         assert!(approx_eq(xyz[0], 1.0), "x = {} != 1", xyz[0]);
         assert!(approx_eq(xyz[1], 1.0), "y = {} != 1", xyz[1]);
@@ -453,15 +458,15 @@ mod tests {
         let tet = tetrahedron();
         let dual = dual_tetrahedron();
         for i in 0..4 {
-            let cv = cube.vertices[i].to_cartesian();
-            let tv = tet.vertices[i].to_cartesian();
+            let cv = quadray_to_xyz(&cube.vertices[i]);
+            let tv = quadray_to_xyz(&tet.vertices[i]);
             assert!(approx_eq(cv[0], tv[0]) && approx_eq(cv[1], tv[1]) && approx_eq(cv[2], tv[2]),
                 "Cube vertex {} != Tet vertex {}", i, i);
         }
         // And the next 4 must be the dual tetrahedron
         for i in 0..4 {
-            let cv = cube.vertices[i + 4].to_cartesian();
-            let dv = dual.vertices[i].to_cartesian();
+            let cv = quadray_to_xyz(&cube.vertices[i + 4]);
+            let dv = quadray_to_xyz(&dual.vertices[i]);
             assert!(approx_eq(cv[0], dv[0]) && approx_eq(cv[1], dv[1]) && approx_eq(cv[2], dv[2]),
                 "Cube vertex {} != Dual vertex {}", i + 4, i);
         }
@@ -511,5 +516,30 @@ mod tests {
         assert!(cube().validate_euler(), "cube");
         assert!(icosahedron().validate_euler(), "icosa");
         assert!(dodecahedron().validate_euler(), "dodeca");
+    }
+
+    // --- Face winding validation ---
+
+    #[test]
+    fn all_platonics_ccw_winding() {
+        let polys: Vec<(&str, super::PolyhedronData)> = vec![
+            ("tet", tetrahedron()),
+            ("dual_tet", dual_tetrahedron()),
+            ("octa", octahedron()),
+            ("cube", cube()),
+            ("icosa", icosahedron()),
+            ("dodeca", dodecahedron()),
+        ];
+        let mut all_ok = true;
+        for (name, poly) in &polys {
+            let bad = poly.check_face_winding();
+            if !bad.is_empty() {
+                eprintln!("{}: faces with INWARD normals (indices): {:?} out of {} total", name, bad, poly.faces.len());
+                all_ok = false;
+            } else {
+                eprintln!("{}: all {} faces have OUTWARD normals ✓", name, poly.faces.len());
+            }
+        }
+        assert!(all_ok, "Some polyhedra have incorrect face winding — see above");
     }
 }
