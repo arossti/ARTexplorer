@@ -124,6 +124,7 @@ fn build_cartesian_plane(
 fn build_quadray_plane(
     basis: [usize; 2],
     tessellations: u32,
+    sign: f32,
     color: [f32; 4],
     index_offset: u32,
 ) -> (Vec<Vertex>, Vec<u32>) {
@@ -135,11 +136,14 @@ fn build_quadray_plane(
     let mut vertices = Vec::with_capacity(est_tris * 6);
     let mut indices = Vec::with_capacity(est_tris * 6);
 
-    // Build an ABCD quadray from two basis indices and integer coefficients
+    // Build an ABCD quadray from two basis indices and integer coefficients.
+    // Janus: sign = -1 negates all coordinates → grid tessellates in the
+    // negative arena (dual tet directions). The shader's ABCD→XYZ conversion
+    // places these at the inverted Cartesian positions naturally.
     let make_quadray = |ci: f32, cj: f32| -> [f32; 4] {
         let mut q = [0.0f32; 4];
-        q[basis[0]] = ci;
-        q[basis[1]] = cj;
+        q[basis[0]] = sign * ci;
+        q[basis[1]] = sign * cj;
         q
     };
 
@@ -238,6 +242,11 @@ pub fn build_quadray_grids(
     let tessellations = state.ivm_tessellations;
     let alpha = state.ivm_grid_opacity;
 
+    // Janus: negative frequency → negative ABCD coordinates.
+    // The grid tessellates in the dual tet directions, mirroring the
+    // basis arrow + polyhedra inversion. See Janus10.tex §3.
+    let sign = if state.frequency < 0.0 { -1.0f32 } else { 1.0f32 };
+
     // 6 Central Angle planes: all C(4,2) pairs of ABCD basis vectors
     // basis indices: 0=A, 1=B, 2=C, 3=D
     let planes: [(bool, [usize; 2], [f32; 3]); 6] = [
@@ -258,7 +267,7 @@ pub fn build_quadray_grids(
         }
         let color = [rgb[0], rgb[1], rgb[2], alpha];
         let offset = index_offset + all_verts.len() as u32;
-        let (verts, idxs) = build_quadray_plane(*basis, tessellations, color, offset);
+        let (verts, idxs) = build_quadray_plane(*basis, tessellations, sign, color, offset);
         all_verts.extend(verts);
         all_idxs.extend(idxs);
     }

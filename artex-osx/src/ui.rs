@@ -260,6 +260,14 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                         state.scale_driver = ScaleDriver::Frequency;
                         state.cube_edge = 2.0 * state.frequency;
                         state.tet_edge = 2.0 * sqrt2 * state.frequency;
+                        // Janus crossing: auto-adjust grid opacity for background contrast
+                        let now_negative = state.frequency < 0.0;
+                        if now_negative != state.janus_negative {
+                            let opacity = if now_negative { 0.6 } else { 0.10 };
+                            state.cartesian_grid_opacity = opacity;
+                            state.ivm_grid_opacity = opacity;
+                            state.janus_negative = now_negative;
+                        }
                         state.geometry_dirty = true;
                     }
 
@@ -307,6 +315,14 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                         state.tet_edge = (state.tet_edge * 10.0).round() / 10.0;
                         state.cube_edge = state.tet_edge / sqrt2;
                         state.frequency = state.cube_edge / 2.0;
+                        // Janus crossing: auto-adjust grid opacity for background contrast
+                        let now_negative = state.frequency < 0.0;
+                        if now_negative != state.janus_negative {
+                            let opacity = if now_negative { 0.6 } else { 0.10 };
+                            state.cartesian_grid_opacity = opacity;
+                            state.ivm_grid_opacity = opacity;
+                            state.janus_negative = now_negative;
+                        }
                         state.geometry_dirty = true;
                     }
 
@@ -321,6 +337,14 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                         state.cube_edge = (state.cube_edge * 10.0).round() / 10.0;
                         state.tet_edge = state.cube_edge * sqrt2;
                         state.frequency = state.cube_edge / 2.0;
+                        // Janus crossing: auto-adjust grid opacity for background contrast
+                        let now_negative = state.frequency < 0.0;
+                        if now_negative != state.janus_negative {
+                            let opacity = if now_negative { 0.6 } else { 0.10 };
+                            state.cartesian_grid_opacity = opacity;
+                            state.ivm_grid_opacity = opacity;
+                            state.janus_negative = now_negative;
+                        }
                         state.geometry_dirty = true;
                     }
 
