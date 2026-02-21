@@ -214,30 +214,30 @@ pub fn icosahedron() -> PolyhedronData {
     ];
 
     let faces = vec![
-        // Top cap
-        vec![0, 8, 1],
-        vec![0, 4, 8],
-        vec![0, 5, 4],
-        vec![0, 9, 5],
-        vec![0, 1, 9],
+        // Top cap (CCW winding for outward normals)
+        vec![0, 1, 8],
+        vec![0, 8, 4],
+        vec![0, 4, 5],
+        vec![0, 5, 9],
+        vec![0, 9, 1],
         // Upper middle
-        vec![1, 8, 6],
-        vec![8, 4, 10],
-        vec![4, 5, 2],
-        vec![5, 9, 11],
-        vec![9, 1, 7],
+        vec![1, 6, 8],
+        vec![8, 10, 4],
+        vec![4, 2, 5],
+        vec![5, 11, 9],
+        vec![9, 7, 1],
         // Lower middle
-        vec![6, 10, 8],
-        vec![10, 2, 4],
-        vec![2, 11, 5],
-        vec![11, 7, 9],
-        vec![7, 6, 1],
+        vec![6, 8, 10],
+        vec![10, 4, 2],
+        vec![2, 5, 11],
+        vec![11, 9, 7],
+        vec![7, 1, 6],
         // Bottom cap
-        vec![3, 6, 10],
-        vec![3, 10, 2],
-        vec![3, 2, 11],
-        vec![3, 11, 7],
-        vec![3, 7, 6],
+        vec![3, 10, 6],
+        vec![3, 2, 10],
+        vec![3, 11, 2],
+        vec![3, 7, 11],
+        vec![3, 6, 7],
     ];
 
     // Edge Q = 4 (distance between adjacent golden rectangle vertices)
