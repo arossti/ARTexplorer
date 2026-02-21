@@ -815,6 +815,67 @@ Each step is independently verifiable. Do not skip ahead.
 - **Verified**: 117 tests pass. Both grid types render correctly at all tessellation levels. Grids stay fixed while geometry scales. Opacity 0.10 default keeps grids visible without obscuring coincident polyhedra edges.
 - **Modified**: `grids.rs` (NEW), `app_state.rs` (17 fields), `geometry.rs` (u32 + RGBA + grid calls), `basis_arrows.rs` (u32 + RGBA), `camera.rs` (far plane), `main.rs` (mod grids, Uint32, ALPHA_BLENDING), `ui.rs` (2 grid sections + opacity sliders), `shader.wgsl` (vec4 color)
 
+### P1: Quadray-Native IVM Grid — PLANNED
+
+**Problem**: The current IVM grid builds geometry in Cartesian and converts back:
+`Quadray → to_cartesian() → normalize (÷√3) → scale by √6/4 → linear combo → from_cartesian()`
+
+This introduces 5 irrationals and 2 unnecessary coordinate conversions. The `√6/4` grid interval is the "Cartesian disease" — measuring inherently integer Quadray spacing in Cartesian units.
+
+**Solution**: Build IVM grid vertices directly as integer ABCD coordinates.
+
+Grid vertices at tessellation level T for each of the 6 planes:
+
+| Plane | Vertex (i, j) | i range | j range |
+|-------|---------------|---------|---------|
+| AB | `[i, j, 0, 0]` | 0..T | 0..T−i |
+| AC | `[i, 0, j, 0]` | 0..T | 0..T−i |
+| AD | `[i, 0, 0, j]` | 0..T | 0..T−i |
+| BC | `[0, i, j, 0]` | 0..T | 0..T−i |
+| BD | `[0, i, 0, j]` | 0..T | 0..T−i |
+| CD | `[0, 0, i, j]` | 0..T | 0..T−i |
+
+Triangles connect `(i,j)` → `(i+1,j)` → `(i,j+1)` — same tessellation algorithm, integer coordinates.
+
+This is the same pattern as the integer polyhedra: tet `[1,0,0,0]`, cube `[1,1,0,0]` ∪ `[0,0,1,1]`, octa `[1,1,0,0]`. The grid extends the lattice: first interval at `[1,0,0,0]`, second at `[2,0,0,0]`, etc.
+
+**What changes**:
+- [ ] `build_ivm_plane()` — replace Cartesian linear combination with direct integer ABCD
+- [ ] Remove `quadray_direction()` helper (no longer needed)
+- [ ] Remove `radicals::quadray_grid_interval()` dependency from IVM grids
+- [ ] No `from_cartesian()` calls — vertices go straight to GPU as integer ABCD
+- [ ] UI: Consider renaming "IVM Grid" → "Quadray Grid" (it IS the native ABCD lattice)
+- [ ] Update tests: verify integer coordinates, coplanarity via ABCD algebra (not Cartesian dot product)
+
+**What stays the same**:
+- Cartesian XYZ grids remain Cartesian (they ARE the XYZ reference frame — `from_cartesian()` is justified there)
+- Tessellation slider still controls grid extent (T=12 means 12 integer steps along each basis direction)
+- Same 6 planes, same colors, same opacity system
+- Same triangular tessellation topology
+
+**Janus Inversion and the Negative Arena** (see Janus10.tex §2.6, §3.1):
+
+The grid itself uses positive integer ABCD and does not invert — visually it looks the same from either arena. But the coordinate system must support negative Quadray values natively, per the ARTexplorer extension of standard Quadray rules:
+
+| Aspect | Standard Quadray (Urner/Ace) | ARTexplorer Extension |
+|--------|----------------------------|-----------------------|
+| Negative coordinates | Substituted: `[-1,0,0,0]` → `[0,1,1,1]` | Permitted: `[-1,0,0,0]` stays negative |
+| Zero-sum constraint | Enforced (3 DOF, isomorphic to ℝ³) | Optional (native 4 DOF) |
+| Janus Inversion | Not representable | Core operation |
+
+The normalization step (`to_cartesian()` subtracts mean to enforce zero-sum) maps `[-1,0,0,0]` and `[0,1,1,1]` to the same Cartesian point — but **erases which arena the form lives in**. The sign is information, not redundancy.
+
+Design implications for the native app:
+- [ ] Quadray struct must store negative values without auto-normalizing to all-positive
+- [ ] Forms can be defined at negative integer coordinates: tet at `[-1,0,0,0]`, `[0,-1,0,0]`, `[0,0,-1,0]`, `[0,0,0,-1]` (the dual, in negative space)
+- [ ] Second-interval tet: `[-2,0,0,0]`, `[0,-2,0,0]`, `[0,0,-2,0]`, `[0,0,0,-2]` — pure negative integers
+- [ ] **Visual signal**: background inverts from black to white when scale < 0 (entering negative arena)
+- [ ] Non-inverted forms ghost/fade when viewing from the opposite arena
+- [ ] Arena state (positive/negative) is first-class metadata, not derived from normalization
+- [ ] `to_cartesian()` still works correctly with negative ABCD (the math is symmetric) — normalization is for XYZ translation only, not a constraint on the Quadray representation
+
+**RT-Purity impact**: Eliminates all irrationals from the IVM grid pipeline. The only `sqrt()` remaining is in the WGSL shader's ABCD→XYZ basis matrix — the justified rendering boundary. Negative integer coordinates preserve the same RT-purity as positive ones — the sign carries geometric meaning (arena parity) without introducing any irrationals.
+
 ### Step 8: Face-Normal Firing (Day 10-12) — DEFERRED (game mode)
 - [ ] Compute face normals (original tet for Quadray alignment)
 - [ ] Spacebar-hold + ASDF firing
@@ -994,6 +1055,7 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P1: Ortho projection + Centre button + viewport-aware canvas** | **Done (2026-02-20)** |
 | **P1: Grid planes (Cartesian XYZ + IVM Central Angle)** | **Done (2026-02-20)** |
 | **P1: Universal alpha blending + grid opacity sliders** | **Done (2026-02-21)** |
+| P1: Quadray-native IVM grid (integer ABCD, eliminate √6/4) | Planned |
 | P1: Node/face rendering (spheres, opacity) | Pending |
 | P1: Coordinate display bar | Pending |
 | P2: Thomson great-circle shells | Pending |
