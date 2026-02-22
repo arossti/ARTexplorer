@@ -1243,13 +1243,10 @@ let data = load_file()?;  // Returns early with Err if it fails
 | **P1: Transparent face depth fix (depth_write_enabled: false)** | **Done (2026-02-21)** |
 | **P1: Node rendering (geodesic vertex spheres, 1–4F, opacity, packed sizing)** | **Done (2026-02-21)** |
 | **P1: Coordinate display bar (cursor tracking, ray-sphere, zero-sum ABCD, on-grid indicator)** | **Done (2026-02-21)** |
-| P2: Thomson great-circle shells | Pending |
 | **P2: Geodesic subdivision (Quadray-native, 3 polyhedra × 4 projections)** | **Done (2026-02-21)** |
-| P2: View manager + state persistence | Pending |
-| P3: Rotor-based orbit camera — eliminate polar singularity ([ARTEX-HAIRYBALL.md](ARTEX-HAIRYBALL.md)) | Research |
-| P3: ABCD-to-clip pipeline — eliminate XYZ from shader (RATIONALE §4, §8, §10) | Research |
-| P3: Cutplane + projection as ABCD dot products (RATIONALE §10) | Research |
-| P3: Wireframe painter's algorithm — depth-sorted 2D, no GPU 3D pipeline (RATIONALE §8) | Research |
+| P2: Thomson great-circle shells | → J6 in RUST-METAL-JUNIOR.md |
+| P2: View manager + state persistence | → J3/J7 in RUST-METAL-JUNIOR.md |
+| P3: Architecture research items | → Junior Phase in RUST-METAL-JUNIOR.md |
 
 ### P2: Geodesic Subdivision — DONE 2026-02-21
 

@@ -344,10 +344,15 @@ impl GpuState {
     fn rebuild_geometry(&mut self) {
         let geo = geometry::build_visible_geometry(&self.app_state);
 
-        self.app_state.vertex_count = geo.vertices.len();
-        self.app_state.edge_count = geo.edge_indices.len() / 2;
-        self.app_state.face_count = geo.face_indices.len() / 3;
+        // Scene counts = total minus infrastructure (arrows + grids).
+        // Infrastructure tracked separately for Geometry Info display.
+        self.app_state.vertex_count = geo.vertices.len().saturating_sub(geo.infra_vertex_count);
+        self.app_state.edge_count = (geo.edge_indices.len() / 2).saturating_sub(geo.infra_edge_count);
+        self.app_state.face_count = (geo.face_indices.len() / 3).saturating_sub(geo.infra_face_count);
         self.app_state.node_count = geo.node_count;
+        self.app_state.infra_vertex_count = geo.infra_vertex_count;
+        self.app_state.infra_edge_count = geo.infra_edge_count;
+        self.app_state.infra_face_count = geo.infra_face_count;
         self.app_state.bounding_radius = geo.bounding_radius;
 
         self.vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -371,9 +376,11 @@ impl GpuState {
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        // Rebuild geometry if UI changed polyhedra/scale
+        // Rebuild geometry if UI changed polyhedra/scale; time the rebuild for Geometry Info display.
         if self.app_state.geometry_dirty {
+            let t0 = std::time::Instant::now();
             self.rebuild_geometry();
+            self.app_state.geometry_build_ms = t0.elapsed().as_secs_f64() * 1000.0;
         }
 
         // FPS tracking

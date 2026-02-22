@@ -16,6 +16,10 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
     let panel_response = egui::SidePanel::right("control_panel")
         .default_width(220.0)
         .show(ctx, |ui| {
+            // Scrollable panel — no visible scrollbar, scroll via trackpad/mouse wheel.
+            egui::ScrollArea::vertical()
+                .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
+                .show(ui, |ui| {
             ui.heading("ARTexplorer");
             ui.label(egui::RichText::new("Algebraic Rational Trigonometry Explorer").small().weak());
             ui.label(egui::RichText::new("by Andy Ross Thomson").small().weak());
@@ -510,17 +514,141 @@ pub fn draw_ui(ctx: &egui::Context, state: &mut AppState, camera: &mut OrbitCame
                     ).small().weak());
                 });
 
-            // --- Info ---
-            egui::CollapsingHeader::new("Info")
+            // --- Geometry Info ---
+            egui::CollapsingHeader::new("Geometry Info")
                 .default_open(true)
                 .show(ui, |ui| {
-                    ui.label(format!("FPS: {:.0}", state.fps));
+                    use crate::rt_polyhedra::platonic;
+
+                    // Scale factor: all edge quadrances at F1, scaled by F²
+                    let f_sq = (state.frequency * state.frequency) as f64;
+
+                    // Per-polyhedron rows: (visible, name, schläfli, note, V, E, F, spread_str, dihedral_str, base_q_f1)
+                    // All Platonic solids satisfy Euler V − E + F = 2 (hardcoded ✓)
+                    // Spread values: exact rationals per Wildberger §26.
+                    // Dihedral angles shown as UX display only (computed from spread at boundary).
+                    let rows: &[(bool, &str, &str, &str, usize, usize, usize, &str, &str, f64)] = &[
+                        (state.show_tetrahedron,      "Tetrahedron",  "{3,3}", "",            4,  6,  4, "8/9", "≈70.53°", 8.0),
+                        (state.show_dual_tetrahedron, "Dual Tet",     "{3,3}", "(self-dual)",  4,  6,  4, "8/9", "≈70.53°", 8.0),
+                        (state.show_cube,             "Hexahedron",   "{4,3}", "",             8, 12,  6, "1",   "90°",     4.0),
+                        (state.show_octahedron,       "Octahedron",   "{3,4}", "",             6, 12,  8, "8/9", "≈70.53°", 8.0),
+                        (state.show_icosahedron,      "Icosahedron",  "{3,5}", "",            12, 30, 20, "4/9", "≈138.19°",4.0),
+                    ];
+
+                    let mut any_visible = false;
+
+                    for &(visible, name, schlafli, note, v, e, f, spread, dihedral, base_q) in rows {
+                        if !visible { continue; }
+                        any_visible = true;
+                        let q_scaled = base_q * f_sq;
+                        let schlafli_line = if note.is_empty() {
+                            format!("Schläfli: {}", schlafli)
+                        } else {
+                            format!("Schläfli: {} {}", schlafli, note)
+                        };
+                        ui.label(egui::RichText::new(name).strong());
+                        ui.label(egui::RichText::new(schlafli_line).small());
+                        ui.label(egui::RichText::new(format!("V: {}, E: {}, F: {}", v, e, f)).small());
+                        ui.label(egui::RichText::new("Euler: ✓ (V − E + F = 2)").small());
+                        ui.label(egui::RichText::new(
+                            format!("Face Spread: {} ({} dihedral)", spread, dihedral)
+                        ).small());
+                        ui.label(egui::RichText::new(
+                            format!("Edge Q: {:.2}  (F{:.0})", q_scaled, state.frequency)
+                        ).small());
+                        ui.separator();
+                    }
+
+                    // Dodecahedron: φ-based edge quadrance, computed from polyhedron function
+                    if state.show_dodecahedron {
+                        any_visible = true;
+                        let dodec = platonic::dodecahedron();
+                        let q_scaled = dodec.edge_quadrance * f_sq;
+                        ui.label(egui::RichText::new("Dodecahedron").strong());
+                        ui.label(egui::RichText::new("Schläfli: {5,3}").small());
+                        ui.label(egui::RichText::new("V: 20, E: 30, F: 12").small());
+                        ui.label(egui::RichText::new("Euler: ✓ (V − E + F = 2)").small());
+                        ui.label(egui::RichText::new("Face Spread: 4/5 (≈116.57° dihedral)").small());
+                        ui.label(egui::RichText::new(
+                            format!("Edge Q: {:.4}  (F{:.0})", q_scaled, state.frequency)
+                        ).small());
+                        ui.separator();
+                    }
+
+                    if !any_visible {
+                        ui.label(egui::RichText::new("No polyhedra visible").weak().small());
+                        ui.separator();
+                    }
+
+                    // Scene Totals (polyhedra + nodes; excludes basis arrows and grids)
+                    ui.label(egui::RichText::new("Scene Totals:").strong());
+                    ui.label(egui::RichText::new(
+                        format!("Vertices: {}", state.vertex_count)
+                    ).small());
+                    ui.label(egui::RichText::new(
+                        format!("Edges: {}", state.edge_count)
+                    ).small());
+                    ui.label(egui::RichText::new(
+                        format!("Faces (tris): {}", state.face_count)
+                    ).small());
+                    if state.node_count > 0 {
+                        // Geodesic icosahedron at freq F has 20·F² triangles (exactly)
+                        let tris_per_node = 20 * (state.node_geodesic_freq * state.node_geodesic_freq) as usize;
+                        ui.label(egui::RichText::new(
+                            format!("Node tris: {}  ({}×{})", state.node_count * tris_per_node, state.node_count, tris_per_node)
+                        ).small());
+                    }
                     ui.separator();
-                    ui.label(format!("V: {}  E: {}  F: {}  N: {}", state.vertex_count, state.edge_count, state.face_count, state.node_count));
+
+                    // Infrastructure Totals (basis arrows + grids) — only when present
+                    let has_infra = state.infra_vertex_count > 0
+                        || state.infra_edge_count > 0
+                        || state.infra_face_count > 0;
+                    if has_infra {
+                        ui.label(egui::RichText::new("Infrastructure Totals:").strong());
+                        ui.label(egui::RichText::new(
+                            format!("Vertices: {}", state.infra_vertex_count)
+                        ).small());
+                        ui.label(egui::RichText::new(
+                            format!("Edges: {}", state.infra_edge_count)
+                        ).small());
+                        if state.infra_face_count > 0 {
+                            ui.label(egui::RichText::new(
+                                format!("Arrow tris: {}", state.infra_face_count)
+                            ).small());
+                        }
+                        ui.label(egui::RichText::new(
+                            "Basis arrows + grid planes"
+                        ).weak().small());
+                        ui.separator();
+                    }
+
+                    // Performance
+                    ui.label(egui::RichText::new("Performance:").strong());
+                    ui.label(egui::RichText::new(
+                        format!("Build: {:.1} ms", state.geometry_build_ms)
+                    ).small());
+                    ui.label(egui::RichText::new(
+                        format!("FPS: {:.0}", state.fps)
+                    ).small());
+                    if state.show_nodes && state.node_count > 0 {
+                        let tris = 20 * (state.node_geodesic_freq * state.node_geodesic_freq) as usize;
+                        ui.label(egui::RichText::new(
+                            format!("Node type: RT Icosa {}F", state.node_geodesic_freq)
+                        ).small());
+                        ui.label(egui::RichText::new(
+                            format!("Node Δ: {} tris/sphere", tris)
+                        ).small());
+                    }
                     ui.separator();
-                    ui.label(egui::RichText::new("ABCD → WGSL → Metal").small().weak());
-                    ui.label(egui::RichText::new("Drag to orbit | Scroll to zoom").small().weak());
+
+                    // Advanced Logging toggle (J3: wires to log_console when implemented)
+                    ui.checkbox(&mut state.advanced_logging, "Advanced Logging");
+                    if state.advanced_logging {
+                        ui.label(egui::RichText::new("Outputs to terminal (stdout)").weak().small());
+                    }
                 });
+            }); // end ScrollArea
         });
 
     // Store actual panel width (logical points) for viewport calculation in render()

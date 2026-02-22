@@ -62,6 +62,46 @@ impl OrbitCamera {
         self.distance = self.distance.clamp(0.1, 10000.0);
     }
 
+    /// Unproject a screen-space cursor to a world-space ray.
+    ///
+    /// Returns `(ray_origin, ray_direction)` in Cartesian XYZ, or `None` if the
+    /// viewport dimensions are degenerate or the matrix is non-invertible.
+    ///
+    /// Math.X justified: matrix inverse at the rendering boundary. There is no
+    /// RT alternative for screen→world unprojection — this is inherently a
+    /// projection-space operation. The result feeds into the RT-pure ray-sphere
+    /// intersection (quadrance discriminant) in the caller.
+    pub fn unproject_ray(
+        &self,
+        cursor_x: f32, cursor_y: f32,      // physical pixel cursor position
+        viewport_x: f32, viewport_y: f32,   // physical pixel 3D viewport top-left
+        viewport_w: f32, viewport_h: f32,   // physical pixel viewport dimensions
+    ) -> Option<(glam::Vec3, glam::Vec3)> {
+        if viewport_w < 1.0 || viewport_h < 1.0 {
+            return None;
+        }
+        let aspect = viewport_w / viewport_h;
+        let vp_inv = self.view_proj(aspect).inverse();
+
+        // NDC: x in [-1,+1] left→right; y in [-1,+1] bottom→top (flip screen y which is down).
+        let ndc_x = 2.0 * (cursor_x - viewport_x) / viewport_w - 1.0;
+        let ndc_y = 1.0 - 2.0 * (cursor_y - viewport_y) / viewport_h;
+
+        // wgpu + glam::perspective_rh: depth range 0 (near) to 1 (far).
+        // Unproject near and far planes to get a ray direction.
+        let near = vp_inv * glam::Vec4::new(ndc_x, ndc_y, 0.0, 1.0);
+        let near = near / near.w;
+        let far  = vp_inv * glam::Vec4::new(ndc_x, ndc_y, 1.0, 1.0);
+        let far  = far  / far.w;
+
+        let origin = near.truncate();
+        let dir = (far.truncate() - origin).normalize_or_zero();
+        if dir.length_squared() < 1e-10 {
+            return None;
+        }
+        Some((origin, dir))
+    }
+
     /// Apply a camera preset (yaw, pitch, distance).
     /// Presets can set exact ±π/2 pitch (top/bottom views) — the view_proj
     /// method handles the up-vector switch for polar orientations.
@@ -326,5 +366,44 @@ mod tests {
         assert!(PRESETS_ABCD[1].pitch > 0.0, "B pitch should be positive");
         assert!(PRESETS_ABCD[2].pitch > 0.0, "C pitch should be positive");
         assert!(PRESETS_ABCD[3].pitch < 0.0, "D pitch should be negative");
+    }
+
+    #[test]
+    fn unproject_ray_degenerate_viewport_returns_none() {
+        let cam = OrbitCamera::default();
+        assert!(cam.unproject_ray(0.0, 0.0, 0.0, 0.0, 0.0, 720.0).is_none());
+        assert!(cam.unproject_ray(0.0, 0.0, 0.0, 0.0, 1280.0, 0.0).is_none());
+    }
+
+    #[test]
+    fn unproject_ray_returns_unit_direction() {
+        let cam = OrbitCamera::default();
+        // Centre of a 1280×720 viewport (panel_x=220, panel_y=0, w=1060, h=720)
+        let (_, dir) = cam.unproject_ray(
+            220.0 + 530.0, 360.0, // centre of 3D viewport
+            220.0, 0.0, 1060.0, 720.0,
+        ).expect("centre of viewport should unproject");
+        let len = dir.length();
+        assert!((len - 1.0).abs() < 1e-5, "direction should be unit vector, got {}", len);
+    }
+
+    #[test]
+    fn unproject_ray_centre_points_toward_origin() {
+        // From the default B-axis view (looking from (+1,+1,+1)/√3 direction),
+        // the centre of the viewport should produce a ray that passes near the origin.
+        let cam = OrbitCamera::default();
+        let (origin, dir) = cam.unproject_ray(
+            220.0 + 530.0, 360.0,
+            220.0, 0.0, 1060.0, 720.0,
+        ).expect("should unproject");
+        // The closest point on the ray to the world origin:
+        // t = -(origin · dir), closest = origin + t * dir
+        let t = -origin.dot(dir);
+        let closest = origin + dir * t;
+        assert!(
+            closest.length() < 0.5,
+            "centre ray should pass within 0.5 of origin, got {}",
+            closest.length()
+        );
     }
 }

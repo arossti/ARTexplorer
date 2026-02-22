@@ -132,6 +132,12 @@ pub struct GeometryOutput {
     pub face_indices: Vec<u32>,
     pub bounding_radius: f32,
     pub node_count: usize,
+
+    // Infrastructure counts (basis arrows + grids) — separate from scene geometry.
+    // Scene = total - infra. Allows Geometry Info to display them in distinct sections.
+    pub infra_vertex_count: usize,
+    pub infra_edge_count: usize,
+    pub infra_face_count: usize,  // arrow faces only; grids have no face geometry
 }
 
 /// Build combined vertex/index buffers for all visible polyhedra.
@@ -234,6 +240,12 @@ pub fn build_visible_geometry(state: &AppState) -> GeometryOutput {
         }
     }
 
+    // Snapshot after polyhedra, before infrastructure (arrows + grids + nodes).
+    // infra = (after grids) - snap_poly. Scene = total - infra.
+    let snap_poly_v = vertices.len();
+    let snap_poly_e = edge_indices.len();
+    let snap_poly_f = face_indices.len();
+
     // --- Basis arrows (own sizing, NOT scaled by s) ---
     // Janus: arrows point inward in negative arena (frequency < 0)
     // Arrowhead faces: solid flat ABCD colors (A=Yellow, B=Red, C=Blue, D=Green).
@@ -267,6 +279,11 @@ pub fn build_visible_geometry(state: &AppState) -> GeometryOutput {
         vertices.extend(grid_verts);
         edge_indices.extend(grid_idxs);
     }
+
+    // Snapshot after infrastructure (arrows + grids), before node spheres.
+    let snap_infra_v = vertices.len() - snap_poly_v;
+    let snap_infra_e = edge_indices.len() - snap_poly_e;
+    let snap_infra_f = face_indices.len() - snap_poly_f;
 
     // --- Node spheres (geodesic icosahedra at each polyhedron vertex) ---
     // Template generated once, instanced at every visible vertex.
@@ -335,6 +352,9 @@ pub fn build_visible_geometry(state: &AppState) -> GeometryOutput {
         face_indices,
         bounding_radius,
         node_count: node_instance_count,
+        infra_vertex_count: snap_infra_v,
+        infra_edge_count: snap_infra_e / 2,
+        infra_face_count: snap_infra_f / 3,
     }
 }
 

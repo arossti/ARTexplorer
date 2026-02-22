@@ -46,9 +46,9 @@ Additional Junior-phase guidance:
 | Native file dialogs (rfd) | Pending |
 | Auto-save | Pending |
 | **J4: Geometry Info Section** | |
-| Per-form V/E/F stats + Euler indicator | Pending |
-| Edge quadrance + face spread display | Pending |
-| Scene budget (total vertices/triangles) | Pending |
+| Per-form V/E/F stats + Euler indicator | **Done (2026-02-21)** |
+| Edge quadrance + face spread display | **Done (2026-02-21)** |
+| Scene budget (total vertices/triangles) | **Done (2026-02-21)** |
 | **J5: Math Demos** | |
 | Quadrance Demo (Plimpton 322) | Pending |
 | Spread/Cross Demo | Pending |
@@ -70,6 +70,11 @@ Additional Junior-phase guidance:
 | Generalized polyhedron projection | Pending |
 | Prime n-gon presets (5, 7, 11, 13-gon) | Pending |
 | SVG export | Pending |
+| **P3: Architecture Research** | |
+| Rotor-based orbit camera (eliminate polar singularity) | Research |
+| ABCD-to-clip pipeline (eliminate XYZ from shader) | Research |
+| Cutplane + projection as ABCD dot products | Research |
+| Wireframe painter's algorithm (depth-sorted 2D, no GPU 3D pipeline) | Research |
 
 ---
 
@@ -299,6 +304,57 @@ Project vertices onto view plane (camera's near plane), compute 2D convex hull
 (Graham scan — uses cross product sign, RT-pure), display as overlay polygon.
 Prime n-gon presets: hardcoded `(polyhedron, view_preset, expected_vertex_count)` triples
 derived from `Geometry Documents/Whitepaper LaTEX/Prime-Projection-Conjecture.tex`.
+
+---
+
+### P3: Architecture Research
+
+**Gate:** Junior phase features stable (no hard dependency — pursue when infrastructure is settled)
+
+These items fundamentally rethink the rendering pipeline to be RT-pure all the way to the GPU.
+They are research-grade: each has an open design question before implementation begins.
+
+#### P3a: Rotor-Based Orbit Camera
+**Reference:** [ARTEX-HAIRYBALL.md](ARTEX-HAIRYBALL.md)
+
+Current `OrbitCamera` uses yaw/pitch/distance — a spherical coordinate system with a polar
+singularity patched by the up-vector flip near ±90°. The topologically correct fix is a
+`QuadrayRotor` orientation in R⁴ × Z₂ — no Hairy Ball singularity, no up-vector patch needed.
+
+**Open question:** Define the `QuadrayRotor` multiply and slerp without introducing `f64::acos()`
+in the orientation update loop. Slerp at camera level is justified (not geometry), but investigate
+whether geometric-algebra double reflection eliminates even this.
+
+#### P3b: ABCD-to-Clip Pipeline
+**Reference:** `ARTEX-RATIONALE.md` §4, §8, §10
+
+The current shader has a `BASIS` matrix converting ABCD→XYZ, then standard view_proj. The goal:
+fold the Tom Ace basis into the camera matrix → single `ABCD_to_clip = view_proj * [BASIS * Normalize]`
+multiply, computed once per frame. The shader reduces to `clip_position = abcd_to_clip * quadray`.
+XYZ eliminated from the GPU pipeline.
+
+**Open question:** How do the 7 camera presets (stored as yaw/pitch) map to stored ABCD 4-vector
+triplets? Each preset already has the triplet annotated in `camera.rs` comments (from P1).
+
+#### P3c: Cutplane + Projection as ABCD Dot Products
+**Reference:** `ARTEX-RATIONALE.md` §10
+
+Section cut planes and prime projections are currently post-process operations in Cartesian space.
+In the ABCD pipeline, a cutplane is a half-space defined by `dot(vertex_abcd, plane_normal_abcd) > 0`.
+The GPU can evaluate this per-vertex in the shader with no Cartesian conversion.
+
+**Open question:** How do the 8 ABCD plane normals map to the IVM symmetry planes used by Thomson?
+Answer this before implementing — the intersection may yield the papercut circles for free.
+
+#### P3d: Wireframe Painter's Algorithm
+**Reference:** `ARTEX-RATIONALE.md` §8
+
+The Platonic solids have small vertex counts (4–20). A CPU-side depth sort + 2D overlay render
+(painter's algorithm) would eliminate the GPU depth buffer for edge rendering entirely.
+RT-pure 2D: edges are line segments, depth order = ABCD dot products against view normal.
+
+**Open question:** At what vertex count does the CPU sort become slower than GPU rasterization?
+Benchmark for geodesic icosahedra at F4 (492 vertices) before committing to this path.
 
 ---
 

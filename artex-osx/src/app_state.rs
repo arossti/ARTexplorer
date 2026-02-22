@@ -137,6 +137,18 @@ pub struct AppState {
     pub fps: f64,
     pub frame_count: u64,
     pub fps_timer: std::time::Instant,
+
+    // Infrastructure geometry counts (basis arrows + grids).
+    // Scene geometry = total counts − these. Tracked separately for Geometry Info display.
+    pub infra_vertex_count: usize,
+    pub infra_edge_count: usize,
+    pub infra_face_count: usize,
+
+    // Performance timing (updated on each geometry rebuild)
+    pub geometry_build_ms: f64,
+
+    // Advanced logging toggle (J3: wired to log_console when implemented)
+    pub advanced_logging: bool,
 }
 
 impl Default for AppState {
@@ -202,6 +214,11 @@ impl Default for AppState {
             fps: 0.0,
             frame_count: 0,
             fps_timer: std::time::Instant::now(),
+            infra_vertex_count: 0,
+            infra_edge_count: 0,
+            infra_face_count: 0,
+            geometry_build_ms: 0.0,
+            advanced_logging: false,
         }
     }
 }
