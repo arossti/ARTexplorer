@@ -8,6 +8,17 @@ mod rt_math;
 mod rt_polyhedra;
 mod ui;
 
+// ── Junior phase stubs (J1–J9) — not yet implemented ──────────────────────────
+mod animation;      // J7: camera slerp, dissolve, view transitions
+mod controls;       // J2: gumball translate/scale/rotate handles
+mod demos;          // J5: math demo sub-windows (Quadrance, Spread, Weierstrass)
+mod file_handler;   // J3: JSON save/load, auto-save, native file dialogs
+mod log_console;    // J3: debug logging toggle + ring buffer
+mod papercut;       // J8: section cut plane + section circles
+mod projections;    // J9: generalized projection + prime n-gon presets
+mod state_manager;  // J2: instance lifecycle, selection, undo/redo
+mod view_manager;   // J7: named view snapshots, export/import
+
 use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::{

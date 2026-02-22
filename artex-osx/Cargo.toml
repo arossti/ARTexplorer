@@ -15,3 +15,8 @@ glam = "0.29"                     # Camera matrices (Mat4, Vec3) — standard wg
 egui = "0.33"                     # Immediate-mode GUI framework
 egui-wgpu = "0.33"                # egui renderer for wgpu backend
 egui-winit = "0.33"               # egui input adapter for winit events
+
+# ── Junior phase dependencies (J3: state persistence + file dialogs) ──────────
+serde = { version = "1", features = ["derive"] }  # Serialization framework
+serde_json = "1"                   # JSON save/load for AppState persistence
+rfd = "0.15"                       # Rusty File Dialogs — native macOS NSOpenPanel/NSSavePanel

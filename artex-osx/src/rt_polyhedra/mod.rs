@@ -8,6 +8,12 @@
 pub mod geodesic;
 pub mod platonic;
 
+// ── Junior phase stubs (J1, J6) — not yet implemented ─────────────────────────
+pub mod helices;    // J1: Tetrahelix1/2/3 face-sharing chains
+pub mod matrices;   // J1: Planar N×N + radial IVM spatial arrays
+pub mod primitives; // J1: Point, Line, N-gon, Prism, Cone, Penrose Tiling
+pub mod thomson;    // J6: Great-circle shells on Platonic solid symmetry planes
+
 pub use geodesic::{geodesic_tetrahedron, geodesic_octahedron, geodesic_icosahedron, ProjectionMode};
 pub use platonic::*;
 
