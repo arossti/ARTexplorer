@@ -1,0 +1,3111 @@
+/* A.R.T Explorer - Stylesheet
+ * Algebraic Rational Trigonometry Polyhedra Visualization
+ * Author: Andy Ross Thomson
+ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
+
+#container {
+  display: flex;
+  height: 100vh;
+}
+
+#canvas-container {
+  flex: 1;
+  position: relative;
+}
+
+#controls-panel {
+  width: 330px;
+  background: #2a2a2a;
+  padding: 15px;
+  padding-bottom: 100px; /* Space for fixed footer */
+  overflow-y: auto;
+  border-left: 1px solid #444;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Hide scrollbar - WebKit (Chrome, Safari) */
+#controls-panel::-webkit-scrollbar {
+  display: none;
+}
+
+/* Panel header with info icon */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0;
+}
+
+/* Outline title styling */
+.title-outline {
+  font-family: "Arial Black", Arial, sans-serif;
+  font-weight: 900;
+  font-size: 34px;
+  letter-spacing: 2px;
+  color: transparent;
+  -webkit-text-stroke: 1px #00b4ff;
+  margin: 0;
+}
+
+.panel-header h5 {
+  font-size: 11px;
+  font-weight: 400;
+  color: #888;
+  margin: 2px 0 0 0;
+}
+
+.info-icon-btn {
+  background: transparent;
+  border: none;
+  color: #00b4ff;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.info-icon-btn:hover {
+  background: rgba(74, 158, 255, 0.1);
+  color: #00b4ff;
+  transform: scale(1.1);
+}
+
+.info-icon-btn:active {
+  transform: scale(0.95);
+}
+
+.info-icon-btn svg {
+  display: block;
+}
+
+h1 {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #00b4ff;
+  text-align: center;
+}
+
+.control-group {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #444;
+}
+
+.control-group:last-child {
+  border-bottom: none;
+}
+
+.control-group h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #00b4ff;
+  font-weight: 600;
+}
+
+.control-item {
+  margin-bottom: 8px;
+}
+
+.control-item label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: #b0b0b0;
+}
+
+.control-item input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.control-item select {
+  width: 100%;
+  padding: 8px;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  color: #e0e0e0;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.control-item select:focus {
+  outline: none;
+  border-color: #00b4ff;
+}
+
+/* --------------------------------------------------------------------------
+   SLIDERS - HiFi LED Style
+   -------------------------------------------------------------------------- */
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-container input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  cursor: pointer;
+  outline: none;
+  margin: 6px 4px;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 3px, transparent 3px),
+    linear-gradient(145deg, #383838, #2a2a2a);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    inset 0 0 6px rgba(0, 180, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  border: none;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb:hover {
+  background:
+    radial-gradient(circle at center, #5cb8ff 0%, #5cb8ff 3px, transparent 3px),
+    linear-gradient(145deg, #404040, #303030);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.04),
+    inset 0 0 8px rgba(74, 158, 255, 0.4);
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb:active {
+  background:
+    radial-gradient(circle at center, #7df9ff 0%, #7df9ff 3px, transparent 3px),
+    #1a1a1a;
+  box-shadow:
+    inset 1px 1px 3px rgba(0, 0, 0, 0.5),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.02),
+    0 0 8px rgba(125, 249, 255, 0.5);
+}
+
+.slider-container input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 3px, transparent 3px),
+    linear-gradient(145deg, #383838, #2a2a2a);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    inset 0 0 6px rgba(0, 180, 255, 0.3);
+  cursor: pointer;
+  border: none;
+}
+
+.slider-value {
+  min-width: 40px;
+  text-align: right;
+  font-size: 11px;
+  color: #00b4ff;
+}
+
+.info-text {
+  font-size: 11px;
+  color: #888;
+  font-style: italic;
+  margin-top: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background: #00b4ff;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #357abd;
+}
+
+button:active {
+  background: #2a5f94;
+}
+
+/* ==========================================================================
+   CHECKBOX AS HiFi TOGGLE
+   Style native checkboxes to look like HiFi toggles
+   ========================================================================== */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--hifi-text, #e0e0e0);
+  gap: 10px;
+}
+
+/* Hide native checkbox */
+.checkbox-label input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  width: 32px;
+  height: 16px;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  flex-shrink: 0;
+  margin: 3px 4px -4px 2px; /* Align with text, tightens line spacing */
+}
+
+/* Toggle thumb (using ::before pseudo-element) */
+.checkbox-label input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(145deg, #505050, #404040);
+  border-radius: 50%;
+  transition: all 0.2s ease-out;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+}
+
+/* Checked state */
+.checkbox-label input[type="checkbox"]:checked {
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+}
+
+.checkbox-label input[type="checkbox"]:checked::before {
+  left: 18px;
+  background:
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
+    linear-gradient(145deg, #555555, #454545);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    0 0 6px rgba(0, 180, 255, 0.5);
+}
+
+/* Hover state */
+.checkbox-label:hover input[type="checkbox"]::before {
+  background: linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover state when checked - keep the LED dot */
+.checkbox-label:hover input[type="checkbox"]:checked::before {
+  background:
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
+    linear-gradient(145deg, #585858, #484848);
+}
+
+/* Collapsible geodesic controls */
+/* ==========================================================================
+   GEODESIC TOGGLE - HiFi Vertical Toggle (Small)
+   ========================================================================== */
+.geodesic-toggle {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 24px;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  border-radius: 6px;
+  margin: 2px 8px 2px 2px;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+  vertical-align: middle;
+}
+
+/* Thumb using ::before */
+.geodesic-toggle::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  background:
+    radial-gradient(
+      circle at center,
+      #00b4ff 0%,
+      #00b4ff 1.5px,
+      transparent 1.5px
+    ),
+    linear-gradient(145deg, #555555, #454545);
+  border-radius: 50%;
+  transition: all 0.2s ease-out;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    0 0 6px rgba(0, 180, 255, 0.5);
+}
+
+/* Collapsed state: thumb at top, no glow */
+.geodesic-toggle.collapsed {
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.geodesic-toggle.collapsed::before {
+  top: 2px;
+  background: linear-gradient(145deg, #505050, #404040);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+}
+
+.geodesic-toggle:hover::before {
+  background:
+    radial-gradient(
+      circle at center,
+      #00b4ff 0%,
+      #00b4ff 1.5px,
+      transparent 1.5px
+    ),
+    linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when collapsed - no LED dot */
+.geodesic-toggle.collapsed:hover::before {
+  background: linear-gradient(145deg, #585858, #484848);
+}
+
+.geodesic-options {
+  margin-left: 20px;
+  margin-top: 5px;
+  max-height: 400px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.geodesic-options.collapsed {
+  max-height: 0;
+}
+
+/* Node size slider uses .slider-container styles (defined above) */
+
+/* Plane toggle switches (iOS-style pill switches) */
+.plane-toggle-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.plane-toggle-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.plane-toggle-label {
+  font-size: 10px;
+  color: #b0b0b0;
+  text-align: center;
+  order: 2; /* Label below toggle */
+}
+
+.plane-toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  background-color: #555;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.plane-toggle-switch.active {
+  background-color: #00b4ff;
+}
+
+.plane-toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.plane-toggle-switch.active .plane-toggle-slider {
+  transform: translateX(20px);
+}
+
+.stats {
+  font-size: 11px;
+  color: #999;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.coord-label {
+  color: #00b4ff;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   SECTION TOGGLE - HiFi Vertical Toggle (Standard)
+   ========================================================================== */
+.section-toggle {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 32px;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  border-radius: 8px;
+  margin: 2px 10px 2px 2px;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+  vertical-align: middle;
+}
+
+/* Thumb using ::before */
+.section-toggle::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  background:
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
+    linear-gradient(145deg, #555555, #454545);
+  border-radius: 50%;
+  transition: all 0.2s ease-out;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    0 0 6px rgba(0, 180, 255, 0.5);
+}
+
+/* Collapsed state: thumb at top, no glow */
+.section-toggle.collapsed {
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.section-toggle.collapsed::before {
+  top: 2px;
+  background: linear-gradient(145deg, #505050, #404040);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+}
+
+.section-toggle:hover::before {
+  background:
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
+    linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when collapsed - no LED dot */
+.section-toggle.collapsed:hover::before {
+  background: linear-gradient(145deg, #585858, #484848);
+}
+
+.section-content {
+  max-height: 2000px;
+  overflow: visible;
+  transition:
+    max-height 0.3s ease-out,
+    opacity 0.3s ease-out;
+  opacity: 1;
+}
+
+.section-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+h3 {
+  cursor: pointer;
+  user-select: none;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   ART GUMBALL CONTROLS
+   ============================================ */
+
+/* Gumball Tool Selector (Move/Scale/Rotate) */
+.gumball-tool-selector {
+  display: flex;
+  gap: 5px;
+}
+
+.gumball-tool-btn {
+  flex: 1;
+  padding: 8px;
+  font-size: 11px;
+  background: #2a2a2a;
+  color: #b0b0b0;
+  border: 1px solid #444;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gumball-tool-btn:hover {
+  background: #353535;
+  border-color: #555;
+}
+
+.gumball-tool-btn.active {
+  background: #00b4ff;
+  color: white;
+  border-color: #00b4ff;
+}
+
+/* Coordinate Input Fields */
+.coordinate-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+/* Four-column layout for QWXYZ (coordinates and rotation) */
+.coordinate-inputs:has(#coordQW),
+.coordinate-inputs:has(#rotQWDegrees),
+.coordinate-inputs:has(#rotQWSpread) {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.coord-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 11px;
+  background: #2a2a2a;
+  color: #b0b0b0;
+  border: 1px solid #444;
+  border-radius: 3px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.coord-input:focus {
+  outline: none;
+  border-color: #00b4ff;
+  background: #353535;
+}
+
+.coord-input::placeholder {
+  color: #666;
+  font-weight: bold;
+}
+
+/* NOW Counter */
+.now-counter {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: #b0b0b0;
+}
+
+.now-counter span {
+  color: #00ff88;
+  font-weight: bold;
+}
+
+/* ============================================
+   CONSOLIDATED CSS CLASSES
+   ============================================ */
+
+/* ==========================================================================
+   UNIFIED TOGGLE BUTTON SYSTEM - HiFi Style
+   ========================================================================== */
+.toggle-btn-group {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 4px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--hifi-radius-md, 4px);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  border: none;
+  color: var(--hifi-text-muted, #b0b0b0);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.toggle-btn:hover {
+  color: var(--hifi-text, #e0e0e0);
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+.toggle-btn.active {
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  color: var(--hifi-accent, #00b4ff);
+}
+
+/* Variant: Standard (node-size, camera, file ops, print) */
+.toggle-btn.variant-standard {
+  padding: 5px 10px;
+  font-size: 10px;
+  border-radius: var(--hifi-radius-sm, 3px);
+}
+
+.toggle-btn.variant-standard:hover {
+  color: var(--hifi-text, #e0e0e0);
+}
+
+.toggle-btn.variant-standard.active {
+  color: var(--hifi-accent, #00b4ff);
+}
+
+/* Variant: Tool mode (move/scale/rotate) */
+.toggle-btn.variant-tool {
+  padding: 8px 10px;
+}
+
+.toggle-btn.variant-tool:hover {
+  color: var(--hifi-text, #e0e0e0);
+}
+
+.toggle-btn.variant-tool.active {
+  color: var(--hifi-accent, #00b4ff);
+}
+
+/* Variant: Snap mode (free/xyz/wxyz) - green accent */
+.toggle-btn.variant-snap {
+  font-size: 11px;
+  padding: 8px 10px;
+  color: var(--hifi-text-dim, #888);
+}
+
+.toggle-btn.variant-snap:hover {
+  color: var(--hifi-text-muted, #b0b0b0);
+}
+
+.toggle-btn.variant-snap.active {
+  color: #00ff88;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(0, 255, 136, 0.3);
+}
+
+/* Variant: Object snap (vertex/edge/face) - orange accent */
+.toggle-btn.variant-objsnap {
+  font-size: 11px;
+  padding: 8px 10px;
+  color: var(--hifi-text-dim, #888);
+}
+
+.toggle-btn.variant-objsnap:hover {
+  color: var(--hifi-text-muted, #b0b0b0);
+}
+
+.toggle-btn.variant-objsnap.active {
+  color: #ff9944;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(255, 153, 68, 0.3);
+}
+
+/* Smaller snap description for object snaps */
+.snap-description-small {
+  font-size: 10px;
+  color: #555;
+  margin-top: 4px;
+}
+
+/* Selection status display */
+.selection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.selection-status #selectionCount {
+  color: var(--hifi-accent, #00b4ff);
+  font-weight: 500;
+}
+
+.selection-status .selection-hint {
+  color: #666;
+  font-size: 10px;
+}
+
+/* Toggle variant (for generic toggles like Node Geometry)
+   Inherits base HiFi style - only hover/active states need overrides */
+.toggle-btn.variant-toggle:hover {
+  color: var(--hifi-text, #e0e0e0);
+}
+
+.toggle-btn.variant-toggle.active {
+  color: var(--hifi-accent, #00b4ff);
+}
+
+/* Variant: Small (compact cutplane axis selectors) */
+.toggle-btn.variant-small {
+  padding: 3px 8px;
+  font-size: 10px;
+  min-width: 28px;
+}
+
+.toggle-btn.variant-small:hover {
+  color: var(--hifi-text, #e0e0e0);
+}
+
+.toggle-btn.variant-small.active {
+  color: var(--hifi-accent, #00b4ff);
+}
+
+/* Geodesic dropdown styling */
+.toggle-btn.geodesic-dropdown {
+  cursor: pointer;
+}
+
+.toggle-btn.geodesic-dropdown option {
+  background: #1a1a1a;
+  color: #e0e0e0;
+  padding: 6px;
+}
+
+/* Label Variants */
+.label-section {
+  font-size: 12px;
+  color: #b0b0b0;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.label-subsection {
+  font-size: 11px;
+  color: #b0b0b0;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.label-axis {
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Axis-specific label colors - Cartesian XYZ */
+.label-axis-x {
+  color: #ff0000; /* Red - matches basis vector */
+}
+.label-axis-y {
+  color: #00ff00; /* Green - matches basis vector */
+}
+.label-axis-z {
+  color: #0000ff; /* Blue - matches basis vector */
+}
+
+/* Axis-specific label colors - Quadray WXYZ */
+.label-axis-qw {
+  color: #ffff00; /* Yellow - matches basis vector */
+}
+.label-axis-qx {
+  color: #ff0000; /* Red - matches basis vector */
+}
+.label-axis-qy {
+  color: #0000ff; /* Blue - matches basis vector */
+}
+.label-axis-qz {
+  color: #00ff00; /* Green - matches basis vector */
+}
+
+/* Coordinate Input Axis Borders - Cartesian XYZ */
+.coord-input.axis-x {
+  border-left: 2px solid #ff0000; /* Red - matches basis vector */
+}
+.coord-input.axis-y {
+  border-left: 2px solid #00ff00; /* Green - matches basis vector */
+}
+.coord-input.axis-z {
+  border-left: 2px solid #0000ff; /* Blue - matches basis vector */
+}
+
+/* Coordinate Input Axis Borders - Quadray WXYZ */
+.coord-input.axis-qw {
+  border-left: 2px solid #ffff00; /* Yellow - matches basis vector */
+}
+.coord-input.axis-qx {
+  border-left: 2px solid #ff0000; /* Red - matches basis vector */
+}
+.coord-input.axis-qy {
+  border-left: 2px solid #0000ff; /* Blue - matches basis vector */
+}
+.coord-input.axis-qz {
+  border-left: 2px solid #00ff00; /* Green - matches basis vector */
+}
+
+/* Nested Content Spacing */
+.nested-content {
+  margin-left: 20px;
+  margin-top: 5px;
+}
+
+.nested-content-2 {
+  margin-left: 40px;
+  margin-top: 5px;
+}
+
+/* Spacing Utilities */
+.spacing-top-small {
+  margin-top: 5px;
+}
+.spacing-top-medium {
+  margin-top: 8px;
+}
+.spacing-top-large {
+  margin-top: 10px;
+}
+
+/* Button Grid Layouts */
+.button-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 4px;
+}
+
+.button-grid-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  margin-top: 5px;
+  padding: 4px;
+}
+
+/* Coordinate Input Containers */
+.coord-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+}
+
+/* Position the label inside the input field as a prefix */
+.coord-container .label-axis {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Add left padding to inputs to make room for the prefix label */
+.coord-input {
+  padding-left: 24px !important;
+  text-align: left;
+}
+
+/* Snap Toggle Container */
+.snap-toggle-container {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Snap Description Text */
+.snap-description {
+  font-size: 10px;
+  color: #666;
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+/* Gumball Action Button - HiFi Style */
+.gumball-action-btn {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: var(--hifi-radius-md, 4px);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  color: #00b4ff;
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.gumball-action-btn:hover {
+  color: #5cb8ff;
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+.gumball-action-btn:active {
+  color: #7df9ff;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+/* ========================================================================
+   GEODESIC CONTROLS (CONSOLIDATED)
+   ======================================================================== */
+
+/* Geodesic control wrapper - consistent spacing */
+.geodesic-control-wrapper {
+  margin-left: 20px;
+  margin-top: 8px;
+}
+
+/* Nested geodesic content */
+.geodesic-nested {
+  margin-left: 20px;
+  margin-top: 5px;
+}
+
+/* Frequency input container */
+.geodesic-frequency-container {
+  margin-bottom: 0;
+}
+
+.geodesic-frequency-label {
+  font-size: 11px;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+.geodesic-frequency-input {
+  width: 50px;
+  margin-left: 5px;
+  padding: 4px 6px;
+  font-size: 11px;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  color: #e0e0e0;
+  border-radius: 3px;
+}
+
+/* Projection options */
+.geodesic-projection-container {
+  margin-top: 8px;
+}
+
+.geodesic-projection-label {
+  font-size: 11px;
+  display: block;
+  margin-bottom: 3px;
+  color: #b0b0b0;
+}
+
+.geodesic-projection-option {
+  font-size: 10px;
+  display: block;
+  margin-left: 5px;
+  margin-bottom: 2px;
+  color: #b0b0b0;
+}
+
+.geodesic-projection-option input[type="radio"] {
+  margin-right: 6px;
+}
+
+/* ========================================================================
+   MATRIX CONTROLS (CONSOLIDATED)
+   ======================================================================== */
+
+/* Matrix control wrapper */
+.matrix-control-wrapper {
+  margin-left: 20px;
+  margin-top: 8px;
+}
+
+/* Matrix control item */
+.matrix-control-item {
+  margin-bottom: 8px;
+}
+
+/* Matrix size label */
+.matrix-size-label {
+  font-size: 11px;
+  display: block;
+  margin-bottom: 4px;
+  color: #b0b0b0;
+}
+
+/* Matrix checkbox label - smaller font */
+.matrix-checkbox-label {
+  font-size: 11px;
+  margin-left: 0;
+}
+
+/* Matrix info text */
+.matrix-info-text {
+  margin-left: 0;
+  font-size: 10px;
+  color: #888;
+  font-style: italic;
+  margin-top: 5px;
+}
+
+/* Matrix divider */
+.matrix-divider {
+  margin: 16px 0 12px 0;
+  padding-top: 12px;
+  border-top: 1px solid #333;
+}
+
+.matrix-divider-label {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+/* ========================================================================
+   TEXT SIZE UTILITIES
+   ======================================================================== */
+
+.text-small {
+  font-size: 10px;
+}
+
+.text-xsmall {
+  font-size: 11px;
+}
+
+/* ========================================================================
+   SPACING UTILITIES
+   ======================================================================== */
+
+.indent {
+  margin-left: 20px;
+}
+
+.spacing-top-xs {
+  margin-top: 5px;
+}
+
+.spacing-top-sm {
+  margin-top: 8px;
+}
+
+/* ========================================================================
+   INPUT UTILITIES
+   ======================================================================== */
+
+.input-narrow {
+  width: 50px;
+  margin-left: 5px;
+}
+
+/* ========================================================================
+   BUTTON GROUP ITEMS
+   ======================================================================== */
+
+.btn-group-item {
+  flex: 1;
+  padding: 8px;
+  background: var(--btn-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-group-item:hover {
+  background: var(--btn-hover-bg);
+}
+
+.btn-group-item.active {
+  background: var(--btn-active-bg);
+  border-color: var(--btn-active-border);
+}
+
+.btn-group-item:first-child {
+  border-radius: 5px 0 0 5px;
+}
+
+.btn-group-item:last-child {
+  border-radius: 0 5px 5px 0;
+}
+
+.btn-group-item:not(:last-child) {
+  border-right: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ========================================================================
+   INFO MODAL
+   ======================================================================== */
+
+/* Modal overlay - semi-transparent to see app underneath */
+#info-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(3px);
+}
+
+#info-modal-overlay.hidden {
+  display: none;
+}
+
+/* Modal container - wider like math demos, semi-transparent */
+#info-modal {
+  background: rgba(42, 42, 42, 0.8);
+  padding: 30px 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+  max-width: 1200px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  text-align: left;
+  border: 1px solid rgba(74, 158, 255, 0.3);
+}
+
+#info-modal h2 {
+  font-family: "Arial Black", Arial, sans-serif;
+  font-weight: 900;
+  font-size: 36px;
+  letter-spacing: 3px;
+  color: transparent;
+  -webkit-text-stroke: 1px #00b4ff;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.modal-subtitle {
+  color: #888;
+  margin-bottom: 25px;
+  font-size: 14px;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Two-column grid layout */
+.modal-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 25px;
+}
+
+.modal-column {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* Section styling */
+.modal-section {
+  margin-bottom: 0;
+}
+
+.modal-section h3 {
+  color: #fff;
+  font-size: 16px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 6px;
+}
+
+/* Shortcuts grid */
+.shortcuts-grid {
+  display: grid;
+  gap: 4px;
+}
+
+.shortcut-row {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #333;
+}
+
+.shortcut-row:last-child {
+  border-bottom: none;
+}
+
+.shortcut-key {
+  color: #00b4ff; /* Match app blue accent */
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.shortcut-desc {
+  color: #b0b0b0;
+  font-size: 11px;
+}
+
+/* Educational content styling */
+.modal-text {
+  color: #b0b0b0;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.modal-text strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-list li {
+  color: #b0b0b0;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.feature-list li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: #00b4ff; /* App blue accent */
+  font-weight: bold;
+}
+
+.feature-list strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Credits list */
+.credits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.credits-list li {
+  color: #888;
+  font-size: 11px;
+  line-height: 1.4;
+  padding-left: 12px;
+  position: relative;
+}
+
+.credits-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #00b4ff;
+  font-weight: bold;
+}
+
+/* Close button - reuses password submit styling */
+.modal-close-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #00b4ff 0%, #357abd 100%);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 20px;
+}
+
+.modal-close-btn:hover {
+  background: linear-gradient(135deg, #357abd 0%, #2a5f8f 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+}
+
+.modal-close-btn:active {
+  transform: translateY(0);
+}
+
+/* ========================================================================
+   DEMO MODALS
+   ======================================================================== */
+
+.demo-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+}
+
+.demo-modal-content {
+  background: #2a2a2a;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  max-width: 95%;
+  max-height: 95%;
+  width: 1400px;
+  height: 900px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.demo-modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #444;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.demo-modal-header h2 {
+  color: #ffffff;
+  font-size: 20px;
+  margin: 0;
+}
+
+.close-modal {
+  background: transparent;
+  border: none;
+  color: #b0b0b0;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-modal:hover {
+  color: #ffffff;
+}
+
+.demo-modal-body {
+  flex: 1;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.demo-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #fafafa;
+  border-radius: 2px;
+}
+
+/* ========================================================================
+   RT CROSS DEMO STYLES
+   ======================================================================== */
+
+.cross-panel {
+  position: absolute;
+  background: rgba(26, 0, 26, 0.95);
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #cc00cc;
+  box-shadow: 0 2px 8px rgba(255, 0, 255, 0.3);
+  color: #ffffff;
+  font-family: "Courier New", monospace;
+}
+
+.cross-formula-panel {
+  top: 50px;
+  right: 10px;
+  width: 280px;
+  font-size: 14px;
+}
+
+.cross-identity-bar {
+  bottom: 50px;
+  left: 10px;
+  right: 10px;
+  padding: 6px 10px;
+}
+
+.cross-section-divider {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #440044;
+}
+
+.cross-section-title {
+  color: #cc00cc;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.cross-section-content {
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+.cross-color-x {
+  color: #ff6666;
+}
+
+.cross-color-y {
+  color: #66ff66;
+}
+
+.cross-color-cross {
+  color: #00b4ff;
+  font-weight: bold;
+}
+
+.cross-color-spread {
+  color: #ff6600;
+  font-weight: bold;
+}
+
+.cross-color-success {
+  color: #00ff88;
+  font-weight: bold;
+}
+
+.cross-color-error {
+  color: #ff4444;
+  font-weight: bold;
+}
+
+.cross-text-muted {
+  color: #888;
+  font-size: 11px;
+}
+
+.cross-text-submuted {
+  color: #666;
+  font-size: 10px;
+}
+
+.cross-text-small {
+  font-size: 10px;
+  color: #aaa;
+  line-height: 1.4;
+}
+
+.cross-highlight-box {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  font-size: 11px;
+  line-height: 1.4;
+  border-left: 2px solid #cc00cc;
+}
+
+.cross-principle-footer {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #440044;
+  font-size: 10px;
+  color: #aaa;
+  line-height: 1.4;
+}
+
+.cross-identity-bar-content {
+  display: flex;
+  height: 12px;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 0 4px rgba(255, 0, 255, 0.3);
+}
+
+.cross-identity-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cross-identity-label {
+  font-size: 9px;
+  color: white;
+  font-weight: bold;
+  font-family: "Courier New", monospace;
+}
+
+.cross-close-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+  transition: color 0.2s;
+  z-index: 10;
+}
+
+/* ========================================================================
+   GRAVITY NUMBERLINE DEMO
+   ======================================================================== */
+
+.gravity-panel {
+  position: absolute;
+  background: rgba(0, 26, 26, 0.95);
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #00cccc;
+  box-shadow: 0 2px 8px rgba(0, 204, 204, 0.3);
+  color: #ffffff;
+  font-family: "Courier New", monospace;
+}
+
+.gravity-formula-panel {
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  font-size: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.gravity-formula-panel .gravity-section-divider {
+  flex: 1 1 0;
+  min-width: 120px;
+  margin-bottom: 0;
+  padding: 4px 8px;
+  border-bottom: none;
+  border-right: 1px solid #004444;
+}
+
+.gravity-formula-panel .gravity-section-divider:last-child {
+  border-right: none;
+}
+
+.gravity-section-divider {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #004444;
+}
+
+.gravity-section-title {
+  color: #00cccc;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.gravity-section-content {
+  font-size: 13px;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+.gravity-color-time {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.gravity-color-position {
+  color: #ff6644;
+  font-weight: bold;
+}
+
+.gravity-color-velocity {
+  color: #ffaa00;
+  font-weight: bold;
+}
+
+.gravity-text-muted {
+  color: #888;
+  font-size: 12px;
+}
+
+.gravity-text-submuted {
+  color: #666;
+  font-size: 11px;
+}
+
+/* ========================================================================
+   COLOR THEORY MODAL
+   ======================================================================== */
+
+/* Color theory modal overlay - semi-transparent to see scene underneath */
+#color-theory-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+}
+
+#color-theory-modal.hidden {
+  display: none;
+}
+
+.color-theory-modal-content {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  max-width: 1200px;
+  max-height: 85vh;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.color-theory-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.color-theory-modal-body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+.color-theory-modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #444;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: #2a2a2a;
+  z-index: 10;
+}
+
+.color-theory-modal-header h2 {
+  color: #00b4ff;
+  font-size: 20px;
+  margin: 0;
+}
+
+.color-theory-modal-subtitle {
+  text-align: center;
+  color: #888;
+  font-size: 13px;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.color-theory-modal-body {
+  padding: 20px;
+}
+
+/* Info box at top of modal */
+.color-info-box {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.color-info-box strong {
+  color: #00b4ff;
+}
+
+/* Global controls section */
+.color-global-controls {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.color-global-controls h3 {
+  color: #00b4ff;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+/* Color sections (Platonic, Dual, Archimedean) */
+.color-section {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.color-section h3 {
+  color: #00b4ff;
+  font-size: 16px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 8px;
+}
+
+/* Multi-column grid for sections - fixed 3 columns */
+#color-theory-sections {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto auto;
+  gap: 15px;
+  align-items: start;
+}
+
+/* Explicit column placement for color sections */
+/* Column 1: Platonic Solids (spans both rows) */
+#color-theory-sections .color-section:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+
+/* Column 2: Space-Filling & Radial Matrices (spans both rows) */
+#color-theory-sections .color-section:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1 / 3;
+}
+
+/* Column 3, Row 1: Dual Polyhedra */
+#color-theory-sections .color-section:nth-child(3) {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+/* Column 3, Row 2: Environment */
+#color-theory-sections .color-section:nth-child(4) {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+/* Compact color item (no large swatch, just picker + label) */
+.color-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  margin-bottom: 4px;
+  background: #222;
+  border-radius: 4px;
+  border: 1px solid #333;
+  transition: border-color 0.2s;
+}
+
+.color-item:hover {
+  border-color: #555;
+}
+
+/* Color picker button (clickable square) */
+.color-picker-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  border: 2px solid #555;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color 0.2s,
+    transform 0.1s;
+}
+
+.color-picker-btn:hover {
+  border-color: #00b4ff;
+  transform: scale(1.05);
+}
+
+.color-picker-btn input[type="color"] {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+}
+
+/* Color info (label + hex) */
+.color-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.color-item-label {
+  font-size: 13px;
+  color: #e0e0e0;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.color-item-hex {
+  font-size: 11px;
+  color: #888;
+  font-family: "Monaco", "Courier New", monospace;
+}
+
+/* Hex input field */
+.color-hex-input {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #00b4ff;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-family: "Monaco", "Courier New", monospace;
+  border-radius: 3px;
+}
+
+.color-hex-input:focus {
+  outline: none;
+  border-color: #00b4ff;
+}
+
+/* LEGACY STYLES (kept for backward compatibility if needed) */
+.color-polyhedron-group {
+  margin-bottom: 15px;
+}
+
+.color-polyhedron-name {
+  font-size: 14px;
+  color: #e0e0e0;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.color-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.color-swatch-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* HIDDEN: Large color swatches removed for compact design */
+.color-swatch {
+  display: none;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.color-swatch:hover {
+  border-color: #00b4ff;
+  transform: scale(1.02);
+}
+
+/* Color label (type + hex value) */
+.color-label {
+  font-size: 11px;
+  color: #b0b0b0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.color-label .type {
+  font-weight: 600;
+  color: #00b4ff;
+}
+
+.color-label .value {
+  font-family: "Courier New", monospace;
+  color: #888;
+  font-size: 10px;
+}
+
+/* Color input group (picker button + hex input) */
+.color-input-group {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.color-input {
+  flex: 1;
+  padding: 4px 6px;
+  background: #0a0a0a;
+  border: 1px solid #555;
+  color: #e0e0e0;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: "Courier New", monospace;
+}
+
+.color-input:focus {
+  outline: none;
+  border-color: #00b4ff;
+}
+
+/* Color picker button (macOS native picker) */
+.color-picker-btn {
+  width: 40px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid #555;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+  background: #2a2a2a;
+}
+
+.color-picker-btn:hover {
+  border-color: #00b4ff;
+}
+
+.color-picker-btn input[type="color"] {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: calc(100% + 10px);
+  height: calc(100% + 10px);
+  border: none;
+  cursor: pointer;
+  opacity: 1;
+}
+
+/* Brightness comparison bars (OLD vs NEW) */
+.brightness-comparison {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px;
+  background: #0a0a0a;
+  border-radius: 4px;
+}
+
+.brightness-swatch {
+  flex: 1;
+  height: 60px;
+  border-radius: 3px;
+  border: 1px solid #444;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 5px;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Export section */
+.color-export-section {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.color-export-section h3 {
+  color: #00b4ff;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.color-code-output {
+  background: #0a0a0a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 15px;
+  margin-top: 15px;
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  color: #00ff88;
+  text-align: left;
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+/* ========================================================================
+   RIGHT-CLICK CONTEXT MENU
+   ======================================================================== */
+
+.context-menu {
+  position: fixed;
+  background: rgba(42, 42, 42, 0.95);
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 8px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  backdrop-filter: blur(8px);
+}
+
+.context-menu.hidden {
+  display: none;
+}
+
+.context-menu-header {
+  padding: 6px 12px 8px;
+  border-bottom: 1px solid #444;
+  margin-bottom: 6px;
+}
+
+#context-menu-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00b4ff;
+}
+
+.context-menu-section {
+  padding: 4px 10px;
+}
+
+.context-menu-label {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.context-menu-btn-group {
+  display: flex;
+  gap: 4px;
+}
+
+/* HiFi Style Context Buttons */
+.context-btn {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--hifi-text-muted, #b0b0b0);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  border: none;
+  border-radius: var(--hifi-radius-sm, 3px);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  text-align: center;
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.context-btn:hover {
+  color: var(--hifi-text, #e0e0e0);
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+/* Active state: pressed/inset with blue accent */
+.context-btn.active {
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  color: var(--hifi-accent, #00b4ff);
+}
+
+/* Object snap toggles: orange accent when active */
+.context-btn.toggle.active {
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(255, 153, 68, 0.3);
+  color: #ff9944;
+}
+
+/* Action button (NOW/Deposit) - HiFi with blue accent */
+.context-btn.action-btn {
+  width: 100%;
+  font-weight: 600;
+  color: var(--hifi-accent, #00b4ff);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.context-btn.action-btn:hover {
+  color: #5cb8ff;
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+.context-btn.action-btn:active {
+  color: #7df9ff;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+/* Danger button (Delete) - HiFi with blue accent (same as action per design system) */
+.context-btn.danger-btn {
+  width: 100%;
+  font-weight: 500;
+  color: var(--hifi-accent, #00b4ff);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -2px -2px 4px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.context-btn.danger-btn:hover {
+  color: #5cb8ff;
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+.context-btn.danger-btn:active {
+  color: #7df9ff;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.context-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.context-menu-divider {
+  height: 1px;
+  background: #444;
+  margin: 6px 10px;
+}
+
+.btn-icon {
+  margin-right: 4px;
+}
+
+/* ========================================================================
+   BOTTOM COORDINATES PANEL
+   ======================================================================== */
+
+#coordinates-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(42, 42, 42, 0.95);
+  border-top: 1px solid #444;
+  padding: 8px 15px;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  backdrop-filter: blur(4px);
+  z-index: 1000; /* Above controls panel */
+}
+
+.coords-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.coords-group-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.coords-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Compact coordinate inputs for bottom panel */
+#coordinates-panel .coord-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+
+#coordinates-panel .coord-input {
+  width: 70px;
+  padding: 4px 6px 4px 22px !important;
+  font-size: 11px;
+}
+
+/* Quadray inputs need extra width for 3-char labels (QW:, QX:, QY:, QZ:) */
+#coordinates-panel .coord-input.axis-qw,
+#coordinates-panel .coord-input.axis-qx,
+#coordinates-panel .coord-input.axis-qy,
+#coordinates-panel .coord-input.axis-qz {
+  width: 78px;
+  padding-left: 30px !important;
+}
+
+#coordinates-panel .label-axis {
+  position: absolute;
+  left: 6px;
+  font-size: 10px;
+}
+
+.coords-divider {
+  width: 1px;
+  height: 50px;
+  background: #444;
+  align-self: center;
+}
+
+/* Coordinate mode row (buttons + scale input) */
+.coords-mode-row {
+  justify-content: flex-start;
+  gap: 8px;
+  padding-left: 20px; /* Align with inputs above (after icon) */
+}
+
+/* Coordinate mode toggle group (Absolute/Relative/Group) */
+.coords-mode-group {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-self: center;
+}
+
+.coords-mode-group .toggle-btn {
+  font-size: 10px;
+  padding: 6px 8px;
+  min-width: auto;
+}
+
+/* Disabled state for Group Centre button (requires 2+ selection) */
+.coords-mode-group .toggle-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Scale input styling */
+.scale-container {
+  margin-left: 8px;
+}
+
+.label-axis-scale {
+  color: #888; /* Neutral gray for scale */
+}
+
+#coordinates-panel .coord-input.axis-scale {
+  border-left: 2px solid #888;
+  width: 90px;
+  padding-left: 38px !important; /* Room for "Scale:" label (6 chars) */
+}
+
+.coords-unit-label {
+  font-size: 11px;
+  color: #666;
+  width: 58px;
+  min-width: 58px;
+  text-align: left;
+}
+
+/* Coordinate panel icons */
+.coords-icon {
+  font-size: 16px;
+  color: var(--hifi-accent, #00b4ff);
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Placeholder icon for alignment (invisible but takes space) */
+.coords-icon-placeholder {
+  visibility: hidden;
+}
+
+/* ==========================================================================
+   HiFi DESIGN SYSTEM
+   1970s High Fidelity Stereo inspired UI components
+   ========================================================================== */
+
+:root {
+  /* Base colors */
+  --hifi-bg: #2a2a2a;
+  --hifi-bg-dark: #1a1a1a;
+  --hifi-bg-light: #353535;
+
+  /* Shadow colors for HiFi effect */
+  --hifi-shadow-dark: rgba(0, 0, 0, 0.5);
+  --hifi-shadow-light: rgba(255, 255, 255, 0.07);
+
+  /* Accent colors */
+  --hifi-accent: #00b4ff;
+  --hifi-accent-glow: #7df9ff;
+
+  /* Text colors */
+  --hifi-text: #e0e0e0;
+  --hifi-text-muted: #b0b0b0;
+  --hifi-text-dim: #888;
+
+  /* Border radii */
+  --hifi-radius-sm: 3px;
+  --hifi-radius-md: 4px;
+
+  /* Transitions */
+  --hifi-transition: 0.15s ease-out;
+}
+
+/* ==========================================================================
+   A) SLIDERS - HiFi Range Inputs
+   ========================================================================== */
+
+.hifi-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.hifi-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--hifi-bg-dark);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light);
+  cursor: pointer;
+  outline: none;
+}
+
+.hifi-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #303030, #262626);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all var(--hifi-transition);
+  border: none;
+}
+
+.hifi-slider::-webkit-slider-thumb:hover {
+  background: linear-gradient(145deg, #383838, #2a2a2a);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.04);
+}
+
+.hifi-slider::-webkit-slider-thumb:active {
+  background: var(--hifi-bg-dark);
+  box-shadow:
+    inset 1px 1px 3px var(--hifi-shadow-dark),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.02);
+}
+
+.hifi-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #303030, #262626);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  border: none;
+}
+
+.hifi-slider-value {
+  min-width: 40px;
+  text-align: right;
+  font-size: 11px;
+  color: #00b4ff;
+}
+
+/* --------------------------------------------------------------------------
+   SLIDER VARIANT: Blue LED dot in thumb center (USE FOR ALL SLIDERS)
+   -------------------------------------------------------------------------- */
+
+.hifi-slider--led {
+  position: relative;
+}
+
+.hifi-slider--led::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 3px, transparent 3px),
+    linear-gradient(145deg, #383838, #2a2a2a);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    inset 0 0 6px rgba(0, 180, 255, 0.3);
+  cursor: pointer;
+  transition: all var(--hifi-transition);
+  border: none;
+}
+
+.hifi-slider--led::-webkit-slider-thumb:hover {
+  background:
+    radial-gradient(circle at center, #5cb8ff 0%, #5cb8ff 3px, transparent 3px),
+    linear-gradient(145deg, #404040, #303030);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.04),
+    inset 0 0 8px rgba(74, 158, 255, 0.4);
+}
+
+.hifi-slider--led::-webkit-slider-thumb:active {
+  background:
+    radial-gradient(circle at center, #7df9ff 0%, #7df9ff 3px, transparent 3px),
+    var(--hifi-bg-dark);
+  box-shadow:
+    inset 1px 1px 3px var(--hifi-shadow-dark),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.02),
+    0 0 8px rgba(125, 249, 255, 0.5);
+}
+
+.hifi-slider--led::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 3px, transparent 3px),
+    linear-gradient(145deg, #383838, #2a2a2a);
+  box-shadow:
+    2px 2px 5px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    inset 0 0 6px rgba(0, 180, 255, 0.3);
+  cursor: pointer;
+  border: none;
+}
+
+/* ==========================================================================
+   B) PUSH BUTTONS - HiFi Buttons
+   ========================================================================== */
+
+.hifi-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--hifi-text-muted);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  border: none;
+  border-radius: var(--hifi-radius-md);
+  cursor: pointer;
+  outline: none;
+  transition: all var(--hifi-transition);
+  box-shadow:
+    3px 3px 6px var(--hifi-shadow-dark),
+    -2px -2px 4px var(--hifi-shadow-light);
+}
+
+.hifi-btn:hover {
+  color: var(--hifi-text);
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+.hifi-btn:active,
+.hifi-btn.active {
+  background: var(--hifi-bg-dark);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light);
+  color: var(--hifi-accent);
+}
+
+/* Small button variant */
+.hifi-btn--sm {
+  padding: 5px 8px;
+  font-size: 10px;
+  border-radius: var(--hifi-radius-sm);
+}
+
+/* Action button - Classic Blue LED style */
+.hifi-btn--action {
+  color: #00b4ff;
+}
+
+.hifi-btn--action:hover {
+  color: #5cb8ff;
+}
+
+.hifi-btn--action:active,
+.hifi-btn--action.active {
+  color: #7df9ff;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+}
+
+/* Danger button - Classic Blue LED style (same as action) */
+.hifi-btn--danger {
+  color: #00b4ff;
+}
+
+.hifi-btn--danger:hover {
+  color: #5cb8ff;
+}
+
+.hifi-btn--danger:active,
+.hifi-btn--danger.active {
+  color: #7df9ff;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.6);
+}
+
+/* Button group */
+.hifi-btn-group {
+  display: flex;
+  gap: 5px;
+}
+
+.hifi-btn-group .hifi-btn {
+  flex: 1;
+}
+
+/* ==========================================================================
+   C) TOGGLES - HiFi On/Off Switches
+   ========================================================================== */
+
+.hifi-toggle {
+  position: relative;
+  width: 36px;
+  height: 18px;
+  background: var(--hifi-bg-dark);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all var(--hifi-transition);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light);
+  flex-shrink: 0;
+}
+
+.hifi-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(145deg, #505050, #404040);
+  border-radius: 50%;
+  transition: all 0.2s ease-out;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+}
+
+/* Active state: subtle accent border on track */
+.hifi-toggle.active {
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+}
+
+.hifi-toggle.active .hifi-toggle-thumb {
+  left: 20px;
+  background:
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
+    linear-gradient(145deg, #555555, #454545);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    0 0 6px rgba(0, 180, 255, 0.5);
+}
+
+/* Toggle with label */
+.hifi-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--hifi-text);
+}
+
+.hifi-toggle-label:hover .hifi-toggle-thumb {
+  background: linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when active - keep the LED dot */
+.hifi-toggle-label:hover .hifi-toggle.active .hifi-toggle-thumb {
+  background:
+    radial-gradient(circle at center, #00b4ff 0%, #00b4ff 2px, transparent 2px),
+    linear-gradient(145deg, #585858, #484848);
+}
+
+/* Small toggle (USE FOR ALL FORM TOGGLES) */
+.hifi-toggle--sm {
+  width: 28px;
+  height: 14px;
+  border-radius: 7px;
+}
+
+.hifi-toggle--sm .hifi-toggle-thumb {
+  width: 10px;
+  height: 10px;
+  top: 2px;
+  left: 2px;
+}
+
+.hifi-toggle--sm.active .hifi-toggle-thumb {
+  left: 16px;
+}
+
+/* ==========================================================================
+   D) DROPDOWN TOGGLES - Vertical HiFi Toggle for Section Expand/Collapse
+   ========================================================================== */
+
+.hifi-dropdown-toggle {
+  position: relative;
+  width: 14px;
+  height: 28px;
+  background: var(--hifi-bg-dark);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all var(--hifi-transition);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light);
+  flex-shrink: 0;
+}
+
+.hifi-dropdown-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(145deg, #505050, #404040);
+  border-radius: 50%;
+  transition: all 0.2s ease-out;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03);
+}
+
+/* Expanded state: thumb at bottom, accent glow */
+.hifi-dropdown-toggle.expanded {
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark),
+    inset -1px -1px 3px var(--hifi-shadow-light),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+}
+
+.hifi-dropdown-toggle.expanded .hifi-dropdown-toggle-thumb {
+  top: 16px;
+  background:
+    radial-gradient(
+      circle at center,
+      #00b4ff 0%,
+      #00b4ff 1.5px,
+      transparent 1.5px
+    ),
+    linear-gradient(145deg, #555555, #454545);
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark),
+    -1px -1px 2px rgba(255, 255, 255, 0.03),
+    0 0 6px rgba(0, 180, 255, 0.5);
+}
+
+.hifi-dropdown-toggle:hover .hifi-dropdown-toggle-thumb {
+  background: linear-gradient(145deg, #585858, #484848);
+}
+
+/* Hover when expanded - keep the LED dot */
+.hifi-dropdown-toggle.expanded:hover .hifi-dropdown-toggle-thumb {
+  background:
+    radial-gradient(
+      circle at center,
+      #00b4ff 0%,
+      #00b4ff 1.5px,
+      transparent 1.5px
+    ),
+    linear-gradient(145deg, #585858, #484848);
+}
+
+/* Small dropdown toggle (for nested options) */
+.hifi-dropdown-toggle--sm {
+  width: 10px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.hifi-dropdown-toggle--sm .hifi-dropdown-toggle-thumb {
+  width: 6px;
+  height: 6px;
+  top: 2px;
+  left: 2px;
+}
+
+.hifi-dropdown-toggle--sm.expanded .hifi-dropdown-toggle-thumb {
+  top: 12px;
+}
+
+/* ========================================================================
+   VIEWS TABLE (SVG View Manager)
+   ======================================================================== */
+
+/* Table header sortable columns */
+.views-table-header span {
+  transition: color 0.15s;
+}
+
+.views-table-header span:hover {
+  color: #00b4ff;
+}
+
+/* View row styling */
+.view-row {
+  transition: background 0.15s;
+}
+
+.view-row:hover {
+  background: rgba(0, 180, 255, 0.1);
+}
+
+.view-row.active {
+  background: rgba(0, 180, 255, 0.2);
+  border-left: 2px solid #00b4ff;
+  padding-left: 6px !important;
+}
+
+/* Row action buttons */
+.view-actions button {
+  background: transparent;
+  border: 1px solid #555;
+  color: #888;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all 0.15s;
+}
+
+.view-actions button:hover {
+  background: #444;
+  color: #fff;
+  border-color: #00b4ff;
+}
+
+.view-actions .view-timing-btn {
+  font-size: 9px;
+  color: #00b4ff;
+  border-color: #00b4ff44;
+}
+
+.view-actions .view-timing-btn:hover {
+  background: rgba(0, 180, 255, 0.15);
+  border-color: #00b4ff;
+}
+
+.view-actions .view-delete-btn:hover {
+  background: #442222;
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+/* Empty state */
+.views-empty-state {
+  color: #666;
+  font-style: italic;
+}
+
+/* View name input styling */
+#viewNameInput::placeholder {
+  color: #666;
+  font-style: italic;
+}
+
+#viewNameInput:focus {
+  outline: none;
+  border-color: #00b4ff;
+}
+
+/* ==========================================================================
+   RADIO BUTTONS - HiFi Style
+   ========================================================================== */
+
+input[type="radio"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  margin-right: 6px;
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  transition: all 0.15s ease-out;
+}
+
+input[type="radio"]:checked {
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07)),
+    0 0 0 1px rgba(0, 180, 255, 0.3);
+}
+
+input[type="radio"]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #505050;
+  transition: all 0.15s ease-out;
+}
+
+input[type="radio"]:checked::before {
+  background: #00b4ff;
+  box-shadow: 0 0 6px rgba(0, 180, 255, 0.6);
+}
+
+input[type="radio"]:hover::before {
+  background: #606060;
+}
+
+input[type="radio"]:checked:hover::before {
+  background: #5cb8ff;
+}
+
+/* ==========================================================================
+   NUMERIC/TEXT INPUTS - HiFi Style
+   ========================================================================== */
+
+input[type="number"],
+input[type="text"] {
+  background: var(--hifi-bg-dark, #1a1a1a);
+  border: 1px solid #444;
+  color: #00b4ff;
+  border-radius: var(--hifi-radius-sm, 3px);
+  padding: 6px 8px;
+  font-size: 12px;
+  box-shadow:
+    inset 1px 1px 3px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.3)),
+    inset -1px -1px 2px var(--hifi-shadow-light, rgba(255, 255, 255, 0.05));
+  transition: border-color 0.15s ease-out;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus {
+  outline: none;
+  border-color: #00b4ff;
+}
+
+input[type="number"]::placeholder,
+input[type="text"]::placeholder {
+  color: #666;
+}
+
+/* Remove spinner arrows from number inputs for cleaner look */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ==========================================================================
+   REFRESH BUTTON - HiFi Momentary Action Button (Inline)
+   Compact button for refresh actions, sits beside toggles
+   ========================================================================== */
+
+/* Container for toggle + refresh button inline layout */
+.toggle-with-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Refresh button - compact inline action button */
+.refresh-btn {
+  width: 60px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--hifi-text-muted, #b0b0b0);
+  background: linear-gradient(145deg, #2f2f2f, #262626);
+  border: none;
+  border-radius: var(--hifi-radius-sm, 3px);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  white-space: nowrap;
+  box-shadow:
+    2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+}
+
+.refresh-btn:hover {
+  color: var(--hifi-accent, #00b4ff);
+  background: linear-gradient(145deg, #333333, #292929);
+}
+
+/* Pressed/active state - momentary detente */
+.refresh-btn:active {
+  color: #7df9ff;
+  background: var(--hifi-bg-dark, #1a1a1a);
+  box-shadow:
+    inset 2px 2px 4px var(--hifi-shadow-dark, rgba(0, 0, 0, 0.5)),
+    inset -1px -1px 3px var(--hifi-shadow-light, rgba(255, 255, 255, 0.07));
+  transform: translateY(1px);
+}
+
+/* ========================================================================
+   VIEW TABLE - Drag Reorder
+   ======================================================================== */
+
+.view-drag-handle {
+  flex: 0 0 14px;
+  cursor: grab;
+  color: #555;
+  font-size: 11px;
+  user-select: none;
+  line-height: 1;
+}
+
+.view-drag-handle:hover {
+  color: #888;
+}
+
+.view-row.dragging {
+  opacity: 0.4;
+}
+
+.view-row.drag-over {
+  border-top: 2px solid #00b4ff;
+}
+
+/* ========================================================================
+   ANIMATION - Play/Stop Icons
+   ======================================================================== */
+
+.anim-icon-stop {
+  color: #ff6b6b;
+  font-size: 14px;
+}
+
+.anim-icon-play {
+  color: #4caf50;
+  font-size: 14px;
+}

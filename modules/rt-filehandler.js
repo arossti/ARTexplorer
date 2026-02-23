@@ -1,0 +1,2107 @@
+/**
+ * rt-filehandler.js
+ * File Handler Module for ART Explorer
+ *
+ * Handles export/import of:
+ * - State persistence (.json) - Scene state, instances, environment
+ * - Geometry export (.gltf/.glb) - 3D model export for external applications
+ * - Auto-save to localStorage
+ * - Preset library system
+ *
+ * @module RTFileHandler
+ * @requires THREE.js
+ * @requires RTStateManager
+ */
+
+import { MetaLog } from "./rt-metalog.js";
+
+export const RTFileHandler = {
+  // ========================================================================
+  // CONFIGURATION
+  // ========================================================================
+
+  config: {
+    autoSaveEnabled: true,
+    autoSaveThreshold: 10, // Auto-save every N modifications
+    autoSaveKey: "art-explorer-autosave",
+    presetKeyPrefix: "art-explorer-preset-",
+    maxAutoSaveHistory: 5,
+  },
+
+  // ========================================================================
+  // STATE
+  // ========================================================================
+
+  state: {
+    lastSaveTimestamp: null,
+  },
+
+  // ========================================================================
+  // INITIALIZATION
+  // ========================================================================
+
+  /**
+   * Initialize File Handler
+   * @param {Object} stateManager - RTStateManager instance
+   * @param {THREE.Scene} scene - THREE.js scene
+   * @param {THREE.Camera} camera - THREE.js camera
+   */
+  init(stateManager, scene, camera) {
+    this.stateManager = stateManager;
+    this.scene = scene;
+    this.camera = camera;
+
+    // Register for state modification events if auto-save enabled
+    if (this.config.autoSaveEnabled) {
+      // Safari-safe: Check if onModification method exists before calling
+      if (typeof this.stateManager.onModification === "function") {
+        this.stateManager.onModification(
+          (_modCount, changesSinceSave, _action) => {
+            // Auto-save when threshold is reached
+            if (changesSinceSave >= this.config.autoSaveThreshold) {
+              this.autoSave();
+              console.log(
+                `💾 Auto-save triggered after ${changesSinceSave} changes`
+              );
+            }
+          }
+        );
+        MetaLog.log(
+          MetaLog.SUMMARY,
+          `💾 Auto-save enabled (every ${this.config.autoSaveThreshold} modifications)`
+        );
+      } else {
+        console.warn(
+          "⚠️ StateManager.onModification not available - auto-save disabled"
+        );
+      }
+    }
+
+    MetaLog.log(MetaLog.SUMMARY, "✅ RTFileHandler initialized");
+  },
+
+  // ========================================================================
+  // JSON STATE EXPORT/IMPORT
+  // ========================================================================
+
+  /**
+   * Export complete scene state to JSON
+   * Includes environment (camera, grids, UI) and instances
+   * @returns {Object} Complete state object
+   */
+  exportState() {
+    // Get camera state
+    const cameraState = {
+      position: {
+        x: this.camera.position.x,
+        y: this.camera.position.y,
+        z: this.camera.position.z,
+      },
+      rotation: {
+        x: this.camera.rotation.x,
+        y: this.camera.rotation.y,
+        z: this.camera.rotation.z,
+      },
+      zoom: this.camera.zoom || 1,
+    };
+
+    // Get grid states from UI
+    const quadrayVisible =
+      document.getElementById("quadray-checkbox")?.checked || false;
+    const cartesianVisible =
+      document.getElementById("cartesian-checkbox")?.checked || false;
+    const quadrayTess = parseInt(
+      document.getElementById("quadrayTessSlider")?.value || 12
+    );
+    const cartesianTess = parseInt(
+      document.getElementById("cartesianTessSlider")?.value || 10
+    );
+    // Grid mode (uniform vs polar) and polar-specific controls
+    const quadrayMode =
+      document.querySelector("[data-quadray-mode].active")?.dataset
+        .quadrayMode || "uniform";
+    const cartesianMode =
+      document.querySelector("[data-cartesian-mode].active")?.dataset
+        .cartesianMode || "uniform";
+    const nGon = parseInt(document.getElementById("nGonSlider")?.value || "64");
+    const showRadialLines =
+      document.getElementById("showRadialLines")?.checked ?? true;
+
+    // Get polyhedra checkbox states (forms visible at origin)
+    const polyhedraCheckboxes = {
+      // Primitives
+      showPoint: document.getElementById("showPoint")?.checked || false,
+      showLine: document.getElementById("showLine")?.checked || false,
+      showPolygon: document.getElementById("showPolygon")?.checked || false,
+      showPrism: document.getElementById("showPrism")?.checked || false,
+      showCone: document.getElementById("showCone")?.checked || false,
+      // Helices
+      showTetrahelix1:
+        document.getElementById("showTetrahelix1")?.checked || false,
+      showTetrahelix2:
+        document.getElementById("showTetrahelix2")?.checked || false,
+      // Regular polyhedra
+      showCube: document.getElementById("showCube")?.checked || false,
+      showTetrahedron:
+        document.getElementById("showTetrahedron")?.checked || false,
+      showDualTetrahedron:
+        document.getElementById("showDualTetrahedron")?.checked || false,
+      showOctahedron:
+        document.getElementById("showOctahedron")?.checked || false,
+      showIcosahedron:
+        document.getElementById("showIcosahedron")?.checked || false,
+      showDodecahedron:
+        document.getElementById("showDodecahedron")?.checked || false,
+      showDualIcosahedron:
+        document.getElementById("showDualIcosahedron")?.checked || false,
+      showCuboctahedron:
+        document.getElementById("showCuboctahedron")?.checked || false,
+      showRhombicDodecahedron:
+        document.getElementById("showRhombicDodecahedron")?.checked || false,
+      // Geodesic polyhedra
+      showGeodesicTetrahedron:
+        document.getElementById("showGeodesicTetrahedron")?.checked || false,
+      showGeodesicDualTetrahedron:
+        document.getElementById("showGeodesicDualTetrahedron")?.checked ||
+        false,
+      showGeodesicOctahedron:
+        document.getElementById("showGeodesicOctahedron")?.checked || false,
+      showGeodesicIcosahedron:
+        document.getElementById("showGeodesicIcosahedron")?.checked || false,
+      showGeodesicDualIcosahedron:
+        document.getElementById("showGeodesicDualIcosahedron")?.checked ||
+        false,
+      // Quadray polyhedra
+      showQuadrayTetrahedron:
+        document.getElementById("showQuadrayTetrahedron")?.checked || false,
+      showQuadrayTetraDeformed:
+        document.getElementById("showQuadrayTetraDeformed")?.checked || false,
+      showQuadrayCuboctahedron:
+        document.getElementById("showQuadrayCuboctahedron")?.checked || false,
+      showQuadrayOctahedron:
+        document.getElementById("showQuadrayOctahedron")?.checked || false,
+      showQuadrayTruncatedTet:
+        document.getElementById("showQuadrayTruncatedTet")?.checked || false,
+      // Thomson Polyhedra
+      showThomsonTetrahedron:
+        document.getElementById("showThomsonTetrahedron")?.checked || false,
+      showThomsonOctahedron:
+        document.getElementById("showThomsonOctahedron")?.checked || false,
+      // Planar matrices
+      showCubeMatrix:
+        document.getElementById("showCubeMatrix")?.checked || false,
+      showTetMatrix: document.getElementById("showTetMatrix")?.checked || false,
+      showOctaMatrix:
+        document.getElementById("showOctaMatrix")?.checked || false,
+      showCuboctahedronMatrix:
+        document.getElementById("showCuboctahedronMatrix")?.checked || false,
+      showRhombicDodecMatrix:
+        document.getElementById("showRhombicDodecMatrix")?.checked || false,
+      // Radial matrices
+      showRadialCubeMatrix:
+        document.getElementById("showRadialCubeMatrix")?.checked || false,
+      showRadialRhombicDodecMatrix:
+        document.getElementById("showRadialRhombicDodecMatrix")?.checked ||
+        false,
+      showRadialTetrahedronMatrix:
+        document.getElementById("showRadialTetrahedronMatrix")?.checked ||
+        false,
+      showRadialOctahedronMatrix:
+        document.getElementById("showRadialOctahedronMatrix")?.checked || false,
+      showRadialCuboctahedronMatrix:
+        document.getElementById("showRadialCuboctahedronMatrix")?.checked ||
+        false,
+      // Basis vectors
+      showCartesianBasis:
+        document.getElementById("showCartesianBasis")?.checked || false,
+      showQuadray: document.getElementById("showQuadray")?.checked || false,
+      // Penrose Tiling
+      showPenroseTiling:
+        document.getElementById("showPenroseTiling")?.checked || false,
+    };
+
+    // Get slider values
+    const sliderValues = {
+      // Scale sliders
+      scaleSlider: parseFloat(
+        document.getElementById("scaleSlider")?.value || "1"
+      ),
+      tetScaleSlider: parseFloat(
+        document.getElementById("tetScaleSlider")?.value || "1"
+      ),
+      opacitySlider: parseFloat(
+        document.getElementById("opacitySlider")?.value || "0.25"
+      ),
+      nodeOpacitySlider: parseFloat(
+        document.getElementById("nodeOpacitySlider")?.value || "0.25"
+      ),
+      // Line primitive parameters
+      lineQuadrance: parseFloat(
+        document.getElementById("lineQuadrance")?.value || "1"
+      ),
+      lineLength: parseFloat(
+        document.getElementById("lineLength")?.value || "1"
+      ),
+      lineWeight: parseInt(document.getElementById("lineWeight")?.value || "2"),
+      // Polygon primitive parameters
+      polygonSides: parseInt(
+        document.getElementById("polygonSides")?.value || "3"
+      ),
+      polygonQuadrance: parseFloat(
+        document.getElementById("polygonQuadrance")?.value || "1"
+      ),
+      polygonRadius: parseFloat(
+        document.getElementById("polygonRadius")?.value || "1"
+      ),
+      polygonEdgeWeight: parseInt(
+        document.getElementById("polygonEdgeWeight")?.value || "2"
+      ),
+      polygonShowFace:
+        document.getElementById("polygonShowFace")?.checked !== false,
+      // Prism primitive parameters
+      prismSides: parseInt(document.getElementById("prismSides")?.value || "6"),
+      prismBaseQuadrance: parseFloat(
+        document.getElementById("prismBaseQuadrance")?.value || "1"
+      ),
+      prismBaseRadius: parseFloat(
+        document.getElementById("prismBaseRadius")?.value || "1"
+      ),
+      prismHeightQuadrance: parseFloat(
+        document.getElementById("prismHeightQuadrance")?.value || "1"
+      ),
+      prismHeight: parseFloat(
+        document.getElementById("prismHeight")?.value || "1"
+      ),
+      prismShowFaces:
+        document.getElementById("prismShowFaces")?.checked !== false,
+      // Cone primitive parameters
+      coneSides: parseInt(document.getElementById("coneSides")?.value || "6"),
+      coneBaseQuadrance: parseFloat(
+        document.getElementById("coneBaseQuadrance")?.value || "1"
+      ),
+      coneBaseRadius: parseFloat(
+        document.getElementById("coneBaseRadius")?.value || "1"
+      ),
+      coneHeightQuadrance: parseFloat(
+        document.getElementById("coneHeightQuadrance")?.value || "1"
+      ),
+      coneHeight: parseFloat(
+        document.getElementById("coneHeight")?.value || "1"
+      ),
+      coneShowFaces:
+        document.getElementById("coneShowFaces")?.checked !== false,
+      // Tetrahelix 1 parameters (toroidal, left-handed) - uses Quadray axis notation
+      tetrahelix1Count: parseInt(
+        document.getElementById("tetrahelix1CountSlider")?.value || "10"
+      ),
+      tetrahelix1Axis:
+        document.querySelector('input[name="tetrahelix1Axis"]:checked')
+          ?.value || "QW",
+      // Tetrahelix 2 parameters (linear with multi-strand) - uses Quadray axis notation
+      tetrahelix2Count: parseInt(
+        document.getElementById("tetrahelix2CountSlider")?.value || "10"
+      ),
+      tetrahelix2Axis:
+        document.querySelector('input[name="tetrahelix2Axis"]:checked')
+          ?.value || "QW",
+      // Javelin model: independent + and - direction checkboxes
+      tetrahelix2DirPlus:
+        document.getElementById("tetrahelix2DirPlus")?.checked ?? true,
+      tetrahelix2DirMinus:
+        document.getElementById("tetrahelix2DirMinus")?.checked ?? false,
+      tetrahelix2Strands: parseInt(
+        document.querySelector('input[name="tetrahelix2Strands"]:checked')
+          ?.value || "1"
+      ),
+      tetrahelix2BondMode:
+        document.querySelector('input[name="tetrahelix2BondMode"]:checked')
+          ?.value || "zipped",
+      // Per-strand exit face selection (Quadray axis names)
+      tetrahelix2ExitQW: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitQW"]:checked')
+          ?.value || "0"
+      ),
+      tetrahelix2ExitQX: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitQX"]:checked')
+          ?.value || "0"
+      ),
+      tetrahelix2ExitQY: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitQY"]:checked')
+          ?.value || "0"
+      ),
+      tetrahelix2ExitQZ: parseInt(
+        document.querySelector('input[name="tetrahelix2ExitQZ"]:checked')
+          ?.value || "0"
+      ),
+      // Tetrahelix 3 parameters (octahedral seed) - individual strand checkboxes
+      tetrahelix3Count: parseInt(
+        document.getElementById("tetrahelix3CountSlider")?.value || "10"
+      ),
+      tetrahelix3StrandA:
+        document.getElementById("tetrahelix3StrandA")?.checked || false,
+      tetrahelix3StrandB:
+        document.getElementById("tetrahelix3StrandB")?.checked || false,
+      tetrahelix3StrandC:
+        document.getElementById("tetrahelix3StrandC")?.checked || false,
+      tetrahelix3StrandD:
+        document.getElementById("tetrahelix3StrandD")?.checked || false,
+      tetrahelix3StrandE:
+        document.getElementById("tetrahelix3StrandE")?.checked || false,
+      tetrahelix3StrandF:
+        document.getElementById("tetrahelix3StrandF")?.checked || false,
+      tetrahelix3StrandG:
+        document.getElementById("tetrahelix3StrandG")?.checked || false,
+      tetrahelix3StrandH:
+        document.getElementById("tetrahelix3StrandH")?.checked || false,
+      // Tetrahelix 3 chirality (checked = RH, unchecked = LH)
+      tetrahelix3ChiralA:
+        document.getElementById("tetrahelix3ChiralA")?.checked !== false,
+      tetrahelix3ChiralB:
+        document.getElementById("tetrahelix3ChiralB")?.checked !== false,
+      tetrahelix3ChiralC:
+        document.getElementById("tetrahelix3ChiralC")?.checked !== false,
+      tetrahelix3ChiralD:
+        document.getElementById("tetrahelix3ChiralD")?.checked !== false,
+      tetrahelix3ChiralE:
+        document.getElementById("tetrahelix3ChiralE")?.checked !== false,
+      tetrahelix3ChiralF:
+        document.getElementById("tetrahelix3ChiralF")?.checked !== false,
+      tetrahelix3ChiralG:
+        document.getElementById("tetrahelix3ChiralG")?.checked !== false,
+      tetrahelix3ChiralH:
+        document.getElementById("tetrahelix3ChiralH")?.checked !== false,
+      // Planar matrix size sliders
+      cubeMatrixSizeSlider: parseInt(
+        document.getElementById("cubeMatrixSizeSlider")?.value || "1"
+      ),
+      tetMatrixSizeSlider: parseInt(
+        document.getElementById("tetMatrixSizeSlider")?.value || "1"
+      ),
+      octaMatrixSizeSlider: parseInt(
+        document.getElementById("octaMatrixSizeSlider")?.value || "1"
+      ),
+      cuboctaMatrixSizeSlider: parseInt(
+        document.getElementById("cuboctaMatrixSizeSlider")?.value || "1"
+      ),
+      rhombicDodecMatrixSizeSlider: parseInt(
+        document.getElementById("rhombicDodecMatrixSizeSlider")?.value || "1"
+      ),
+      // Planar matrix 45° rotation toggles
+      cubeMatrixRotate45:
+        document.getElementById("cubeMatrixRotate45")?.checked || false,
+      tetMatrixRotate45:
+        document.getElementById("tetMatrixRotate45")?.checked || false,
+      octaMatrixRotate45:
+        document.getElementById("octaMatrixRotate45")?.checked || false,
+      cuboctaMatrixRotate45:
+        document.getElementById("cuboctaMatrixRotate45")?.checked || false,
+      rhombicDodecMatrixRotate45:
+        document.getElementById("rhombicDodecMatrixRotate45")?.checked || false,
+      // Radial matrix mode toggles (Space Filling / IVM)
+      radialCubeSpaceFill:
+        document.getElementById("radialCubeSpaceFill")?.checked ?? true,
+      radialTetIVMMode:
+        document.getElementById("radialTetIVMMode")?.checked || false,
+      radialOctIVMScale:
+        document.getElementById("radialOctIVMScale")?.checked || false,
+      // Radial matrix frequency sliders
+      radialCubeFreqSlider: parseInt(
+        document.getElementById("radialCubeFreqSlider")?.value || "1"
+      ),
+      radialRhombicDodecFreqSlider: parseInt(
+        document.getElementById("radialRhombicDodecFreqSlider")?.value || "1"
+      ),
+      radialTetFreqSlider: parseInt(
+        document.getElementById("radialTetFreqSlider")?.value || "1"
+      ),
+      radialOctFreqSlider: parseInt(
+        document.getElementById("radialOctFreqSlider")?.value || "1"
+      ),
+      radialVEFreqSlider: parseInt(
+        document.getElementById("radialVEFreqSlider")?.value || "1"
+      ),
+      // Geodesic frequency sliders
+      geodesicTetraFrequency: parseInt(
+        document.getElementById("geodesicTetraFrequency")?.value || "1"
+      ),
+      geodesicDualTetraFrequency: parseInt(
+        document.getElementById("geodesicDualTetraFrequency")?.value || "1"
+      ),
+      geodesicOctaFrequency: parseInt(
+        document.getElementById("geodesicOctaFrequency")?.value || "1"
+      ),
+      geodesicIcosaFrequency: parseInt(
+        document.getElementById("geodesicIcosaFrequency")?.value || "1"
+      ),
+      geodesicDualIcosaFrequency: parseInt(
+        document.getElementById("geodesicDualIcosaFrequency")?.value || "1"
+      ),
+      // Penrose Tiling parameters
+      penroseQuadrance: parseFloat(
+        document.getElementById("penroseQuadrance")?.value || "1"
+      ),
+      penroseEdgeWeight: parseInt(
+        document.getElementById("penroseEdgeWeight")?.value || "2"
+      ),
+      penroseShowFace:
+        document.getElementById("penroseShowFace")?.checked !== false,
+      penroseTileType:
+        document.querySelector('input[name="penroseTileType"]:checked')
+          ?.value || "thick",
+      // Thomson Polyhedra N-gon sliders
+      thomsonTetraNGon: parseInt(
+        document.getElementById("thomsonTetraNGon")?.value || "5"
+      ),
+      thomsonOctaNGon: parseInt(
+        document.getElementById("thomsonOctaNGon")?.value || "5"
+      ),
+      thomsonCubeNGon: parseInt(
+        document.getElementById("thomsonCubeNGon")?.value || "5"
+      ),
+      thomsonIcosaNGon: parseInt(
+        document.getElementById("thomsonIcosaNGon")?.value || "5"
+      ),
+    };
+
+    // Get geodesic projection radio states
+    const geodesicProjections = {
+      geodesicTetraProjection:
+        document.querySelector('input[name="geodesicTetraProjection"]:checked')
+          ?.value || "out",
+      geodesicDualTetraProjection:
+        document.querySelector(
+          'input[name="geodesicDualTetraProjection"]:checked'
+        )?.value || "out",
+      geodesicOctaProjection:
+        document.querySelector('input[name="geodesicOctaProjection"]:checked')
+          ?.value || "out",
+      geodesicIcosaProjection:
+        document.querySelector('input[name="geodesicIcosaProjection"]:checked')
+          ?.value || "out",
+      geodesicDualIcosaProjection:
+        document.querySelector(
+          'input[name="geodesicDualIcosaProjection"]:checked'
+        )?.value || "out",
+    };
+
+    // Get active form state (legacy, kept for backwards compatibility)
+    const formButtons = document.querySelectorAll(".form-btn");
+    const activeFormButton = Array.from(formButtons).find(btn =>
+      btn.classList.contains("active")
+    );
+    const activeForm = activeFormButton?.dataset.form || null;
+
+    // Get form visibility states (legacy)
+    const formStates = {};
+    formButtons.forEach(btn => {
+      const formType = btn.dataset.form;
+      if (formType) {
+        formStates[formType] = {
+          visible: btn.classList.contains("active"),
+          scale: 1.0, // Could be extended to track scale
+        };
+      }
+    });
+
+    // Build complete state object
+    const stateData = {
+      version: "1.0",
+      timestamp: new Date().toISOString(),
+      timestampMs: Date.now(),
+
+      environment: {
+        camera: cameraState,
+        grids: {
+          quadray: {
+            visible: quadrayVisible,
+            tessellation: quadrayTess,
+            mode: quadrayMode,
+          },
+          cartesian: {
+            visible: cartesianVisible,
+            tessellation: cartesianTess,
+            mode: cartesianMode,
+          },
+          nGon: nGon,
+          showRadialLines: showRadialLines,
+        },
+        // Polyhedra checkbox states (forms at origin)
+        polyhedraCheckboxes: polyhedraCheckboxes,
+        // Slider values (scale, opacity, matrix sizes, frequencies)
+        sliderValues: sliderValues,
+        // Geodesic projection radio states (out/flat/in)
+        geodesicProjections: geodesicProjections,
+        // Legacy form states (kept for backwards compatibility)
+        forms: formStates,
+        activeForm: activeForm,
+        // Color palette and environment backgrounds
+        colorPalette: this.stateManager.getColorPalette(),
+        canvasBackground: this.stateManager.state.environment.canvasBackground,
+        uiBackground: this.stateManager.state.environment.uiBackground,
+        // Projection state (from RTProjections if available)
+        projection: window.RTProjections
+          ? {
+              enabled: window.RTProjections.state.enabled,
+              basis: window.RTProjections.state.basis,
+              axis: window.RTProjections.state.axis,
+              distance: window.RTProjections.state.distance,
+              showRays: window.RTProjections.state.showRays,
+              showInterior: window.RTProjections.state.showInterior,
+              showIdealPolygon: window.RTProjections.state.showIdealPolygon,
+              customSpreads: window.RTProjections.state.customSpreads || null,
+              presetName: window.RTProjections.state.presetName || null,
+              targetPolyhedronType:
+                window.RTProjections.state.targetPolyhedronType || null,
+            }
+          : this.stateManager.state.environment.projection,
+      },
+
+      instances: this.stateManager.state.instances.map(instance => ({
+        id: instance.id,
+        timestamp: instance.timestamp,
+        type: instance.type,
+        parameters: instance.parameters, // Geodesic frequency/projection, Quadray wxyz, etc.
+        transform: instance.transform,
+        appearance: instance.appearance,
+        metadata: instance.metadata,
+      })),
+
+      metadata: {
+        depositedCount: this.stateManager.state.depositedCount,
+        instanceCount: this.stateManager.state.instances.length,
+      },
+
+      // Include saved views from RTViewManager (if available)
+      views: window.RTViewManager?.state?.views || [],
+    };
+
+    return stateData;
+  },
+
+  /**
+   * Export state to JSON file with download
+   * @param {string} filename - Optional custom filename
+   */
+  exportStateToFile(filename) {
+    const stateData = this.exportState();
+    const jsonString = JSON.stringify(stateData, null, 2);
+
+    // Generate filename with timestamp
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .slice(0, 19);
+    const finalFilename = filename || `art-scene-${timestamp}.json`;
+
+    // Create download
+    this.downloadFile(jsonString, finalFilename, "application/json");
+
+    // Mark state as saved (resets modification counter)
+    this.stateManager.markAsSaved();
+
+    console.log(`✅ State exported to ${finalFilename}`);
+    return stateData;
+  },
+
+  /**
+   * Import state from JSON object
+   * @param {Object} stateData - State object to import
+   * @returns {Promise<boolean>} Success status
+   */
+  async importState(stateData) {
+    try {
+      // Validate state data
+      if (!stateData || !stateData.version) {
+        throw new Error("Invalid state data: missing version");
+      }
+
+      if (stateData.version !== "1.0") {
+        console.warn(
+          `⚠️ State version mismatch: ${stateData.version} (expected 1.0)`
+        );
+      }
+
+      // Clear existing scene
+      this.stateManager.clearAll(this.scene);
+
+      // Restore camera
+      if (stateData.environment?.camera) {
+        const cam = stateData.environment.camera;
+        this.camera.position.set(
+          cam.position.x,
+          cam.position.y,
+          cam.position.z
+        );
+        if (cam.rotation) {
+          this.camera.rotation.set(
+            cam.rotation.x,
+            cam.rotation.y,
+            cam.rotation.z
+          );
+        }
+        if (cam.zoom) {
+          this.camera.zoom = cam.zoom;
+          this.camera.updateProjectionMatrix();
+        }
+      }
+
+      // Restore grid states
+      if (stateData.environment?.grids) {
+        const grids = stateData.environment.grids;
+
+        if (grids.quadray) {
+          const checkbox = document.getElementById("quadray-checkbox");
+          const slider = document.getElementById("quadrayTessSlider");
+          if (checkbox) checkbox.checked = grids.quadray.visible;
+          if (slider) slider.value = grids.quadray.tessellation;
+          // Restore grid mode (uniform/polar) button state
+          if (grids.quadray.mode) {
+            document.querySelectorAll("[data-quadray-mode]").forEach(btn => {
+              btn.classList.toggle(
+                "active",
+                btn.dataset.quadrayMode === grids.quadray.mode
+              );
+            });
+          }
+        }
+
+        if (grids.cartesian) {
+          const checkbox = document.getElementById("cartesian-checkbox");
+          const slider = document.getElementById("cartesianTessSlider");
+          if (checkbox) checkbox.checked = grids.cartesian.visible;
+          if (slider) slider.value = grids.cartesian.tessellation;
+          // Restore grid mode (uniform/polar) button state
+          if (grids.cartesian.mode) {
+            document.querySelectorAll("[data-cartesian-mode]").forEach(btn => {
+              btn.classList.toggle(
+                "active",
+                btn.dataset.cartesianMode === grids.cartesian.mode
+              );
+            });
+          }
+        }
+
+        // Restore N-gon slider and Radial Lines toggle (polar grid controls)
+        if (grids.nGon !== undefined) {
+          const slider = document.getElementById("nGonSlider");
+          const display = document.getElementById("nGonValue");
+          if (slider) slider.value = grids.nGon;
+          if (display) display.textContent = grids.nGon;
+        }
+        if (grids.showRadialLines !== undefined) {
+          const checkbox = document.getElementById("showRadialLines");
+          if (checkbox) checkbox.checked = grids.showRadialLines;
+        }
+
+        // Trigger grid rebuild
+        const rebuildEvent = new Event("change");
+        document
+          .getElementById("quadray-checkbox")
+          ?.dispatchEvent(rebuildEvent);
+        document
+          .getElementById("cartesian-checkbox")
+          ?.dispatchEvent(rebuildEvent);
+      }
+
+      // Restore slider values FIRST (before checkboxes, so geometry uses correct values)
+      if (stateData.environment?.sliderValues) {
+        const sliders = stateData.environment.sliderValues;
+
+        // Scale and opacity sliders
+        if (sliders.scaleSlider !== undefined) {
+          const el = document.getElementById("scaleSlider");
+          if (el) el.value = sliders.scaleSlider;
+        }
+        if (sliders.tetScaleSlider !== undefined) {
+          const el = document.getElementById("tetScaleSlider");
+          if (el) el.value = sliders.tetScaleSlider;
+        }
+        if (sliders.opacitySlider !== undefined) {
+          const el = document.getElementById("opacitySlider");
+          if (el) el.value = sliders.opacitySlider;
+        }
+        if (sliders.nodeOpacitySlider !== undefined) {
+          const el = document.getElementById("nodeOpacitySlider");
+          if (el) el.value = sliders.nodeOpacitySlider;
+        }
+        // Line primitive parameters
+        if (sliders.lineQuadrance !== undefined) {
+          const el = document.getElementById("lineQuadrance");
+          if (el) el.value = sliders.lineQuadrance;
+        }
+        if (sliders.lineLength !== undefined) {
+          const el = document.getElementById("lineLength");
+          if (el) el.value = sliders.lineLength;
+        }
+        if (sliders.lineWeight !== undefined) {
+          const el = document.getElementById("lineWeight");
+          const valEl = document.getElementById("lineWeightValue");
+          if (el) el.value = sliders.lineWeight;
+          if (valEl) valEl.textContent = sliders.lineWeight;
+        }
+        // Polygon primitive parameters
+        if (sliders.polygonSides !== undefined) {
+          const el = document.getElementById("polygonSides");
+          if (el) el.value = sliders.polygonSides;
+        }
+        if (sliders.polygonQuadrance !== undefined) {
+          const el = document.getElementById("polygonQuadrance");
+          if (el) el.value = sliders.polygonQuadrance;
+        }
+        if (sliders.polygonRadius !== undefined) {
+          const el = document.getElementById("polygonRadius");
+          if (el) el.value = sliders.polygonRadius;
+        }
+        if (sliders.polygonEdgeWeight !== undefined) {
+          const el = document.getElementById("polygonEdgeWeight");
+          const valEl = document.getElementById("polygonEdgeWeightValue");
+          if (el) el.value = sliders.polygonEdgeWeight;
+          if (valEl) valEl.textContent = sliders.polygonEdgeWeight;
+        }
+        if (sliders.polygonShowFace !== undefined) {
+          const el = document.getElementById("polygonShowFace");
+          if (el) el.checked = sliders.polygonShowFace;
+        }
+        // Prism primitive parameters
+        if (sliders.prismSides !== undefined) {
+          const el = document.getElementById("prismSides");
+          if (el) el.value = sliders.prismSides;
+        }
+        if (sliders.prismBaseQuadrance !== undefined) {
+          const el = document.getElementById("prismBaseQuadrance");
+          if (el) el.value = sliders.prismBaseQuadrance;
+        }
+        if (sliders.prismBaseRadius !== undefined) {
+          const el = document.getElementById("prismBaseRadius");
+          if (el) el.value = sliders.prismBaseRadius;
+        }
+        if (sliders.prismHeightQuadrance !== undefined) {
+          const el = document.getElementById("prismHeightQuadrance");
+          if (el) el.value = sliders.prismHeightQuadrance;
+        }
+        if (sliders.prismHeight !== undefined) {
+          const el = document.getElementById("prismHeight");
+          if (el) el.value = sliders.prismHeight;
+        }
+        if (sliders.prismShowFaces !== undefined) {
+          const el = document.getElementById("prismShowFaces");
+          if (el) el.checked = sliders.prismShowFaces;
+        }
+        // Cone primitive parameters
+        if (sliders.coneSides !== undefined) {
+          const el = document.getElementById("coneSides");
+          if (el) el.value = sliders.coneSides;
+        }
+        if (sliders.coneBaseQuadrance !== undefined) {
+          const el = document.getElementById("coneBaseQuadrance");
+          if (el) el.value = sliders.coneBaseQuadrance;
+        }
+        if (sliders.coneBaseRadius !== undefined) {
+          const el = document.getElementById("coneBaseRadius");
+          if (el) el.value = sliders.coneBaseRadius;
+        }
+        if (sliders.coneHeightQuadrance !== undefined) {
+          const el = document.getElementById("coneHeightQuadrance");
+          if (el) el.value = sliders.coneHeightQuadrance;
+        }
+        if (sliders.coneHeight !== undefined) {
+          const el = document.getElementById("coneHeight");
+          if (el) el.value = sliders.coneHeight;
+        }
+        if (sliders.coneShowFaces !== undefined) {
+          const el = document.getElementById("coneShowFaces");
+          if (el) el.checked = sliders.coneShowFaces;
+        }
+        // Tetrahelix 1 parameters - uses Quadray axis notation
+        if (sliders.tetrahelix1Count !== undefined) {
+          const slider = document.getElementById("tetrahelix1CountSlider");
+          const display = document.getElementById("tetrahelix1CountDisplay");
+          if (slider) slider.value = sliders.tetrahelix1Count;
+          if (display) display.textContent = sliders.tetrahelix1Count;
+        }
+        if (sliders.tetrahelix1Axis !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix1Axis"][value="${sliders.tetrahelix1Axis}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        // Tetrahelix 2 parameters - uses Quadray axis notation
+        if (sliders.tetrahelix2Count !== undefined) {
+          const slider = document.getElementById("tetrahelix2CountSlider");
+          const display = document.getElementById("tetrahelix2CountDisplay");
+          if (slider) slider.value = sliders.tetrahelix2Count;
+          if (display) display.textContent = sliders.tetrahelix2Count;
+        }
+        if (sliders.tetrahelix2Axis !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2Axis"][value="${sliders.tetrahelix2Axis}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        // Javelin model: independent + and - direction checkboxes
+        if (sliders.tetrahelix2DirPlus !== undefined) {
+          const checkbox = document.getElementById("tetrahelix2DirPlus");
+          if (checkbox) checkbox.checked = sliders.tetrahelix2DirPlus;
+        }
+        if (sliders.tetrahelix2DirMinus !== undefined) {
+          const checkbox = document.getElementById("tetrahelix2DirMinus");
+          if (checkbox) checkbox.checked = sliders.tetrahelix2DirMinus;
+        }
+        // Legacy: handle old tetrahelix2Direction radio format during import
+        if (
+          sliders.tetrahelix2Direction !== undefined &&
+          sliders.tetrahelix2DirPlus === undefined
+        ) {
+          const plusCheckbox = document.getElementById("tetrahelix2DirPlus");
+          const minusCheckbox = document.getElementById("tetrahelix2DirMinus");
+          if (plusCheckbox)
+            plusCheckbox.checked = sliders.tetrahelix2Direction === "+";
+          if (minusCheckbox)
+            minusCheckbox.checked = sliders.tetrahelix2Direction === "-";
+        }
+        if (sliders.tetrahelix2Strands !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2Strands"][value="${sliders.tetrahelix2Strands}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix2BondMode !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2BondMode"][value="${sliders.tetrahelix2BondMode}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        // Per-strand exit face selection (Quadray axis names)
+        if (sliders.tetrahelix2ExitQW !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2ExitQW"][value="${sliders.tetrahelix2ExitQW}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix2ExitQX !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2ExitQX"][value="${sliders.tetrahelix2ExitQX}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix2ExitQY !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2ExitQY"][value="${sliders.tetrahelix2ExitQY}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        if (sliders.tetrahelix2ExitQZ !== undefined) {
+          const radio = document.querySelector(
+            `input[name="tetrahelix2ExitQZ"][value="${sliders.tetrahelix2ExitQZ}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+        // Tetrahelix 3 parameters (count slider + strand checkboxes A-H)
+        if (sliders.tetrahelix3Count !== undefined) {
+          const slider = document.getElementById("tetrahelix3CountSlider");
+          const display = document.getElementById("tetrahelix3CountDisplay");
+          if (slider) slider.value = sliders.tetrahelix3Count;
+          if (display) display.textContent = sliders.tetrahelix3Count;
+        }
+        // Restore individual strand checkboxes and chirality checkboxes
+        const strandLabels = ["A", "B", "C", "D", "E", "F", "G", "H"];
+        for (const label of strandLabels) {
+          // Strand enabled checkbox
+          const strandKey = `tetrahelix3Strand${label}`;
+          if (sliders[strandKey] !== undefined) {
+            const checkbox = document.getElementById(strandKey);
+            if (checkbox) checkbox.checked = sliders[strandKey];
+          }
+          // Chirality checkbox
+          const chiralKey = `tetrahelix3Chiral${label}`;
+          if (sliders[chiralKey] !== undefined) {
+            const checkbox = document.getElementById(chiralKey);
+            if (checkbox) checkbox.checked = sliders[chiralKey];
+          }
+        }
+        // Planar matrix size sliders (set value + update N×N display text)
+        const matrixSizeSliders = [
+          ["cubeMatrixSizeSlider", "cubeMatrixSizeValue"],
+          ["tetMatrixSizeSlider", "tetMatrixSizeValue"],
+          ["octaMatrixSizeSlider", "octaMatrixSizeValue"],
+          ["cuboctaMatrixSizeSlider", "cuboctaMatrixSizeValue"],
+          ["rhombicDodecMatrixSizeSlider", "rhombicDodecMatrixSizeValue"],
+        ];
+        for (const [sliderId, displayId] of matrixSizeSliders) {
+          if (sliders[sliderId] !== undefined) {
+            const el = document.getElementById(sliderId);
+            if (el) el.value = sliders[sliderId];
+            const display = document.getElementById(displayId);
+            if (display) {
+              const v = sliders[sliderId];
+              display.textContent = `${v}×${v}`;
+            }
+          }
+        }
+        // Planar matrix 45° rotation toggles
+        const rotate45Ids = [
+          "cubeMatrixRotate45",
+          "tetMatrixRotate45",
+          "octaMatrixRotate45",
+          "cuboctaMatrixRotate45",
+          "rhombicDodecMatrixRotate45",
+        ];
+        for (const id of rotate45Ids) {
+          if (sliders[id] !== undefined) {
+            const el = document.getElementById(id);
+            if (el) el.checked = sliders[id];
+          }
+        }
+        // Radial matrix mode toggles (Space Filling / IVM)
+        const radialModeIds = [
+          "radialCubeSpaceFill",
+          "radialTetIVMMode",
+          "radialOctIVMScale",
+        ];
+        for (const id of radialModeIds) {
+          if (sliders[id] !== undefined) {
+            const el = document.getElementById(id);
+            if (el) el.checked = sliders[id];
+          }
+        }
+        // Radial matrix frequency sliders (set value + update Fn display text)
+        const radialFreqSliders = [
+          [
+            "radialCubeFreqSlider",
+            "radialCubeFreqDisplay",
+            v => `F${2 * v - 1}`,
+          ],
+          [
+            "radialRhombicDodecFreqSlider",
+            "radialRhombicDodecFreqDisplay",
+            v => `F${2 * v - 1}`,
+          ],
+          ["radialTetFreqSlider", "radialTetFreqDisplay", v => `F${v}`],
+          ["radialOctFreqSlider", "radialOctFreqDisplay", v => `F${v}`],
+          ["radialVEFreqSlider", "radialVEFreqDisplay", v => `F${v}`],
+        ];
+        for (const [sliderId, displayId, formatFn] of radialFreqSliders) {
+          if (sliders[sliderId] !== undefined) {
+            const el = document.getElementById(sliderId);
+            if (el) el.value = sliders[sliderId];
+            const display = document.getElementById(displayId);
+            if (display) display.textContent = formatFn(sliders[sliderId]);
+          }
+        }
+        // Geodesic frequency sliders
+        if (sliders.geodesicTetraFrequency !== undefined) {
+          const el = document.getElementById("geodesicTetraFrequency");
+          if (el) el.value = sliders.geodesicTetraFrequency;
+        }
+        if (sliders.geodesicDualTetraFrequency !== undefined) {
+          const el = document.getElementById("geodesicDualTetraFrequency");
+          if (el) el.value = sliders.geodesicDualTetraFrequency;
+        }
+        if (sliders.geodesicOctaFrequency !== undefined) {
+          const el = document.getElementById("geodesicOctaFrequency");
+          if (el) el.value = sliders.geodesicOctaFrequency;
+        }
+        if (sliders.geodesicIcosaFrequency !== undefined) {
+          const el = document.getElementById("geodesicIcosaFrequency");
+          if (el) el.value = sliders.geodesicIcosaFrequency;
+        }
+        if (sliders.geodesicDualIcosaFrequency !== undefined) {
+          const el = document.getElementById("geodesicDualIcosaFrequency");
+          if (el) el.value = sliders.geodesicDualIcosaFrequency;
+        }
+        // Penrose Tiling parameters
+        if (sliders.penroseQuadrance !== undefined) {
+          const el = document.getElementById("penroseQuadrance");
+          if (el) el.value = sliders.penroseQuadrance;
+        }
+        if (sliders.penroseEdgeWeight !== undefined) {
+          const slider = document.getElementById("penroseEdgeWeight");
+          const display = document.getElementById("penroseEdgeWeightValue");
+          if (slider) slider.value = sliders.penroseEdgeWeight;
+          if (display) display.textContent = sliders.penroseEdgeWeight;
+        }
+        if (sliders.penroseShowFace !== undefined) {
+          const checkbox = document.getElementById("penroseShowFace");
+          if (checkbox) checkbox.checked = sliders.penroseShowFace;
+        }
+        if (sliders.penroseTileType !== undefined) {
+          const radio = document.querySelector(
+            `input[name="penroseTileType"][value="${sliders.penroseTileType}"]`
+          );
+          if (radio) radio.checked = true;
+        }
+
+        // Thomson Polyhedra N-gon sliders
+        if (sliders.thomsonTetraNGon !== undefined) {
+          const slider = document.getElementById("thomsonTetraNGon");
+          const display = document.getElementById("thomsonTetraNGonValue");
+          if (slider) slider.value = sliders.thomsonTetraNGon;
+          if (display) display.textContent = sliders.thomsonTetraNGon;
+        }
+        if (sliders.thomsonOctaNGon !== undefined) {
+          const slider = document.getElementById("thomsonOctaNGon");
+          const display = document.getElementById("thomsonOctaNGonValue");
+          if (slider) slider.value = sliders.thomsonOctaNGon;
+          if (display) display.textContent = sliders.thomsonOctaNGon;
+        }
+        if (sliders.thomsonCubeNGon !== undefined) {
+          const slider = document.getElementById("thomsonCubeNGon");
+          const display = document.getElementById("thomsonCubeNGonValue");
+          if (slider) slider.value = sliders.thomsonCubeNGon;
+          if (display) display.textContent = sliders.thomsonCubeNGon;
+        }
+        if (sliders.thomsonIcosaNGon !== undefined) {
+          const slider = document.getElementById("thomsonIcosaNGon");
+          const display = document.getElementById("thomsonIcosaNGonValue");
+          if (slider) slider.value = sliders.thomsonIcosaNGon;
+          if (display) display.textContent = sliders.thomsonIcosaNGon;
+        }
+      }
+
+      // Restore geodesic projection radio states
+      if (stateData.environment?.geodesicProjections) {
+        const projections = stateData.environment.geodesicProjections;
+
+        // Helper to set radio by name and value
+        const setRadio = (name, value) => {
+          const radio = document.querySelector(
+            `input[name="${name}"][value="${value}"]`
+          );
+          if (radio) radio.checked = true;
+        };
+
+        if (projections.geodesicTetraProjection) {
+          setRadio(
+            "geodesicTetraProjection",
+            projections.geodesicTetraProjection
+          );
+        }
+        if (projections.geodesicDualTetraProjection) {
+          setRadio(
+            "geodesicDualTetraProjection",
+            projections.geodesicDualTetraProjection
+          );
+        }
+        if (projections.geodesicOctaProjection) {
+          setRadio(
+            "geodesicOctaProjection",
+            projections.geodesicOctaProjection
+          );
+        }
+        if (projections.geodesicIcosaProjection) {
+          setRadio(
+            "geodesicIcosaProjection",
+            projections.geodesicIcosaProjection
+          );
+        }
+        if (projections.geodesicDualIcosaProjection) {
+          setRadio(
+            "geodesicDualIcosaProjection",
+            projections.geodesicDualIcosaProjection
+          );
+        }
+      }
+
+      // Restore polyhedra checkbox states (forms at origin)
+      if (stateData.environment?.polyhedraCheckboxes) {
+        const checkboxes = stateData.environment.polyhedraCheckboxes;
+        Object.keys(checkboxes).forEach(checkboxId => {
+          const el = document.getElementById(checkboxId);
+          if (el) {
+            el.checked = checkboxes[checkboxId];
+          }
+        });
+
+        // Show/hide Line controls based on checkbox state
+        const lineControls = document.getElementById("line-controls");
+        if (lineControls && checkboxes.showLine) {
+          lineControls.style.display = "block";
+        }
+
+        // Show/hide Polygon controls based on checkbox state
+        const polygonControls = document.getElementById("polygon-controls");
+        if (polygonControls && checkboxes.showPolygon) {
+          polygonControls.style.display = "block";
+        }
+
+        // Show/hide Prism controls based on checkbox state
+        const prismControls = document.getElementById("prism-controls");
+        if (prismControls && checkboxes.showPrism) {
+          prismControls.style.display = "block";
+        }
+
+        // Show/hide Cone controls based on checkbox state
+        const coneControls = document.getElementById("cone-controls");
+        if (coneControls && checkboxes.showCone) {
+          coneControls.style.display = "block";
+        }
+
+        // Show/hide Tetrahelix 1 controls based on checkbox state
+        const tetrahelix1Controls = document.getElementById(
+          "tetrahelix1-controls"
+        );
+        if (tetrahelix1Controls && checkboxes.showTetrahelix1) {
+          tetrahelix1Controls.style.display = "block";
+        }
+
+        // Show/hide Tetrahelix 2 controls based on checkbox state
+        const tetrahelix2Controls = document.getElementById(
+          "tetrahelix2-controls"
+        );
+        if (tetrahelix2Controls && checkboxes.showTetrahelix2) {
+          tetrahelix2Controls.style.display = "block";
+        }
+
+        // Show/hide Tetrahelix 3 controls based on checkbox state
+        const tetrahelix3Controls = document.getElementById(
+          "tetrahelix3-controls"
+        );
+        if (tetrahelix3Controls && checkboxes.showTetrahelix3) {
+          tetrahelix3Controls.style.display = "block";
+        }
+
+        // Show/hide Penrose Tiling controls based on checkbox state
+        const penroseTilingControls = document.getElementById(
+          "penrose-tiling-controls"
+        );
+        if (penroseTilingControls && checkboxes.showPenroseTiling) {
+          penroseTilingControls.style.display = "block";
+        }
+
+        // Show/hide Quadray Octahedron controls based on checkbox state
+        const quadrayOctaControls = document.getElementById(
+          "quadray-octahedron-controls"
+        );
+        if (quadrayOctaControls && checkboxes.showQuadrayOctahedron) {
+          quadrayOctaControls.style.display = "block";
+        }
+
+        // Show/hide Quadray Truncated Tetrahedron controls based on checkbox state
+        const quadrayTruncTetControls = document.getElementById(
+          "quadray-trunc-tet-controls"
+        );
+        if (quadrayTruncTetControls && checkboxes.showQuadrayTruncatedTet) {
+          quadrayTruncTetControls.style.display = "block";
+        }
+
+        // Show/hide Thomson controls based on checkbox state
+        const thomsonTetraControls = document.getElementById(
+          "thomson-tetra-controls"
+        );
+        if (thomsonTetraControls && checkboxes.showThomsonTetrahedron) {
+          thomsonTetraControls.style.display = "block";
+        }
+        const thomsonOctaControls = document.getElementById(
+          "thomson-octa-controls"
+        );
+        if (thomsonOctaControls && checkboxes.showThomsonOctahedron) {
+          thomsonOctaControls.style.display = "block";
+        }
+        const thomsonCubeControls = document.getElementById(
+          "thomson-cube-controls"
+        );
+        if (thomsonCubeControls && checkboxes.showThomsonCube) {
+          thomsonCubeControls.style.display = "block";
+        }
+        const thomsonIcosaControls = document.getElementById(
+          "thomson-icosa-controls"
+        );
+        if (thomsonIcosaControls && checkboxes.showThomsonIcosahedron) {
+          thomsonIcosaControls.style.display = "block";
+        }
+
+        // Show/hide planar matrix controls based on checkbox state
+        const matrixControlMappings = [
+          ["showCubeMatrix", "cube-matrix-controls"],
+          ["showTetMatrix", "tet-matrix-controls"],
+          ["showOctaMatrix", "octa-matrix-controls"],
+          ["showCuboctahedronMatrix", "cubocta-matrix-controls"],
+          ["showRhombicDodecMatrix", "rhombic-dodec-matrix-controls"],
+          ["showRadialCubeMatrix", "radial-cube-matrix-controls"],
+          [
+            "showRadialRhombicDodecMatrix",
+            "radial-rhombic-dodec-matrix-controls",
+          ],
+          ["showRadialTetrahedronMatrix", "radial-tetrahedron-matrix-controls"],
+          ["showRadialOctahedronMatrix", "radial-octahedron-matrix-controls"],
+          [
+            "showRadialCuboctahedronMatrix",
+            "radial-cuboctahedron-matrix-controls",
+          ],
+        ];
+        for (const [checkboxId, controlsId] of matrixControlMappings) {
+          if (checkboxes[checkboxId]) {
+            const panel = document.getElementById(controlsId);
+            if (panel) panel.style.display = "block";
+          }
+        }
+
+        // Trigger updateGeometry to render the restored forms
+        if (window.renderingAPI?.updateGeometry) {
+          window.renderingAPI.updateGeometry();
+        }
+      }
+
+      // Restore color palette (environment settings)
+      if (stateData.environment?.colorPalette) {
+        const colorPalette = stateData.environment.colorPalette;
+
+        // Save to StateManager
+        this.stateManager.setColorPalette(colorPalette);
+
+        // Apply colors via rendering API if available
+        if (window.renderingAPI) {
+          Object.keys(colorPalette).forEach(polyType => {
+            window.renderingAPI.updatePolyhedronColor(
+              polyType,
+              colorPalette[polyType]
+            );
+          });
+        }
+
+        // Save to localStorage for session persistence
+        try {
+          localStorage.setItem(
+            "artexplorer-color-palette",
+            JSON.stringify(colorPalette)
+          );
+        } catch (e) {
+          console.warn("Could not save color palette to localStorage:", e);
+        }
+      }
+
+      // Restore environment backgrounds
+      if (
+        stateData.environment?.canvasBackground ||
+        stateData.environment?.uiBackground
+      ) {
+        const envSettings = {
+          canvasBackground: stateData.environment.canvasBackground,
+          uiBackground: stateData.environment.uiBackground,
+        };
+
+        // Save to StateManager
+        this.stateManager.setEnvironmentBackgrounds(
+          envSettings.canvasBackground,
+          envSettings.uiBackground
+        );
+
+        // Apply via colorTheoryModal if available
+        if (window.colorTheoryModal) {
+          window.colorTheoryModal.importEnvironment(envSettings);
+        } else {
+          // Apply directly if modal not available
+          if (
+            envSettings.canvasBackground &&
+            window.renderingAPI?.setCanvasBackground
+          ) {
+            const colorHex = parseInt(
+              envSettings.canvasBackground.replace("0x", ""),
+              16
+            );
+            window.renderingAPI.setCanvasBackground(colorHex);
+          }
+        }
+
+        console.log("✅ Environment backgrounds restored");
+      }
+
+      // Restore projection state
+      if (stateData.environment?.projection) {
+        const proj = stateData.environment.projection;
+
+        // Update RTProjections state if available
+        if (window.RTProjections) {
+          Object.assign(window.RTProjections.state, {
+            enabled: proj.enabled || false,
+            basis: proj.basis || "cartesian",
+            axis: proj.axis || "z",
+            distance: proj.distance || 3,
+            showRays: proj.showRays !== false,
+            showInterior: proj.showInterior || false,
+            showIdealPolygon: proj.showIdealPolygon || false,
+            customSpreads: proj.customSpreads || null,
+            presetName: proj.presetName || null,
+            targetPolyhedronType: proj.targetPolyhedronType || null,
+          });
+        }
+
+        // Update StateManager environment
+        this.stateManager.state.environment.projection = proj;
+
+        // Update UI elements
+        const enableCheckbox = document.getElementById("enableProjection");
+        if (enableCheckbox) enableCheckbox.checked = proj.enabled;
+
+        const distanceSlider = document.getElementById("projectionDistance");
+        const distanceValue = document.getElementById(
+          "projectionDistanceValue"
+        );
+        if (distanceSlider) distanceSlider.value = proj.distance;
+        if (distanceValue) distanceValue.textContent = proj.distance;
+
+        const showRaysCheckbox = document.getElementById("projectionShowRays");
+        if (showRaysCheckbox)
+          showRaysCheckbox.checked = proj.showRays !== false;
+
+        const showInteriorCheckbox = document.getElementById(
+          "projectionShowInterior"
+        );
+        if (showInteriorCheckbox)
+          showInteriorCheckbox.checked = proj.showInterior;
+
+        const showIdealCheckbox = document.getElementById(
+          "projectionShowIdeal"
+        );
+        if (showIdealCheckbox)
+          showIdealCheckbox.checked = proj.showIdealPolygon;
+
+        // Update axis button highlighting
+        document.querySelectorAll(".projection-axis-btn").forEach(btn => {
+          btn.classList.remove("active");
+        });
+        const axisId =
+          proj.basis === "cartesian"
+            ? `projectionAxis${proj.axis.toUpperCase()}`
+            : `projectionAxis${proj.axis.toUpperCase()}`;
+        const axisBtn = document.getElementById(axisId);
+        if (axisBtn) axisBtn.classList.add("active");
+
+        // Show/hide projection controls panel
+        const projectionOptions = document.getElementById("projection-options");
+        if (projectionOptions) {
+          projectionOptions.style.display = proj.enabled ? "block" : "none";
+        }
+
+        console.log("✅ Projection state restored");
+      }
+
+      // Restore instances
+      if (stateData.instances && Array.isArray(stateData.instances)) {
+        // Check if renderingAPI is available with createPolyhedronByType
+        if (!window.renderingAPI?.createPolyhedronByType) {
+          console.warn(
+            "⚠️ renderingAPI.createPolyhedronByType not available - instances not restored"
+          );
+        } else {
+          // Matrix types that require async creation
+          const matrixTypes = [
+            "cubeMatrix",
+            "tetMatrix",
+            "octaMatrix",
+            "cuboctaMatrix",
+            "rhombicDodecMatrix",
+            "radialCubeMatrix",
+            "radialRhombicDodecMatrix",
+            "radialTetMatrix",
+            "radialOctMatrix",
+            "radialVEMatrix",
+          ];
+
+          let restoredCount = 0;
+          let failedCount = 0;
+
+          // Map old instance IDs to new instance IDs (for connectedLine endpoint resolution)
+          const instanceIdMap = new Map();
+
+          // Sort instances: Points first, then connectedLines last
+          // This ensures endpoints exist before we try to restore connections
+          const sortedInstances = [...stateData.instances].sort((a, b) => {
+            if (a.type === "connectedLine" && b.type !== "connectedLine")
+              return 1;
+            if (a.type !== "connectedLine" && b.type === "connectedLine")
+              return -1;
+            return 0;
+          });
+
+          // ----------------------------------------------------------------
+          // Helper: Restore a connectedLine by recreating the connection
+          // ----------------------------------------------------------------
+          const restoreConnectedLine = (instanceData, instanceIdMap) => {
+            const { startPoint, endPoint } = instanceData.parameters || {};
+            if (!startPoint || !endPoint) {
+              console.warn(
+                `⚠️ connectedLine missing endpoint IDs: ${instanceData.id}`
+              );
+              return false;
+            }
+
+            if (!window.RTStateManager) {
+              console.warn(
+                "⚠️ RTStateManager not available for connectedLine restore"
+              );
+              return false;
+            }
+
+            // Map old endpoint IDs to new IDs
+            const newStartId = instanceIdMap.get(startPoint);
+            const newEndId = instanceIdMap.get(endPoint);
+
+            if (!newStartId || !newEndId) {
+              console.warn(
+                `⚠️ connectedLine endpoint mapping not found: ${startPoint} → ${newStartId}, ${endPoint} → ${newEndId}`
+              );
+              return false;
+            }
+
+            const startInst = window.RTStateManager.getInstance(newStartId);
+            const endInst = window.RTStateManager.getInstance(newEndId);
+
+            if (!startInst || !endInst) {
+              console.warn(
+                `⚠️ connectedLine endpoints not found: ${newStartId}, ${newEndId}`
+              );
+              return false;
+            }
+
+            // Recreate the connection using existing connectPoints with NEW IDs
+            const lineInstance = window.RTStateManager.connectPoints(
+              newStartId,
+              newEndId,
+              window.renderingAPI.getScene()
+            );
+
+            if (lineInstance) {
+              console.log(
+                `  ✅ Restored: connectedLine ${newStartId} ↔ ${newEndId}`
+              );
+              return true;
+            } else {
+              console.warn(
+                `⚠️ Failed to restore connectedLine: ${instanceData.id}`
+              );
+              return false;
+            }
+          };
+
+          // ----------------------------------------------------------------
+          // Helper: Build creation options from instance parameters
+          // ----------------------------------------------------------------
+          const buildCreationOptions = instanceData => {
+            const options = {
+              opacity: instanceData.appearance?.opacity ?? 0.25,
+            };
+
+            if (!instanceData.parameters) return options;
+
+            const params = instanceData.parameters;
+
+            // Geodesic parameters
+            if (params.frequency !== undefined)
+              options.frequency = params.frequency;
+            if (params.projection !== undefined)
+              options.projection = params.projection;
+
+            // Matrix parameters
+            if (params.matrixSize !== undefined)
+              options.matrixSize = params.matrixSize;
+            if (params.rotate45 !== undefined)
+              options.rotate45 = params.rotate45;
+
+            // Quadray parameters (preserves native WXYZ coordinates)
+            if (params.normalize !== undefined)
+              options.normalize = params.normalize;
+            if (params.zStretch !== undefined)
+              options.zStretch = params.zStretch;
+            if (params.wxyz !== undefined) options.wxyz = params.wxyz;
+
+            // Primitive parameters (polygon, prism, cone)
+            if (params.sides !== undefined) options.sides = params.sides;
+            if (params.baseQuadrance !== undefined)
+              options.baseQuadrance = params.baseQuadrance;
+            if (params.heightQuadrance !== undefined)
+              options.heightQuadrance = params.heightQuadrance;
+            if (params.showFaces !== undefined)
+              options.showFaces = params.showFaces;
+
+            // Polygon-specific parameters
+            if (params.quadrance !== undefined)
+              options.quadrance = params.quadrance;
+            if (params.showFace !== undefined)
+              options.showFace = params.showFace;
+            if (params.edgeWeight !== undefined)
+              options.edgeWeight = params.edgeWeight;
+
+            return options;
+          };
+
+          // ----------------------------------------------------------------
+          // Helper: Restore a standard polyhedron (non-connectedLine)
+          // ----------------------------------------------------------------
+          const restoreStandardPolyhedron = async (
+            instanceData,
+            instanceIdMap,
+            matrixTypes,
+            stateManager,
+            scene
+          ) => {
+            const options = buildCreationOptions(instanceData);
+
+            // Create polyhedron group from type (async for matrices, sync for others)
+            let polyhedronGroup;
+            if (matrixTypes.includes(instanceData.type)) {
+              if (window.renderingAPI?.createPolyhedronByTypeAsync) {
+                polyhedronGroup =
+                  await window.renderingAPI.createPolyhedronByTypeAsync(
+                    instanceData.type,
+                    options
+                  );
+              } else {
+                console.warn(
+                  `⚠️ createPolyhedronByTypeAsync not available for matrix type: ${instanceData.type}`
+                );
+                return false;
+              }
+            } else {
+              polyhedronGroup = window.renderingAPI.createPolyhedronByType(
+                instanceData.type,
+                options
+              );
+            }
+
+            if (!polyhedronGroup) {
+              console.warn(
+                `⚠️ Failed to create polyhedron of type: ${instanceData.type}`
+              );
+              return false;
+            }
+
+            // Apply saved transform
+            if (instanceData.transform) {
+              const { position, rotation, scale } = instanceData.transform;
+
+              if (position) {
+                polyhedronGroup.position.set(
+                  position.x ?? 0,
+                  position.y ?? 0,
+                  position.z ?? 0
+                );
+              }
+
+              if (rotation) {
+                polyhedronGroup.rotation.set(
+                  rotation.x ?? 0,
+                  rotation.y ?? 0,
+                  rotation.z ?? 0
+                );
+              }
+
+              if (scale) {
+                polyhedronGroup.scale.set(
+                  scale.x ?? 1,
+                  scale.y ?? 1,
+                  scale.z ?? 1
+                );
+              }
+            }
+
+            // Set visibility
+            if (instanceData.appearance?.visible !== undefined) {
+              polyhedronGroup.visible = instanceData.appearance.visible;
+            }
+
+            // Register as instance via StateManager
+            // Use skipClone: true since geometry was freshly created for import
+            const restoredInstance = stateManager.createInstance(
+              polyhedronGroup,
+              scene,
+              { skipClone: true }
+            );
+
+            if (restoredInstance) {
+              // Store mapping from old ID to new ID (for connectedLine endpoint resolution)
+              if (instanceData.id && restoredInstance.id) {
+                instanceIdMap.set(instanceData.id, restoredInstance.id);
+              }
+
+              console.log(
+                `  ✅ Restored: ${instanceData.type} at (${instanceData.transform?.position?.x?.toFixed(2) ?? 0}, ${instanceData.transform?.position?.y?.toFixed(2) ?? 0}, ${instanceData.transform?.position?.z?.toFixed(2) ?? 0})`
+              );
+              return true;
+            }
+            return false;
+          };
+
+          // ----------------------------------------------------------------
+          // Main dispatcher: Restore a single instance
+          // ----------------------------------------------------------------
+          const restoreInstance = async instanceData => {
+            if (instanceData.type === "connectedLine") {
+              return restoreConnectedLine(instanceData, instanceIdMap);
+            }
+            return restoreStandardPolyhedron(
+              instanceData,
+              instanceIdMap,
+              matrixTypes,
+              this.stateManager,
+              this.scene
+            );
+          };
+
+          // Restore all instances (handles both sync and async types)
+          // Uses sortedInstances to ensure Points are restored before connectedLines
+          for (const instanceData of sortedInstances) {
+            try {
+              const success = await restoreInstance(instanceData);
+              if (success) {
+                restoredCount++;
+              } else {
+                failedCount++;
+              }
+            } catch (error) {
+              console.error(
+                `❌ Failed to restore instance ${instanceData.id}:`,
+                error
+              );
+              failedCount++;
+            }
+          }
+
+          console.log(
+            `📦 Instance restoration complete: ${restoredCount} restored, ${failedCount} failed`
+          );
+        }
+      }
+
+      // Restore saved views (if RTViewManager is available)
+      if (
+        stateData.views &&
+        Array.isArray(stateData.views) &&
+        window.RTViewManager
+      ) {
+        window.RTViewManager.state.views = stateData.views;
+        // Restore view counters from imported views
+        if (stateData.views.length > 0) {
+          // Reset counters
+          const counters = window.RTViewManager.state.counters;
+          Object.keys(counters).forEach(key => (counters[key] = 0));
+
+          // Update counters based on imported view names
+          stateData.views.forEach(view => {
+            const axisCode = view.axisCode || view.name.replace(/\d+$/, "");
+            const number = parseInt(view.name.match(/\d+$/)?.[0] || "0", 10);
+            if (
+              counters[axisCode] !== undefined &&
+              number > counters[axisCode]
+            ) {
+              counters[axisCode] = number;
+            }
+          });
+        }
+        window.RTViewManager.renderViewsTable();
+        console.log(`📐 Views restored: ${stateData.views.length} views`);
+      }
+
+      console.log("✅ State imported successfully");
+      return true;
+    } catch (error) {
+      console.error("❌ Failed to import state:", error);
+      return false;
+    }
+  },
+
+  /**
+   * Import state from JSON file
+   * @param {File} file - File object from input
+   * @returns {Promise<boolean>} Success status
+   */
+  async importStateFromFile(file) {
+    try {
+      const text = await file.text();
+      const stateData = JSON.parse(text);
+      return this.importState(stateData);
+    } catch (error) {
+      console.error("❌ Failed to parse JSON file:", error);
+      return false;
+    }
+  },
+
+  // ========================================================================
+  // GLTF EXPORT
+  // ========================================================================
+
+  /**
+   * Export scene to glTF format
+   * @param {Object} options - Export options
+   * @param {boolean} options.binary - Export as .glb (true) or .gltf (false)
+   * @param {boolean} options.includeGrids - Include grid geometry
+   * @param {boolean} options.includeGumball - Include gumball handles
+   * @param {string} options.filename - Optional custom filename
+   */
+  async exportGLTF(options = {}) {
+    const {
+      binary = true,
+      includeGrids = false,
+      _includeGumball = false,
+      filename = null,
+    } = options;
+
+    try {
+      // Import GLTFExporter dynamically
+      const { GLTFExporter } =
+        await import("https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/exporters/GLTFExporter.js");
+
+      const exporter = new GLTFExporter();
+
+      // Collect objects to export
+      const exportGroup = new THREE.Group();
+
+      // Add all deposited instances
+      this.stateManager.state.instances.forEach(instance => {
+        if (instance.threeObject) {
+          const clone = instance.threeObject.clone();
+          exportGroup.add(clone);
+        }
+      });
+
+      // Optionally include grids
+      if (includeGrids) {
+        // Find grid objects in scene
+        const cartesianGrid = this.scene.getObjectByName("cartesianGrid");
+        const quadrayBasis = this.scene.getObjectByName("quadrayBasis");
+        const ivmPlanes = this.scene.getObjectByName("ivmPlanes");
+
+        if (cartesianGrid) exportGroup.add(cartesianGrid.clone());
+        if (quadrayBasis) exportGroup.add(quadrayBasis.clone());
+        if (ivmPlanes) exportGroup.add(ivmPlanes.clone());
+      }
+
+      // Export options
+      const exportOptions = {
+        binary: binary,
+        trs: true, // Export separate translate/rotate/scale
+        onlyVisible: true,
+        truncateDrawRange: true,
+        includeCustomExtensions: true,
+      };
+
+      // Generate filename with timestamp
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[:.]/g, "-")
+        .slice(0, 19);
+      const extension = binary ? "glb" : "gltf";
+      const finalFilename = filename || `art-scene-${timestamp}.${extension}`;
+
+      // Export
+      exporter.parse(
+        exportGroup,
+        result => {
+          if (binary) {
+            // Binary .glb format
+            const blob = new Blob([result], {
+              type: "application/octet-stream",
+            });
+            this.downloadBlob(blob, finalFilename);
+          } else {
+            // JSON .gltf format
+            const output = JSON.stringify(result, null, 2);
+            this.downloadFile(output, finalFilename, "application/json");
+          }
+
+          console.log(`✅ glTF exported to ${finalFilename}`);
+        },
+        error => {
+          console.error("❌ glTF export failed:", error);
+        },
+        exportOptions
+      );
+    } catch (error) {
+      console.error("❌ Failed to load GLTFExporter:", error);
+    }
+  },
+
+  // ========================================================================
+  // CSV EXPORT
+  // ========================================================================
+
+  /**
+   * Export instances to CSV file
+   * @param {string} filename - Optional custom filename
+   */
+  exportCSVToFile(filename) {
+    const csvString = this.stateManager.exportCSV();
+
+    // Generate filename with timestamp
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .slice(0, 19);
+    const finalFilename = filename || `art-instances-${timestamp}.csv`;
+
+    // Create download
+    this.downloadFile(csvString, finalFilename, "text/csv");
+
+    console.log(`✅ CSV exported to ${finalFilename}`);
+  },
+
+  // ========================================================================
+  // AUTO-SAVE (LocalStorage - Modification-Based)
+  // ========================================================================
+
+  /**
+   * Save current state to localStorage (triggered by modifications)
+   */
+  autoSave() {
+    try {
+      const stateData = this.exportState();
+      const jsonString = JSON.stringify(stateData);
+
+      // Save to localStorage
+      localStorage.setItem(this.config.autoSaveKey, jsonString);
+      this.state.lastSaveTimestamp = Date.now();
+
+      // Maintain save history
+      this.addToSaveHistory(stateData);
+
+      // Mark state as saved in StateManager (resets modification counter)
+      this.stateManager.markAsSaved();
+
+      const unsavedCount = this.stateManager.getUnsavedChanges();
+      console.log(
+        `💾 Auto-saved at ${new Date().toLocaleTimeString()} (${unsavedCount} unsaved changes)`
+      );
+    } catch (error) {
+      console.error("❌ Auto-save failed:", error);
+    }
+  },
+
+  /**
+   * Load auto-saved state from localStorage
+   * @returns {boolean} Success status
+   */
+  async loadAutoSave() {
+    try {
+      const jsonString = localStorage.getItem(this.config.autoSaveKey);
+      if (!jsonString) {
+        console.log("💾 No auto-save found");
+        return false;
+      }
+
+      const stateData = JSON.parse(jsonString);
+      return await this.importState(stateData);
+    } catch (error) {
+      console.error("❌ Failed to load auto-save:", error);
+      return false;
+    }
+  },
+
+  /**
+   * Clear auto-save from localStorage
+   */
+  clearAutoSave() {
+    localStorage.removeItem(this.config.autoSaveKey);
+    console.log("💾 Auto-save cleared");
+  },
+
+  /**
+   * Add state to save history
+   * @param {Object} stateData - State to save
+   */
+  addToSaveHistory(stateData) {
+    try {
+      const historyKey = `${this.config.autoSaveKey}-history`;
+      const historyString = localStorage.getItem(historyKey);
+      const history = historyString ? JSON.parse(historyString) : [];
+
+      // Add new save
+      history.push({
+        timestamp: stateData.timestamp,
+        timestampMs: stateData.timestampMs,
+        instanceCount: stateData.instances.length,
+      });
+
+      // Keep only last N saves
+      if (history.length > this.config.maxAutoSaveHistory) {
+        history.shift();
+      }
+
+      localStorage.setItem(historyKey, JSON.stringify(history));
+    } catch (error) {
+      console.error("❌ Failed to save history:", error);
+    }
+  },
+
+  // ========================================================================
+  // PRESET SYSTEM
+  // ========================================================================
+
+  /**
+   * Save current state as a named preset
+   * @param {string} presetName - Name for the preset
+   * @returns {boolean} Success status
+   */
+  savePreset(presetName) {
+    try {
+      const stateData = this.exportState();
+      const presetKey = `${this.config.presetKeyPrefix}${presetName}`;
+      const jsonString = JSON.stringify(stateData);
+
+      localStorage.setItem(presetKey, jsonString);
+      console.log(`✅ Preset saved: ${presetName}`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to save preset "${presetName}":`, error);
+      return false;
+    }
+  },
+
+  /**
+   * Load a named preset
+   * @param {string} presetName - Name of the preset to load
+   * @returns {boolean} Success status
+   */
+  async loadPreset(presetName) {
+    try {
+      const presetKey = `${this.config.presetKeyPrefix}${presetName}`;
+      const jsonString = localStorage.getItem(presetKey);
+
+      if (!jsonString) {
+        console.warn(`⚠️ Preset not found: ${presetName}`);
+        return false;
+      }
+
+      const stateData = JSON.parse(jsonString);
+      const success = await this.importState(stateData);
+
+      if (success) {
+        console.log(`✅ Preset loaded: ${presetName}`);
+      }
+
+      return success;
+    } catch (error) {
+      console.error(`❌ Failed to load preset "${presetName}":`, error);
+      return false;
+    }
+  },
+
+  /**
+   * Delete a named preset
+   * @param {string} presetName - Name of the preset to delete
+   * @returns {boolean} Success status
+   */
+  deletePreset(presetName) {
+    try {
+      const presetKey = `${this.config.presetKeyPrefix}${presetName}`;
+      localStorage.removeItem(presetKey);
+      console.log(`✅ Preset deleted: ${presetName}`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to delete preset "${presetName}":`, error);
+      return false;
+    }
+  },
+
+  /**
+   * Get list of all saved presets
+   * @returns {Array<string>} Array of preset names
+   */
+  listPresets() {
+    const presets = [];
+    const prefix = this.config.presetKeyPrefix;
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        const presetName = key.substring(prefix.length);
+        presets.push(presetName);
+      }
+    }
+
+    return presets;
+  },
+
+  // ========================================================================
+  // UTILITY FUNCTIONS
+  // ========================================================================
+
+  /**
+   * Download string as file
+   * @param {string} content - File content
+   * @param {string} filename - Filename
+   * @param {string} mimeType - MIME type
+   */
+  downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    this.downloadBlob(blob, filename);
+  },
+
+  /**
+   * Download blob as file
+   * @param {Blob} blob - Blob to download
+   * @param {string} filename - Filename
+   */
+  downloadBlob(blob, filename) {
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(link.href), 100);
+  },
+
+  /**
+   * Create file input element for import
+   * @param {Function} callback - Callback function with file parameter
+   * @param {string} accept - File types to accept
+   */
+  createFileInput(callback, accept = ".json") {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = accept;
+    input.style.display = "none";
+
+    input.addEventListener("change", event => {
+      const file = event.target.files[0];
+      if (file) {
+        callback(file);
+      }
+      input.remove();
+    });
+
+    document.body.appendChild(input);
+    input.click();
+  },
+
+  // ========================================================================
+  // UI HELPER METHODS
+  // ========================================================================
+
+  /**
+   * Show file import dialog
+   */
+  showImportDialog() {
+    this.createFileInput(file => {
+      this.importStateFromFile(file);
+    }, ".json");
+  },
+
+  /**
+   * Show export dialog (prompts for format)
+   * @returns {Promise<void>}
+   */
+  async showExportDialog() {
+    const format = prompt(
+      "Export format:\n1. JSON (state)\n2. glTF (geometry)\n3. glB (binary)\n4. CSV (data)\n\nEnter 1-4:",
+      "1"
+    );
+
+    switch (format) {
+      case "1":
+        this.exportStateToFile();
+        break;
+      case "2":
+        await this.exportGLTF({ binary: false });
+        break;
+      case "3":
+        await this.exportGLTF({ binary: true });
+        break;
+      case "4":
+        this.exportCSVToFile();
+        break;
+      default:
+        console.log("Export cancelled");
+    }
+  },
+};

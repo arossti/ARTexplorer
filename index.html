@@ -1,0 +1,4631 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A.R.T Explorer - Polyhedra Visualization</title>
+    <meta name="application-name" content="A.R.T. Geometry Explorer" />
+    <meta
+      name="description"
+      content="An interactive explorer for Algebraic Rational Trigonometry geometry by Andy Ross Thomson, M.Arch, OAA. with guidance by Metatron"
+    />
+    <!-- Open Graph meta tags for social media previews -->
+    <meta
+      property="og:title"
+      content="A.R.T. Explorer - Polyhedra Visualization"
+    />
+    <meta
+      property="og:description"
+      content="An interactive explorer for Algebraic Rational Trigonometry geometry by Andy Ross Thomson, M.Arch, OAA."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://arossti.github.io/ARTexplorer/" />
+    <link rel="stylesheet" href="art.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+  </head>
+  <body>
+    <!-- Info Modal - Shows on initialization -->
+    <div id="info-modal-overlay" class="hidden">
+      <div id="info-modal">
+        <h2>a.r.t.explorer</h2>
+        <p class="modal-subtitle">
+          Algebraic Rational Trigonometry Geometry Engine
+        </p>
+
+        <div class="modal-content-grid">
+          <!-- Left Column -->
+          <div class="modal-column">
+            <div class="modal-section">
+              <h3>Keyboard Shortcuts</h3>
+              <div class="shortcuts-grid">
+                <div class="shortcut-row">
+                  <span class="shortcut-key">Left-click + drag</span>
+                  <span class="shortcut-desc">Orbit camera</span>
+                </div>
+                <div class="shortcut-row">
+                  <span class="shortcut-key">Right-click</span>
+                  <span class="shortcut-desc"
+                    >Context menu (edit selected)</span
+                  >
+                </div>
+                <div class="shortcut-row">
+                  <span class="shortcut-key">Middle-click + drag</span>
+                  <span class="shortcut-desc">Pan camera</span>
+                </div>
+                <div class="shortcut-row">
+                  <span class="shortcut-key">Scroll wheel</span>
+                  <span class="shortcut-desc">Zoom</span>
+                </div>
+                <div class="shortcut-row">
+                  <span class="shortcut-key">ESC</span>
+                  <span class="shortcut-desc">Deselect</span>
+                </div>
+                <div class="shortcut-row">
+                  <span class="shortcut-key">Delete</span>
+                  <span class="shortcut-desc">Remove selected instance</span>
+                </div>
+                <div class="shortcut-row">
+                  <span class="shortcut-key">Cmd/Ctrl+Z</span>
+                  <span class="shortcut-desc">Undo</span>
+                </div>
+                <div class="shortcut-row">
+                  <span class="shortcut-key">Cmd/Ctrl+Shift+Z</span>
+                  <span class="shortcut-desc">Redo</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-section">
+              <h3>What is A.R.T. Explorer?</h3>
+              <p class="modal-text">
+                A.R.T. Explorer is a unique geometry engine combining
+                <strong>R. Buckminster Fuller's Synergetics</strong> with
+                <strong>N.J. Wildberger's Rational Trigonometry</strong>.
+              </p>
+              <p class="modal-text">
+                This app uses Rational Trigonometry to perform pure algebraic
+                geometry calculations in quadrance and spread space, avoiding
+                transcendental functions (sin, cos, tan) entirely. Working
+                symbolically in quadrance space, square roots are deferred until
+                the final rendering stage when instantiating THREE.js Vector3
+                vertices, maintaining algebraic exactness throughout
+                intermediate calculations and only expanding to floating-point
+                at the GPU boundary. Golden ratio (φ) relationships are
+                preserved algebraically using φ² = φ + 1, and rotations employ
+                Weierstrass substitution to convert trigonometric operations
+                into pure rational expressions.
+              </p>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="modal-column">
+            <div class="modal-section">
+              <h3>Key Innovations</h3>
+              <ul class="feature-list">
+                <li>
+                  <strong>Quadray Coordinates:</strong> Tetrahedral coordinate
+                  system (4 basis vectors) instead of Cartesian XYZ
+                </li>
+                <li>
+                  <strong>Rational Trigonometry:</strong> Quadrance (Q = a²)
+                  replaces distance, spread replaces angle
+                </li>
+                <li>
+                  <strong>IVM (Isotropic Vector Matrix):</strong> Space-filling
+                  octahedron-tetrahedron lattice
+                </li>
+                <li>
+                  <strong>Close-Packing:</strong> Vertex spheres calculated
+                  algebraically for perfect tangency
+                </li>
+              </ul>
+            </div>
+
+            <div class="modal-section">
+              <h3>Why This Matters</h3>
+              <p class="modal-text">
+                Traditional geometry engines accumulate floating-point errors.
+                A.R.T. maintains <strong>exact rational relationships</strong>
+                throughout calculations, enabling precision-critical
+                applications in architecture, crystallography, and computational
+                geometry.
+              </p>
+            </div>
+
+            <div class="modal-section">
+              <h3>Credits</h3>
+              <ul class="credits-list">
+                <li>
+                  Rudolf Dorenach, Bucky's German Associate and my first
+                  Synergetics mentor
+                </li>
+                <li>Kirby Urner, for introducting me to Quadrays</li>
+                <li>
+                  Tom Ace, for his work on the basis vector conversion idea
+                </li>
+                <li>Gerald DeJong, for introducing me to Wildberger</li>
+                <li>
+                  Dawn Danby and David McConville - for their moral support and
+                  enthusiasm
+                </li>
+                <li>
+                  Bonnie DeVarco, for her tireless preservation and active
+                  engagement with the original work
+                </li>
+                <li>
+                  Mark Pavlidis, for teaching me how to navigate Git and the
+                  importance of clean code
+                </li>
+                <li>
+                  Enzyme APD, for encouraging the pursuit of these ideas against
+                  all odds
+                </li>
+                <li>Metatron — because nothing is noticed alone</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <button id="info-modal-close" class="modal-close-btn">
+          Get Started
+        </button>
+      </div>
+    </div>
+
+    <div id="container">
+      <div id="canvas-container">
+        <!-- Bottom Coordinates Panel -->
+        <div id="coordinates-panel">
+          <!-- XYZ Position + Mode Buttons + Scale -->
+          <div class="coords-group">
+            <div class="coords-row">
+              <i class="bi bi-arrows-move coords-icon" title="XYZ Position"></i>
+              <div class="coord-container">
+                <label class="label-axis label-axis-x">X:</label>
+                <input
+                  type="text"
+                  id="coordX"
+                  class="coord-input axis-x"
+                  value="0.0000"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-y">Y:</label>
+                <input
+                  type="text"
+                  id="coordY"
+                  class="coord-input axis-y"
+                  value="0.0000"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-z">Z:</label>
+                <input
+                  type="text"
+                  id="coordZ"
+                  class="coord-input axis-z"
+                  value="0.0000"
+                />
+              </div>
+            </div>
+            <!-- Coordinate Mode Toggle + Scale -->
+            <div class="coords-row coords-mode-row">
+              <div class="coords-mode-group toggle-btn-group">
+                <button
+                  id="coordModeAbsolute"
+                  class="toggle-btn variant-objsnap active"
+                  data-coord-mode="absolute"
+                  title="Coordinates relative to world origin (Alpha)"
+                >
+                  Absolute
+                </button>
+                <button
+                  id="coordModeRelative"
+                  class="toggle-btn variant-objsnap"
+                  data-coord-mode="relative"
+                  title="Coordinates relative to selected object (local transform)"
+                >
+                  Relative
+                </button>
+                <button
+                  id="coordModeGroupCentre"
+                  class="toggle-btn variant-objsnap"
+                  data-coord-mode="group-centre"
+                  disabled
+                  title="Coordinates relative to group centroid (requires 2+ selected)"
+                >
+                  Group
+                </button>
+              </div>
+              <div class="coord-container scale-container">
+                <label class="label-axis label-axis-scale">Scale:</label>
+                <input
+                  type="text"
+                  id="coordScale"
+                  class="coord-input axis-scale"
+                  value="1.0000"
+                  title="Uniform scale factor"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- WXYZ Position -->
+          <div class="coords-group">
+            <div class="coords-row">
+              <i
+                class="bi bi-arrows-move coords-icon"
+                title="WXYZ Position"
+              ></i>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qw">QW:</label>
+                <input
+                  type="text"
+                  id="coordQW"
+                  class="coord-input axis-qw"
+                  value="0.0000"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qx">QX:</label>
+                <input
+                  type="text"
+                  id="coordQX"
+                  class="coord-input axis-qx"
+                  value="0.0000"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qy">QY:</label>
+                <input
+                  type="text"
+                  id="coordQY"
+                  class="coord-input axis-qy"
+                  value="0.0000"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qz">QZ:</label>
+                <input
+                  type="text"
+                  id="coordQZ"
+                  class="coord-input axis-qz"
+                  value="0.0000"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="coords-divider"></div>
+
+          <!-- XYZ Rotation -->
+          <div class="coords-group">
+            <div class="coords-row">
+              <i
+                class="bi bi-arrow-clockwise coords-icon"
+                title="XYZ Rotation"
+              ></i>
+              <span class="coords-unit-label">degrees°</span>
+              <div class="coord-container">
+                <label class="label-axis label-axis-x">X:</label>
+                <input
+                  type="text"
+                  id="rotXDegrees"
+                  class="coord-input axis-x"
+                  value="0.00"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-y">Y:</label>
+                <input
+                  type="text"
+                  id="rotYDegrees"
+                  class="coord-input axis-y"
+                  value="0.00"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-z">Z:</label>
+                <input
+                  type="text"
+                  id="rotZDegrees"
+                  class="coord-input axis-z"
+                  value="0.00"
+                />
+              </div>
+            </div>
+            <div class="coords-row">
+              <i
+                class="bi bi-arrow-clockwise coords-icon coords-icon-placeholder"
+              ></i>
+              <span class="coords-unit-label">spread (s)</span>
+              <div class="coord-container">
+                <label class="label-axis label-axis-x">X:</label>
+                <input
+                  type="text"
+                  id="rotXSpread"
+                  class="coord-input axis-x"
+                  value="0.00"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-y">Y:</label>
+                <input
+                  type="text"
+                  id="rotYSpread"
+                  class="coord-input axis-y"
+                  value="0.00"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-z">Z:</label>
+                <input
+                  type="text"
+                  id="rotZSpread"
+                  class="coord-input axis-z"
+                  value="0.00"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- WXYZ Rotation -->
+          <div class="coords-group">
+            <div class="coords-row">
+              <i
+                class="bi bi-arrow-clockwise coords-icon"
+                title="WXYZ Rotation"
+              ></i>
+              <span class="coords-unit-label">degrees°</span>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qw">QW:</label>
+                <input
+                  type="text"
+                  id="rotQWDegrees"
+                  class="coord-input axis-qw"
+                  value="0.00"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qx">QX:</label>
+                <input
+                  type="text"
+                  id="rotQXDegrees"
+                  class="coord-input axis-qx"
+                  value="0.00"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qy">QY:</label>
+                <input
+                  type="text"
+                  id="rotQYDegrees"
+                  class="coord-input axis-qy"
+                  value="0.00"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qz">QZ:</label>
+                <input
+                  type="text"
+                  id="rotQZDegrees"
+                  class="coord-input axis-qz"
+                  value="0.00"
+                />
+              </div>
+            </div>
+            <div class="coords-row">
+              <i
+                class="bi bi-arrow-clockwise coords-icon coords-icon-placeholder"
+              ></i>
+              <span class="coords-unit-label">spread (s)</span>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qw">QW:</label>
+                <input
+                  type="text"
+                  id="rotQWSpread"
+                  class="coord-input axis-qw"
+                  value="0.00"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qx">QX:</label>
+                <input
+                  type="text"
+                  id="rotQXSpread"
+                  class="coord-input axis-qx"
+                  value="0.00"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qy">QY:</label>
+                <input
+                  type="text"
+                  id="rotQYSpread"
+                  class="coord-input axis-qy"
+                  value="0.00"
+                />
+              </div>
+              <div class="coord-container">
+                <label class="label-axis label-axis-qz">QZ:</label>
+                <input
+                  type="text"
+                  id="rotQZSpread"
+                  class="coord-input axis-qz"
+                  value="0.00"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="controls-panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="title-outline">a.r.t.explorer</h2>
+            <h5>by Andy Ross Thomson</h5>
+          </div>
+          <button
+            id="info-icon-btn"
+            class="info-icon-btn"
+            title="About A.R.T. Explorer"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M12 16V12M12 8H12.01"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <br />
+        <!-- ========================================
+             SECTION 1: FILE
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="file-section"
+            ></span>
+            File
+          </h3>
+          <div id="file-section" class="section-content collapsed">
+            <div class="control-item">
+              <label class="label-section">File Operations</label>
+              <div class="toggle-btn-group">
+                <button
+                  class="toggle-btn variant-standard"
+                  id="importBtn"
+                  title="Import scene state from JSON file (Ctrl/Cmd+O)"
+                >
+                  Import
+                </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="exportBtn"
+                  title="Export scene (JSON/glTF/glB/CSV) (Ctrl/Cmd+E)"
+                >
+                  Export
+                </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="saveBtn"
+                  title="Quick save to JSON file (Ctrl/Cmd+S)"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+            <p class="info-text">
+              <strong>Import:</strong> Load .json state file<br />
+              <strong>Export:</strong> Choose format (JSON/glTF/glB/CSV)<br />
+              <strong>Save:</strong> Quick save to timestamped JSON<br />
+              <span style="font-size: 10px; color: #666"
+                >Keyboard: Ctrl/Cmd+S (Save) | Ctrl/Cmd+O (Import) | Ctrl/Cmd+E
+                (Export)</span
+              >
+            </p>
+          </div>
+        </div>
+        <!-- END SECTION 1: FILE -->
+
+        <!-- ========================================
+             SECTION 2: COORDINATE SYSTEMS
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="coordinate-system-section"
+            ></span>
+            Coordinate Systems
+          </h3>
+          <div id="coordinate-system-section" class="section-content collapsed">
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showCartesianBasis" />
+                Show Cartesian Basis (XYZ)
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadray" checked />
+                Show Quadray Basis (WXYZ)
+                <!-- Quadray: 4 tetrahedral basis vectors pointing to cube vertices (1,1,1), (1,-1,-1), (-1,1,-1), (-1,-1,1) -->
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="label-section">
+                <span
+                  class="geodesic-toggle collapsed"
+                  data-target="cartesian-planes"
+                ></span>
+                Cartesian Planes
+              </label>
+              <div id="cartesian-planes" class="geodesic-options collapsed">
+                <div
+                  id="cartesian-checkboxes"
+                  style="
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-bottom: 8px;
+                  "
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeXY" /> XY
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeXZ" /> XZ
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeYZ" /> YZ
+                  </label>
+                </div>
+                <div class="spacing-top-large">
+                  <label class="label-subsection">Grid Mode</label>
+                  <div class="toggle-btn-group">
+                    <button
+                      class="toggle-btn variant-objsnap active"
+                      data-cartesian-mode="uniform"
+                      title="Standard uniform-interval Cartesian grid"
+                    >
+                      Uniform
+                    </button>
+                    <button
+                      class="toggle-btn variant-objsnap"
+                      data-cartesian-mode="gravity-spherical"
+                      title="Polar grid: concentric circles at gravity-spaced radii"
+                    >
+                      Polar
+                    </button>
+                  </div>
+                </div>
+                <div class="spacing-top-large">
+                  <label class="label-subsection">Grid Intervals</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="cartesianTessSlider"
+                      min="10"
+                      max="100"
+                      step="10"
+                      value="10"
+                    />
+                    <span class="slider-value" id="cartesianTessValue">10</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="control-item">
+              <label class="label-section">
+                <span
+                  class="geodesic-toggle collapsed"
+                  data-target="ivm-grids"
+                ></span>
+                IVM Grids (Future Implementation)
+              </label>
+              <!--
+                FUTURE DEV NOTE: When implementing TRUE IVM grids, consider creating
+                a centralized grid state module (e.g., rt-grid-state.js) instead of
+                querying DOM checkboxes directly. Current pattern has multiple locations
+                (rt-init.js, rt-ui-binding-defs.js) independently querying the same
+                checkbox elements. A single state object would be cleaner:
+
+                  const gridState = { ivmWX: true, ivmWY: true, ... };
+                  function setGridVisibility(plane, visible) { ... }
+                  function getGridVisibility(plane) { ... }
+
+                See commit c3c8d0c for context on the checkbox migration that exposed
+                this coupling issue. - Feb 2026
+              -->
+              <div id="ivm-grids" class="geodesic-options collapsed">
+                <div
+                  id="quadray-checkboxes"
+                  style="
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-bottom: 8px;
+                  "
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeQuadrayWX" /> WX
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeQuadrayWY" /> WY
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeQuadrayWZ" /> WZ
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeQuadrayXY" /> XY
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeQuadrayXZ" /> XZ
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeQuadrayYZ" /> YZ
+                  </label>
+                </div>
+                <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                  IVM: Placeholder for TRUE IVM implementation - coplanar
+                  tetrahedral faces (not yet implemented)
+                </p>
+              </div>
+            </div>
+            <div class="control-item">
+              <label class="label-section">
+                <span
+                  class="geodesic-toggle"
+                  data-target="central-angle-grids"
+                ></span>
+                Central Angle Grids (Corrected Tessellation)
+              </label>
+              <div id="central-angle-grids" class="geodesic-options">
+                <div
+                  id="ivm-checkboxes"
+                  style="
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-bottom: 8px;
+                  "
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeIvmWX" checked /> WX
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeIvmWY" checked /> WY
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeIvmWZ" checked /> WZ
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeIvmXY" checked /> XY
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeIvmXZ" checked /> XZ
+                  </label>
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="planeIvmYZ" checked /> YZ
+                  </label>
+                </div>
+                <div class="spacing-top-large">
+                  <label class="label-subsection">Grid Mode</label>
+                  <div class="toggle-btn-group">
+                    <button
+                      class="toggle-btn variant-objsnap active"
+                      data-quadray-mode="uniform"
+                      title="Standard uniform-interval triangular tessellation"
+                    >
+                      Uniform
+                    </button>
+                    <button
+                      class="toggle-btn variant-objsnap"
+                      data-quadray-mode="gravity-spherical"
+                      title="Polar grid: concentric circles on 4 tetrahedral face planes"
+                    >
+                      Polar
+                    </button>
+                  </div>
+                </div>
+                <div class="spacing-top-large">
+                  <label class="label-subsection">Grid Intervals</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="quadrayTessSlider"
+                      min="12"
+                      max="144"
+                      step="12"
+                      value="12"
+                    />
+                    <span class="slider-value" id="quadrayTessValue">12</span>
+                  </div>
+                </div>
+                <div class="spacing-top-large">
+                  <label class="label-subsection">Circle N-gon <span style="font-size:0.75em;color:#888">(Polar mode)</span></label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="nGonSlider"
+                      min="3"
+                      max="128"
+                      step="1"
+                      value="64"
+                    />
+                    <span class="slider-value" id="nGonValue">64</span>
+                  </div>
+                </div>
+                <div class="spacing-top-small">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="showRadialLines" checked />
+                    Radial Lines <span style="font-size:0.75em;color:#888">(Polar mode)</span>
+                  </label>
+                </div>
+                <p class="info-text spacing-top-small">
+                  Central Angle: Triangular faces tessellated vertex-to-vertex
+                  using tet edge length 2s√2 (corrected implementation without
+                  bugs)
+                </p>
+              </div>
+            </div>
+            <!-- UCS (User Coordinate System) Scene Orientation -->
+            <div class="control-item" style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #333">
+              <label class="label-section">Scene Orientation (UCS)</label>
+              <div class="toggle-btn-group">
+                <button
+                  class="toggle-btn variant-objsnap active"
+                  data-ucs="z-up"
+                  title="Default Z-up (CAD/BIM standard)"
+                >
+                  Z-up
+                </button>
+                <button
+                  class="toggle-btn variant-objsnap"
+                  data-ucs="y-up"
+                  title="Y-up (game engine convention)"
+                >
+                  Y-up
+                </button>
+                <button
+                  class="toggle-btn variant-objsnap"
+                  data-ucs="qz-up"
+                  title="Quadray WZ-Up — rotates scene so QZ (Green) points skyward"
+                >
+                  Struppi-Up
+                </button>
+              </div>
+              <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                View-only — coordinates and files remain in native Z-up
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- END SECTION 2: COORDINATE SYSTEMS -->
+
+        <!-- ========================================
+             SECTION 3: PRIMITIVES
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="primitives-section"
+            ></span>
+            Primitives
+          </h3>
+          <div id="primitives-section" class="section-content collapsed">
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPoint" />
+                Point (Single Vertex)
+              </label>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showLine" />
+                Line (1D Primitive)
+              </label>
+              <div
+                id="line-controls"
+                class="line-options"
+                style="display: none; margin-left: 20px; margin-top: 5px"
+              >
+                <div
+                  class="line-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q:</label>
+                  <input
+                    type="number"
+                    id="lineQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 60px; font-size: 0.85em"
+                    title="Quadrance (Q = length²)"
+                  />
+                  <label style="font-size: 0.85em">L:</label>
+                  <input
+                    type="number"
+                    id="lineLength"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 60px; font-size: 0.85em"
+                    title="Length (L = √Q)"
+                  />
+                </div>
+                <div
+                  class="line-weight-container slider-container"
+                  style="display: flex; gap: 5px; align-items: center"
+                >
+                  <label style="font-size: 0.85em">Weight:</label>
+                  <input
+                    type="range"
+                    id="lineWeight"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value="2"
+                  />
+                  <span class="slider-value" id="lineWeightValue">2</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPolygon" />
+                Polygon (2D Primitive)
+              </label>
+              <div
+                id="polygon-controls"
+                class="polygon-options"
+                style="display: none; margin-left: 20px; margin-top: 5px"
+              >
+                <div
+                  class="polygon-sides-container slider-container"
+                  style="
+                    display: flex;
+                    gap: 5px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Sides:</label>
+                  <input
+                    type="range"
+                    id="polygonSides"
+                    min="3"
+                    max="24"
+                    step="1"
+                    value="3"
+                    title="Number of sides (n-gon)"
+                  />
+                  <input
+                    type="number"
+                    id="polygonSidesInput"
+                    min="3"
+                    step="1"
+                    value="3"
+                    style="width: 55px; font-size: 11px"
+                  />
+                </div>
+                <div
+                  class="tiling-info"
+                  style="font-size: 10px; color: #00b4ff; margin-bottom: 5px"
+                >
+                  <span id="polygonMethodInfo"
+                    >Triangle: RT-Pure (s = 3/4)</span
+                  >
+                </div>
+                <div
+                  class="polygon-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q<sub>R</sub>:</label>
+                  <input
+                    type="number"
+                    id="polygonQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 60px; font-size: 0.85em"
+                    title="Circumradius Quadrance (Q_R = R²)"
+                  />
+                  <label style="font-size: 0.85em">R:</label>
+                  <input
+                    type="number"
+                    id="polygonRadius"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 60px; font-size: 0.85em"
+                    title="Circumradius (R = √Q_R)"
+                  />
+                </div>
+                <div
+                  class="polygon-face-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="polygonShowFace" checked />
+                    Show Face
+                  </label>
+                </div>
+                <div
+                  class="polygon-weight-container slider-container"
+                  style="
+                    display: flex;
+                    gap: 5px;
+                    align-items: center;
+                    margin-bottom: 8px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Edge Weight:</label>
+                  <input
+                    type="range"
+                    id="polygonEdgeWeight"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value="2"
+                  />
+                  <span class="slider-value" id="polygonEdgeWeightValue"
+                    >2</span
+                  >
+                </div>
+                <!-- Enable Tiling toggle and controls -->
+                <label
+                  class="checkbox-label"
+                  style="font-size: 0.85em; font-weight: bold; margin-top: 8px"
+                >
+                  <input type="checkbox" id="polygonEnableTiling" />
+                  Enable Tiling
+                </label>
+                <div
+                  id="polygon-tiling-controls"
+                  class="polygon-tiling-section"
+                  style="display: none; margin-top: 5px; margin-left: 10px"
+                >
+                  <div
+                    class="tiling-generations-container slider-container"
+                    style="
+                      display: flex;
+                      gap: 5px;
+                      align-items: center;
+                      margin-bottom: 5px;
+                    "
+                  >
+                    <label style="font-size: 0.85em">Generations:</label>
+                    <input
+                      type="range"
+                      id="polygonTilingGenerations"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="2"
+                    />
+                    <span
+                      class="slider-value"
+                      id="polygonTilingGenerationsValue"
+                      >2</span
+                    >
+                  </div>
+                  <div
+                    class="tiling-info"
+                    style="font-size: 0.75em; color: #888; margin-top: 3px"
+                  >
+                    <span id="polygonTilingInfo"
+                      >Triangle: subdivides into 4 per gen</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPrism" />
+                Prism (3D Primitive)
+              </label>
+              <div
+                id="prism-controls"
+                class="prism-options"
+                style="display: none; margin-left: 20px; margin-top: 5px"
+              >
+                <div
+                  class="prism-sides-container slider-container"
+                  style="
+                    display: flex;
+                    gap: 5px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Sides:</label>
+                  <input
+                    type="range"
+                    id="prismSides"
+                    min="1"
+                    max="24"
+                    step="1"
+                    value="6"
+                    title="Number of sides (n-gon prism)"
+                  />
+                  <input
+                    type="number"
+                    id="prismSidesInput"
+                    min="1"
+                    step="1"
+                    value="6"
+                    style="width: 55px; font-size: 11px"
+                  />
+                </div>
+                <div
+                  class="tiling-info"
+                  style="font-size: 10px; color: #00b4ff; margin-bottom: 5px"
+                >
+                  <span id="prismMethodInfo">Hexagon: Classical (sin π/6)</span>
+                </div>
+                <div
+                  class="prism-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q<sub>R</sub>:</label>
+                  <input
+                    type="number"
+                    id="prismBaseQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Base circumradius quadrance (Q_R = R²)"
+                  />
+                  <label style="font-size: 0.85em">R:</label>
+                  <input
+                    type="number"
+                    id="prismBaseRadius"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Base circumradius (R = √Q_R)"
+                  />
+                </div>
+                <div
+                  class="prism-height-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q<sub>H</sub>:</label>
+                  <input
+                    type="number"
+                    id="prismHeightQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Height quadrance (Q_H = H²)"
+                  />
+                  <label style="font-size: 0.85em">H:</label>
+                  <input
+                    type="number"
+                    id="prismHeight"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Height (H = √Q_H)"
+                  />
+                </div>
+                <div
+                  class="prism-face-container"
+                  style="display: flex; gap: 10px; align-items: center"
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="prismShowFaces" checked />
+                    Show Faces
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showCone" />
+                Cone (3D Primitive)
+              </label>
+              <div
+                id="cone-controls"
+                class="cone-options"
+                style="display: none; margin-left: 20px; margin-top: 5px"
+              >
+                <div
+                  class="cone-sides-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Sides:</label>
+                  <input
+                    type="number"
+                    id="coneSides"
+                    min="3"
+                    max="24"
+                    step="1"
+                    value="6"
+                    style="width: 50px; font-size: 0.85em"
+                    title="Number of sides (n-gon cone)"
+                  />
+                </div>
+                <div
+                  class="cone-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q<sub>R</sub>:</label>
+                  <input
+                    type="number"
+                    id="coneBaseQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Base circumradius quadrance (Q_R = R²)"
+                  />
+                  <label style="font-size: 0.85em">R:</label>
+                  <input
+                    type="number"
+                    id="coneBaseRadius"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Base circumradius (R = √Q_R)"
+                  />
+                </div>
+                <div
+                  class="cone-height-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q<sub>H</sub>:</label>
+                  <input
+                    type="number"
+                    id="coneHeightQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Height quadrance (Q_H = H²)"
+                  />
+                  <label style="font-size: 0.85em">H:</label>
+                  <input
+                    type="number"
+                    id="coneHeight"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Height (H = √Q_H)"
+                  />
+                </div>
+                <div
+                  class="cone-face-container"
+                  style="display: flex; gap: 10px; align-items: center"
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="coneShowFaces" checked />
+                    Show Faces
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Penrose Tiling (2D aperiodic tiling with golden ratio) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPenroseTiling" />
+                Penrose Tiling (φ)
+              </label>
+              <div
+                id="penrose-tiling-controls"
+                class="penrose-options"
+                style="display: none; margin-left: 20px; margin-top: 5px"
+              >
+                <!-- Tile Type Selection -->
+                <div
+                  class="penrose-type-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <label style="font-size: 0.85em">
+                    <input
+                      type="radio"
+                      name="penroseTileType"
+                      value="thick"
+                      checked
+                    />
+                    Thick (72°)
+                  </label>
+                  <label style="font-size: 0.85em">
+                    <input type="radio" name="penroseTileType" value="thin" />
+                    Thin (36°)
+                  </label>
+                  <label style="font-size: 0.85em">
+                    <input type="radio" name="penroseTileType" value="kite" />
+                    Kite
+                  </label>
+                  <label style="font-size: 0.85em">
+                    <input type="radio" name="penroseTileType" value="dart" />
+                    Dart
+                  </label>
+                </div>
+                <!-- Quadrance Input -->
+                <div
+                  class="penrose-quadrance-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Q:</label>
+                  <input
+                    type="number"
+                    id="penroseQuadrance"
+                    min="0.001"
+                    step="0.1"
+                    value="1"
+                    style="width: 55px; font-size: 0.85em"
+                    title="Short diagonal quadrance"
+                  />
+                </div>
+                <!-- Edge Weight Slider -->
+                <div
+                  class="penrose-weight-container"
+                  style="
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    margin-bottom: 5px;
+                  "
+                >
+                  <label style="font-size: 0.85em">Edge:</label>
+                  <input
+                    type="range"
+                    id="penroseEdgeWeight"
+                    min="1"
+                    max="10"
+                    value="2"
+                    style="width: 80px"
+                  />
+                  <span
+                    class="slider-value"
+                    id="penroseEdgeWeightValue"
+                    style="font-size: 0.85em"
+                    >2</span
+                  >
+                </div>
+                <!-- Show Face Checkbox -->
+                <div
+                  class="penrose-face-container"
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    margin-bottom: 8px;
+                  "
+                >
+                  <label class="checkbox-label" style="font-size: 0.85em">
+                    <input type="checkbox" id="penroseShowFace" checked />
+                    Show Face
+                  </label>
+                </div>
+                <!-- Tiling Generation Controls -->
+                <div
+                  style="
+                    border-top: 1px solid #444;
+                    padding-top: 8px;
+                    margin-top: 5px;
+                  "
+                >
+                  <label
+                    class="checkbox-label"
+                    style="
+                      font-size: 0.85em;
+                      margin-bottom: 5px;
+                      display: block;
+                    "
+                  >
+                    <input type="checkbox" id="penroseTilingEnabled" />
+                    Enable Tiling (Deflation)
+                  </label>
+                  <div
+                    id="penrose-deflation-controls"
+                    style="display: none; margin-left: 10px; margin-top: 5px"
+                  >
+                    <!-- Seed Selection -->
+                    <div style="margin-bottom: 5px">
+                      <label
+                        style="
+                          font-size: 0.8em;
+                          display: block;
+                          margin-bottom: 3px;
+                        "
+                        >Seed:</label
+                      >
+                      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                        <label style="font-size: 0.8em">
+                          <input
+                            type="radio"
+                            name="penroseSeed"
+                            value="star"
+                            checked
+                          />
+                          Star
+                        </label>
+                        <label style="font-size: 0.8em">
+                          <input type="radio" name="penroseSeed" value="sun" />
+                          Sun
+                        </label>
+                        <label style="font-size: 0.8em">
+                          <input
+                            type="radio"
+                            name="penroseSeed"
+                            value="cartwheel"
+                          />
+                          Cartwheel
+                        </label>
+                        <label style="font-size: 0.8em">
+                          <input
+                            type="radio"
+                            name="penroseSeed"
+                            value="single-thick"
+                          />
+                          Single
+                        </label>
+                      </div>
+                    </div>
+                    <!-- Generations Slider -->
+                    <div style="display: flex; gap: 8px; align-items: center">
+                      <label style="font-size: 0.8em">Generations:</label>
+                      <input
+                        type="range"
+                        id="penroseGenerations"
+                        min="0"
+                        max="6"
+                        value="2"
+                        style="width: 70px"
+                      />
+                      <span
+                        class="slider-value"
+                        id="penroseGenerationsValue"
+                        style="font-size: 0.8em"
+                        >2</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END SECTION 3: PRIMITIVES -->
+
+        <!-- ========================================
+             SECTION 3B: POLYHEDRA
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span class="section-toggle" data-target="polyhedra-section"></span>
+            Polyhedra
+          </h3>
+          <div id="polyhedra-section" class="section-content">
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showCube" checked />
+                Hexahedron (Cube)
+              </label>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showTetrahedron" />
+                Tetrahedron (Inscribed)
+              </label>
+              <div
+                id="geodesic-tetra-all"
+                class="geodesic-options geodesic-control-wrapper"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="showGeodesicTetrahedron" />
+                    Geodesic (Fuller)
+                  </label>
+                  <div class="geodesic-nested">
+                    <div class="geodesic-frequency-container slider-container">
+                      <label class="geodesic-frequency-label">Freq:</label>
+                      <input
+                        type="range"
+                        id="geodesicTetraFrequency"
+                        min="1"
+                        max="7"
+                        step="1"
+                        value="1"
+                      />
+                      <span class="slider-value" id="geodesicTetraFreqValue"
+                        >1</span
+                      >
+                    </div>
+                    <div class="geodesic-projection-container">
+                      <label class="geodesic-projection-label">Project:</label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicTetraProjection"
+                          value="off"
+                        />
+                        Off (flat)
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicTetraProjection"
+                          value="in"
+                        />
+                        InSphere
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicTetraProjection"
+                          value="mid"
+                        />
+                        MidSphere
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicTetraProjection"
+                          value="out"
+                          checked
+                        />
+                        OutSphere
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <!-- Truncation controls (for prime polygon search parity) -->
+                <div class="geodesic-nested" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="showTruncatedTetrahedron" />
+                    Truncate (0 → ½)
+                  </label>
+                  <div id="truncation-tetra-controls" class="geodesic-nested" style="display: none">
+                    <div class="geodesic-frequency-container slider-container">
+                      <label class="geodesic-frequency-label">t:</label>
+                      <input
+                        type="range"
+                        id="truncationTetraSlider"
+                        min="0"
+                        max="0.5"
+                        step="0.01"
+                        value="0.333"
+                      />
+                      <span class="slider-value" id="truncationTetraValue">⅓</span>
+                    </div>
+                    <p class="info-text" style="font-size: 9px; margin-top: 4px">
+                      t=0: Tetrahedron • t=⅓: Truncated Tet • t=½: Octahedron
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showDualTetrahedron" checked />
+                Tetrahedron Dual
+              </label>
+              <div
+                id="geodesic-dual-tetra-all"
+                class="geodesic-options geodesic-control-wrapper"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="showGeodesicDualTetrahedron" />
+                    Geodesic (Fuller)
+                  </label>
+                  <div class="geodesic-nested">
+                    <div class="geodesic-frequency-container slider-container">
+                      <label class="geodesic-frequency-label">Freq:</label>
+                      <input
+                        type="range"
+                        id="geodesicDualTetraFrequency"
+                        min="1"
+                        max="7"
+                        step="1"
+                        value="1"
+                      />
+                      <span class="slider-value" id="geodesicDualTetraFreqValue"
+                        >1</span
+                      >
+                    </div>
+                    <div class="geodesic-projection-container">
+                      <label class="geodesic-projection-label">Project:</label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicDualTetraProjection"
+                          value="off"
+                        />
+                        Off (flat)
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicDualTetraProjection"
+                          value="in"
+                        />
+                        InSphere
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicDualTetraProjection"
+                          value="mid"
+                        />
+                        MidSphere
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicDualTetraProjection"
+                          value="out"
+                          checked
+                        />
+                        OutSphere
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <!-- Truncation controls for Dual Tetrahedron -->
+                <div class="geodesic-nested" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #333">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="showTruncatedDualTetrahedron" />
+                    Truncate (0 → ½)
+                  </label>
+                  <div id="truncation-dual-tetra-controls" class="geodesic-nested" style="display: none">
+                    <div class="geodesic-frequency-container slider-container">
+                      <label class="geodesic-frequency-label">t:</label>
+                      <input
+                        type="range"
+                        id="truncationDualTetraSlider"
+                        min="0"
+                        max="0.5"
+                        step="0.01"
+                        value="0.333"
+                      />
+                      <span class="slider-value" id="truncationDualTetraValue">⅓</span>
+                    </div>
+                    <p class="info-text" style="font-size: 9px; margin-top: 4px">
+                      t=0: Dual Tet • t=⅓: Truncated Dual Tet • t=½: Octahedron
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showOctahedron" />
+                Octahedron (Dual of Cube)
+              </label>
+              <div
+                id="geodesic-octa-all"
+                class="geodesic-options geodesic-control-wrapper"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="showGeodesicOctahedron" />
+                    Geodesic (Fuller)
+                  </label>
+                  <div class="geodesic-nested">
+                    <div class="geodesic-frequency-container slider-container">
+                      <label class="geodesic-frequency-label">Freq:</label>
+                      <input
+                        type="range"
+                        id="geodesicOctaFrequency"
+                        min="1"
+                        max="7"
+                        step="1"
+                        value="1"
+                      />
+                      <span class="slider-value" id="geodesicOctaFreqValue"
+                        >1</span
+                      >
+                    </div>
+                    <div class="geodesic-projection-container">
+                      <label class="geodesic-projection-label">Project:</label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicOctaProjection"
+                          value="off"
+                        />
+                        Off (flat)
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicOctaProjection"
+                          value="in"
+                        />
+                        InSphere
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicOctaProjection"
+                          value="mid"
+                        />
+                        MidSphere
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicOctaProjection"
+                          value="out"
+                          checked
+                        />
+                        OutSphere
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showIcosahedron" />
+                Icosahedron (20 faces, φ)
+              </label>
+              <div
+                id="geodesic-icosa-all"
+                class="geodesic-options geodesic-control-wrapper"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="showGeodesicIcosahedron" />
+                    Geodesic (Fuller)
+                  </label>
+                  <div class="geodesic-nested">
+                    <div class="geodesic-frequency-container slider-container">
+                      <label class="geodesic-frequency-label">Freq:</label>
+                      <input
+                        type="range"
+                        id="geodesicIcosaFrequency"
+                        min="1"
+                        max="7"
+                        step="1"
+                        value="1"
+                      />
+                      <span class="slider-value" id="geodesicIcosaFreqValue"
+                        >1</span
+                      >
+                    </div>
+                    <div class="geodesic-projection-container">
+                      <label class="geodesic-projection-label">Project:</label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicIcosaProjection"
+                          value="off"
+                        />
+                        Off (flat)
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicIcosaProjection"
+                          value="in"
+                        />
+                        InSphere
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicIcosaProjection"
+                          value="mid"
+                        />
+                        MidSphere
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicIcosaProjection"
+                          value="out"
+                          checked
+                        />
+                        OutSphere
+                      </label>
+                    </div>
+                    <!-- Face Tiling option -->
+                    <div class="geodesic-face-tiling-container">
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="geodesicIcosaFaceTiling" />
+                        Face Tiling
+                      </label>
+                      <div
+                        id="geodesic-icosa-face-tiling-options"
+                        class="sub-controls"
+                        style="display: none"
+                      >
+                        <span
+                          class="tiling-info"
+                          style="font-size: 10px; color: #00b4ff"
+                          >Set Polygon Tiling Properties under
+                          Primitives/Polygons</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showDodecahedron" />
+                Dodecahedron (12 faces, φ)
+              </label>
+              <div
+                id="dodecahedron-options"
+                class="geodesic-options geodesic-control-wrapper"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <!-- Face Tiling option for Dodecahedron -->
+                  <div class="geodesic-face-tiling-container">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="dodecahedronFaceTiling" />
+                      Face Tiling (Pentagon)
+                    </label>
+                    <div
+                      id="dodecahedron-face-tiling-options"
+                      class="sub-controls"
+                      style="display: none"
+                    >
+                      <span
+                        class="tiling-info"
+                        style="font-size: 10px; color: #00b4ff"
+                        >Uses Pentagon settings from Primitives/Polygons</span
+                      >
+                      <div
+                        class="slider-container"
+                        style="
+                          display: flex;
+                          gap: 5px;
+                          align-items: center;
+                          margin-top: 6px;
+                        "
+                      >
+                        <label style="font-size: 0.85em">Scale:</label>
+                        <input
+                          type="range"
+                          id="dodecTilingScale"
+                          min="0.5"
+                          max="1.5"
+                          step="0.001"
+                          value="1.0"
+                        />
+                        <input
+                          type="number"
+                          id="dodecTilingScaleInput"
+                          min="0.1"
+                          max="2.0"
+                          step="0.001"
+                          value="1.000"
+                          style="width: 55px; font-size: 11px"
+                        />
+                      </div>
+                      <div style="font-size: 9px; color: #888; margin-top: 2px">
+                        φ: 0.618, 0.809, 0.899, 1.236
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showDualIcosahedron" />
+                Icosahedron Dual (Face Dual)
+              </label>
+              <div
+                id="geodesic-dual-icosa-all"
+                class="geodesic-options geodesic-control-wrapper"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="showGeodesicDualIcosahedron" />
+                    Geodesic (Fuller)
+                  </label>
+                  <div class="geodesic-nested">
+                    <div class="geodesic-frequency-container slider-container">
+                      <label class="geodesic-frequency-label">Freq:</label>
+                      <input
+                        type="range"
+                        id="geodesicDualIcosaFrequency"
+                        min="1"
+                        max="7"
+                        step="1"
+                        value="1"
+                      />
+                      <span class="slider-value" id="geodesicDualIcosaFreqValue"
+                        >1</span
+                      >
+                    </div>
+                    <div class="geodesic-projection-container">
+                      <label class="geodesic-projection-label">Project:</label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicDualIcosaProjection"
+                          value="off"
+                        />
+                        Off (flat)
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicDualIcosaProjection"
+                          value="in"
+                        />
+                        InSphere
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicDualIcosaProjection"
+                          value="mid"
+                        />
+                        MidSphere
+                      </label>
+                      <label class="geodesic-projection-option">
+                        <input
+                          type="radio"
+                          name="geodesicDualIcosaProjection"
+                          value="out"
+                          checked
+                        />
+                        OutSphere
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showCuboctahedron" />
+                Cuboctahedron (VE)
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRhombicDodecahedron" />
+                Rhombic Dodecahedron
+              </label>
+            </div>
+
+          </div>
+        </div>
+        <!-- END SECTION 3B: POLYHEDRA -->
+
+        <!-- ========================================
+             SECTION 3B2: EXPERIMENTAL POLYHEDRA
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span class="section-toggle collapsed" data-target="experimental-polyhedra-section"></span>
+            Experimental Polyhedra
+          </h3>
+          <div id="experimental-polyhedra-section" class="section-content collapsed">
+
+            <!-- ========== QUADRAY DEMONSTRATORS ========== -->
+            <div class="matrix-divider">
+              <label class="matrix-divider-label">Quadray Demonstrators</label>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayTetrahedron" />
+                Quadray Tetrahedron (4D Native)
+              </label>
+              <div
+                id="quadray-tetra-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="quadrayTetraNormalize" checked />
+                    Zero-Sum Normalize (3 DOF)
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    ON: Standard Quadray (equivalent to XYZ)<br />
+                    OFF: Native 4-DOF (deformations preserved)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayTetraDeformed" />
+                Quadray Tetrahedron Deformed
+              </label>
+              <div
+                id="quadray-tetra-deformed-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <div class="slider-container">
+                    <label class="geodesic-frequency-label">Z Stretch:</label>
+                    <input
+                      type="range"
+                      id="quadrayTetraZStretch"
+                      min="0.5"
+                      max="4"
+                      step="0.5"
+                      value="2"
+                    />
+                    <span class="slider-value">2.0</span>
+                  </div>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    Stretches Z vertex to (0,0,0,N) — demonstrates 4th DOF
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayCuboctahedron" />
+                Quadray Cuboctahedron (VE)
+              </label>
+              <div
+                id="quadray-cuboctahedron-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="quadrayCuboctaNormalize"
+                      checked
+                    />
+                    Zero-Sum Normalize (3 DOF)
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    {2,1,1,0} permutations — 12-around-1 sphere packing<br />
+                    (Kirby Urner calibration)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayOctahedron" />
+                Quadray Octahedron
+              </label>
+              <div
+                id="quadray-octahedron-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="quadrayOctaNormalize"
+                      checked
+                    />
+                    Zero-Sum Normalize
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    {1,1,0,0} permutations — 6 vertices
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayTruncatedTet" />
+                Quadray Truncated Tetrahedron
+              </label>
+              <div
+                id="quadray-trunc-tet-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="quadrayTruncTetNormalize"
+                      checked
+                    />
+                    Zero-Sum Normalize
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    {2,1,0,0} permutations — ALL rational!<br />
+                    <span style="color: #888">Quadray coordinate demonstrator</span>
+                  </p>
+                  <p class="info-text" style="font-size: 9px; margin-top: 5px; color: #ffd93d">
+                    ★ For prime projections, use the dedicated<br />
+                    "Prime Polygon Projections" section below
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showQuadrayStellaOctangula" />
+                Quadray Stella Octangula
+              </label>
+              <div
+                id="quadray-stella-octangula-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      id="quadrayStellaOctangulaNormalize"
+                      checked
+                    />
+                    Zero-Sum Normalize
+                  </label>
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    Star Tetrahedron (Merkaba)<br />
+                    tetrahedron + dualTetrahedron compound — 8 vertices
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ========== PRIME POLYGON PROJECTIONS ========== -->
+            <div class="matrix-divider">
+              <label class="matrix-divider-label">Prime Polygon Projections</label>
+            </div>
+            <p class="info-text" style="font-size: 10px; margin: 5px 0 10px 0; color: #888">
+              Base polyhedra for prime hull projections (Gauss-Wantzel bypass).<br />
+              Single source of truth — no Quadray normalization.
+            </p>
+
+            <!-- Truncated Tetrahedron (5-gon) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPrimeTruncTet" />
+                Truncated Tetrahedron (5-gon)
+              </label>
+              <div
+                id="prime-trunc-tet-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    12 vertices → 5-gon hull at s=(0, 0.5, 0)<br />
+                    <span style="color: #00b4ff">Pentagon — Fermat prime, compass-constructible</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Compound TruncTet + Tet (7-gon) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPrimeCompoundTet" />
+                Compound (TruncTet + Tet)
+              </label>
+              <div
+                id="prime-compound-tet-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    16 vertices (12 + 4) → 7-gon hull<br />
+                    <span style="color: #00b4ff">Heptagon — NOT compass-constructible!</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Compound TruncTet + Icosa (11/13-gon) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPrimeCompoundIcosa" />
+                Compound (TruncTet + Icosa)
+              </label>
+              <div
+                id="prime-compound-icosa-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    24 vertices (12 + 12) → 11/13-gon hulls<br />
+                    <span style="color: #00b4ff">Bypasses Gauss-Wantzel theorem!</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Geodesic Tet f=2 (7-gon single-poly) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPrimeGeoTetF2" />
+                Geodesic Tet f=2 (7-gon)
+              </label>
+              <div
+                id="prime-geo-tet-f2-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    10 vertices → 7-gon hull (single polyhedron!)<br />
+                    <span style="color: #00b4ff">Asymmetric geodesic — no compound needed</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Geodesic Tet f=4 (11/13-gon single-poly) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showPrimeGeoTetF4" />
+                Geodesic Tet f=4 (11/13-gon)
+              </label>
+              <div
+                id="prime-geo-tet-f4-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                    34 vertices → 11/13-gon hulls (single polyhedron!)<br />
+                    <span style="color: #00b4ff">Beats compound: Tier 1, √2-only, higher regularity</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ========== THOMSON POLYHEDRA ========== -->
+            <div class="matrix-divider">
+              <label class="matrix-divider-label">Thomson Polyhedra</label>
+            </div>
+            <p class="info-text" style="font-size: 10px; margin: 5px 0 10px 0; color: #888">
+              N-gon great-circle shells on platonic frames.<br />
+              Vertex count = f(N, base polyhedron).
+            </p>
+
+            <!-- Thomson Tetrahedron -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showThomsonTetrahedron" />
+                Thomson Tetrahedron
+              </label>
+              <div
+                id="thomson-tetra-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="label-subsection">N-gon</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonTetraNGon"
+                      min="3"
+                      max="12"
+                      step="1"
+                      value="5"
+                    />
+                    <span class="slider-value" id="thomsonTetraNGonValue">5</span>
+                  </div>
+                  <label class="label-subsection">Rotation</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonTetraRotation"
+                      min="0"
+                      max="360"
+                      step="1"
+                      value="0"
+                    />
+                    <span class="slider-value" id="thomsonTetraRotationValue">0° s=0</span>
+                  </div>
+                  <label class="checkbox-label" style="font-size: 11px; margin-top: 4px">
+                    <input type="checkbox" id="thomsonTetraFacePlanes" checked />
+                    Face Planes (4)
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonTetraEdgePlanes" />
+                    Edge Planes (6)
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonTetraShowFaces" />
+                    Show Faces
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonTetraShowHullEdges" />
+                    Hull Edges
+                  </label>
+                  <div style="margin-top: 6px; border-top: 1px solid #444; padding-top: 4px">
+                    <label class="label-subsection">Jitterbug</label>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
+                      <button
+                        id="thomsonTetJitterbugToggle"
+                        class="toggle-btn variant-standard"
+                        style="width: auto; flex: none"
+                      >Play</button>
+                      <label class="checkbox-label" style="font-size: 11px; margin: 0">
+                        <input
+                          type="checkbox"
+                          id="thomsonTetJitterbugBounce"
+                          checked
+                        />
+                        Bounce
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thomson Octahedron -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showThomsonOctahedron" />
+                Thomson Octahedron
+              </label>
+              <div
+                id="thomson-octa-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="label-subsection">N-gon</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonOctaNGon"
+                      min="3"
+                      max="12"
+                      step="1"
+                      value="5"
+                    />
+                    <span class="slider-value" id="thomsonOctaNGonValue">5</span>
+                  </div>
+                  <label class="label-subsection">Rotation</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonOctaRotation"
+                      min="0"
+                      max="360"
+                      step="1"
+                      value="0"
+                    />
+                    <span class="slider-value" id="thomsonOctaRotationValue">0° s=0</span>
+                  </div>
+                  <label class="checkbox-label" style="font-size: 11px; margin-top: 4px">
+                    <input type="checkbox" id="thomsonOctaShowFaces" />
+                    Show Faces
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonOctaShowHullEdges" />
+                    Hull Edges
+                  </label>
+                  <div style="margin-top: 6px; border-top: 1px solid #444; padding-top: 4px">
+                    <label class="label-subsection">Jitterbug</label>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
+                      <button
+                        id="thomsonOctaJitterbugToggle"
+                        class="toggle-btn variant-standard"
+                        style="width: auto; flex: none"
+                      >Play</button>
+                      <label class="checkbox-label" style="font-size: 11px; margin: 0">
+                        <input
+                          type="checkbox"
+                          id="thomsonOctaJitterbugBounce"
+                          checked
+                        />
+                        Bounce
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thomson Cube -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showThomsonCube" />
+                Thomson Cube
+              </label>
+              <div
+                id="thomson-cube-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="label-subsection">N-gon</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonCubeNGon"
+                      min="3"
+                      max="12"
+                      step="1"
+                      value="5"
+                    />
+                    <span class="slider-value" id="thomsonCubeNGonValue"
+                      >5</span
+                    >
+                  </div>
+                  <label class="label-subsection">Rotation</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonCubeRotation"
+                      min="0"
+                      max="360"
+                      step="1"
+                      value="0"
+                    />
+                    <span class="slider-value" id="thomsonCubeRotationValue"
+                      >0° s=0</span
+                    >
+                  </div>
+                  <label
+                    class="checkbox-label"
+                    style="font-size: 11px; margin-top: 4px"
+                  >
+                    <input
+                      type="checkbox"
+                      id="thomsonCubeCoordPlanes"
+                      checked
+                    />
+                    Coord Planes (3)
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input
+                      type="checkbox"
+                      id="thomsonCubeDiagPlanes"
+                      checked
+                    />
+                    Diagonal Planes (6)
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonCubeShowFaces" />
+                    Show Faces
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonCubeShowHullEdges" />
+                    Hull Edges
+                  </label>
+                  <div style="margin-top: 6px; border-top: 1px solid #444; padding-top: 4px">
+                    <label class="label-subsection">Jitterbug</label>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
+                      <button
+                        id="thomsonCubeJitterbugToggle"
+                        class="toggle-btn variant-standard"
+                        style="width: auto; flex: none"
+                      >Play</button>
+                      <label class="checkbox-label" style="font-size: 11px; margin: 0">
+                        <input
+                          type="checkbox"
+                          id="thomsonCubeJitterbugBounce"
+                          checked
+                        />
+                        Bounce
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thomson Icosahedron -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showThomsonIcosahedron" />
+                Thomson Icosahedron
+              </label>
+              <div
+                id="thomson-icosa-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <div class="geodesic-nested">
+                  <label class="label-subsection">N-gon</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonIcosaNGon"
+                      min="3"
+                      max="12"
+                      step="1"
+                      value="5"
+                    />
+                    <span class="slider-value" id="thomsonIcosaNGonValue"
+                      >5</span
+                    >
+                  </div>
+                  <label class="label-subsection">Rotation</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="thomsonIcosaRotation"
+                      min="0"
+                      max="360"
+                      step="1"
+                      value="0"
+                    />
+                    <span class="slider-value" id="thomsonIcosaRotationValue"
+                      >0° s=0</span
+                    >
+                  </div>
+                  <label
+                    class="checkbox-label"
+                    style="font-size: 11px; margin-top: 4px"
+                  >
+                    <input
+                      type="checkbox"
+                      id="thomsonIcosaCoordPlanes"
+                      checked
+                    />
+                    Coord Planes (3)
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input
+                      type="checkbox"
+                      id="thomsonIcosaEdgeMirrorPlanes"
+                      checked
+                    />
+                    Edge Mirror Planes (12)
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonIcosaShowFaces" />
+                    Show Faces
+                  </label>
+                  <label class="checkbox-label" style="font-size: 11px">
+                    <input type="checkbox" id="thomsonIcosaShowHullEdges" />
+                    Hull Edges
+                  </label>
+                  <div style="margin-top: 6px; border-top: 1px solid #444; padding-top: 4px">
+                    <label class="label-subsection">Jitterbug</label>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
+                      <button
+                        id="thomsonIcosaJitterbugToggle"
+                        class="toggle-btn variant-standard"
+                        style="width: auto; flex: none"
+                      >Play</button>
+                      <label class="checkbox-label" style="font-size: 11px; margin: 0">
+                        <input
+                          type="checkbox"
+                          id="thomsonIcosaJitterbugBounce"
+                          checked
+                        />
+                        Bounce
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <!-- END SECTION 3B2: EXPERIMENTAL POLYHEDRA -->
+
+        <!-- ========================================
+             SECTION 3C: PLANAR MATRICES
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="planar-matrices-section"
+            ></span>
+            Planar Matrices
+          </h3>
+          <div id="planar-matrices-section" class="section-content collapsed">
+            <!-- Hexahedral Matrix (IVM) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showCubeMatrix" />
+                Hexahedral Matrix (IVM)
+              </label>
+              <div
+                id="cube-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Matrix Size</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="cubeMatrixSizeSlider"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="cubeMatrixSizeValue"
+                      >1×1</span
+                    >
+                  </div>
+                </div>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="cubeMatrixRotate45" />
+                  Rotate 45° (grid align)
+                </label>
+                <p class="matrix-info-text">N×N spatial array (spread = 0.5)</p>
+              </div>
+            </div>
+
+            <!-- Tetrahedral Matrix (IVM) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showTetMatrix" />
+                Tetrahedral Matrix (IVM)
+              </label>
+              <div
+                id="tet-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Matrix Size</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="tetMatrixSizeSlider"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="tetMatrixSizeValue"
+                      >1×1</span
+                    >
+                  </div>
+                </div>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="tetMatrixRotate45" />
+                  Rotate 45° (grid align)
+                </label>
+                <p class="matrix-info-text">
+                  N×N tetrahedral array with alternating orientations
+                </p>
+              </div>
+            </div>
+
+            <!-- Octahedral Matrix (IVM) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showOctaMatrix" />
+                Octahedral Matrix (IVM)
+              </label>
+              <div
+                id="octa-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Matrix Size</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="octaMatrixSizeSlider"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="octaMatrixSizeValue"
+                      >1×1</span
+                    >
+                  </div>
+                </div>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="octaMatrixRotate45" />
+                  Rotate 45° (grid align)
+                </label>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="octaMatrixColinearEdges" />
+                  Colinear Edges (space-filling)
+                </label>
+                <p class="matrix-info-text">
+                  N×N octahedral face-to-face array
+                </p>
+              </div>
+            </div>
+
+            <!-- Cuboctahedral Matrix (VE) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showCuboctahedronMatrix" />
+                Cuboctahedral Matrix (VE)
+              </label>
+              <div
+                id="cubocta-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Matrix Size</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="cuboctaMatrixSizeSlider"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="cuboctaMatrixSizeValue"
+                      >1×1</span
+                    >
+                  </div>
+                </div>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="cuboctaMatrixRotate45" />
+                  Rotate 45° (grid align)
+                </label>
+                <p class="matrix-info-text">
+                  N×N Vector Equilibrium space-filling array
+                </p>
+              </div>
+            </div>
+
+            <!-- Rhombic Dodecahedral Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRhombicDodecMatrix" />
+                Rhombic Dodecahedral Matrix
+              </label>
+              <div
+                id="rhombic-dodec-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Matrix Size</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="rhombicDodecMatrixSizeSlider"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="rhombicDodecMatrixSizeValue"
+                      >1×1</span
+                    >
+                  </div>
+                </div>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="rhombicDodecMatrixRotate45" />
+                  Rotate 45° (grid align)
+                </label>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="rhombicDodecMatrixFaceCoplanar" />
+                  Face Coplanarity (space-filling)
+                </label>
+                <p class="matrix-info-text">
+                  N×N Rhombic Dodecahedron space-filling array
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END SECTION 3C: PLANAR MATRICES -->
+
+        <!-- ========================================
+             SECTION 3D: RADIAL MATRICES
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="radial-matrices-section"
+            ></span>
+            Radial Matrices
+          </h3>
+          <div id="radial-matrices-section" class="section-content collapsed">
+            <!-- Hexahedral Radial Matrix (Cube) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialCubeMatrix" />
+                Hexahedral Radial Matrix
+              </label>
+              <div
+                id="radial-cube-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialCubeFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialCubeFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="radialCubeSpaceFill" checked />
+                  Space-filling
+                </label>
+                <p class="matrix-info-text">
+                  Odd frequencies (nuclear cube): F1=1³, F3=3³, F5=5³
+                </p>
+              </div>
+            </div>
+
+            <!-- Tetrahedral Radial Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialTetrahedronMatrix" />
+                Tetrahedral Radial Matrix
+              </label>
+              <div
+                id="radial-tetrahedron-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialTetFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialTetFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <p class="matrix-info-text">
+                  Stellation: F1=1, F2=5, F3=15 (alternating up/down)
+                </p>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="radialTetIVMMode" />
+                  IVM Mode (fill oct voids)
+                </label>
+              </div>
+            </div>
+
+            <!-- Octahedral Radial Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialOctahedronMatrix" />
+                Octahedral Radial Matrix
+              </label>
+              <div
+                id="radial-octahedron-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialOctFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialOctFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <p class="matrix-info-text">
+                  Vertex stellation: F1=1, F2=7, F3=25 (octahedral growth)
+                </p>
+                <label class="checkbox-label matrix-checkbox-label">
+                  <input type="checkbox" id="radialOctIVMScale" />
+                  IVM Scale (match tet faces)
+                </label>
+              </div>
+            </div>
+
+            <!-- Cuboctahedral Radial Matrix (VE) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialCuboctahedronMatrix" />
+                Cuboctahedral Radial Matrix
+              </label>
+              <div
+                id="radial-cuboctahedron-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialVEFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span class="slider-value" id="radialVEFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <p class="matrix-info-text">
+                  Stacked grids: F1=1, F2=6, F3=19 (hexahedral packing)
+                </p>
+              </div>
+            </div>
+
+            <!-- Rhombic Dodecahedral Radial Matrix -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showRadialRhombicDodecMatrix" />
+                Rhombic Dodecahedral Radial Matrix
+              </label>
+              <div
+                id="radial-rhombic-dodec-matrix-controls"
+                class="geodesic-options matrix-control-wrapper"
+                style="display: none"
+              >
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Frequency</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="radialRhombicDodecFreqSlider"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value="1"
+                    />
+                    <span
+                      class="slider-value"
+                      id="radialRhombicDodecFreqDisplay"
+                      >F1</span
+                    >
+                  </div>
+                </div>
+                <p class="matrix-info-text">
+                  Odd frequencies (nuclear RD): F1=1, F3=13, F5=55
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END SECTION 3D: RADIAL MATRICES -->
+
+        <!-- ========================================
+             SECTION 3E: HELICES
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="helices-section"
+            ></span>
+            Helices
+          </h3>
+          <div id="helices-section" class="section-content collapsed">
+            <!-- Tetrahelix 1: Toroidal (left-handed) -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showTetrahelix1" />
+                Tetrahelix 1 (Toroidal)
+              </label>
+              <div
+                id="tetrahelix1-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <!-- Count slider (1-48 for torus near-closure) -->
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Count</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="tetrahelix1CountSlider"
+                      min="1"
+                      max="48"
+                      step="1"
+                      value="10"
+                    />
+                    <span class="slider-value" id="tetrahelix1CountDisplay"
+                      >10</span
+                    >
+                  </div>
+                </div>
+                <!-- Quadray Axis selection (QW, QX, QY, QZ) - Radio buttons -->
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Axis</label>
+                  <label class="geodesic-projection-option">
+                    <input
+                      type="radio"
+                      name="tetrahelix1Axis"
+                      value="QW"
+                      checked
+                    />
+                    QW
+                  </label>
+                  <label class="geodesic-projection-option">
+                    <input type="radio" name="tetrahelix1Axis" value="QX" />
+                    QX
+                  </label>
+                  <label class="geodesic-projection-option">
+                    <input type="radio" name="tetrahelix1Axis" value="QY" />
+                    QY
+                  </label>
+                  <label class="geodesic-projection-option">
+                    <input type="radio" name="tetrahelix1Axis" value="QZ" />
+                    QZ
+                  </label>
+                </div>
+                <p class="matrix-info-text">
+                  Left-handed only (48 = torus near-closure)
+                </p>
+              </div>
+            </div>
+
+            <!-- Tetrahelix 2: Linear -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showTetrahelix2" />
+                Tetrahelix 2 (Linear)
+              </label>
+              <div
+                id="tetrahelix2-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <!-- Count slider (1-96 for linear exploration) -->
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Count</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="tetrahelix2CountSlider"
+                      min="1"
+                      max="145"
+                      step="1"
+                      value="10"
+                    />
+                    <span class="slider-value" id="tetrahelix2CountDisplay"
+                      >10</span
+                    >
+                  </div>
+                </div>
+                <!-- Axis, Direction, and Strands on same row -->
+                <div
+                  class="matrix-control-item"
+                  style="display: flex; gap: 16px; flex-wrap: wrap"
+                >
+                  <div style="display: flex; align-items: center; gap: 4px">
+                    <label class="matrix-size-label" style="margin-right: 4px"
+                      >Axis</label
+                    >
+                    <label class="geodesic-projection-option">
+                      <input
+                        type="radio"
+                        name="tetrahelix2Axis"
+                        value="QW"
+                        checked
+                      />
+                      QW
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2Axis" value="QX" />
+                      QX
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2Axis" value="QY" />
+                      QY
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2Axis" value="QZ" />
+                      QZ
+                    </label>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 4px">
+                    <label class="matrix-size-label" style="margin-right: 4px"
+                      >Dir</label
+                    >
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix2DirPlus" checked />
+                      +
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix2DirMinus" /> -
+                    </label>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 4px">
+                    <label class="matrix-size-label" style="margin-right: 4px"
+                      >Strands</label
+                    >
+                    <label class="geodesic-projection-option">
+                      <input
+                        type="radio"
+                        name="tetrahelix2Strands"
+                        value="1"
+                        checked
+                      />
+                      1
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2Strands" value="2" />
+                      2
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2Strands" value="3" />
+                      3
+                    </label>
+                    <label class="geodesic-projection-option">
+                      <input type="radio" name="tetrahelix2Strands" value="4" />
+                      4
+                    </label>
+                  </div>
+                </div>
+                <!-- Bonding mode: zipped (radial) vs unzipped (parallel chains) -->
+                <div
+                  class="matrix-control-item"
+                  style="display: flex; align-items: center; gap: 8px"
+                >
+                  <label class="matrix-size-label" style="margin-right: 4px"
+                    >Mode</label
+                  >
+                  <label class="geodesic-projection-option">
+                    <input
+                      type="radio"
+                      name="tetrahelix2BondMode"
+                      value="zipped"
+                      checked
+                    />
+                    Zipped
+                  </label>
+                  <label class="geodesic-projection-option">
+                    <input
+                      type="radio"
+                      name="tetrahelix2BondMode"
+                      value="unzipped"
+                    />
+                    Unzipped
+                  </label>
+                </div>
+                <p class="matrix-info-text">
+                  Zipped: radial spines | Unzipped: parallel chains (DNA-like)
+                </p>
+                <!-- COMMENTED OUT: Exit face matrix (kept for future use)
+                     Second Exit Face per strand (controls direction after first tet)
+                <div class="matrix-control-item" style="margin-top: 8px;">
+                  <label class="matrix-size-label" style="margin-bottom: 4px;">Second Exit (per strand)</label>
+                  <div style="display: grid; grid-template-columns: 30px repeat(3, 1fr); gap: 2px; font-size: 11px;">
+                    <div></div>
+                    <div style="text-align: center;">0</div>
+                    <div style="text-align: center;">1</div>
+                    <div style="text-align: center;">2</div>
+                    <div style="font-weight: bold;">QW</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQW" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQW" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQW" value="2" /></label>
+                    <div style="font-weight: bold;">QX</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQX" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQX" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQX" value="2" /></label>
+                    <div style="font-weight: bold;">QY</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQY" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQY" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQY" value="2" /></label>
+                    <div style="font-weight: bold;">QZ</div>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQZ" value="0" checked /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQZ" value="1" /></label>
+                    <label style="text-align: center;"><input type="radio" name="tetrahelix2ExitQZ" value="2" /></label>
+                  </div>
+                  <p class="matrix-info-text" style="margin-top: 4px;">
+                    Exit face used after first tetrahedron (affects strand direction)
+                  </p>
+                </div>
+                -->
+              </div>
+            </div>
+
+            <!-- Tetrahelix 3: Octahedral Seed -->
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showTetrahelix3" />
+                Tetrahelix 3 (Octahedral)
+              </label>
+              <div
+                id="tetrahelix3-controls"
+                class="geodesic-options"
+                style="display: none"
+              >
+                <!-- Count slider (1-96 for linear exploration) -->
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Count</label>
+                  <div class="slider-container">
+                    <input
+                      type="range"
+                      id="tetrahelix3CountSlider"
+                      min="1"
+                      max="96"
+                      step="1"
+                      value="10"
+                    />
+                    <span class="slider-value" id="tetrahelix3CountDisplay"
+                      >10</span
+                    >
+                  </div>
+                </div>
+                <!-- Strands: checkboxes for each octahedral face A-H -->
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Strands</label>
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3StrandA" checked />
+                      A
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3StrandB" /> B
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3StrandC" /> C
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3StrandD" /> D
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3StrandE" /> E
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3StrandF" /> F
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3StrandG" /> G
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3StrandH" /> H
+                    </label>
+                  </div>
+                </div>
+                <!-- Twist: LH/RH toggle for each strand A-H -->
+                <div class="matrix-control-item">
+                  <label class="matrix-size-label">Twist (LH/RH)</label>
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralA" checked />
+                      A
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralB" checked />
+                      B
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralC" checked />
+                      C
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralD" checked />
+                      D
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralE" checked />
+                      E
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralF" checked />
+                      F
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralG" checked />
+                      G
+                    </label>
+                    <label class="checkbox-label" style="font-size: 0.85em">
+                      <input type="checkbox" id="tetrahelix3ChiralH" checked />
+                      H
+                    </label>
+                  </div>
+                  <p class="matrix-info-text" style="margin-top: 4px">
+                    Unchecked = Left-Hand twist, Checked = Right-Hand twist
+                  </p>
+                </div>
+                <p class="matrix-info-text">
+                  Octahedral seed with 8 faces. Each checked strand bonds a
+                  tetrahelix to that face.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END SECTION 3E: HELICES -->
+
+        <!-- ========================================
+             SECTION 4: CONTROLS
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="controls-section"
+            ></span>
+            Controls
+          </h3>
+          <div id="controls-section" class="section-content collapsed">
+            <!-- Tool Mode -->
+            <div class="control-item">
+              <label class="label-section">Tool Mode</label>
+              <div class="toggle-btn-group">
+                <button
+                  class="toggle-btn variant-tool"
+                  data-gumball-tool="move"
+                >
+                  Move
+                </button>
+                <button
+                  class="toggle-btn variant-tool"
+                  data-gumball-tool="scale"
+                >
+                  Scale
+                </button>
+                <button
+                  class="toggle-btn variant-tool"
+                  data-gumball-tool="rotate"
+                >
+                  Rotate
+                </button>
+              </div>
+            </div>
+
+            <!-- Grid Snapping -->
+            <div class="control-item spacing-top-large">
+              <label class="label-section">Grid Snapping</label>
+              <div class="snap-toggle-container">
+                <button
+                  id="snapFree"
+                  class="toggle-btn variant-snap active"
+                  data-snap-mode="free"
+                >
+                  Free
+                </button>
+                <button
+                  id="snapXYZ"
+                  class="toggle-btn variant-snap"
+                  data-snap-mode="xyz"
+                >
+                  XYZ
+                </button>
+                <button
+                  id="snapWXYZ"
+                  class="toggle-btn variant-snap"
+                  data-snap-mode="wxyz"
+                >
+                  WXYZ
+                </button>
+              </div>
+              <div class="snap-description">
+                <strong>Free:</strong> No snapping (full precision)<br />
+                <strong>XYZ:</strong> Snap to 0.1 Cartesian grid<br />
+                <strong>WXYZ:</strong> Snap to √6/4 ≈ 0.612 Quadray grid
+              </div>
+            </div>
+
+            <!-- Object Snapping -->
+            <div class="control-item spacing-top">
+              <label class="label-section">Object Snaps</label>
+              <div class="snap-toggle-container">
+                <button
+                  id="snapVertex"
+                  class="toggle-btn variant-objsnap"
+                  data-objsnap="vertex"
+                  title="Snap to nearest vertex"
+                >
+                  Vertex
+                </button>
+                <button
+                  id="snapEdge"
+                  class="toggle-btn variant-objsnap"
+                  data-objsnap="edge"
+                  title="Snap to nearest edge midpoint"
+                >
+                  Edge
+                </button>
+                <button
+                  id="snapFace"
+                  class="toggle-btn variant-objsnap"
+                  data-objsnap="face"
+                  title="Snap to nearest face centroid"
+                >
+                  Face
+                </button>
+              </div>
+              <div class="snap-description snap-description-small">
+                Toggle on/off. Snaps to other visible polyhedra.
+              </div>
+            </div>
+
+            <!-- Edit Actions -->
+            <div class="control-item spacing-top-large">
+              <label class="label-section">Edit Actions</label>
+              <div class="selection-status">
+                <span id="selectionCount">None selected</span>
+                <span class="selection-hint"
+                  >(Shift+click to multi-select)</span
+                >
+              </div>
+              <div class="toggle-btn-group">
+                <button
+                  class="toggle-btn variant-standard"
+                  id="deformBtn"
+                  title="Enter vertex deformation mode (D)"
+                  disabled
+                >
+                  Deform
+                </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="groupBtn"
+                  title="Group selected objects (Ctrl/Cmd+G)"
+                  disabled
+                >
+                  Group
+                </button>
+              </div>
+              <div class="toggle-btn-group spacing-top-small">
+                <button
+                  class="toggle-btn variant-standard"
+                  id="connectBtn"
+                  title="Connect two Points with a Line (C)"
+                  disabled
+                >
+                  Connect
+                </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="disconnectBtn"
+                  title="Disconnect Line back to two Points"
+                  disabled
+                >
+                  Disconnect
+                </button>
+              </div>
+              <div class="snap-description snap-description-small">
+                Deform: Select instance vertices. Group: Combine 2+ objects.<br />
+                Connect: Link 2 Points with a Line. Disconnect: Unlink Line to
+                Points.
+              </div>
+            </div>
+
+            <!-- History -->
+            <div class="control-item spacing-top">
+              <label class="label-section">History</label>
+              <div class="toggle-btn-group">
+                <button
+                  class="toggle-btn variant-standard"
+                  id="undoBtn"
+                  title="Undo (Ctrl/Cmd+Z)"
+                  disabled
+                >
+                  Undo
+                </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="redoBtn"
+                  title="Redo (Ctrl/Cmd+Shift+Z)"
+                  disabled
+                >
+                  Redo
+                </button>
+              </div>
+            </div>
+
+            <!-- NOW Button -->
+            <div class="control-item spacing-top-large">
+              <button id="nowButton" class="gumball-action-btn">🕐 NOW</button>
+              <div class="now-counter">
+                Deposited: <span id="nowCount">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END SECTION 4: CONTROLS -->
+
+        <!-- ========================================
+             SECTION 5: SCALE
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="scale-section"
+            ></span>
+            Scale
+          </h3>
+          <div id="scale-section" class="section-content collapsed">
+            <div class="control-item">
+              <label>Cube Edge Length (4D±)</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="scaleSlider"
+                  min="-3.6"
+                  max="3.6"
+                  step="0.1"
+                  value="1.4"
+                />
+                <span class="slider-value" id="scaleValue">1.4142</span>
+              </div>
+            </div>
+            <div class="control-item">
+              <label>Tetrahedron Edge Length (4D±)</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="tetScaleSlider"
+                  min="-5.0"
+                  max="5.0"
+                  step="any"
+                  value="2.0"
+                />
+                <span class="slider-value" id="tetScaleValue">2.0000</span>
+              </div>
+            </div>
+            <p class="info-text" style="font-size: 10px; margin-top: 5px">
+              Linked sliders: rational units follow whichever you adjust
+            </p>
+            <p
+              class="info-text"
+              style="font-size: 9px; margin-top: 3px; color: #888"
+            >
+              💫 Negative = inverted through origin (Janus Point)
+            </p>
+          </div>
+        </div>
+        <!-- END SECTION 5: SCALE -->
+
+        <!-- ========================================
+             SECTION 6: VISUAL OPTIONS
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="visual-options-section"
+            ></span>
+            Nodes and Faces
+          </h3>
+          <div id="visual-options-section" class="section-content collapsed">
+            <div class="control-item">
+              <label
+                style="
+                  font-size: 12px;
+                  margin-bottom: 5px;
+                  display: block;
+                  color: #b0b0b0;
+                "
+                >Nodes</label
+              >
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="nodeSizeSlider"
+                  min="0"
+                  max="8"
+                  step="1"
+                  value="4"
+                  title="Node sphere size: 0=Off, 1-7=Fixed sizes, 8=Packed (close-packed r=a/2)"
+                />
+                <span class="slider-value" id="nodeSizeLabel">Md</span>
+              </div>
+            </div>
+            <div class="control-item spacing-top-medium">
+              <label class="label-section">Node Geometry</label>
+              <div class="toggle-btn-group">
+                <button
+                  class="toggle-btn variant-toggle"
+                  id="nodeGeomClassical"
+                  data-node-geom="classical"
+                >
+                  Classical Spheres
+                </button>
+                <select
+                  class="toggle-btn variant-toggle geodesic-dropdown active"
+                  id="nodeGeomRT"
+                >
+                  <option value="1">1f Geodesic</option>
+                  <option value="2">2f Geodesic</option>
+                  <option value="3" selected>3f Geodesic</option>
+                  <option value="4">4f Geodesic</option>
+                </select>
+              </div>
+              <p class="info-text" style="font-size: 10px; margin-top: 5px">
+                Toggle between THREE.js spheres and RT-computed geodesic nodes
+                for performance comparison
+              </p>
+            </div>
+            <div class="control-item spacing-top-small">
+              <label class="checkbox-label">
+                <input type="checkbox" id="nodeFlatShading" />
+                Faceted Nodes (show geometry)
+              </label>
+              <p class="info-text" style="font-size: 10px; margin-top: 3px">
+                Show faceted geometry vs smooth "sphere" shading
+              </p>
+            </div>
+            <div class="control-item">
+              <label>Face Opacity</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="opacitySlider"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value="0.35"
+                />
+                <span class="slider-value" id="opacityValue">0.35</span>
+              </div>
+            </div>
+            <div class="control-item">
+              <label>Node Opacity</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="nodeOpacitySlider"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value="0.60"
+                />
+                <span class="slider-value" id="nodeOpacityValue">0.60</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END SECTION 6: VISUAL OPTIONS -->
+
+        <!-- ========================================
+             SECTION 7: VIEW MANAGER
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="view-section"
+            ></span>
+            View Manager
+          </h3>
+          <div id="view-section" class="section-content collapsed">
+            <!-- Projection Mode -->
+            <div class="control-item">
+              <label class="label-section">Projection</label>
+              <div class="toggle-btn-group">
+                <button
+                  class="toggle-btn variant-standard active"
+                  id="cameraPerspective"
+                >
+                  Perspective
+                </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="cameraOrthographic"
+                >
+                  Orthographic
+                </button>
+                <button class="toggle-btn variant-standard" id="cameraCentre">
+                  Centre
+                </button>
+              </div>
+            </div>
+
+            <!-- XYZ Cartesian Views -->
+            <div class="control-item spacing-top-large">
+              <label class="label-section">XYZ Cartesian Views</label>
+              <div class="button-grid-2col">
+                <button class="toggle-btn variant-standard" id="viewX">
+                  X
+                </button>
+                <button class="toggle-btn variant-standard" id="viewY">
+                  Y
+                </button>
+                <button class="toggle-btn variant-standard" id="viewZDown">
+                  Z-Down
+                </button>
+                <button class="toggle-btn variant-standard" id="viewZUp">
+                  Z-Up
+                </button>
+                <button class="toggle-btn variant-standard" id="viewAxo">
+                  Axo
+                </button>
+              </div>
+            </div>
+
+            <!-- QWXYZ Tetrahedral Basis Views -->
+            <div class="control-item spacing-top-large">
+              <hr
+                style="border: none; border-top: 1px solid #444; margin: 20px 0"
+              />
+              <label class="label-section">QWXYZ Tetrahedral Views</label>
+              <div class="button-grid-2col">
+                <button class="toggle-btn variant-standard" id="viewQuadQW">
+                  QW
+                </button>
+                <button class="toggle-btn variant-standard" id="viewQuadQX">
+                  QX
+                </button>
+                <button class="toggle-btn variant-standard" id="viewQuadQY">
+                  QY
+                </button>
+                <button class="toggle-btn variant-standard" id="viewQuadQZ">
+                  QZ
+                </button>
+              </div>
+            </div>
+
+            <!-- View Capture Section -->
+            <div
+              class="control-item"
+              style="
+                margin-top: 12px;
+                border-top: 1px solid #444;
+                padding-top: 12px;
+              "
+            >
+              <label class="label-section">View Capture</label>
+
+              <!-- View Name Input + Save Button -->
+              <div
+                style="
+                  display: flex;
+                  gap: 4px;
+                  align-items: center;
+                  margin-bottom: 8px;
+                "
+              >
+                <input
+                  type="text"
+                  id="viewNameInput"
+                  style="
+                    flex: 1;
+                    background: #333;
+                    border: 1px solid #555;
+                    color: #fff;
+                    padding: 6px 8px;
+                    font-size: 12px;
+                    border-radius: 4px;
+                  "
+                  placeholder="Auto: Z1"
+                />
+                <button
+                  class="toggle-btn variant-standard"
+                  id="saveViewBtn"
+                  title="Save current view"
+                >
+                  Save
+                </button>
+                <button
+                  class="toggle-btn variant-standard"
+                  id="resaveViewBtn"
+                  title="Overwrite selected view with current state"
+                  style="display: none"
+                >
+                  Re-Save
+                </button>
+              </div>
+            </div>
+
+            <!-- Saved Views Table -->
+            <div class="control-item">
+              <label class="label-section">Saved Views</label>
+
+              <!-- Table Header with Sort Controls -->
+              <div
+                class="views-table-header"
+                style="
+                  display: flex;
+                  gap: 4px;
+                  margin-bottom: 4px;
+                  font-size: 10px;
+                  color: #888;
+                "
+              >
+                <span
+                  style="flex: 0 0 50px; cursor: pointer"
+                  id="sortByName"
+                  title="Sort by name"
+                  >Name ▼</span
+                >
+                <span
+                  style="flex: 0 0 50px; cursor: pointer"
+                  id="sortByAxis"
+                  title="Sort by axis"
+                  >Axis</span
+                >
+                <span
+                  style="flex: 1; cursor: pointer"
+                  id="sortByDate"
+                  title="Sort by date"
+                  >Date</span
+                >
+                <span style="flex: 0 0 75px">Actions</span>
+              </div>
+
+              <!-- Views Table Body -->
+              <div
+                id="viewsTableBody"
+                style="
+                  border: 1px solid #444;
+                  border-radius: 4px;
+                "
+              >
+                <!-- Empty state (replaced by JS) -->
+                <div
+                  class="views-empty-state"
+                  style="
+                    padding: 12px;
+                    text-align: center;
+                    color: #666;
+                    font-size: 11px;
+                  "
+                >
+                  No saved views yet.
+                </div>
+              </div>
+
+              <!-- Bulk Actions -->
+              <div style="display: flex; gap: 4px; margin-top: 8px">
+                <button
+                  class="toggle-btn variant-small"
+                  id="importViewsBtn"
+                  title="Import views from file"
+                  style="flex: 1"
+                >
+                  Import
+                </button>
+                <button
+                  class="toggle-btn variant-small"
+                  id="exportAllViewsBtn"
+                  title="Export all views to JSON file"
+                  style="flex: 1"
+                >
+                  Export
+                </button>
+                <button
+                  class="toggle-btn variant-small"
+                  id="downloadSelectedBtn"
+                  title="Download selected view as SVG"
+                  style="flex: 1"
+                >
+                  SVG
+                </button>
+                <button
+                  class="toggle-btn variant-small"
+                  id="clearAllViewsBtn"
+                  title="Delete all views"
+                  style="
+                    width: 28px;
+                    min-width: 28px;
+                    padding: 4px;
+                    color: #ff6b6b;
+                  "
+                >
+                  ✕
+                </button>
+              </div>
+
+              <!-- Animation Actions: Camera Only -->
+              <div style="margin-top: 8px">
+                <div style="font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px">Camera Only</div>
+                <div style="display: flex; gap: 4px">
+                  <button
+                    class="toggle-btn variant-small"
+                    id="previewAnimationBtn"
+                    title="Preview camera animation loop"
+                    style="flex: 1"
+                  >
+                    <span style="color: #4caf50; font-size: 14px">&#9654;</span>
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportBatchBtn"
+                    title="Export each view as individual SVG (camera only)"
+                    style="flex: 1"
+                  >
+                    Batch
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportAnimationBtn"
+                    title="Export animated SVG sequence (camera only)"
+                    style="flex: 1"
+                  >
+                    Animation
+                  </button>
+                </div>
+              </div>
+
+              <!-- Animation Actions: Camera + Scene -->
+              <div style="margin-top: 4px">
+                <div style="font-size: 9px; color: #888; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px">Camera + Scene</div>
+                <div style="display: flex; gap: 4px">
+                  <button
+                    class="toggle-btn variant-small"
+                    id="previewFullBtn"
+                    title="Preview with full scene restore (cutplane, render state)"
+                    style="flex: 1"
+                  >
+                    <span style="color: #4caf50; font-size: 14px">&#9654;</span>
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportBatchFullBtn"
+                    title="Export each view as individual SVG (full scene state)"
+                    style="flex: 1"
+                  >
+                    Batch
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="exportAnimationFullBtn"
+                    title="Export animated SVG sequence (full scene state)"
+                    style="flex: 1"
+                  >
+                    Animation
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <!-- END SECTION 7: VIEW MANAGER -->
+
+        <!-- ========================================
+             SECTION 8: PAPERCUT
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="papercut-section"
+            ></span>
+            Papercut
+          </h3>
+          <div id="papercut-section" class="section-content collapsed">
+            <div class="control-item">
+              <label style="font-size: 12px; color: #b0b0b0"
+                >Cut Line Weight</label
+              >
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="cutplaneLineWeight"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value="3"
+                />
+                <span class="slider-value" id="cutplaneLineWeightValue">3</span>
+              </div>
+            </div>
+            <div class="control-item">
+              <label
+                class="checkbox-label"
+                title="Hide back-facing polygons for better performance (~2x faster). All geometry is correctly wound."
+              >
+                <input type="checkbox" id="backfaceCulling" checked />
+                Backface Culling
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="enablePrintMode" />
+                Print Mode (B&amp;W)
+              </label>
+            </div>
+            <div class="control-item">
+              <div class="toggle-with-refresh">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="enableCutPlane" />
+                  Enable Cut Plane
+                </label>
+                <button id="refreshCutPlane" class="refresh-btn">Refresh</button>
+              </div>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="invertCutPlane" />
+                Invert Cut Plane
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="intervalSnapXYZ" checked />
+                XYZ Interval Snap
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="intervalSnapWXYZ" />
+                WXYZ Interval Snap
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="sectionNodes" />
+                Section Nodes
+              </label>
+            </div>
+            <div class="control-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="adaptiveNodeResolution" />
+                High Resolution Nodes
+              </label>
+            </div>
+            <!-- Axial Cutplane Selections -->
+            <div class="control-item spacing-top-large">
+              <hr
+                style="border: none; border-top: 1px solid #444; margin: 20px 0"
+              />
+              <label class="label-section">Axial Cutplane Selections</label>
+              <label class="label-subsection">Cartesian Basis</label>
+              <div style="display: flex; gap: 4px; margin-bottom: 8px">
+                <button class="toggle-btn variant-small" id="cutplaneAxisX">
+                  X
+                </button>
+                <button class="toggle-btn variant-small" id="cutplaneAxisY">
+                  Y
+                </button>
+                <button
+                  class="toggle-btn variant-small active"
+                  id="cutplaneAxisZ"
+                >
+                  Z
+                </button>
+              </div>
+              <label class="label-subsection">Tetrahedral Basis</label>
+              <div style="display: flex; gap: 4px">
+                <button class="toggle-btn variant-small" id="cutplaneAxisQW">
+                  QW
+                </button>
+                <button class="toggle-btn variant-small" id="cutplaneAxisQX">
+                  QX
+                </button>
+                <button class="toggle-btn variant-small" id="cutplaneAxisQY">
+                  QY
+                </button>
+                <button class="toggle-btn variant-small" id="cutplaneAxisQZ">
+                  QZ
+                </button>
+              </div>
+            </div>
+            <!-- Sheet Size / Print Extents -->
+            <div class="control-item">
+              <label class="label-section">Sheet Size</label>
+              <div class="button-grid-2col">
+                <button class="toggle-btn variant-standard" id="fitA4">
+                  A4
+                </button>
+                <button class="toggle-btn variant-standard" id="fitLetter">
+                  Letter
+                </button>
+                <button class="toggle-btn variant-standard" id="fitA3">
+                  A3
+                </button>
+                <button class="toggle-btn variant-standard" id="fitCustom">
+                  Custom
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END SECTION 8: PAPERCUT -->
+
+        <!-- ========================================
+             SECTION 8B: PROJECTIONS
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="projections-section"
+            ></span>
+            Projections
+          </h3>
+          <div id="projections-section" class="section-content collapsed">
+            <!-- Enable Projection -->
+            <div class="control-item">
+              <div class="toggle-with-refresh">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="enableProjection" />
+                  Enable Projection
+                </label>
+                <button id="refreshProjection" class="refresh-btn">Refresh</button>
+              </div>
+            </div>
+
+            <div id="projection-options" style="display: none">
+              <!-- Options: Show Rays, Interior, Ideal -->
+              <div class="control-item">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="projectionShowRays" checked />
+                  Show Projection Rays
+                </label>
+              </div>
+              <div class="control-item">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="projectionShowInterior" />
+                  Show Interior Vertices
+                </label>
+              </div>
+              <div class="control-item">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="projectionShowIdeal" />
+                  Show Ideal n-gon
+                </label>
+              </div>
+
+              <!-- Distance Slider -->
+              <div class="control-item">
+                <label style="font-size: 12px; color: #b0b0b0"
+                  >Plane Distance</label
+                >
+                <div class="slider-container">
+                  <input
+                    type="range"
+                    id="projectionDistance"
+                    min="1"
+                    max="20"
+                    step="0.5"
+                    value="3"
+                  />
+                  <span class="slider-value" id="projectionDistanceValue"
+                    >3</span
+                  >
+                </div>
+              </div>
+
+              <!-- Axis Selection -->
+              <div class="control-item spacing-top-large">
+                <hr
+                  style="border: none; border-top: 1px solid #444; margin: 20px 0"
+                />
+                <label class="label-section">Projection Axis</label>
+                <label class="label-subsection">Cartesian Basis</label>
+                <div style="display: flex; gap: 4px; margin-bottom: 8px">
+                  <button class="toggle-btn variant-small" id="projectionAxisX">
+                    X
+                  </button>
+                  <button class="toggle-btn variant-small" id="projectionAxisY">
+                    Y
+                  </button>
+                  <button
+                    class="toggle-btn variant-small active"
+                    id="projectionAxisZ"
+                  >
+                    Z
+                  </button>
+                </div>
+                <label class="label-subsection">Tetrahedral Basis</label>
+                <div style="display: flex; gap: 4px">
+                  <button
+                    class="toggle-btn variant-small"
+                    id="projectionAxisQW"
+                  >
+                    QW
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="projectionAxisQX"
+                  >
+                    QX
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="projectionAxisQY"
+                  >
+                    QY
+                  </button>
+                  <button
+                    class="toggle-btn variant-small"
+                    id="projectionAxisQZ"
+                  >
+                    QZ
+                  </button>
+                </div>
+              </div>
+
+              <!-- Info Display -->
+              <div class="control-item">
+                <p class="info-text" id="projectionInfo">
+                  Axis: Z | Hull: -- vertices
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END SECTION 8B: PROJECTIONS -->
+
+        <!-- ========================================
+             SECTION 9: GEOMETRY INFO
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle"
+              data-target="geometry-info-section"
+            ></span>
+            Geometry Info
+          </h3>
+          <div id="geometry-info-section" class="section-content">
+            <!-- Individual polyhedra stats (populated by rt-rendering.js) -->
+            <div class="stats" id="polyhedraStats">
+              <div style="color: #888">Select a polyhedron to see stats</div>
+            </div>
+
+            <!-- Scene totals (updated by PerformanceClock) -->
+            <div
+              class="stats"
+              id="geometryStats"
+              style="
+                margin-top: 12px;
+                padding-top: 10px;
+                border-top: 1px solid #444;
+              "
+            >
+              <div><strong>Scene Totals:</strong></div>
+              <div id="totalVertices">Vertices: --</div>
+              <div id="totalEdges">Edges: --</div>
+              <div id="totalFaces">Faces: --</div>
+              <div id="totalTriangles">Triangles: --</div>
+            </div>
+
+            <div class="stats" id="performanceStats" style="margin-top: 12px">
+              <div><strong>Performance:</strong></div>
+              <div id="perfCalcTime">Calculation: -- ms</div>
+              <div id="perfNodeTime">Node Gen: -- ms</div>
+              <div id="perfFPS">FPS: --</div>
+              <div id="perfNodeType">Node Type: Classical</div>
+              <div id="perfNodeTriangles">Node Δ: --</div>
+            </div>
+
+            <p class="info-text" style="font-size: 10px; margin-top: 10px">
+              Performance metrics compare RT algebraic methods vs classical
+              trigonometry
+            </p>
+
+            <div
+              class="stats"
+              style="
+                margin-top: 12px;
+                padding-top: 10px;
+                border-top: 1px solid #444;
+              "
+            >
+              <label class="checkbox-label">
+                <input type="checkbox" id="enableAdvancedLogging" />
+                Enable Advanced Logging
+              </label>
+              <p class="info-text" style="font-size: 10px; margin-top: 4px">
+                Open browser console (F12) to see geometry logs
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- END SECTION 9: GEOMETRY INFO -->
+
+        <!-- ========================================
+             SECTION 10: MATH DEMOS
+             ======================================== -->
+        <div class="control-group">
+          <h3>
+            <span
+              class="section-toggle collapsed"
+              data-target="math-demos-section"
+            ></span>
+            Math Demos
+          </h3>
+          <div id="math-demos-section" class="section-content collapsed">
+            <p class="info-text" style="font-size: 10px; margin-bottom: 8px">
+              Explore the rational trigonometry foundations used for WXYZ and
+              XYZ rotations
+            </p>
+            <ul
+              style="
+                font-size: 11px;
+                color: #7ab8ff;
+                margin-left: 15px;
+                line-height: 1.8;
+              "
+            >
+              <li>
+                <a
+                  href="#"
+                  id="open-quadrance-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Quadrance
+                </a>
+                <span style="color: #888"> - rational distance</span>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-cross-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Cross Product
+                </a>
+                <span style="color: #888">
+                  - vector relationships & spread</span
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-weierstrass-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Weierstrass
+                </a>
+                <span style="color: #888"> - circle parametrization</span>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-gravity-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Gravity Numberline
+                </a>
+                <span style="color: #888">
+                  - acceleration vs grid spacing</span
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-color-theory-modal"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Color Theory
+                </a>
+                <span style="color: #888"> - backface culling calibration</span>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-rotor-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Spread-Quadray Rotors
+                </a>
+                <span style="color: #888"> - gimbal-lock-free rotation</span>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-4d-drop-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  4D&plusmn; Gravity + Inversion
+                </a>
+                <span style="color: #888"> - Quadray Janus drop</span>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  id="open-prime-projections-demo"
+                  style="color: #7ab8ff; text-decoration: none"
+                >
+                  Prime Projections
+                </a>
+                <span style="color: #888">
+                  - Gauss-Wantzel bypass presets</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+        <!-- END SECTION 10: MATH DEMOS -->
+      </div>
+    </div>
+
+    <!-- ========================================
+         RIGHT-CLICK CONTEXT MENU
+         ======================================== -->
+    <div id="polyhedron-context-menu" class="context-menu hidden">
+      <div class="context-menu-header">
+        <span id="context-menu-title">Polyhedron</span>
+      </div>
+      <div class="context-menu-section">
+        <div class="context-menu-label">Tool Mode</div>
+        <div class="context-menu-btn-group">
+          <button class="context-btn" data-action="tool-move">Move</button>
+          <button class="context-btn" data-action="tool-scale">Scale</button>
+          <button class="context-btn" data-action="tool-rotate">Rotate</button>
+        </div>
+      </div>
+      <div class="context-menu-section">
+        <div class="context-menu-label">Grid Snap</div>
+        <div class="context-menu-btn-group">
+          <button class="context-btn" data-action="snap-free">Free</button>
+          <button class="context-btn" data-action="snap-xyz">XYZ</button>
+          <button class="context-btn" data-action="snap-wxyz">WXYZ</button>
+        </div>
+      </div>
+      <div class="context-menu-section">
+        <div class="context-menu-label">Object Snaps</div>
+        <div class="context-menu-btn-group">
+          <button class="context-btn toggle" data-action="objsnap-vertex">
+            Vertex
+          </button>
+          <button class="context-btn toggle" data-action="objsnap-edge">
+            Edge
+          </button>
+          <button class="context-btn toggle" data-action="objsnap-face">
+            Face
+          </button>
+        </div>
+      </div>
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-section">
+        <div class="context-menu-label">Edit</div>
+        <div class="context-menu-btn-group">
+          <button
+            class="context-btn"
+            data-action="deform"
+            title="Enter vertex deformation mode"
+          >
+            Deform
+          </button>
+          <button
+            class="context-btn"
+            data-action="group"
+            title="Group selected objects (Ctrl/Cmd+G)"
+          >
+            Group
+          </button>
+        </div>
+        <div class="context-menu-btn-group">
+          <button
+            class="context-btn"
+            data-action="connect"
+            title="Connect two Points with a Line (C)"
+          >
+            Connect
+          </button>
+          <button
+            class="context-btn"
+            data-action="disconnect"
+            title="Disconnect Line back to two Points"
+          >
+            Disconnect
+          </button>
+        </div>
+      </div>
+      <div class="context-menu-section">
+        <div class="context-menu-label">History</div>
+        <div class="context-menu-btn-group">
+          <button
+            class="context-btn"
+            data-action="undo"
+            title="Undo (Ctrl/Cmd+Z)"
+          >
+            Undo
+          </button>
+          <button
+            class="context-btn"
+            data-action="redo"
+            title="Redo (Ctrl/Cmd+Shift+Z)"
+          >
+            Redo
+          </button>
+        </div>
+      </div>
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-section">
+        <button class="context-btn action-btn" data-action="deposit">
+          <span class="btn-icon">🕐</span> NOW (Deposit)
+        </button>
+      </div>
+      <div class="context-menu-section">
+        <button class="context-btn danger-btn" data-action="delete">
+          <span class="btn-icon">🗑</span> Delete
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================
+         DEMO MODALS
+         ======================================== -->
+
+    <!-- Quadrance Demo Modal -->
+    <div id="quadrance-modal" class="demo-modal">
+      <div class="demo-modal-content">
+        <div class="demo-modal-body">
+          <div id="quadrance-demo-container" class="demo-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cross Product Demo Modal -->
+    <div id="cross-modal" class="demo-modal">
+      <div class="demo-modal-content">
+        <div class="demo-modal-body">
+          <div id="cross-demo-container" class="demo-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weierstrass Demo Modal -->
+    <div id="weierstrass-modal" class="demo-modal">
+      <div class="demo-modal-content">
+        <div class="demo-modal-body">
+          <div id="weierstrass-demo-container" class="demo-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gravity Numberline Demo Modal -->
+    <div id="gravity-modal" class="demo-modal">
+      <div class="demo-modal-content">
+        <div class="demo-modal-body">
+          <div id="gravity-demo-container" class="demo-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Three.js ES Modules via importmap (no build step required) -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <!-- Application Initialization -->
+    <script type="module" src="modules/rt-init.js"></script>
+
+    <!-- Context Menu Initialization -->
+    <script type="module">
+      import { initContextMenu } from "./modules/rt-context.js";
+
+      // Wait for app initialization complete event (dispatched by rt-init.js)
+      window.addEventListener("artexplorer-ready", () => {
+        if (window.THREE && window.renderingAPI) {
+          const scene = window.renderingAPI.getScene();
+          const camera = window.renderingAPI.getCamera();
+          const renderer = window.renderingAPI.getRenderer();
+          window.contextMenuAPI = initContextMenu(
+            window.THREE,
+            scene,
+            camera,
+            renderer
+          );
+        }
+      });
+    </script>
+  </body>
+</html>

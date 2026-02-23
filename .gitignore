@@ -1,0 +1,67 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Thumbnails
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Node modules and package files
+node_modules/
+package.json
+package-lock.json
+eslint.config.js
+
+# Prettier configs (personal preference)
+.prettierrc.json
+.prettierignore
+
+# Large binary files (local coding resources, some copyright protected)
+*.pdf
+*.PDF
+
+# Generated results (local only)
+scripts/results/
+
+# Console utility scripts (developer-only, auto-downloads files)
+scripts/PlayerPiano*.js
+
+# LaTeX build artifacts
+*.aux
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+
+# Whitepaper images and reference materials (large binaries)
+Geometry Documents/Whitepaper Images/
+Geometry Documents/Wildberger References/
+
+# A.r.t.steroids game (local development only — commercial/proprietary, not for public repo)
+modules/asteroids/
+artsteroids.html
+
+# Rust/Metal native app (private repo only — entire directory)
+artex-osx/

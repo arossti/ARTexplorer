@@ -1,0 +1,3 @@
+# Disallow all web crawlers from indexing this directory
+User-agent: *
+Disallow: /

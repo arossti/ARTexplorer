@@ -1,0 +1,1114 @@
+/**
+ * rt-ui-binding-defs.js
+ * Declarative binding definitions for ARTexplorer UI
+ *
+ * Each binding replaces a manual addEventListener() call in rt-init.js.
+ * This file defines WHAT to bind; rt-ui-bindings.js handles HOW to bind.
+ *
+ * Part of the Phase 1 modularization effort (Jan 30, 2026).
+ *
+ * @module RTUIBindingDefs
+ */
+
+// ============================================================================
+// POLYHEDRA CHECKBOXES - Simple visibility toggles
+// ============================================================================
+
+export const simpleCheckboxBindings = [
+  // Base polyhedra (just trigger updateGeometry)
+  { id: "showPoint", type: "checkbox" },
+  { id: "showCube", type: "checkbox" },
+  // showDodecahedron moved to checkboxWithControlsBindings (has Face Tiling option)
+  { id: "showCuboctahedron", type: "checkbox" },
+  { id: "showRhombicDodecahedron", type: "checkbox" },
+
+  // Geodesic variants
+  { id: "showGeodesicIcosahedron", type: "checkbox" },
+  { id: "showGeodesicTetrahedron", type: "checkbox" },
+  { id: "showGeodesicOctahedron", type: "checkbox" },
+  { id: "showGeodesicDualTetrahedron", type: "checkbox" },
+  { id: "showGeodesicDualIcosahedron", type: "checkbox" },
+
+  // Matrix rotation checkboxes
+  { id: "cubeMatrixRotate45", type: "checkbox" },
+  { id: "tetMatrixRotate45", type: "checkbox" },
+  { id: "octaMatrixRotate45", type: "checkbox" },
+  { id: "cuboctaMatrixRotate45", type: "checkbox" },
+  { id: "rhombicDodecMatrixRotate45", type: "checkbox" },
+  { id: "octaMatrixColinearEdges", type: "checkbox" },
+  { id: "rhombicDodecMatrixFaceCoplanar", type: "checkbox" },
+
+  // Thomson Polyhedra plane toggles
+  { id: "thomsonTetraFacePlanes", type: "checkbox" },
+  { id: "thomsonTetraEdgePlanes", type: "checkbox" },
+  { id: "thomsonTetraShowFaces", type: "checkbox" },
+  { id: "thomsonTetraShowHullEdges", type: "checkbox" },
+  { id: "thomsonTetJitterbugBounce", type: "checkbox" },
+  { id: "thomsonOctaShowFaces", type: "checkbox" },
+  { id: "thomsonOctaShowHullEdges", type: "checkbox" },
+  { id: "thomsonOctaJitterbugBounce", type: "checkbox" },
+  { id: "thomsonCubeCoordPlanes", type: "checkbox" },
+  { id: "thomsonCubeDiagPlanes", type: "checkbox" },
+  { id: "thomsonCubeShowFaces", type: "checkbox" },
+  { id: "thomsonCubeShowHullEdges", type: "checkbox" },
+  { id: "thomsonCubeJitterbugBounce", type: "checkbox" },
+  { id: "thomsonIcosaCoordPlanes", type: "checkbox" },
+  { id: "thomsonIcosaEdgeMirrorPlanes", type: "checkbox" },
+  { id: "thomsonIcosaShowFaces", type: "checkbox" },
+  { id: "thomsonIcosaShowHullEdges", type: "checkbox" },
+  { id: "thomsonIcosaJitterbugBounce", type: "checkbox" },
+
+  // Radial matrix options
+  { id: "radialCubeSpaceFill", type: "checkbox" },
+  { id: "radialTetIVMMode", type: "checkbox" },
+  { id: "radialOctIVMScale", type: "checkbox" },
+
+  // Quadray demonstrator options
+  { id: "quadrayTetraNormalize", type: "checkbox" },
+  { id: "quadrayCuboctaNormalize", type: "checkbox" },
+
+  // Primitive options
+  { id: "polygonShowFace", type: "checkbox" },
+  { id: "prismShowFaces", type: "checkbox" },
+  { id: "coneShowFaces", type: "checkbox" },
+  { id: "penroseShowFace", type: "checkbox" },
+
+  // Helix options (chirality commented out for tetrahelix1 - left-handed only)
+  // { id: "tetrahelix1LeftHanded", type: "checkbox" },
+
+  // Tetrahelix 2 direction checkboxes (javelin model - both can be enabled)
+  { id: "tetrahelix2DirPlus", type: "checkbox" },
+  { id: "tetrahelix2DirMinus", type: "checkbox" },
+
+  // Tetrahelix 3 strand checkboxes (A-H for octahedral faces)
+  { id: "tetrahelix3StrandA", type: "checkbox" },
+  { id: "tetrahelix3StrandB", type: "checkbox" },
+  { id: "tetrahelix3StrandC", type: "checkbox" },
+  { id: "tetrahelix3StrandD", type: "checkbox" },
+  { id: "tetrahelix3StrandE", type: "checkbox" },
+  { id: "tetrahelix3StrandF", type: "checkbox" },
+  { id: "tetrahelix3StrandG", type: "checkbox" },
+  { id: "tetrahelix3StrandH", type: "checkbox" },
+
+  // Tetrahelix 3 chirality checkboxes (A-H: checked=RH, unchecked=LH)
+  { id: "tetrahelix3ChiralA", type: "checkbox" },
+  { id: "tetrahelix3ChiralB", type: "checkbox" },
+  { id: "tetrahelix3ChiralC", type: "checkbox" },
+  { id: "tetrahelix3ChiralD", type: "checkbox" },
+  { id: "tetrahelix3ChiralE", type: "checkbox" },
+  { id: "tetrahelix3ChiralF", type: "checkbox" },
+  { id: "tetrahelix3ChiralG", type: "checkbox" },
+  { id: "tetrahelix3ChiralH", type: "checkbox" },
+
+  // Node shading
+  { id: "nodeFlatShading", type: "checkbox" },
+
+  // Projection options - do NOT trigger updateGeometry (handled by RTProjections.updateProjection in rt-init.js)
+  { id: "projectionShowRays", type: "checkbox", updateGeometry: false },
+  { id: "projectionShowInterior", type: "checkbox", updateGeometry: false },
+  { id: "projectionShowIdeal", type: "checkbox", updateGeometry: false },
+];
+
+// ============================================================================
+// CHECKBOXES WITH SUB-CONTROLS - Show/hide control panels
+// ============================================================================
+
+export const checkboxWithControlsBindings = [
+  // Primitives with controls
+  {
+    id: "showLine",
+    type: "checkbox-controls",
+    controlsId: "line-controls",
+  },
+  {
+    id: "showPolygon",
+    type: "checkbox-controls",
+    controlsId: "polygon-controls",
+  },
+  {
+    id: "polygonEnableTiling",
+    type: "checkbox-controls",
+    controlsId: "polygon-tiling-controls",
+  },
+  {
+    id: "geodesicIcosaFaceTiling",
+    type: "checkbox-controls",
+    controlsId: "geodesic-icosa-face-tiling-options",
+  },
+  {
+    id: "showDodecahedron",
+    type: "checkbox-controls",
+    controlsId: "dodecahedron-options",
+  },
+  {
+    id: "dodecahedronFaceTiling",
+    type: "checkbox-controls",
+    controlsId: "dodecahedron-face-tiling-options",
+  },
+  {
+    id: "showPrism",
+    type: "checkbox-controls",
+    controlsId: "prism-controls",
+  },
+  {
+    id: "showCone",
+    type: "checkbox-controls",
+    controlsId: "cone-controls",
+  },
+  {
+    id: "showPenroseTiling",
+    type: "checkbox-controls",
+    controlsId: "penrose-tiling-controls",
+  },
+  {
+    id: "penroseTilingEnabled",
+    type: "checkbox-controls",
+    controlsId: "penrose-deflation-controls",
+  },
+  {
+    id: "showTetrahelix1",
+    type: "checkbox-controls",
+    controlsId: "tetrahelix1-controls",
+  },
+  {
+    id: "showTetrahelix2",
+    type: "checkbox-controls",
+    controlsId: "tetrahelix2-controls",
+  },
+  {
+    id: "showTetrahelix3",
+    type: "checkbox-controls",
+    controlsId: "tetrahelix3-controls",
+  },
+
+  // Polyhedra with geodesic controls (complex: sibling checkbox keeps controls visible)
+  {
+    id: "showTetrahedron",
+    type: "checkbox-controls",
+    controlsId: "geodesic-tetra-all",
+    siblingCheckboxId: "showGeodesicTetrahedron",
+  },
+  {
+    id: "showTruncatedTetrahedron",
+    type: "checkbox-controls",
+    controlsId: "truncation-tetra-controls",
+  },
+  {
+    id: "showDualTetrahedron",
+    type: "checkbox-controls",
+    controlsId: "geodesic-dual-tetra-all",
+    siblingCheckboxId: "showGeodesicDualTetrahedron",
+  },
+  {
+    id: "showTruncatedDualTetrahedron",
+    type: "checkbox-controls",
+    controlsId: "truncation-dual-tetra-controls",
+  },
+  {
+    id: "showOctahedron",
+    type: "checkbox-controls",
+    controlsId: "geodesic-octa-all",
+    siblingCheckboxId: "showGeodesicOctahedron",
+  },
+  {
+    id: "showIcosahedron",
+    type: "checkbox-controls",
+    controlsId: "geodesic-icosa-all",
+    siblingCheckboxId: "showGeodesicIcosahedron",
+  },
+  {
+    id: "showDualIcosahedron",
+    type: "checkbox-controls",
+    controlsId: "geodesic-dual-icosa-all",
+    siblingCheckboxId: "showGeodesicDualIcosahedron",
+  },
+
+  // Matrix forms with controls
+  {
+    id: "showCubeMatrix",
+    type: "checkbox-controls",
+    controlsId: "cube-matrix-controls",
+  },
+  {
+    id: "showTetMatrix",
+    type: "checkbox-controls",
+    controlsId: "tet-matrix-controls",
+  },
+  {
+    id: "showOctaMatrix",
+    type: "checkbox-controls",
+    controlsId: "octa-matrix-controls",
+  },
+  {
+    id: "showCuboctahedronMatrix",
+    type: "checkbox-controls",
+    controlsId: "cubocta-matrix-controls",
+  },
+  {
+    id: "showRhombicDodecMatrix",
+    type: "checkbox-controls",
+    controlsId: "rhombic-dodec-matrix-controls",
+  },
+
+  // Radial matrices with controls
+  {
+    id: "showRadialCubeMatrix",
+    type: "checkbox-controls",
+    controlsId: "radial-cube-matrix-controls",
+  },
+  {
+    id: "showRadialRhombicDodecMatrix",
+    type: "checkbox-controls",
+    controlsId: "radial-rhombic-dodec-matrix-controls",
+  },
+  {
+    id: "showRadialTetrahedronMatrix",
+    type: "checkbox-controls",
+    controlsId: "radial-tetrahedron-matrix-controls",
+  },
+  {
+    id: "showRadialOctahedronMatrix",
+    type: "checkbox-controls",
+    controlsId: "radial-octahedron-matrix-controls",
+  },
+  {
+    id: "showRadialCuboctahedronMatrix",
+    type: "checkbox-controls",
+    controlsId: "radial-cuboctahedron-matrix-controls",
+  },
+
+  // Quadray demonstrators with controls
+  {
+    id: "showQuadrayTetrahedron",
+    type: "checkbox-controls",
+    controlsId: "quadray-tetra-controls",
+  },
+  {
+    id: "showQuadrayTetraDeformed",
+    type: "checkbox-controls",
+    controlsId: "quadray-tetra-deformed-controls",
+  },
+  {
+    id: "showQuadrayCuboctahedron",
+    type: "checkbox-controls",
+    controlsId: "quadray-cuboctahedron-controls",
+  },
+  {
+    id: "showQuadrayOctahedron",
+    type: "checkbox-controls",
+    controlsId: "quadray-octahedron-controls",
+  },
+  {
+    id: "showQuadrayTruncatedTet",
+    type: "checkbox-controls",
+    controlsId: "quadray-trunc-tet-controls",
+  },
+  {
+    id: "showQuadrayStellaOctangula",
+    type: "checkbox-controls",
+    controlsId: "quadray-stella-octangula-controls",
+  },
+  // Prime Polygon Projection polyhedra (base geometry)
+  {
+    id: "showPrimeTruncTet",
+    type: "checkbox-controls",
+    controlsId: "prime-trunc-tet-controls",
+  },
+  {
+    id: "showPrimeCompoundTet",
+    type: "checkbox-controls",
+    controlsId: "prime-compound-tet-controls",
+  },
+  {
+    id: "showPrimeCompoundIcosa",
+    type: "checkbox-controls",
+    controlsId: "prime-compound-icosa-controls",
+  },
+  {
+    id: "showPrimeGeoTetF2",
+    type: "checkbox-controls",
+    controlsId: "prime-geo-tet-f2-controls",
+  },
+  {
+    id: "showPrimeGeoTetF4",
+    type: "checkbox-controls",
+    controlsId: "prime-geo-tet-f4-controls",
+  },
+
+  // Thomson Polyhedra (stubbed — rt-thomson.js will wire these)
+  {
+    id: "showThomsonTetrahedron",
+    type: "checkbox-controls",
+    controlsId: "thomson-tetra-controls",
+  },
+  {
+    id: "showThomsonOctahedron",
+    type: "checkbox-controls",
+    controlsId: "thomson-octa-controls",
+  },
+  {
+    id: "showThomsonCube",
+    type: "checkbox-controls",
+    controlsId: "thomson-cube-controls",
+  },
+  {
+    id: "showThomsonIcosahedron",
+    type: "checkbox-controls",
+    controlsId: "thomson-icosa-controls",
+  },
+
+  // Projection with controls panel
+  {
+    id: "enableProjection",
+    type: "checkbox-controls",
+    controlsId: "projection-options",
+  },
+];
+
+// ============================================================================
+// SIMPLE SLIDERS - Value display only
+// ============================================================================
+
+// Polyhedral rotation snap points — angles where N-gon vertices coincide
+// on symmetry planes, producing regular/semi-regular vertex configurations.
+// Divisors of 360°: n-gon fold symmetries (3,4,5,6,8,10,12).
+// Threshold ±2° gives a light detent feel on integer-step sliders.
+const ROTATION_SNAP_POINTS = [
+  0, 20, 30, 36, 45, 60, 72, 90, 108, 120, 135, 144, 150, 180,
+  210, 216, 225, 240, 252, 270, 288, 300, 315, 324, 330, 340, 360,
+];
+
+const thomsonRotationSlider = (id, valueId) => ({
+  id,
+  type: "slider",
+  valueId,
+  snapPoints: ROTATION_SNAP_POINTS,
+  snapThreshold: 2,
+  // Spread = sin²(θ) — the RT measure of angular separation.
+  // 4 spread intervals per 360°: 0→1→0→1→0 (UX boundary computation).
+  formatValue: v => {
+    const rad = (v * Math.PI) / 180;
+    const spread = Math.sin(rad) ** 2;
+    return `${v}° s=${spread.toFixed(3)}`;
+  },
+});
+
+export const simpleSliderBindings = [
+  // Thomson Polyhedra sliders
+  {
+    id: "thomsonTetraNGon",
+    type: "slider",
+    valueId: "thomsonTetraNGonValue",
+  },
+  thomsonRotationSlider("thomsonTetraRotation", "thomsonTetraRotationValue"),
+  {
+    id: "thomsonOctaNGon",
+    type: "slider",
+    valueId: "thomsonOctaNGonValue",
+  },
+  thomsonRotationSlider("thomsonOctaRotation", "thomsonOctaRotationValue"),
+  {
+    id: "thomsonCubeNGon",
+    type: "slider",
+    valueId: "thomsonCubeNGonValue",
+  },
+  thomsonRotationSlider("thomsonCubeRotation", "thomsonCubeRotationValue"),
+  {
+    id: "thomsonIcosaNGon",
+    type: "slider",
+    valueId: "thomsonIcosaNGonValue",
+  },
+  thomsonRotationSlider("thomsonIcosaRotation", "thomsonIcosaRotationValue"),
+  {
+    id: "opacitySlider",
+    type: "slider",
+    valueId: "opacityValue",
+  },
+  {
+    id: "nodeOpacitySlider",
+    type: "slider",
+    valueId: "nodeOpacityValue",
+    onInput: (value, renderingAPI) => {
+      renderingAPI.setNodeOpacity(value);
+    },
+  },
+  {
+    id: "quadrayTessSlider",
+    type: "slider",
+    valueId: "quadrayTessValue",
+    onInput: (value, renderingAPI) => {
+      // Collect visibility state from NEW checkbox IDs (Phase 3)
+      const visibilityState = {
+        ivmWX: document.getElementById("planeIvmWX")?.checked ?? true,
+        ivmWY: document.getElementById("planeIvmWY")?.checked ?? true,
+        ivmWZ: document.getElementById("planeIvmWZ")?.checked ?? true,
+        ivmXY: document.getElementById("planeIvmXY")?.checked ?? true,
+        ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
+        ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
+      };
+      // Read active grid mode from Quadray section
+      const activeBtn = document.querySelector("[data-quadray-mode].active");
+      const gridMode = activeBtn ? activeBtn.dataset.quadrayMode : "uniform";
+      const nGon = parseInt(
+        document.getElementById("nGonSlider")?.value || "64"
+      );
+      const showRadials =
+        document.getElementById("showRadialLines")?.checked ?? true;
+      renderingAPI.rebuildQuadrayGrids(
+        parseInt(value),
+        visibilityState,
+        gridMode,
+        nGon,
+        showRadials
+      );
+    },
+    updateGeometry: false, // Handled by rebuildQuadrayGrids
+  },
+  {
+    id: "cartesianTessSlider",
+    type: "slider",
+    valueId: "cartesianTessValue",
+    onInput: (value, renderingAPI) => {
+      // Collect visibility state from NEW checkbox IDs (Phase 3)
+      const visibilityState = {
+        gridXY: document.getElementById("planeXY")?.checked ?? false,
+        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
+        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
+        cartesianBasis:
+          document.getElementById("showCartesianBasis")?.checked ?? false,
+      };
+      // Read active grid mode from Cartesian section
+      const activeBtn = document.querySelector("[data-cartesian-mode].active");
+      const gridMode = activeBtn ? activeBtn.dataset.cartesianMode : "uniform";
+      const nGon = parseInt(
+        document.getElementById("nGonSlider")?.value || "64"
+      );
+      const showRadials =
+        document.getElementById("showRadialLines")?.checked ?? true;
+      renderingAPI.rebuildCartesianGrids(
+        parseInt(value),
+        visibilityState,
+        gridMode,
+        nGon,
+        showRadials
+      );
+    },
+    updateGeometry: false, // Handled by rebuildCartesianGrids
+  },
+
+  {
+    id: "nGonSlider",
+    type: "slider",
+    valueId: "nGonValue",
+    onInput: (value, renderingAPI) => {
+      const nGon = parseInt(value);
+      // Rebuild Quadray grids with new nGon
+      const quadrayTess = parseInt(
+        document.getElementById("quadrayTessSlider")?.value || "12"
+      );
+      const ivmVisibility = {
+        ivmWX: document.getElementById("planeIvmWX")?.checked ?? true,
+        ivmWY: document.getElementById("planeIvmWY")?.checked ?? true,
+        ivmWZ: document.getElementById("planeIvmWZ")?.checked ?? true,
+        ivmXY: document.getElementById("planeIvmXY")?.checked ?? true,
+        ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
+        ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
+      };
+      const quadrayBtn = document.querySelector("[data-quadray-mode].active");
+      const quadrayMode = quadrayBtn
+        ? quadrayBtn.dataset.quadrayMode
+        : "uniform";
+      const showRadials =
+        document.getElementById("showRadialLines")?.checked ?? true;
+      renderingAPI.rebuildQuadrayGrids(
+        quadrayTess,
+        ivmVisibility,
+        quadrayMode,
+        nGon,
+        showRadials
+      );
+      // Rebuild Cartesian grids with new nGon
+      const cartTess = parseInt(
+        document.getElementById("cartesianTessSlider")?.value || "10"
+      );
+      const cartVisibility = {
+        gridXY: document.getElementById("planeXY")?.checked ?? false,
+        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
+        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
+        cartesianBasis:
+          document.getElementById("showCartesianBasis")?.checked ?? false,
+      };
+      const cartBtn = document.querySelector("[data-cartesian-mode].active");
+      const cartMode = cartBtn ? cartBtn.dataset.cartesianMode : "uniform";
+      renderingAPI.rebuildCartesianGrids(
+        cartTess,
+        cartVisibility,
+        cartMode,
+        nGon,
+        showRadials
+      );
+    },
+    updateGeometry: false,
+  },
+
+  // Geodesic frequency sliders
+  {
+    id: "geodesicIcosaFrequency",
+    type: "slider",
+    valueId: "geodesicIcosaFreqValue",
+    formatValue: v => v,
+  },
+  {
+    id: "geodesicTetraFrequency",
+    type: "slider",
+    valueId: "geodesicTetraFreqValue",
+    formatValue: v => v,
+  },
+  {
+    id: "geodesicOctaFrequency",
+    type: "slider",
+    valueId: "geodesicOctaFreqValue",
+    formatValue: v => v,
+  },
+  {
+    id: "geodesicDualTetraFrequency",
+    type: "slider",
+    valueId: "geodesicDualTetraFreqValue",
+    formatValue: v => v,
+  },
+  {
+    id: "geodesicDualIcosaFrequency",
+    type: "slider",
+    valueId: "geodesicDualIcosaFreqValue",
+    formatValue: v => v,
+  },
+
+  // Truncation slider (tetrahedron → truncated tet → octahedron)
+  {
+    id: "truncationTetraSlider",
+    type: "slider",
+    valueId: "truncationTetraValue",
+    formatValue: v => {
+      const t = parseFloat(v);
+      if (t < 0.01) return "0";
+      if (Math.abs(t - 1 / 3) < 0.02) return "⅓";
+      if (t > 0.49) return "½";
+      return t.toFixed(2);
+    },
+  },
+  // Truncation slider (dual tetrahedron → truncated dual tet → octahedron)
+  {
+    id: "truncationDualTetraSlider",
+    type: "slider",
+    valueId: "truncationDualTetraValue",
+    formatValue: v => {
+      const t = parseFloat(v);
+      if (t < 0.01) return "0";
+      if (Math.abs(t - 1 / 3) < 0.02) return "⅓";
+      if (t > 0.49) return "½";
+      return t.toFixed(2);
+    },
+  },
+
+  // Matrix size sliders
+  {
+    id: "cubeMatrixSizeSlider",
+    type: "slider",
+    valueId: "cubeMatrixSizeValue",
+    formatValue: v => `${v}×${v}`,
+  },
+  {
+    id: "tetMatrixSizeSlider",
+    type: "slider",
+    valueId: "tetMatrixSizeValue",
+    formatValue: v => `${v}×${v}`,
+  },
+  {
+    id: "octaMatrixSizeSlider",
+    type: "slider",
+    valueId: "octaMatrixSizeValue",
+    formatValue: v => `${v}×${v}`,
+  },
+  {
+    id: "cuboctaMatrixSizeSlider",
+    type: "slider",
+    valueId: "cuboctaMatrixSizeValue",
+    formatValue: v => `${v}×${v}`,
+  },
+  {
+    id: "rhombicDodecMatrixSizeSlider",
+    type: "slider",
+    valueId: "rhombicDodecMatrixSizeValue",
+    formatValue: v => `${v}×${v}`,
+  },
+
+  // Radial frequency sliders (with odd-frequency mapping)
+  {
+    id: "radialCubeFreqSlider",
+    type: "slider",
+    valueId: "radialCubeFreqDisplay",
+    formatValue: v => `F${2 * v - 1}`,
+  },
+  {
+    id: "radialRhombicDodecFreqSlider",
+    type: "slider",
+    valueId: "radialRhombicDodecFreqDisplay",
+    formatValue: v => `F${2 * v - 1}`,
+  },
+  {
+    id: "radialTetFreqSlider",
+    type: "slider",
+    valueId: "radialTetFreqDisplay",
+    formatValue: v => `F${v}`,
+  },
+  {
+    id: "radialOctFreqSlider",
+    type: "slider",
+    valueId: "radialOctFreqDisplay",
+    formatValue: v => `F${v}`,
+  },
+  {
+    id: "radialVEFreqSlider",
+    type: "slider",
+    valueId: "radialVEFreqDisplay",
+    formatValue: v => `F${v}`,
+  },
+
+  // Quadray deformed stretch slider
+  {
+    id: "quadrayTetraZStretch",
+    type: "slider",
+    formatValue: v => parseFloat(v).toFixed(1),
+  },
+
+  // Primitive size inputs
+  {
+    id: "polygonSides",
+    type: "slider",
+    onInput: value => {
+      const input = document.getElementById("polygonSidesInput");
+      if (input) input.value = parseInt(value);
+    },
+  },
+  {
+    id: "polygonSidesInput",
+    type: "slider", // Treated as slider for updateGeometry trigger
+    onInput: value => {
+      const slider = document.getElementById("polygonSides");
+      if (slider) {
+        const clamped = Math.max(3, Math.min(24, parseInt(value) || 3));
+        slider.value = clamped;
+      }
+    },
+  },
+  {
+    id: "prismSides",
+    type: "slider",
+    onInput: value => {
+      const input = document.getElementById("prismSidesInput");
+      if (input) input.value = parseInt(value);
+    },
+  },
+  {
+    id: "prismSidesInput",
+    type: "slider", // Treated as slider for updateGeometry trigger
+    onInput: value => {
+      const slider = document.getElementById("prismSides");
+      if (slider) {
+        const clamped = Math.max(1, Math.min(24, parseInt(value) || 6));
+        slider.value = clamped;
+      }
+    },
+  },
+  { id: "coneSides", type: "slider" },
+  { id: "penroseQuadrance", type: "slider" },
+  {
+    id: "penroseGenerations",
+    type: "slider",
+    valueId: "penroseGenerationsValue",
+  },
+
+  // Helix controls
+  {
+    id: "tetrahelix1CountSlider",
+    type: "slider",
+    valueId: "tetrahelix1CountDisplay",
+  },
+  {
+    id: "tetrahelix2CountSlider",
+    type: "slider",
+    valueId: "tetrahelix2CountDisplay",
+  },
+  {
+    id: "tetrahelix3CountSlider",
+    type: "slider",
+    valueId: "tetrahelix3CountDisplay",
+  },
+
+  // Projection plane distance slider
+  // Does NOT trigger updateGeometry - handled by RTProjections.setProjectionDistance() in rt-init.js
+  {
+    id: "projectionDistance",
+    type: "slider",
+    valueId: "projectionDistanceValue",
+    updateGeometry: false,
+  },
+
+  // Dodecahedron face tiling scale (for finding φ-ratio)
+  // Slider and numeric input are synced together
+  {
+    id: "dodecTilingScale",
+    type: "slider",
+    onInput: value => {
+      const input = document.getElementById("dodecTilingScaleInput");
+      if (input) input.value = parseFloat(value).toFixed(3);
+    },
+  },
+  {
+    id: "dodecTilingScaleInput",
+    type: "slider", // Treated as slider for updateGeometry trigger
+    onInput: value => {
+      const slider = document.getElementById("dodecTilingScale");
+      if (slider) {
+        const clamped = Math.max(0.5, Math.min(1.5, parseFloat(value) || 1.0));
+        slider.value = clamped;
+      }
+    },
+  },
+];
+
+// ============================================================================
+// LINKED SLIDERS - Bidirectional conversion (Quadrance ↔ Length)
+// ============================================================================
+
+export const linkedSliderBindings = [
+  // Line: Q ↔ L
+  {
+    type: "slider-linked",
+    primaryId: "lineQuadrance",
+    secondaryId: "lineLength",
+    primaryToSecondary: Q => Math.sqrt(Q), // Q → L = √Q
+    secondaryToPrimary: L => L * L, // L → Q = L²
+  },
+  // Polygon: Q_R ↔ R
+  {
+    type: "slider-linked",
+    primaryId: "polygonQuadrance",
+    secondaryId: "polygonRadius",
+    primaryToSecondary: Q => Math.sqrt(Q),
+    secondaryToPrimary: R => R * R,
+  },
+  // Prism base: Q_R ↔ R
+  {
+    type: "slider-linked",
+    primaryId: "prismBaseQuadrance",
+    secondaryId: "prismBaseRadius",
+    primaryToSecondary: Q => Math.sqrt(Q),
+    secondaryToPrimary: R => R * R,
+  },
+  // Prism height: Q_H ↔ H
+  {
+    type: "slider-linked",
+    primaryId: "prismHeightQuadrance",
+    secondaryId: "prismHeight",
+    primaryToSecondary: Q => Math.sqrt(Q),
+    secondaryToPrimary: H => H * H,
+  },
+  // Cone base: Q_R ↔ R
+  {
+    type: "slider-linked",
+    primaryId: "coneBaseQuadrance",
+    secondaryId: "coneBaseRadius",
+    primaryToSecondary: Q => Math.sqrt(Q),
+    secondaryToPrimary: R => R * R,
+  },
+  // Cone height: Q_H ↔ H
+  {
+    type: "slider-linked",
+    primaryId: "coneHeightQuadrance",
+    secondaryId: "coneHeight",
+    primaryToSecondary: Q => Math.sqrt(Q),
+    secondaryToPrimary: H => H * H,
+  },
+];
+
+// ============================================================================
+// LINEWEIGHT SLIDERS
+// ============================================================================
+
+export const lineweightSliderBindings = [
+  {
+    id: "lineWeight",
+    type: "slider",
+    valueId: "lineWeightValue",
+  },
+  {
+    id: "polygonEdgeWeight",
+    type: "slider",
+    valueId: "polygonEdgeWeightValue",
+  },
+  {
+    id: "polygonTilingGenerations",
+    type: "slider",
+    valueId: "polygonTilingGenerationsValue",
+  },
+  {
+    id: "penroseEdgeWeight",
+    type: "slider",
+    valueId: "penroseEdgeWeightValue",
+  },
+];
+
+// ============================================================================
+// GEODESIC PROJECTION RADIO BUTTONS
+// ============================================================================
+
+export const geodesicProjectionBindings = [
+  // Penrose tile type and seed selection
+  { type: "radio-group", name: "penroseTileType" },
+  { type: "radio-group", name: "penroseSeed" },
+  // Each geodesic form has out/in/mid projection options
+  { type: "radio-group", name: "geodesicTetraProjection" },
+  { type: "radio-group", name: "geodesicDualTetraProjection" },
+  { type: "radio-group", name: "geodesicOctaProjection" },
+  { type: "radio-group", name: "geodesicIcosaProjection" },
+  { type: "radio-group", name: "geodesicDualIcosaProjection" },
+  // Helix axis/face selection - Quadray axis notation (QW, QX, QY, QZ)
+  { type: "radio-group", name: "tetrahelix1Axis" },
+  { type: "radio-group", name: "tetrahelix2Axis" },
+  // tetrahelix2 direction checkboxes moved to simpleCheckboxBindings
+  // (tetrahelix2DirPlus, tetrahelix2DirMinus) - javelin model allows both enabled
+  // Helix strand count (tetrahelix2 only)
+  { type: "radio-group", name: "tetrahelix2Strands" },
+  // Helix bond mode (tetrahelix2 only)
+  { type: "radio-group", name: "tetrahelix2BondMode" },
+  // Per-strand exit face: controls strand direction after 1st tet (HTML+bindings commented out)
+  // { type: "radio-group", name: "tetrahelix2ExitQW" },
+  // { type: "radio-group", name: "tetrahelix2ExitQX" },
+  // { type: "radio-group", name: "tetrahelix2ExitQY" },
+  // { type: "radio-group", name: "tetrahelix2ExitQZ" },
+];
+
+// ============================================================================
+// VIEW CONTROL BUTTONS
+// ============================================================================
+
+export const viewControlBindings = [
+  // Camera type toggle (perspective/orthographic)
+  {
+    type: "button-group",
+    groupId: "cameraType",
+    buttons: [
+      {
+        id: "cameraPerspective",
+        onClick: renderingAPI => renderingAPI.switchCameraType("perspective"),
+      },
+      {
+        id: "cameraOrthographic",
+        onClick: renderingAPI => renderingAPI.switchCameraType("orthographic"),
+      },
+    ],
+  },
+  // Camera presets (Cartesian views)
+  {
+    type: "button-group",
+    groupId: "cameraPresets",
+    buttons: [
+      {
+        id: "viewX",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("X"),
+      },
+      {
+        id: "viewY",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("Y"),
+      },
+      {
+        id: "viewZDown",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("Zdown"),
+      },
+      {
+        id: "viewZUp",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("Zup"),
+      },
+      {
+        id: "viewAxo",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("Axo"),
+      },
+      // QWXYZ Quadray views (QW=Yellow, QX=Red, QY=Blue, QZ=Green)
+      {
+        id: "viewQuadQW",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("quadqw"),
+      },
+      {
+        id: "viewQuadQX",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("quadqx"),
+      },
+      {
+        id: "viewQuadQY",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("quadqy"),
+      },
+      {
+        id: "viewQuadQZ",
+        onClick: renderingAPI => renderingAPI.setCameraPreset("quadqz"),
+      },
+      // Prime Projection Views (rational n-gon discovery)
+      // Note: 7-gon removed from truncated tet - requires TruncTet+Tet compound (see viewHeptagonProjectionTet)
+      {
+        id: "viewPentagonProjection",
+        onClick: renderingAPI =>
+          renderingAPI.setCameraPreset("pentagonProjection"),
+      },
+      // Prime Projection Preset buttons moved to floating modal in rt-prime-cuts.js
+      // Buttons are now created dynamically by RTPrimeCuts.createPanel()
+    ],
+  },
+];
+
+// ============================================================================
+// BASIS VISIBILITY CHECKBOXES
+// ============================================================================
+
+export const basisVisibilityBindings = [
+  {
+    id: "showCartesianBasis",
+    type: "checkbox",
+    onChange: (checked, renderingAPI) => {
+      renderingAPI.setCartesianBasisVisible(checked);
+    },
+    updateGeometry: false,
+  },
+  {
+    id: "showQuadray",
+    type: "checkbox",
+    onChange: (checked, renderingAPI) => {
+      renderingAPI.setQuadrayBasisVisible(checked);
+    },
+    updateGeometry: false,
+  },
+  {
+    id: "showRadialLines",
+    type: "checkbox",
+    onChange: (checked, renderingAPI) => {
+      // Rebuild Quadray grids with showRadials state
+      const quadrayTess = parseInt(
+        document.getElementById("quadrayTessSlider")?.value || "12"
+      );
+      const ivmVisibility = {
+        ivmWX: document.getElementById("planeIvmWX")?.checked ?? true,
+        ivmWY: document.getElementById("planeIvmWY")?.checked ?? true,
+        ivmWZ: document.getElementById("planeIvmWZ")?.checked ?? true,
+        ivmXY: document.getElementById("planeIvmXY")?.checked ?? true,
+        ivmXZ: document.getElementById("planeIvmXZ")?.checked ?? true,
+        ivmYZ: document.getElementById("planeIvmYZ")?.checked ?? true,
+      };
+      const quadrayBtn = document.querySelector("[data-quadray-mode].active");
+      const quadrayMode = quadrayBtn
+        ? quadrayBtn.dataset.quadrayMode
+        : "uniform";
+      const nGon = parseInt(
+        document.getElementById("nGonSlider")?.value || "64"
+      );
+      renderingAPI.rebuildQuadrayGrids(
+        quadrayTess,
+        ivmVisibility,
+        quadrayMode,
+        nGon,
+        checked
+      );
+      // Rebuild Cartesian grids with showRadials state
+      const cartTess = parseInt(
+        document.getElementById("cartesianTessSlider")?.value || "10"
+      );
+      const cartVisibility = {
+        gridXY: document.getElementById("planeXY")?.checked ?? false,
+        gridXZ: document.getElementById("planeXZ")?.checked ?? false,
+        gridYZ: document.getElementById("planeYZ")?.checked ?? false,
+        cartesianBasis:
+          document.getElementById("showCartesianBasis")?.checked ?? false,
+      };
+      const cartBtn = document.querySelector("[data-cartesian-mode].active");
+      const cartMode = cartBtn ? cartBtn.dataset.cartesianMode : "uniform";
+      renderingAPI.rebuildCartesianGrids(
+        cartTess,
+        cartVisibility,
+        cartMode,
+        nGon,
+        checked
+      );
+    },
+    updateGeometry: false,
+  },
+];
+
+// ============================================================================
+// REFRESH BUTTONS - Momentary action buttons for refreshing visualizations
+// ============================================================================
+
+export const refreshButtonBindings = [
+  {
+    id: "refreshProjection",
+    type: "button",
+    onClick: () => {
+      if (window.RTProjections && window.RTProjections.state.enabled) {
+        window.RTProjections.updateProjection();
+        console.log("📐 Projection refreshed");
+      } else {
+        console.log("📐 No active projection to refresh");
+      }
+    },
+  },
+  {
+    id: "refreshCutPlane",
+    type: "button",
+    onClick: () => {
+      if (window.RTPapercut && window.RTPapercut.state.cutplaneEnabled) {
+        window.RTPapercut.updateCutplane(
+          window.RTPapercut.state.cutplaneValue,
+          window.RTPapercut._scene
+        );
+        console.log("✂️ Cut plane refreshed");
+      } else {
+        console.log("✂️ No active cut plane to refresh");
+      }
+    },
+  },
+];
+
+// ============================================================================
+// COMBINED EXPORTS
+// ============================================================================
+
+/**
+ * All binding definitions combined
+ * Use this for full initialization:
+ *   uiBindings.registerAll(allBindings);
+ */
+export const allBindings = [
+  ...simpleCheckboxBindings,
+  ...checkboxWithControlsBindings,
+  ...simpleSliderBindings,
+  ...linkedSliderBindings,
+  ...lineweightSliderBindings,
+  ...geodesicProjectionBindings,
+  ...viewControlBindings,
+  ...basisVisibilityBindings,
+  ...refreshButtonBindings,
+];
+
+/**
+ * Get binding count by type (for debugging)
+ */
+export function getBindingStats() {
+  return {
+    simpleCheckboxes: simpleCheckboxBindings.length,
+    checkboxWithControls: checkboxWithControlsBindings.length,
+    simpleSliders: simpleSliderBindings.length,
+    linkedSliders: linkedSliderBindings.length,
+    lineweightSliders: lineweightSliderBindings.length,
+    geodesicProjections: geodesicProjectionBindings.length,
+    viewControls: viewControlBindings.length,
+    basisVisibility: basisVisibilityBindings.length,
+    refreshButtons: refreshButtonBindings.length,
+    total: allBindings.length,
+  };
+}

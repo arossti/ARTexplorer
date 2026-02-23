@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Archives and old versions
+ARCHIVE/
+
+# Generated documentation
+docs/
+
+# Test files
+test/

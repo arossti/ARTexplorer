@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      ART Color Theory Test - Backface Culling Brightness Compensation
+    </title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #1a1a1a;
+        color: #e0e0e0;
+        padding: 20px;
+      }
+
+      h1 {
+        color: #4a9eff;
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 24px;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #888;
+        font-size: 14px;
+        margin-bottom: 30px;
+        font-style: italic;
+      }
+
+      .info-box {
+        background: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 30px;
+        line-height: 1.6;
+        font-size: 13px;
+      }
+
+      .info-box strong {
+        color: #4a9eff;
+      }
+
+      .global-controls {
+        background: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 30px;
+      }
+
+      .global-controls h2 {
+        color: #7ab8ff;
+        font-size: 16px;
+        margin-bottom: 15px;
+      }
+
+      .slider-group {
+        margin-bottom: 15px;
+      }
+
+      .slider-label {
+        display: block;
+        color: #b0b0b0;
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      input[type="range"] {
+        flex: 1;
+        cursor: pointer;
+      }
+
+      .slider-value {
+        min-width: 60px;
+        text-align: right;
+        color: #4a9eff;
+        font-weight: bold;
+        font-size: 13px;
+      }
+
+      .section {
+        background: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 30px;
+      }
+
+      .section h2 {
+        color: #7ab8ff;
+        font-size: 18px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #444;
+        padding-bottom: 10px;
+      }
+
+      .polyhedron-group {
+        margin-bottom: 25px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid #333;
+      }
+
+      .polyhedron-group:last-child {
+        border-bottom: none;
+      }
+
+      .polyhedron-name {
+        font-size: 14px;
+        color: #e0e0e0;
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+
+      .color-pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 10px;
+      }
+
+      .color-swatch-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .color-swatch {
+        height: 80px;
+        border-radius: 4px;
+        border: 2px solid #555;
+        position: relative;
+        transition: all 0.3s;
+        cursor: pointer;
+      }
+
+      .color-swatch:hover {
+        border-color: #7ab8ff;
+        transform: scale(1.02);
+      }
+
+      .color-label {
+        font-size: 11px;
+        color: #b0b0b0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .color-label .type {
+        font-weight: 600;
+        color: #7ab8ff;
+      }
+
+      .color-label .value {
+        font-family: "Courier New", monospace;
+        color: #888;
+        font-size: 10px;
+      }
+
+      .color-input-group {
+        display: flex;
+        gap: 5px;
+        margin-top: 5px;
+      }
+
+      .color-input {
+        flex: 1;
+        padding: 4px 6px;
+        background: #1a1a1a;
+        border: 1px solid #555;
+        color: #e0e0e0;
+        border-radius: 3px;
+        font-size: 11px;
+        font-family: "Courier New", monospace;
+      }
+
+      .color-input:focus {
+        outline: none;
+        border-color: #4a9eff;
+      }
+
+      .color-picker-btn {
+        width: 40px;
+        height: 28px;
+        padding: 0;
+        border: 2px solid #555;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: border-color 0.2s;
+        position: relative;
+        overflow: hidden;
+        background: #2a2a2a;
+      }
+
+      .color-picker-btn:hover {
+        border-color: #7ab8ff;
+      }
+
+      .color-picker-btn input[type="color"] {
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        width: calc(100% + 10px);
+        height: calc(100% + 10px);
+        border: none;
+        cursor: pointer;
+        opacity: 1;
+      }
+
+      .brightness-comparison {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        padding: 10px;
+        background: #1a1a1a;
+        border-radius: 4px;
+      }
+
+      .brightness-swatch {
+        flex: 1;
+        height: 60px;
+        border-radius: 3px;
+        border: 1px solid #444;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding: 5px;
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.7);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+      }
+
+      .matrix-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+      }
+
+      button {
+        background: #4a9eff;
+        border: none;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: #357abd;
+      }
+
+      .export-section {
+        background: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .code-output {
+        background: #1a1a1a;
+        border: 1px solid #555;
+        border-radius: 4px;
+        padding: 15px;
+        margin-top: 15px;
+        font-family: "Courier New", monospace;
+        font-size: 11px;
+        color: #00ff88;
+        text-align: left;
+        max-height: 400px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ART Color Theory Test Suite</h1>
+    <p class="subtitle">
+      Backface Culling Brightness Compensation - Interactive Color Calibration
+      with macOS Color Picker
+    </p>
+
+    <div class="info-box">
+      <strong>Context:</strong> With backface culling enabled (proper
+      single-sided rendering), we've eliminated the 30-40% brightness boost from
+      accidental double-rendering (front + back faces overlapping). This tool
+      helps calibrate color values to maintain visual "pop" and intensity.
+      <br /><br />
+      <strong>How to Use:</strong> Click the colored square next to each hex
+      input to open your macOS system color picker. Select colors that work well
+      at both full opacity (1.0) and the default (0.25). The hex values will
+      update automatically.
+    </div>
+
+    <div class="global-controls">
+      <h2>Global Opacity Control</h2>
+      <div class="slider-group">
+        <label class="slider-label"
+          >Face Opacity (simulates 3D transparency)</label
+        >
+        <div class="slider-container">
+          <input
+            type="range"
+            id="globalOpacity"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.25"
+          />
+          <span class="slider-value" id="globalOpacityValue">0.25</span>
+        </div>
+      </div>
+      <div class="slider-group">
+        <label class="slider-label"
+          >Brightness Multiplier (simulate backface culling loss)</label
+        >
+        <div class="slider-container">
+          <input
+            type="range"
+            id="brightnessMult"
+            min="0.5"
+            max="2"
+            step="0.05"
+            value="1"
+          />
+          <span class="slider-value" id="brightnessMultValue">1.00×</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Color swatches will be dynamically generated -->
+    <div id="color-sections"></div>
+
+    <!-- EXPORT SECTION -->
+    <div class="export-section">
+      <h2 style="color: #7ab8ff; margin-bottom: 15px">
+        Export Updated Color Values
+      </h2>
+      <button onclick="exportColors()">
+        Generate rt-rendering.js Color Updates
+      </button>
+      <div class="code-output" id="codeOutput">
+        Click "Generate" to see JavaScript code with updated color values...
+      </div>
+    </div>
+
+    <script>
+      // Color definitions (name, label, default color)
+      const colorData = [
+        {
+          section: "Platonic Solids - Base & Geodesic (Complementary Colors)",
+          groups: [
+            {
+              name: "Cube (Blue)",
+              pairs: [
+                { id: "cube", label: "Base Solid", color: "0x4a9eff" },
+                { id: "cube-matrix", label: "Matrix Color", color: "0x4a9eff" },
+              ],
+            },
+            {
+              name: "Tetrahedron (Yellow) ↔ Geodesic Tetrahedron (Cyan)",
+              pairs: [
+                { id: "tetra", label: "Base Solid", color: "0xffff00" },
+                { id: "tetra-geodesic", label: "Geodesic", color: "0x00cccc" },
+              ],
+            },
+            {
+              name: "Octahedron (Green) ↔ Geodesic Octahedron (Magenta)",
+              pairs: [
+                { id: "octa", label: "Base Solid", color: "0x00ff00" },
+                { id: "octa-geodesic", label: "Geodesic", color: "0xff00cc" },
+              ],
+            },
+            {
+              name: "Icosahedron (Cyan) ↔ Geodesic Icosahedron (Orange) [UPDATED]",
+              pairs: [
+                { id: "icosa", label: "Base Solid", color: "0x00ffff" },
+                {
+                  id: "icosa-geodesic",
+                  label: "Geodesic (NEW: 0xff8800)",
+                  color: "0xff8800",
+                },
+              ],
+              comparison: [
+                { label: "OLD: 0xff4400", color: "#ff4400" },
+                { label: "NEW: 0xff8800", color: "#ff8800" },
+              ],
+            },
+            {
+              name: "Dodecahedron (Yellow)",
+              pairs: [
+                { id: "dodeca", label: "Base Solid", color: "0xffff00" },
+                {
+                  id: "dodeca-geodesic",
+                  label: "Future Geodesic?",
+                  color: "0x0088ff",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          section: "Dual Polyhedra (Reciprocal Complementary Colors)",
+          groups: [
+            {
+              name: "Dual Tetrahedron (Cyan) ↔ Geodesic Dual Tetra (Yellow)",
+              pairs: [
+                { id: "dual-tetra", label: "Dual Solid", color: "0x00cccc" },
+                {
+                  id: "dual-tetra-geodesic",
+                  label: "Geodesic Dual",
+                  color: "0xffff00",
+                },
+              ],
+            },
+            {
+              name: "Dual Icosahedron (Orange) ↔ Geodesic Dual Icosa (Cyan) [UPDATED]",
+              pairs: [
+                {
+                  id: "dual-icosa",
+                  label: "Dual Solid (NEW: 0xff8800)",
+                  color: "0xff8800",
+                },
+                {
+                  id: "dual-icosa-geodesic",
+                  label: "Geodesic Dual",
+                  color: "0x00ffff",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          section: "Archimedean & Space-Filling Polyhedra",
+          groups: [
+            {
+              name: "Cuboctahedron",
+              pairs: [
+                { id: "cubocta", label: "Solid & Matrix", color: "0x00ff88" },
+              ],
+            },
+            {
+              name: "Rhombic Dodecahedron [UPDATED]",
+              pairs: [
+                {
+                  id: "rhombic",
+                  label: "Solid & Matrix (NEW: 0xff9900)",
+                  color: "0xff9900",
+                },
+              ],
+              comparison: [
+                { label: "OLD: 0xff8800", color: "#ff8800" },
+                { label: "NEW: 0xff9900", color: "#ff9900" },
+              ],
+            },
+          ],
+        },
+      ];
+
+      // Generate HTML
+      function generateHTML() {
+        const container = document.getElementById("color-sections");
+
+        colorData.forEach(sectionData => {
+          const section = document.createElement("div");
+          section.className = "section";
+          section.innerHTML = `<h2>${sectionData.section}</h2>`;
+
+          sectionData.groups.forEach(group => {
+            const polyGroup = document.createElement("div");
+            polyGroup.className = "polyhedron-group";
+
+            let html = `<div class="polyhedron-name">${group.name}</div>`;
+
+            if (group.pairs.length === 1) {
+              // Single color
+              const pair = group.pairs[0];
+              html += `
+              <div class="color-swatch-container">
+                <div class="color-label">
+                  <span class="type">${pair.label}</span>
+                  <span class="value" id="${pair.id}-hex">—</span>
+                </div>
+                <div class="color-swatch" id="${pair.id}-swatch"></div>
+                <div class="color-input-group">
+                  <div class="color-picker-btn">
+                    <input type="color" id="${pair.id}-picker" value="${hexToColor(pair.color)}">
+                  </div>
+                  <input type="text" class="color-input" id="${pair.id}-input" value="${pair.color}">
+                </div>
+              </div>
+            `;
+            } else {
+              // Pair of colors
+              html += '<div class="color-pair">';
+              group.pairs.forEach(pair => {
+                html += `
+                <div class="color-swatch-container">
+                  <div class="color-label">
+                    <span class="type">${pair.label}</span>
+                    <span class="value" id="${pair.id}-hex">—</span>
+                  </div>
+                  <div class="color-swatch" id="${pair.id}-swatch"></div>
+                  <div class="color-input-group">
+                    <div class="color-picker-btn">
+                      <input type="color" id="${pair.id}-picker" value="${hexToColor(pair.color)}">
+                    </div>
+                    <input type="text" class="color-input" id="${pair.id}-input" value="${pair.color}">
+                  </div>
+                </div>
+              `;
+              });
+              html += "</div>";
+            }
+
+            // Add comparison if exists
+            if (group.comparison) {
+              html += '<div class="brightness-comparison">';
+              group.comparison.forEach(comp => {
+                html += `<div class="brightness-swatch" style="background-color: ${comp.color};">${comp.label}</div>`;
+              });
+              html += "</div>";
+            }
+
+            polyGroup.innerHTML = html;
+            section.appendChild(polyGroup);
+          });
+
+          container.appendChild(section);
+        });
+      }
+
+      // Convert 0xRRGGBB to #RRGGBB
+      function hexToColor(hex) {
+        return "#" + hex.replace("0x", "");
+      }
+
+      // Convert #RRGGBB to 0xRRGGBB
+      function colorToHex(color) {
+        return "0x" + color.replace("#", "").toUpperCase();
+      }
+
+      // Convert hex to RGB
+      function hexToRgb(hex) {
+        hex = hex.replace("0x", "");
+        const bigint = parseInt(hex, 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return { r, g, b };
+      }
+
+      // Apply brightness multiplier
+      function applyBrightness(r, g, b, multiplier) {
+        r = Math.min(255, Math.round(r * multiplier));
+        g = Math.min(255, Math.round(g * multiplier));
+        b = Math.min(255, Math.round(b * multiplier));
+        return { r, g, b };
+      }
+
+      // Update a single color swatch
+      function updateColor(id) {
+        const inputEl = document.getElementById(`${id}-input`);
+        const pickerEl = document.getElementById(`${id}-picker`);
+        const swatchEl = document.getElementById(`${id}-swatch`);
+        const hexEl = document.getElementById(`${id}-hex`);
+
+        if (!inputEl || !swatchEl || !hexEl) return;
+
+        let colorValue = inputEl.value.trim();
+
+        // Validate hex format
+        if (!colorValue.match(/^0x[0-9a-fA-F]{6}$/)) {
+          hexEl.textContent = "Invalid";
+          return;
+        }
+
+        const rgb = hexToRgb(colorValue);
+        const opacity = parseFloat(
+          document.getElementById("globalOpacity").value
+        );
+        const brightnessMult = parseFloat(
+          document.getElementById("brightnessMult").value
+        );
+
+        const adjusted = applyBrightness(rgb.r, rgb.g, rgb.b, brightnessMult);
+
+        swatchEl.style.backgroundColor = `rgba(${adjusted.r}, ${adjusted.g}, ${adjusted.b}, ${opacity})`;
+        hexEl.textContent = `${colorValue} → rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+
+        // Update picker if it exists
+        if (pickerEl) {
+          pickerEl.value = hexToColor(colorValue);
+        }
+      }
+
+      // Initialize all listeners
+      function init() {
+        generateHTML();
+
+        // Get all color IDs
+        const colorIds = [];
+        colorData.forEach(section => {
+          section.groups.forEach(group => {
+            group.pairs.forEach(pair => {
+              colorIds.push(pair.id);
+            });
+          });
+        });
+
+        // Set up listeners for each color
+        colorIds.forEach(id => {
+          const inputEl = document.getElementById(`${id}-input`);
+          const pickerEl = document.getElementById(`${id}-picker`);
+
+          if (inputEl) {
+            inputEl.addEventListener("input", () => updateColor(id));
+          }
+
+          if (pickerEl) {
+            pickerEl.addEventListener("input", e => {
+              const hexValue = colorToHex(e.target.value);
+              document.getElementById(`${id}-input`).value = hexValue;
+              updateColor(id);
+            });
+          }
+
+          // Initial update
+          updateColor(id);
+        });
+
+        // Opacity slider
+        const opacitySlider = document.getElementById("globalOpacity");
+        const opacityValue = document.getElementById("globalOpacityValue");
+        opacitySlider.addEventListener("input", () => {
+          opacityValue.textContent = parseFloat(opacitySlider.value).toFixed(2);
+          colorIds.forEach(id => updateColor(id));
+        });
+
+        // Brightness multiplier slider
+        const brightnessSlider = document.getElementById("brightnessMult");
+        const brightnessValue = document.getElementById("brightnessMultValue");
+        brightnessSlider.addEventListener("input", () => {
+          brightnessValue.textContent =
+            parseFloat(brightnessSlider.value).toFixed(2) + "×";
+          colorIds.forEach(id => updateColor(id));
+        });
+      }
+
+      function exportColors() {
+        const output = document.getElementById("codeOutput");
+        let code = "// Updated color values for rt-rendering.js\n";
+        code +=
+          "// Brightness compensation for backface culling (30-40% boost)\n\n";
+
+        code += "// PLATONIC SOLIDS\n";
+        code += `Cube: ${document.getElementById("cube-input").value}\n`;
+        code += `Cube Matrix: ${document.getElementById("cube-matrix-input").value}\n\n`;
+
+        code += `Tetrahedron: ${document.getElementById("tetra-input").value}\n`;
+        code += `Geodesic Tetrahedron: ${document.getElementById("tetra-geodesic-input").value}\n\n`;
+
+        code += `Octahedron: ${document.getElementById("octa-input").value}\n`;
+        code += `Geodesic Octahedron: ${document.getElementById("octa-geodesic-input").value}\n\n`;
+
+        code += `Icosahedron: ${document.getElementById("icosa-input").value}\n`;
+        code += `Geodesic Icosahedron: ${document.getElementById("icosa-geodesic-input").value} // UPDATED from 0xff4400\n\n`;
+
+        code += `Dodecahedron: ${document.getElementById("dodeca-input").value}\n`;
+        code += `Geodesic Dodecahedron (future): ${document.getElementById("dodeca-geodesic-input").value}\n\n`;
+
+        code += "// DUAL POLYHEDRA\n";
+        code += `Dual Tetrahedron: ${document.getElementById("dual-tetra-input").value}\n`;
+        code += `Geodesic Dual Tetrahedron: ${document.getElementById("dual-tetra-geodesic-input").value}\n\n`;
+
+        code += `Dual Icosahedron: ${document.getElementById("dual-icosa-input").value} // UPDATED from 0xff4400\n`;
+        code += `Geodesic Dual Icosahedron: ${document.getElementById("dual-icosa-geodesic-input").value}\n\n`;
+
+        code += "// ARCHIMEDEAN & SPACE-FILLING\n";
+        code += `Cuboctahedron: ${document.getElementById("cubocta-input").value}\n`;
+        code += `Rhombic Dodecahedron: ${document.getElementById("rhombic-input").value} // UPDATED from 0xff8800\n`;
+
+        output.textContent = code;
+      }
+
+      // Initialize on load
+      init();
+    </script>
+  </body>
+</html>
