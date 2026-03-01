@@ -28,6 +28,7 @@ import { RTRadialMatrix } from "./rt-matrix-radial.js";
 import { Helices } from "./rt-helices.js";
 import { Thomson } from "./rt-thomson.js";
 import { MetaLog } from "./rt-metalog.js";
+import { createViewGizmo } from "./rt-gizmo.js";
 import { PenroseTiles, PenroseTiling } from "./rt-penrose.js";
 
 // Line2 addons for variable lineweight (cross-platform support)
@@ -249,6 +250,7 @@ export function initScene(THREE, OrbitControls, RT) {
   let penroseTilingGroup; // Penrose Tiling: Aperiodic tiling with golden ratio
   let thomsonTetrahedronGroup, thomsonOctahedronGroup, thomsonCubeGroup, thomsonIcosahedronGroup; // Thomson Polyhedra (N-gon great-circle shells)
   let cartesianGrid, cartesianBasis, quadrayBasis, ivmPlanes;
+  let viewGizmo; // Viewport orientation gizmo (2D canvas overlay)
 
   // ========================================================================
   // Quaternion-Based Orbit — replaces OrbitControls' spherical rotation
@@ -363,6 +365,50 @@ export function initScene(THREE, OrbitControls, RT) {
     createCartesianGrid();
     createQuadrayBasis();
     createIVMPlanes();
+
+    // Viewport orientation gizmo (2D canvas overlay, top-right corner)
+    viewGizmo = createViewGizmo(
+      () => camera,
+      setCameraPreset,
+      THREE
+    );
+    container.appendChild(viewGizmo.canvas);
+
+    // Hidden DOM anchors for delta system (view save/load captures gizmo mode)
+    const gizmoModeXYZ = document.createElement("span");
+    gizmoModeXYZ.setAttribute("data-gizmo-mode", "xyz");
+    gizmoModeXYZ.classList.add("active");
+    gizmoModeXYZ.style.display = "none";
+    gizmoModeXYZ.addEventListener("click", () => {
+      viewGizmo.setMode("xyz");
+      gizmoModeXYZ.classList.add("active");
+      gizmoModeABCD.classList.remove("active");
+    });
+
+    const gizmoModeABCD = document.createElement("span");
+    gizmoModeABCD.setAttribute("data-gizmo-mode", "abcd");
+    gizmoModeABCD.style.display = "none";
+    gizmoModeABCD.addEventListener("click", () => {
+      viewGizmo.setMode("abcd");
+      gizmoModeABCD.classList.add("active");
+      gizmoModeXYZ.classList.remove("active");
+    });
+
+    container.appendChild(gizmoModeXYZ);
+    container.appendChild(gizmoModeABCD);
+
+    // Sync DOM anchors when gizmo mode changes (e.g. user clicks label on canvas)
+    viewGizmo.onModeChange(newMode => {
+      const xyzEl = document.querySelector('[data-gizmo-mode="xyz"]');
+      const abcdEl = document.querySelector('[data-gizmo-mode="abcd"]');
+      if (newMode === "abcd") {
+        abcdEl?.classList.add("active");
+        xyzEl?.classList.remove("active");
+      } else {
+        xyzEl?.classList.add("active");
+        abcdEl?.classList.remove("active");
+      }
+    });
 
     // Create polyhedra groups
     // Point primitive (single vertex - Move only, no Scale/Rotate)
@@ -4085,6 +4131,9 @@ export function initScene(THREE, OrbitControls, RT) {
     controls.update(); // Required for zoom/pan damping
     renderer.render(scene, camera);
 
+    // Update viewport orientation gizmo
+    if (viewGizmo) viewGizmo.update();
+
     // Update FPS tracking and performance display
     PerformanceClock.updateFPS();
 
@@ -5490,6 +5539,18 @@ export function initScene(THREE, OrbitControls, RT) {
     setCameraPreset,
     resetCameraTarget,
     setUCSOrientation,
+
+    // Viewport orientation gizmo
+    setGizmoMode: mode => {
+      if (!viewGizmo) return;
+      viewGizmo.setMode(mode);
+      // Sync hidden DOM anchors for delta system
+      const target = document.querySelector(`[data-gizmo-mode="${mode}"]`);
+      if (target && !target.classList.contains("active")) {
+        target.click();
+      }
+    },
+    getGizmoMode: () => (viewGizmo ? viewGizmo.getMode() : "xyz"),
 
     // Getters for THREE.js objects (needed by rt-init.js)
     getScene: () => scene,

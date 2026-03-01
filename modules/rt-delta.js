@@ -305,7 +305,7 @@ export const RTDelta = {
    * Each group has mutually exclusive buttons with an `active` CSS class.
    * @private
    */
-  _toggleButtonGroups: ["cartesian-mode", "quadray-mode", "ucs"],
+  _toggleButtonGroups: ["cartesian-mode", "quadray-mode", "ucs", "gizmo-mode"],
 
   /**
    * Default active value for each toggle button group (matches HTML).
@@ -316,6 +316,7 @@ export const RTDelta = {
     "cartesian-mode": "uniform",
     "quadray-mode": "uniform",
     ucs: "z-up",
+    "gizmo-mode": "xyz",
   },
 
   /** @private */
