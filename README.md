@@ -767,6 +767,7 @@ We welcome contributions! Areas of interest:
 
 - The Three.js community for excellent WebGL tools
 - **Yomotsu Takeno** ([camera-controls](https://github.com/yomotsu/camera-controls), MIT license) — quaternion orbit technique for pole-free camera rotation, which inspired our custom orbit implementation
+- **Louis Trümpler** ([ifc5cad](https://github.com/louistrue/ifc5cad), AGPL-3.0 license) — ViewGizmo concept that inspired our viewport orientation gizmo with XYZ/ABCD toggle
 - Claude 4.5 (Anthropic) and the VSC IDE for development assistance and code review
 - Open source contributors and geometry enthusiasts
 

@@ -38,6 +38,13 @@ No code was directly copied; the approach of rotating around camera.up and the c
 right axis (rather than using spherical coordinates) was inspired by the library's
 canonical-space quaternion transform technique.
 
+Viewport orientation gizmo (modules/rt-gizmo.js) inspired by the ViewGizmo component
+in ifc5cad by Louis Trümpler (LTplus AG).
+Source: https://github.com/louistrue/ifc5cad
+License: AGPL-3.0 (https://www.gnu.org/licenses/agpl-3.0.html)
+No code was directly copied; the concept of a 2D canvas overlay with projected axis
+bubbles and click-to-snap camera navigation informed our independent implementation.
+
 
 DISCLAIMER: (Disclaimer last updated: April 2025. Subject to change without notice.)
 OpenBuilding, including its directors, advisors, and volunteers, makes no guarantees and assumes no legal responsibility for the accuracy, completeness, or usefulness of this tool. 
