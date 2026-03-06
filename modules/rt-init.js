@@ -817,6 +817,7 @@ function startARTexplorer(
     gravity: "open-gravity-demo",
     color: "open-color-theory-modal",
     rotors: "open-rotor-demo",
+    janus: "open-4d-drop-demo",
     prime: "open-prime-projections-demo",
   };
 
