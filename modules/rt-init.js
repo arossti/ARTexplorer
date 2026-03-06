@@ -805,6 +805,39 @@ function startARTexplorer(
     });
 
   // ========================================================================
+  // HASH ROUTING — auto-open demos from URL (e.g. #quadrance, #cross)
+  // ========================================================================
+  // Enables the native macOS app (and external links) to open specific demos
+  // via: https://arossti.github.io/ARTexplorer/#quadrance
+
+  const hashDemoMap = {
+    quadrance: "open-quadrance-demo",
+    cross: "open-cross-demo",
+    weierstrass: "open-weierstrass-demo",
+    gravity: "open-gravity-demo",
+    color: "open-color-theory-modal",
+    rotors: "open-rotor-demo",
+    prime: "open-prime-projections-demo",
+  };
+
+  function openDemoFromHash() {
+    const hash = window.location.hash.replace("#", "").toLowerCase();
+    if (hash && hashDemoMap[hash]) {
+      const linkEl = document.getElementById(hashDemoMap[hash]);
+      if (linkEl) {
+        // Small delay to ensure DOM and THREE.js are fully ready
+        setTimeout(() => linkEl.click(), 100);
+      }
+    }
+  }
+
+  // Check hash on initial page load
+  openDemoFromHash();
+
+  // Listen for hash changes (e.g. user navigates or native app opens new hash)
+  window.addEventListener("hashchange", openDemoFromHash);
+
+  // ========================================================================
   // GUMBALL TOOL FUNCTIONALITY
   // ========================================================================
 
