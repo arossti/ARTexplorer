@@ -14,7 +14,9 @@ export function initInfoModal() {
   const infoIconBtn = document.getElementById("info-icon-btn");
 
   // Show modal on first load (check sessionStorage)
-  if (!sessionStorage.getItem("artexplorer-info-seen")) {
+  // Skip if arriving via hash deep link (e.g. #quadrance from native app)
+  const hasDeepLink = window.location.hash && window.location.hash.length > 1;
+  if (!hasDeepLink && !sessionStorage.getItem("artexplorer-info-seen")) {
     infoModalOverlay.classList.remove("hidden");
   }
 
